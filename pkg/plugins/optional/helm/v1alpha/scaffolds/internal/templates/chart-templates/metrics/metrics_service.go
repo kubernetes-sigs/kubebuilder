@@ -53,8 +53,8 @@ metadata:
     control-plane: controller-manager
 spec:
   ports:
-    - port: 8443
-      targetPort: 8443
+    - port: {{ "{{ .Values.metrics.port }}" }}
+      targetPort: {{ "{{ .Values.metrics.port }}" }}
       protocol: TCP
       name: https
   selector:

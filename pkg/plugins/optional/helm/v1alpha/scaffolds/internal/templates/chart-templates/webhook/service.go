@@ -57,7 +57,7 @@ spec:
   ports:
     - port: 443
       protocol: TCP
-      targetPort: 9443
+      targetPort: {{ "{{ .Values.webhook.port }}" }}
   selector:
     control-plane: controller-manager
 {{` + "`" + `{{- end }}` + "`" + `}}
