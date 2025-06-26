@@ -61,8 +61,9 @@ controllerManager:
       tag: latest
     args:
       - "--leader-elect"
-      - "--metrics-bind-address=:8443"
+      - "--metrics-bind-address=:{{ "{{" }} .Values.metrics.port {{ "}}" }}"
       - "--health-probe-bind-address=:8081"
+      - "--webhook-port={{ "{{" }} .Values.webhook.port {{ "}}" }}"
     resources:
       limits:
         cpu: 500m
@@ -122,6 +123,7 @@ crd:
 # ControllerManager argument "--metrics-bind-address=:8443" is removed.
 metrics:
   enable: true
+  port: 8443
 {{ if .HasWebhooks }}
 # [WEBHOOKS]: Webhooks configuration
 # The following configuration is automatically generated from the manifests
@@ -129,6 +131,7 @@ metrics:
 # the edit command with the '--force' flag
 webhook:
   enable: true
+  port: 9443
 {{ end }}
 # [PROMETHEUS]: To enable a ServiceMonitor to export metrics to Prometheus set true
 prometheus:
