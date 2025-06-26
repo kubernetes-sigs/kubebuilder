@@ -28,16 +28,15 @@ type MemcachedSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Size defines the number of Memcached instances
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3
-	// +kubebuilder:validation:ExclusiveMaximum=false
-	Size int32 `json:"size,omitempty"`
+	// size defines the number of Memcached instances
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	Size *int32 `json:"size,omitempty"`
 
-	// Port defines the port that will be used to init the container with the image
-	ContainerPort int32 `json:"containerPort,omitempty"`
+	// containerPort defines the port that will be used to init the container with the image
+	// +required
+	ContainerPort int32 `json:"containerPort"`
 }
 
 // MemcachedStatus defines the observed state of Memcached
@@ -64,11 +63,19 @@ type MemcachedStatus struct {
 
 // Memcached is the Schema for the memcacheds API
 type Memcached struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MemcachedSpec   `json:"spec,omitempty"`
-	Status MemcachedStatus `json:"status,omitempty"`
+	// spec defines the desired state of Memcached.
+	// +required
+	Spec MemcachedSpec `json:"spec"`
+
+	// status defines the observed state of Memcached.
+	// +optional
+	Status *MemcachedStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
