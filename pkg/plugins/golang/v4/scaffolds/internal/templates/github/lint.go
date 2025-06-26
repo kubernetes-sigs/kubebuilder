@@ -69,4 +69,5 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: {{ .GolangciLintVersion }}
+          install-mode: goinstall
 `

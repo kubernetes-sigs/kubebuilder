@@ -95,7 +95,7 @@ cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
+lint: golangci-lint kube-api-linter ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
@@ -224,6 +224,23 @@ $(ENVTEST): $(LOCALBIN)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+# To lint Kubernetes API definitions.
+# More info: https://github.com/kubernetes-sigs/kube-api-linter
+KUBE_API_LINTER_PLUGIN := $(LOCALBIN)/kube-api-linter.so
+KUBE_API_LINTER_BUILD_DIR := ./hack/kube-api-linter
+
+.PHONY: kube-api-linter
+kube-api-linter: $(KUBE_API_LINTER_PLUGIN) ## Build the kube-api-linter plugin
+$(KUBE_API_LINTER_PLUGIN): $(KUBE_API_LINTER_BUILD_DIR)/go.mod
+	cd $(KUBE_API_LINTER_BUILD_DIR) && \
+	go build -buildmode=plugin -o "$(abspath $(KUBE_API_LINTER_PLUGIN))" sigs.k8s.io/kube-api-linter/pkg/plugin
+$(KUBE_API_LINTER_BUILD_DIR)/go.mod:
+	@echo "Setting up local module for kube-api-linter plugin..."
+	mkdir -p $(KUBE_API_LINTER_BUILD_DIR)
+	cd $(KUBE_API_LINTER_BUILD_DIR) && \
+	go mod init local-kube-api-linter && \
+	go get sigs.k8s.io/kube-api-linter@latest
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
