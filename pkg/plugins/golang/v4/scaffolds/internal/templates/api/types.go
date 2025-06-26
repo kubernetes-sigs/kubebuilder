@@ -78,8 +78,9 @@ type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
-	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
+	// foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
+	// +optional	
+	Foo *string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
 // {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.
@@ -101,10 +102,19 @@ type {{ .Resource.Kind }}Status struct {
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API.
 type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
 
-	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
-	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+	// spec defines the desired state of {{ .Resource.Kind }}.
+	// +required
+	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec"` + "`" + `
+
+	// status defines the observed state of {{ .Resource.Kind }}.
+	// +optional
+	Status *{{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+
 }
 
 // +kubebuilder:object:root=true

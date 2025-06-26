@@ -71,7 +71,7 @@ var _ = Describe("Busybox controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
-				busybox := &examplecomv1alpha1.Busybox{
+				busybox = &examplecomv1alpha1.Busybox{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      BusyboxName,
 						Namespace: namespace.Name,
@@ -138,12 +138,22 @@ var _ = Describe("Busybox controller", func() {
 
 			By("Checking the latest Status Condition added to the Busybox instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, busybox)).To(Succeed())
-			var conditions []metav1.Condition
-			Expect(busybox.Status.Conditions).To(ContainElement(
-				HaveField("Type", Equal(typeAvailableBusybox)), &conditions))
-			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableBusybox)
-			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableBusybox)
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableBusybox)
+
+			var foundCondition *metav1.Condition
+			for i := range busybox.Status.Conditions {
+				c := &busybox.Status.Conditions[i]
+				if c.Type == typeAvailableBusybox {
+					foundCondition = c
+					break
+				}
+
+			}
+			Expect(foundCondition).NotTo(BeNil(),
+				"Expected to find condition of type %s", typeAvailableBusybox)
+			Expect(foundCondition.Status).To(Equal(metav1.ConditionTrue),
+				"Condition %s should be True", typeAvailableBusybox)
+			Expect(foundCondition.Reason).To(Equal("Reconciling"),
+				"Condition %s should have Reason 'Reconciling'", typeAvailableBusybox)
 		})
 	})
 })

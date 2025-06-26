@@ -75,32 +75,38 @@ import (
 type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Size defines the number of {{ .Resource.Kind }} instances
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3
-	// +kubebuilder:validation:ExclusiveMaximum=false
-	Size int32 ` + "`" + `json:"size,omitempty"` + "`" + `
+
+	// size defines the number of {{ .Resource.Kind }} instances
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=1
+	// +required
+	Size int32 ` + "`" + `json:"size"` + "`" + `
 
 	{{ if not (isEmptyStr .Port) -}}
-	// Port defines the port that will be used to init the container with the image
-	ContainerPort int32 ` + "`" + `json:"containerPort,omitempty"` + "`" + `
+	// containerPort defines the port that will be used to init the container with the image
+	// +required
+	ContainerPort int32 ` + "`" + `json:"containerPort"` + "`" + `
 	{{- end }}
 }
 
-// {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}
+// {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.
+// For guidance, see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
 type {{ .Resource.Kind }}Status struct {
-	// Represents the observations of a {{ .Resource.Kind }}'s current state.
-	// {{ .Resource.Kind }}.status.conditions.type are: "Available", "Progressing", and "Degraded"
-	// {{ .Resource.Kind }}.status.conditions.status are one of True, False, Unknown.
-	// {{ .Resource.Kind }}.status.conditions.reason the value should be a CamelCase string and producers of specific
-	// condition types may define expected values and meanings for this field, and whether the values
-	// are considered a guaranteed API.
-	// {{ .Resource.Kind }}.status.conditions.Message is a human readable message indicating details about the transition.
-	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
+	// conditions represent the latest available observations of the resource's state.
+	// Common condition types include:
+	// - "Available": the resource is healthy and functioning as expected.
+	// - "Progressing": the resource is being created or updated.
+	// - "Degraded": the resource has encountered an error or failed to reach its desired state.
+	//
+	// Each condition must have a unique type. A condition's 'status' field may be True, False, or Unknown.
+	//
+	// +optional
+	// +patchStrategy=merge
+	// +patchMergeKey=type
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"` + "`" + `
 }
 
@@ -117,10 +123,18 @@ type {{ .Resource.Kind }}Status struct {
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
 
-	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
-	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+	// spec defines the desired state of {{ .Resource.Kind }}.
+	// +required
+	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec"` + "`" + `
+
+	// status defines the observed state of {{ .Resource.Kind }}.
+	// +optional
+	Status *{{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
 // +kubebuilder:object:root=true

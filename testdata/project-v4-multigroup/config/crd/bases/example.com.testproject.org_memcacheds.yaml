@@ -37,27 +37,35 @@ spec:
           metadata:
             type: object
           spec:
-            description: MemcachedSpec defines the desired state of Memcached
+            description: spec defines the desired state of Memcached.
             properties:
               containerPort:
-                description: Port defines the port that will be used to init the container
-                  with the image
+                description: containerPort defines the port that will be used to init
+                  the container with the image
                 format: int32
                 type: integer
               size:
-                description: |-
-                  Size defines the number of Memcached instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Memcached instances
                 format: int32
-                maximum: 3
-                minimum: 1
+                minimum: 0
                 type: integer
+            required:
+            - containerPort
+            - size
             type: object
           status:
-            description: MemcachedStatus defines the observed state of Memcached
+            description: status defines the observed state of Memcached.
             properties:
               conditions:
+                description: |-
+                  conditions represent the latest available observations of the resource's state.
+                  Common condition types include:
+                  - "Available": the resource is healthy and functioning as expected.
+                  - "Progressing": the resource is being created or updated.
+                  - "Degraded": the resource has encountered an error or failed to reach its desired state.
+
+                  Each condition must have a unique type. A condition's 'status' field may be True, False, or Unknown.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -113,7 +121,12 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

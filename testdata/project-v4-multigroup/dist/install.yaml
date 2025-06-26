@@ -45,16 +45,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar.
+            description: spec defines the desired state of Bar.
             properties:
               foo:
-                description: Foo is an example field of Bar. Edit bar_types.go to
+                description: foo is an example field of Bar. Edit bar_types.go to
                   remove/update
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar.
+            description: status defines the observed state of Bar.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -99,16 +101,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar.
+            description: spec defines the desired state of Bar.
             properties:
               foo:
-                description: Foo is an example field of Bar. Edit bar_types.go to
+                description: foo is an example field of Bar. Edit bar_types.go to
                   remove/update
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar.
+            description: status defines the observed state of Bar.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -153,22 +157,29 @@ spec:
           metadata:
             type: object
           spec:
-            description: BusyboxSpec defines the desired state of Busybox
+            description: spec defines the desired state of Busybox.
             properties:
               size:
-                description: |-
-                  Size defines the number of Busybox instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Busybox instances
                 format: int32
-                maximum: 3
-                minimum: 1
+                minimum: 0
                 type: integer
+            required:
+            - size
             type: object
           status:
-            description: BusyboxStatus defines the observed state of Busybox
+            description: status defines the observed state of Busybox.
             properties:
               conditions:
+                description: |-
+                  conditions represent the latest available observations of the resource's state.
+                  Common condition types include:
+                  - "Available": the resource is healthy and functioning as expected.
+                  - "Progressing": the resource is being created or updated.
+                  - "Degraded": the resource has encountered an error or failed to reach its desired state.
+
+                  Each condition must have a unique type. A condition's 'status' field may be True, False, or Unknown.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -224,7 +235,12 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -269,16 +285,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain.
+            description: spec defines the desired state of Captain.
             properties:
               foo:
-                description: Foo is an example field of Captain. Edit captain_types.go
+                description: foo is an example field of Captain. Edit captain_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain.
+            description: status defines the observed state of Captain.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -323,16 +341,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: CruiserSpec defines the desired state of Cruiser.
+            description: spec defines the desired state of Cruiser.
             properties:
               foo:
-                description: Foo is an example field of Cruiser. Edit cruiser_types.go
+                description: foo is an example field of Cruiser. Edit cruiser_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: CruiserStatus defines the observed state of Cruiser.
+            description: status defines the observed state of Cruiser.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -377,16 +397,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: DestroyerSpec defines the desired state of Destroyer.
+            description: spec defines the desired state of Destroyer.
             properties:
               foo:
-                description: Foo is an example field of Destroyer. Edit destroyer_types.go
+                description: foo is an example field of Destroyer. Edit destroyer_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: DestroyerStatus defines the observed state of Destroyer.
+            description: status defines the observed state of Destroyer.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -431,16 +453,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FrigateSpec defines the desired state of Frigate.
+            description: spec defines the desired state of Frigate.
             properties:
               foo:
-                description: Foo is an example field of Frigate. Edit frigate_types.go
+                description: foo is an example field of Frigate. Edit frigate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FrigateStatus defines the observed state of Frigate.
+            description: status defines the observed state of Frigate.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -485,16 +509,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
+            description: spec defines the desired state of HealthCheckPolicy.
             properties:
               foo:
-                description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
+                description: foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
+            description: status defines the observed state of HealthCheckPolicy.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -539,16 +565,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: KrakenSpec defines the desired state of Kraken.
+            description: spec defines the desired state of Kraken.
             properties:
               foo:
-                description: Foo is an example field of Kraken. Edit kraken_types.go
+                description: foo is an example field of Kraken. Edit kraken_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: KrakenStatus defines the observed state of Kraken.
+            description: status defines the observed state of Kraken.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -593,16 +621,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: LeviathanSpec defines the desired state of Leviathan.
+            description: spec defines the desired state of Leviathan.
             properties:
               foo:
-                description: Foo is an example field of Leviathan. Edit leviathan_types.go
+                description: foo is an example field of Leviathan. Edit leviathan_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: LeviathanStatus defines the observed state of Leviathan.
+            description: status defines the observed state of Leviathan.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -647,27 +677,35 @@ spec:
           metadata:
             type: object
           spec:
-            description: MemcachedSpec defines the desired state of Memcached
+            description: spec defines the desired state of Memcached.
             properties:
               containerPort:
-                description: Port defines the port that will be used to init the container
-                  with the image
+                description: containerPort defines the port that will be used to init
+                  the container with the image
                 format: int32
                 type: integer
               size:
-                description: |-
-                  Size defines the number of Memcached instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Memcached instances
                 format: int32
-                maximum: 3
-                minimum: 1
+                minimum: 0
                 type: integer
+            required:
+            - containerPort
+            - size
             type: object
           status:
-            description: MemcachedStatus defines the observed state of Memcached
+            description: status defines the observed state of Memcached.
             properties:
               conditions:
+                description: |-
+                  conditions represent the latest available observations of the resource's state.
+                  Common condition types include:
+                  - "Available": the resource is healthy and functioning as expected.
+                  - "Progressing": the resource is being created or updated.
+                  - "Degraded": the resource has encountered an error or failed to reach its desired state.
+
+                  Each condition must have a unique type. A condition's 'status' field may be True, False, or Unknown.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -723,7 +761,12 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -779,16 +822,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: WordpressSpec defines the desired state of Wordpress.
+            description: spec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                description: foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: WordpressStatus defines the observed state of Wordpress.
+            description: status defines the observed state of Wordpress.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -817,16 +862,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: WordpressSpec defines the desired state of Wordpress.
+            description: spec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                description: foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: WordpressStatus defines the observed state of Wordpress.
+            description: status defines the observed state of Wordpress.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: false

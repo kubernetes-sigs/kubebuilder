@@ -37,16 +37,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: AdmiralSpec defines the desired state of Admiral.
+            description: spec defines the desired state of Admiral.
             properties:
               foo:
-                description: Foo is an example field of Admiral. Edit admiral_types.go
+                description: foo is an example field of Admiral. Edit admiral_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: AdmiralStatus defines the observed state of Admiral.
+            description: status defines the observed state of Admiral.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

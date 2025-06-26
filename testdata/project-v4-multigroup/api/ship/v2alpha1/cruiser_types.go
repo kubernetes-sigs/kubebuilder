@@ -28,8 +28,9 @@ type CruiserSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Cruiser. Edit cruiser_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Cruiser. Edit cruiser_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // CruiserStatus defines the observed state of Cruiser.
@@ -44,11 +45,19 @@ type CruiserStatus struct {
 
 // Cruiser is the Schema for the cruisers API.
 type Cruiser struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CruiserSpec   `json:"spec,omitempty"`
-	Status CruiserStatus `json:"status,omitempty"`
+	// spec defines the desired state of Cruiser.
+	// +required
+	Spec CruiserSpec `json:"spec"`
+
+	// status defines the observed state of Cruiser.
+	// +optional
+	Status *CruiserStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	validationutils "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -140,8 +141,8 @@ func (v *CronJobCustomValidator) ValidateDelete(ctx context.Context, obj runtime
 
 // applyDefaults applies default values to CronJob fields.
 func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
-	if cronJob.Spec.ConcurrencyPolicy == "" {
-		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
+	if cronJob.Spec.ConcurrencyPolicy == nil {
+		cronJob.Spec.ConcurrencyPolicy = ptr.To(d.DefaultConcurrencyPolicy)
 	}
 	if cronJob.Spec.Suspend == nil {
 		cronJob.Spec.Suspend = new(bool)

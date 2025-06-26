@@ -43,22 +43,29 @@ spec:
           metadata:
             type: object
           spec:
-            description: BusyboxSpec defines the desired state of Busybox
+            description: spec defines the desired state of Busybox.
             properties:
               size:
-                description: |-
-                  Size defines the number of Busybox instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Busybox instances
                 format: int32
-                maximum: 3
-                minimum: 1
+                minimum: 0
                 type: integer
+            required:
+            - size
             type: object
           status:
-            description: BusyboxStatus defines the observed state of Busybox
+            description: status defines the observed state of Busybox.
             properties:
               conditions:
+                description: |-
+                  conditions represent the latest available observations of the resource's state.
+                  Common condition types include:
+                  - "Available": the resource is healthy and functioning as expected.
+                  - "Progressing": the resource is being created or updated.
+                  - "Degraded": the resource has encountered an error or failed to reach its desired state.
+
+                  Each condition must have a unique type. A condition's 'status' field may be True, False, or Unknown.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -114,7 +121,12 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
