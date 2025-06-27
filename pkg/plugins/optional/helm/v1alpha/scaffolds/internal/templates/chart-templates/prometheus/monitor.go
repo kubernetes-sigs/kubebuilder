@@ -27,12 +27,15 @@ var _ machinery.Template = &Monitor{}
 type Monitor struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults sets the default template configuration
 func (f *Monitor) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("dist", "chart", "templates", "prometheus", "monitor.yaml")
+		f.Path = filepath.Join(f.Directory, "chart", "templates", "prometheus", "monitor.yaml")
 	}
 
 	f.TemplateBody = monitorTemplate

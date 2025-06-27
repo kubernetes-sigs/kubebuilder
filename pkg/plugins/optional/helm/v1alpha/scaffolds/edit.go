@@ -50,13 +50,16 @@ type editScaffolder struct {
 	fs machinery.Filesystem
 
 	force bool
+
+	directory string
 }
 
 // NewHelmScaffolder returns a new Scaffolder for HelmPlugin
-func NewHelmScaffolder(cfg config.Config, force bool) plugins.Scaffolder {
+func NewHelmScaffolder(cfg config.Config, force bool, dir string) plugins.Scaffolder {
 	return &editScaffolder{
-		config: cfg,
-		force:  force,
+		config:    cfg,
+		force:     force,
+		directory: dir,
 	}
 }
 
@@ -83,23 +86,40 @@ func (s *editScaffolder) Scaffold() error {
 	hasWebhooks := hasWebhooksWith(s.config) || (len(mutatingWebhooks) > 0 && len(validatingWebhooks) > 0)
 
 	buildScaffold := []machinery.Builder{
-		&github.HelmChartCI{},
-		&templates.HelmChart{},
+		&github.HelmChartCI{
+			Directory: s.directory,
+		},
+		&templates.HelmChart{
+			Directory: s.directory,
+		},
 		&templates.HelmValues{
 			HasWebhooks:  hasWebhooks,
 			DeployImages: imagesEnvVars,
 			Force:        s.force,
+			Directory:    s.directory,
 		},
-		&templates.HelmIgnore{},
-		&charttemplates.HelmHelpers{},
+		&templates.HelmIgnore{
+			Directory: s.directory,
+		},
+		&charttemplates.HelmHelpers{
+			Directory: s.directory,
+		},
 		&manager.Deployment{
 			Force:        s.force,
 			DeployImages: len(imagesEnvVars) > 0,
 			HasWebhooks:  hasWebhooks,
+			Directory:    s.directory,
 		},
-		&templatescertmanager.Certificate{HasWebhooks: hasWebhooks},
-		&templatesmetrics.Service{},
-		&prometheus.Monitor{},
+		&templatescertmanager.Certificate{
+			HasWebhooks: hasWebhooks,
+			Directory:   s.directory,
+		},
+		&templatesmetrics.Service{
+			Directory: s.directory,
+		},
+		&prometheus.Monitor{
+			Directory: s.directory,
+		},
 	}
 
 	if len(mutatingWebhooks) > 0 || len(validatingWebhooks) > 0 {
@@ -107,13 +127,16 @@ func (s *editScaffolder) Scaffold() error {
 			&templateswebhooks.Template{
 				MutatingWebhooks:   mutatingWebhooks,
 				ValidatingWebhooks: validatingWebhooks,
+				Directory:          s.directory,
 			},
 		)
 	}
 
 	if hasWebhooks {
 		buildScaffold = append(buildScaffold,
-			&templateswebhooks.Service{},
+			&templateswebhooks.Service{
+				Directory: s.directory,
+			},
 		)
 	}
 
@@ -122,9 +145,9 @@ func (s *editScaffolder) Scaffold() error {
 	}
 
 	// Copy relevant files from config/ to dist/chart/templates/
-	err = s.copyConfigFiles()
+	err = s.copyConfigFiles(s.directory)
 	if err != nil {
-		return fmt.Errorf("failed to copy manifests from config to dist/chart/templates/: %w", err)
+		return fmt.Errorf("failed to copy manifests from config %s/chart/templates/: %w", s.directory, err)
 	}
 
 	return nil
@@ -227,15 +250,15 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 }
 
 // Helper function to copy files from config/ to dist/chart/templates/
-func (s *editScaffolder) copyConfigFiles() error {
+func (s *editScaffolder) copyConfigFiles(targetDirectory string) error {
 	configDirs := []struct {
 		SrcDir  string
 		DestDir string
 		SubDir  string
 	}{
-		{"config/rbac", "dist/chart/templates/rbac", "rbac"},
-		{"config/crd/bases", "dist/chart/templates/crd", "crd"},
-		{"config/network-policy", "dist/chart/templates/network-policy", "networkPolicy"},
+		{"config/rbac", targetDirectory + "/chart/templates/rbac", "rbac"},
+		{"config/crd/bases", targetDirectory + "/chart/templates/crd", "crd"},
+		{"config/network-policy", targetDirectory + "/chart/templates/network-policy", "networkPolicy"},
 	}
 
 	for _, dir := range configDirs {

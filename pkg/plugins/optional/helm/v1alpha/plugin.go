@@ -24,7 +24,15 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 )
 
-const pluginName = "helm." + plugins.DefaultNameQualifier
+const (
+	pluginName = "helm." + plugins.DefaultNameQualifier
+
+	// HelmDefaultTargetDirectory is the default directory where the Helm chart will be scaffolded
+	// This is used in the init subcommand to scaffold the Helm chart.
+	// It is also used in the edit subcommand to add or edit a Helm chart.
+	// It is set to "dist" to match the default target directory for other plugins.
+	HelmDefaultTargetDirectory = "dist"
+)
 
 var (
 	pluginVersion            = plugin.Version{Number: 1, Stage: stage.Alpha}
@@ -39,7 +47,15 @@ type Plugin struct {
 
 var _ plugin.Edit = Plugin{}
 
-type pluginConfig struct{}
+type PluginConfig struct {
+	// Options contains the options for the Helm plugin
+	Options options `json:"options,omitempty"`
+}
+
+type options struct {
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string `json:"directory,omitempty"`
+}
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }

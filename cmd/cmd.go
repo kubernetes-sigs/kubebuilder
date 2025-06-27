@@ -28,7 +28,7 @@ import (
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
 
 func init() {
@@ -62,7 +62,7 @@ func Run() {
 			&kustomizecommonv2.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
-			&helmv1alpha1.Plugin{},
+			&helmv1alpha.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),

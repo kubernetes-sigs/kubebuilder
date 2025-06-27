@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -182,16 +183,16 @@ func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string
 	By("decoding the grafana plugin configuration")
 	var grafanaConfig v1alpha1.PluginConfig
 	err = projectConfig.DecodePluginConfig("grafana.kubebuilder.io/v1-alpha", &grafanaConfig)
-	Expect(err).NotTo(HaveOccurred(), "Failed to decode DeployImage plugin configuration")
+	Expect(err).NotTo(HaveOccurred(), "Failed to decode Grafana plugin configuration")
 
 	// Validate the resource configuration
 	Expect(grafanaConfig.Resources).To(BeEmpty(), "Expected zero resource for the Grafana plugin")
 
 	By("decoding the helm plugin configuration")
-	var helmConfig v1alpha1.PluginConfig
-	err = projectConfig.DecodePluginConfig("grafana.kubebuilder.io/v1-alpha", &helmConfig)
+	var helmConfig helmv1alpha.PluginConfig
+	err = projectConfig.DecodePluginConfig("helm.kubebuilder.io/v1-alpha", &helmConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
 
 	// Validate the resource configuration
-	Expect(helmConfig.Resources).To(BeEmpty(), "Expected zero resource for the Helm plugin")
+	Expect(helmConfig.Options.Directory).To(Equal("dist"), "Expected default directory to be 'dist'")
 }

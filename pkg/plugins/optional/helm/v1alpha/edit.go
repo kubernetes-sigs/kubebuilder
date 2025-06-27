@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -29,8 +30,9 @@ import (
 var _ plugin.EditSubcommand = &editSubcommand{}
 
 type editSubcommand struct {
-	config config.Config
-	force  bool
+	config    config.Config
+	force     bool
+	directory string
 }
 
 //nolint:lll
@@ -66,6 +68,7 @@ manifests in the chart align with the latest changes.
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+	fs.StringVar(&p.directory, "directory", HelmDefaultTargetDirectory, "domain for groups")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -74,7 +77,7 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewHelmScaffolder(p.config, p.force)
+	scaffolder := scaffolds.NewHelmScaffolder(p.config, p.force, p.directory)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
@@ -82,5 +85,22 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Track the resources following a declarative approach
-	return insertPluginMetaToConfig(p.config, pluginConfig{})
+	cfg := PluginConfig{}
+	if err = p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
+		// Skip tracking as the config doesn't support per-plugin configuration
+		return nil
+	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+		// Fail unless the key wasn't found, which just means it is the first resource tracked
+		return fmt.Errorf("error decoding plugin configuration: %w", err)
+	}
+
+	cfg.Options = options{
+		Directory: p.directory,
+	}
+
+	if err = p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+		return fmt.Errorf("error encoding plugin configuration: %w", err)
+	}
+
+	return nil
 }

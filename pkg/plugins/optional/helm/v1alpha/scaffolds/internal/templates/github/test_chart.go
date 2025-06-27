@@ -28,6 +28,9 @@ var _ machinery.Template = &HelmChartCI{}
 type HelmChartCI struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	// Directory is the directory where the Helm chart CI workflow will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -90,7 +93,7 @@ jobs:
 
       - name: Lint Helm Chart
         run: |
-          helm lint ./dist/chart
+          helm lint ./{{ .Directory }}/chart
 
 # TODO: Uncomment if cert-manager is enabled
 #      - name: Install cert-manager via Helm
@@ -124,7 +127,7 @@ jobs:
 
       - name: Install Helm chart for project
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace {{ .ProjectName }}-system
+          helm install my-release ./{{ .Directory }}/chart --create-namespace --namespace {{ .ProjectName }}-system
 
       - name: Check Helm release status
         run: |

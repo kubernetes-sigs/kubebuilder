@@ -28,12 +28,15 @@ var _ machinery.Template = &HelmChart{}
 type HelmChart struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *HelmChart) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("dist", "chart", "Chart.yaml")
+		f.Path = filepath.Join(f.Directory, "chart", "Chart.yaml")
 	}
 
 	f.TemplateBody = helmChartTemplate
