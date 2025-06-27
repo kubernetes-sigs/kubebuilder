@@ -28,8 +28,9 @@ type WordpressSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Wordpress. Edit wordpress_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Wordpress. Edit wordpress_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // WordpressStatus defines the observed state of Wordpress.
@@ -44,11 +45,19 @@ type WordpressStatus struct {
 
 // Wordpress is the Schema for the wordpresses API.
 type Wordpress struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   WordpressSpec   `json:"spec,omitempty"`
-	Status WordpressStatus `json:"status,omitempty"`
+	// spec defines the desired state of Wordpress.
+	// +required
+	Spec WordpressSpec `json:"spec"`
+
+	// status defines the observed state of Wordpress.
+	// +optional
+	Status *WordpressStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

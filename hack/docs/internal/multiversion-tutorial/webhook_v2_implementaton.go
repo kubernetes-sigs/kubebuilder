@@ -31,8 +31,8 @@ const cronJobDefaultingLogic = `// Set default values
 const cronJobDefaultFunction = `
 // applyDefaults applies default values to CronJob fields.
 func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
-	if cronJob.Spec.ConcurrencyPolicy == "" {
-		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
+	if cronJob.Spec.ConcurrencyPolicy == nil {
+		cronJob.Spec.ConcurrencyPolicy = ptr.To(d.DefaultConcurrencyPolicy)
 	}
 	if cronJob.Spec.Suspend == nil {
 		cronJob.Spec.Suspend = new(bool)

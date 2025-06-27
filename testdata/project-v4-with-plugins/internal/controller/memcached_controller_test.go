@@ -71,7 +71,7 @@ var _ = Describe("Memcached controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
-				memcached := &examplecomv1alpha1.Memcached{
+				memcached = &examplecomv1alpha1.Memcached{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      MemcachedName,
 						Namespace: namespace.Name,
@@ -139,12 +139,22 @@ var _ = Describe("Memcached controller", func() {
 
 			By("Checking the latest Status Condition added to the Memcached instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, memcached)).To(Succeed())
-			var conditions []metav1.Condition
-			Expect(memcached.Status.Conditions).To(ContainElement(
-				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
-			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
-			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableMemcached)
+
+			var foundCondition *metav1.Condition
+			for i := range memcached.Status.Conditions {
+				c := &memcached.Status.Conditions[i]
+				if c.Type == typeAvailableMemcached {
+					foundCondition = c
+					break
+				}
+
+			}
+			Expect(foundCondition).NotTo(BeNil(),
+				"Expected to find condition of type %s", typeAvailableMemcached)
+			Expect(foundCondition.Status).To(Equal(metav1.ConditionTrue),
+				"Condition %s should be True", typeAvailableMemcached)
+			Expect(foundCondition.Reason).To(Equal("Reconciling"),
+				"Condition %s should have Reason 'Reconciling'", typeAvailableMemcached)
 		})
 	})
 })

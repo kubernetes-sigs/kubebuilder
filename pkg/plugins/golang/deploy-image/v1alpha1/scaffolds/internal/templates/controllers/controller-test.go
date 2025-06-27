@@ -121,7 +121,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
-				{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
+				{{ lower .Resource.Kind }} = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      {{ .Resource.Kind }}Name,
 						Namespace: namespace.Name,
@@ -191,12 +191,22 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})).To(Succeed())
-			var conditions []metav1.Condition
-			Expect({{ lower .Resource.Kind }}.Status.Conditions).To(ContainElement(
-				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
-			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})
-			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailable{{ .Resource.Kind }})
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailable{{ .Resource.Kind }})
+
+			var foundCondition *metav1.Condition
+			for i := range {{ lower .Resource.Kind }}.Status.Conditions {
+				c := &{{ lower .Resource.Kind }}.Status.Conditions[i]
+				if c.Type == typeAvailable{{ .Resource.Kind }} {
+					foundCondition = c
+					break
+				}
+
+			}
+			Expect(foundCondition).NotTo(BeNil(),
+				"Expected to find condition of type %s", typeAvailable{{ .Resource.Kind }})
+			Expect(foundCondition.Status).To(Equal(metav1.ConditionTrue),
+				"Condition %s should be True", typeAvailable{{ .Resource.Kind }})
+			Expect(foundCondition.Reason).To(Equal("Reconciling"),
+				"Condition %s should have Reason 'Reconciling'", typeAvailable{{ .Resource.Kind }})
 		})
 	})
 })

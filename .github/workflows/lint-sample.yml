@@ -12,6 +12,7 @@ jobs:
   lint-samples:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         folder: [
           "testdata/project-v4",
@@ -32,6 +33,11 @@ jobs:
       - name: Prepare ${{ matrix.folder }}
         working-directory: ${{ matrix.folder }}
         run: go mod tidy
+      - name: Build kubeapilinter
+        working-directory: ${{ matrix.folder }}
+        run: make kube-api-linter
+        env:
+          CGO_ENABLED: 1
       - name: Check linter configuration
         working-directory: ${{ matrix.folder }}
         run: make lint-config
@@ -40,7 +46,7 @@ jobs:
         with:
           version: v2.1.6
           working-directory: ${{ matrix.folder }}
-          args: --config .golangci.yml ./...
+          install-mode: goinstall
       - name: Run linter via makefile target
         working-directory: ${{ matrix.folder }}
         run: make lint

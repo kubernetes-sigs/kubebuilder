@@ -28,8 +28,9 @@ type LeviathanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Leviathan. Edit leviathan_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Leviathan. Edit leviathan_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // LeviathanStatus defines the observed state of Leviathan.
@@ -43,11 +44,19 @@ type LeviathanStatus struct {
 
 // Leviathan is the Schema for the leviathans API.
 type Leviathan struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LeviathanSpec   `json:"spec,omitempty"`
-	Status LeviathanStatus `json:"status,omitempty"`
+	// spec defines the desired state of Leviathan.
+	// +required
+	Spec LeviathanSpec `json:"spec"`
+
+	// status defines the observed state of Leviathan.
+	// +optional
+	Status *LeviathanStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
