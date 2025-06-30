@@ -12,6 +12,7 @@ jobs:
   lint-samples:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         folder: [
           "testdata/project-v4",
@@ -40,7 +41,6 @@ jobs:
         with:
           version: v2.1.6
           working-directory: ${{ matrix.folder }}
-          args: --config .golangci.yml ./...
       - name: Run linter via makefile target
         working-directory: ${{ matrix.folder }}
         run: make lint
