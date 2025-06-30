@@ -77,6 +77,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	{{ if not (isEmptyStr .Resource.Path) -}}
@@ -121,13 +122,13 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
-				{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
+				{{ lower .Resource.Kind }} = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      {{ .Resource.Kind }}Name,
 						Namespace: namespace.Name,
 					},
 					Spec: {{ .Resource.ImportAlias }}.{{ .Resource.Kind }}Spec{
-						Size: 1,
+						Size: ptr.To(int32(1)),
 						{{ if not (isEmptyStr .Port) -}}
 						ContainerPort: {{ .Port }},
 						{{- end }}

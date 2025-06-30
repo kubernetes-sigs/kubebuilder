@@ -100,6 +100,10 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Let's just set the status as Unknown when no status is available
+	if memcached.Status == nil {
+		memcached.Status = &examplecomv1alpha1.MemcachedStatus{}
+	}
+
 	if len(memcached.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, memcached); err != nil {
@@ -228,13 +232,18 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	// If the size is not defined in the Custom Resource then we will set the desired replicas to 0
+	var desiredReplicas int32 = 0
+	if memcached.Spec.Size != nil {
+		desiredReplicas = *memcached.Spec.Size
+	}
+
 	// The CRD API defines that the Memcached type have a MemcachedSpec.Size field
 	// to set the quantity of Deployment instances to the desired state on the cluster.
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
-	size := memcached.Spec.Size
-	if *found.Spec.Replicas != size {
-		found.Spec.Replicas = &size
+	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
+		found.Spec.Replicas = ptr.To(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -270,7 +279,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// The following implementation will update the status
 	meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
 		Status: metav1.ConditionTrue, Reason: "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, size)})
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, memcached); err != nil {
 		log.Error(err, "Failed to update Memcached status")
@@ -304,7 +313,6 @@ func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *examplecomv1alpha1.Memcached) (*appsv1.Deployment, error) {
 	ls := labelsForMemcached()
-	replicas := memcached.Spec.Size
 
 	// Get the Operand image
 	image, err := imageForMemcached()
@@ -318,7 +326,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 			Namespace: memcached.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: memcached.Spec.Size,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: ls,
 			},
