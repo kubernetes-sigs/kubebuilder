@@ -43,20 +43,17 @@ spec:
           metadata:
             type: object
           spec:
-            description: BusyboxSpec defines the desired state of Busybox
+            description: spec defines the desired state of Busybox.
             properties:
               size:
-                description: |-
-                  Size defines the number of Busybox instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Busybox instances
                 format: int32
-                maximum: 3
-                minimum: 1
+                minimum: 0
                 type: integer
             type: object
           status:
-            description: BusyboxStatus defines the observed state of Busybox
+            description: status defines the observed state of Busybox.
             properties:
               conditions:
                 description: |-
@@ -128,6 +125,8 @@ spec:
                 - type
                 x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
