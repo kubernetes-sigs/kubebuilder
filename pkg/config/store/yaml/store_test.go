@@ -109,7 +109,9 @@ layout: ""
 			Expect(err).To(MatchError(store.LoadError{
 				Err: fmt.Errorf("unable to determine config version: %w",
 					fmt.Errorf("error unmarshaling JSON: %w",
-						errors.New("while decoding JSON: project version is empty"),
+						fmt.Errorf("while decoding JSON: %w",
+							errors.New("project version is empty"),
+						),
 					),
 				),
 			}))
@@ -174,7 +176,9 @@ layout: ""
 			Expect(err).To(MatchError(store.LoadError{
 				Err: fmt.Errorf("unable to determine config version: %w",
 					fmt.Errorf("error unmarshaling JSON: %w",
-						errors.New("while decoding JSON: project version is empty"),
+						fmt.Errorf("while decoding JSON: %w",
+							errors.New("project version is empty"),
+						),
 					),
 				),
 			}))
