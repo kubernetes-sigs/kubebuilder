@@ -62,8 +62,8 @@ controllerManager:
     args:
       - "--leader-elect"
       - "--metrics-bind-address=:{{ "{{" }} .Values.metrics.port {{ "}}" }}"
-      - "--health-probe-bind-address=:8081"
-      - "--webhook-port={{ "{{" }} .Values.webhook.port {{ "}}" }}"
+      - "--health-probe-bind-address=:8081"{{ if .HasWebhooks }}
+      - "--webhook-port={{ "{{" }} .Values.webhook.port {{ "}}" }}"{{ end }}
     resources:
       limits:
         cpu: 500m
