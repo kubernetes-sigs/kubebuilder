@@ -256,15 +256,20 @@ const (
 const oldStatusAPI = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file`
 
-const newStatusAPI = `// Represents the observations of a Memcached's current state.
-	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
-	// Memcached.status.conditions.status are one of True, False, Unknown.
-	// Memcached.status.conditions.reason the value should be a CamelCase string and producers of specific
-	// condition types may define expected values and meanings for this field, and whether the values
-	// are considered a guaranteed API.
-	// Memcached.status.conditions.Message is a human readable message indicating details about the transition.
-	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
+const newStatusAPI = `// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+	
+	// conditions represent the current state of the Memcached resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional.
+	// - "Progressing": the resource is being created or updated.
+	// - "Degraded": the resource failed to reach or maintain its desired state.
+	//
+	// The status of each condition is one of True, False, or Unknown.
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition ` + "`json:\"conditions,omitempty\"`"
 
 const sampleSizeFragment = `# TODO(user): edit the following value to ensure the number
