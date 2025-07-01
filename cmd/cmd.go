@@ -56,7 +56,7 @@ func Run() {
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
-		cli.WithCliVersion(getKubebuilderVersion()),
+		cli.WithCliVersion(getKubeBuilderVersion()),
 		cli.WithPlugins(
 			golangv4.Plugin{},
 			gov4Bundle,
