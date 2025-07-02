@@ -37,9 +37,7 @@ type Plugin struct {
 	editSubcommand
 }
 
-var (
-	_ plugin.Edit = Plugin{}
-)
+var _ plugin.Edit = Plugin{}
 
 type pluginConfig struct{}
 

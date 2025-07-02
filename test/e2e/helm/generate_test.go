@@ -86,7 +86,6 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred(), "Failed to read values.yaml file")
 			Expect(fileContainsExpr).To(BeFalse(), "Failed to get enabled webhook value from values.yaml file")
 		})
-
 	})
 })
 
