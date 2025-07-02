@@ -19,6 +19,7 @@ package v1alpha
 import (
 	"fmt"
 
+	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
@@ -29,6 +30,9 @@ var _ plugin.InitSubcommand = &initSubcommand{}
 
 type initSubcommand struct {
 	config config.Config
+
+	// config options
+	name string
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -41,8 +45,18 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
+func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&p.name, "project-name", "", "name of this project")
+}
+
 func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+
+	// Assign a default project name
+	if err := p.config.GenerateProjectName(p.name); err != nil {
+		return fmt.Errorf("error generating project name: %w", err)
+	}
+
 	return nil
 }
 

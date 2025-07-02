@@ -18,11 +18,14 @@ package v3
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
@@ -372,6 +375,29 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 func (c *Cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
+	}
+
+	return nil
+}
+
+// GenerateProjectName generates a default project name based on the current directory name.
+func (c *Cfg) GenerateProjectName(projectName string) error {
+
+	// Assign a default project name
+	if projectName == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("error getting current directory: %w", err)
+		}
+		projectName = strings.ToLower(filepath.Base(dir))
+	}
+	// Check if the project name is a valid k8s namespace (DNS 1123 label).
+	if err := validation.IsDNS1123Label(projectName); err != nil {
+		return fmt.Errorf("project name %q is invalid: %v", projectName, err)
+	}
+
+	if err := c.SetProjectName(projectName); err != nil {
+		return fmt.Errorf("error setting project name: %w", err)
 	}
 
 	return nil

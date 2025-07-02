@@ -18,14 +18,10 @@ package v2
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
-	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
@@ -69,20 +65,8 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	}
 
 	// Assign a default project name
-	if p.name == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("error getting current directory: %w", err)
-		}
-		p.name = strings.ToLower(filepath.Base(dir))
-	}
-	// Check if the project name is a valid k8s namespace (DNS 1123 label).
-	if err := validation.IsDNS1123Label(p.name); err != nil {
-		return fmt.Errorf("project name %q is invalid: %v", p.name, err)
-	}
-
-	if err := p.config.SetProjectName(p.name); err != nil {
-		return fmt.Errorf("error setting project name: %w", err)
+	if err := p.config.GenerateProjectName(p.name); err != nil {
+		return fmt.Errorf("error generating project name: %w", err)
 	}
 
 	return nil

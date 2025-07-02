@@ -51,6 +51,8 @@ type Config interface {
 	// SetProjectName sets the project name.
 	// This method was introduced in project version 3.
 	SetProjectName(name string) error
+	// GenerateProjectName generates a project name.
+	GenerateProjectName(name string) error
 
 	// GetPluginChain returns the plugin chain.
 	// This method was introduced in project version 3.
