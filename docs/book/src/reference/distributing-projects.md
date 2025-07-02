@@ -4,6 +4,10 @@
 
 This section would help users understand how to package and deliver their Kubebuilder-based Operators to end users.
 
+## By Providing Operator SDK Bundle
+
+Using operator-sdk to generate an operator bundle, which includes all the necessary manifests, CRDs, and metadata. This is the preferred method, especially for platforms like OperatorHub.io and OLM.
+
 ### Step 1:  operator-sdk generate kustomize manifests
 
 Example output:
@@ -74,3 +78,9 @@ bundle
 └── metadata
     └── annotations.yaml
 ```
+
+## FAQ: How to Publish Your Project to OperatorHub.io / OKD / OCP Catalog
+
+To publish your operator to public platforms like OperatorHub.io, OKD, or the OCP catalog, here are the steps you can follow:
+1. OperatorHub.io: Follow the [OperatorHub.io Documentation](https://operatorhub.io/docs/) to submit your operator.
+2. OKD/OCP Catalog: Refer to the [OKD or OCP documentation]((https://okd.io/docs/documentation/) ) for adding your operator to their catalogs.
