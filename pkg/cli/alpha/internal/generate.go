@@ -40,8 +40,9 @@ import (
 
 // Generate store the required info for the command
 type Generate struct {
-	InputDir  string
-	OutputDir string
+	InputDir      string
+	OutputDir     string
+	HelmDirectory string
 }
 
 // Generate handles the migration and scaffolding process.
@@ -110,7 +111,7 @@ func (opts *Generate) Generate() error {
 	}
 
 	if hasHelmPlugin(projectConfig) {
-		if err = migrateHelmPlugin(projectConfig); err != nil {
+		if err = migrateHelmPlugin(projectConfig, opts.HelmDirectory); err != nil {
 			return fmt.Errorf("error migrating Helm plugin: %w", err)
 		}
 	}
@@ -489,7 +490,7 @@ func kubebuilderGrafanaEdit() error {
 }
 
 // Migrates the Helm plugin.
-func migrateHelmPlugin(s store.Store) error {
+func migrateHelmPlugin(s store.Store, targetDir string) error {
 	var helmPlugin helmv1alpha.PluginConfig
 
 	err := s.Config().DecodePluginConfig(plugin.KeyFor(helmv1alpha.Plugin{}), &helmPlugin)
@@ -500,13 +501,13 @@ func migrateHelmPlugin(s store.Store) error {
 		return fmt.Errorf("failed to decode Helm plugin config: %w", err)
 	}
 
-	return kubebuilderHelmEdit(helmPlugin)
+	return kubebuilderHelmEdit(helmPlugin, targetDir)
 }
 
 // Edits the project to include the Helm plugin.
-func kubebuilderHelmEdit(resourceData helmv1alpha.PluginConfig) error {
+func kubebuilderHelmEdit(resourceData helmv1alpha.PluginConfig, targetDir string) error {
 	args := []string{"edit", "--plugins", plugin.KeyFor(helmv1alpha.Plugin{})}
-	args = append(args, getHelmOptions(resourceData)...)
+	args = append(args, getHelmOptions(resourceData, targetDir)...)
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
 	}
@@ -516,12 +517,15 @@ func kubebuilderHelmEdit(resourceData helmv1alpha.PluginConfig) error {
 // Gets the options for Helm resource.
 // If the directory is not the default, it sets the directory option.
 // otherwise, it returns an empty slice which then use the default value from the edit/init subcommand.
-func getHelmOptions(resourceData helmv1alpha.PluginConfig) []string {
+func getHelmOptions(resourceData helmv1alpha.PluginConfig, targetDir string) []string {
 	var args []string
 
-	if resourceData.Options.Directory != helmv1alpha.HelmDefaultTargetDirectory {
+	if targetDir != "" {
+		log.Info("setting Helm chart directory")
+		args = append(args, fmt.Sprintf("--output-dir=%s", targetDir))
+	} else if resourceData.Options.Directory != helmv1alpha.HelmDefaultTargetDirectory {
 		log.Info("setting directory for Helm chart")
-		args = append(args, fmt.Sprintf("--directory=%s", resourceData.Options.Directory))
+		args = append(args, fmt.Sprintf("--output-dir=%s", resourceData.Options.Directory))
 	}
 
 	return args

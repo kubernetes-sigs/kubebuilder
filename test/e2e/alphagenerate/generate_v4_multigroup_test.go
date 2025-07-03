@@ -62,7 +62,7 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should regenerate the project in project-v4-multigroup directory with success", func() {
-			regenerateProjectWith(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir, "")
 			By("checking that the project file was generated in the current directory")
 			validateV4MultigroupProjectFile(kbc, projectFilePath)
 		})

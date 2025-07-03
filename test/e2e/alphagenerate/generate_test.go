@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -62,10 +63,10 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred(), "Failed to create project")
 		})
 
-		AfterEach(func() {
-			By("destroying directory")
-			kbc.Destroy()
-		})
+		// AfterEach(func() {
+		// 	By("destroying directory")
+		// 	kbc.Destroy()
+		// })
 
 		It("should regenerate the project in current directory with success", func() {
 			generateProject(kbc)
@@ -76,20 +77,20 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should regenerate project with grafana plugin with success", func() {
 			generateProjectWithGrafanaPlugin(kbc)
-			regenerateProjectWith(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir, "")
 			validateGrafanaPlugin(projectFilePath)
 		})
 
 		It("should regenerate project with DeployImage plugin with success", func() {
 			generateProjectWithDeployImagePlugin(kbc)
-			regenerateProjectWith(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir, "")
 			validateDeployImagePlugin(projectFilePath)
 		})
 
 		It("should regenerate project with helm plugin with success", func() {
-			generateProjectWithHelmPlugin(kbc)
-			regenerateProjectWith(kbc, projectOutputDir)
-			validateHelmPlugin(projectFilePath)
+			generateProjectWithHelmPlugin(kbc, "helm")
+			regenerateProjectWith(kbc, projectOutputDir, "helm")
+			validateHelmPlugin(projectFilePath, "helm")
 		})
 	})
 })
@@ -191,11 +192,20 @@ func regenerateProject(kbc *utils.TestContext) {
 	Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
 }
 
-func regenerateProjectWith(kbc *utils.TestContext, projectOutputDir string) {
+func regenerateProjectWith(kbc *utils.TestContext, projectOutputDir, helmOutputDir string) {
 	By("regenerating the project")
-	err := kbc.Regenerate(
+
+	regenerateOptions := []string{
 		fmt.Sprintf("--input-dir=%s", kbc.Dir),
 		fmt.Sprintf("--output-dir=%s", projectOutputDir),
+	}
+
+	if helmOutputDir != "" {
+		regenerateOptions = append(regenerateOptions, "--helm-output-dir", helmOutputDir)
+	}
+
+	err := kbc.Regenerate(
+		regenerateOptions...,
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
 }
@@ -206,9 +216,21 @@ func generateProjectWithGrafanaPlugin(kbc *utils.TestContext) {
 	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
 }
 
-func generateProjectWithHelmPlugin(kbc *utils.TestContext) {
+func generateProjectWithHelmPlugin(kbc *utils.TestContext, directory string) {
 	By("editing project to enable Helm plugin")
-	err := kbc.Edit("--plugins", "helm.kubebuilder.io/v1-alpha")
+	editOptions := []string{
+		"--plugins", "helm.kubebuilder.io/v1-alpha",
+	}
+
+	if directory != "" {
+		editOptions = append(editOptions, "--output-dir", directory)
+	} else {
+		directory = "dist"
+	}
+
+	err := kbc.Edit(
+		editOptions...,
+	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Helm Plugin")
 }
 
@@ -355,12 +377,12 @@ func validateDeployImagePlugin(projectFile string) {
 	Expect(options.RunAsUser).To(Equal("1001"), "Expected runAsUser to match")
 }
 
-func validateHelmPlugin(projectFile string) {
+func validateHelmPlugin(projectFile string, directory string) {
 	projectConfig := getConfigFromProjectFile(projectFile)
 
 	By("checking the Helm plugin in the PROJECT file")
-	var helmPluginConfig map[string]interface{}
+	var helmPluginConfig helmv1alpha.PluginConfig
 	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v1-alpha", &helmPluginConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
-	Expect(helmPluginConfig).NotTo(BeNil(), "Expected Helm plugin configuration to be present in the PROJECT file")
+	Expect(helmPluginConfig.Options.Directory).To(Equal("helm"), "Expected Helm plugin configuration to be present in the PROJECT file")
 }

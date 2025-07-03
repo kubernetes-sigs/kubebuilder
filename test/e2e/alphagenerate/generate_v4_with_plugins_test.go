@@ -61,15 +61,15 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should regenerate the project in project-v4-with-plugins directory with success", func() {
-			regenerateProjectWith(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir, "helm")
 			By("checking that the project file was generated in the current directory")
-			validateV4WithPluginsProjectFile(kbc, projectFilePath)
+			validateV4WithPluginsProjectFile(kbc, projectFilePath, "helm")
 		})
 	})
 })
 
 // Validate the PROJECT file for basic content and additional resources
-func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string) {
+func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string, helmOutputDir string) {
 	projectConfig := getConfigFromProjectFile(projectFile)
 
 	By("checking the layout in the PROJECT file")
@@ -194,5 +194,5 @@ func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
 
 	// Validate the resource configuration
-	Expect(helmConfig.Options.Directory).To(Equal("dist"), "Expected default directory to be 'dist'")
+	Expect(helmConfig.Options.Directory).To(Equal(helmOutputDir), "Expected default directory to be 'dist'")
 }

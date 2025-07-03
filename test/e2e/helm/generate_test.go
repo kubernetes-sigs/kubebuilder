@@ -45,12 +45,12 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should extend a runnable project with helm plugin", func() {
 			initTheProject(kbc)
-			generateProject(kbc)
+			generateProject(kbc, "")
 		})
 
 		It("should extend a runnable project with helm plugin and webhooks", func() {
 			initTheProject(kbc)
-			generateProject(kbc)
+			generateProject(kbc, "")
 			extendProjectWithWebhooks(kbc)
 
 			By("re-edit the project after creating webhooks")
@@ -70,7 +70,7 @@ var _ = Describe("kubebuilder", func() {
 		// Without --force, the webhooks should not be enabled in the values.yaml file.
 		It("should extend a runnable project with helm plugin but not running with --force", func() {
 			initTheProject(kbc)
-			generateProject(kbc)
+			generateProject(kbc, "")
 			extendProjectWithWebhooks(kbc)
 
 			By("re-edit the project after creating webhooks without --force")
@@ -86,22 +86,39 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred(), "Failed to read values.yaml file")
 			Expect(fileContainsExpr).To(BeFalse(), "Failed to get enabled webhook value from values.yaml file")
 		})
+
+		It("should extend a runnable project with helm plugin and a custom helm directory", func() {
+			initTheProject(kbc)
+			generateProject(kbc, "helm-charts")
+		})
 	})
 })
 
 // generateProject implements a helm/v1(-alpha) plugin project defined by a TestContext.
-func generateProject(kbc *utils.TestContext) {
+func generateProject(kbc *utils.TestContext, directory string) {
 	var err error
+
+	editOptions := []string{
+		"--plugins", "helm.kubebuilder.io/v1-alpha",
+	}
+
+	if directory != "" {
+		editOptions = append(editOptions, "--output-dir", directory)
+	} else {
+		directory = "dist"
+	}
 
 	By("editing a project")
 	err = kbc.Edit(
-		"--plugins", "helm.kubebuilder.io/v1-alpha",
+		editOptions...,
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to edit the project")
 
 	fileContainsExpr, err := pluginutil.HasFileContentWith(
 		filepath.Join(kbc.Dir, "PROJECT"),
-		`helm.kubebuilder.io/v1-alpha: {}`)
+		`helm.kubebuilder.io/v1-alpha:
+    options:
+      directory: `+directory)
 	Expect(err).NotTo(HaveOccurred(), "Failed to read PROJECT file")
 	Expect(fileContainsExpr).To(BeTrue(), "Failed to find helm plugin in PROJECT file")
 
@@ -112,13 +129,13 @@ func generateProject(kbc *utils.TestContext) {
 	Expect(fileContainsExpr).To(BeTrue(), "Failed to find projectName in PROJECT file")
 
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
-		filepath.Join(kbc.Dir, "dist", "chart", "Chart.yaml"),
+		filepath.Join(kbc.Dir, directory, "chart", "Chart.yaml"),
 		"name: e2e-"+kbc.TestSuffix)
 	Expect(err).NotTo(HaveOccurred(), "Failed to read Chart.yaml file")
 	Expect(fileContainsExpr).To(BeTrue(), "Failed to find name in Chart.yaml file")
 
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
-		filepath.Join(kbc.Dir, "dist", "chart", "templates", "manager", "manager.yaml"),
+		filepath.Join(kbc.Dir, directory, "chart", "templates", "manager", "manager.yaml"),
 		`metadata:
   name: e2e-`+kbc.TestSuffix)
 	Expect(err).NotTo(HaveOccurred(), "Failed to read manager.yaml file")

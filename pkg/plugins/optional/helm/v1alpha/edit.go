@@ -68,7 +68,7 @@ manifests in the chart align with the latest changes.
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
-	fs.StringVar(&p.directory, "directory", HelmDefaultTargetDirectory, "domain for groups")
+	fs.StringVar(&p.directory, "output-dir", HelmDefaultTargetDirectory, "the directory where the Helm chart will be generated. Defaults to 'dist' if not specified.")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
