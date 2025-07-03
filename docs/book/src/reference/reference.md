@@ -41,3 +41,4 @@
       - [Reference](metrics-reference.md)
 
   - [CLI plugins](../plugins/plugins.md)
+  - [How to Distribute Projects Built with Kubebuilder](distributing-projects.md)
