@@ -23,13 +23,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
+
 	log "github.com/sirupsen/logrus"
 
-	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
-	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
-	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -46,9 +45,9 @@ type Generate struct {
 
 // Generate handles the migration and scaffolding process.
 func (opts *Generate) Generate() error {
-	projectConfig, err := loadProjectConfig(opts.InputDir)
+	projectConfig, err := common.LoadProjectConfig(opts.InputDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("error loading project config: %v", err)
 	}
 
 	if opts.OutputDir == "" {
@@ -138,7 +137,7 @@ func (opts *Generate) Generate() error {
 // Validate ensures the options are valid and kubebuilder is installed.
 func (opts *Generate) Validate() error {
 	var err error
-	opts.InputDir, err = getInputPath(opts.InputDir)
+	opts.InputDir, err = common.GetInputPath(opts.InputDir)
 	if err != nil {
 		return fmt.Errorf("error getting input path %q: %w", opts.InputDir, err)
 	}
@@ -149,15 +148,6 @@ func (opts *Generate) Validate() error {
 	}
 
 	return nil
-}
-
-// Helper function to load the project configuration.
-func loadProjectConfig(inputDir string) (store.Store, error) {
-	projectConfig := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-	if err := projectConfig.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
-		return nil, fmt.Errorf("failed to load PROJECT file: %w", err)
-	}
-	return projectConfig, nil
 }
 
 // Helper function to create the output directory.
@@ -274,22 +264,6 @@ func createAPIWithDeployImage(resourceData v1alpha1.ResourceData) error {
 	}
 
 	return nil
-}
-
-// Helper function to get input path.
-func getInputPath(inputPath string) (string, error) {
-	if inputPath == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("failed to get working directory: %w", err)
-		}
-		inputPath = cwd
-	}
-	projectPath := fmt.Sprintf("%s/%s", inputPath, yaml.DefaultPath)
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("project path %q does not exist: %w", projectPath, err)
-	}
-	return inputPath, nil
 }
 
 // Helper function to get Init arguments for Kubebuilder.
