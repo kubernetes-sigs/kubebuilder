@@ -30,12 +30,15 @@ type Template struct {
 
 	MutatingWebhooks   []DataWebhook
 	ValidatingWebhooks []DataWebhook
+
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults sets default configuration for the webhook template
 func (f *Template) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("dist", "chart", "templates", "webhook", "webhooks.yaml")
+		f.Path = filepath.Join(f.Directory, "chart", "templates", "webhook", "webhooks.yaml")
 	}
 
 	f.TemplateBody = webhookTemplate

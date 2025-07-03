@@ -35,12 +35,14 @@ type Deployment struct {
 	Force bool
 	// HasWebhooks is true when webhooks were found in the config
 	HasWebhooks bool
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults sets the default template configuration
 func (f *Deployment) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("dist", "chart", "templates", "manager", "manager.yaml")
+		f.Path = filepath.Join(f.Directory, "chart", "templates", "manager", "manager.yaml")
 	}
 
 	f.TemplateBody = managerDeploymentTemplate
