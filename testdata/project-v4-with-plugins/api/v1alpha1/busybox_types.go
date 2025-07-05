@@ -28,13 +28,11 @@ type BusyboxSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Size defines the number of Busybox instances
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3
-	// +kubebuilder:validation:ExclusiveMaximum=false
-	Size int32 `json:"size,omitempty"`
+	// size defines the number of Busybox instances
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	Size *int32 `json:"size,omitempty"`
 }
 
 // BusyboxStatus defines the observed state of Busybox
@@ -61,11 +59,19 @@ type BusyboxStatus struct {
 
 // Busybox is the Schema for the busyboxes API
 type Busybox struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BusyboxSpec   `json:"spec,omitempty"`
-	Status BusyboxStatus `json:"status,omitempty"`
+	// spec defines the desired state of Busybox.
+	// +required
+	Spec BusyboxSpec `json:"spec"`
+
+	// status defines the observed state of Busybox.
+	// +optional
+	Status *BusyboxStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
