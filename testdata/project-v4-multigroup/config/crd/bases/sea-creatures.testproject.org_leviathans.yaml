@@ -17,7 +17,7 @@ spec:
   - name: v1beta2
     schema:
       openAPIV3Schema:
-        description: Leviathan is the Schema for the leviathans API.
+        description: Leviathan is the Schema for the leviathans API
         properties:
           apiVersion:
             description: |-
@@ -37,16 +37,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: LeviathanSpec defines the desired state of Leviathan.
+            description: spec defines the desired state of Leviathan
             properties:
               foo:
-                description: Foo is an example field of Leviathan. Edit leviathan_types.go
+                description: foo is an example field of Leviathan. Edit leviathan_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: LeviathanStatus defines the observed state of Leviathan.
+            description: status defines the observed state of Leviathan
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

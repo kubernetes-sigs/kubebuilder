@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AdmiralSpec defines the desired state of Admiral.
+// AdmiralSpec defines the desired state of Admiral
 type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of Admiral. Edit admiral_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Admiral. Edit admiral_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // AdmiralStatus defines the observed state of Admiral.
@@ -42,18 +45,26 @@ type AdmiralStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=admirales,scope=Cluster
 
-// Admiral is the Schema for the admirales API.
+// Admiral is the Schema for the admirales API
 type Admiral struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   AdmiralSpec   `json:"spec,omitempty"`
-	Status AdmiralStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of Admiral
+	// +required
+	Spec AdmiralSpec `json:"spec"`
+
+	// status defines the observed state of Admiral
+	// +optional
+	Status AdmiralStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// AdmiralList contains a list of Admiral.
+// AdmiralList contains a list of Admiral
 type AdmiralList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

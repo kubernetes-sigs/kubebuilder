@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// WordpressSpec defines the desired state of Wordpress.
+// WordpressSpec defines the desired state of Wordpress
 type WordpressSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of Wordpress. Edit wordpress_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Wordpress. Edit wordpress_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // WordpressStatus defines the observed state of Wordpress.
@@ -41,18 +44,26 @@ type WordpressStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Wordpress is the Schema for the wordpresses API.
+// Wordpress is the Schema for the wordpresses API
 type Wordpress struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   WordpressSpec   `json:"spec,omitempty"`
-	Status WordpressStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of Wordpress
+	// +required
+	Spec WordpressSpec `json:"spec"`
+
+	// status defines the observed state of Wordpress
+	// +optional
+	Status WordpressStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// WordpressList contains a list of Wordpress.
+// WordpressList contains a list of Wordpress
 type WordpressList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

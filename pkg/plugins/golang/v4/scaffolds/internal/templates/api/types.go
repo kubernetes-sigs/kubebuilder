@@ -73,13 +73,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}.
+// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
-	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
+	// foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
+	// +optional	
+	Foo *string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
 // {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.
@@ -98,18 +101,26 @@ type {{ .Resource.Kind }}Status struct {
 // +kubebuilder:resource:path={{ .Resource.Plural }}
 {{- end }}
 
-// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API.
+// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
-	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
 
-	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
-	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty,omitzero"` + "`" + `
+
+	// spec defines the desired state of {{ .Resource.Kind }}
+	// +required
+	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec"` + "`" + `
+
+	// status defines the observed state of {{ .Resource.Kind }}
+	// +optional
+	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty,omitzero"` + "`" + `
 }
 
 // +kubebuilder:object:root=true
 
-// {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}.
+// {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {
 	metav1.TypeMeta ` + "`" + `json:",inline"` + "`" + `
 	metav1.ListMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `

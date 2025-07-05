@@ -39,7 +39,7 @@ import (
 /*
 We'll leave our spec largely unchanged, except to change the schedule field to a new type.
 */
-// CronJobSpec defines the desired state of CronJob.
+// CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule CronSchedule `json:"schedule"`
@@ -162,18 +162,26 @@ type CronJobStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +versionName=v2
-// CronJob is the Schema for the cronjobs API.
+// CronJob is the Schema for the cronjobs API
 type CronJob struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   CronJobSpec   `json:"spec,omitempty"`
-	Status CronJobStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of CronJob
+	// +required
+	Spec CronJobSpec `json:"spec"`
+
+	// status defines the observed state of CronJob
+	// +optional
+	Status CronJobStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob.
+// CronJobList contains a list of CronJob
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// BarSpec defines the desired state of Bar.
+// BarSpec defines the desired state of Bar
 type BarSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of Bar. Edit bar_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Bar. Edit bar_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // BarStatus defines the observed state of Bar.
@@ -41,18 +44,26 @@ type BarStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Bar is the Schema for the bars API.
+// Bar is the Schema for the bars API
 type Bar struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   BarSpec   `json:"spec,omitempty"`
-	Status BarStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of Bar
+	// +required
+	Spec BarSpec `json:"spec"`
+
+	// status defines the observed state of Bar
+	// +optional
+	Status BarStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// BarList contains a list of Bar.
+// BarList contains a list of Bar
 type BarList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

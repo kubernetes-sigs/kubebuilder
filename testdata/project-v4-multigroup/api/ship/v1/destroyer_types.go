@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// DestroyerSpec defines the desired state of Destroyer.
+// DestroyerSpec defines the desired state of Destroyer
 type DestroyerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of Destroyer. Edit destroyer_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Destroyer. Edit destroyer_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // DestroyerStatus defines the observed state of Destroyer.
@@ -42,18 +45,26 @@ type DestroyerStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 
-// Destroyer is the Schema for the destroyers API.
+// Destroyer is the Schema for the destroyers API
 type Destroyer struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   DestroyerSpec   `json:"spec,omitempty"`
-	Status DestroyerStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of Destroyer
+	// +required
+	Spec DestroyerSpec `json:"spec"`
+
+	// status defines the observed state of Destroyer
+	// +optional
+	Status DestroyerStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// DestroyerList contains a list of Destroyer.
+// DestroyerList contains a list of Destroyer
 type DestroyerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

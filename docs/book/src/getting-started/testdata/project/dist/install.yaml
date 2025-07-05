@@ -25,7 +25,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Memcached is the Schema for the memcacheds API.
+        description: Memcached is the Schema for the memcacheds API
         properties:
           apiVersion:
             description: |-
@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MemcachedSpec defines the desired state of Memcached.
+            description: spec defines the desired state of Memcached
             properties:
               size:
                 description: |-
@@ -58,7 +58,7 @@ spec:
                 type: integer
             type: object
           status:
-            description: MemcachedStatus defines the observed state of Memcached.
+            description: status defines the observed state of Memcached
             properties:
               conditions:
                 description: |-
@@ -130,6 +130,8 @@ spec:
                 - type
                 x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

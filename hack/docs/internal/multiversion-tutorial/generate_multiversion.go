@@ -411,13 +411,13 @@ func (sp *Sample) updateAPIV1() {
 		filepath.Join(sp.ctx.Dir, path),
 		`// +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob.`,
+// CronJobList contains a list of CronJob`,
 		`/*
  */
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob.`,
+// CronJobList contains a list of CronJob`,
 	)
 	hackutils.CheckError("add comment empty after struct", err)
 
@@ -687,19 +687,22 @@ marker](/reference/markers/crd.md).
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// CronJobSpec defines the desired state of CronJob.`,
+		`// CronJobSpec defines the desired state of CronJob`,
 		`// +kubebuilder:docs-gen:collapse=Imports
 
 /*
 We'll leave our spec largely unchanged, except to change the schedule field to a new type.
 */
-// CronJobSpec defines the desired state of CronJob.`,
+// CronJobSpec defines the desired state of CronJob`,
 	)
 	hackutils.CheckError("replace doc about CronjobSpec v2", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		"// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster\n\t// Important: Run \"make\" to regenerate code after modifying this file",
+		`// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html`,
 		`// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule CronSchedule `+"`json:\"schedule\"`"+`
 
@@ -711,8 +714,9 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// Foo is an example field of CronJob. Edit cronjob_types.go to remove/update
-	Foo string `+"`json:\"foo,omitempty\"`",
+		`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+	// +optional
+	Foo *string `+"`json:\"foo,omitempty\"`",
 		cronJobSpecReplace,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
