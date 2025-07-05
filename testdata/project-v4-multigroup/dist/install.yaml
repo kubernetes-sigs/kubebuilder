@@ -45,16 +45,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar.
+            description: spec defines the desired state of Bar.
             properties:
               foo:
-                description: Foo is an example field of Bar. Edit bar_types.go to
+                description: foo is an example field of Bar. Edit bar_types.go to
                   remove/update
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar.
+            description: status defines the observed state of Bar.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -99,16 +101,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar.
+            description: spec defines the desired state of Bar.
             properties:
               foo:
-                description: Foo is an example field of Bar. Edit bar_types.go to
+                description: foo is an example field of Bar. Edit bar_types.go to
                   remove/update
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar.
+            description: status defines the observed state of Bar.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -282,16 +286,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain.
+            description: spec defines the desired state of Captain.
             properties:
               foo:
-                description: Foo is an example field of Captain. Edit captain_types.go
+                description: foo is an example field of Captain. Edit captain_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain.
+            description: status defines the observed state of Captain.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -336,16 +342,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: CruiserSpec defines the desired state of Cruiser.
+            description: spec defines the desired state of Cruiser.
             properties:
               foo:
-                description: Foo is an example field of Cruiser. Edit cruiser_types.go
+                description: foo is an example field of Cruiser. Edit cruiser_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: CruiserStatus defines the observed state of Cruiser.
+            description: status defines the observed state of Cruiser.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -390,16 +398,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: DestroyerSpec defines the desired state of Destroyer.
+            description: spec defines the desired state of Destroyer.
             properties:
               foo:
-                description: Foo is an example field of Destroyer. Edit destroyer_types.go
+                description: foo is an example field of Destroyer. Edit destroyer_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: DestroyerStatus defines the observed state of Destroyer.
+            description: status defines the observed state of Destroyer.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -444,16 +454,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FrigateSpec defines the desired state of Frigate.
+            description: spec defines the desired state of Frigate.
             properties:
               foo:
-                description: Foo is an example field of Frigate. Edit frigate_types.go
+                description: foo is an example field of Frigate. Edit frigate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FrigateStatus defines the observed state of Frigate.
+            description: status defines the observed state of Frigate.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -498,16 +510,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
+            description: spec defines the desired state of HealthCheckPolicy.
             properties:
               foo:
-                description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
+                description: foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
+            description: status defines the observed state of HealthCheckPolicy.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -552,16 +566,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: KrakenSpec defines the desired state of Kraken.
+            description: spec defines the desired state of Kraken.
             properties:
               foo:
-                description: Foo is an example field of Kraken. Edit kraken_types.go
+                description: foo is an example field of Kraken. Edit kraken_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: KrakenStatus defines the observed state of Kraken.
+            description: status defines the observed state of Kraken.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -606,16 +622,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: LeviathanSpec defines the desired state of Leviathan.
+            description: spec defines the desired state of Leviathan.
             properties:
               foo:
-                description: Foo is an example field of Leviathan. Edit leviathan_types.go
+                description: foo is an example field of Leviathan. Edit leviathan_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: LeviathanStatus defines the observed state of Leviathan.
+            description: status defines the observed state of Leviathan.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -805,16 +823,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: WordpressSpec defines the desired state of Wordpress.
+            description: spec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                description: foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: WordpressStatus defines the observed state of Wordpress.
+            description: status defines the observed state of Wordpress.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -843,16 +863,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: WordpressSpec defines the desired state of Wordpress.
+            description: spec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                description: foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: WordpressStatus defines the observed state of Wordpress.
+            description: status defines the observed state of Wordpress.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: false

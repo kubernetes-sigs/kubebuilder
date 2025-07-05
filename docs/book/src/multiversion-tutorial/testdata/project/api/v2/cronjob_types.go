@@ -164,11 +164,19 @@ type CronJobStatus struct {
 // +versionName=v2
 // CronJob is the Schema for the cronjobs API.
 type CronJob struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CronJobSpec   `json:"spec,omitempty"`
-	Status CronJobStatus `json:"status,omitempty"`
+	// spec defines the desired state of CronJob.
+	// +required
+	Spec CronJobSpec `json:"spec"`
+
+	// status defines the observed state of CronJob.
+	// +optional
+	Status *CronJobStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

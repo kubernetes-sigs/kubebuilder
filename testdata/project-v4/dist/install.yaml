@@ -45,16 +45,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: AdmiralSpec defines the desired state of Admiral.
+            description: spec defines the desired state of Admiral.
             properties:
               foo:
-                description: Foo is an example field of Admiral. Edit admiral_types.go
+                description: foo is an example field of Admiral. Edit admiral_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: AdmiralStatus defines the observed state of Admiral.
+            description: status defines the observed state of Admiral.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -99,16 +101,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain.
+            description: spec defines the desired state of Captain.
             properties:
               foo:
-                description: Foo is an example field of Captain. Edit captain_types.go
+                description: foo is an example field of Captain. Edit captain_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain.
+            description: status defines the observed state of Captain.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -164,16 +168,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: spec defines the desired state of FirstMate.
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: foo is an example field of FirstMate. Edit firstmate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: status defines the observed state of FirstMate.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -202,16 +208,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: spec defines the desired state of FirstMate.
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: foo is an example field of FirstMate. Edit firstmate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: status defines the observed state of FirstMate.
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: false

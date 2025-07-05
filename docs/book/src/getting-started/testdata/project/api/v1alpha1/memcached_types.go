@@ -64,11 +64,19 @@ type MemcachedStatus struct {
 
 // Memcached is the Schema for the memcacheds API.
 type Memcached struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MemcachedSpec   `json:"spec,omitempty"`
-	Status MemcachedStatus `json:"status,omitempty"`
+	// spec defines the desired state of Memcached.
+	// +required
+	Spec MemcachedSpec `json:"spec"`
+
+	// status defines the observed state of Memcached.
+	// +optional
+	Status *MemcachedStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

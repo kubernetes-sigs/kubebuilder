@@ -191,8 +191,9 @@ func (sp *Sample) updateSpec() {
 		`// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of CronJob. Edit cronjob_types.go to remove/update
-	Foo string`+" `"+`json:"foo,omitempty"`+"`", "")
+	// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+	// +optional
+	Foo *string`+" `"+`json:"foo,omitempty"`+"`", "")
 	hackutils.CheckError("fixing cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(

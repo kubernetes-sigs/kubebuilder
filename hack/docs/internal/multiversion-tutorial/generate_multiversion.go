@@ -711,8 +711,9 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// Foo is an example field of CronJob. Edit cronjob_types.go to remove/update
-	Foo string `+"`json:\"foo,omitempty\"`",
+		`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+	// +optional
+	Foo *string `+"`json:\"foo,omitempty\"`",
 		cronJobSpecReplace,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)

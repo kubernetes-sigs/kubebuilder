@@ -28,8 +28,9 @@ type BarSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Bar. Edit bar_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Bar. Edit bar_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // BarStatus defines the observed state of Bar.
@@ -43,11 +44,19 @@ type BarStatus struct {
 
 // Bar is the Schema for the bars API.
 type Bar struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BarSpec   `json:"spec,omitempty"`
-	Status BarStatus `json:"status,omitempty"`
+	// spec defines the desired state of Bar.
+	// +required
+	Spec BarSpec `json:"spec"`
+
+	// status defines the observed state of Bar.
+	// +optional
+	Status *BarStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

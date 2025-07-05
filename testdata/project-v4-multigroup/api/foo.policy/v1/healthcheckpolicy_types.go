@@ -28,8 +28,9 @@ type HealthCheckPolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
@@ -43,11 +44,19 @@ type HealthCheckPolicyStatus struct {
 
 // HealthCheckPolicy is the Schema for the healthcheckpolicies API.
 type HealthCheckPolicy struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HealthCheckPolicySpec   `json:"spec,omitempty"`
-	Status HealthCheckPolicyStatus `json:"status,omitempty"`
+	// spec defines the desired state of HealthCheckPolicy.
+	// +required
+	Spec HealthCheckPolicySpec `json:"spec"`
+
+	// status defines the observed state of HealthCheckPolicy.
+	// +optional
+	Status *HealthCheckPolicyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

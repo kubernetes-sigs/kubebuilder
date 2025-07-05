@@ -28,8 +28,9 @@ type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Admiral. Edit admiral_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Admiral. Edit admiral_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // AdmiralStatus defines the observed state of Admiral.
@@ -44,11 +45,19 @@ type AdmiralStatus struct {
 
 // Admiral is the Schema for the admirales API.
 type Admiral struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AdmiralSpec   `json:"spec,omitempty"`
-	Status AdmiralStatus `json:"status,omitempty"`
+	// spec defines the desired state of Admiral.
+	// +required
+	Spec AdmiralSpec `json:"spec"`
+
+	// status defines the observed state of Admiral.
+	// +optional
+	Status *AdmiralStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -28,8 +28,9 @@ type CaptainSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Captain. Edit captain_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Captain. Edit captain_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // CaptainStatus defines the observed state of Captain.
@@ -43,11 +44,19 @@ type CaptainStatus struct {
 
 // Captain is the Schema for the captains API.
 type Captain struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CaptainSpec   `json:"spec,omitempty"`
-	Status CaptainStatus `json:"status,omitempty"`
+	// spec defines the desired state of Captain.
+	// +required
+	Spec CaptainSpec `json:"spec"`
+
+	// status defines the observed state of Captain.
+	// +optional
+	Status *CaptainStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
