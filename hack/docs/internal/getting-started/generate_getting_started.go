@@ -243,7 +243,7 @@ func (sp *Sample) CodeGen() {
 }
 
 const (
-	oldSpecAPI = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
+	oldSpecAPI = "// foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\t// +optional\n\tFoo *string `json:\"foo,omitempty\"`"
 	newSpecAPI = `// Size defines the number of Memcached instances
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html

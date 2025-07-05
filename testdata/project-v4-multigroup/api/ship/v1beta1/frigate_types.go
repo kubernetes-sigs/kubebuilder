@@ -28,8 +28,9 @@ type FrigateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Frigate. Edit frigate_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Frigate. Edit frigate_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // FrigateStatus defines the observed state of Frigate.
@@ -43,11 +44,19 @@ type FrigateStatus struct {
 
 // Frigate is the Schema for the frigates API.
 type Frigate struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FrigateSpec   `json:"spec,omitempty"`
-	Status FrigateStatus `json:"status,omitempty"`
+	// spec defines the desired state of Frigate.
+	// +required
+	Spec FrigateSpec `json:"spec"`
+
+	// status defines the observed state of Frigate.
+	// +optional
+	Status *FrigateStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

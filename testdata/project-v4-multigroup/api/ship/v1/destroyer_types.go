@@ -28,8 +28,9 @@ type DestroyerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Destroyer. Edit destroyer_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Destroyer. Edit destroyer_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // DestroyerStatus defines the observed state of Destroyer.
@@ -44,11 +45,19 @@ type DestroyerStatus struct {
 
 // Destroyer is the Schema for the destroyers API.
 type Destroyer struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata.
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DestroyerSpec   `json:"spec,omitempty"`
-	Status DestroyerStatus `json:"status,omitempty"`
+	// spec defines the desired state of Destroyer.
+	// +required
+	Spec DestroyerSpec `json:"spec"`
+
+	// status defines the observed state of Destroyer.
+	// +optional
+	Status *DestroyerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
