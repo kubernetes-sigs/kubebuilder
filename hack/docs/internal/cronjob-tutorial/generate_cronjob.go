@@ -158,7 +158,7 @@ func (sp *Sample) updateSpec() {
 
 /*
  */`)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing collapse for cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -166,7 +166,7 @@ func (sp *Sample) updateSpec() {
 		`
 /*
  */`)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing package for cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -174,17 +174,17 @@ func (sp *Sample) updateSpec() {
 		`
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"`)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing imports for cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`to be serialized.`, cronjobSpecExplaination)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing spec explanation for cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`type CronJobSpec struct {`, cronjobSpecStruct)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing spec struct for cronjob_types.go", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -205,7 +205,7 @@ func (sp *Sample) updateSpec() {
 		`SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }`, `
 // +kubebuilder:docs-gen:collapse=Root Object Definitions`)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing builder for cronjob_types.go", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -214,7 +214,7 @@ type CronJob struct {`, `// CronJob is the Schema for the cronjobs API.
 type CronJob struct {`+`
 	/*
 	 */`)
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	hackutils.CheckError("fixing schema for cronjob_types.go", err)
 
 	// fix lint
 	err = pluginutil.ReplaceInFile(
