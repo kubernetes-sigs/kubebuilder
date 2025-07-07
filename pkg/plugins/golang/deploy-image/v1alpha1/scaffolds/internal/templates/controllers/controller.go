@@ -155,6 +155,10 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	// Let's just set the status as Unknown when no status is available
+	if {{ lower .Resource.Kind }}.Status == nil {
+		{{ lower .Resource.Kind }}.Status = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}Status{}
+	}
+	
 	if len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -283,13 +287,18 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
+	// If the size is not defined in the Custom Resource then we will set the desired replicas to 0
+	var desiredReplicas int32 = 0
+	if {{ lower .Resource.Kind }}.Spec.Size != nil {
+		desiredReplicas = *{{ lower .Resource.Kind }}.Spec.Size
+	}
+
 	// The CRD API defines that the {{ .Resource.Kind }} type have a {{ .Resource.Kind }}Spec.Size field
 	// to set the quantity of Deployment instances to the desired state on the cluster.
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
-	size := {{ lower .Resource.Kind }}.Spec.Size
-	if *found.Spec.Replicas != size {
-		found.Spec.Replicas = &size
+	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
+		found.Spec.Replicas = ptr.To(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -325,7 +334,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	// The following implementation will update the status
 	meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
 		Status: metav1.ConditionTrue, Reason: "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, size)})
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 		log.Error(err, "Failed to update {{ .Resource.Kind }} status")
@@ -359,7 +368,6 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (*appsv1.Deployment, error) {
 	ls := labelsFor{{ .Resource.Kind }}()
-	replicas := {{ lower .Resource.Kind }}.Spec.Size
 
 	// Get the Operand image
 	image, err := imageFor{{ .Resource.Kind }}()
@@ -373,7 +381,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 			Namespace: {{ lower .Resource.Kind }}.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: {{ lower .Resource.Kind }}.Spec.Size,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: ls,
 			},

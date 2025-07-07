@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1"
@@ -71,13 +72,13 @@ var _ = Describe("Busybox controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
-				busybox := &examplecomv1alpha1.Busybox{
+				busybox = &examplecomv1alpha1.Busybox{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      BusyboxName,
 						Namespace: namespace.Name,
 					},
 					Spec: examplecomv1alpha1.BusyboxSpec{
-						Size: 1,
+						Size: ptr.To(int32(1)),
 					},
 				}
 

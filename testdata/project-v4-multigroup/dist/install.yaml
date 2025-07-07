@@ -153,19 +153,17 @@ spec:
           metadata:
             type: object
           spec:
-            description: BusyboxSpec defines the desired state of Busybox
+            description: spec defines the desired state of Busybox
             properties:
               size:
-                description: |-
-                  Size defines the number of Busybox instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Busybox instances
                 format: int32
-                minimum: 1
+                minimum: 0
                 type: integer
             type: object
           status:
-            description: BusyboxStatus defines the observed state of Busybox
+            description: status defines the observed state of Busybox
             properties:
               conditions:
                 description: |-
@@ -173,9 +171,9 @@ spec:
                   Each condition has a unique type and reflects the status of a specific aspect of the resource.
 
                   Standard condition types include:
-                  - "Available": the resource is fully functional.
-                  - "Progressing": the resource is being created or updated.
-                  - "Degraded": the resource failed to reach or maintain its desired state.
+                  - "Available": the resource is fully functional
+                  - "Progressing": the resource is being created or updated
+                  - "Degraded": the resource failed to reach or maintain its desired state
 
                   The status of each condition is one of True, False, or Unknown.
                 items:
@@ -237,6 +235,8 @@ spec:
                 - type
                 x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -659,24 +659,24 @@ spec:
           metadata:
             type: object
           spec:
-            description: MemcachedSpec defines the desired state of Memcached
+            description: spec defines the desired state of Memcached
             properties:
               containerPort:
-                description: Port defines the port that will be used to init the container
-                  with the image
+                description: containerPort defines the port that will be used to init
+                  the container with the image
                 format: int32
                 type: integer
               size:
-                description: |-
-                  Size defines the number of Memcached instances
-                  The following markers will use OpenAPI v3 schema to validate the value
-                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                default: 1
+                description: size defines the number of Memcached instances
                 format: int32
-                minimum: 1
+                minimum: 0
                 type: integer
+            required:
+            - containerPort
             type: object
           status:
-            description: MemcachedStatus defines the observed state of Memcached
+            description: status defines the observed state of Memcached
             properties:
               conditions:
                 description: |-
@@ -684,9 +684,9 @@ spec:
                   Each condition has a unique type and reflects the status of a specific aspect of the resource.
 
                   Standard condition types include:
-                  - "Available": the resource is fully functional.
-                  - "Progressing": the resource is being created or updated.
-                  - "Degraded": the resource failed to reach or maintain its desired state.
+                  - "Available": the resource is fully functional
+                  - "Progressing": the resource is being created or updated
+                  - "Degraded": the resource failed to reach or maintain its desired state
 
                   The status of each condition is one of True, False, or Unknown.
                 items:
@@ -748,6 +748,8 @@ spec:
                 - type
                 x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

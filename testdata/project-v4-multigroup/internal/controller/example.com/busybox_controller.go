@@ -100,6 +100,10 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Let's just set the status as Unknown when no status is available
+	if busybox.Status == nil {
+		busybox.Status = &examplecomv1alpha1.BusyboxStatus{}
+	}
+
 	if len(busybox.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, busybox); err != nil {
@@ -228,13 +232,18 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// If the size is not defined in the Custom Resource then we will set the desired replicas to 0
+	var desiredReplicas int32 = 0
+	if busybox.Spec.Size != nil {
+		desiredReplicas = *busybox.Spec.Size
+	}
+
 	// The CRD API defines that the Busybox type have a BusyboxSpec.Size field
 	// to set the quantity of Deployment instances to the desired state on the cluster.
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
-	size := busybox.Spec.Size
-	if *found.Spec.Replicas != size {
-		found.Spec.Replicas = &size
+	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
+		found.Spec.Replicas = ptr.To(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -270,7 +279,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// The following implementation will update the status
 	meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
 		Status: metav1.ConditionTrue, Reason: "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, size)})
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, busybox); err != nil {
 		log.Error(err, "Failed to update Busybox status")
@@ -304,7 +313,6 @@ func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alph
 func (r *BusyboxReconciler) deploymentForBusybox(
 	busybox *examplecomv1alpha1.Busybox) (*appsv1.Deployment, error) {
 	ls := labelsForBusybox()
-	replicas := busybox.Spec.Size
 
 	// Get the Operand image
 	image, err := imageForBusybox()
@@ -318,7 +326,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(
 			Namespace: busybox.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: busybox.Spec.Size,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: ls,
 			},
