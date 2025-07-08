@@ -31,6 +31,11 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	config config.Config
 	force  bool
+
+	IgnorePrometheus    bool
+	IgnoreNetworkPolicy bool
+	IgnoreCertManager   bool
+	IgnoreWebhook       bool
 }
 
 //nolint:lll
@@ -66,6 +71,11 @@ manifests in the chart align with the latest changes.
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+
+	fs.BoolVar(&p.IgnorePrometheus, "ignore-prometheus", false, "ignore scaffolding of prometheus monitor")
+	fs.BoolVar(&p.IgnoreNetworkPolicy, "ignore-networkPolicy", false, "ignore scaffolding of network policy")
+	fs.BoolVar(&p.IgnoreCertManager, "ignore-certmanager", false, "ignore scaffolding of cert-manager manifests")
+	fs.BoolVar(&p.IgnoreWebhook, "ignore-webhook", false, "ignore scaffolding of webhooks")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -74,7 +84,14 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitHelmScaffolder(p.config, p.force)
+	ignoreFlags := map[string]bool{
+		"ignore-prometheus":    p.IgnorePrometheus,
+		"ignore-networkPolicy": p.IgnoreNetworkPolicy,
+		"ignore-certmanager":   p.IgnoreCertManager,
+		"ignore-webhook":       p.IgnoreWebhook,
+	}
+	scaffolder := scaffolds.NewInitHelmScaffolder(p.config, p.force, ignoreFlags)
+
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
