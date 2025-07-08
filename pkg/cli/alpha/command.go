@@ -74,5 +74,10 @@ If no output directory is provided, the current working directory will be cleane
 			"If unset, re-scaffolding occurs in-place "+
 			"and will delete existing files (except .git and PROJECT).")
 
+	scaffoldCmd.Flags().StringVar(&opts.HelmDirectory, "helm-output-dir", "",
+		"Directory where the new project scaffold will be written. "+
+			"If unset, re-scaffolding occurs in-place "+
+			"and will delete existing files (except .git and PROJECT).")
+
 	return scaffoldCmd
 }

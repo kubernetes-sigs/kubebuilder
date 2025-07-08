@@ -13,6 +13,7 @@ linters:
     - goconst
     - gocyclo
     - govet
+    - importas
     - ineffassign
     - lll
     - misspell
@@ -27,6 +28,10 @@ linters:
     - wrapcheck
     - whitespace
   settings:
+    importas:
+      alias:
+      - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha
+        alias: helmv1alpha
     ginkgolinter:
       forbid-focus-container: true
       forbid-spec-pollution: true

@@ -65,7 +65,7 @@ var _ = Describe("kubebuilder", func() {
 })
 
 func regenerateAndValidate(kbc *utils.TestContext, projectOutputDir, projectFilePath string) {
-	regenerateProjectWith(kbc, projectOutputDir)
+	regenerateProjectWith(kbc, projectOutputDir, "")
 	By("checking that the project file was generated in the current directory")
 	validateV4ProjectFile(kbc, projectFilePath)
 }

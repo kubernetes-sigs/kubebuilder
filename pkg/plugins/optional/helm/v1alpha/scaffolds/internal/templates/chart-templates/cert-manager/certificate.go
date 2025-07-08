@@ -30,12 +30,14 @@ type Certificate struct {
 
 	// HasWebhooks is true when webhooks were found in the config
 	HasWebhooks bool
+	// Directory is the directory where the Helm chart will be scaffolded
+	Directory string
 }
 
 // SetTemplateDefaults sets the default template configuration
 func (f *Certificate) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("dist", "chart", "templates", "certmanager", "certificate.yaml")
+		f.Path = filepath.Join(f.Directory, "chart", "templates", "certmanager", "certificate.yaml")
 	}
 
 	f.TemplateBody = certificateTemplate

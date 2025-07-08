@@ -33,14 +33,15 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	hemlv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
 
 // Generate store the required info for the command
 type Generate struct {
-	InputDir  string
-	OutputDir string
+	InputDir      string
+	OutputDir     string
+	HelmDirectory string
 }
 
 // Generate handles the migration and scaffolding process.
@@ -109,8 +110,8 @@ func (opts *Generate) Generate() error {
 	}
 
 	if hasHelmPlugin(projectConfig) {
-		if err = kubebuilderHelmEdit(); err != nil {
-			return fmt.Errorf("error editing Helm plugin: %w", err)
+		if err = migrateHelmPlugin(projectConfig, opts.HelmDirectory); err != nil {
+			return fmt.Errorf("error migrating Helm plugin: %w", err)
 		}
 	}
 
@@ -216,7 +217,7 @@ func kubebuilderCreate(s store.Store) error {
 // Migrates the Grafana plugin.
 func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha.Plugin{}), grafanaPlugin)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(grafanav1alpha.Plugin{}), grafanaPlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		log.Info("Grafana plugin not found, skipping migration")
 		return nil
@@ -455,20 +456,53 @@ func grafanaConfigMigrate(src, des string) error {
 
 // Edits the project to include the Grafana plugin.
 func kubebuilderGrafanaEdit() error {
-	args := []string{"edit", "--plugins", plugin.KeyFor(v1alpha.Plugin{})}
+	args := []string{"edit", "--plugins", plugin.KeyFor(grafanav1alpha.Plugin{})}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Grafana plugin: %w", err)
 	}
 	return nil
 }
 
+// Migrates the Helm plugin.
+func migrateHelmPlugin(s store.Store, targetDir string) error {
+	var helmPlugin helmv1alpha.PluginConfig
+
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(helmv1alpha.Plugin{}), &helmPlugin)
+	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+		log.Info("Helm plugin not found, skipping migration")
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to decode Helm plugin config: %w", err)
+	}
+
+	return kubebuilderHelmEdit(helmPlugin, targetDir)
+}
+
 // Edits the project to include the Helm plugin.
-func kubebuilderHelmEdit() error {
-	args := []string{"edit", "--plugins", plugin.KeyFor(hemlv1alpha.Plugin{})}
+func kubebuilderHelmEdit(resourceData helmv1alpha.PluginConfig, targetDir string) error {
+	args := []string{"edit", "--plugins", plugin.KeyFor(helmv1alpha.Plugin{})}
+	args = append(args, getHelmOptions(resourceData, targetDir)...)
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
 	}
 	return nil
+}
+
+// Gets the options for Helm resource.
+// If the directory is not the default, it sets the directory option.
+// otherwise, it returns an empty slice which then use the default value from the edit/init subcommand.
+func getHelmOptions(resourceData helmv1alpha.PluginConfig, targetDir string) []string {
+	var args []string
+
+	if targetDir != "" {
+		log.Info("setting Helm chart directory")
+		args = append(args, fmt.Sprintf("--output-dir=%s", targetDir))
+	} else if resourceData.Options.Directory != helmv1alpha.HelmDefaultTargetDirectory {
+		log.Info("setting directory for Helm chart")
+		args = append(args, fmt.Sprintf("--output-dir=%s", resourceData.Options.Directory))
+	}
+
+	return args
 }
 
 // hasHelmPlugin checks if the Helm plugin is present by inspecting the plugin chain or configuration.
@@ -476,7 +510,7 @@ func hasHelmPlugin(cfg store.Store) bool {
 	var pluginConfig map[string]interface{}
 
 	// Decode the Helm plugin configuration to check if it's present
-	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv1alpha.Plugin{}), &pluginConfig)
+	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv1alpha.Plugin{}), &pluginConfig)
 	if err != nil {
 		// If the Helm plugin is not found, return false
 		if errors.As(err, &config.PluginKeyNotFoundError{}) {

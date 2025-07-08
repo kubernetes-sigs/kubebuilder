@@ -41,12 +41,13 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 
 ### Basic Usage
 
-The Helm plugin is attached to the `init` subcommand and the `edit` subcommand:
+The Helm plugin is attached to the `edit` subcommand as the `helm/v1-alpha` plugin
+relies on the Go project being scaffolded first.
 
 ```sh
 
-# Initialize a new project with helm chart
-kubebuilder init --plugins=helm/v1-alpha
+# Initialize a new project
+kubebuilder init
 
 # Enable or Update the helm chart via the helm plugin to an existing project
 # Before run the edit command, run `make manifests` to generate the manifest under `config/`
@@ -79,8 +80,6 @@ kubebuilder edit --plugins=helm/v1-alpha
 The Helm plugin implements the following subcommands:
 
 - edit (`$ kubebuilder edit [OPTIONS]`)
-
-- init (`$ kubebuilder init [OPTIONS]`)
 
 ## Affected files
 
