@@ -70,7 +70,7 @@ type Memcached struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// spec defines the desired state of Memcached
 	// +required
@@ -78,7 +78,7 @@ type Memcached struct {
 
 	// status defines the observed state of Memcached
 	// +optional
-	Status *MemcachedStatus `json:"status,omitempty"`
+	Status MemcachedStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
