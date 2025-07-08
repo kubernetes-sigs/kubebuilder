@@ -23,13 +23,16 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LeviathanSpec defines the desired state of Leviathan.
+// LeviathanSpec defines the desired state of Leviathan
 type LeviathanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of Leviathan. Edit leviathan_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// foo is an example field of Leviathan. Edit leviathan_types.go to remove/update
+	// +optional
+	Foo *string `json:"foo,omitempty"`
 }
 
 // LeviathanStatus defines the observed state of Leviathan.
@@ -41,18 +44,26 @@ type LeviathanStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Leviathan is the Schema for the leviathans API.
+// Leviathan is the Schema for the leviathans API
 type Leviathan struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   LeviathanSpec   `json:"spec,omitempty"`
-	Status LeviathanStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of Leviathan
+	// +required
+	Spec LeviathanSpec `json:"spec"`
+
+	// status defines the observed state of Leviathan
+	// +optional
+	Status LeviathanStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
 
-// LeviathanList contains a list of Leviathan.
+// LeviathanList contains a list of Leviathan
 type LeviathanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -255,7 +255,7 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 	By("implementing the size spec in v1")
 	ExpectWithOffset(1, pluginutil.InsertCode(
 		filepath.Join(kbc.Dir, "api", "v1", "conversiontest_types.go"),
-		"Foo string `json:\"foo,omitempty\"`",
+		"Foo *string `json:\"foo,omitempty\"`",
 		"\n\tSize int `json:\"size,omitempty\"` // Number of desired instances",
 	)).NotTo(HaveOccurred(), "failed to add size spec to conversiontest_types v1")
 
@@ -263,7 +263,7 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 	By("implementing the replicas spec in v2")
 	ExpectWithOffset(1, pluginutil.InsertCode(
 		filepath.Join(kbc.Dir, "api", "v2", "conversiontest_types.go"),
-		"Foo string `json:\"foo,omitempty\"`",
+		"Foo *string `json:\"foo,omitempty\"`",
 		"\n\tReplicas int `json:\"replicas,omitempty\"` // Number of replicas",
 	)).NotTo(HaveOccurred(), "failed to add replicas spec to conversiontest_conversion.go v2")
 

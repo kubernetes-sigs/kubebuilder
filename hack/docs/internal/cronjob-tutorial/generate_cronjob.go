@@ -190,10 +190,13 @@ func (sp *Sample) updateSpec() {
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Foo is an example field of CronJob. Edit cronjob_types.go to remove/update
-	Foo string`+" `"+`json:"foo,omitempty"`+"`", "")
-	hackutils.CheckError("fixing cronjob_types.go", err)
+	// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+	// +optional
+	Foo *string`+" `"+`json:"foo,omitempty"`+"`", "")
+	hackutils.CheckError("fixing additional spec fields for cronjob_types.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -209,8 +212,8 @@ func (sp *Sample) updateSpec() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`// CronJob is the Schema for the cronjobs API.
-type CronJob struct {`, `// CronJob is the Schema for the cronjobs API.
+		`// CronJob is the Schema for the cronjobs API
+type CronJob struct {`, `// CronJob is the Schema for the cronjobs API
 type CronJob struct {`+`
 	/*
 	 */`)

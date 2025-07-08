@@ -17,7 +17,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Kraken is the Schema for the krakens API.
+        description: Kraken is the Schema for the krakens API
         properties:
           apiVersion:
             description: |-
@@ -37,16 +37,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: KrakenSpec defines the desired state of Kraken.
+            description: spec defines the desired state of Kraken
             properties:
               foo:
-                description: Foo is an example field of Kraken. Edit kraken_types.go
+                description: foo is an example field of Kraken. Edit kraken_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: KrakenStatus defines the observed state of Kraken.
+            description: status defines the observed state of Kraken
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

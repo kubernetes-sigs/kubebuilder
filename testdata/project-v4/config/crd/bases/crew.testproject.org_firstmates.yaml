@@ -17,7 +17,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API.
+        description: FirstMate is the Schema for the firstmates API
         properties:
           apiVersion:
             description: |-
@@ -37,16 +37,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: spec defines the desired state of FirstMate
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: foo is an example field of FirstMate. Edit firstmate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: status defines the observed state of FirstMate
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
@@ -55,7 +57,7 @@ spec:
   - name: v2
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API.
+        description: FirstMate is the Schema for the firstmates API
         properties:
           apiVersion:
             description: |-
@@ -75,16 +77,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: spec defines the desired state of FirstMate
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: foo is an example field of FirstMate. Edit firstmate_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: status defines the observed state of FirstMate
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: false
