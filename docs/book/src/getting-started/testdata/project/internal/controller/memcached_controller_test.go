@@ -21,9 +21,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +55,7 @@ var _ = Describe("Memcached Controller", func() {
 						Namespace: "default",
 					},
 					Spec: cachev1alpha1.MemcachedSpec{
-						Size: 1,
+						Size: ptr.To(int32(1)),
 					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
