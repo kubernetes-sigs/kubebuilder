@@ -74,7 +74,7 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitHelmScaffolder(p.config, p.force)
+	scaffolder := scaffolds.NewHelmScaffolder(p.config, p.force)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
