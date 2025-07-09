@@ -54,6 +54,8 @@ func (sp *Sample) updateControllerTest() {
 		filepath.Join(sp.ctx.Dir, file),
 		". \"github.com/onsi/gomega\"",
 		`. "github.com/onsi/gomega"
+
+	"k8s.io/utils/ptr"
 	appsv1 "k8s.io/api/apps/v1"`,
 	)
 	hackutils.CheckError("add imports apis", err)
@@ -62,7 +64,7 @@ func (sp *Sample) updateControllerTest() {
 		filepath.Join(sp.ctx.Dir, file),
 		"// TODO(user): Specify other spec details if needed.",
 		`Spec: cachev1alpha1.MemcachedSpec{
-						Size: 1,
+						Size: ptr.To(int32(1)),
 					},`,
 	)
 	hackutils.CheckError("add spec apis", err)
@@ -244,13 +246,14 @@ func (sp *Sample) CodeGen() {
 
 const (
 	oldSpecAPI = "// foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\t// +optional\n\tFoo *string `json:\"foo,omitempty\"`"
-	newSpecAPI = `// Size defines the number of Memcached instances
+	newSpecAPI = `// size defines the number of Memcached instances
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:ExclusiveMaximum=false
-	Size int32 ` + "`json:\"size,omitempty\"`"
+	// +optional
+	Size *int32 ` + "`json:\"size,omitempty\"`"
 )
 
 const oldStatusAPI = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -278,7 +281,6 @@ const sampleSizeFragment = `# TODO(user): edit the following value to ensure the
 
 const controllerImports = `"context"
 	"fmt"
-
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -387,13 +389,18 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 		return ctrl.Result{}, err
 	}
 
+	// If the size is not defined in the Custom Resource then we will set the desired replicas to 0
+	var desiredReplicas int32 = 0
+	if memcached.Spec.Size != nil {
+		desiredReplicas = *memcached.Spec.Size
+	}
+
 	// The CRD API defines that the Memcached type have a MemcachedSpec.Size field
 	// to set the quantity of Deployment instances to the desired state on the cluster.
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
-	size := memcached.Spec.Size
-	if *found.Spec.Replicas != size {
-		found.Spec.Replicas = &size
+	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
+		found.Spec.Replicas = ptr.To(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -429,7 +436,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 	// The following implementation will update the status
 	meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
 		Status: metav1.ConditionTrue, Reason: "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, size)})
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, memcached); err != nil {
 		log.Error(err, "Failed to update Memcached status")
@@ -439,7 +446,6 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 const controllerDeploymentFunc = `// deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *cachev1alpha1.Memcached) (*appsv1.Deployment, error) {
-	replicas := memcached.Spec.Size
 	image := "memcached:1.6.26-alpine3.19"
 
 	dep := &appsv1.Deployment{
@@ -448,7 +454,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 			Namespace: memcached.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: memcached.Spec.Size,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": "project"},
 			},
