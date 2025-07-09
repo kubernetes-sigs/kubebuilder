@@ -50,19 +50,18 @@ const cronjobSpecExplaination = `
 `
 
 const cronjobSpecStruct = `
+	// schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	// +kubebuilder:validation:MinLength=0
-
-	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +required
 	Schedule string` + " `" + `json:"schedule"` + "`" + `
 
-	// +kubebuilder:validation:Minimum=0
-
-	// Optional deadline in seconds for starting the job if it misses scheduled
+	// startingDeadlineSeconds defines in seconds for starting the job if it misses scheduled
 	// time for any reason.  Missed jobs executions will be counted as failed ones.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	StartingDeadlineSeconds *int64` + " `" + `json:"startingDeadlineSeconds,omitempty"` + "`" + `
 
-	// Specifies how to treat concurrent executions of a Job.
+	// concurrencyPolicy specifies how to treat concurrent executions of a Job.
 	// Valid values are:
 	// - "Allow" (default): allows CronJobs to run concurrently;
 	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
@@ -70,26 +69,24 @@ const cronjobSpecStruct = `
 	// +optional
 	ConcurrencyPolicy ConcurrencyPolicy` + " `" + `json:"concurrencyPolicy,omitempty"` + "`" + `
 
-	// This flag tells the controller to suspend subsequent executions, it does
+	// suspend tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool` + " `" + `json:"suspend,omitempty"` + "`" + `
 
-	// Specifies the job that will be created when executing a CronJob.
+	// jobTemplate defines the job that will be created when executing a CronJob.
 	JobTemplate batchv1.JobTemplateSpec` + " `" + `json:"jobTemplate"` + "`" + `
 
-	// +kubebuilder:validation:Minimum=0
-
-	// The number of successful finished jobs to retain.
+	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	SuccessfulJobsHistoryLimit *int32` + " `" + `json:"successfulJobsHistoryLimit,omitempty"` + "`" + `
 
-	// +kubebuilder:validation:Minimum=0
-
-	// The number of failed finished jobs to retain.
+	// failedJobsHistoryLimit defines the number of failed finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	FailedJobsHistoryLimit *int32` + " `" + `json:"failedJobsHistoryLimit,omitempty"` + "`" + `
 }
 
@@ -130,11 +127,11 @@ const (
 
 const cronjobList = `
 
-	// A list of pointers to currently running jobs.
+	// active defines a list of pointers to currently running jobs.
 	// +optional
 	Active []corev1.ObjectReference` + " `" + `json:"active,omitempty"` + "`" + `
 
-	// Information when was the last time the job was successfully scheduled.
+	// lastScheduleTime defines when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time` + " `" + `json:"lastScheduleTime,omitempty"` + "`" + `
 }
