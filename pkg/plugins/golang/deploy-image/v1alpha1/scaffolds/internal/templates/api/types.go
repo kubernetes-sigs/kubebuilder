@@ -127,7 +127,7 @@ type {{ .Resource.Kind }} struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
+	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty,omitzero"` + "`" + `
 
 	// spec defines the desired state of {{ .Resource.Kind }}
 	// +required
@@ -135,7 +135,7 @@ type {{ .Resource.Kind }} struct {
 
 	// status defines the observed state of {{ .Resource.Kind }}
 	// +optional
-	Status *{{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty,omitzero"` + "`" + `
 }
 
 // +kubebuilder:object:root=true

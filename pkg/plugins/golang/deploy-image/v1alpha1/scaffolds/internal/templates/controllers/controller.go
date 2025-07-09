@@ -153,11 +153,6 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		log.Error(err, "Failed to get {{ lower .Resource.Kind }}")
 		return ctrl.Result{}, err
 	}
-
-	// Let's just set the status as Unknown when no status is available
-	if {{ lower .Resource.Kind }}.Status == nil {
-		{{ lower .Resource.Kind }}.Status = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}Status{}
-	}
 	
 	if len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
