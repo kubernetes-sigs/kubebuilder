@@ -158,6 +158,36 @@ type StructName struct {
 - Users still receive error notifications from the Kubernetes API for invalid `timeField` values.
 - Developers can directly use the parsed TimeField in their code without additional parsing, reducing errors and improving efficiency.
 
+## How to build a bundle with Kubebuilder-based projects to be managed by OLM and/or published in OperatorHub.io?
+
+You’ll need to create an [OLM bundle][olm-bundle-docs] to publish your operator.
+You can use the [Operator SDK][operator-sdk] and the command `operator-sdk generate kustomize manifests` to generate the files.
+After running the above command, you will find the `ClusterServiceVersion (CSV) ` in the path `config/manifests/bases/`. After that, you can run the bundle generation command:
+```
+kustomize build config/manifests | \
+operator-sdk generate bundle \
+--version 0.1.0 \
+--package my-operator \
+--channels alpha \
+--default-channel alpha
+
+```
+
+Now you will have the bundle structure such as:
+
+```
+bundle
+├── manifests
+│   ├── app.mydomain.com_myapps.yaml
+│   ├── kubebuilderdemo-controller-manager-metrics-service_v1_service.yaml
+│   ├── kubebuilderdemo-metrics-reader_rbac.authorization.k8s.io_v1_clusterrole.yaml
+│   ├── kubebuilderdemo-myapp-admin-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+│   ├── kubebuilderdemo-myapp-editor-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+│   ├── kubebuilderdemo-myapp-viewer-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+│   └── my-example-operator.clusterserviceversion.yaml
+└── metadata
+    └── annotations.yaml
+```
 
 
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
@@ -169,3 +199,5 @@ type StructName struct {
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
 [controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[olm-bundle-docs]: https://operator-framework.github.io/operator-controller/
+[operator-sdk]: https://operatorhub.io/docs/
