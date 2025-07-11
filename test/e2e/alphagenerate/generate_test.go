@@ -74,21 +74,24 @@ var _ = Describe("kubebuilder", func() {
 			validateProjectFile(kbc, filepath.Join(kbc.Dir, "PROJECT"))
 		})
 
-		It("should regenerate project with grafana plugin with success", func() {
-			generateProjectWithGrafanaPlugin(kbc)
+		It("should regenerate project with plugins with success", func() {
+			By("Enabling the Grafana plugin")
+			err := kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")
+			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
+
+			By("Generate API with Deploy Image plugin")
+			generateAPIWithDeployImage(kbc)
+
+			By("Enabling Helm plugin")
+			err = kbc.Edit("--plugins", "helm.kubebuilder.io/v1-alpha")
+			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Helm Plugin")
+
+			By("Re-generating the project with plugins")
 			regenerateProjectWith(kbc, projectOutputDir)
+
+			By("By validating the expected scaffolded files")
 			validateGrafanaPlugin(projectFilePath)
-		})
-
-		It("should regenerate project with DeployImage plugin with success", func() {
-			generateProjectWithDeployImagePlugin(kbc)
-			regenerateProjectWith(kbc, projectOutputDir)
 			validateDeployImagePlugin(projectFilePath)
-		})
-
-		It("should regenerate project with helm plugin with success", func() {
-			generateProjectWithHelmPlugin(kbc)
-			regenerateProjectWith(kbc, projectOutputDir)
 			validateHelmPlugin(projectFilePath)
 		})
 	})
@@ -200,19 +203,7 @@ func regenerateProjectWith(kbc *utils.TestContext, projectOutputDir string) {
 	Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
 }
 
-func generateProjectWithGrafanaPlugin(kbc *utils.TestContext) {
-	By("editing project to enable Grafana plugin")
-	err := kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")
-	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
-}
-
-func generateProjectWithHelmPlugin(kbc *utils.TestContext) {
-	By("editing project to enable Helm plugin")
-	err := kbc.Edit("--plugins", "helm.kubebuilder.io/v1-alpha")
-	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Helm Plugin")
-}
-
-func generateProjectWithDeployImagePlugin(kbc *utils.TestContext) {
+func generateAPIWithDeployImage(kbc *utils.TestContext) {
 	By("creating an API with DeployImage plugin")
 	err := kbc.CreateAPI(
 		"--group", "crew",

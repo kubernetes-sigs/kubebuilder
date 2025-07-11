@@ -73,11 +73,25 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
 		CmdContext:     cc,
 	}
-	k8sVersion, err := kubectl.Version()
+	var k8sVersion *KubernetesVersion
+	v, err := kubectl.Version()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get kubernetes version: %w", err)
+		_, _ = fmt.Fprintf(GinkgoWriter, "warning: failed to get kubernetes version: %v\n", err)
+		k8sVersion = &KubernetesVersion{
+			ClientVersion: VersionInfo{
+				Major:      "1",
+				Minor:      "0",
+				GitVersion: "v1.0.0-fake",
+			},
+			ServerVersion: VersionInfo{
+				Major:      "1",
+				Minor:      "0",
+				GitVersion: "v1.0.0-fake",
+			},
+		}
+	} else {
+		k8sVersion = &v
 	}
-
 	// Set CmdContext.Dir after running Kubectl.Version() because dir does not exist yet.
 	if cc.Dir, err = filepath.Abs("e2e-" + testSuffix); err != nil {
 		return nil, fmt.Errorf("failed to determine absolute path to %q: %w", "e2e-"+testSuffix, err)
@@ -93,7 +107,7 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		ImageName:  "e2e-test/controller-manager:" + testSuffix,
 		CmdContext: cc,
 		Kubectl:    kubectl,
-		K8sVersion: &k8sVersion,
+		K8sVersion: k8sVersion,
 		BinaryName: binaryName,
 	}, nil
 }

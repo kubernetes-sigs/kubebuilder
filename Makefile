@@ -156,6 +156,7 @@ test-coverage: ## Run unit tests creating the output to report coverage
 .PHONY: test-integration
 test-integration: ## Run the integration tests
 	./test/integration.sh
+	./test/features.sh
 
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated

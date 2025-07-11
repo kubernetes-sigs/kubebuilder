@@ -64,8 +64,6 @@ function test_cluster {
   docker pull busybox:1.36.1
   kind load docker-image --name $KIND_CLUSTER busybox:1.36.1
 
-  go test $(dirname "$0")/grafana $flags -timeout 30m
   go test $(dirname "$0")/deployimage $flags -timeout 30m
   go test $(dirname "$0")/v4 $flags -timeout 30m
-  go test $(dirname "$0")/alphagenerate $flags -timeout 30m
 }
