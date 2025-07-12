@@ -66,7 +66,10 @@
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
-- [Project Upgrade Assistant](./reference/rescaffold.md)
+- [Alpha Commands](./reference/alpha_commands.md)
+
+  - [alpha generate](./reference/commands/alpha_generate.md)
+  - [alpha update](./reference/commands/alpha_update.md)
 
 ---
 
