@@ -80,7 +80,10 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
-	dst.Spec.ConcurrencyPolicy = batchv1.ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	if src.Spec.ConcurrencyPolicy != nil && *src.Spec.ConcurrencyPolicy != "" {
+		cp := batchv1.ConcurrencyPolicy(*src.Spec.ConcurrencyPolicy)
+		dst.Spec.ConcurrencyPolicy = &cp
+	}
 	dst.Spec.Suspend = src.Spec.Suspend
 	dst.Spec.JobTemplate = src.Spec.JobTemplate
 	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
@@ -131,7 +134,10 @@ func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
-	dst.Spec.ConcurrencyPolicy = ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	if src.Spec.ConcurrencyPolicy != nil && *src.Spec.ConcurrencyPolicy != "" {
+		cp := ConcurrencyPolicy(*src.Spec.ConcurrencyPolicy)
+		dst.Spec.ConcurrencyPolicy = &cp
+	}
 	dst.Spec.Suspend = src.Spec.Suspend
 	dst.Spec.JobTemplate = src.Spec.JobTemplate
 	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit

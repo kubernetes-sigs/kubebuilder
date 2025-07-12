@@ -93,6 +93,11 @@ func (in *CronJobSpec) DeepCopyInto(out *CronJobSpec) {
 		*out = new(int64)
 		**out = **in
 	}
+	if in.ConcurrencyPolicy != nil {
+		in, out := &in.ConcurrencyPolicy, &out.ConcurrencyPolicy
+		*out = new(ConcurrencyPolicy)
+		**out = **in
+	}
 	if in.Suspend != nil {
 		in, out := &in.Suspend, &out.Suspend
 		*out = new(bool)

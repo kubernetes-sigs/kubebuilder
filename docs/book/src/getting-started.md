@@ -83,6 +83,8 @@ we will allow configuring the number of instances with the following:
 ```go
 type MemcachedSpec struct {
 	...
+	// +kubebuilder:validation:Minimum=0
+	// +required
 	Size int32 `json:"size,omitempty"`
 }
 ```
@@ -97,7 +99,21 @@ similar to how we do with any resource from the Kubernetes API.
 ```go
 // MemcachedStatus defines the observed state of Memcached
 type MemcachedStatus struct {
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+	// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+
+	// conditions represent the current state of the {{ .Resource.Kind }} resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional.
+	// - "Progressing": the resource is being created or updated.
+	// - "Degraded": the resource failed to reach or maintain its desired state.
+	//
+	// The status of each condition is one of True, False, or Unknown.
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 ```
 
