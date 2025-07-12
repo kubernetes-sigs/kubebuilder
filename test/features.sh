@@ -31,4 +31,7 @@ go test "$(dirname "$0")/e2e/grafana" ${flags:-} -timeout 30m
 header_text "Running Alpha Generate Command E2E tests"
 go test "$(dirname "$0")/e2e/alphagenerate" ${flags:-} -timeout 30m
 
+header_text "Running Alpha Update Command E2E tests"
+go test "$(dirname "$0")/e2e/alphaupdate" ${flags:-} -timeout 30m
+
 popd >/dev/null
