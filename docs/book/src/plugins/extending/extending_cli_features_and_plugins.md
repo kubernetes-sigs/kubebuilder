@@ -344,8 +344,8 @@ or [External Plugin][external-plugin] properly uses the
 [PROJECT file][project-file-config] to track relevant information.
 This ensures that other external tools and plugins can properly
 integrate with the project. It also allows tools features to help users
-re-scaffold their projects such as the [Project Upgrade Assistant][upgrade-assistant]
-provided by Kubebuilder, ensuring the tracked information in the
+re-scaffold their projects such as using the [Alpha Commands](./../../reference/alpha_commands.md)
+to upgrade the project scaffold to a newer version of Kubebuilder, ensuring the tracked information in the
 PROJECT file can be leveraged for various purposes.
 
 For example, plugins can check whether they support the project setup
