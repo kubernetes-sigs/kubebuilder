@@ -32,12 +32,9 @@ import (
 )
 
 const (
-	fromVersion = "v4.5.2"
-	toVersion   = "v4.6.0"
-
-	// Binary patterns for cleanup
-	binFromVersionPattern = "/tmp/kubebuilder" + fromVersion + "-*"
-	binToVersionPattern   = "/tmp/kubebuilder" + toVersion + "-*"
+	fromVersionWithoutConflicts = "v4.5.2"
+	fromVersionWithConflicts    = "v4.5.0"
+	toVersion                   = "v4.6.0"
 )
 
 var _ = Describe("kubebuilder", func() {
@@ -59,8 +56,8 @@ var _ = Describe("kubebuilder", func() {
 			mockProjectDir, err = os.MkdirTemp("/tmp", "kubebuilder-mock-project-")
 			Expect(err).NotTo(HaveOccurred())
 
-			By("downloading kubebuilder v4.5.2 binary to isolated /tmp directory")
-			binFromVersionPath, err = downloadKubebuilder()
+			By("downloading kubebuilder binary to isolated /tmp directory")
+			binFromVersionPath, err = downloadKubebuilderVersion(fromVersionWithoutConflicts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -72,8 +69,9 @@ var _ = Describe("kubebuilder", func() {
 
 			// Clean up kubebuilder alpha update downloaded binaries
 			binaryPatterns := []string{
-				binFromVersionPattern,
-				binToVersionPattern,
+				"/tmp/kubebuilder" + fromVersionWithoutConflicts + "-*",
+				"/tmp/kubebuilder" + fromVersionWithConflicts + "-*",
+				"/tmp/kubebuilder" + toVersion + "-*",
 			}
 
 			for _, pattern := range binaryPatterns {
@@ -89,8 +87,8 @@ var _ = Describe("kubebuilder", func() {
 			}
 		})
 
-		It("should update project from v4.5.2 to v4.6.0 preserving custom code", func() {
-			By("creating mock project with kubebuilder v4.5.2")
+		It("should update project from v4.5.2 to v4.6.0 without conflicts", func() {
+			By("creating mock project with kubebuilder " + fromVersionWithoutConflicts)
 			createMockProject(mockProjectDir, binFromVersionPath)
 
 			By("injecting custom code in API and controller")
@@ -99,25 +97,76 @@ var _ = Describe("kubebuilder", func() {
 			By("initializing git repository and committing mock project")
 			initializeGitRepo(mockProjectDir)
 
-			By("running alpha update from v4.5.2 to v4.6.0")
+			By("running alpha update from " + fromVersionWithoutConflicts + " to " + toVersion)
 			runAlphaUpdate(mockProjectDir, kbc)
+
+			By("validating that no conflict markers are present")
+			validateConflictMarkers(mockProjectDir, false)
 
 			By("validating custom code preservation")
 			validateCustomCodePreservation(mockProjectDir)
+		})
+
+		It("should stop on merge conflicts when --force is not used", func() {
+			// Download the conflicts version binary for this test
+			conflictsBinPath, err := downloadKubebuilderVersion(fromVersionWithConflicts)
+			Expect(err).NotTo(HaveOccurred())
+			defer func() { _ = os.RemoveAll(filepath.Dir(conflictsBinPath)) }()
+
+			By("creating mock project with kubebuilder " + fromVersionWithConflicts)
+			createMockProject(mockProjectDir, conflictsBinPath)
+
+			By("initializing git repository and committing mock project")
+			initializeGitRepo(mockProjectDir)
+
+			By("running alpha update without --force flag")
+			cmd := exec.Command(kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersionWithConflicts, "--to-version", toVersion, "--from-branch", "main")
+			cmd.Dir = mockProjectDir
+			output, err := cmd.CombinedOutput()
+
+			By("expecting the command to fail due to merge conflicts")
+			Expect(err).To(HaveOccurred())
+			Expect(string(output)).To(ContainSubstring("Merge stopped due to conflicts"))
+		})
+
+		It("should commit with conflict markers when --force is used", func() {
+			// Download the conflicts version binary for this test
+			conflictsBinPath, err := downloadKubebuilderVersion(fromVersionWithConflicts)
+			Expect(err).NotTo(HaveOccurred())
+			defer func() { _ = os.RemoveAll(filepath.Dir(conflictsBinPath)) }()
+
+			By("creating mock project with kubebuilder " + fromVersionWithConflicts)
+			createMockProject(mockProjectDir, conflictsBinPath)
+
+			By("initializing git repository and committing mock project")
+			initializeGitRepo(mockProjectDir)
+
+			By("running alpha update with --force flag")
+			cmd := exec.Command(kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersionWithConflicts, "--to-version", toVersion, "--from-branch", "main", "--force")
+			cmd.Dir = mockProjectDir
+			output, err := cmd.CombinedOutput()
+
+			By("expecting the command to succeed despite conflicts")
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("Alpha update with --force failed: %s", string(output)))
+
+			By("validating that conflict markers are present in the merged files")
+			validateConflictMarkers(mockProjectDir, true)
 		})
 	})
 })
 
 // downloadKubebuilder downloads the --from-version kubebuilder binary to a temporary directory
-func downloadKubebuilder() (string, error) {
-	binaryDir, err := os.MkdirTemp("", "kubebuilder-v4.5.2-")
+func downloadKubebuilderVersion(version string) (string, error) {
+	binaryDir, err := os.MkdirTemp("", "kubebuilder-"+version+"-")
 	if err != nil {
 		return "", fmt.Errorf("failed to create binary directory: %w", err)
 	}
 
 	url := fmt.Sprintf(
 		"https://github.com/kubernetes-sigs/kubebuilder/releases/download/%s/kubebuilder_%s_%s",
-		fromVersion,
+		version,
 		runtime.GOOS,
 		runtime.GOARCH,
 	)
@@ -125,12 +174,12 @@ func downloadKubebuilder() (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("failed to download kubebuilder %s: %w", fromVersion, err)
+		return "", fmt.Errorf("failed to download kubebuilder %s: %w", version, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download kubebuilder %s: HTTP %d", fromVersion, resp.StatusCode)
+		return "", fmt.Errorf("failed to download kubebuilder %s: HTTP %d", version, resp.StatusCode)
 	}
 
 	file, err := os.Create(binaryPath)
@@ -263,7 +312,7 @@ func runAlphaUpdate(projectDir string, kbc *utils.TestContext) {
 
 	// Use TestContext to run alpha update command
 	cmd := exec.Command(kbc.BinaryName, "alpha", "update",
-		"--from-version", fromVersion, "--to-version", toVersion, "--from-branch", "main")
+		"--from-version", fromVersionWithoutConflicts, "--to-version", toVersion, "--from-branch", "main")
 	cmd.Dir = projectDir
 	output, err := cmd.CombinedOutput()
 	Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("Alpha update failed: %s", string(output)))
@@ -282,4 +331,27 @@ func validateCustomCodePreservation(projectDir string) {
 	Expect(string(content)).To(ContainSubstring("Custom reconciliation logic"))
 	Expect(string(content)).To(ContainSubstring("log.Info(\"Reconciling TestOperator\")"))
 	Expect(string(content)).To(ContainSubstring("log.Info(\"TestOperator size\", \"size\", testOperator.Spec.Size)"))
+}
+
+func validateConflictMarkers(projectDir string, expectConflicts bool) {
+	// Use git to check for conflict markers across the entire project
+	cmd := exec.Command("git", "grep", "-l", "^<<<<<<<\\|^=======\\|^>>>>>>>", ".")
+	cmd.Dir = projectDir
+	output, err := cmd.CombinedOutput()
+
+	// If git grep finds conflict markers, it returns exit code 0
+	// If no conflict markers are found, it returns exit code 1
+	if err == nil {
+		// Conflict markers found
+		if expectConflicts {
+			Expect(output).ToNot(BeEmpty(), "Expected conflict markers in merged files")
+		} else {
+			Expect(false).To(BeTrue(), fmt.Sprintf("Unexpected conflict markers found in files: %s", string(output)))
+		}
+	} else {
+		// No conflict markers found
+		if expectConflicts {
+			Expect(false).To(BeTrue(), "Expected conflict markers in merged files but none were found")
+		}
+	}
 }

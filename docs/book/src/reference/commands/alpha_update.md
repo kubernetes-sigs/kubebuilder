@@ -61,6 +61,12 @@ kubebuilder alpha update \
   --from-branch=main
 ```
 
+Force update even with merge conflicts:
+
+```sh
+kubebuilder alpha update --force
+```
+
 <aside class="note warning">
 <h1>You might need to upgrade your project first</h1>
 
@@ -81,7 +87,45 @@ Once updated, you can use `kubebuilder alpha update` for future upgrades.
 | `--from-version`    | **Required for projects initialized with versions earlier than v4.6.0.** Kubebuilder version your project was created with. If unset, uses the `PROJECT` file. |
 | `--to-version`      | Version to upgrade to. Defaults to the latest version.                                                                                                         |
 | `--from-branch`     | Git branch that contains your current project code. Defaults to `main`.                                                                                        |
+| `--force`           | Force the update even if conflicts occur. Conflicted files will include conflict markers, and a commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).                                                                       |
 | `-h, --help`        | Show help for this command.                                                                                                                                    |
+
+## Using the `--force` flag
+
+When using the `--force` flag, merge conflicts will be committed with conflict markers in the `tmp-kb-update-merge` branch.
+You should carefully review and resolve these conflicts before merging into your main branch.
+
+After resolving conflicts, run the following command to ensure manifests and generated files are up to date:
+```sh
+make manifests generate fmt vet lint-fix
+```
+
+You might want to run `make all`, ensure that all tests are passing, and thoroughly validate the final result before committing and pushing a pull request to update your project from the `tmp-kb-update-merge` branch.
+
+## Handling Merge Conflicts
+
+If conflicts occur during a merge, Git will stop the process and leave the merge branch in a conflicted state for manual resolution.
+
+To proceed with the merge despite conflicts, you can use the `--force` option. This is useful in automated environments, such as CI pipelines or cron jobs, where you want to create a pull request with the changes - even if conflicts are present.
+
+```
+kubebuilder alpha update --force
+```
+The resulting commit will include conflict markers in the affected files:
+
+```
+<<<<<<< HEAD
+Your changes
+=======
+Incoming changes
+>>>>>>> branch-name
+```
+
+The commit message will indicate that conflicts are present and need to be resolved manually.
+
+<aside>
+Note: This approach is typically used in automation workflows where conflict markers are later addressed by a human, or where preserving the conflicting changes is acceptable for follow-up processing.
+</aside>
 
 <aside class="note warning">
 <h1>Projects generated with </h1>
