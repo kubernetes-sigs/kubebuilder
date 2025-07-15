@@ -20,11 +20,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	log "github.com/sirupsen/logrus"
 
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
-
-	log "github.com/sirupsen/logrus"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 

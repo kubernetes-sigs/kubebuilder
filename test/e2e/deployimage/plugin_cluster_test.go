@@ -23,11 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 

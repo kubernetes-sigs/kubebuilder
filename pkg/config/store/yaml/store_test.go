@@ -22,14 +22,13 @@ import (
 	"os"
 	"testing"
 
-	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 

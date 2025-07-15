@@ -24,11 +24,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-
 	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
+	log "github.com/sirupsen/logrus"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
 const (

@@ -83,16 +83,23 @@ linters:
         path: hack/docs/*
       - linters:
           - revive
-        text: 'should have comment or be unexported'
+        text: "should have comment or be unexported"
     paths:
       - third_party$
       - builtin$
       - examples$
 formatters:
   enable:
+    - gci
     - gofmt
     - gofumpt
     - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(sigs.k8s.io/kubebuilder)
   exclusions:
     generated: lax
     paths:
