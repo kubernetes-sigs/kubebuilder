@@ -3,7 +3,7 @@ module v1
 go 1.24.0
 
 require (
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 	sigs.k8s.io/kubebuilder/v4 v4.7.0
 )
 
