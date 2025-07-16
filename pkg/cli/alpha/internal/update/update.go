@@ -142,7 +142,7 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
 	}
-	commitMessage := "Clean scaffold from release version:" + opts.FromVersion
+	commitMessage := "Clean scaffolding from release version: " + opts.FromVersion
 	_ = exec.Command("git", "commit", "-m", commitMessage).Run()
 	return nil
 }
@@ -252,7 +252,7 @@ func runAlphaGenerate(tempDir, version string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run alpha generate: %w", err)
 	}
-	log.Info("Successfully ran alpha generate", version)
+	log.Info("Successfully ran alpha generate ", version)
 
 	// TODO: Analyse if this command is still needed in the future.
 	// It was added because the alpha generate command in versions prior to v4.7.0 does
@@ -314,7 +314,7 @@ func (opts *Update) prepareUpgradeBranch() error {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.UpgradeBranch, err)
 	}
 
-	_ = exec.Command("git", "commit", "-m", "Clean scaffolding from version "+opts.ToVersion).Run()
+	_ = exec.Command("git", "commit", "-m", "Clean scaffolding from release version: "+opts.ToVersion).Run()
 	return nil
 }
 
