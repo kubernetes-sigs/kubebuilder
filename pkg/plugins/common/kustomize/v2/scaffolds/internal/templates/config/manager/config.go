@@ -76,6 +76,12 @@ spec:
         control-plane: controller-manager
         app.kubernetes.io/name: {{ .ProjectName }}
     spec:
+      # Annotations for the manager pod
+      # annotations:
+      #   example-annotation: "value"
+      # Node selector for scheduling the manager pod
+      # nodeSelector:
+      #   disktype: ssd
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
@@ -90,12 +96,27 @@ spec:
       #             values:
       #               - amd64
       #               - arm64
-      #               - ppc64le
-      #               - s390x
       #           - key: kubernetes.io/os
       #             operator: In
       #             values:
       #               - linux
+      # Tolerations for the manager pod
+      # tolerations:
+      #   - key: "key1"
+      #     operator: "Equal"
+      #     value: "value1"
+      #     effect: "NoSchedule"
+      # Topology spread constraints for the manager pod
+      # topologySpreadConstraints:
+      #   - maxSkew: 1
+      #     topologyKey: "topology.kubernetes.io/zone"
+      #     whenUnsatisfiable: "ScheduleAnyway"
+      #     labelSelector:
+      #       matchLabels:
+      #         app: controller-manager
+      # imagePullSecrets for pulling images from private registries
+      # imagePullSecrets:
+      #   - name: myregistrykey
       securityContext:
         # Projects are configured by default to adhere to the "restricted" Pod Security Standards.
         # This ensures that deployments meet the highest security requirements for Kubernetes.
@@ -111,6 +132,8 @@ spec:
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
         name: manager
+        # imagePullPolicy for the manager container (e.g., Always, IfNotPresent, Never)
+        # imagePullPolicy: IfNotPresent
         ports: []
         securityContext:
           readOnlyRootFilesystem: true
@@ -139,7 +162,16 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        # Extra volumeMounts for the manager container
+        # volumeMounts:
+        #   - name: extra-config
+        #     mountPath: /etc/extra
         volumeMounts: []
+      # Extra volumes for the manager pod
+      # volumes:
+      #   - name: extra-config
+      #     configMap:
+      #       name: extra-config
       volumes: []
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
