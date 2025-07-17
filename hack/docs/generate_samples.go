@@ -18,6 +18,7 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
+
 	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
 	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
 	multiversion "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/multiversion-tutorial"

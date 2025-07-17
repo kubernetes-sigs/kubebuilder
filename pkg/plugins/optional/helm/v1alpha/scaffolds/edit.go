@@ -23,9 +23,8 @@ import (
 	"regexp"
 	"strings"
 
-	"sigs.k8s.io/yaml"
-
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"

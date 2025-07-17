@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
