@@ -76,12 +76,6 @@ spec:
         control-plane: controller-manager
         app.kubernetes.io/name: {{ .ProjectName }}
     spec:
-      # Annotations for the manager pod
-      # annotations:
-      #   example-annotation: "value"
-      # Node selector for scheduling the manager pod
-      # nodeSelector:
-      #   disktype: ssd
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
@@ -100,6 +94,16 @@ spec:
       #             operator: In
       #             values:
       #               - linux
+      # TODO(user): Uncomment the following code to configure the nodeSelector expression
+      # annotations, nodeSelector, tolerations, topologySpreadConstraints.
+      # nodeSelector:
+      #   disktype: ssd
+      # Annotations for the manager pod
+      # annotations:
+      #   example-annotation: "value"
+      # Node selector for scheduling the manager pod
+      # nodeSelector:
+      #   disktype: ssd
       # Tolerations for the manager pod
       # tolerations:
       #   - key: "key1"
