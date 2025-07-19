@@ -37,21 +37,35 @@ const (
 	toVersion   = "v4.6.0"
 
 	// Binary patterns for cleanup
-	binFromVersionPattern = "/tmp/kubebuilder" + fromVersion + "-*"
-	binToVersionPattern   = "/tmp/kubebuilder" + toVersion + "-*"
+	binFromVersionPath = "/tmp/kubebuilder" + fromVersion + "-*"
+	pathBinToVersion   = "/tmp/kubebuilder" + toVersion + "-*"
+
+	controllerImplementation = `// Fetch the TestOperator instance
+	testOperator := &webappv1.TestOperator{}
+	err := r.Get(ctx, req.NamespacedName, testOperator)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("testOperator resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Failed to get testOperator")
+		return ctrl.Result{}, err
+	}
+
+	log.Info("testOperator reconciled")`
 )
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha update", func() {
 		var (
 			mockProjectDir     string
-			binFromVersionPath string
+			pathBinFromVersion string
 			kbc                *utils.TestContext
 		)
 
 		BeforeEach(func() {
 			var err error
-			By("setting up test context with current kubebuilder binary")
+			By("setting up test context with binary build from source")
 			kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
@@ -61,20 +75,19 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("downloading kubebuilder v4.5.2 binary to isolated /tmp directory")
-			binFromVersionPath, err = downloadKubebuilder()
+			pathBinFromVersion, err = downloadKubebuilder()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
 			By("cleaning up test artifacts")
-
 			_ = os.RemoveAll(mockProjectDir)
-			_ = os.RemoveAll(filepath.Dir(binFromVersionPath))
+			_ = os.RemoveAll(filepath.Dir(pathBinFromVersion))
 
 			// Clean up kubebuilder alpha update downloaded binaries
 			binaryPatterns := []string{
-				binFromVersionPattern,
-				binToVersionPattern,
+				pathBinFromVersion,
+				pathBinToVersion,
 			}
 
 			for _, pattern := range binaryPatterns {
@@ -84,18 +97,16 @@ var _ = Describe("kubebuilder", func() {
 				}
 			}
 
-			// Clean up TestContext
-			if kbc != nil {
-				kbc.Destroy()
-			}
+			_ = os.RemoveAll(kbc.Dir)
 		})
 
-		It("should update project from v4.5.2 to v4.6.0 preserving custom code", func() {
+		It("should update project from v4.5.2 to v4.6.0 without conflicts", func() {
 			By("creating mock project with kubebuilder v4.5.2")
-			createMockProject(mockProjectDir, binFromVersionPath)
+			createMockProject(mockProjectDir, pathBinFromVersion)
 
-			By("injecting custom code in API and controller")
-			injectCustomCode(mockProjectDir)
+			By("adding custom code in API and controller")
+			updateAPI(mockProjectDir)
+			updateController(mockProjectDir)
 
 			By("initializing git repository and committing mock project")
 			initializeGitRepo(mockProjectDir)
@@ -182,38 +193,36 @@ func createMockProject(projectDir, binaryPath string) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func injectCustomCode(projectDir string) {
+func updateController(projectDir string) {
+	controllerFile := filepath.Join(projectDir, "internal", "controller", "testoperator_controller.go")
+
+	err := pluginutil.ReplaceInFile(
+		controllerFile,
+		"_ = logf.FromContext(ctx)",
+		"log := logf.FromContext(ctx)",
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = pluginutil.ReplaceInFile(
+		controllerFile,
+		"// TODO(user): your logic here",
+		controllerImplementation,
+	)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func updateAPI(projectDir string) {
 	typesFile := filepath.Join(projectDir, "api", "v1", "testoperator_types.go")
-	err := pluginutil.InsertCode(
+	err := pluginutil.ReplaceInFile(
 		typesFile,
 		"Foo string `json:\"foo,omitempty\"`",
 		`
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:default=1
-	// Size is the size of the memcached deployment
 	Size int32 `+"`json:\"size,omitempty\"`",
 	)
-	Expect(err).NotTo(HaveOccurred())
-	controllerFile := filepath.Join(projectDir, "internal", "controller", "testoperator_controller.go")
-	err = pluginutil.InsertCode(
-		controllerFile,
-		"// TODO(user): your logic here",
-		`// Custom reconciliation logic
-	log := ctrl.LoggerFrom(ctx)
-	log.Info("Reconciling TestOperator")
-
-	// Fetch the TestOperator instance
-	testOperator := &webappv1.TestOperator{}
-	err := r.Get(ctx, req.NamespacedName, testOperator)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// Custom logic: log the size field
-	log.Info("TestOperator size", "size", testOperator.Spec.Size)`,
-	)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to update testoperator_types.go")
 }
 
 func initializeGitRepo(projectDir string) {
@@ -271,16 +280,18 @@ func runAlphaUpdate(projectDir string, kbc *utils.TestContext) {
 }
 
 func validateCustomCodePreservation(projectDir string) {
+	By("validating the API")
 	typesFile := filepath.Join(projectDir, "api", "v1", "testoperator_types.go")
 	content, err := os.ReadFile(typesFile)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(string(content)).To(ContainSubstring("Size int32 `json:\"size,omitempty\"`"))
-	Expect(string(content)).To(ContainSubstring("Size is the size of the memcached deployment"))
+	Expect(string(content)).To(ContainSubstring("// +kubebuilder:validation:Minimum=0"))
+	Expect(string(content)).To(ContainSubstring("// +kubebuilder:validation:Maximum=3"))
+	Expect(string(content)).To(ContainSubstring("// +kubebuilder:default=1"))
 
+	By("validating the Controller")
 	controllerFile := filepath.Join(projectDir, "internal", "controller", "testoperator_controller.go")
 	content, err = os.ReadFile(controllerFile)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(string(content)).To(ContainSubstring("Custom reconciliation logic"))
-	Expect(string(content)).To(ContainSubstring("log.Info(\"Reconciling TestOperator\")"))
-	Expect(string(content)).To(ContainSubstring("log.Info(\"TestOperator size\", \"size\", testOperator.Spec.Size)"))
+	Expect(string(content)).To(ContainSubstring(controllerImplementation))
 }
