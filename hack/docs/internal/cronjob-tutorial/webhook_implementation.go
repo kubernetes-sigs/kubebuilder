@@ -34,8 +34,8 @@ const webhookDefaultingSettings = `// Set default values
 
 // applyDefaults applies default values to CronJob fields.
 func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
-	if cronJob.Spec.ConcurrencyPolicy == "" {
-		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
+	if cronJob.Spec.ConcurrencyPolicy == nil {
+		cronJob.Spec.ConcurrencyPolicy = ptr.To(d.DefaultConcurrencyPolicy)
 	}
 	if cronJob.Spec.Suspend == nil {
 		cronJob.Spec.Suspend = new(bool)
@@ -199,7 +199,7 @@ const webhookTestCreateDefaultingFragment = `// TODO (user): Add logic for defau
 
 const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults when a required field is empty", func() {
 			By("simulating a scenario where defaults should be applied")
-			obj.Spec.ConcurrencyPolicy = ""           // This should default to AllowConcurrent
+			obj.Spec.ConcurrencyPolicy = nil          // This should default to AllowConcurrent
 			obj.Spec.Suspend = nil                    // This should default to false
 			obj.Spec.SuccessfulJobsHistoryLimit = nil // This should default to 3
 			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
@@ -208,7 +208,7 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the default values are set")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
+			Expect(obj.Spec.ConcurrencyPolicy).To(HaveValue(Equal(batchv1.AllowConcurrent)), "Expected ConcurrencyPolicy to default to AllowConcurrent")
 			Expect(*obj.Spec.Suspend).To(BeFalse(), "Expected Suspend to default to false")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)), "Expected SuccessfulJobsHistoryLimit to default to 3")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)), "Expected FailedJobsHistoryLimit to default to 1")
@@ -216,7 +216,7 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
-			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+			obj.Spec.ConcurrencyPolicy = ptr.To(batchv1.ForbidConcurrent)
 			obj.Spec.Suspend = new(bool)
 			*obj.Spec.Suspend = true
 			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
@@ -228,7 +228,7 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 			_ = defaulter.Default(ctx, obj)
 			
 			By("checking that the fields were not overwritten")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
+			Expect(obj.Spec.ConcurrencyPolicy).To(HaveValue(Equal(batchv1.ForbidConcurrent)), "Expected ConcurrencyPolicy to retain its set value")
 			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
@@ -337,9 +337,9 @@ const webhookTestsBeforeEachOriginal = `obj = &batchv1.CronJob{}
 const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				ConcurrencyPolicy:          ptr.To(batchv1.AllowConcurrent),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -348,9 +348,9 @@ const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 		oldObj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				ConcurrencyPolicy:          ptr.To(batchv1.AllowConcurrent),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3

@@ -101,6 +101,21 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateAPIV1()
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
+
+	path := "internal/webhook/v1/cronjob_webhook_test.go"
+	err := pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
+		`// TODO (user): Add any additional imports if needed`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
+	path = "internal/webhook/v2/cronjob_webhook.go"
+	err = pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
+		`"k8s.io/apimachinery/pkg/util/validation/field"`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
@@ -146,9 +161,9 @@ interfaces, a conversion webhook will be registered.
 		obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				ConcurrencyPolicy:          ptr.To(batchv1.AllowConcurrent),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -157,9 +172,9 @@ interfaces, a conversion webhook will be registered.
 		oldObj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				ConcurrencyPolicy:          ptr.To(batchv1.AllowConcurrent),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -187,7 +202,7 @@ interfaces, a conversion webhook will be registered.
 		`Context("When creating CronJob under Defaulting Webhook", func() {
 		It("Should apply defaults when a required field is empty", func() {
 			By("simulating a scenario where defaults should be applied")
-			obj.Spec.ConcurrencyPolicy = ""           // This should default to AllowConcurrent
+			obj.Spec.ConcurrencyPolicy = nil          // This should default to AllowConcurrent
 			obj.Spec.Suspend = nil                    // This should default to false
 			obj.Spec.SuccessfulJobsHistoryLimit = nil // This should default to 3
 			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
@@ -196,7 +211,7 @@ interfaces, a conversion webhook will be registered.
 			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the default values are set")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
+			Expect(obj.Spec.ConcurrencyPolicy).To(HaveValue(Equal(batchv1.AllowConcurrent)), "Expected ConcurrencyPolicy to default to AllowConcurrent")
 			Expect(*obj.Spec.Suspend).To(BeFalse(), "Expected Suspend to default to false")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)), "Expected SuccessfulJobsHistoryLimit to default to 3")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)), "Expected FailedJobsHistoryLimit to default to 1")
@@ -204,7 +219,7 @@ interfaces, a conversion webhook will be registered.
 
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
-			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+			obj.Spec.ConcurrencyPolicy = ptr.To(batchv1.ForbidConcurrent)
 			obj.Spec.Suspend = new(bool)
 			*obj.Spec.Suspend = true
 			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
@@ -216,7 +231,7 @@ interfaces, a conversion webhook will be registered.
 			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the fields were not overwritten")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
+			Expect(obj.Spec.ConcurrencyPolicy).To(HaveValue(Equal(batchv1.ForbidConcurrent)), "Expected ConcurrencyPolicy to retain its set value")
 			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
@@ -704,7 +719,8 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 	// Important: Run "make" to regenerate code after modifying this file
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html`,
-		`// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+		`// schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +required
 	Schedule CronSchedule `+"`json:\"schedule\"`"+`
 
 	/*
