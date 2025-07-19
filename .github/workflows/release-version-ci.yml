@@ -1,0 +1,59 @@
+name: Test GoReleaser and CLI Version
+
+on:
+  push:
+    paths:
+      - 'pkg/cmd/**'
+      - 'build/.goreleaser.yml'
+      - '.github/workflows/release-version-ci.yml'
+  pull_request:
+    paths:
+      - 'pkg/cmd/**'
+      - 'build/.goreleaser.yml'
+      - '.github/workflows/release-version-ci.yml'
+
+jobs:
+  mock-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Clean dist directory
+        run: rm -rf dist || true
+
+      - name: Create temporary git tag
+        run: |
+          git tag v4.5.3-rc.1
+
+      - name: Install Syft to generate SBOMs
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b $HOME/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+          
+      - name: Run GoReleaser in mock mode using tag
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.7.0
+          args: release --skip=publish --clean -f ./build/.goreleaser.yml
+
+      - name: Init project using built kubebuilder binary and check cliVersion
+        run: |
+          mkdir test-operator && cd test-operator
+          go mod init test-operator
+          chmod +x ../dist/kubebuilder_linux_amd64_v1/kubebuilder
+          ../dist/kubebuilder_linux_amd64_v1/kubebuilder init --domain example.com
+
+          echo "PROJECT file content:"
+          cat PROJECT
+
+          echo "Verifying cliVersion value..."
+          grep '^cliVersion: 4.5.3-rc.1$' PROJECT
