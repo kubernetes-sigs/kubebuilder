@@ -84,6 +84,9 @@ linters:
       - linters:
           - revive
         text: "should have comment or be unexported"
+      - linters:
+          - revive
+        text: "var-naming: avoid meaningless package names"
     paths:
       - third_party$
       - builtin$
