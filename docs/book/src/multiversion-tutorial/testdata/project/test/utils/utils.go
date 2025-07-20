@@ -111,6 +111,19 @@ func UninstallCertManager() {
 	if _, err := Run(cmd); err != nil {
 		warnError(err)
 	}
+
+	// Delete leftover leases in kube-system (not cleaned by default)
+	kubeSystemLeases := []string{
+		"cert-manager-cainjector-leader-election",
+		"cert-manager-controller",
+	}
+	for _, lease := range kubeSystemLeases {
+		cmd = exec.Command("kubectl", "delete", "lease", lease,
+			"-n", "kube-system", "--ignore-not-found", "--force", "--grace-period=0")
+		if _, err := Run(cmd); err != nil {
+			warnError(err)
+		}
+	}
 }
 
 // InstallCertManager installs the cert manager bundle.
