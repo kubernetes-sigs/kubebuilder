@@ -177,8 +177,10 @@ const conversionWebhookChecksFragment = `It("should have CA injection for %[1]s 
 
 `
 
-var testCodeTemplate = `{{ .Boilerplate }}
+var testCodeTemplate = `//go:build e2e
+// +build e2e
 
+{{ .Boilerplate }}
 
 package e2e
 
