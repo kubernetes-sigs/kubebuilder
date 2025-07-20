@@ -662,22 +662,36 @@ func (sp *Sample) addControllerTest() {
 func (sp *Sample) updateE2E() {
 	cronjobE2ESuite := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_suite_test.go")
 	cronjobE2ETest := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_test.go")
+	cronjobE2EUtils := filepath.Join(sp.ctx.Dir, "test", "utils", "utils.go")
 	var err error
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `isCertManagerAlreadyInstalled = false`, isPrometheusInstalledVar)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding isPrometheusInstalledVar", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = BeforeSuite(func() {`, beforeSuitePrometheus)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code in the before suite", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite,
 		`// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.`,
 		checkPrometheusInstalled)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding code check if has prometheus", err)
+
+	err = pluginutil.InsertCode(cronjobE2EUtils,
+		`defaultKindCluster = "kind"`,
+		prometheusVersionURL)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus version and URL", err)
+
+	err = pluginutil.InsertCode(cronjobE2EUtils,
+		`return false
+}
+`,
+		prometheusUtilities)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus version and URL", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = AfterSuite(func() {`, afterSuitePrometheus)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code after suite", err)
 
-	err = pluginutil.InsertCode(cronjobE2ETest, `Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")`, serviceMonitorE2e)
-	hackutils.CheckError("fixing test/e2e/e2e_test.go", err)
+	err = pluginutil.InsertCode(cronjobE2ETest, `Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")`,
+		serviceMonitorE2e)
+	hackutils.CheckError("fixing test/e2e/e2e_test.go by adding ServiceMonitor should exist", err)
 }
