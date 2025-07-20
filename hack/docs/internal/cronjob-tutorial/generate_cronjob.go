@@ -204,6 +204,12 @@ func (sp *Sample) updateSpec() {
 		`// Important: Run "make" to regenerate code after modifying this file`, cronjobList)
 	hackutils.CheckError("fixing cronjob_types.go", err)
 
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
+		`// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status`, docCommentStatusSub)
+	hackutils.CheckError("fixing cronjob_types.go", err)
+
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`SchemeBuilder.Register(&CronJob{}, &CronJobList{})
@@ -223,18 +229,10 @@ type CronJob struct {`+`
 	// fix lint
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`
+		`/
 	
-}`, "")
-	hackutils.CheckError("fixing cronjob_types.go", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`
-
-
-}`, "")
-	hackutils.CheckError("fixing cronjob_types.go", err)
+}`, "/")
+	hackutils.CheckError("fixing cronjob_types.go end of status", err)
 }
 
 func (sp *Sample) updateAPIStuff() {

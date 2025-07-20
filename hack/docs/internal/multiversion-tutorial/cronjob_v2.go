@@ -28,7 +28,46 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )`
 
-const cronJobStatusReplace = `/*
+// FIXME: We should just insert and replace what is need and not a block of code in this way
+const cronjobSpecMore = `// startingDeadlineSeconds defines in seconds for starting the job if it misses scheduled
+	// time for any reason.  Missed jobs executions will be counted as failed ones.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	StartingDeadlineSeconds *int64 ` + "`json:\"startingDeadlineSeconds,omitempty\"`" + `
+
+	// concurrencyPolicy defines how to treat concurrent executions of a Job.
+	// Valid values are:
+	// - "Allow" (default): allows CronJobs to run concurrently;
+	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
+	// - "Replace": cancels currently running job and replaces it with a new one
+	// +optional
+	ConcurrencyPolicy ConcurrencyPolicy ` + "`json:\"concurrencyPolicy,omitempty\"`" + `
+
+	// suspend tells the controller to suspend subsequent executions, it does
+	// not apply to already started executions.  Defaults to false.
+	// +optional
+	Suspend *bool ` + "`json:\"suspend,omitempty\"`" + `
+
+	// jobTemplate defines the job that will be created when executing a CronJob.
+	JobTemplate batchv1.JobTemplateSpec ` + "`json:\"jobTemplate\"`" + `
+
+	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	SuccessfulJobsHistoryLimit *int32 ` + "`json:\"successfulJobsHistoryLimit,omitempty\"`" + `
+
+	// failedJobsHistoryLimit defines the number of failed finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	FailedJobsHistoryLimit *int32 ` + "`json:\"failedJobsHistoryLimit,omitempty\"`" + `
+
+	// +kubebuilder:docs-gen:collapse=The rest of Spec
+
+}
+
+/*
 Next, we'll need to define a type to hold our schedule.
 Based on our proposed YAML above, it'll have a field for
 each corresponding Cron "field".
@@ -84,56 +123,4 @@ const (
 	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
-
-// CronJobStatus defines the observed state of CronJob
-type CronJobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// active defines a list of pointers to currently running jobs.
-	// +optional
-	Active []corev1.ObjectReference ` + "`json:\"active,omitempty\"`" + `
-
-	// lastScheduleTime defines the information when was the last time the job was successfully scheduled.
-	// +optional
-	LastScheduleTime *metav1.Time ` + "`json:\"lastScheduleTime,omitempty\"`" + `
-}
-`
-
-const cronJobSpecReplace = `
-// startingDeadlineSeconds defines in seconds for starting the job if it misses scheduled
-// time for any reason.  Missed jobs executions will be counted as failed ones.
-// +optional
-// +kubebuilder:validation:Minimum=0
-StartingDeadlineSeconds *int64 ` + "`json:\"startingDeadlineSeconds,omitempty\"`" + `
-
-// concurrencyPolicy defines how to treat concurrent executions of a Job.
-// Valid values are:
-// - "Allow" (default): allows CronJobs to run concurrently;
-// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
-// - "Replace": cancels currently running job and replaces it with a new one
-// +optional
-ConcurrencyPolicy ConcurrencyPolicy ` + "`json:\"concurrencyPolicy,omitempty\"`" + `
-
-// suspend tells the controller to suspend subsequent executions, it does
-// not apply to already started executions.  Defaults to false.
-// +optional
-Suspend *bool ` + "`json:\"suspend,omitempty\"`" + `
-
-// jobTemplate defines the job that will be created when executing a CronJob.
-JobTemplate batchv1.JobTemplateSpec ` + "`json:\"jobTemplate\"`" + `
-
-// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
-// This is a pointer to distinguish between explicit zero and not specified.
-// +optional
-// +kubebuilder:validation:Minimum=0
-SuccessfulJobsHistoryLimit *int32 ` + "`json:\"successfulJobsHistoryLimit,omitempty\"`" + `
-
-// failedJobsHistoryLimit defines the number of failed finished jobs to retain.
-// This is a pointer to distinguish between explicit zero and not specified.
-// +optional
-// +kubebuilder:validation:Minimum=0
-FailedJobsHistoryLimit *int32 ` + "`json:\"failedJobsHistoryLimit,omitempty\"`" + `
-
-// +kubebuilder:docs-gen:collapse=The rest of Spec
 `

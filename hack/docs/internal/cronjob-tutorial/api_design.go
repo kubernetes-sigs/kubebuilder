@@ -134,12 +134,15 @@ const cronjobList = `
 	// lastScheduleTime defines when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time` + " `" + `json:"lastScheduleTime,omitempty"` + "`" + `
-}
+`
 
+const docCommentStatusSub = `
 /*
  Finally, we have the rest of the boilerplate that we've already discussed.
  As previously noted, we don't need to change this, except to mark that
  we want a status subresource, so that we behave like built-in kubernetes types.
 */
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 `
