@@ -41,6 +41,7 @@ const cronjobSpecMore = `// startingDeadlineSeconds defines in seconds for start
 	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
 	// - "Replace": cancels currently running job and replaces it with a new one
 	// +optional
+	// +kubebuilder:default:=Allow
 	ConcurrencyPolicy ConcurrencyPolicy ` + "`json:\"concurrencyPolicy,omitempty\"`" + `
 
 	// suspend tells the controller to suspend subsequent executions, it does
@@ -49,6 +50,7 @@ const cronjobSpecMore = `// startingDeadlineSeconds defines in seconds for start
 	Suspend *bool ` + "`json:\"suspend,omitempty\"`" + `
 
 	// jobTemplate defines the job that will be created when executing a CronJob.
+	// +required
 	JobTemplate batchv1.JobTemplateSpec ` + "`json:\"jobTemplate\"`" + `
 
 	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.

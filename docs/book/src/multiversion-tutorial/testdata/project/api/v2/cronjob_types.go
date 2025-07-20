@@ -41,7 +41,8 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 */
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
-	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +required
 	Schedule CronSchedule `json:"schedule"`
 
 	/*
@@ -59,6 +60,7 @@ type CronJobSpec struct {
 	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
 	// - "Replace": cancels currently running job and replaces it with a new one
 	// +optional
+	// +kubebuilder:default:=Allow
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
 
 	// suspend tells the controller to suspend subsequent executions, it does
@@ -67,6 +69,7 @@ type CronJobSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// jobTemplate defines the job that will be created when executing a CronJob.
+	// +required
 	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
 	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
@@ -148,6 +151,9 @@ type CronJobStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	// active defines a list of pointers to currently running jobs.
 	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
 	Active []corev1.ObjectReference `json:"active,omitempty"`
 
 	// lastScheduleTime defines the information when was the last time the job was successfully scheduled.
