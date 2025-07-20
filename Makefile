@@ -131,8 +131,18 @@ yamllint:
     	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest $$files -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
 
 .PHONY: golangci-lint
-golangci-lint:
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,${GOLANGCI_LINT_VERSION})
+golangci-lint: $(GOLANGCI_LINT)
+
+$(GOLANGCI_LINT_BASE): $(LOCALBIN)
+	$(call go-install-tool,$(GOLANGCI_LINT_BASE),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,${GOLANGCI_LINT_VERSION})
+
+$(GOLANGCI_LINT): $(GOLANGCI_LINT_BASE) .custom-gcl.yml
+	@echo "Installing custom golangci-lint plugins..."
+	@$(GOLANGCI_LINT_BASE) custom || { \
+		echo "golangci-lint custom failed. Cleaning up..."; \
+		rm -f $(GOLANGCI_LINT_BASE); \
+		exit 1; \
+	}
 
 .PHONY: apidiff
 apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared with origin/master
@@ -229,7 +239,8 @@ update-k8s-version: ## Update Kubernetes API version in version.go and .goreleas
 
 ## Tool Binaries
 GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
-GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT_BASE ?= $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint-kube-api
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.6.1
