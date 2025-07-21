@@ -2,11 +2,18 @@ name: Lint Samples
 
 on:
   push:
-    paths-ignore:
-      - '**/*.md'
+    - 'testdata/**'
+    - 'docs/book/src/cronjob-tutorial/testdata/project/**'
+    - 'docs/book/src/getting-started/testdata/project/**'
+    - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+    - '.github/workflows/lint-sample.yml'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - 'docs/book/src/cronjob-tutorial/testdata/project/**'
+      - 'docs/book/src/getting-started/testdata/project/**'
+      - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+      - '.github/workflows/lint-sample.yml'
 
 jobs:
   lint-samples:

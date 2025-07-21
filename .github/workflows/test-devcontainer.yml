@@ -2,11 +2,12 @@ name: Test DevContainer Image
 
 on:
   push:
-    paths-ignore:
-      - '**/*.md'
+    - 'testdata/**'
+    - '.github/workflows/test-devcontainer.yml'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-devcontainer.yml'
 
 jobs:
   test-devcontainer:
