@@ -1,10 +1,29 @@
 # [MANAGER]: Manager Deployment Configurations
 controllerManager:
   replicas: 1
+  pod:
+    # imagePullSecrets for pulling images from private registries
+    imagePullSecrets: []
+    # nodeSelector for scheduling the manager pod
+    nodeSelector: {}
+    # affinity rules for the manager pod
+    affinity: {}
+    # tolerations for the manager pod
+    tolerations: []
+    # topologySpreadConstraints for the manager pod
+    topologySpreadConstraints: []
+    # extraVolumeMounts for additional volumeMounts in the manager container
+    extraVolumeMounts: []
+    # extraVolumes for additional volumes in the manager pod
+    extraVolumes: []
+    # annotations for the manager pod
+    annotations: {}
   container:
     image:
       repository: controller
       tag: latest
+    # imagePullPolicy for the manager container (e.g., Always, IfNotPresent, Never)
+    imagePullPolicy: IfNotPresent
     args:
       - "--leader-elect"
       - "--metrics-bind-address=:8443"
