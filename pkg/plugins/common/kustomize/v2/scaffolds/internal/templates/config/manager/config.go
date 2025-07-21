@@ -30,7 +30,8 @@ type Config struct {
 	machinery.ProjectNameMixin
 
 	// Image is controller manager image name
-	Image string
+	Image           string
+	ImagePullPolicy string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -110,6 +111,9 @@ spec:
           - --leader-elect
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
+        {{- if .ImagePullPolicy }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        {{- end }}
         name: manager
         ports: []
         securityContext:
