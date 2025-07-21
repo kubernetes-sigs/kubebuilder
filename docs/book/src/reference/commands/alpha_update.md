@@ -111,7 +111,6 @@ These conflicts will be committed in the
 <aside class="note warning">
 You must manually resolve these conflicts before merging into your main branch.
 
-```suggestion
 <aside class="note warning">
 <H1>If you face conflicts (using or not the --force flag) </H1>
 If the merge introduces conflicts, you must resolve them and **ensure** you execute the following command to regenerate the manifests and organise the files properly:
