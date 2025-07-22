@@ -60,12 +60,6 @@ const statusDesignComment = `/*
  serialization, as mentioned above.
 */`
 
-const boilerplateComment = `/*
- Finally, we have the rest of the boilerplate that we've already discussed.
- As previously noted, we don't need to change this, except to mark that
- we want a status subresource, so that we behave like built-in kubernetes types.
-*/`
-
 const boilerplateReplacement = `// +kubebuilder:docs-gen:collapse=old stuff
 
 /*
@@ -78,4 +72,7 @@ const boilerplateReplacement = `// +kubebuilder:docs-gen:collapse=old stuff
  Note that multiple versions may exist in storage if they were written before
  the storage version changes -- changing the storage version only affects how
  objects are created/updated after the change.
-*/`
+*/
+
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion`

@@ -410,6 +410,17 @@ func (sp *Sample) updateAPIV1() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
+		`/*
+ Finally, we have the rest of the boilerplate that we've already discussed.
+ As previously noted, we don't need to change this, except to mark that
+ we want a status subresource, so that we behave like built-in kubernetes types.
+*/`,
+		``,
+	)
+	hackutils.CheckError("removing comment from cronjob tutorial", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, path),
 		`// +kubebuilder:object:root=true
 
 // CronJobList contains a list of CronJob`,
@@ -438,10 +449,11 @@ func (sp *Sample) updateAPIV1() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		boilerplateComment,
+		`// +kubebuilder:object:root=true
+// +kubebuilder:storageversion`,
 		boilerplateReplacement,
 	)
-	hackutils.CheckError("replacing boilerplate comment with storage version explanation", err)
+	hackutils.CheckError("add comment with storage version explanation", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -718,20 +730,35 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 		`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
 	// +optional
 	Foo *string `+"`json:\"foo,omitempty\"`",
-		cronJobSpecReplace,
+		cronjobSpecMore,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// CronJobStatus defines the observed state of CronJob.
-type CronJobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+		`)
+
 }`,
-		cronJobStatusReplace,
+		`)
+`,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
+
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, path),
+		`type CronJobStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file`,
+		`
+	// active defines a list of pointers to currently running jobs.
+	// +optional
+	Active []corev1.ObjectReference `+"`json:\"active,omitempty\"`"+`
+
+	// lastScheduleTime defines the information when was the last time the job was successfully scheduled.
+	// +optional
+	LastScheduleTime *metav1.Time `+"`json:\"lastScheduleTime,omitempty\"`"+`
+`)
+	hackutils.CheckError("insert status for cronjob v2", err)
 
 	err = pluginutil.AppendCodeAtTheEnd(
 		filepath.Join(sp.ctx.Dir, path), `
