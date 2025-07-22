@@ -50,10 +50,23 @@ linters:
         - name: error-strings
         - name: error-naming
         - name: exported
+          disabled: true
         - name: if-return
         - name: import-shadowing
         - name: increment-decrement
         - name: var-naming
+          severity: warning
+          arguments:
+            - ["ID"]            # allowed initialisms
+            - ["VM"]            # disallowed initialisms
+            - [                 # <-- this is a list containing one map
+                {
+                  skip-initialism-name-checks: true,
+                  upper-case-const: true,
+                  skip-package-name-checks: true,
+                  extra-bad-package-names: ["helpers", "models"]
+                }
+              ]
         - name: var-declaration
         - name: package-comments
           disabled: true
@@ -81,12 +94,6 @@ linters:
           - gosec
           - lll
         path: hack/docs/*
-      - linters:
-          - revive
-        text: "should have comment or be unexported"
-      - linters:
-          - revive
-        text: "var-naming: avoid meaningless package names"
     paths:
       - third_party$
       - builtin$
