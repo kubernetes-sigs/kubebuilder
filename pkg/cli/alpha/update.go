@@ -49,9 +49,8 @@ The process uses Git branches:
   - upgrade: scaffold from the target version
   - merge: result of the 3-way merge
 
-If conflicts occur during the merge, resolve them manually in the 'merge' branch. 
-Once resolved, commit and push it as a pull request. This branch will contain the 
-final upgraded project with the latest Kubebuilder layout and your custom code.
+If conflicts occur during the merge, the command will stop and leave the merge branch for manual resolution.
+Use --force to commit conflicts with markers instead. 
 
 Examples:
   # Update from the version specified in the PROJECT file to the latest release
@@ -62,6 +61,9 @@ Examples:
 
   # Update from a specific version to an specific release
   kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0	
+
+  # Force update even with merge conflicts (commit conflict markers)
+  kubebuilder alpha update --force
 
 `,
 
@@ -91,6 +93,10 @@ Examples:
 
 	updateCmd.Flags().StringVar(&opts.FromBranch, "from-branch", "",
 		"Git branch to use as current state of the project for the update.")
+
+	updateCmd.Flags().BoolVar(&opts.Force, "force", false,
+		"Force the update even if conflicts occur. Conflicted files will include conflict markers, and a "+
+			"commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).")
 
 	return updateCmd
 }

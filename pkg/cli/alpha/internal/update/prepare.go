@@ -75,7 +75,7 @@ func (opts *Update) defineFromVersion(config store.Store) (string, error) {
 
 func (opts *Update) defineToVersion() string {
 	if len(opts.ToVersion) != 0 {
-		if !strings.HasPrefix(opts.FromVersion, "v") {
+		if !strings.HasPrefix(opts.ToVersion, "v") {
 			return "v" + opts.ToVersion
 		}
 		return opts.ToVersion
