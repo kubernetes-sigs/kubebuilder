@@ -82,6 +82,8 @@ var _ = Describe("Options", func() {
 						} else {
 							Expect(res.Path).To(Equal(path.Join(cfg.GetRepository(), "api", gvk.Version)))
 						}
+					} else if len(options.ExternalAPIPath) > 0 {
+						Expect(res.Path).To(Equal("testPath"))
 					} else {
 						// Core-resources have a path despite not having an API/Webhook but they are not tested here
 						Expect(res.Path).To(Equal(""))
@@ -104,6 +106,12 @@ var _ = Describe("Options", func() {
 					} else {
 						Expect(res.Webhooks.IsEmpty()).To(BeTrue())
 					}
+
+					if len(options.ExternalAPIPath) > 0 {
+						Expect(res.External).To(BeTrue())
+						Expect(res.Domain).To(Equal("test.io"))
+					}
+
 					Expect(res.QualifiedGroup()).To(Equal(gvk.Group + "." + gvk.Domain))
 					Expect(res.PackageName()).To(Equal(gvk.Group))
 					Expect(res.ImportAlias()).To(Equal(gvk.Group + gvk.Version))
@@ -112,6 +120,9 @@ var _ = Describe("Options", func() {
 			Entry("when updating nothing", Options{}),
 			Entry("when updating the plural", Options{Plural: "mates"}),
 			Entry("when updating the Controller", Options{DoController: true}),
+			Entry("when updating with External API Path", Options{ExternalAPIPath: "testPath", ExternalAPIDomain: "test.io"}),
+			Entry("when updating the API with setting webhooks params",
+				Options{DoAPI: true, DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
 
 		DescribeTable("should use core apis",
