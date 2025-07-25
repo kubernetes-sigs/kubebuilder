@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 
-go 1.24.0
+go 1.24.5
 
 require (
 	github.com/cert-manager/cert-manager v1.18.2
