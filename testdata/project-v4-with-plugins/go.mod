@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins
 
-go 1.24.0
+go 1.24.5
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0

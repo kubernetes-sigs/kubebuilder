@@ -3,17 +3,19 @@ name: Test GoReleaser and CLI Version
 on:
   push:
     paths:
+      - 'pkg/**'
       - 'cmd/**'
       - 'build/.goreleaser.yml'
       - '.github/workflows/release-version-ci.yml'
   pull_request:
     paths:
+      - 'pkg/**'
       - 'cmd/**'
       - 'build/.goreleaser.yml'
       - '.github/workflows/release-version-ci.yml'
 
 jobs:
-  mock-build:
+  go-releaser-test:
     runs-on: ubuntu-latest
 
     steps:
