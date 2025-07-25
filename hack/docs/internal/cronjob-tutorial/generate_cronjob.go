@@ -397,7 +397,13 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 func (sp *Sample) updateWebhookTests() {
 	file := filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook_test.go")
 
-	err := pluginutil.ReplaceInFile(file,
+	err := pluginutil.InsertCode(file,
+		`// TODO (user): Add any additional imports if needed`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
+	err = pluginutil.ReplaceInFile(file,
 		webhookTestCreateDefaultingFragment,
 		webhookTestCreateDefaultingReplaceFragment)
 	hackutils.CheckError("replace create defaulting test", err)

@@ -48,6 +48,7 @@ spec:
           spec:
             properties:
               concurrencyPolicy:
+                default: Allow
                 enum:
                 - Allow
                 - Forbid
@@ -3856,7 +3857,10 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                maxItems: 10
+                minItems: 1
                 type: array
+                x-kubernetes-list-type: atomic
               conditions:
                 items:
                   properties:
@@ -3920,6 +3924,7 @@ spec:
           spec:
             properties:
               concurrencyPolicy:
+                default: Allow
                 enum:
                 - Allow
                 - Forbid
@@ -7738,7 +7743,10 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                maxItems: 10
+                minItems: 1
                 type: array
+                x-kubernetes-list-type: atomic
               conditions:
                 items:
                   properties:

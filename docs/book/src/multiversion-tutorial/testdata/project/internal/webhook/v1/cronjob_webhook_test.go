@@ -22,6 +22,7 @@ import (
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	// TODO (user): Add any additional imports if needed
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("CronJob Webhook", func() {
@@ -39,8 +40,8 @@ var _ = Describe("CronJob Webhook", func() {
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -50,8 +51,8 @@ var _ = Describe("CronJob Webhook", func() {
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3

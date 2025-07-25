@@ -83,7 +83,9 @@ we will allow configuring the number of instances with the following:
 ```go
 type MemcachedSpec struct {
 	...
-	Size int32 `json:"size,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	// +required
+	Size *int32 `json:"size,omitempty"`
 }
 ```
 
