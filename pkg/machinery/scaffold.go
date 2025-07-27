@@ -20,12 +20,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	log "log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"golang.org/x/tools/imports"
 
@@ -241,7 +241,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 		// If the file path starts with test/, warn and skip
 		// Workaround to allow projects be backwards compatible with previous versions
 		if strings.HasPrefix(i.GetPath(), "test/") {
-			log.Warnf("Skipping missing test file: %s", i.GetPath())
+			log.Warn("Skipping missing test file", "file_path", i.GetPath())
 			log.Warn("The code fragments will not be inserted.")
 			return nil
 		}

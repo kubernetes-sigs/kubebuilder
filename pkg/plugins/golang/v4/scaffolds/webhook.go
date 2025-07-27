@@ -19,9 +19,9 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -70,17 +70,17 @@ func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
-	log.Println("Writing scaffold for you to edit...")
+	log.Info("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
-			log.Warnf("Unable to find %s : %s .\n"+
+			log.Warn("Unable to find boilerplate file."+
 				"This file is used to generate the license header in the project.\n"+
 				"Note that controller-gen will also use this. Therefore, ensure that you "+
 				"add the license file or configure your project accordingly.",
-				hack.DefaultBoilerplatePath, err)
+				"file_path", hack.DefaultBoilerplatePath, "error", err)
 			boilerplate = []byte("")
 		} else {
 			return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
@@ -125,9 +125,10 @@ func (s *webhookScaffolder) Scaffold() error {
 			"// +kubebuilder:object:root=true",
 			"\n// +kubebuilder:storageversion")
 		if err != nil {
-			log.Errorf("Unable to insert storage version marker "+
-				"(// +kubebuilder:storageversion)"+
-				"in file %s: %v", resourceFilePath, err)
+			log.Error("Unable to insert storage version marker in file",
+				"marker", "// +kubebuilder:storageversion",
+				"file_path", resourceFilePath,
+				"error", err)
 		}
 
 		if err = scaffold.Execute(&api.Hub{Force: s.force}); err != nil {
@@ -135,13 +136,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 
 		for _, spoke := range s.resource.Webhooks.Spoke {
-			log.Printf("Scaffolding for spoke version: %s\n", spoke)
+			log.Info("Scaffolding for spoke version", "version", spoke)
 			if err = scaffold.Execute(&api.Spoke{Force: s.force, SpokeVersion: spoke}); err != nil {
 				return fmt.Errorf("failed to scaffold spoke %s: %w", spoke, err)
 			}
 		}
 
-		log.Println(`Webhook server has been set up for you.
+		log.Info(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
@@ -155,13 +156,13 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 	// TODO: remove for go/v5
 	if !s.isLegacy {
 		if hasInternalController, err := pluginutil.HasFileContentWith("Dockerfile", "internal/controller"); err != nil {
-			log.Error("Unable to read Dockerfile to check if webhook(s) will be properly copied: ", err)
+			log.Error("Unable to read Dockerfile to check if webhook(s) will be properly copied", "error", err)
 		} else if hasInternalController {
-			log.Warning("Dockerfile is copying internal/controller. To allow copying webhooks, " +
+			log.Warn("Dockerfile is copying internal/controller. To allow copying webhooks, " +
 				"it will be edited, and `internal/controller` will be replaced by `internal/`.")
 
 			if err = pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
-				log.Error("Unable to replace \"internal/controller\" with \"internal/\" in the Dockerfile: ", err)
+				log.Error("Unable to replace \"internal/controller\" with \"internal/\" in the Dockerfile", "error", err)
 			}
 		}
 	}

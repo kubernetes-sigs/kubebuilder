@@ -17,10 +17,9 @@ limitations under the License.
 package webhooks
 
 import (
+	log "log/slog"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -66,7 +65,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Println(f.Path)
+	log.Info(f.Path)
 
 	webhookTemplate := webhookTemplate
 	if f.Resource.HasDefaultingWebhook() {

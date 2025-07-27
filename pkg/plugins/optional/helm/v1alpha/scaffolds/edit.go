@@ -18,12 +18,12 @@ package scaffolds
 
 import (
 	"fmt"
+	log "log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -66,7 +66,7 @@ func (s *editScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold scaffolds the Helm chart with the necessary files.
 func (s *editScaffolder) Scaffold() error {
-	log.Println("Generating Helm Chart to distribute project")
+	log.Info("Generating Helm Chart to distribute project")
 
 	imagesEnvVars := s.getDeployImagesEnvVars()
 
@@ -162,7 +162,7 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 	manifestFile := "config/webhook/manifests.yaml"
 
 	if _, err = os.Stat(manifestFile); os.IsNotExist(err) {
-		log.Printf("webhook manifests were not found at %s", manifestFile)
+		log.Info("webhook manifests were not found", "path", manifestFile)
 		return nil, nil, nil
 	}
 
@@ -193,7 +193,7 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 		}
 
 		if err := yaml.Unmarshal([]byte(doc), &webhookConfig); err != nil {
-			log.Errorf("fail to unmarshalling webhook YAML: %v", err)
+			log.Error("fail to unmarshalling webhook YAML", "error", err)
 			continue
 		}
 
@@ -290,13 +290,13 @@ func (s *editScaffolder) copyConfigFiles() error {
 // to spec.conversion if applicable, and writes it to the destination
 func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasConvertionalWebhook bool) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
-		log.Printf("Source file does not exist: %s", srcFile)
+		log.Info("Source file does not exist", "source_file", srcFile)
 		return fmt.Errorf("source file does not exist %q: %w", srcFile, err)
 	}
 
 	content, err := os.ReadFile(srcFile)
 	if err != nil {
-		log.Printf("Error reading source file: %s", srcFile)
+		log.Info("Error reading source file", "source_file", srcFile)
 		return fmt.Errorf("failed to read file %q: %w", srcFile, err)
 	}
 
@@ -441,11 +441,11 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 
 	err = os.WriteFile(destFile, []byte(wrappedContent), 0o644)
 	if err != nil {
-		log.Printf("Error writing destination file: %s", destFile)
+		log.Info("Error writing destination file", "destination_file", destFile)
 		return fmt.Errorf("error writing destination file %q: %w", destFile, err)
 	}
 
-	log.Printf("Successfully copied %s to %s", srcFile, destFile)
+	log.Info("Successfully copied file", "from", srcFile, "to", destFile)
 	return nil
 }
 

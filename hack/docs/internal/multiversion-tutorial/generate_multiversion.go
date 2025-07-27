@@ -17,10 +17,9 @@ limitations under the License.
 package multiversion
 
 import (
+	log "log/slog"
 	"os/exec"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -34,23 +33,23 @@ type Sample struct {
 
 // NewSample create a new instance of the sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of MultiVersion Cronjob...")
+	log.Info("Generating the sample context of MultiVersion Cronjob...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("refreshing tools and creating directory for multiversion ...")
+	log.Info("refreshing tools and creating directory for multiversion ...")
 	err := sp.ctx.Prepare()
 	hackutils.CheckError("creating directory for multiversion project", err)
 }
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the multiversion cronjob project")
+	log.Info("Initializing the multiversion cronjob project")
 
-	log.Infof("Creating v2 API")
+	log.Info("Creating v2 API")
 	err := sp.ctx.CreateAPI(
 		"--group", "batch",
 		"--version", "v2",
@@ -60,7 +59,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating the v2 API without controller", err)
 
-	log.Infof("Creating conversion webhook for v1")
+	log.Info("Creating conversion webhook for v1")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v1",
@@ -71,7 +70,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating conversion webhook for v1", err)
 
-	log.Infof("Workaround to fix the issue with the conversion webhook")
+	log.Info("Workaround to fix the issue with the conversion webhook")
 	// FIXME: This is a workaround to fix the issue with the conversion webhook
 	// We should be able to inject the code when we create webhooks with different
 	// types of webhooks. However, currently, we are not able to do that and we need to
@@ -81,7 +80,7 @@ func (sp *Sample) GenerateSampleProject() {
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Copying the code from cronjob tutorial", err)
 
-	log.Infof("Creating defaulting and validation webhook for v2")
+	log.Info("Creating defaulting and validation webhook for v2")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v2",
@@ -94,7 +93,7 @@ func (sp *Sample) GenerateSampleProject() {
 
 // UpdateTutorial the muilt-version sample tutorial with the scaffold changes
 func (sp *Sample) UpdateTutorial() {
-	log.Println("Update tutorial with multiversion code")
+	log.Info("Update tutorial with multiversion code")
 
 	// Update files according to the multiversion
 	sp.updateCronjobV1DueForce()

@@ -20,12 +20,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	log "log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -52,7 +52,7 @@ type Update struct {
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
 func (opts *Update) Update() error {
-	log.Infof("Checking out base branch: %s", opts.FromBranch)
+	log.Info("Checking out base branch", "branch", opts.FromBranch)
 	checkoutCmd := exec.Command("git", "checkout", opts.FromBranch)
 	if err := checkoutCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout base branch %s: %w", opts.FromBranch, err)
@@ -65,18 +65,18 @@ func (opts *Update) Update() error {
 	opts.UpgradeBranch = "tmp-upgrade-" + suffix
 	opts.MergeBranch = "tmp-merge-" + suffix
 
-	log.Infof("Using branch names:")
-	log.Infof("  Ancestor: %s", opts.AncestorBranch)
-	log.Infof("  Original:  %s", opts.OriginalBranch)
-	log.Infof("  Upgrade:  %s", opts.UpgradeBranch)
-	log.Infof("  Merge:    %s", opts.MergeBranch)
+	log.Info("Using branch names",
+		"ancestor_branch", opts.AncestorBranch,
+		"original_branch", opts.OriginalBranch,
+		"upgrade_branch", opts.UpgradeBranch,
+		"merge_branch", opts.MergeBranch)
 
 	// 1. Creates an ancestor branch based on base branch
 	// 2. Deletes everything except .git and PROJECT
 	// 3. Installs old release
 	// 4. Runs alpha generate with old release binary
 	// 5. Commits the result
-	log.Infof("Preparing Ancestor branch with name %s", opts.AncestorBranch)
+	log.Info("Preparing Ancestor branch", "branch_name", opts.AncestorBranch)
 	if err := opts.prepareAncestorBranch(); err != nil {
 		return fmt.Errorf("failed to prepare ancestor branch: %w", err)
 	}
@@ -84,7 +84,7 @@ func (opts *Update) Update() error {
 	// 2. Ensure that original branch is == Based on user’s current base branch content with
 	// git checkout "main" -- .
 	// 3. Commits this state
-	log.Infof("Preparing Original branch with name %s", opts.OriginalBranch)
+	log.Info("Preparing Original branch", "branch_name", opts.OriginalBranch)
 	if err := opts.prepareOriginalBranch(); err != nil {
 		return fmt.Errorf("failed to checkout current off ancestor: %w", err)
 	}
@@ -92,7 +92,7 @@ func (opts *Update) Update() error {
 	// 2. Cleans up the branch by removing all files except .git and PROJECT
 	// 2. Regenerates scaffold using alpha generate with new version
 	// 3. Commits the result
-	log.Infof("Preparing Upgrade branch with name %s", opts.UpgradeBranch)
+	log.Info("Preparing Upgrade branch", "branch_name", opts.UpgradeBranch)
 	if err := opts.prepareUpgradeBranch(); err != nil {
 		return fmt.Errorf("failed to checkout upgrade off ancestor: %w", err)
 	}
@@ -101,7 +101,7 @@ func (opts *Update) Update() error {
 	// 2. Merges in original (user code)
 	// 3. If conflicts occur, it will warn the user and leave the merge branch for manual resolution
 	// 4. If merge is clean, it stages the changes and commits the result
-	log.Infof("Preparing Merge branch with name %s and performing merge", opts.MergeBranch)
+	log.Info("Preparing Merge branch and performing merge", "branch_name", opts.MergeBranch)
 	if err := opts.mergeOriginalToUpgrade(); err != nil {
 		return fmt.Errorf("failed to merge upgrade into merge branch: %w", err)
 	}
@@ -166,7 +166,7 @@ func binaryWithVersion(version string) (string, error) {
 	}
 	defer func() {
 		if err = file.Close(); err != nil {
-			log.Errorf("failed to close the file: %v", err)
+			log.Error("failed to close the file", "error", err)
 		}
 	}()
 
@@ -176,7 +176,7 @@ func binaryWithVersion(version string) (string, error) {
 	}
 	defer func() {
 		if err = response.Body.Close(); err != nil {
-			log.Errorf("failed to close the connection: %v", err)
+			log.Error("failed to close the connection", "error", err)
 		}
 	}()
 
@@ -217,7 +217,7 @@ func runMakeTargets() {
 	for _, target := range targets {
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
-			log.Warnf("make %s failed: %v", target, err)
+			log.Warn("make target failed", "target", target, "error", err)
 		}
 	}
 }
@@ -226,7 +226,7 @@ func runMakeTargets() {
 // to create clean scaffolding in the ancestor branch. This uses the downloaded
 // binary with the original PROJECT file to recreate the project's initial state.
 func runAlphaGenerate(tempDir, version string) error {
-	log.Infof("Generating project with version %s", version)
+	log.Info("Generating project", "version", version)
 	// Temporarily modify PATH to use the downloaded Kubebuilder binary
 	tempBinaryPath := tempDir + "/kubebuilder"
 	originalPath := os.Getenv("PATH")
@@ -238,7 +238,7 @@ func runAlphaGenerate(tempDir, version string) error {
 
 	defer func() {
 		if err := os.Setenv("PATH", originalPath); err != nil {
-			log.Errorf("failed to restore original PATH: %v", err)
+			log.Error("failed to restore original PATH", "error", err)
 		}
 	}()
 
@@ -252,7 +252,7 @@ func runAlphaGenerate(tempDir, version string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run alpha generate: %w", err)
 	}
-	log.Info("Successfully ran alpha generate ", version)
+	log.Info("Successfully ran alpha generate", "version", version)
 
 	// TODO: Analyse if this command is still needed in the future.
 	// It was added because the alpha generate command in versions prior to v4.7.0 does

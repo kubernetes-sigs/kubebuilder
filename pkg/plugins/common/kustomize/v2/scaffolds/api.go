@@ -18,9 +18,8 @@ package scaffolds
 
 import (
 	"fmt"
+	log "log/slog"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -63,7 +62,7 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
-	log.Println("Writing kustomize manifests for you to edit...")
+	log.Info("Writing kustomize manifests for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
@@ -95,8 +94,8 @@ func (s *apiScaffolder) Scaffold() error {
 		if err != nil {
 			hasCRUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
 			if !hasCRUncommented || errCheck != nil {
-				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
-					"%s.", kustomizeFilePath)
+				log.Error("Unable to find the target #- ../crd to uncomment in the file ",
+					"file_path", kustomizeFilePath)
 			}
 		}
 
@@ -107,8 +106,8 @@ func (s *apiScaffolder) Scaffold() error {
 		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
 			comment)
 		if err != nil {
-			log.Errorf("Unable to append the admin/edit/view roles comment in the file "+
-				"%s.", rbacKustomizeFilePath)
+			log.Error("Unable to append the admin/edit/view roles comment in the file ",
+				"file_path", rbacKustomizeFilePath)
 		}
 		crdName := strings.ToLower(s.resource.Kind)
 		if s.config.IsMultiGroup() && s.resource.Group != "" {
@@ -117,8 +116,8 @@ func (s *apiScaffolder) Scaffold() error {
 		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath, comment,
 			fmt.Sprintf("\n- %[1]s_admin_role.yaml\n- %[1]s_editor_role.yaml\n- %[1]s_viewer_role.yaml", crdName))
 		if err != nil {
-			log.Errorf("Unable to add Admin, Editor and Viewer roles in the file "+
-				"%s.", rbacKustomizeFilePath)
+			log.Error("Unable to add Admin, Editor and Viewer roles in the file ",
+				"file_path", rbacKustomizeFilePath)
 		}
 		// Add an empty line at the end of the file
 		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
@@ -126,8 +125,8 @@ func (s *apiScaffolder) Scaffold() error {
 
 `)
 		if err != nil {
-			log.Errorf("Unable to append empty line at the end of the file"+
-				"%s.", rbacKustomizeFilePath)
+			log.Error("Unable to append empty line at the end of the file",
+				"file_path", rbacKustomizeFilePath)
 		}
 	}
 

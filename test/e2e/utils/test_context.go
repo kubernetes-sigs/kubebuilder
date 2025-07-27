@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	log "log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +27,6 @@ import (
 
 	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
@@ -255,7 +255,7 @@ func (t *TestContext) Destroy() {
 	if t.ImageName != "" {
 		// Check white space from image name
 		if len(strings.TrimSpace(t.ImageName)) == 0 {
-			log.Println("Image not set, skip cleaning up of docker image")
+			log.Info("Image not set, skip cleaning up of docker image")
 		} else {
 			cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
 			if _, err := t.Run(cmd); err != nil {

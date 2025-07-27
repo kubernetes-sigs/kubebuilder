@@ -19,10 +19,10 @@ package cli
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -301,9 +301,11 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	for _, rep := range replacements {
 		if strings.Contains(modified, rep.Old) {
 			modified = strings.ReplaceAll(modified, rep.Old, rep.New)
-			log.Warnf("This project is using an old and no longer supported plugin layout %q. "+
-				"Replace in memory to %q to allow `alpha generate` to work.",
-				rep.Old, rep.New)
+			log.Warn("Project is using an old and unsupported plugin layout",
+				"old_layout", rep.Old,
+				"new_layout", rep.New,
+				"note", "Replace in memory to allow `alpha generate` to work.",
+			)
 		}
 	}
 

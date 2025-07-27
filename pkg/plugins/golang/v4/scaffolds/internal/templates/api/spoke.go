@@ -17,9 +17,8 @@ limitations under the License.
 package api
 
 import (
+	log "log/slog"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -50,7 +49,7 @@ func (f *Spoke) SetTemplateDefaults() error {
 
 	// Replace placeholders in the path
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Printf("Creating spoke conversion file at: %s", f.Path)
+	log.Info("Creating spoke conversion file", "path", f.Path)
 
 	f.TemplateBody = spokeTemplate
 

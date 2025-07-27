@@ -18,12 +18,12 @@ package v4
 
 import (
 	"fmt"
+	log "log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -133,7 +133,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	if !p.fetchDeps {
-		log.Println("Skipping fetching dependencies.")
+		log.Info("Skipping fetching dependencies.")
 		return nil
 	}
 
