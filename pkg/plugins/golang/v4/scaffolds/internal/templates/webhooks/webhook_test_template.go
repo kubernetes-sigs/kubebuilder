@@ -34,6 +34,7 @@ type WebhookTest struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.IfNotExistsActionMixin
 
 	Force bool
 
@@ -78,7 +79,10 @@ func (f *WebhookTest) SetTemplateDefaults() error {
 
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.Error
 	}
+	f.IfNotExistsAction = machinery.IgnoreFile
 
 	return nil
 }
