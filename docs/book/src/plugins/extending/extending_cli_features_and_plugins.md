@@ -233,7 +233,7 @@ program in `kubebuilder init`. Following an example:
 package cli
 
 import (
-	log "github.com/sirupsen/logrus"
+	log "log/slog"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"

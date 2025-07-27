@@ -17,11 +17,15 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/sirupsen/logrus"
+	"log"
+	"log/slog"
+	"os"
+
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
@@ -33,8 +37,14 @@ import (
 )
 
 func init() {
-	// Disable timestamps on the default TextFormatter
-	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true})
+	opts := logging.HandlerOptions{
+		SlogOpts: slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		},
+	}
+	handler := logging.NewHandler(os.Stdout, opts)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 }
 
 // Run bootstraps & runs the CLI
@@ -50,7 +60,7 @@ func Run() {
 	}
 	externalPlugins, err := cli.DiscoverExternalPlugins(fs.FS)
 	if err != nil {
-		logrus.Error(err)
+		slog.Error("error discovering external plugins", "error", err)
 	}
 
 	c, err := cli.New(
@@ -71,9 +81,9 @@ func Run() {
 		cli.WithCompletion(),
 	)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	if err := c.Run(); err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }

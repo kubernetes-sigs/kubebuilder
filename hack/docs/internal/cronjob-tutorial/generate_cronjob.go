@@ -18,10 +18,10 @@ package cronjob
 
 import (
 	"fmt"
+	log "log/slog"
 	"os/exec"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
@@ -37,17 +37,17 @@ type Sample struct {
 
 // NewSample create a new instance of the cronjob sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of Cronjob...")
+	log.Info("Generating the sample context of Cronjob...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for cronjob sample project")
+	log.Info("destroying directory for cronjob sample project")
 	sp.ctx.Destroy()
 
-	log.Infof("refreshing tools and creating directory...")
+	log.Info("refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
 
 	hackutils.CheckError("creating directory for sample project", err)
@@ -55,7 +55,7 @@ func (sp *Sample) Prepare() {
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the cronjob project")
+	log.Info("Initializing the cronjob project")
 
 	err := sp.ctx.Init(
 		"--domain", "tutorial.kubebuilder.io",
@@ -65,7 +65,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Initializing the cronjob project", err)
 
-	log.Infof("Adding a new config type")
+	log.Info("Adding a new config type")
 	err = sp.ctx.CreateAPI(
 		"--group", "batch",
 		"--version", "v1",
@@ -74,7 +74,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating the API", err)
 
-	log.Infof("Implementing admission webhook")
+	log.Info("Implementing admission webhook")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v1",
@@ -86,7 +86,7 @@ func (sp *Sample) GenerateSampleProject() {
 
 // UpdateTutorial the cronjob tutorial with the scaffold changes
 func (sp *Sample) UpdateTutorial() {
-	log.Println("Update tutorial with cronjob code")
+	log.Info("Update tutorial with cronjob code")
 	// 1. update specs
 	sp.updateSpec()
 	// 2. update webhook

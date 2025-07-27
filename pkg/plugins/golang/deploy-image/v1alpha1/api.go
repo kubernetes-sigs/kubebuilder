@@ -19,10 +19,10 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -175,7 +175,7 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	log.Println("updating scaffold with deploy-image/v1alpha1 plugin...")
+	log.Info("updating scaffold with deploy-image/v1alpha1 plugin...")
 
 	scaffolder := scaffolds.NewDeployImageScaffolder(p.config,
 		*p.resource,
