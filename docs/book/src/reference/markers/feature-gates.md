@@ -2,6 +2,34 @@
 
 Feature gates allow you to enable or disable experimental features in your Kubebuilder controllers. This is similar to how Kubernetes core uses feature gates to manage experimental functionality.
 
+## Quick Start
+
+### Marking Fields
+
+```go
+type MyResourceSpec struct {
+    // Standard field
+    Name string `json:"name"`
+
+    // Experimental field
+    // +feature-gate experimental-bar
+    Bar *string `json:"bar,omitempty"`
+}
+```
+
+### Running with Feature Gates
+
+```bash
+# Enable feature gates
+./manager --feature-gates=experimental-bar
+
+# Multiple gates
+./manager --feature-gates=experimental-bar,advanced-features
+
+# Mixed states
+./manager --feature-gates=experimental-bar=true,advanced-features=false
+```
+
 ## Overview
 
 Feature gates provide a mechanism to:
@@ -55,10 +83,10 @@ The `--feature-gates` flag accepts:
 ### Naming Conventions
 
 Use descriptive, lowercase names with hyphens:
-- ✅ `experimental-bar`
-- ✅ `advanced-features`
-- ❌ `ExperimentalBar`
-- ❌ `advanced_features`
+- `experimental-bar`
+- `advanced-features`
+- `ExperimentalBar`
+- `advanced_features`
 
 ### Documentation
 
@@ -133,4 +161,26 @@ Enable debug logging to see feature gate discovery:
 
 ```bash
 ./manager --feature-gates=experimental-bar --zap-log-level=debug
-``` 
+```
+
+## Implementation Status
+
+### Production Ready
+
+- Feature gate discovery and validation
+- Controller integration with `--feature-gates` flag
+- Scaffolding integration for new projects
+
+### Future Enhancement
+
+- CRD schema modification (requires [controller-tools support](https://github.com/kubernetes-sigs/controller-tools/issues/1238))
+
+When [controller-tools supports feature gates](https://github.com/kubernetes-sigs/controller-tools/issues/1238), you'll be able to use:
+
+```go
+// +kubebuilder:feature-gate=experimental-bar
+// +optional
+Bar *string `json:"bar,omitempty"`
+```
+
+This will automatically exclude the field from CRD schemas when the feature gate is disabled. 
