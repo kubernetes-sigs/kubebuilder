@@ -38,8 +38,8 @@ controller-gen:
 
 - `make manifests` generates Kubernetes object YAML, like
   [CustomResourceDefinitions](./markers/crd.md),
-  [WebhookConfigurations](./markers/webhook.md), and [RBAC
-  roles](./markers/rbac.md).
+  [WebhookConfigurations](./markers/webhook.md), [RBAC
+  roles](./markers/rbac.md), and [Feature Gates](./markers/feature-gates.md).
 
 - `make generate` generates code, like [runtime.Object/DeepCopy
   implementations](./markers/object.md).
