@@ -33,6 +33,11 @@ type CaptainSpec struct {
 	// foo is an example field of Captain. Edit captain_types.go to remove/update
 	// +optional
 	Foo *string `json:"foo,omitempty"`
+
+	// Bar is an experimental field that requires the "experimental-bar" feature gate to be enabled
+	// +feature-gate experimental-bar
+	// +optional
+	Bar *string `json:"bar,omitempty"`
 }
 
 // CaptainStatus defines the observed state of Captain.
