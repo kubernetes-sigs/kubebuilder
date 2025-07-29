@@ -59,7 +59,7 @@ func (opts *Update) Prepare() error {
 
 // defineFromVersion will return the CLI version to be used for the update with the v prefix.
 func (opts *Update) defineFromVersion(config store.Store) (string, error) {
-	if len(opts.FromBranch) == 0 && len(config.Config().GetCliVersion()) == 0 {
+	if len(opts.FromVersion) == 0 && len(config.Config().GetCliVersion()) == 0 {
 		return "", fmt.Errorf("no version specified in PROJECT file. " +
 			"Please use --from-version flag to specify the version to update from")
 	}
