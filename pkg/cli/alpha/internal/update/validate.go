@@ -19,6 +19,7 @@ package update
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -28,6 +29,9 @@ import (
 
 // Validate checks the input info provided for the update and populates the cliVersion
 func (opts *Update) Validate() error {
+	if err := opts.validateEqualVersions(); err != nil {
+		return fmt.Errorf("failed to validate equal versions: %w", err)
+	}
 	if err := opts.validateGitRepo(); err != nil {
 		return fmt.Errorf("failed to validate git repository: %w", err)
 	}
@@ -116,4 +120,24 @@ func validateReleaseAvailability(version string) error {
 		return fmt.Errorf("unexpected response %d when checking binary availability for version %s",
 			resp.StatusCode, version)
 	}
+}
+
+// validateEqualVersions checks if from-version and to-version are the same.
+// If they are equal, logs an appropriate message and exits successfully.
+func (opts *Update) validateEqualVersions() error {
+	if opts.FromVersion == opts.ToVersion {
+		// Check if this is the latest version to provide appropriate message
+		latestVersion, err := fetchLatestRelease()
+		if err != nil {
+			return fmt.Errorf("failed to fetch latest release for messaging: %w", err)
+		}
+
+		if opts.ToVersion == latestVersion {
+			log.Infof("Your project already uses the latest version (%s). No action taken.", opts.FromVersion)
+		} else {
+			log.Infof("Your project already uses the specified version (%s). No action taken.", opts.FromVersion)
+		}
+		os.Exit(0)
+	}
+	return nil
 }
