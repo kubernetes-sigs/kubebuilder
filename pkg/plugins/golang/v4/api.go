@@ -20,9 +20,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	log "log/slog"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -128,11 +128,11 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
-		log.Println("Create Resource [y/n]")
+		log.Info("Create Resource [y/n]")
 		p.options.DoAPI = util.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
-		log.Println("Create Controller [y/n]")
+		log.Info("Create Controller [y/n]")
 		p.options.DoController = util.YesNo(reader)
 	}
 

@@ -19,11 +19,10 @@ package internal
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"os"
 	"os/exec"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -60,13 +59,13 @@ func (opts *Generate) Generate() error {
 			log.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
 			// Ensure we clean the correct directory
-			log.Info("Cleaning directory:", opts.OutputDir)
+			log.Info("Cleaning directory", "dir", opts.OutputDir)
 
 			// Use an absolute path to target files directly
 			cleanupCmd := fmt.Sprintf("rm -rf %s/*", opts.OutputDir)
 			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
 			if err != nil {
-				log.Error("Cleanup failed:", err)
+				log.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
 
@@ -77,7 +76,7 @@ func (opts *Generate) Generate() error {
 			)
 			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
 			if err != nil {
-				log.Error("Cleanup failed:", err)
+				log.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
 		}
@@ -123,10 +122,10 @@ func (opts *Generate) Generate() error {
 	// This is to avoid blocking the migration flow due to non-critical issues during setup.
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
 	for _, target := range targets {
-		log.Infof("Running: make %s", target)
+		log.Info("Running make target", "target", target)
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
-			log.Warnf("make %s failed: %v", target, err)
+			log.Warn("make target failed", "target", target, "error", err)
 		}
 	}
 
@@ -280,8 +279,10 @@ func getInitArgs(s store.Store) []string {
 	// Replace outdated plugins and exit after the first replacement
 	for i, plg := range plugins {
 		if newPlugin, exists := outdatedPlugins[plg]; exists {
-			log.Warnf("We checked that your PROJECT file is configured with the layout '%s', which is no longer supported.\n"+
-				"However, we will try our best to re-generate the project using '%s'.", plg, newPlugin)
+			log.Warn("We checked that your PROJECT file is configured with deprecated layout. "+
+				"However, we will try our best to re-generate the project using new one",
+				"deprecated_layout", plg,
+				"new_layout", newPlugin)
 			plugins[i] = newPlugin
 			break
 		}
@@ -482,7 +483,7 @@ func hasHelmPlugin(cfg store.Store) bool {
 			return false
 		}
 		// Log other errors if needed
-		log.Errorf("error decoding Helm plugin config: %v", err)
+		log.Error("error decoding Helm plugin config", "error", err)
 		return false
 	}
 

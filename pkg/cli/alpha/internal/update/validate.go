@@ -18,12 +18,12 @@ package update
 
 import (
 	"fmt"
+	log "log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
 )
 
@@ -105,13 +105,13 @@ func validateReleaseAvailability(version string) error {
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Errorf("failed to close connection: %s", err)
+			log.Error("failed to close connection", "error", err)
 		}
 	}()
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		log.Infof("Binary version %v is available", version)
+		log.Info("Binary version available", "version", version)
 		return nil
 	case http.StatusNotFound:
 		return fmt.Errorf("binary version %s not found. Check versions available in releases",

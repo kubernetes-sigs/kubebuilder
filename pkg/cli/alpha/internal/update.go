@@ -19,13 +19,13 @@ package internal
 import (
 	"fmt"
 	"io"
+	log "log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"golang.org/x/mod/semver"
 
@@ -61,7 +61,7 @@ func (opts *Update) Update() error {
 	if err != nil {
 		return fmt.Errorf("failed to download Kubebuilder %s binary: %w", opts.CliVersion, err)
 	}
-	log.Infof("Downloaded binary kept at %s for debugging purposes", tempDir)
+	log.Info("Downloaded binary kept for debugging purposes", "directory", tempDir)
 
 	// Create ancestor branch with clean state for three-way merge
 	if err := opts.checkoutAncestorBranch(); err != nil {
@@ -108,7 +108,7 @@ func (opts *Update) downloadKubebuilderBinary() (string, error) {
 	// Construct GitHub release URL based on current OS and architecture
 	url := opts.BinaryURL
 
-	log.Infof("Downloading the Kubebuilder %s binary from: %s", opts.CliVersion, url)
+	log.Info("Downloading the Kubebuilder binary", "version", opts.CliVersion, "download_url", url)
 
 	// Create temporary directory for storing the downloaded binary
 	fs := afero.NewOsFs()
@@ -125,7 +125,7 @@ func (opts *Update) downloadKubebuilderBinary() (string, error) {
 	}
 	defer func() {
 		if err = file.Close(); err != nil {
-			log.Errorf("failed to close the file: %v", err)
+			log.Error("failed to close the file", "error", err)
 		}
 	}()
 
@@ -136,7 +136,7 @@ func (opts *Update) downloadKubebuilderBinary() (string, error) {
 	}
 	defer func() {
 		if err = response.Body.Close(); err != nil {
-			log.Errorf("failed to close the connection: %v", err)
+			log.Error("failed to close the connection", "error", err)
 		}
 	}()
 
@@ -156,7 +156,7 @@ func (opts *Update) downloadKubebuilderBinary() (string, error) {
 		return "", fmt.Errorf("failed to make binary executable: %w", err)
 	}
 
-	log.Infof("Kubebuilder version %s successfully downloaded to %s", opts.CliVersion, binaryPath)
+	log.Info("Kubebuilder successfully downloaded", "kubebuilder_version", opts.CliVersion, "binary_path", binaryPath)
 
 	return tempDir, nil
 }
@@ -184,7 +184,7 @@ func (opts *Update) cleanUpAncestorBranch() error {
 		"!", "-name", ".git",
 		"!", "-name", "PROJECT",
 		"-exec", "rm", "-rf", "{}", "+")
-	log.Infof("Running cleanup command: %v", cmd.Args)
+	log.Info("Running cleanup command", "command", cmd.Args)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to clean up files in ancestor branch: %w", err)
 	}
@@ -212,7 +212,7 @@ func (opts *Update) cleanUpAncestorBranch() error {
 func runMakeTargets() error {
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
 	for _, target := range targets {
-		log.Infof("Running: make %s", target)
+		log.Info("Running make command", "target", target)
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
 			return fmt.Errorf("make %s failed: %v", target, err)
@@ -237,7 +237,7 @@ func (opts *Update) runAlphaGenerate(tempDir, version string) error {
 	// Restore original PATH when function completes
 	defer func() {
 		if err := os.Setenv("PATH", originalPath); err != nil {
-			log.Errorf("failed to restore original PATH: %v", err)
+			log.Error("failed to restore original PATH", "error", err)
 		}
 	}()
 
@@ -251,7 +251,7 @@ func (opts *Update) runAlphaGenerate(tempDir, version string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run alpha generate: %w", err)
 	}
-	log.Info("Successfully ran alpha generate using Kubebuilder ", version)
+	log.Info("Successfully ran alpha generate using Kubebuilder", "version", version)
 
 	// Run make targets to ensure all the necessary components are generated,
 	// formatted and linted.
@@ -482,13 +482,13 @@ func (opts *Update) validateBinaryAvailability() error {
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Errorf("failed to close connection: %s", err)
+			log.Error("failed to close connection", "error", err)
 		}
 	}()
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		log.Infof("Binary version %v is available", opts.CliVersion)
+		log.Info("Binary version available", "version", opts.CliVersion)
 		return nil
 	case http.StatusNotFound:
 		return fmt.Errorf("binary version %s not found. Check versions available in releases",

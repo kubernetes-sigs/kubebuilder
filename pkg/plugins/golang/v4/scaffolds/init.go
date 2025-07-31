@@ -19,9 +19,9 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -95,7 +95,7 @@ func getControllerRuntimeReleaseBranch() string {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
-	log.Println("Writing scaffold for you to edit...")
+	log.Info("Writing scaffold for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
 	// The boilerplate file needs to be scaffolded as a separate step as it is going to
@@ -117,10 +117,12 @@ func (s *initScaffolder) Scaffold() error {
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 		if err != nil {
 			if errors.Is(err, afero.ErrFileNotFound) {
-				log.Warnf("Unable to find %s: %s.\n"+"This file is used to generate the license header in the project.\n"+
+				log.Warn("Unable to find boilerplate file. "+
+					"This file is used to generate the license header in the project. "+
 					"Note that controller-gen will also use this. Therefore, ensure that you "+
 					"add the license file or configure your project accordingly.",
-					s.boilerplatePath, err)
+					"file_path", s.boilerplatePath,
+					"error", err)
 				boilerplate = []byte("")
 			} else {
 				return fmt.Errorf("unable to load boilerplate: %w", err)
