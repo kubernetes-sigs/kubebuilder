@@ -161,6 +161,24 @@ var _ = Describe("kubebuilder", func() {
 			By("validating merge stopped in conflict state for manual resolution")
 			validateConflictState(mockProjectDir)
 		})
+
+		It("should succeed with no action when from-version and to-version are the same", func() {
+			By("creating mock project with kubebuilder v4.5.2")
+			createMockProject(mockProjectDir, pathBinFromVersion)
+
+			By("initializing git repository and committing mock project")
+			initializeGitRepo(mockProjectDir)
+
+			By("running alpha update with same versions (v4.5.2 to v4.5.2)")
+			cmd := exec.Command(kbc.BinaryName, "alpha", "update",
+				"--from-version", "v4.5.2", "--to-version", "v4.5.2", "--from-branch", "main")
+			cmd.Dir = mockProjectDir
+			output, err := cmd.CombinedOutput()
+
+			Expect(err).NotTo(HaveOccurred(), "Expected command to succeed when from-version equals to-version")
+			Expect(string(output)).To(ContainSubstring("already uses the specified version"))
+			Expect(string(output)).To(ContainSubstring("No action taken"))
+		})
 	})
 })
 
