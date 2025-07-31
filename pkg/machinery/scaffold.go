@@ -237,13 +237,13 @@ func doTemplate(t Template) ([]byte, error) {
 func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
-		// TODO(kubebuilder/issues/4960): Create Machinery implementation to allow defining IfNotExistsAction
-		// If the file path starts with test/, warn and skip
-		// Workaround to allow projects be backwards compatible with previous versions
-		if strings.HasPrefix(i.GetPath(), "test/") {
-			log.Warnf("Skipping missing test file: %s", i.GetPath())
-			log.Warn("The code fragments will not be inserted.")
-			return nil
+		if os.IsNotExist(err) {
+			if withOptionalBehavior, ok := i.(HasIfNotExistsAction); ok &&
+				withOptionalBehavior.GetIfNotExistsAction() == IgnoreFile {
+				log.Warnf("Skipping missing file: %s", i.GetPath())
+				log.Warn("The code fragments will not be inserted.")
+				return nil
+			}
 		}
 		return fmt.Errorf("failed to load previous model for %s: %w", i.GetPath(), err)
 	}
