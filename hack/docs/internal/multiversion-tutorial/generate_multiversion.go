@@ -101,6 +101,14 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateAPIV1()
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
+
+	path := "internal/webhook/v1/cronjob_webhook_test.go"
+	err := pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
+		`// TODO (user): Add any additional imports if needed`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
@@ -147,8 +155,8 @@ interfaces, a conversion webhook will be registered.
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -158,8 +166,8 @@ interfaces, a conversion webhook will be registered.
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -716,7 +724,8 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 	// Important: Run "make" to regenerate code after modifying this file
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html`,
-		`// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+		`// schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +required
 	Schedule CronSchedule `+"`json:\"schedule\"`"+`
 
 	/*
@@ -752,6 +761,9 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 		`
 	// active defines a list of pointers to currently running jobs.
 	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
 	Active []corev1.ObjectReference `+"`json:\"active,omitempty\"`"+`
 
 	// lastScheduleTime defines the information when was the last time the job was successfully scheduled.
