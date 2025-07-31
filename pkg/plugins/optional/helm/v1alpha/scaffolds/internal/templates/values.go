@@ -59,6 +59,7 @@ controllerManager:
     image:
       repository: controller
       tag: latest
+    imagePullPolicy: IfNotPresent
     args:
       - "--leader-elect"
       - "--metrics-bind-address=:8443"

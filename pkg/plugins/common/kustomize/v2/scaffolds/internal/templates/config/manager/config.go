@@ -31,6 +31,9 @@ type Config struct {
 
 	// Image is controller manager image name
 	Image string
+
+	// ImagePullPolicy defines the policy to pull the container images
+	ImagePullPolicy string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -110,6 +113,9 @@ spec:
           - --leader-elect
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
+        {{- if .ImagePullPolicy }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        {{- end }}
         name: manager
         ports: []
         securityContext:
