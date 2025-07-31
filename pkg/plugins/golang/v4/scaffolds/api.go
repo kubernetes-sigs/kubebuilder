@@ -19,6 +19,7 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -115,6 +116,16 @@ func (s *apiScaffolder) Scaffold() error {
 		}
 	}
 
+	// Discover feature gates from API types
+	availableGates := s.discoverFeatureGates()
+
+	// Generate feature gates file
+	if err := scaffold.Execute(
+		&cmd.FeatureGates{AvailableGates: availableGates},
+	); err != nil {
+		return fmt.Errorf("error scaffolding feature gates: %w", err)
+	}
+
 	if err := scaffold.Execute(
 		&cmd.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
@@ -122,4 +133,36 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// discoverFeatureGates scans the API directory for feature gate markers
+func (s *apiScaffolder) discoverFeatureGates() []string {
+	parser := machinery.NewFeatureGateMarkerParser()
+
+	// Try to parse the API directory
+	apiDir := "api"
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		apiDir = filepath.Join("api", s.resource.Group)
+	}
+
+	// Check if the directory exists before trying to parse it
+	if _, err := s.fs.FS.Stat(apiDir); err != nil {
+		log.Debugf("API directory %s does not exist yet, skipping feature gate discovery", apiDir)
+		return []string{}
+	}
+
+	markers, err := parser.ParseDirectory(apiDir)
+	if err != nil {
+		log.Debugf("Failed to parse feature gates from %s: %v", apiDir, err)
+		return []string{}
+	}
+
+	featureGates := machinery.ExtractFeatureGates(markers)
+	if len(featureGates) > 0 {
+		log.Infof("Discovered feature gates: %v", featureGates)
+	} else {
+		log.Debugf("No feature gates found in %s", apiDir)
+	}
+
+	return featureGates
 }

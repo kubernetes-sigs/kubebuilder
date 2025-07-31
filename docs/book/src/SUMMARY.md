@@ -95,6 +95,7 @@
     - [Object/DeepCopy](./reference/markers/object.md)
     - [RBAC](./reference/markers/rbac.md)
     - [Scaffold](./reference/markers/scaffold.md)
+    - [Feature Gates](./reference/markers/feature-gates.md)
 
   - [controller-gen CLI](./reference/controller-gen.md)
   - [completion](./reference/completion.md)
