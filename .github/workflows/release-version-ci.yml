@@ -59,3 +59,13 @@ jobs:
 
           echo "Verifying cliVersion value..."
           grep '^cliVersion: 4.5.3-rc.1$' PROJECT
+
+      - name: Validate version info in darwin/amd64 binary (static check)
+        run: |
+          echo "Checking macOS binary metadata (static strings)..."
+          strings dist/kubebuilder_darwin_amd64_v1/kubebuilder > version_darwin.txt
+
+          echo "Validating injected values..."
+          grep "4.5.3-rc.1" version_darwin.txt
+          grep "darwin" version_darwin.txt
+          grep "amd64" version_darwin.txt
