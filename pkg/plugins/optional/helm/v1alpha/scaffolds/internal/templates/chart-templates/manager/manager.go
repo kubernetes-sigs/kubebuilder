@@ -73,6 +73,9 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        {{ "{{- with .Values.controllerManager.pod.annotations }}" }}
+        {{ "{{- toYaml . | nindent 8 }}" }}
+        {{ "{{- end }}" }}
       labels:
         {{ "{{- include \"chart.labels\" . | nindent 8 }}" }}
         control-plane: controller-manager
@@ -132,11 +135,34 @@ spec:
               mountPath: /tmp/k8s-metrics-server/metrics-certs
               readOnly: true
             {{ "{{- end }}" }}
+          {{ "{{- with .Values.controllerManager.pod.extraVolumeMounts }}" }}
+          {{ "{{- toYaml . | nindent 12 }}" }}
+          {{ "{{- end }}" }}
           {{ "{{- end }}" }}
       securityContext:
         {{ "{{- toYaml .Values.controllerManager.securityContext | nindent 8 }}" }}
       serviceAccountName: {{ "{{ .Values.controllerManager.serviceAccountName }}" }}
       terminationGracePeriodSeconds: {{ "{{ .Values.controllerManager.terminationGracePeriodSeconds }}" }}
+      {{ "{{- with .Values.controllerManager.pod.imagePullSecrets }}" }}
+      imagePullSecrets:
+        {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
+      {{ "{{- with .Values.controllerManager.pod.nodeSelector }}" }}
+      nodeSelector:
+        {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
+      {{ "{{- with .Values.controllerManager.pod.affinity }}" }}
+      affinity:
+        {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
+      {{ "{{- with .Values.controllerManager.pod.tolerations }}" }}
+      tolerations:
+        {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
+      {{ "{{- with .Values.controllerManager.pod.topologySpreadConstraints }}" }}
+      topologySpreadConstraints:
+        {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
 {{- if .HasWebhooks }}
       {{ "{{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}" }}
 {{- else }}
@@ -155,5 +181,8 @@ spec:
           secret:
             secretName: metrics-server-cert
         {{ "{{- end }}" }}
+      {{ "{{- with .Values.controllerManager.pod.extraVolumes }}" }}
+      {{ "{{- toYaml . | nindent 8 }}" }}
+      {{ "{{- end }}" }}
       {{ "{{- end }}" }}
 `
