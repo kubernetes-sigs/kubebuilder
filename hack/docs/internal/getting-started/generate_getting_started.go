@@ -17,10 +17,9 @@ limitations under the License.
 package gettingstarted
 
 import (
+	"log/slog"
 	"os/exec"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -34,7 +33,7 @@ type Sample struct {
 
 // NewSample create a new instance of the getting started sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of getting-started...")
+	slog.Info("Generating the sample context of getting-started...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
@@ -192,10 +191,10 @@ func (sp *Sample) updateController() {
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("Destroying directory for getting-started sample project")
+	slog.Info("Destroying directory for getting-started sample project")
 	sp.ctx.Destroy()
 
-	log.Infof("Refreshing tools and creating directory...")
+	slog.Info("Refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
 
 	hackutils.CheckError("Creating directory for sample project", err)
@@ -203,7 +202,7 @@ func (sp *Sample) Prepare() {
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the getting started project")
+	slog.Info("Initializing the getting started project")
 	err := sp.ctx.Init(
 		"--domain", "example.com",
 		"--repo", "example.com/memcached",
@@ -212,7 +211,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Initializing the getting started project", err)
 
-	log.Infof("Adding a new config type")
+	slog.Info("Adding a new config type")
 	err = sp.ctx.CreateAPI(
 		"--group", "cache",
 		"--version", "v1alpha1",

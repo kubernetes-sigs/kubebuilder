@@ -19,10 +19,9 @@ package e2e
 import (
 	"bytes"
 	"fmt"
+	log "log/slog"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -89,10 +88,10 @@ func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Warnf("Unable to read %q: %v", filePath, err)
-		log.Warnf("Webhook test code injection will be skipped for this file.")
-		log.Warnf("This typically occurs when the file was removed and is missing.")
-		log.Warnf("If you intend to scaffold webhook tests, ensure the file and its markers exist.")
+		log.Warn("Unable to read file", "file", filePath, "error", err)
+		log.Warn("Webhook test code injection will be skipped for this file.")
+		log.Warn("This typically occurs when the file was removed and is missing.")
+		log.Warn("If you intend to scaffold webhook tests, ensure the file and its markers exist.")
 		return nil
 	}
 
@@ -101,8 +100,9 @@ func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	for _, marker := range markers {
 		if !bytes.Contains(content, []byte(marker.String())) {
-			log.Warnf("Marker %q not found in %s; skipping injection of webhook test code",
-				marker.String(), filePath)
+			log.Warn("Marker not found in file, skipping webhook test code injection",
+				"marker", marker.String(),
+				"file_path", filePath)
 			continue // skip this marker
 		}
 

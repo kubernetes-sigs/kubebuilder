@@ -18,11 +18,10 @@ package util
 
 import (
 	"fmt"
+	log "log/slog"
 	"os"
 	"os/exec"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // RunCmd prints the provided message and command and then executes it binding stdout and stderr
@@ -30,7 +29,7 @@ func RunCmd(msg, cmd string, args ...string) error {
 	c := exec.Command(cmd, args...) //nolint:gosec
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	log.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
+	log.Info(msg, "command", strings.Join(c.Args, " "))
 
 	if err := c.Run(); err != nil {
 		return fmt.Errorf("error running %q: %w", cmd, err)

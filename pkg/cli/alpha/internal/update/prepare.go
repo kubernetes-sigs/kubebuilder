@@ -19,10 +19,9 @@ package update
 import (
 	"encoding/json"
 	"fmt"
+	log "log/slog"
 	"net/http"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
@@ -37,7 +36,7 @@ type releaseResponse struct {
 func (opts *Update) Prepare() error {
 	if opts.FromBranch == "" {
 		// TODO: Check if is possible to use get to determine the default branch
-		log.Warning("No --from-branch specified, using 'main' as default")
+		log.Warn("No --from-branch specified, using 'main' as default")
 		opts.FromBranch = "main"
 	}
 
@@ -94,7 +93,7 @@ func fetchLatestRelease() (string, error) {
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Infof("failed to close connection: %s", err)
+			log.Info("failed to close connection", "error", err)
 		}
 	}()
 

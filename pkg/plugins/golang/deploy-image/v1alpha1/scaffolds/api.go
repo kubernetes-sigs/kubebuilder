@@ -19,10 +19,10 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -74,7 +74,7 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
-	log.Println("Writing scaffold for you to edit...")
+	log.Info("Writing scaffold for you to edit...")
 
 	if err := s.scaffoldCreateAPI(); err != nil {
 		return err
@@ -87,11 +87,11 @@ func (s *apiScaffolder) Scaffold() error {
 	boilerplate, err := afero.ReadFile(s.fs.FS, boilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
-			log.Warnf("Unable to find %s : %s .\n"+
+			log.Warn("Unable to find boilerplate file. "+
 				"This file is used to generate the license header in the project.\n"+
 				"Note that controller-gen will also use this. Therefore, ensure that you "+
 				"add the license file or configure your project accordingly.",
-				boilerplatePath, err)
+				"file_path", boilerplatePath, "error", err)
 			boilerplate = []byte("")
 		} else {
 			return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)

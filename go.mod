@@ -6,7 +6,6 @@ require (
 	github.com/gobuffalo/flect v1.0.3
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.38.0
-	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7

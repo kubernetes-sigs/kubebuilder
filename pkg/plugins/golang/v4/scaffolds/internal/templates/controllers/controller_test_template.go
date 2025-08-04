@@ -17,9 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	log "log/slog"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -51,7 +50,7 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Println(f.Path)
+	log.Info(f.Path)
 
 	f.TemplateBody = controllerTestTemplate
 

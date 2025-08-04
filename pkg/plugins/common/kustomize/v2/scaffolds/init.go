@@ -18,8 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
+	log "log/slog"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -58,7 +57,7 @@ func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
-	log.Println("Writing kustomize manifests for you to edit...")
+	log.Info("Writing kustomize manifests for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
