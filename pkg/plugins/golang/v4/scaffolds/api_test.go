@@ -18,15 +18,13 @@ package scaffolds
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
@@ -108,27 +106,24 @@ func TestAPIScaffolder_discoverFeatureGates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a mock filesystem
-			fs := afero.NewMemMapFs()
-
-			scaffolder := &apiScaffolder{
-				config:   tt.config,
-				resource: tt.resource,
-				fs:       machinery.Filesystem{FS: fs},
+			scaffolder := NewAPIScaffolder(tt.config, tt.resource, false)
+			apiScaffolder, ok := scaffolder.(*apiScaffolder)
+			if !ok {
+				t.Fatal("Expected apiScaffolder type")
 			}
 
-			gates := scaffolder.discoverFeatureGates()
+			gates := apiScaffolder.discoverFeatureGates()
 
 			// In a real test environment, we'd create test files with feature gates
 			// For now, we just verify the function doesn't panic and returns a slice
-			assert.NotNil(t, gates, "Expected gates slice to be returned")
-			assert.IsType(t, []string{}, gates, "Expected gates to be a string slice")
+			Expect(gates).NotTo(BeNil())
+			Expect(gates).To(BeAssignableToTypeOf([]string{}))
 		})
 	}
 }
 
 func TestAPIScaffolder_NewAPIScaffolder(t *testing.T) {
-	cfg := &mockConfig{}
+	cfg := v3.New()
 	res := resource.Resource{
 		GVK: resource.GVK{
 			Group:   "example.com",
@@ -138,45 +133,46 @@ func TestAPIScaffolder_NewAPIScaffolder(t *testing.T) {
 	}
 
 	scaffolder := NewAPIScaffolder(cfg, res, false)
-	require.NotNil(t, scaffolder, "Expected scaffolder to be created")
+	Expect(scaffolder).NotTo(BeNil())
 
 	apiScaffolder, ok := scaffolder.(*apiScaffolder)
-	require.True(t, ok, "Expected apiScaffolder type")
+	Expect(ok).To(BeTrue())
 
-	assert.Equal(t, cfg, apiScaffolder.config)
-	assert.Equal(t, res, apiScaffolder.resource)
-	assert.False(t, apiScaffolder.force)
+	Expect(apiScaffolder.config).To(Equal(cfg))
+	Expect(apiScaffolder.resource).To(Equal(res))
+	Expect(apiScaffolder.force).To(BeFalse())
 }
 
 func TestAPIScaffolder_discoverFeatureGates_Testdata(t *testing.T) {
-	// Test with actual testdata to ensure commented markers are ignored
-	scaffolder := &apiScaffolder{
-		config: v3.New(),
-		resource: resource.Resource{
-			GVK: resource.GVK{
-				Group: "crew",
-			},
-		},
-		fs: machinery.Filesystem{
-			FS: afero.NewOsFs(),
-		},
-	}
-
-	// Change to the testdata directory
-	originalDir, err := os.Getwd()
+	// Change to testdata directory
+	oldDir, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer os.Chdir(oldDir)
 
-	if err := os.Chdir("testdata/project-v4"); err != nil {
-		t.Skipf("Skipping test - testdata directory not available: %v", err)
+	// Change to testdata/project-v4 directory
+	testdataDir := filepath.Join("testdata", "project-v4")
+	if err := os.Chdir(testdataDir); err != nil {
+		t.Fatalf("Failed to change to testdata directory: %v", err)
 	}
 
-	// Discover feature gates from the testdata
-	featureGates := scaffolder.discoverFeatureGates()
+	cfg := v3.New()
+	res := resource.Resource{
+		GVK: resource.GVK{
+			Group:   "crew.example.com",
+			Version: "v1",
+			Kind:    "Captain",
+		},
+	}
 
-	// Should not find any feature gates since they're all commented out
+	scaffolder := NewAPIScaffolder(cfg, res, false)
+	apiScaffolder, ok := scaffolder.(*apiScaffolder)
+	if !ok {
+		t.Fatal("Expected apiScaffolder type")
+	}
+
+	featureGates := apiScaffolder.discoverFeatureGates()
 	if len(featureGates) > 0 {
 		t.Errorf("Expected no feature gates from testdata, but found %d: %v", len(featureGates), featureGates)
 	}
