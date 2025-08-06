@@ -23,8 +23,10 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
@@ -68,6 +70,8 @@ func (m *mockConfig) MarshalYAML() ([]byte, error) { return nil, nil }
 func (m *mockConfig) UnmarshalYAML([]byte) error   { return nil }
 
 func TestAPIScaffolder_discoverFeatureGates(t *testing.T) {
+	RegisterTestingT(t)
+
 	tests := []struct {
 		name          string
 		config        config.Config
@@ -112,6 +116,9 @@ func TestAPIScaffolder_discoverFeatureGates(t *testing.T) {
 				t.Fatal("Expected apiScaffolder type")
 			}
 
+			// Initialize filesystem to prevent nil pointer dereference
+			apiScaffolder.fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
+
 			gates := apiScaffolder.discoverFeatureGates()
 
 			// In a real test environment, we'd create test files with feature gates
@@ -123,6 +130,8 @@ func TestAPIScaffolder_discoverFeatureGates(t *testing.T) {
 }
 
 func TestAPIScaffolder_NewAPIScaffolder(t *testing.T) {
+	RegisterTestingT(t)
+
 	cfg := v3.New()
 	res := resource.Resource{
 		GVK: resource.GVK{
@@ -151,8 +160,8 @@ func TestAPIScaffolder_discoverFeatureGates_Testdata(t *testing.T) {
 	}
 	defer os.Chdir(oldDir)
 
-	// Change to testdata/project-v4 directory
-	testdataDir := filepath.Join("testdata", "project-v4")
+	// Change to testdata/project-v4 directory (from pkg/plugins/golang/v4/scaffolds/ to ../../../../../testdata/project-v4)
+	testdataDir := filepath.Join("../../../../../testdata", "project-v4")
 	if err := os.Chdir(testdataDir); err != nil {
 		t.Fatalf("Failed to change to testdata directory: %v", err)
 	}
@@ -171,6 +180,9 @@ func TestAPIScaffolder_discoverFeatureGates_Testdata(t *testing.T) {
 	if !ok {
 		t.Fatal("Expected apiScaffolder type")
 	}
+
+	// Initialize filesystem to prevent nil pointer dereference
+	apiScaffolder.fs = machinery.Filesystem{FS: afero.NewOsFs()}
 
 	featureGates := apiScaffolder.discoverFeatureGates()
 	if len(featureGates) > 0 {

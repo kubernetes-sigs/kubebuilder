@@ -18,44 +18,61 @@ package v4
 
 import (
 	"os"
-	"testing"
+	"path/filepath"
+	"strings"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
-func TestFeatureGateDiscoveryInTestdata(t *testing.T) {
-	// Test feature gate discovery in our testdata project
-	parser := machinery.NewFeatureGateMarkerParser()
+var _ = Describe("Feature Gates Discovery", func() {
+	var kbc *utils.TestContext
 
-	// Parse the testdata project API types
-	markers, err := parser.ParseFile("../../../testdata/project-v4/api/v1/captain_types.go")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, markers, "Should discover feature gate markers")
+	BeforeEach(func() {
+		var err error
+		kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(kbc.Prepare()).To(Succeed())
+	})
 
-	// Extract feature gate names
-	featureGates := machinery.ExtractFeatureGates(markers)
+	AfterEach(func() {
+		By("cleaning up test context")
+		kbc.Destroy()
+	})
 
-	// Verify we found the expected feature gates
-	expectedGates := []string{
-		"experimental-bar",
-	}
+	Context("when parsing testdata project", func() {
+		It("should discover feature gate markers from captain_types.go", func() {
+			By("parsing the testdata project API types")
+			parser := machinery.NewFeatureGateMarkerParser()
+			markers, err := parser.ParseFile("../../../testdata/project-v4/api/v1/captain_types.go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(markers).NotTo(BeEmpty(), "Should discover feature gate markers")
 
-	for _, expectedGate := range expectedGates {
-		assert.Contains(t, featureGates, expectedGate,
-			"Should discover feature gate: %s", expectedGate)
-	}
+			By("extracting feature gate names")
+			featureGates := machinery.ExtractFeatureGates(markers)
 
-	t.Logf("Discovered feature gates: %v", featureGates)
-}
+			By("verifying expected feature gates are found")
+			expectedGates := []string{
+				"experimental-bar",
+			}
 
-func TestFeatureGateDiscoveryIgnoresCommentedFields(t *testing.T) {
-	// Test that commented fields with feature gate markers are not discovered
-	parser := machinery.NewFeatureGateMarkerParser()
+			for _, expectedGate := range expectedGates {
+				Expect(featureGates).To(ContainElement(expectedGate),
+					"Should discover feature gate: %s", expectedGate)
+			}
 
-	// Create a temporary file with commented feature gate markers
-	tempContent := `package test
+			GinkgoWriter.Printf("Discovered feature gates: %v\n", featureGates)
+		})
+	})
+
+	Context("when parsing files with commented fields", func() {
+		It("should ignore commented feature gate markers", func() {
+			By("creating a temporary file with commented feature gate markers")
+			tempContent := `package test
 
 type TestStruct struct {
 	// This field is commented out and should not be discovered
@@ -68,85 +85,142 @@ type TestStruct struct {
 }
 `
 
-	// Write to temporary file
-	tmpFile, err := os.CreateTemp("", "featuregate_test_*.go")
-	assert.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+			By("writing temporary file")
+			tmpFile, err := os.CreateTemp("", "featuregate_test_*.go")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Remove(tmpFile.Name())
 
-	_, err = tmpFile.WriteString(tempContent)
-	assert.NoError(t, err)
-	tmpFile.Close()
+			_, err = tmpFile.WriteString(tempContent)
+			Expect(err).NotTo(HaveOccurred())
+			tmpFile.Close()
 
-	// Parse the temporary file
-	markers, err := parser.ParseFile(tmpFile.Name())
-	assert.NoError(t, err)
+			By("parsing the temporary file")
+			parser := machinery.NewFeatureGateMarkerParser()
+			markers, err := parser.ParseFile(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
 
-	// Extract feature gate names
-	featureGates := machinery.ExtractFeatureGates(markers)
+			By("extracting feature gate names")
+			featureGates := machinery.ExtractFeatureGates(markers)
 
-	// Should only discover the active feature gate, not the commented one
-	assert.Contains(t, featureGates, "active-feature", "Should discover active feature gate")
-	assert.NotContains(t, featureGates, "commented-feature", "Should NOT discover commented feature gate")
+			By("verifying only active feature gates are discovered")
+			Expect(featureGates).To(ContainElement("active-feature"), "Should discover active feature gate")
+			Expect(featureGates).NotTo(ContainElement("commented-feature"), "Should NOT discover commented feature gate")
 
-	t.Logf("Discovered feature gates: %v", featureGates)
-}
+			GinkgoWriter.Printf("Discovered feature gates: %v\n", featureGates)
+		})
+	})
 
-func TestFeatureGateParsing(t *testing.T) {
-	// Test various feature gate parsing scenarios
-	testCases := []struct {
-		name     string
-		input    string
-		expected map[string]bool
-		hasError bool
-	}{
-		{
-			name:     "empty string",
-			input:    "",
-			expected: map[string]bool{},
-			hasError: false,
-		},
-		{
-			name:     "single feature gate",
-			input:    "experimental-bar",
-			expected: map[string]bool{"experimental-bar": true},
-			hasError: false,
-		},
-		{
-			name:  "multiple feature gates",
-			input: "experimental-bar,advanced-features",
-			expected: map[string]bool{
-				"experimental-bar":  true,
-				"advanced-features": true,
-			},
-			hasError: false,
-		},
-		{
-			name:  "mixed enabled and disabled",
-			input: "experimental-bar=true,advanced-features=false",
-			expected: map[string]bool{
-				"experimental-bar":  true,
-				"advanced-features": false,
-			},
-			hasError: false,
-		},
-		{
-			name:     "invalid format",
-			input:    "experimental-bar=invalid",
-			expected: nil,
-			hasError: true,
-		},
-	}
+	Context("when parsing feature gate strings", func() {
+		It("should handle various feature gate parsing scenarios", func() {
+			testCases := []struct {
+				name     string
+				input    string
+				expected map[string]bool
+				hasError bool
+			}{
+				{
+					name:     "empty string",
+					input:    "",
+					expected: map[string]bool{},
+					hasError: false,
+				},
+				{
+					name:     "single feature gate",
+					input:    "experimental-bar",
+					expected: map[string]bool{"experimental-bar": true},
+					hasError: false,
+				},
+				{
+					name:  "multiple feature gates",
+					input: "experimental-bar,advanced-features",
+					expected: map[string]bool{
+						"experimental-bar":  true,
+						"advanced-features": true,
+					},
+					hasError: false,
+				},
+				{
+					name:  "mixed enabled and disabled",
+					input: "experimental-bar=true,advanced-features=false",
+					expected: map[string]bool{
+						"experimental-bar":  true,
+						"advanced-features": false,
+					},
+					hasError: false,
+				},
+				{
+					name:     "invalid format",
+					input:    "experimental-bar=invalid",
+					expected: nil,
+					hasError: true,
+				},
+			}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := machinery.ParseFeatureGates(tc.input)
+			for _, tc := range testCases {
+				By("testing scenario: " + tc.name)
+				result, err := machinery.ParseFeatureGates(tc.input)
 
-			if tc.hasError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, machinery.FeatureGates(tc.expected), result)
+				if tc.hasError {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(result).To(Equal(machinery.FeatureGates(tc.expected)))
+				}
 			}
 		})
-	}
-}
+	})
+
+	Context("when scaffolding a project with feature gates", func() {
+		It("should generate feature gates file correctly", func() {
+			By("initializing a project")
+			err := kbc.Init(
+				"--plugins", "go/v4",
+				"--project-version", "3",
+				"--domain", kbc.Domain,
+			)
+			Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
+
+			By("creating API with feature gate markers")
+			err = kbc.CreateAPI(
+				"--group", kbc.Group,
+				"--version", kbc.Version,
+				"--kind", kbc.Kind,
+				"--make=false",
+				"--manifests=false",
+			)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create API definition")
+
+			By("adding feature gate markers to the API types")
+			apiTypesFile := filepath.Join(kbc.Dir, "api", kbc.Version, strings.ToLower(kbc.Kind)+"_types.go")
+
+			// Add a feature gate marker to the spec
+			err = util.InsertCode(
+				apiTypesFile,
+				"//+kubebuilder:validation:Optional",
+				"\n\t// +feature-gate experimental-feature",
+			)
+			Expect(err).NotTo(HaveOccurred(), "Failed to add feature gate marker")
+
+			// Add a field after the marker
+			err = util.InsertCode(
+				apiTypesFile,
+				"// +feature-gate experimental-feature",
+				"\n\tExperimentalField *string `json:\"experimentalField,omitempty\"`",
+			)
+			Expect(err).NotTo(HaveOccurred(), "Failed to add experimental field")
+
+			By("regenerating the project to discover feature gates")
+			err = kbc.Regenerate()
+			Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
+
+			By("verifying feature gates file was generated")
+			featureGatesFile := filepath.Join(kbc.Dir, "internal", "featuregates", "featuregates.go")
+			Expect(featureGatesFile).To(BeAnExistingFile())
+
+			By("verifying feature gates file contains the discovered feature gate")
+			hasContent, err := util.HasFileContentWith(featureGatesFile, "experimental-feature")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasContent).To(BeTrue(), "Feature gates file should contain the discovered feature gate")
+		})
+	})
+})
