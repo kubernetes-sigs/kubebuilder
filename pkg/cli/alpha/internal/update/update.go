@@ -222,6 +222,29 @@ func runMakeTargets() {
 	}
 }
 
+// runMakeTargetsSilently is a helper function to run make with the targets necessary
+// to ensure all the necessary components are generated, formatted and linted.
+// This version runs silently without logging, suitable for best-effort execution when conflicts exist.
+func runMakeTargetsSilently() {
+	log.Info("Running make targets to generate, format, and lint code")
+	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
+	for _, target := range targets {
+		cmd := exec.Command("make", target)
+		// Run silently - discard output and errors
+		_ = cmd.Run()
+	}
+	log.Info("Finished running make targets")
+}
+
+// hasConflictMarkers checks if there are any Git conflict markers in the repository.
+// It returns true if conflict markers are found, false otherwise.
+func hasConflictMarkers() bool {
+	cmd := exec.Command("git", "grep", "-l", "-E", "^(<<<<<<<|=======|>>>>>>>)")
+	err := cmd.Run()
+
+	return err == nil
+}
+
 // runAlphaGenerate executes the old Kubebuilder version's 'alpha generate' command
 // to create clean scaffolding in the ancestor branch. This uses the downloaded
 // binary with the original PROJECT file to recreate the project's initial state.
@@ -340,12 +363,8 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 			hasConflicts = true
 			if !opts.Force {
 				log.Warn("Merge stopped due to conflicts. Manual resolution is required.")
-				log.Warn("After resolving the conflicts, run the following command:")
-				log.Warn("    make manifests generate fmt vet lint-fix")
-				log.Warn("This ensures manifests and generated files are up to date, and the project layout remains consistent.")
 				return fmt.Errorf("merge stopped due to conflicts")
 			}
-			log.Warn("Merge completed with conflicts. Conflict markers will be committed.")
 		} else {
 			return fmt.Errorf("merge failed unexpectedly: %w", err)
 		}
@@ -353,12 +372,18 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 
 	if !hasConflicts {
 		log.Info("Merge happened without conflicts.")
+		runMakeTargets()
+	} else {
+		runMakeTargetsSilently()
 	}
 
-	// Best effort to run make targets to ensure the project is in a good state
-	runMakeTargets()
+	hasConflicts = false
+	if hasConflictMarkers() {
+		hasConflicts = true
+	}
 
 	// Step 4: Stage and commit
+	log.Info("Staging all changes for commit")
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
 		return fmt.Errorf("failed to stage merge results: %w", err)
 	}
@@ -367,10 +392,20 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 	if hasConflicts {
 		message += " With conflicts - manual resolution required."
 	} else {
-		message += " Merge happened without conflicts."
+		message += " Merge completed without conflicts."
 	}
 
 	_ = exec.Command("git", "commit", "-m", message).Run()
+
+	if hasConflicts {
+		log.Warn("Update completed with conflicts. Conflict markers were committed.")
+		log.Warn("Resolve the conflicts that were committed, then run:")
+		log.Warn("     make manifests generate fmt vet lint-fix")
+		log.Warn("This ensures manifests and generated files are up to date, " +
+			"and the project layout remains consistent.")
+	} else {
+		log.Info("Update completed successfully. Please review the changes.")
+	}
 
 	return nil
 }
