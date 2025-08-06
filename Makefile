@@ -26,6 +26,11 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
 ##@ General
 
 # The help target prints out all targets with their descriptions organized
@@ -124,19 +129,17 @@ yamllint:
 	@files=$$(find testdata -name '*.yaml' ! -path 'testdata/*/dist/*'); \
     	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest $$files -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
 
-GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
+.PHONY: golangci-lint
 golangci-lint:
-	@[ -f $(GOLANGCI_LINT) ] || { \
-	GOBIN=$(shell pwd)/bin go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.0  ;\
-	}
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,${GOLANGCI_LINT_VERSION})
 
 .PHONY: apidiff
 apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared with origin/master
-	$(GOBIN)/go-apidiff master --compare-imports --print-compatible --repo-path=.
+	$(GO_APIDIFF) master --compare-imports --print-compatible --repo-path=.
 
 .PHONY: go-apidiff
 go-apidiff:
-	go install github.com/joelanford/go-apidiff@v0.6.1
+	$(call go-install-tool,$(GO_APIDIFF),github.com/joelanford/go-apidiff,$(GO_APIDIFF_VERSION))
 
 ##@ Tests
 
@@ -219,3 +222,27 @@ update-k8s-version: ## Update Kubernetes API version in version.go and .goreleas
 	@sed -i.bak 's/KUBERNETES_VERSION=.*/KUBERNETES_VERSION=$(K8S_VERSION)/' build/.goreleaser.yml
 	@# Clean up backup files
 	@find . -name "*.bak" -type f -delete
+
+## Tool Binaries
+GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+
+## Tool Versions
+GO_APIDIFF_VERSION ?= v0.6.1
+GOLANGCI_LINT_VERSION ?= v2.3.0
+
+# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+# $1 - target path with name of binary
+# $2 - package url which can be installed
+# $3 - specific version of package
+define go-install-tool
+@[ -f "$(1)-$(3)" ] || { \
+set -e; \
+package=$(2)@$(3) ;\
+echo "Downloading $${package}" ;\
+rm -f $(1) || true ;\
+GOBIN=$(LOCALBIN) go install $${package} ;\
+mv $(1) $(1)-$(3) ;\
+} ;\
+ln -sf $(1)-$(3) $(1)
+endef
