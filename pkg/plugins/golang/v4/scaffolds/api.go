@@ -19,7 +19,7 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
-	log "log/slog"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/spf13/afero"
@@ -65,13 +65,13 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
-	log.Info("Writing scaffold for you to edit...")
+	slog.Info("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
-			log.Warn("Unable to find boilerplate file."+
+			slog.Warn("Unable to find boilerplate file."+
 				"This file is used to generate the license header in the project.\n"+
 				"Note that controller-gen will also use this. Therefore, ensure that you "+
 				"add the license file or configure your project accordingly.",
@@ -143,24 +143,25 @@ func (s *apiScaffolder) discoverFeatureGates() []string {
 	apiDir := "api"
 	if s.config.IsMultiGroup() && s.resource.Group != "" {
 		apiDir = filepath.Join("api", s.resource.Group)
+	}
 
 	// Check if the directory exists before trying to parse it
 	if _, err := s.fs.FS.Stat(apiDir); err != nil {
-		log.Debugf("API directory %s does not exist yet, skipping feature gate discovery", apiDir)
+		slog.Debug("API directory does not exist yet, skipping feature gate discovery", "apiDir", apiDir)
 		return []string{}
 	}
 
 	markers, err := parser.ParseDirectory(apiDir)
 	if err != nil {
-		log.Debugf("Failed to parse feature gates from %s: %v", apiDir, err)
+		slog.Debug("Failed to parse feature gates from directory", "apiDir", apiDir, "error", err)
 		return []string{}
 	}
 
 	featureGates := machinery.ExtractFeatureGates(markers)
 	if len(featureGates) > 0 {
-		log.Infof("Discovered feature gates: %v", featureGates)
+		slog.Info("Discovered feature gates", "featureGates", featureGates)
 	} else {
-		log.Debugf("No feature gates found in %s", apiDir)
+		slog.Debug("No feature gates found in directory", "apiDir", apiDir)
 	}
 
 	return featureGates
