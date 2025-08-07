@@ -185,8 +185,8 @@ type TestStruct struct {
 				"--group", kbc.Group,
 				"--version", kbc.Version,
 				"--kind", kbc.Kind,
+				"--resource", "--controller",
 				"--make=false",
-				"--manifests=false",
 			)
 			Expect(err).NotTo(HaveOccurred(), "Failed to create API definition")
 
@@ -196,8 +196,8 @@ type TestStruct struct {
 			// Add a feature gate marker to the spec
 			err = util.InsertCode(
 				apiTypesFile,
-				"//+kubebuilder:validation:Optional",
-				"\n\t// +feature-gate experimental-feature",
+				"// +optional\n\tFoo *string `json:\"foo,omitempty\"`",
+				"\n\n\t// +feature-gate experimental-feature",
 			)
 			Expect(err).NotTo(HaveOccurred(), "Failed to add feature gate marker")
 
@@ -210,7 +210,14 @@ type TestStruct struct {
 			Expect(err).NotTo(HaveOccurred(), "Failed to add experimental field")
 
 			By("regenerating the project to discover feature gates")
-			err = kbc.Regenerate()
+			err = kbc.CreateAPI(
+				"--group", kbc.Group,
+				"--version", kbc.Version,
+				"--kind", kbc.Kind,
+				"--resource", "--controller",
+				"--make=false",
+				"--force",
+			)
 			Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
 
 			By("verifying feature gates file was generated")

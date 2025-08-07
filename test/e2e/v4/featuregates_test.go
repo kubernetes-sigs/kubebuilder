@@ -20,18 +20,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
-
-func TestFeatureGates(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Feature Gates Suite")
-}
 
 var _ = Describe("Feature Gates", func() {
 	Context("project with feature gates", func() {
@@ -41,7 +36,7 @@ var _ = Describe("Feature Gates", func() {
 
 		BeforeEach(func() {
 			var err error
-			ctx, err = utils.NewTestContext("go")
+			ctx, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx).NotTo(BeNil())
 
@@ -63,7 +58,9 @@ var _ = Describe("Feature Gates", func() {
 
 		It("should scaffold a project with feature gates", func() {
 			// Initialize the project
-			err := ctx.Init()
+			err := ctx.Init(
+				"--domain", ctx.Domain,
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Create API with feature gates
@@ -97,7 +94,9 @@ var _ = Describe("Feature Gates", func() {
 
 		It("should discover feature gates from API types", func() {
 			// Initialize the project
-			err := ctx.Init()
+			err := ctx.Init(
+				"--domain", ctx.Domain,
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Create API
@@ -123,8 +122,8 @@ var _ = Describe("Feature Gates", func() {
 `
 			// Insert the new field in the Spec struct
 			updatedContent := strings.Replace(string(typesContent),
-				"// Bar *string ` + \"`\" + `json:\"bar,omitempty\"` + \"`\" + `",
-				"// Bar *string ` + \"`\" + `json:\"bar,omitempty\"` + \"`\" + `\n"+newField,
+				"Bar *string `json:\"bar,omitempty\"`",
+				"Bar *string `json:\"bar,omitempty\"`\n"+newField,
 				1)
 
 			err = os.WriteFile(typesFile, []byte(updatedContent), 0644)
@@ -150,7 +149,9 @@ var _ = Describe("Feature Gates", func() {
 
 		It("should build project with feature gates", func() {
 			// Initialize the project
-			err := ctx.Init()
+			err := ctx.Init(
+				"--domain", ctx.Domain,
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Create API
@@ -173,7 +174,9 @@ var _ = Describe("Feature Gates", func() {
 
 		It("should generate manifests with feature gates", func() {
 			// Initialize the project
-			err := ctx.Init()
+			err := ctx.Init(
+				"--domain", ctx.Domain,
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Create API
@@ -191,7 +194,7 @@ var _ = Describe("Feature Gates", func() {
 
 			// Verify CRDs were generated
 			crdFile := filepath.Join(ctx.Dir, "config", "crd", "bases",
-				strings.ToLower(ctx.Group)+"_"+ctx.Version+"_"+strings.ToLower(ctx.Kind)+".yaml")
+				strings.ToLower(ctx.Group)+"."+ctx.Domain+"_"+ctx.Resources+".yaml")
 			Expect(crdFile).To(BeAnExistingFile())
 		})
 	})

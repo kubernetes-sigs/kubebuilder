@@ -185,7 +185,23 @@ func TestAPIScaffolder_discoverFeatureGates_Testdata(t *testing.T) {
 	apiScaffolder.fs = machinery.Filesystem{FS: afero.NewOsFs()}
 
 	featureGates := apiScaffolder.discoverFeatureGates()
-	if len(featureGates) > 0 {
-		t.Errorf("Expected no feature gates from testdata, but found %d: %v", len(featureGates), featureGates)
+
+	// The testdata contains a feature gate marker for "experimental-bar"
+	expectedGates := []string{"experimental-bar"}
+	if len(featureGates) != len(expectedGates) {
+		t.Errorf("Expected %d feature gates from testdata, but found %d: %v", len(expectedGates), len(featureGates), featureGates)
+	}
+
+	for _, expectedGate := range expectedGates {
+		found := false
+		for _, gate := range featureGates {
+			if gate == expectedGate {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected to find feature gate %s, but it was not discovered", expectedGate)
+		}
 	}
 }

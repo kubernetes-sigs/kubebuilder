@@ -90,7 +90,7 @@ type {{ .Resource.Kind }}Spec struct {
 	// +kubebuilder:feature-gate=experimental-bar
 	// +feature-gate experimental-bar
 	// +optional
-	// Bar *string ` + "`" + `json:"bar,omitempty"` + "`" + `
+	Bar *string ` + "`" + `json:"bar,omitempty"` + "`" + `
 }
 
 // {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.
