@@ -17,6 +17,7 @@ limitations under the License.
 package alphaupdate
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -98,12 +99,18 @@ var _ = Describe("kubebuilder", func() {
 			By("cleaning up test artifacts")
 			_ = os.RemoveAll(filepath.Dir(pathBinFromVersion))
 			_ = os.RemoveAll(kbc.Dir)
+			kbc.Destroy()
 		})
 
 		It("should update project from v4.5.2 to v4.6.0 without conflicts", func() {
+			By("running alpha update from v4.5.2 to v4.6.0")
 			runAlphaUpdate(kbc.Dir, kbc, toVersion, false)
+
+			By("checking that custom code is preserved")
 			validateCustomCodePreservation(kbc.Dir)
-			validateConflictMarkers(kbc.Dir, false)
+
+			By("checking that no conflict markers are present in the project files")
+			Expect(hasConflictMarkers(kbc.Dir)).To(BeFalse())
 
 			By("checking that go module is upgraded")
 			validateCommonGoModule(kbc.Dir)
@@ -113,14 +120,52 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should update project from v4.5.2 to v4.7.0 with --force flag and create conflict markers", func() {
+			By("modifying original Makefile to use CONTROLLER_TOOLS_VERSION v0.17.3")
+			modifyMakefileControllerTools(kbc.Dir, "v0.17.3")
+
 			By("running alpha update to v4.7.0 with --force flag")
 			runAlphaUpdate(kbc.Dir, kbc, toVersionWithConflict, true)
 
-			By("checking that markers for conflicts are present")
-			validateConflictMarkers(kbc.Dir, true)
+			By("checking that custom code is preserved")
+			validateCustomCodePreservation(kbc.Dir)
 
-			By("checking that go module is upgraded")
+			By("checking that conflict markers are present in the project files")
+			Expect(hasConflictMarkers(kbc.Dir)).To(BeTrue())
+
+			By("checking that go module is upgraded to expected versions")
 			validateCommonGoModule(kbc.Dir)
+
+			By("checking that Makefile is updated and has conflict between old and new versions in Makefile")
+			makefilePath := filepath.Join(kbc.Dir, "Makefile")
+			content, err := os.ReadFile(makefilePath)
+			Expect(err).NotTo(HaveOccurred(), "Failed to read Makefile after update")
+			makefileStr := string(content)
+
+			// Should update to the new version
+			Expect(makefileStr).To(ContainSubstring(`GOLANGCI_LINT_VERSION ?= v2.1.6`))
+
+			// The original project was scaffolded with v0.17.2 (from v4.5.2).
+			// The user manually updated it to v0.17.3.
+			// The target upgrade version (v4.7.0) introduces v0.18.0.
+			//
+			// Because both the user's version (v0.17.3) and the scaffold version (v0.18.0) differ,
+			// we expect Git to insert conflict markers around this line in the Makefile:
+			//
+			// <<<<<<< HEAD
+			// CONTROLLER_TOOLS_VERSION ?= v0.18.0
+			// =======
+			// CONTROLLER_TOOLS_VERSION ?= v0.17.3
+			// >>>>>>> tmp-original-*
+			Expect(makefileStr).To(ContainSubstring("<<<<<<<"),
+				"Expected conflict marker <<<<<<< in Makefile")
+			Expect(makefileStr).To(ContainSubstring("======="),
+				"Expected conflict separator ======= in Makefile")
+			Expect(makefileStr).To(ContainSubstring(">>>>>>>"),
+				"Expected conflict marker >>>>>>> in Makefile")
+			Expect(makefileStr).To(ContainSubstring("CONTROLLER_TOOLS_VERSION ?= v0.17.3"),
+				"Expected original user version in conflict")
+			Expect(makefileStr).To(ContainSubstring("CONTROLLER_TOOLS_VERSION ?= v0.18.0"),
+				"Expected latest scaffold version in conflict")
 		})
 
 		It("should stop when updating the project from v4.5.2 to v4.7.0 without the flag force", func() {
@@ -129,6 +174,9 @@ var _ = Describe("kubebuilder", func() {
 
 			By("validating that merge stopped with conflicts requiring manual resolution")
 			validateConflictState(kbc.Dir)
+
+			By("checking that custom code is preserved")
+			validateCustomCodePreservation(kbc.Dir)
 
 			By("checking that go module is upgraded")
 			validateCommonGoModule(kbc.Dir)
@@ -146,6 +194,28 @@ var _ = Describe("kubebuilder", func() {
 		})
 	})
 })
+
+func modifyMakefileControllerTools(projectDir, newVersion string) {
+	makefilePath := filepath.Join(projectDir, "Makefile")
+	oldLine := "CONTROLLER_TOOLS_VERSION ?= v0.17.2"
+	newLine := fmt.Sprintf("CONTROLLER_TOOLS_VERSION ?= %s", newVersion)
+
+	By("replacing the controller-tools version in the Makefile")
+	Expect(util.ReplaceInFile(makefilePath, oldLine, newLine)).
+		To(Succeed(), "Failed to update CONTROLLER_TOOLS_VERSION in Makefile")
+
+	By("committing the Makefile change to simulate user customization")
+	cmds := [][]string{
+		{"git", "add", "Makefile"},
+		{"git", "commit", "-m", fmt.Sprintf("User modified CONTROLLER_TOOLS_VERSION to %s", newVersion)},
+	}
+	for _, args := range cmds {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir = projectDir
+		output, err := cmd.CombinedOutput()
+		Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("Git command failed: %s", output))
+	}
+}
 
 func validateMakefileContent(projectDir string) {
 	makefilePath := filepath.Join(projectDir, "Makefile")
@@ -283,34 +353,37 @@ func validateCustomCodePreservation(projectDir string) {
 	Expect(string(controllerContent)).To(ContainSubstring(controllerImplementation))
 }
 
-func validateConflictMarkers(projectDir string, expectMarkers bool) {
-	files := []string{
-		filepath.Join(projectDir, "api", "v1", "testoperator_types.go"),
-		filepath.Join(projectDir, "internal", "controller", "testoperator_controller.go"),
-	}
-	found := false
-	for _, file := range files {
-		content, err := os.ReadFile(file)
-		if err != nil {
-			continue
+func hasConflictMarkers(projectDir string) bool {
+	hasMarker := false
+
+	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
 		}
+
+		content, readErr := os.ReadFile(path)
+		if readErr != nil || bytes.Contains(content, []byte{0}) {
+			return nil // skip unreadable or binary files
+		}
+
 		if strings.Contains(string(content), "<<<<<<<") {
-			found = true
-			break
+			hasMarker = true
+			return fmt.Errorf("conflict marker found in %s", path) // short-circuit early
 		}
+		return nil
+	})
+
+	if err != nil && hasMarker {
+		return true
 	}
-	if expectMarkers {
-		Expect(found).To(BeTrue())
-	} else {
-		Expect(found).To(BeFalse())
-	}
+	return false
 }
 
 func validateConflictState(projectDir string) {
 	By("validating merge stopped with conflicts requiring manual resolution")
 
 	// 1. Check file contents for conflict markers
-	validateConflictMarkers(projectDir, true)
+	Expect(hasConflictMarkers(projectDir)).To(BeTrue())
 
 	// 2. Check Git status for conflict-tracked files (UU = both modified)
 	cmd := exec.Command("git", "status", "--porcelain")
