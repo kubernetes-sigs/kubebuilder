@@ -19,7 +19,6 @@ package common
 import (
 	"os"
 	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,34 +26,30 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
-
-func TestCommon(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Common Pkg Suite")
-}
 
 var _ = Describe("LoadProjectConfig", func() {
 	var (
-		tmpDir      string
+		kbc         *utils.TestContext
 		projectFile string
 	)
 
 	BeforeEach(func() {
 		var err error
-		tmpDir, err = os.MkdirTemp("", "kubebuilder-common-test")
+		kbc, err = utils.NewTestContext("kubebuilder", "GO111MODULE=on")
 		Expect(err).NotTo(HaveOccurred())
-		projectFile = filepath.Join(tmpDir, yaml.DefaultPath)
+		Expect(kbc.Prepare()).To(Succeed())
+		projectFile = filepath.Join(kbc.Dir, yaml.DefaultPath)
 	})
 
 	AfterEach(func() {
-		err := os.RemoveAll(tmpDir)
-		Expect(err).NotTo(HaveOccurred())
+		By("cleaning up test artifacts")
+		kbc.Destroy()
 	})
 
 	Context("when PROJECT file exists and is valid", func() {
 		It("should load the project config successfully", func() {
-			// Register version 3 config
 			config.Register(config.Version{Number: 3}, func() config.Config {
 				return &v3.Cfg{Version: config.Version{Number: 3}}
 			})
@@ -63,15 +58,15 @@ var _ = Describe("LoadProjectConfig", func() {
 `
 			Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
 
-			config, err := LoadProjectConfig(tmpDir)
+			cfg, err := LoadProjectConfig(kbc.Dir)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(config).NotTo(BeNil())
+			Expect(cfg).NotTo(BeNil())
 		})
 	})
 
 	Context("when PROJECT file does not exist", func() {
 		It("should return an error", func() {
-			_, err := LoadProjectConfig(tmpDir)
+			_, err := LoadProjectConfig(kbc.Dir)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to load PROJECT file"))
 		})
@@ -79,10 +74,9 @@ var _ = Describe("LoadProjectConfig", func() {
 
 	Context("when PROJECT file is invalid", func() {
 		It("should return an error", func() {
-			// Write an invalid YAML content
 			Expect(os.WriteFile(projectFile, []byte(":?!"), 0o644)).To(Succeed())
 
-			_, err := LoadProjectConfig(tmpDir)
+			_, err := LoadProjectConfig(kbc.Dir)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to load PROJECT file"))
 		})
@@ -91,42 +85,35 @@ var _ = Describe("LoadProjectConfig", func() {
 
 var _ = Describe("GetInputPath", func() {
 	var (
-		tmpDir      string
+		kbc         *utils.TestContext
 		projectFile string
 	)
 
 	BeforeEach(func() {
 		var err error
-		tmpDir, err = os.MkdirTemp("", "kubebuilder-common-test")
+		kbc, err = utils.NewTestContext("kubebuilder", "GO111MODULE=on")
 		Expect(err).NotTo(HaveOccurred())
-		projectFile = filepath.Join(tmpDir, yaml.DefaultPath)
+		Expect(kbc.Prepare()).To(Succeed())
+		projectFile = filepath.Join(kbc.Dir, yaml.DefaultPath)
 	})
 
 	AfterEach(func() {
-		err := os.RemoveAll(tmpDir)
-		Expect(err).NotTo(HaveOccurred())
+		By("cleaning up test artifacts")
+		kbc.Destroy()
+	})
+
+	Context("when inputPath has trailing slash", func() {
+		It("should handle trailing slash and find PROJECT file", func() {
+			Expect(os.WriteFile(projectFile, []byte("test"), 0o644)).To(Succeed())
+
+			inputPath, err := GetInputPath(kbc.Dir + "/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(inputPath).To(Equal(kbc.Dir + "/"))
+		})
 	})
 
 	Context("when inputPath is empty", func() {
-		It("should return current working directory if PROJECT file exists", func() {
-			// Create PROJECT file in tmpDir
-			Expect(os.WriteFile(projectFile, []byte("test-data"), 0o644)).To(Succeed())
-
-			// Change working directory to tmpDir
-			Expect(os.Chdir(tmpDir)).To(Succeed())
-
-			currWd, err := os.Getwd()
-			Expect(err).NotTo(HaveOccurred())
-
-			inputPath, err := GetInputPath("")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(inputPath).To(Equal(currWd))
-		})
-
-		It("should return error if PROJECT file does not exist in cwd", func() {
-			// Change working directory to tmpDir (no PROJECT file)
-			Expect(os.Chdir(tmpDir)).To(Succeed())
-
+		It("should return error if PROJECT file does not exist in CWD", func() {
 			inputPath, err := GetInputPath("")
 			Expect(err).To(HaveOccurred())
 			Expect(inputPath).To(Equal(""))
@@ -134,26 +121,28 @@ var _ = Describe("GetInputPath", func() {
 		})
 	})
 
-	Context("when inputPath is provided", func() {
-		It("should return inputPath if PROJECT file exists", func() {
+	Context("when inputPath is valid and PROJECT file exists", func() {
+		It("should return the inputPath", func() {
 			Expect(os.WriteFile(projectFile, []byte("test"), 0o644)).To(Succeed())
 
-			inputPath, err := GetInputPath(tmpDir)
+			inputPath, err := GetInputPath(kbc.Dir)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(inputPath).To(Equal(tmpDir))
+			Expect(inputPath).To(Equal(kbc.Dir))
 		})
+	})
 
-		It("should return error if PROJECT file does not exist at provided inputPath", func() {
-			inputPath, err := GetInputPath(tmpDir)
+	Context("when inputPath is valid but PROJECT file does not exist", func() {
+		It("should return an error", func() {
+			inputPath, err := GetInputPath(kbc.Dir)
 			Expect(err).To(HaveOccurred())
 			Expect(inputPath).To(Equal(""))
 			Expect(err.Error()).To(ContainSubstring("does not exist"))
 		})
 	})
 
-	Context("when inputPath is invalid", func() {
-		It("should return error if inputPath does not exist", func() {
-			invalidPath := filepath.Join(tmpDir, "nonexistent")
+	Context("when inputPath does not exist", func() {
+		It("should return an error", func() {
+			invalidPath := filepath.Join(kbc.Dir, "nonexistent")
 			inputPath, err := GetInputPath(invalidPath)
 			Expect(err).To(HaveOccurred())
 			Expect(inputPath).To(Equal(""))
