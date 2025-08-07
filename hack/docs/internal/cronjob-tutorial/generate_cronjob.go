@@ -226,12 +226,28 @@ type CronJob struct {`+`
 	 */`)
 	hackutils.CheckError("fixing schema for cronjob_types.go", err)
 
-	// fix lint
+	// fix lint - handle the pattern with or without feature-gated fields
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`/
 	
+
+	// Example of a feature-gated field:
+	// Bar is an experimental field that requires the "experimental-bar" feature gate to be enabled
+	// TODO: When controller-tools supports feature gates (issue #1238), use:
+	// +kubebuilder:feature-gate=experimental-bar
+	// +feature-gate experimental-bar
+	// +optional
+	Bar *string `+"`"+`json:"bar,omitempty"`+"`"+`
 }`, "/")
+	if err != nil {
+		// Fallback to the original pattern if the feature-gated field is not present
+		err = pluginutil.ReplaceInFile(
+			filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
+			`/
+	
+}`, "/")
+	}
 	hackutils.CheckError("fixing cronjob_types.go end of status", err)
 }
 

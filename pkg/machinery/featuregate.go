@@ -18,8 +18,13 @@ package machinery
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+// featureGateNameRegex validates feature gate names
+// Names should follow Kubernetes conventions: start with lowercase letter, followed by lowercase alphanumeric with hyphens
+var featureGateNameRegex = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
 // FeatureGate represents a feature gate with its name and enabled state
 type FeatureGate struct {
@@ -30,9 +35,23 @@ type FeatureGate struct {
 // FeatureGates represents a collection of feature gates
 type FeatureGates map[string]bool
 
+// validateFeatureGateName validates that a feature gate name follows conventions
+func validateFeatureGateName(name string) error {
+	if name == "" {
+		return fmt.Errorf("empty feature gate name")
+	}
+
+	if !featureGateNameRegex.MatchString(name) {
+		return fmt.Errorf("invalid feature gate name '%s': must be lowercase alphanumeric with hyphens (e.g., 'experimental-feature')", name)
+	}
+
+	return nil
+}
+
 // ParseFeatureGates parses a comma-separated string of feature gates
-// Format: "feature1=true,feature2=false,feature3"
-// If no value is specified, the feature gate defaults to enabled
+// Format: "feature1=true,feature2=false,feature3=true"
+// Feature gate names must be lowercase alphanumeric with hyphens
+// Values must be 'true' or 'false' (case insensitive)
 func ParseFeatureGates(featureGates string) (FeatureGates, error) {
 	if featureGates == "" {
 		return make(FeatureGates), nil
@@ -41,13 +60,10 @@ func ParseFeatureGates(featureGates string) (FeatureGates, error) {
 	gates := make(FeatureGates)
 	parts := strings.Split(featureGates, ",")
 
-	for i, part := range parts {
+	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part == "" {
-			// If this is the first part and it's empty, it's an error
-			if i == 0 {
-				return nil, fmt.Errorf("empty feature gate name")
-			}
+			// Skip empty parts (e.g., trailing commas)
 			continue
 		}
 
@@ -63,20 +79,26 @@ func ParseFeatureGates(featureGates string) (FeatureGates, error) {
 			name = strings.TrimSpace(kv[0])
 			value := strings.TrimSpace(kv[1])
 
+			if value == "" {
+				return nil, fmt.Errorf("empty value for feature gate '%s'", name)
+			}
+
 			switch strings.ToLower(value) {
-			case "true", "1", "yes", "on":
+			case "true":
 				enabled = true
-			case "false", "0", "no", "off":
+			case "false":
 				enabled = false
 			default:
-				return nil, fmt.Errorf("invalid feature gate value for %s: %s", name, value)
+				return nil, fmt.Errorf("invalid feature gate value for %s: %s (must be 'true' or 'false')", name, value)
 			}
 		} else {
+			// No '=' found, treat entire part as name with default value true
 			name = part
 		}
 
-		if name == "" {
-			return nil, fmt.Errorf("empty feature gate name")
+		// Validate the feature gate name
+		if err := validateFeatureGateName(name); err != nil {
+			return nil, err
 		}
 
 		gates[name] = enabled

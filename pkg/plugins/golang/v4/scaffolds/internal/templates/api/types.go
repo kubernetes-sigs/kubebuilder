@@ -35,6 +35,8 @@ type Types struct {
 	machinery.ResourceMixin
 
 	Force bool
+	// IncludeFeatureGateExample determines whether to include feature gate example in the scaffolded API
+	IncludeFeatureGateExample bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -83,14 +85,15 @@ type {{ .Resource.Kind }}Spec struct {
 	// foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
 	// +optional	
 	Foo *string ` + "`" + `json:"foo,omitempty"` + "`" + `
+{{- if .IncludeFeatureGateExample }}
 
 	// Example of a feature-gated field:
 	// Bar is an experimental field that requires the "experimental-bar" feature gate to be enabled
-	// TODO: When controller-tools supports feature gates (issue #1238), use:
 	// +kubebuilder:feature-gate=experimental-bar
 	// +feature-gate experimental-bar
 	// +optional
-	// Bar *string ` + "`" + `json:"bar,omitempty"` + "`" + `
+	Bar *string ` + "`" + `json:"bar,omitempty"` + "`" + `
+{{- end }}
 }
 
 // {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.

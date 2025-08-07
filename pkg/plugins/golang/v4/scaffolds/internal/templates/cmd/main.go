@@ -293,6 +293,7 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.StringVar(&featureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features. " +
+		"Example: --feature-gates \"gate1=true,gate2=false\". " +
 		"Options are: "+featuregates.GetFeatureGatesHelpText())
 	opts := zap.Options{
 		Development: true,
