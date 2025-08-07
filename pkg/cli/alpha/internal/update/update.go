@@ -210,13 +210,25 @@ func cleanupBranch() error {
 	return nil
 }
 
-// runMakeTargets is a helper function to run make with the targets necessary
-// to ensure all the necessary components are generated, formatted and linted.
-func runMakeTargets() {
+// runMakeTargets runs the specified make targets to ensure the project is in a good state.
+// If force is true, do not run target with || true to move forward when failures are faced.
+func runMakeTargets(force bool) {
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
+
 	for _, target := range targets {
-		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
-		if err != nil {
+		var cmd []string
+		var msg string
+
+		if force {
+			msg = fmt.Sprintf("Running make %s (with --force)", target)
+			shellCmd := fmt.Sprintf("make %s || true", target)
+			cmd = []string{"sh", "-c", shellCmd}
+		} else {
+			msg = fmt.Sprintf("Running make %s", target)
+			cmd = []string{"make", target}
+		}
+
+		if err := util.RunCmd(msg, cmd[0], cmd[1:]...); err != nil {
 			log.Warn("make target failed", "target", target, "error", err)
 		}
 	}
@@ -258,8 +270,8 @@ func runAlphaGenerate(tempDir, version string) error {
 	// It was added because the alpha generate command in versions prior to v4.7.0 does
 	// not run those commands automatically which will not allow we properly ensure
 	// that all manifests, code generation, formatting, and linting are applied to
-	// properly do the 3-way merge.
-	runMakeTargets()
+	// properly do the 3-way merge. We use true to ignore errors and do our best effort
+	runMakeTargets(false)
 	return nil
 }
 
@@ -355,8 +367,8 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 		log.Info("Merge happened without conflicts.")
 	}
 
-	// Best effort to run make targets to ensure the project is in a good state
-	runMakeTargets()
+	// When the --force flag is used has the best effort to run the make targets
+	runMakeTargets(opts.Force)
 
 	// Step 4: Stage and commit
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
