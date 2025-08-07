@@ -321,7 +321,7 @@ func (opts *Update) prepareUpgradeBranch() error {
 // mergeOriginalToUpgrade attempts to merge the upgrade branch
 func (opts *Update) mergeOriginalToUpgrade() error {
 	if err := exec.Command("git", "checkout", "-b", opts.MergeBranch, opts.UpgradeBranch).Run(); err != nil {
-		return fmt.Errorf("failed to create merge branch %s from %s: %w", opts.MergeBranch, opts.OriginalBranch, err)
+		return fmt.Errorf("failed to create merge branch %s from %s: %w", opts.MergeBranch, opts.UpgradeBranch, err)
 	}
 
 	checkoutCmd := exec.Command("git", "checkout", opts.MergeBranch)
