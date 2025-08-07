@@ -281,7 +281,7 @@ var _ = Describe("Prepare for internal update", func() {
 			err = mockBinResponse(fakeBinScript, mockMake)
 			Expect(err).ToNot(HaveOccurred())
 
-			runMakeTargets()
+			runMakeTargets(true)
 		})
 	})
 
