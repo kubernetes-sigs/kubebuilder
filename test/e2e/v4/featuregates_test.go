@@ -85,7 +85,7 @@ var _ = Describe("Feature Gates", func() {
 			Expect(string(mainContent)).To(ContainSubstring("featuregates"))
 
 			// Verify API types have feature gate example
-			typesFile := filepath.Join(ctx.Dir, "api", ctx.Version, ctx.Kind+"_types.go")
+			typesFile := filepath.Join(ctx.Dir, "api", ctx.Version, strings.ToLower(ctx.Kind)+"_types.go")
 			Expect(typesFile).To(BeAnExistingFile())
 			typesContent, err := os.ReadFile(typesFile)
 			Expect(err).NotTo(HaveOccurred())
@@ -109,7 +109,7 @@ var _ = Describe("Feature Gates", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Add custom feature gates to the API types
-			typesFile := filepath.Join(ctx.Dir, "api", ctx.Version, ctx.Kind+"_types.go")
+			typesFile := filepath.Join(ctx.Dir, "api", ctx.Version, strings.ToLower(ctx.Kind)+"_types.go")
 			typesContent, err := os.ReadFile(typesFile)
 			Expect(err).NotTo(HaveOccurred())
 
