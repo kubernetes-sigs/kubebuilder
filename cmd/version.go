@@ -17,58 +17,91 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"runtime"
 	"runtime/debug"
 )
 
 const unknown = "unknown"
 
-// var needs to be used instead of const as ldflags is used to fill this
-// information in the release process
+// These are filled via ldflags during build
 var (
 	kubeBuilderVersion      = unknown
 	kubernetesVendorVersion = "1.33.0"
 	goos                    = unknown
 	goarch                  = unknown
-	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)
-
-	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+	gitCommit               = "$Format:%H$"
+	buildDate               = "1970-01-01T00:00:00Z"
 )
 
-// version contains all the information related to the CLI version
-type version struct {
+// VersionInfo holds all CLI version-related information
+type VersionInfo struct {
 	KubeBuilderVersion string `json:"kubeBuilderVersion"`
 	KubernetesVendor   string `json:"kubernetesVendor"`
 	GitCommit          string `json:"gitCommit"`
 	BuildDate          string `json:"buildDate"`
-	GoOs               string `json:"goOs"`
+	GoOS               string `json:"goOs"`
 	GoArch             string `json:"goArch"`
 }
 
-// versionString returns the Full CLI version
-func versionString() string {
+// resolveBuildInfo ensures dynamic fields are populated
+func resolveBuildInfo() {
 	if kubeBuilderVersion == unknown {
 		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
 			kubeBuilderVersion = info.Main.Version
 		}
 	}
-
-	return fmt.Sprintf("Version: %#v", version{
-		kubeBuilderVersion,
-		kubernetesVendorVersion,
-		gitCommit,
-		buildDate,
-		goos,
-		goarch,
-	})
+	if goos == unknown {
+		goos = runtime.GOOS
+	}
+	if goarch == unknown {
+		goarch = runtime.GOARCH
+	}
+	if gitCommit == "$Format:%H$" || gitCommit == "" {
+		gitCommit = unknown
+	}
 }
 
-// getKubebuilderVersion returns only the CLI version string
-func getKubebuilderVersion() string {
-	if kubeBuilderVersion == unknown {
-		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-			kubeBuilderVersion = info.Main.Version
-		}
+// getVersionInfo returns populated VersionInfo
+func getVersionInfo() VersionInfo {
+	resolveBuildInfo()
+	return VersionInfo{
+		KubeBuilderVersion: kubeBuilderVersion,
+		KubernetesVendor:   kubernetesVendorVersion,
+		GitCommit:          gitCommit,
+		BuildDate:          buildDate,
+		GoOS:               goos,
+		GoArch:             goarch,
 	}
+}
+
+// versionString returns a human-friendly string version
+func versionString() string {
+	v := getVersionInfo()
+	return fmt.Sprintf(`KubeBuilder Version: %s
+Kubernetes Vendor:   %s
+Git Commit:          %s
+Build Date:          %s
+Go OS/Arch:          %s/%s`,
+		v.KubeBuilderVersion,
+		v.KubernetesVendor,
+		v.GitCommit,
+		v.BuildDate,
+		v.GoOS,
+		v.GoArch,
+	)
+}
+
+// getKubeBuilderVersion returns just the CLI version
+func getKubeBuilderVersion() string {
+	resolveBuildInfo()
 	return kubeBuilderVersion
+}
+
+// versionJSON returns version as JSON string
+func versionJSON() string {
+	v := getVersionInfo()
+	b, _ := json.MarshalIndent(v, "", "  ")
+	return string(b)
 }
