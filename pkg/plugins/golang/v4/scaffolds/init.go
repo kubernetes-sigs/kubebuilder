@@ -159,6 +159,7 @@ func (s *initScaffolder) Scaffold() error {
 		&cmd.Main{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
+		&cmd.FeatureGates{AvailableGates: []string{}},
 		&templates.GoMod{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},

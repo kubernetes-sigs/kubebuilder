@@ -248,6 +248,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	
+	featuregates "{{ .Repo }}/internal/featuregates"
 	%s
 )
 
@@ -271,6 +273,7 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
+	var featureGates string
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. " +
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -289,11 +292,27 @@ func main() {
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.StringVar(&featureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features. " +
+		"Example: --feature-gates \"gate1=true,gate2=false\". " +
+		"Options are: "+featuregates.GetFeatureGatesHelpText())
 	opts := zap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	// Parse feature gates
+	parsedFeatureGates, err := featuregates.ParseFeatureGates(featureGates)
+	if err != nil {
+		setupLog.Error(err, "failed to parse feature gates")
+		os.Exit(1)
+	}
+
+	// Validate feature gates
+	if err := featuregates.ValidateFeatureGates(parsedFeatureGates); err != nil {
+		setupLog.Error(err, "invalid feature gates")
+		os.Exit(1)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 

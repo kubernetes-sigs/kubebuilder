@@ -19,7 +19,9 @@ package scaffolds
 import (
 	"errors"
 	"fmt"
-	log "log/slog"
+	"log/slog"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 
@@ -64,13 +66,13 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
-	log.Info("Writing scaffold for you to edit...")
+	slog.Info("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
-			log.Warn("Unable to find boilerplate file."+
+			slog.Warn("Unable to find boilerplate file."+
 				"This file is used to generate the license header in the project.\n"+
 				"Note that controller-gen will also use this. Therefore, ensure that you "+
 				"add the license file or configure your project accordingly.",
@@ -96,6 +98,12 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
+	// If using --force, discover existing feature gates before overwriting files
+	var existingGates []string
+	if s.force && doAPI {
+		existingGates = s.discoverFeatureGates()
+	}
+
 	if doAPI {
 		if err := scaffold.Execute(
 			&api.Types{Force: s.force},
@@ -115,6 +123,43 @@ func (s *apiScaffolder) Scaffold() error {
 		}
 	}
 
+	// Discover feature gates from newly scaffolded API types
+	newGates := s.discoverFeatureGates()
+	var availableGates []string
+
+	// Merge existing gates with newly discovered ones if we used --force
+	if len(existingGates) > 0 {
+		gateMap := make(map[string]bool)
+		
+		// Add existing gates
+		for _, gate := range existingGates {
+			gateMap[gate] = true
+		}
+		
+		// Add newly discovered gates (from template)
+		for _, gate := range newGates {
+			gateMap[gate] = true
+		}
+		
+		// Create merged list
+		var mergedGates []string
+		for gate := range gateMap {
+			mergedGates = append(mergedGates, gate)
+		}
+		
+		availableGates = mergedGates
+	} else {
+		availableGates = newGates
+	}
+
+	// Generate feature gates file
+	featureGatesTemplate := &cmd.FeatureGates{}
+	featureGatesTemplate.AvailableGates = availableGates
+	featureGatesTemplate.IfExistsAction = machinery.OverwriteFile
+	if err := scaffold.Execute(featureGatesTemplate); err != nil {
+		return fmt.Errorf("error scaffolding feature gates: %w", err)
+	}
+
 	if err := scaffold.Execute(
 		&cmd.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
@@ -122,4 +167,69 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// discoverFeatureGates scans the API directory for feature gate markers
+func (s *apiScaffolder) discoverFeatureGates() []string {
+	mgParser := machinery.NewFeatureGateMarkerParser()
+
+	// Try to parse the API directory
+	apiDir := "api"
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		apiDir = filepath.Join("api", s.resource.Group)
+	}
+
+	// Debug: Get current working directory
+	if wd, err := os.Getwd(); err == nil {
+		slog.Debug("Feature gate discovery", "workingDir", wd, "apiDir", apiDir)
+	}
+
+	// Check if the directory exists before trying to parse it
+	if _, err := os.Stat(apiDir); err != nil {
+		slog.Debug("API directory does not exist yet, skipping feature gate discovery", "apiDir", apiDir, "error", err)
+		return []string{}
+	}
+
+	var allMarkers []machinery.FeatureGateMarker
+
+	// Walk through each version directory and parse for feature gates
+	entries, err := os.ReadDir(apiDir)
+	if err != nil {
+		slog.Debug("Error reading API directory", "error", err, "apiDir", apiDir)
+		return []string{}
+	}
+
+	slog.Debug("API directory contents", "apiDir", apiDir, "fileCount", len(entries))
+
+	for _, entry := range entries {
+		slog.Debug("API directory file", "name", entry.Name(), "isDir", entry.IsDir())
+		if entry.IsDir() {
+			versionDir := filepath.Join(apiDir, entry.Name())
+			
+			// Use the existing parser to parse the version directory
+			markers, err := mgParser.ParseDirectory(versionDir)
+			if err != nil {
+				slog.Debug("Error parsing version directory for feature gates", "error", err, "versionDir", versionDir)
+				continue
+			}
+
+			slog.Debug("Parsed markers from directory", "versionDir", versionDir, "markerCount", len(markers))
+			
+			// Debug: Print all discovered markers
+			for _, marker := range markers {
+				slog.Debug("Found feature gate marker", "gateName", marker.GateName, "line", marker.Line, "file", marker.File)
+			}
+
+			allMarkers = append(allMarkers, markers...)
+		}
+	}
+
+	featureGates := machinery.ExtractFeatureGates(allMarkers)
+	if len(featureGates) > 0 {
+		slog.Debug("Discovered feature gates", "featureGates", featureGates)
+	} else {
+		slog.Debug("No feature gates found in directory", "apiDir", apiDir)
+	}
+
+	return featureGates
 }
