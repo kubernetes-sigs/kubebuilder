@@ -1,5 +1,14 @@
 # Update Your Project with (`alpha update`)
 
+<aside class="note tip">
+<h1>Receive Pull Requests with the Updates</h1>
+
+You can **automate `kubebuilder alpha update`** so your project stays in sync with every new Kubebuilder release —
+saving time, reducing maintenance overhead, and ensuring you’re always aligned with the latest improvements.
+
+Follow the [Workflow Auto-Update](./workflow_auto_update.md) guide to set it up in minutes.
+</aside>
+
 ## Overview
 
 The `kubebuilder alpha update` command helps you upgrade your project scaffold to a newer Kubebuilder version or plugin layout automatically.
@@ -89,6 +98,7 @@ Once updated, you can use `kubebuilder alpha update` for future upgrades.
 | `--from-branch`     | Git branch that contains your current project code. Defaults to `main`.                                                                                        |
 | `--force`           | Force the update even if conflicts occur. Conflicted files will include conflict markers, and a commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).                                                                       |
 | `-h, --help`        | Show help for this command.                                                                                                                                    |
+
 <aside class="note">
 Projects generated with **Kubebuilder v4.6.0** or later include the `cliVersion` field in the `PROJECT` file.
 This field is used by `kubebuilder alpha update` to determine the correct CLI
@@ -111,41 +121,41 @@ These conflicts will be committed in the
 <aside class="note warning">
 You must manually resolve these conflicts before merging into your main branch.
 
-<aside class="note warning">
 <H1>If you face conflicts (using or not the --force flag) </H1>
 If the merge introduces conflicts, you must resolve them and **ensure** you execute the following command to regenerate the manifests and organise the files properly:
 
-```bash
-make manifests generate fmt vet lint-fix
-```
+    ```bash
+    make manifests generate fmt vet lint-fix
+    ```
 
-Alternatively, you may want to run:
+    Alternatively, you may want to run:
 
-```bash
-make all
-```
+    ```bash
+    make all
+    ```
 </aside>
 
-
 ## When to Use `--force`
+
 Use `--force` only in scenarios like:
 - Automated environments (e.g., CI pipelines or cron jobs)
 - When you need to create a PR even if conflicts are present
 - When a human will resolve the conflicts later
 `kubebuilder alpha update --force`
 
-This ensures the update proceeds without manual blocking but shifts responsibility for conflict resolution to a follow-up manual step.
+This ensures the update proceeds without manual blocking but shifts responsibility for conflict resolution
+to a follow-up manual step.
 
-This approach is typically used in automation workflows where conflict markers are later addressed by a human, or where preserving the conflicting changes is acceptable for follow-up processing.
+This approach is typically used in automation workflows where conflict markers are later addressed by a human,
+or where preserving the conflicting changes is acceptable for follow-up processing.
 
-## Requirements
+## Demonstration
 
-- A valid [PROJECT][project-config] file at the root of your project
-- A clean Git working directory (no uncommitted changes)
-- Git must be installed and available
+<iframe width="560" height="315" src="https://www.youtube.com/embed/J8zonID__8k?si=WC-FXOHX0mCjph71" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Further Resources
 
 - [WIP: Design proposal for update automation](https://github.com/kubernetes-sigs/kubebuilder/pull/4302)
+- [Workflow Auto-Update](./workflow_auto_update.md) - Automate updates with GitHub Actions
 
 [project-config]: ../../reference/project-config.md

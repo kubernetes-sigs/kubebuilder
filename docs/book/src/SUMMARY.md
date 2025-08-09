@@ -71,10 +71,12 @@
   - [alpha generate](./reference/commands/alpha_generate.md)
   - [alpha update](./reference/commands/alpha_update.md)
 
+
+
 ---
 
 - [Reference](./reference/reference.md)
-
+  - [Automate Updates](./reference/commands/workflow_auto_update.md)
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
