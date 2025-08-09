@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/spf13/afero"
@@ -41,6 +42,18 @@ type Update struct {
 	FromBranch string
 	// Force commits the update changes even with merge conflicts
 	Force bool
+
+	// Squash writes the merge result as a single commit on a stable branch when true.
+	// The branch defaults to "kubebuilder-alpha-update-to-<ToVersion>" unless OutputBranch is set.
+	Squash bool
+
+	// PreservePath lists paths to restore from the base branch when squashing (repeatable).
+	// Example: ".github/workflows"
+	PreservePath []string
+
+	// OutputBranch is the branch name to use with Squash.
+	// If empty, it defaults to "kubebuilder-alpha-update-to-<ToVersion>".
+	OutputBranch string
 
 	// UpdateBranches
 	AncestorBranch string
@@ -105,6 +118,62 @@ func (opts *Update) Update() error {
 	if err := opts.mergeOriginalToUpgrade(); err != nil {
 		return fmt.Errorf("failed to merge upgrade into merge branch: %w", err)
 	}
+	// If requested, collapse the merge result into a single commit on a fixed branch
+	if opts.Squash {
+		if err := opts.squashToOutputBranch(); err != nil {
+			return fmt.Errorf("failed to squash to output branch: %w", err)
+		}
+	}
+	return nil
+}
+
+// squashToOutputBranch takes the exact tree of the MergeBranch and writes it as ONE commit
+// on a branch derived from FromBranch (e.g., "main"). If PreservePath is set, those paths
+// are restored from the base branch after copying the merge tree, so CI config etc. stays put.
+func (opts *Update) squashToOutputBranch() error {
+	// Default output branch name if not provided
+	out := opts.OutputBranch
+	if out == "" {
+		out = "kubebuilder-alpha-update-to-" + opts.ToVersion
+	}
+
+	// 1. Start from base (FromBranch)
+	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("checkout %s: %w", opts.FromBranch, err)
+	}
+	if err := exec.Command("git", "checkout", "-B", out, opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("create/reset %s from %s: %w", out, opts.FromBranch, err)
+	}
+
+	// 2. Clean working tree (except .git) so the next checkout is a verbatim snapshot
+	if err := exec.Command("sh", "-c",
+		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
+		return fmt.Errorf("cleanup output branch: %w", err)
+	}
+
+	// 3. Bring in the exact content from the merge branch (no re-merge -> no new conflicts)
+	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout merge content: %w", err)
+	}
+
+	// 4. Optionally restore preserved paths from base (keep CI, etc.)
+	for _, p := range opts.PreservePath {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			_ = exec.Command("git", "restore", "--source", opts.FromBranch, "--staged", "--worktree", p).Run()
+		}
+	}
+
+	// 5. One commit (keep markers; bypass hooks if repos have pre-commit on conflicts)
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage output: %w", err)
+	}
+	msg := fmt.Sprintf("[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
+		opts.FromVersion, opts.ToVersion)
+	if err := exec.Command("git", "commit", "--no-verify", "-m", msg).Run(); err != nil {
+		return nil
+	}
+
 	return nil
 }
 

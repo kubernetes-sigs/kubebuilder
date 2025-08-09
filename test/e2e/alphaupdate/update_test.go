@@ -104,7 +104,15 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should update project from v4.5.2 to v4.6.0 without conflicts", func() {
 			By("running alpha update from v4.5.2 to v4.6.0")
-			runAlphaUpdate(kbc.Dir, kbc, toVersion, false)
+			cmd := exec.Command(
+				kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersion,
+				"--to-version", toVersion,
+				"--from-branch", "main",
+			)
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), string(out))
 
 			By("checking that custom code is preserved")
 			validateCustomCodePreservation(kbc.Dir)
@@ -123,8 +131,17 @@ var _ = Describe("kubebuilder", func() {
 			By("modifying original Makefile to use CONTROLLER_TOOLS_VERSION v0.17.3")
 			modifyMakefileControllerTools(kbc.Dir, "v0.17.3")
 
-			By("running alpha update to v4.7.0 with --force flag")
-			runAlphaUpdate(kbc.Dir, kbc, toVersionWithConflict, true)
+			By("running alpha update with --force --squash")
+			cmd := exec.Command(
+				kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersion,
+				"--to-version", toVersionWithConflict,
+				"--from-branch", "main",
+				"--force", "--squash",
+			)
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), string(out))
 
 			By("checking that custom code is preserved")
 			validateCustomCodePreservation(kbc.Dir)
@@ -166,11 +183,48 @@ var _ = Describe("kubebuilder", func() {
 				"Expected original user version in conflict")
 			Expect(makefileStr).To(ContainSubstring("CONTROLLER_TOOLS_VERSION ?= v0.18.0"),
 				"Expected latest scaffold version in conflict")
+
+			By("checking that the squashed branch is created with the expected commit message")
+			prBranch := "kubebuilder-alpha-update-to-" + toVersionWithConflict
+
+			git := func(args ...string) ([]byte, error) {
+				cmd := exec.Command("git", args...)
+				cmd.Dir = kbc.Dir
+				return cmd.CombinedOutput()
+			}
+
+			By("checking that the squashed branch exists")
+			_, err = git("rev-parse", "--verify", prBranch)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("checking that exactly one squashed commit ahead of main")
+			out, err = git("rev-list", "--count", prBranch, "^main")
+			Expect(err).NotTo(HaveOccurred(), string(out))
+			Expect(strings.TrimSpace(string(out))).To(Equal("1"))
+
+			By("checking commit message of the squashed branch")
+			out, err = git("log", "-1", "--pretty=%B", prBranch)
+			Expect(err).NotTo(HaveOccurred(), string(out))
+			expected := fmt.Sprintf(
+				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
+				fromVersion, toVersionWithConflict,
+			)
+			Expect(string(out)).To(ContainSubstring(expected))
 		})
 
 		It("should stop when updating the project from v4.5.2 to v4.7.0 without the flag force", func() {
 			By("running alpha update without --force flag")
-			runAlphaUpdate(kbc.Dir, kbc, toVersionWithConflict, false, true)
+			By("running alpha update without --force flag")
+			cmd := exec.Command(
+				kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersion,
+				"--to-version", toVersionWithConflict,
+				"--from-branch", "main",
+			)
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).To(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring("merge stopped due to conflicts"))
 
 			By("validating that merge stopped with conflicts requiring manual resolution")
 			validateConflictState(kbc.Dir)
@@ -284,24 +338,6 @@ func downloadKubebuilderVersion(version string) (string, error) {
 	}
 
 	return binaryPath, nil
-}
-
-func runAlphaUpdate(projectDir string, kbc *utils.TestContext, version string, force bool, expectFailure ...bool) {
-	args := []string{"alpha", "update", "--from-version", fromVersion, "--to-version", version, "--from-branch", "main"}
-	if force {
-		args = append(args, "--force")
-	}
-
-	cmd := exec.Command(kbc.BinaryName, args...)
-	cmd.Dir = projectDir
-
-	output, err := kbc.Run(cmd)
-	if len(expectFailure) > 0 && expectFailure[0] {
-		Expect(err).To(HaveOccurred())
-		Expect(string(output)).To(ContainSubstring("merge stopped due to conflicts"))
-	} else {
-		Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("Alpha update failed: %s", string(output)))
-	}
 }
 
 func updateController(projectDir string) {
