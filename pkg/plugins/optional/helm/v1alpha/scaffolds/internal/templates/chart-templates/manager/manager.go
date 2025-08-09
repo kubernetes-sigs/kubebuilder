@@ -108,7 +108,7 @@ spec:
 {{- if .HasWebhooks }}
           {{ "{{- if .Values.webhook.enable }}" }}
           ports:
-            - containerPort: 9443
+            - containerPort: {{ "{{ .Values.webhook.port }}" }}
               name: webhook-server
               protocol: TCP
           {{ "{{- end }}" }}
