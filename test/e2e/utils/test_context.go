@@ -77,22 +77,32 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
 		CmdContext:     cc,
 	}
+
+	// For test outside of cluster we do not need to have kubectl
 	var k8sVersion *KubernetesVersion
-	v, err := kubectl.Version()
-	if err != nil {
+	fakeVersion := &KubernetesVersion{
+		ClientVersion: VersionInfo{
+			Major:      "1",
+			Minor:      "0",
+			GitVersion: "v1.0.0-fake",
+		},
+		ServerVersion: VersionInfo{
+			Major:      "1",
+			Minor:      "0",
+			GitVersion: "v1.0.0-fake",
+		},
+	}
+
+	var v KubernetesVersion
+	var lookupErr error
+
+	_, lookupErr = exec.LookPath("kubectl")
+	if lookupErr != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, "warning: kubectl not found in PATH; proceeding with fake version\n")
+		k8sVersion = fakeVersion
+	} else if v, err = kubectl.Version(); err != nil {
 		_, _ = fmt.Fprintf(GinkgoWriter, "warning: failed to get kubernetes version: %v\n", err)
-		k8sVersion = &KubernetesVersion{
-			ClientVersion: VersionInfo{
-				Major:      "1",
-				Minor:      "0",
-				GitVersion: "v1.0.0-fake",
-			},
-			ServerVersion: VersionInfo{
-				Major:      "1",
-				Minor:      "0",
-				GitVersion: "v1.0.0-fake",
-			},
-		}
+		k8sVersion = fakeVersion
 	} else {
 		k8sVersion = &v
 	}
