@@ -30,6 +30,17 @@ const (
 	OverwriteFile
 )
 
+// IfNotExistsAction determines what to do if a file to be updated does not exist
+type IfNotExistsAction int
+
+const (
+	// ErrorIfNotExist returns an error and stops processing (default behavior)
+	ErrorIfNotExist IfNotExistsAction = iota
+
+	// IgnoreFile skips the file and logs a message if it does not exist
+	IgnoreFile
+)
+
 // File describes a file that will be written
 type File struct {
 	// Path is the file to write
@@ -40,4 +51,7 @@ type File struct {
 
 	// IfExistsAction determines what to do if the file exists
 	IfExistsAction IfExistsAction
+
+	// IfNotExistsAction determines what to do if the file is missing (optional updates only)
+	IfNotExistsAction IfNotExistsAction
 }

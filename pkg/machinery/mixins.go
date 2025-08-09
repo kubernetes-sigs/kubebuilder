@@ -153,3 +153,14 @@ func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 		m.Resource = res
 	}
 }
+
+// IfNotExistsActionMixin provides file builders with an if-not-exists-action field
+type IfNotExistsActionMixin struct {
+	// IfNotExistsAction determines what to do if the file does not exist
+	IfNotExistsAction IfNotExistsAction
+}
+
+// GetIfNotExistsAction implements Inserter
+func (m *IfNotExistsActionMixin) GetIfNotExistsAction() IfNotExistsAction {
+	return m.IfNotExistsAction
+}
