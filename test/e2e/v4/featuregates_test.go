@@ -58,6 +58,7 @@ var _ = Describe("Feature Gates", func() {
 			By("initializing a project")
 			err := kbc.Init(
 				"--domain", kbc.Domain,
+				"--with-feature-gates",
 			)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -91,6 +92,43 @@ var _ = Describe("Feature Gates", func() {
 			Expect(string(typesContent)).To(ContainSubstring("+feature-gate"))
 		})
 
+		It("should NOT scaffold feature gates by default", func() {
+			By("initializing a project without feature gates flag")
+			err := kbc.Init(
+				"--domain", kbc.Domain,
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("creating API without feature gates flag")
+			err = kbc.CreateAPI(
+				"--group", kbc.Group,
+				"--version", kbc.Version,
+				"--kind", kbc.Kind,
+				"--resource", "--controller",
+				"--make=false",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying feature gates file was NOT generated")
+			featureGatesFile := filepath.Join(kbc.Dir, "internal", "featuregates", "featuregates.go")
+			Expect(featureGatesFile).NotTo(BeAnExistingFile())
+
+			By("verifying main.go does NOT have feature gates flag")
+			mainFile := filepath.Join(kbc.Dir, "cmd", "main.go")
+			Expect(mainFile).To(BeAnExistingFile())
+			mainContent, err := os.ReadFile(mainFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(mainContent)).NotTo(ContainSubstring("--feature-gates"))
+			Expect(string(mainContent)).NotTo(ContainSubstring("featuregates"))
+
+			By("verifying API types do NOT have feature gate example")
+			typesFile := filepath.Join(kbc.Dir, "api", kbc.Version, strings.ToLower(kbc.Kind)+"_types.go")
+			Expect(typesFile).To(BeAnExistingFile())
+			typesContent, err := os.ReadFile(typesFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(typesContent)).NotTo(ContainSubstring("+feature-gate"))
+		})
+
 		It("should discover feature gates from API types", func() {
 			By("initializing a project")
 			err := kbc.Init(
@@ -120,7 +158,7 @@ var _ = Describe("Feature Gates", func() {
 
 			err = pluginutil.InsertCode(
 				typesFile,
-				"Bar *string `json:\"bar,omitempty\"`",
+				"Foo *string `json:\"foo,omitempty\"`",
 				newField,
 			)
 			Expect(err).NotTo(HaveOccurred())
@@ -145,9 +183,10 @@ var _ = Describe("Feature Gates", func() {
 		})
 
 		It("should build project with feature gates", func() {
-			By("initializing a project")
+			By("initializing a project with feature gates")
 			err := kbc.Init(
 				"--domain", kbc.Domain,
+				"--with-feature-gates",
 			)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -171,9 +210,10 @@ var _ = Describe("Feature Gates", func() {
 		})
 
 		It("should generate manifests with feature gates", func() {
-			By("initializing a project")
+			By("initializing a project with feature gates")
 			err := kbc.Init(
 				"--domain", kbc.Domain,
+				"--with-feature-gates",
 			)
 			Expect(err).NotTo(HaveOccurred())
 
