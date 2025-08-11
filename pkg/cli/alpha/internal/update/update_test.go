@@ -110,7 +110,7 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(err).ToNot(HaveOccurred())
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring("checkout %s", opts.FromBranch))
+			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
 		})
 		It("Should fail when git command fails", func() {
 			fakeBinScript := `#!/bin/bash
@@ -124,7 +124,7 @@ var _ = Describe("Prepare for internal update", func() {
 
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring("checkout %s", opts.FromBranch))
+			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
 		})
 		It("Should fail when kubebuilder binary could not be downloaded", func() {
 			gock.Off()
@@ -141,7 +141,7 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(err.Error()).To(ContainSubstring("failed to prepare ancestor branch"))
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring("checkout %s", opts.FromBranch))
+			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
 		})
 	})
 
@@ -363,10 +363,97 @@ var _ = Describe("Prepare for internal update", func() {
 							exit 1`
 			err = mockBinResponse(fakeBinScript, mockGit)
 			Expect(err).ToNot(HaveOccurred())
-			err := opts.mergeOriginalToUpgrade()
+			err = opts.mergeOriginalToUpgrade()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(
 				"failed to create merge branch %s from %s", opts.MergeBranch, opts.OriginalBranch))
+		})
+	})
+
+	Context("SquashToOutputBranch", func() {
+		BeforeEach(func() {
+			opts.FromBranch = "main"
+			opts.ToVersion = "v4.6.0"
+			if opts.MergeBranch == "" {
+				opts.MergeBranch = "tmp-merge-test"
+			}
+		})
+
+		It("should create/reset the output branch and commit one squashed snapshot", func() {
+			opts.OutputBranch = ""
+			opts.PreservePath = []string{".github/workflows"} // exercise the restore call
+
+			err = opts.squashToOutputBranch()
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, readErr := os.ReadFile(logFile)
+			Expect(readErr).ToNot(HaveOccurred())
+			s := string(logs)
+
+			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
+			Expect(s).To(ContainSubstring(fmt.Sprintf(
+				"checkout -B kubebuilder-alpha-update-to-%s %s",
+				opts.ToVersion, opts.FromBranch,
+			)))
+			Expect(s).To(ContainSubstring(
+				"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +",
+			))
+			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
+			Expect(s).To(ContainSubstring(fmt.Sprintf(
+				"restore --source %s --staged --worktree .github/workflows",
+				opts.FromBranch,
+			)))
+			Expect(s).To(ContainSubstring("add --all"))
+
+			msg := fmt.Sprintf(
+				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
+				opts.FromVersion, opts.ToVersion,
+			)
+			Expect(s).To(ContainSubstring(msg))
+
+			Expect(s).To(ContainSubstring("commit --no-verify -m"))
+		})
+
+		It("should respect a custom output branch name", func() {
+			opts.OutputBranch = "my-custom-branch"
+			err = opts.squashToOutputBranch()
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, _ := os.ReadFile(logFile)
+			Expect(string(logs)).To(ContainSubstring(
+				fmt.Sprintf("checkout -B %s %s", "my-custom-branch", opts.FromBranch),
+			))
+		})
+
+		It("squash: no changes -> commit exits 1 but returns nil", func() {
+			fake := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "commit" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(fake, mockGit)).To(Succeed())
+
+			opts.PreservePath = nil
+			Expect(opts.squashToOutputBranch()).To(Succeed())
+
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring("commit --no-verify -m"))
+		})
+
+		It("squash: trims preserve-path and skips blanks", func() {
+			opts.PreservePath = []string{" .github/workflows ", "", "docs"}
+			Expect(opts.squashToOutputBranch()).To(Succeed())
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree .github/workflows"))
+			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree docs"))
+		})
+
+		It("update: runs squash when --squash is set", func() {
+			opts.Squash = true
+			Expect(opts.Update()).To(Succeed())
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring("checkout -B kubebuilder-alpha-update-to-" + opts.ToVersion + " main"))
+			Expect(string(s)).To(ContainSubstring("-c find . -mindepth 1"))
+			Expect(string(s)).To(ContainSubstring("checkout " + opts.MergeBranch + " -- ."))
 		})
 	})
 })
