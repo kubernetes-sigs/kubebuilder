@@ -2,7 +2,25 @@
 
 Feature gates allow you to enable or disable experimental features in your Kubebuilder controllers. This is similar to how Kubernetes core uses feature gates to manage experimental functionality.
 
+> **Note**: Feature gate infrastructure is **optional** and only generated when explicitly requested or detected. This provides a better user experience by avoiding unnecessary scaffolding.
+
 ## Quick Start
+
+### Enabling Feature Gate Infrastructure
+
+Feature gate infrastructure can be enabled in two ways:
+
+1. **During project initialization** with the `--with-feature-gates` flag:
+   ```bash
+   kubebuilder init --domain my.domain --repo my.domain/project --with-feature-gates
+   ```
+
+2. **During API creation** when adding experimental fields:
+   ```bash
+   kubebuilder create api --group webapp --version v1 --kind Guestbook --with-feature-gates
+   ```
+
+3. **Auto-detection**: If you add `+feature-gate` markers to your API types and run `kubebuilder create api`, the infrastructure will be automatically generated.
 
 ### Marking Fields
 
@@ -38,6 +56,13 @@ Feature gates provide a mechanism to:
 - Enable gradual rollout of new functionality
 - Maintain backward compatibility during API evolution
 - Test experimental functionality safely in production environments
+
+**Infrastructure Generation**: Feature gate infrastructure is only generated when:
+- The `--with-feature-gates` flag is used with `kubebuilder init` or `kubebuilder create api`
+- Auto-detected when existing feature gate infrastructure is found in the project
+- Auto-detected when `+feature-gate` markers are found in API types during `kubebuilder create api`
+
+This optional approach ensures projects only include feature gate infrastructure when actually needed.
 
 ## Usage
 
@@ -75,9 +100,13 @@ Feature gates are validated for proper format:
 
 Kubebuilder automatically discovers feature gates from your API types during scaffolding:
 
-1. **During `kubebuilder create api`**: Scans for existing `+feature-gate` markers
-2. **Generates `internal/featuregates/featuregates.go`**: Contains all discovered gates
-3. **Updates `cmd/main.go`**: Adds `--feature-gates` flag support
+1. **During `kubebuilder init --with-feature-gates`**: Generates infrastructure for future use
+2. **During `kubebuilder create api --with-feature-gates`**: Generates infrastructure and scans for markers
+3. **During `kubebuilder create api`**: Auto-detects existing infrastructure or discovers new `+feature-gate` markers
+4. **Generates `internal/featuregates/featuregates.go`**: Contains all discovered gates
+5. **Updates `cmd/main.go`**: Adds `--feature-gates` flag support
+
+**Important**: If no `--with-feature-gates` flag is provided and no feature gate infrastructure exists, it will only be generated if `+feature-gate` markers are found in your API types.
 
 ```go
 // Generated in internal/featuregates/featuregates.go
@@ -233,20 +262,25 @@ spec:
 
 ### Common Issues
 
-1. **Feature gate not discovered**
+1. **Feature gate infrastructure not generated**
+   - Use `--with-feature-gates` flag explicitly: `kubebuilder init --with-feature-gates` or `kubebuilder create api --with-feature-gates`
+   - Add `+feature-gate` markers to your API types and run `kubebuilder create api` (auto-detection)
+   - Ensure you're in a project directory with existing feature gate infrastructure
+
+2. **Feature gate not discovered**
    - Ensure the `+feature-gate` marker is on the line immediately before the field
-   - Re-run `kubebuilder create api` to regenerate feature gate files
+   - Re-run `kubebuilder create api --with-feature-gates` to regenerate feature gate files
    - Check that the marker follows the correct format: `// +feature-gate gate-name`
 
-2. **Invalid feature gate name**
+3. **Invalid feature gate name**
    - Use only lowercase letters, numbers, and hyphens
    - Examples: `experimental-bar`, `alpha-feature-v2`
 
-3. **Validation errors**
+4. **Validation errors**
    - Check that all specified gates are discovered in your API types
    - Verify syntax: `gate1=true,gate2=false` (no spaces around `=`)
 
-4. **Controller not recognizing feature gates**
+5. **Controller not recognizing feature gates**
    - Ensure `cmd/main.go` includes the generated feature gate initialization
    - Verify that `internal/featuregates/featuregates.go` is properly generated
 

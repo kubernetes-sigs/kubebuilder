@@ -75,6 +75,23 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
 <aside class="note">
+<h1>Feature Gates (Optional)</h1>
+
+If you plan to use experimental features with feature gates, you can include the infrastructure during project creation:
+
+```bash
+# Initialize project with feature gate support
+kubebuilder init --domain my.domain --repo my.domain/guestbook --with-feature-gates
+
+# Or add feature gate support when creating APIs
+kubebuilder create api --group webapp --version v1 --kind Guestbook --with-feature-gates
+```
+
+Feature gate infrastructure is only generated when explicitly requested or when `+feature-gate` markers are detected in your API types. See the [Feature Gates reference](/reference/markers/feature-gates.md) for more details.
+
+</aside>
+
+<aside class="note">
 <h1>Press Options</h1>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined

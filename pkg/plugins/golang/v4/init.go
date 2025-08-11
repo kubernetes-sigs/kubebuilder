@@ -75,6 +75,9 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 
   # Initialize a new project defining a specific project version
   %[1]s init --plugins go/v4 --project-version 3
+
+  # Initialize a new project with feature gate infrastructure for experimental features
+  %[1]s init --plugins go/v4 --domain example.org --with-feature-gates
 `, cliMeta.CommandName)
 }
 

@@ -75,6 +75,9 @@ make generate will be run.
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
   %[1]s create api --group ship --version v1beta1 --kind Frigate
 
+  # Create an API with feature gate infrastructure for experimental features
+  %[1]s create api --group webapp --version v1 --kind Guestbook --with-feature-gates
+
   # Edit the API Scheme
 
   nano api/v1beta1/frigate_types.go
