@@ -176,10 +176,10 @@ Bar *string `json:"bar,omitempty"`
 
 2. **Beta**: Feature available but can be disabled
    ```go
-   // +feature-gate beta-feature  
+   // +feature-gate beta-feature
    BetaField *string `json:"betaField,omitempty"`
    ```
-   
+
 3. **Stable**: Remove feature gate, feature always available
    ```go
    // No feature gate marker - always available
@@ -194,7 +194,7 @@ Test your controller with different feature gate configurations:
 # Test with all features disabled (default)
 make test
 
-# Test with specific features enabled  
+# Test with specific features enabled
 FEATURE_GATES="experimental-bar=true" make test
 
 # Test with all features enabled
@@ -225,7 +225,7 @@ spec:
 
 ```yaml
 # Production - only stable features
-apiVersion: apps/v1  
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
@@ -244,7 +244,7 @@ spec:
 ```yaml
 # Canary deployment with experimental features
 apiVersion: apps/v1
-kind: Deployment  
+kind: Deployment
 metadata:
   name: controller-manager-canary
 spec:
@@ -316,7 +316,7 @@ grep -A 5 -B 5 "feature-gates" cmd/main.go
 ### ✅ Production Ready
 
 - Feature gate discovery from API type markers
-- CLI flag `--feature-gates` for runtime control  
+- CLI flag `--feature-gates` for runtime control
 - Automatic scaffolding integration
 - Validation and error handling
 - Controller runtime integration
@@ -390,7 +390,7 @@ func (r *WebAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
         }
     }
 
-    // Handle advanced routing if enabled  
+    // Handle advanced routing if enabled
     if featureGates.IsEnabled("advanced-routing") && webapp.Spec.AdvancedRouting != nil {
         log.Info("Configuring advanced routing")
         if err := r.reconcileAdvancedRouting(ctx, &webapp); err != nil {

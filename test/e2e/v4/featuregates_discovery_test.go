@@ -45,27 +45,15 @@ var _ = Describe("Feature Gates Discovery", func() {
 	})
 
 	Context("when parsing testdata project", func() {
-		It("should discover feature gate markers from captain_types.go", func() {
+		It("should NOT discover feature gate markers from captain_types.go by default", func() {
 			By("parsing the testdata project API types")
 			parser := machinery.NewFeatureGateMarkerParser()
 			markers, err := parser.ParseFile("../../../testdata/project-v4/api/v1/captain_types.go")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(markers).NotTo(BeEmpty(), "Should discover feature gate markers")
-
-			By("extracting feature gate names")
-			featureGates := machinery.ExtractFeatureGates(markers)
-
-			By("verifying expected feature gates are found")
-			expectedGates := []string{
-				"experimental-bar",
-			}
-
-			for _, expectedGate := range expectedGates {
-				Expect(featureGates).To(ContainElement(expectedGate),
-					"Should discover feature gate: %s", expectedGate)
-			}
-
-			GinkgoWriter.Printf("Discovered feature gates: %v\n", featureGates)
+			
+			By("verifying no feature gates are found in clean testdata")
+			// Testdata files are auto-generated and should not contain feature gate markers by default
+			Expect(markers).To(BeEmpty(), "Clean testdata should not contain feature gate markers")
 		})
 	})
 

@@ -19,6 +19,7 @@ package machinery
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -63,8 +64,7 @@ func ParseFeatureGates(featureGates string) (FeatureGates, error) {
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if part == "" {
-			// Skip empty parts (e.g., trailing commas)
-			continue
+			return nil, fmt.Errorf("empty feature gate name in input")
 		}
 
 		// Parse the feature gate name and value
@@ -141,8 +141,16 @@ func (fg FeatureGates) String() string {
 		return ""
 	}
 
+	// Get feature gate names and sort them for consistent output
+	names := make([]string, 0, len(fg))
+	for name := range fg {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
 	var parts []string
-	for name, enabled := range fg {
+	for _, name := range names {
+		enabled := fg[name]
 		if enabled {
 			parts = append(parts, name)
 		} else {

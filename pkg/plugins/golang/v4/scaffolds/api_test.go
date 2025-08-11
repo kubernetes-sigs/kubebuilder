@@ -186,22 +186,10 @@ func TestAPIScaffolder_discoverFeatureGates_Testdata(t *testing.T) {
 
 	featureGates := apiScaffolder.discoverFeatureGates()
 
-	// The testdata contains a feature gate marker for "experimental-bar"
-	expectedGates := []string{"experimental-bar"}
+	// The testdata should not contain any feature gate markers by default
+	// since testdata files are auto-generated
+	expectedGates := []string{}
 	if len(featureGates) != len(expectedGates) {
 		t.Errorf("Expected %d feature gates from testdata, but found %d: %v", len(expectedGates), len(featureGates), featureGates)
-	}
-
-	for _, expectedGate := range expectedGates {
-		found := false
-		for _, gate := range featureGates {
-			if gate == expectedGate {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("Expected to find feature gate %s, but it was not discovered", expectedGate)
-		}
 	}
 }
