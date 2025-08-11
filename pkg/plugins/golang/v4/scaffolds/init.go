@@ -53,11 +53,12 @@ var _ plugins.Scaffolder = &initScaffolder{}
 var kustomizeVersion string
 
 type initScaffolder struct {
-	config          config.Config
-	boilerplatePath string
-	license         string
-	owner           string
-	commandName     string
+	config           config.Config
+	boilerplatePath  string
+	license          string
+	owner            string
+	commandName      string
+	withFeatureGates bool
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -77,6 +78,11 @@ func NewInitScaffolder(cfg config.Config, license, owner, commandName string) pl
 // InjectFS implements cmdutil.Scaffolder
 func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
+}
+
+// SetWithFeatureGates sets whether to scaffold feature gate infrastructure
+func (s *initScaffolder) SetWithFeatureGates(withFeatureGates bool) {
+	s.withFeatureGates = withFeatureGates
 }
 
 // getControllerRuntimeReleaseBranch converts the ControllerRuntime semantic versioning string to a
@@ -155,11 +161,12 @@ func (s *initScaffolder) Scaffold() error {
 		}
 	}
 
-	err := scaffold.Execute(
+	// Build the list of templates to scaffold
+	scaffoldFiles := []machinery.Builder{
 		&cmd.Main{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
+			WithFeatureGates:         s.withFeatureGates,
 		},
-		&cmd.FeatureGates{AvailableGates: []string{}},
 		&templates.GoMod{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
@@ -178,7 +185,6 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Readme{CommandName: s.commandName},
 		&templates.Golangci{},
 		&e2e.Test{},
-		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},
 		&github.E2eTestCi{},
 		&github.TestCi{},
@@ -188,7 +194,14 @@ func (s *initScaffolder) Scaffold() error {
 		&utils.Utils{},
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},
-	)
+	}
+
+	// Only add feature gates template if requested
+	if s.withFeatureGates {
+		scaffoldFiles = append(scaffoldFiles, &cmd.FeatureGates{AvailableGates: []string{}})
+	}
+
+	err := scaffold.Execute(scaffoldFiles...)
 	if err != nil {
 		return fmt.Errorf("failed to execute init scaffold: %w", err)
 	}

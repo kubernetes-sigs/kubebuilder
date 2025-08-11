@@ -48,6 +48,9 @@ type apiScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
+
+	// withFeatureGates indicates whether to include feature gate support
+	withFeatureGates bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
@@ -62,6 +65,11 @@ func NewAPIScaffolder(cfg config.Config, res resource.Resource, force bool) plug
 // InjectFS implements cmdutil.Scaffolder
 func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
+}
+
+// SetWithFeatureGates sets whether to include feature gate support
+func (s *apiScaffolder) SetWithFeatureGates(withFeatureGates bool) {
+	s.withFeatureGates = withFeatureGates
 }
 
 // Scaffold implements cmdutil.Scaffolder
@@ -98,6 +106,14 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
+	// Check if feature gates infrastructure already exists
+	existingFeatureGatesFile := filepath.Join("internal", "featuregates", "featuregates.go")
+	if _, err := os.Stat(existingFeatureGatesFile); err == nil {
+		// Feature gates infrastructure already exists, enable support
+		s.withFeatureGates = true
+		slog.Debug("Detected existing feature gates infrastructure, enabling support")
+	}
+
 	// If using --force, discover existing feature gates before overwriting files
 	var existingGates []string
 	if s.force && doAPI {
@@ -108,7 +124,7 @@ func (s *apiScaffolder) Scaffold() error {
 		if err := scaffold.Execute(
 			&api.Types{
 				Force:                     s.force,
-				IncludeFeatureGateExample: false, // Don't include by default - keep it simple
+				IncludeFeatureGateExample: s.withFeatureGates,
 			},
 			&api.Group{},
 		); err != nil {
@@ -155,12 +171,15 @@ func (s *apiScaffolder) Scaffold() error {
 		availableGates = newGates
 	}
 
-	// Generate feature gates file
-	featureGatesTemplate := &cmd.FeatureGates{}
-	featureGatesTemplate.AvailableGates = availableGates
-	featureGatesTemplate.IfExistsAction = machinery.OverwriteFile
-	if err := scaffold.Execute(featureGatesTemplate); err != nil {
-		return fmt.Errorf("error scaffolding feature gates: %w", err)
+	// Only generate feature gates infrastructure if requested or if gates were discovered
+	if s.withFeatureGates || len(availableGates) > 0 {
+		// Generate feature gates file
+		featureGatesTemplate := &cmd.FeatureGates{}
+		featureGatesTemplate.AvailableGates = availableGates
+		featureGatesTemplate.IfExistsAction = machinery.OverwriteFile
+		if err := scaffold.Execute(featureGatesTemplate); err != nil {
+			return fmt.Errorf("error scaffolding feature gates: %w", err)
+		}
 	}
 
 	if err := scaffold.Execute(

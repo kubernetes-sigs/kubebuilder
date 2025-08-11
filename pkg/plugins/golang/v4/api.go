@@ -50,11 +50,17 @@ type createAPISubcommand struct {
 	resourceFlag   *pflag.Flag
 	controllerFlag *pflag.Flag
 
+	// featureGateFlag holds the flag for feature gates
+	featureGateFlag *pflag.Flag
+
 	// force indicates that the resource should be created even if it already exists
 	force bool
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// withFeatureGates indicates whether to include feature gate support
+	withFeatureGates bool
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -95,6 +101,10 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
+
+	fs.BoolVar(&p.withFeatureGates, "with-feature-gates", false,
+		"if specified, include feature gate support in scaffolded files")
+	p.featureGateFlag = fs.Lookup("with-feature-gates")
 
 	p.options = &goPlugin.Options{}
 
@@ -147,6 +157,13 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 
 	p.options.UpdateResource(p.resource, p.config)
 
+	// Auto-detect feature gates if not explicitly set and infrastructure exists
+	if !p.featureGateFlag.Changed {
+		if _, err := os.Stat("internal/featuregates/featuregates.go"); err == nil {
+			p.withFeatureGates = true
+		}
+	}
+
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
 	}
@@ -180,6 +197,11 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
+
+	// Set feature gates flag if the scaffolder supports it
+	if fgScaffolder, ok := scaffolder.(scaffolds.FeatureGateScaffolder); ok {
+		fgScaffolder.SetWithFeatureGates(p.withFeatureGates)
+	}
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding API: %w", err)
 	}
