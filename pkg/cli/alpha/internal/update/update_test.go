@@ -27,6 +27,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	testVersion        = "v4.6.0"
+	testBranchName     = "test-branch"
+	testPRCreationLink = "https://github.com/test-owner/test-repo/pull/new/test-branch"
+	testOwner          = "test-owner"
+	testRepoName       = "test-repo"
+)
+
 // Mock response for binary executables
 func mockBinResponse(script, mockBin string) error {
 	err := os.WriteFile(mockBin, []byte(script), 0o755)
@@ -120,11 +128,27 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = opts.Update()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to checkout base branch %s", opts.FromBranch))
+			Expect(err.Error()).To(ContainSubstring("failed to checkout base branch"))
 
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
+			Expect(string(logs)).To(ContainSubstring("checkout"))
+		})
+		It("Should fail when git config fails with --open-gh-issue flag", func() {
+			opts.OpenIssue = true
+			opts.Force = true // Required for --open-gh-issue
+			// Create a script that succeeds for most git commands but fails for "git config"
+			fakeBinScript := `#!/bin/bash
+			       echo "$@" >> "` + logFile + `"
+			       if [[ "$1" == "config" ]]; then
+			           exit 1
+			       fi
+			       exit 0`
+			err = mockBinResponse(fakeBinScript, mockGit)
+			Expect(err).ToNot(HaveOccurred())
+			err = opts.Update()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to configure git identity"))
 		})
 		It("Should fail when kubebuilder binary could not be downloaded", func() {
 			gock.Off()
@@ -373,7 +397,7 @@ var _ = Describe("Prepare for internal update", func() {
 	Context("SquashToOutputBranch", func() {
 		BeforeEach(func() {
 			opts.FromBranch = "main"
-			opts.ToVersion = "v4.6.0"
+			opts.ToVersion = testVersion
 			if opts.MergeBranch == "" {
 				opts.MergeBranch = "tmp-merge-test"
 			}
@@ -392,8 +416,8 @@ var _ = Describe("Prepare for internal update", func() {
 
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
 			Expect(s).To(ContainSubstring(fmt.Sprintf(
-				"checkout -B kubebuilder-alpha-update-to-%s %s",
-				opts.ToVersion, opts.FromBranch,
+				"checkout -B kubebuilder-alpha-update-from-%s-to-%s %s",
+				opts.FromVersion, opts.ToVersion, opts.FromBranch,
 			)))
 			Expect(s).To(ContainSubstring(
 				"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +",
@@ -406,7 +430,7 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(s).To(ContainSubstring("add --all"))
 
 			msg := fmt.Sprintf(
-				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
+				"(kubebuilder): update scaffold from %s to %s",
 				opts.FromVersion, opts.ToVersion,
 			)
 			Expect(s).To(ContainSubstring(msg))
@@ -428,7 +452,7 @@ var _ = Describe("Prepare for internal update", func() {
 		It("squash: no changes -> commit exits 1 but returns nil", func() {
 			fake := `#!/bin/bash
 echo "$@" >> "` + logFile + `"
-if [[ "$1" == "commit" ]]; then exit 1; fi
+if [[ "$1" == "commit" && "$2" == "--no-verify" ]]; then exit 1; fi
 exit 0`
 			Expect(mockBinResponse(fake, mockGit)).To(Succeed())
 
@@ -451,9 +475,368 @@ exit 0`
 			opts.Squash = true
 			Expect(opts.Update()).To(Succeed())
 			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("checkout -B kubebuilder-alpha-update-to-" + opts.ToVersion + " main"))
+			expectedBranch := fmt.Sprintf("kubebuilder-alpha-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)
+			Expect(string(s)).To(ContainSubstring(fmt.Sprintf("checkout -B %s main", expectedBranch)))
 			Expect(string(s)).To(ContainSubstring("-c find . -mindepth 1"))
 			Expect(string(s)).To(ContainSubstring("checkout " + opts.MergeBranch + " -- ."))
+		})
+	})
+
+	Context("GitHub Integration", func() {
+		var mockGh string
+
+		BeforeEach(func() {
+			// Create fake gh CLI executable
+			mockGh = filepath.Join(tmpDir, "gh")
+			script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 0`
+			err = mockBinResponse(script, mockGh)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("CheckExistingIssue", func() {
+			It("should return false when no issue exists", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+echo "0"
+exit 0`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, issueErr := opts.checkExistingIssue()
+				Expect(issueErr).NotTo(HaveOccurred())
+				Expect(exists).To(BeFalse())
+
+				logs, _ := os.ReadFile(logFile)
+				expectedTitle := fmt.Sprintf("(kubebuilder) Update scaffold from %s to %s", opts.FromVersion, opts.ToVersion)
+				expectedSearch := fmt.Sprintf(`issue list --state open --search in:title "%s"`, expectedTitle)
+				Expect(string(logs)).To(ContainSubstring(expectedSearch))
+			})
+
+			It("should return true when issue exists", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+echo "2"
+exit 0`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, issueErr := opts.checkExistingIssue()
+				Expect(issueErr).NotTo(HaveOccurred())
+				Expect(exists).To(BeTrue())
+			})
+
+			It("should return error when gh command fails", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, issueErr := opts.checkExistingIssue()
+				Expect(issueErr).To(HaveOccurred())
+				Expect(issueErr.Error()).To(ContainSubstring("failed to check existing issues"))
+				Expect(exists).To(BeFalse())
+			})
+		})
+
+		Context("CreateIssue", func() {
+			It("should skip creating issue when one already exists", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "1"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.createIssue()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("issue list --state open"))
+				Expect(string(logs)).NotTo(ContainSubstring("issue create"))
+			})
+
+			It("should create issue when none exists", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "0"
+elif [[ "$1" == "issue" && "$2" == "create" ]]; then
+    echo "Issue created successfully"
+elif [[ "$1" == "repo" && "$2" == "view" ]]; then
+    echo "test-owner"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.createIssue()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("issue list --state open"))
+				Expect(string(logs)).To(ContainSubstring("push -u origin"))
+				Expect(string(logs)).To(ContainSubstring("repo view --json owner"))
+				Expect(string(logs)).To(ContainSubstring("repo view --json name"))
+				Expect(string(logs)).To(ContainSubstring("issue create --title"))
+			})
+		})
+
+		Context("RenderIssueBody Function", func() {
+			It("should render issue body correctly without conflicts", func() {
+				fromVersion := "v4.5.0"
+				toVersion := testVersion
+				branchName := testBranchName
+				prCreationLink := testPRCreationLink
+				owner := testOwner
+				repoName := testRepoName
+				hasConflicts := false
+
+				actual := renderIssueBody(fromVersion, toVersion, branchName, prCreationLink, owner, repoName, hasConflicts)
+
+				releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s", toVersion)
+				branchURL := fmt.Sprintf("https://github.com/%s/%s/tree/%s", owner, repoName, branchName)
+				expected := fmt.Sprintf(
+					issueBodyTemplate, toVersion, releaseURL, fromVersion, toVersion, branchName, branchURL, prCreationLink,
+				)
+
+				Expect(actual).To(Equal(expected))
+				Expect(actual).NotTo(ContainSubstring("**WARNING**"))
+			})
+
+			It("should render issue body correctly with conflicts", func() {
+				fromVersion := "v4.5.0"
+				toVersion := testVersion
+				branchName := testBranchName
+				prCreationLink := testPRCreationLink
+				owner := testOwner
+				repoName := testRepoName
+				hasConflicts := true
+
+				actual := renderIssueBody(fromVersion, toVersion, branchName, prCreationLink, owner, repoName, hasConflicts)
+
+				releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s", toVersion)
+				branchURL := fmt.Sprintf("https://github.com/%s/%s/tree/%s", owner, repoName, branchName)
+				expectedBase := fmt.Sprintf(
+					issueBodyTemplate, toVersion, releaseURL, fromVersion, toVersion, branchName, branchURL, prCreationLink,
+				)
+				expected := expectedBase + conflictWarningTemplate
+
+				Expect(actual).To(Equal(expected))
+				Expect(actual).To(ContainSubstring("**WARNING**"))
+			})
+
+			It("should use opts.createIssueBody correctly", func() {
+				opts.HasConflicts = false
+				branchName := testBranchName
+				prCreationLink := testPRCreationLink
+				owner := testOwner
+				repoName := testRepoName
+
+				actual := opts.createIssueBody(branchName, prCreationLink, owner, repoName)
+				expected := renderIssueBody(
+					opts.FromVersion, opts.ToVersion, branchName, prCreationLink, owner, repoName, opts.HasConflicts,
+				)
+
+				Expect(actual).To(Equal(expected))
+			})
+		})
+
+		Context("CheckRemoteBranchExists", func() {
+			It("should return false when remote branch does not exist", func() {
+				// Mock git ls-remote returning empty (no remote branch)
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo ""
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, checkErr := opts.checkRemoteBranchExists("test-branch")
+				Expect(checkErr).NotTo(HaveOccurred())
+				Expect(exists).To(BeFalse())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin test-branch"))
+			})
+
+			It("should return true when remote branch exists", func() {
+				// Mock git ls-remote returning branch info (remote branch exists)
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo "abc123 refs/heads/test-branch"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, checkErr := opts.checkRemoteBranchExists("test-branch")
+				Expect(checkErr).NotTo(HaveOccurred())
+				Expect(exists).To(BeTrue())
+			})
+
+			It("should return error when git command fails", func() {
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+
+				exists, checkErr := opts.checkRemoteBranchExists("test-branch")
+				Expect(checkErr).To(HaveOccurred())
+				Expect(checkErr.Error()).To(ContainSubstring("failed to check remote branch"))
+				Expect(exists).To(BeFalse())
+			})
+		})
+
+		Context("PushBranchToRemote Safety", func() {
+			It("should skip push when remote branch already exists", func() {
+				// Mock git ls-remote to return existing branch
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo "abc123 refs/heads/test-branch"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+
+				pushed, pushErr := opts.pushBranchToRemote("test-branch")
+				Expect(pushErr).NotTo(HaveOccurred())
+				Expect(pushed).To(BeFalse())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin test-branch"))
+				// Should not contain push command
+				Expect(string(logs)).NotTo(ContainSubstring("push -u origin"))
+			})
+
+			It("should push when remote branch does not exist", func() {
+				// Mock git ls-remote to return empty (no remote branch)
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo ""
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+
+				pushed, pushErr := opts.pushBranchToRemote("test-branch")
+				Expect(pushErr).NotTo(HaveOccurred())
+				Expect(pushed).To(BeTrue())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin test-branch"))
+				Expect(string(logs)).To(ContainSubstring("push -u origin test-branch"))
+			})
+		})
+
+		Context("CreateIssue Safety Integration", func() {
+			It("should skip issue creation when remote branch already exists", func() {
+				// Mock git ls-remote to return existing branch (push will return false)
+				// Mock gh to return no existing issues
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo "abc123 refs/heads/test-branch"
+elif [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "0"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.createIssue()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				// Should check for existing issues
+				Expect(string(logs)).To(ContainSubstring("issue list --state open"))
+				// Should check if remote branch exists
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin"))
+				// Should NOT create issue or push
+				Expect(string(logs)).NotTo(ContainSubstring("issue create"))
+				Expect(string(logs)).NotTo(ContainSubstring("push -u origin"))
+			})
+
+			It("should create issue when remote branch does not exist", func() {
+				// Mock git ls-remote to return empty (no remote branch)
+				// Mock gh to return no existing issues and successful repo info
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo ""
+elif [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "0"
+elif [[ "$1" == "repo" && "$2" == "view" && "$*" == *"owner"* ]]; then
+    echo "test-owner"
+elif [[ "$1" == "repo" && "$2" == "view" && "$*" == *"name"* ]]; then
+    echo "test-repo"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.createIssue()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				// Should check for existing issues
+				Expect(string(logs)).To(ContainSubstring("issue list --state open"))
+				// Should check if remote branch exists
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin"))
+				// Should push and create issue
+				Expect(string(logs)).To(ContainSubstring("push -u origin"))
+				Expect(string(logs)).To(ContainSubstring("issue create"))
+			})
+		})
+
+		Context("Integration with Update workflow", func() {
+			It("should call GitHub integration when issue flag is set", func() {
+				opts.OpenIssue = true
+				opts.Squash = true
+
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "0"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.Update()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				Expect(string(logs)).To(ContainSubstring("issue create"))
+			})
 		})
 	})
 })

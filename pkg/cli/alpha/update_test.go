@@ -37,6 +37,7 @@ var _ = Describe("NewUpdateCommand", func() {
 			Expect(flags.Lookup("squash")).NotTo(BeNil())
 			Expect(flags.Lookup("preserve-path")).NotTo(BeNil())
 			Expect(flags.Lookup("output-branch")).NotTo(BeNil())
+			Expect(flags.Lookup("open-gh-issue")).NotTo(BeNil())
 		})
 	})
 })

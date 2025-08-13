@@ -47,6 +47,9 @@ func (opts *Update) Validate() error {
 	if err := validateReleaseAvailability(opts.ToVersion); err != nil {
 		return fmt.Errorf("unable to find release %s: %w", opts.ToVersion, err)
 	}
+	if err := opts.validateGitHubIntegrationFlags(); err != nil {
+		return fmt.Errorf("failed to validate GitHub integration flags: %w", err)
+	}
 	return nil
 }
 
@@ -138,6 +141,14 @@ func (opts *Update) validateEqualVersions() error {
 			log.Info("Your project already uses the specified version. No action taken.", "version", opts.FromVersion)
 		}
 		os.Exit(0)
+	}
+	return nil
+}
+
+// validateGitHubIntegrationFlags validates that --force is used with GitHub integration flags
+func (opts *Update) validateGitHubIntegrationFlags() error {
+	if opts.OpenIssue && !opts.Force {
+		return fmt.Errorf("--force flag is required when using --open-gh-issue to handle potential conflicts")
 	}
 	return nil
 }

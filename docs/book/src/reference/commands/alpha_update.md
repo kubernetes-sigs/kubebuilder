@@ -48,7 +48,7 @@ Use this command when you:
 
 4. **(Optional) Squash**
    With `--squash`, copies the merge result to a stable output branch and commits **once**:
-   - Default output branch: `kubebuilder-alpha-update-to-<to-version>`
+   - Default output branch: `kubebuilder-alpha-update-from-<from-version>-to-<to-version>`
    - Or set your own with `--output-branch`
      If there are conflicts, the single commit will include conflict markers.
 
@@ -92,8 +92,36 @@ Use a **custom output branch** name:
 
 ```shell
 kubebuilder alpha update --force --squash \
-  -output-branch upgrade/kb-to-v4.7.0
+  --output-branch chore/upgrade-kb-to-v4.7.0
 ```
+
+**GitHub Integration** - automatically create an issue:
+
+```shell
+kubebuilder alpha update --force --squash --open-gh-issue
+```
+
+## GitHub Integration Requirements
+
+The GitHub integration feature (`--open-gh-issue`) requires:
+
+- **gh CLI** installed and authenticated
+  - For local use: `gh auth login`
+  - For GitHub Actions: authentication is automatic with `GITHUB_TOKEN`
+- **`--force` flag** to handle potential conflicts during automation
+- **Push access** to the repository
+
+**GitHub Token Permissions**: When using GitHub tokens (e.g., in CI/CD), you may need to preserve workflow files to avoid permission issues:
+
+```shell
+kubebuilder alpha update --force --squash \
+  --preserve-path .github/workflows --open-gh-issue
+```
+
+**Idempotent Behavior**: The command is safe to run multiple times:
+- If a remote branch already exists with the same name, the command will not push or create an issue (prevents overwriting existing work)
+- If an issue already exists for the same update (from → to versions), no new issue is created
+- The command will log when existing branches/issues are found and exit successfully
 
 ## Merge Conflicts with `--force`
 
@@ -113,7 +141,7 @@ Incoming changes
 
 ## Commit message used in `--squash` mode
 
-> [kubebuilder-automated-update]: update scaffold from <from> to <to>; (squashed 3-way merge)
+> (kubebuilder): update scaffold from <from> to <to>
 
 <aside class="note warning">
 <h1>You might need to upgrade your project first</h1>
@@ -155,7 +183,8 @@ make all
 | `--force`         | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (useful for CI/cron).                         |
 | `--squash`        | Write the merge result as **one commit** on a stable output branch.                                                                         |
 | `--preserve-path` | Repeatable. With `--squash`, restore these paths from the base branch (e.g., `--preserve-path .github/workflows`).                          |
-| `--output-branch` | Branch name to use for the squashed commit (default: `kubebuilder-alpha-update-to-<to-version>`).                                          |
+| `--output-branch` | Branch name to use for the squashed commit (default: `kubebuilder-alpha-update-from-<from-version>-to-<to-version>`).                                          |
+| `--open-gh-issue` | Create an issue using gh CLI after successful update. Requires gh CLI and `--force` flag. Safe to re-run - skips if remote branch or issue already exists. |
 | `-h, --help`      | Show help for this command.                                                                                                                |
 
 <aside class="note">

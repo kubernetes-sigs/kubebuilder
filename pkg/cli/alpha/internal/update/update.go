@@ -55,11 +55,17 @@ type Update struct {
 	// If empty, it defaults to "kubebuilder-alpha-update-to-<ToVersion>".
 	OutputBranch string
 
+	// OpenIssue enables creating an issue using gh CLI.
+	OpenIssue bool
+
 	// UpdateBranches
 	AncestorBranch string
 	OriginalBranch string
 	UpgradeBranch  string
 	MergeBranch    string
+
+	// HasConflicts tracks whether merge conflicts were detected during the update
+	HasConflicts bool
 }
 
 // Update a project using a default three-way Git merge.
@@ -83,6 +89,13 @@ func (opts *Update) Update() error {
 		"original_branch", opts.OriginalBranch,
 		"upgrade_branch", opts.UpgradeBranch,
 		"merge_branch", opts.MergeBranch)
+
+	// Configure git identity if GitHub integration is enabled (needed for commits during 3-way merge)
+	if opts.OpenIssue {
+		if err := opts.ensureGitIdentity(); err != nil {
+			return fmt.Errorf("failed to configure git identity: %w", err)
+		}
+	}
 
 	// 1. Creates an ancestor branch based on base branch
 	// 2. Deletes everything except .git and PROJECT
@@ -124,6 +137,19 @@ func (opts *Update) Update() error {
 			return fmt.Errorf("failed to squash to output branch: %w", err)
 		}
 	}
+
+	// GitHub integration
+	if opts.OpenIssue {
+		if !opts.Squash {
+			if err := opts.createOutputBranch(); err != nil {
+				return fmt.Errorf("failed to create output branch for GitHub integration: %w", err)
+			}
+		}
+		if err := opts.createIssue(); err != nil {
+			return fmt.Errorf("failed to create GitHub issue: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -131,11 +157,7 @@ func (opts *Update) Update() error {
 // on a branch derived from FromBranch (e.g., "main"). If PreservePath is set, those paths
 // are restored from the base branch after copying the merge tree, so CI config etc. stays put.
 func (opts *Update) squashToOutputBranch() error {
-	// Default output branch name if not provided
-	out := opts.OutputBranch
-	if out == "" {
-		out = "kubebuilder-alpha-update-to-" + opts.ToVersion
-	}
+	out := opts.getOutputBranchName()
 
 	// 1. Start from base (FromBranch)
 	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
@@ -168,10 +190,96 @@ func (opts *Update) squashToOutputBranch() error {
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
 		return fmt.Errorf("stage output: %w", err)
 	}
-	msg := fmt.Sprintf("[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
-		opts.FromVersion, opts.ToVersion)
+	msg := fmt.Sprintf("(kubebuilder): update scaffold from %s to %s", opts.FromVersion, opts.ToVersion)
 	if err := exec.Command("git", "commit", "--no-verify", "-m", msg).Run(); err != nil {
-		return nil
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			return nil
+		}
+		return fmt.Errorf("failed to commit squashed changes: %w", err)
+	}
+
+	return nil
+}
+
+// createOutputBranch creates the output branch preserving the full 3-way merge commit history.
+// This is used when GitHub integration is enabled but --squash is not used.
+// It recreates the merge history on a pushable branch based on the original base branch.
+func (opts *Update) createOutputBranch() error {
+	out := opts.getOutputBranchName()
+
+	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("checkout %s: %w", opts.FromBranch, err)
+	}
+	if err := exec.Command("git", "checkout", "-B", out, opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("create/reset %s from %s: %w", out, opts.FromBranch, err)
+	}
+
+	if err := exec.Command("sh", "-c",
+		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
+		return fmt.Errorf("cleanup for ancestor: %w", err)
+	}
+	if err := exec.Command("git", "checkout", opts.AncestorBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout ancestor content: %w", err)
+	}
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage ancestor content: %w", err)
+	}
+	if err := exec.Command("git", "commit", "--no-verify", "-m",
+		"Clean scaffolding from release version: "+opts.FromVersion).Run(); err != nil {
+		return fmt.Errorf("commit ancestor: %w", err)
+	}
+
+	if err := exec.Command("sh", "-c",
+		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
+		return fmt.Errorf("cleanup for original: %w", err)
+	}
+	if err := exec.Command("git", "checkout", opts.OriginalBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout original content: %w", err)
+	}
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage original content: %w", err)
+	}
+	if err := exec.Command("git", "commit", "--no-verify", "-m",
+		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, out)).Run(); err != nil {
+		return fmt.Errorf("commit original: %w", err)
+	}
+
+	if err := exec.Command("sh", "-c",
+		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
+		return fmt.Errorf("cleanup for upgrade: %w", err)
+	}
+	if err := exec.Command("git", "checkout", opts.UpgradeBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout upgrade content: %w", err)
+	}
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage upgrade content: %w", err)
+	}
+	if err := exec.Command("git", "commit", "--no-verify", "-m",
+		"Clean scaffolding from release version: "+opts.ToVersion).Run(); err != nil {
+		return fmt.Errorf("commit upgrade: %w", err)
+	}
+
+	if err := exec.Command("sh", "-c",
+		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
+		return fmt.Errorf("cleanup for merge: %w", err)
+	}
+	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout merge content: %w", err)
+	}
+
+	for _, p := range opts.PreservePath {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			_ = exec.Command("git", "checkout", opts.FromBranch, "--", p).Run()
+		}
+	}
+
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage merge content: %w", err)
+	}
+	mergeMessage := fmt.Sprintf("Merge from %s to %s.", opts.FromVersion, opts.ToVersion)
+	if err := exec.Command("git", "commit", "--no-verify", "-m", mergeMessage).Run(); err != nil {
+		return fmt.Errorf("commit merge: %w", err)
 	}
 
 	return nil
@@ -407,6 +515,7 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 		// If the merge has an error that is not a conflict, return an error 2
 		if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
 			hasConflicts = true
+			opts.HasConflicts = true
 			if !opts.Force {
 				log.Warn("Merge stopped due to conflicts. Manual resolution is required.")
 				log.Warn("After resolving the conflicts, run the following command:")
@@ -422,6 +531,7 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 
 	if !hasConflicts {
 		log.Info("Merge happened without conflicts.")
+		opts.HasConflicts = false
 	}
 
 	// Best effort to run make targets to ensure the project is in a good state
@@ -439,7 +549,191 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 		message += " Merge happened without conflicts."
 	}
 
-	_ = exec.Command("git", "commit", "-m", message).Run()
+	if err := exec.Command("git", "commit", "--no-verify", "-m", message).Run(); err != nil {
+		return fmt.Errorf("failed to commit merge result: %w", err)
+	}
+
+	return nil
+}
+
+// getOutputBranchName returns the output branch name
+func (opts *Update) getOutputBranchName() string {
+	if opts.OutputBranch != "" {
+		return opts.OutputBranch
+	}
+	return fmt.Sprintf("kubebuilder-alpha-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)
+}
+
+// createIssue creates an issue using gh CLI
+func (opts *Update) createIssue() error {
+	exists, err := opts.checkExistingIssue()
+	if err != nil {
+		return fmt.Errorf("failed to check existing issues: %w", err)
+	}
+
+	if exists {
+		log.Info("Issue for update already exists. Nothing to do here.", "from", opts.FromVersion, "to", opts.ToVersion)
+		return nil
+	}
+
+	branchName := opts.getOutputBranchName()
+
+	pushed, err := opts.pushBranchToRemote(branchName)
+	if err != nil {
+		return err
+	}
+	if !pushed {
+		log.Info("Branch was not pushed (already exists), skipping issue creation", "branch", branchName)
+		return nil
+	}
+
+	ownerOutput, _ := exec.Command("gh", "repo", "view", "--json", "owner", "--jq", ".owner.login").Output()
+	nameOutput, _ := exec.Command("gh", "repo", "view", "--json", "name", "--jq", ".name").Output()
+
+	owner := strings.TrimSpace(string(ownerOutput))
+	name := strings.TrimSpace(string(nameOutput))
+
+	var prCreationLink string
+	if owner != "" && name != "" {
+		prCreationLink = fmt.Sprintf("https://github.com/%s/%s/pull/new/%s", owner, name, branchName)
+	} else {
+		prCreationLink = fmt.Sprintf("https://github.com/{owner}/{repo}/pull/new/%s", branchName)
+	}
+
+	title := fmt.Sprintf("(kubebuilder) Update scaffold from %s to %s", opts.FromVersion, opts.ToVersion)
+	body := opts.createIssueBody(branchName, prCreationLink, owner, name)
+
+	if err := exec.Command("gh", "issue", "create", "--title", title, "--body", body).Run(); err != nil {
+		return fmt.Errorf("failed to create issue: %w", err)
+	}
+	return nil
+}
+
+const issueBodyTemplate = `There's a new scaffold available for update!
+
+Check out what's new in [Kubebuilder %s Release Notes](%s).
+
+### What to do?
+
+To make your life easier, Kubebuilder has updated your project scaffold **from %s to %s** on the [%s](%s) branch.
+
+You can create a Pull Request with the changes using the link below:
+
+%s
+
+**ATTENTION**: This update was performed by automation. Always review and test your code before merging the changes.
+
+**HINT**: You can learn more ways to automate updates in the ` +
+	`[alpha update documentation](https://kubebuilder.io/reference/commands/alpha_update).`
+
+const conflictWarningTemplate = `
+
+**WARNING**: Conflict markers were committed to make this automation possible. ` +
+	`You should resolve the conflicts before anything.`
+
+// renderIssueBody renders the issue body template with the provided parameters
+func renderIssueBody(
+	fromVersion, toVersion, branchName, prCreationLink, owner, repoName string,
+	hasConflicts bool,
+) string {
+	releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s", toVersion)
+	var branchURL string
+	if owner != "" && repoName != "" {
+		branchURL = fmt.Sprintf("https://github.com/%s/%s/tree/%s", owner, repoName, branchName)
+	} else {
+		branchURL = fmt.Sprintf("https://github.com/{owner}/{repo}/tree/%s", branchName)
+	}
+
+	body := fmt.Sprintf(
+		issueBodyTemplate, toVersion, releaseURL, fromVersion, toVersion, branchName, branchURL, prCreationLink,
+	)
+
+	if hasConflicts {
+		body += conflictWarningTemplate
+	}
+
+	return body
+}
+
+// createIssueBody creates a unified issue body template
+func (opts *Update) createIssueBody(branchName, prCreationLink, owner, repoName string) string {
+	return renderIssueBody(
+		opts.FromVersion, opts.ToVersion, branchName, prCreationLink, owner, repoName, opts.HasConflicts,
+	)
+}
+
+// pushBranchToRemote handles the common logic for pushing a branch to remote
+// Returns (pushed bool, error) where pushed indicates if the push actually happened
+func (opts *Update) pushBranchToRemote(branchName string) (bool, error) {
+	// Check if the branch already exists on remote to avoid overwriting existing work
+	exists, err := opts.checkRemoteBranchExists(branchName)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if remote branch exists: %w", err)
+	}
+	if exists {
+		log.Info("Remote branch already exists, skipping push to avoid overwriting existing work", "branch", branchName)
+		return false, nil
+	}
+
+	if err := exec.Command("git", "checkout", branchName).Run(); err != nil {
+		log.Warn("Failed to checkout branch before push", "branch", branchName, "error", err)
+		return false, fmt.Errorf("failed to checkout branch %s: %w", branchName, err)
+	}
+
+	statusCmd := exec.Command("git", "status", "--porcelain")
+	if output, err := statusCmd.Output(); err != nil {
+		log.Warn("Failed to check git status", "error", err)
+	} else if len(strings.TrimSpace(string(output))) > 0 {
+		log.Warn("Branch has uncommitted changes", "branch", branchName, "status", string(output))
+		_ = exec.Command("git", "add", "--all").Run()
+		_ = exec.Command("git", "commit", "--no-verify", "-m", "Fix uncommitted changes before push").Run()
+	}
+
+	pushCmd := exec.Command("git", "push", "-u", "origin", branchName)
+	if output, err := pushCmd.CombinedOutput(); err != nil {
+		return false, fmt.Errorf("failed to push branch to remote: %w. Output: %s", err, string(output))
+	}
+
+	return true, nil
+}
+
+// checkRemoteBranchExists checks if a branch already exists on the remote repository
+func (opts *Update) checkRemoteBranchExists(branchName string) (bool, error) {
+	cmd := exec.Command("git", "ls-remote", "--heads", "origin", branchName)
+	output, err := cmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("failed to check remote branch: %w", err)
+	}
+
+	// If output is not empty, the branch exists on remote
+	return len(strings.TrimSpace(string(output))) > 0, nil
+}
+
+// checkExistingIssue checks if an issue already exists for the same update (from -> to versions)
+func (opts *Update) checkExistingIssue() (bool, error) {
+	expectedTitle := fmt.Sprintf("(kubebuilder) Update scaffold from %s to %s", opts.FromVersion, opts.ToVersion)
+
+	cmd := exec.Command("gh", "issue", "list", "--state", "open", "--search",
+		fmt.Sprintf("in:title \"%s\"", expectedTitle), "--json", "number", "--jq", "length")
+	output, err := cmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("failed to check existing issues: %w", err)
+	}
+
+	issueCount := strings.TrimSpace(string(output))
+	return issueCount != "0", nil
+}
+
+// ensureGitIdentity configures git user identity for commits
+func (opts *Update) ensureGitIdentity() error {
+	if err := exec.Command("git", "config", "user.name", "github-actions[bot]").Run(); err != nil {
+		return fmt.Errorf("failed to set git user.name: %w", err)
+	}
+
+	if err := exec.Command("git", "config", "user.email",
+		"github-actions[bot]@users.noreply.github.com").Run(); err != nil {
+		return fmt.Errorf("failed to set git user.email: %w", err)
+	}
 
 	return nil
 }
