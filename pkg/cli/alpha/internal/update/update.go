@@ -90,13 +90,6 @@ func (opts *Update) Update() error {
 		"upgrade_branch", opts.UpgradeBranch,
 		"merge_branch", opts.MergeBranch)
 
-	// Configure git identity if GitHub integration is enabled (needed for commits during 3-way merge)
-	if opts.OpenIssue {
-		if err := opts.ensureGitIdentity(); err != nil {
-			return fmt.Errorf("failed to configure git identity: %w", err)
-		}
-	}
-
 	// 1. Creates an ancestor branch based on base branch
 	// 2. Deletes everything except .git and PROJECT
 	// 3. Installs old release
@@ -722,18 +715,4 @@ func (opts *Update) checkExistingIssue() (bool, error) {
 
 	issueCount := strings.TrimSpace(string(output))
 	return issueCount != "0", nil
-}
-
-// ensureGitIdentity configures git user identity for commits
-func (opts *Update) ensureGitIdentity() error {
-	if err := exec.Command("git", "config", "user.name", "github-actions[bot]").Run(); err != nil {
-		return fmt.Errorf("failed to set git user.name: %w", err)
-	}
-
-	if err := exec.Command("git", "config", "user.email",
-		"github-actions[bot]@users.noreply.github.com").Run(); err != nil {
-		return fmt.Errorf("failed to set git user.email: %w", err)
-	}
-
-	return nil
 }

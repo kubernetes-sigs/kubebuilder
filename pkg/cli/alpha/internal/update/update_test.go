@@ -134,22 +134,6 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(readErr).ToNot(HaveOccurred())
 			Expect(string(logs)).To(ContainSubstring("checkout"))
 		})
-		It("Should fail when git config fails with --open-gh-issue flag", func() {
-			opts.OpenIssue = true
-			opts.Force = true // Required for --open-gh-issue
-			// Create a script that succeeds for most git commands but fails for "git config"
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       if [[ "$1" == "config" ]]; then
-			           exit 1
-			       fi
-			       exit 0`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
-			err = opts.Update()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to configure git identity"))
-		})
 		It("Should fail when kubebuilder binary could not be downloaded", func() {
 			gock.Off()
 
