@@ -119,9 +119,10 @@ kubebuilder alpha update --force --squash \
 ```
 
 **Idempotent Behavior**: The command is safe to run multiple times:
-- If a remote branch already exists with the same name, the command will not push or create an issue (prevents overwriting existing work)
+- If a remote branch already exists with the same name, the command will not push (prevents overwriting existing work)
 - If an issue already exists for the same update (from → to versions), no new issue is created
-- The command will log when existing branches/issues are found and exit successfully
+- If a branch exists but no issue exists, an issue will be created to link to the existing branch
+- The command will log when existing branches/issues are found and handle each case appropriately
 
 ## Merge Conflicts with `--force`
 

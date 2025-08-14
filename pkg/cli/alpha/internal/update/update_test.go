@@ -732,8 +732,8 @@ exit 0`
 		})
 
 		Context("CreateIssue Safety Integration", func() {
-			It("should skip issue creation when remote branch already exists", func() {
-				// Mock git ls-remote to return existing branch (push will return false)
+			It("should create issue when remote branch exists but no issue exists", func() {
+				// Mock git ls-remote to return existing branch
 				// Mock gh to return no existing issues
 				script := `#!/bin/bash
 echo "$@" >> "` + logFile + `"
@@ -741,6 +741,41 @@ if [[ "$1" == "ls-remote" ]]; then
     echo "abc123 refs/heads/test-branch"
 elif [[ "$1" == "issue" && "$2" == "list" ]]; then
     echo "0"
+elif [[ "$1" == "issue" && "$2" == "create" ]]; then
+    echo "Issue created successfully"
+elif [[ "$1" == "repo" && "$2" == "view" ]]; then
+    echo "test-owner"
+else
+    echo "success"
+fi
+exit 0`
+				err = mockBinResponse(script, mockGit)
+				Expect(err).NotTo(HaveOccurred())
+				err = mockBinResponse(script, mockGh)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = opts.createIssue()
+				Expect(err).NotTo(HaveOccurred())
+
+				logs, _ := os.ReadFile(logFile)
+				// Should check for existing issues
+				Expect(string(logs)).To(ContainSubstring("issue list --state open"))
+				// Should check if remote branch exists
+				Expect(string(logs)).To(ContainSubstring("ls-remote --heads origin"))
+				// Should create issue but NOT push
+				Expect(string(logs)).To(ContainSubstring("issue create"))
+				Expect(string(logs)).NotTo(ContainSubstring("push -u origin"))
+			})
+
+			It("should skip issue creation when both remote branch and issue exist", func() {
+				// Mock git ls-remote to return existing branch
+				// Mock gh to return existing issue
+				script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "ls-remote" ]]; then
+    echo "abc123 refs/heads/test-branch"
+elif [[ "$1" == "issue" && "$2" == "list" ]]; then
+    echo "1"
 else
     echo "success"
 fi
@@ -763,7 +798,7 @@ exit 0`
 				Expect(string(logs)).NotTo(ContainSubstring("push -u origin"))
 			})
 
-			It("should create issue when remote branch does not exist", func() {
+			It("should create branch and issue when neither exist", func() {
 				// Mock git ls-remote to return empty (no remote branch)
 				// Mock gh to return no existing issues and successful repo info
 				script := `#!/bin/bash

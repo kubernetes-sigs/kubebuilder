@@ -559,25 +559,46 @@ func (opts *Update) getOutputBranchName() string {
 
 // createIssue creates an issue using gh CLI
 func (opts *Update) createIssue() error {
-	exists, err := opts.checkExistingIssue()
+	branchName := opts.getOutputBranchName()
+
+	branchExists, err := opts.checkRemoteBranchExists(branchName)
+	if err != nil {
+		return fmt.Errorf("failed to check if remote branch exists: %w", err)
+	}
+
+	var pushed bool
+	if branchExists {
+		log.Info("Remote branch already exists, skipping push to avoid overwriting existing work", "branch", branchName)
+		log.Info("Branch was not pushed (already exists), ensuring no work is overwritten", "branch", branchName)
+		pushed = false
+	} else {
+		pushed, err = opts.pushBranchToRemote(branchName)
+		if err != nil {
+			return err
+		}
+		if !pushed {
+			log.Info("Branch was not pushed (unexpected), skipping issue creation", "branch", branchName)
+			return nil
+		}
+	}
+
+	issueExists, err := opts.checkExistingIssue()
 	if err != nil {
 		return fmt.Errorf("failed to check existing issues: %w", err)
 	}
 
-	if exists {
-		log.Info("Issue for update already exists. Nothing to do here.", "from", opts.FromVersion, "to", opts.ToVersion)
+	if issueExists {
+		if pushed {
+			log.Info("Branch was created but issue already exists for this update", "branch", branchName,
+				"from", opts.FromVersion, "to", opts.ToVersion)
+		} else {
+			log.Info("Issue for update already exists. Nothing to do here.", "from", opts.FromVersion, "to", opts.ToVersion)
+		}
 		return nil
 	}
 
-	branchName := opts.getOutputBranchName()
-
-	pushed, err := opts.pushBranchToRemote(branchName)
-	if err != nil {
-		return err
-	}
 	if !pushed {
-		log.Info("Branch was not pushed (already exists), skipping issue creation", "branch", branchName)
-		return nil
+		log.Info("Creating issue for existing branch", "branch", branchName)
 	}
 
 	ownerOutput, _ := exec.Command("gh", "repo", "view", "--json", "owner", "--jq", ".owner.login").Output()
