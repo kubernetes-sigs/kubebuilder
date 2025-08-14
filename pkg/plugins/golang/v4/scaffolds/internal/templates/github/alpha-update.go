@@ -27,7 +27,6 @@ var _ machinery.Template = &AlphaUpdateCi{}
 // AlphaUpdateCi scaffolds the GitHub Action to run kubebuilder alpha update
 type AlphaUpdateCi struct {
 	machinery.TemplateMixin
-	machinery.BoilerplateMixin
 }
 
 // SetTemplateDefaults implements machinery.Template
