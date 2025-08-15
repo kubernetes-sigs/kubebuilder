@@ -59,6 +59,11 @@ type Inserter interface {
 	GetCodeFragments() CodeFragmentsMap
 }
 
+// HasIfNotExistsAction allows a template to define an action if the file is missing
+type HasIfNotExistsAction interface {
+	GetIfNotExistsAction() IfNotExistsAction
+}
+
 // HasDomain allows the domain to be used on a template
 type HasDomain interface {
 	// InjectDomain sets the template domain
