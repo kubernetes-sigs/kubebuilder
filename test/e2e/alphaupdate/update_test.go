@@ -185,7 +185,7 @@ var _ = Describe("kubebuilder", func() {
 				"Expected latest scaffold version in conflict")
 
 			By("checking that the squashed branch is created with the expected commit message")
-			prBranch := "kubebuilder-alpha-update-to-" + toVersionWithConflict
+			prBranch := fmt.Sprintf("kubebuilder-alpha-update-from-%s-to-%s", fromVersion, toVersionWithConflict)
 
 			git := func(args ...string) ([]byte, error) {
 				cmd := exec.Command("git", args...)
@@ -206,7 +206,7 @@ var _ = Describe("kubebuilder", func() {
 			out, err = git("log", "-1", "--pretty=%B", prBranch)
 			Expect(err).NotTo(HaveOccurred(), string(out))
 			expected := fmt.Sprintf(
-				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
+				"(kubebuilder): update scaffold from %s to %s",
 				fromVersion, toVersionWithConflict,
 			)
 			Expect(string(out)).To(ContainSubstring(expected))

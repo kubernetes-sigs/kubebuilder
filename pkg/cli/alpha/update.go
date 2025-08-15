@@ -48,7 +48,7 @@ By default, the merge result is committed on the temporary 'merge' branch.
 Use --squash to snapshot that result into a SINGLE commit on a stable branch,
 ready for a PR:
 
-  kubebuilder-alpha-update-to-<to-version>
+  kubebuilder-alpha-update-from-<from-version>-to-<to-version>
 
 This keeps history tidy (one commit per update run) and enables idempotent PRs.
 
@@ -77,6 +77,9 @@ Examples:
   # Squash into a custom output branch name
   kubebuilder alpha update --force --squash --output-branch my-update-branch
 
+  # Create an issue automatically using gh CLI
+  kubebuilder alpha update --force --squash --open-gh-issue
+
 Behavior summary:
   • Without --force:
       - If conflicts occur during the 3-way merge, the command stops on the 'merge' branch
@@ -85,7 +88,7 @@ Behavior summary:
       - Conflicted files are committed on the 'merge' branch with conflict markers.
   • With --squash:
       - After the merge step, the exact 'merge' tree is copied to a new/updated branch
-        (default: kubebuilder-alpha-update-to-<to-version>) and committed ONCE, keeping markers
+        (default: kubebuilder-alpha-update-from-<from-version>-to-<to-version>) and committed ONCE, keeping markers
         if present. This branch is intended for opening/refreshing a PR.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			err := opts.Prepare()
@@ -115,12 +118,14 @@ Behavior summary:
 			"commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).")
 	updateCmd.Flags().BoolVar(&opts.Squash, "squash", false,
 		"After merging, write a single squashed commit with the merge result to a fixed branch "+
-			"named kubebuilder-alpha-update-to-<to-version>.")
+			"named kubebuilder-alpha-update-from-<from-version>-to-<to-version>.")
 	updateCmd.Flags().StringArrayVar(&opts.PreservePath, "preserve-path", nil,
 		"Paths to preserve from the base branch when squashing (repeatable). "+
 			"Example: --preserve-path .github/workflows")
 	updateCmd.Flags().StringVar(&opts.OutputBranch, "output-branch", "",
-		"Override the default kubebuilder-alpha-update-to-<to-version> branch name (used with --squash).")
+		"Override the default kubebuilder-alpha-update-from-<from-version>-to-<to-version> branch name (used with --squash).")
+	updateCmd.Flags().BoolVar(&opts.OpenIssue, "open-gh-issue", false,
+		"Create an issue using gh CLI after successful update. Requires gh CLI to be installed and authenticated.")
 
 	return updateCmd
 }
