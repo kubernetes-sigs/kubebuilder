@@ -57,6 +57,7 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+	withFeatureGates   bool
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -74,6 +75,9 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 
   # Initialize a new project defining a specific project version
   %[1]s init --plugins go/v4 --project-version 3
+
+  # Initialize a new project with feature gate infrastructure for experimental features
+  %[1]s init --plugins go/v4 --domain example.org --with-feature-gates
 `, cliMeta.CommandName)
 }
 
@@ -83,6 +87,10 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	// dependency args
 	fs.BoolVar(&p.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
+
+	// feature gate args
+	fs.BoolVar(&p.withFeatureGates, "with-feature-gates", false,
+		"if specified, scaffold feature gate infrastructure for experimental functionality")
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
@@ -128,6 +136,10 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.commandName)
 	scaffolder.InjectFS(fs)
+	// Set feature gates flag if the scaffolder supports it
+	if fgScaffolder, ok := scaffolder.(scaffolds.FeatureGateScaffolder); ok {
+		fgScaffolder.SetWithFeatureGates(p.withFeatureGates)
+	}
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding init plugin: %w", err)
 	}

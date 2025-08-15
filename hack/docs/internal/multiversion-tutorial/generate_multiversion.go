@@ -735,11 +735,25 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+		`// Example of a feature-gated field:
+	// Bar is an experimental field that requires the "experimental-bar" feature gate to be enabled
+	// TODO: When controller-tools supports feature gates (issue #1238), use:
+	// +kubebuilder:feature-gate=experimental-bar
+	// +feature-gate experimental-bar
 	// +optional
-	Foo *string `+"`json:\"foo,omitempty\"`",
+	Bar *string `+"`"+`json:"bar,omitempty"`+"`",
 		cronjobSpecMore,
 	)
+	if err != nil {
+		// Fallback to the original pattern if the feature-gated field is not present
+		err = pluginutil.ReplaceInFile(
+			filepath.Join(sp.ctx.Dir, path),
+			`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
+	// +optional
+	Foo *string `+"`json:\"foo,omitempty\"`",
+			cronjobSpecMore,
+		)
+	}
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
 
 	err = pluginutil.ReplaceInFile(
