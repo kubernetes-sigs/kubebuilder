@@ -568,8 +568,8 @@ func (opts *Update) createIssue() error {
 
 	var pushed bool
 	if branchExists {
-		log.Info("Remote branch already exists, skipping push to avoid overwriting existing work", "branch", branchName)
-		log.Info("Branch was not pushed (already exists), ensuring no work is overwritten", "branch", branchName)
+		log.Info("Remote branch already exists. Branch was not pushed to avoid overwriting existing work",
+			"branch", branchName)
 		pushed = false
 	} else {
 		pushed, err = opts.pushBranchToRemote(branchName)
