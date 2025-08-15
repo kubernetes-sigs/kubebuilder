@@ -47,7 +47,6 @@ const alphaUpdateCiTemplate = `name: Alpha Update
 permissions:
   contents: write
   issues: write
-  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -91,4 +90,5 @@ jobs:
           --squash \
           --preserve-path .github/workflows \
           --open-gh-issue
+
 `
