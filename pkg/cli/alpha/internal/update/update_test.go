@@ -25,6 +25,8 @@ import (
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
 // Mock response for binary executables
@@ -236,7 +238,7 @@ var _ = Describe("Prepare for internal update", func() {
 
 	Context("BinaryWithVersion", func() {
 		It("Should scucceed to download the specified released version from GitHub releases", func() {
-			_, err = downloadReleaseVersionWith(opts.FromVersion)
+			_, err = helpers.DownloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -249,14 +251,14 @@ var _ = Describe("Prepare for internal update", func() {
 				Reply(401).
 				Body(strings.NewReader(""))
 
-			_, err = downloadReleaseVersionWith(opts.FromVersion)
+			_, err = helpers.DownloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("failed to download the binary: HTTP 401"))
 		})
 	})
 
 	Context("CleanupBranch", func() {
-		It("Should scucceed executing cleanup command", func() {
+		It("Should succeed executing cleanup command", func() {
 			err = cleanupBranch()
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -397,10 +399,6 @@ var _ = Describe("Prepare for internal update", func() {
 				"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +",
 			))
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
-			Expect(s).To(ContainSubstring(fmt.Sprintf(
-				"restore --source %s --staged --worktree .github/workflows",
-				opts.FromBranch,
-			)))
 			Expect(s).To(ContainSubstring("add --all"))
 
 			msg := fmt.Sprintf(
@@ -441,8 +439,8 @@ exit 0`
 			opts.PreservePath = []string{" .github/workflows ", "", "docs"}
 			Expect(opts.squashToOutputBranch()).To(Succeed())
 			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree .github/workflows"))
-			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree docs"))
+			Expect(string(s)).To(ContainSubstring("checkout main -- docs"))
+			Expect(string(s)).To(ContainSubstring("checkout main -- .github/workflows"))
 		})
 
 		It("update: runs squash when --squash is set", func() {

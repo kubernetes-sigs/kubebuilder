@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
 // Validate checks the input info provided for the update and populates the cliVersion
@@ -98,7 +100,7 @@ func (opts *Update) validateSemanticVersions() error {
 
 // validateReleaseAvailability will verify if the binary to scaffold from-version flag is available
 func validateReleaseAvailability(version string) error {
-	url := buildReleaseURL(version)
+	url := helpers.BuildReleaseURL(version)
 	resp, err := http.Head(url)
 	if err != nil {
 		return fmt.Errorf("failed to check binary availability: %w", err)

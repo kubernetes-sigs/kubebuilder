@@ -19,16 +19,13 @@ package update
 import (
 	"errors"
 	"fmt"
-	"io"
 	log "log/slog"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/spf13/afero"
-
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
@@ -188,20 +185,20 @@ func (opts *Update) addCommitsToOutputBranch() error {
 	}
 
 	// 2) ancestor snapshot
-	if err := cleanWorktree("ancestor"); err != nil {
-		return err
+	if err := helpers.CleanWorktree("ancestor"); err != nil {
+		return fmt.Errorf("failed to clean ancestor branch: %w", err)
 	}
 	if err := snapshotCommit(
 		opts.AncestorBranch,
 		"Clean scaffolding from release version: "+opts.FromVersion,
 		"ancestor",
 	); err != nil {
-		return err
+		return fmt.Errorf("failed to commit ancestor branch: %w", err)
 	}
 
 	// 3) original snapshot
-	if err := cleanWorktree("original"); err != nil {
-		return err
+	if err := helpers.CleanWorktree("original"); err != nil {
+		return fmt.Errorf("failed to clean original branch: %w", err)
 	}
 	// custom message uses the output-branch name
 	if err := snapshotCommit(
@@ -209,24 +206,24 @@ func (opts *Update) addCommitsToOutputBranch() error {
 		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, out),
 		"original",
 	); err != nil {
-		return err
+		return fmt.Errorf("failed to commit original branch: %w", err)
 	}
 
 	// 4) upgrade snapshot
-	if err := cleanWorktree("upgrade"); err != nil {
-		return err
+	if err := helpers.CleanWorktree("upgrade"); err != nil {
+		return fmt.Errorf("failed to clean upgrade branch: %w", err)
 	}
 	if err := snapshotCommit(
 		opts.UpgradeBranch,
 		"Clean scaffolding from release version: "+opts.ToVersion,
 		"upgrade",
 	); err != nil {
-		return err
+		return fmt.Errorf("failed to commit upgrade branch: %w", err)
 	}
 
 	// 5) merge snapshot (no new merge; copy tree from the prepared merge branch)
-	if err := cleanWorktree("merge"); err != nil {
-		return err
+	if err := helpers.CleanWorktree("merge"); err != nil {
+		return fmt.Errorf("failed to clean merge branch: %w", err)
 	}
 	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
 		return fmt.Errorf("checkout merge content: %w", err)
@@ -255,16 +252,6 @@ func (opts *Update) preservePaths() {
 			log.Warn("failed to restore preserved path", "path", p, "branch", opts.FromBranch, "error", err)
 		}
 	}
-}
-
-// cleanWorktree removes everything in the repo root except .git so the next
-// checkout writes a verbatim snapshot of the source branch.
-func cleanWorktree(label string) error {
-	if err := exec.Command("sh", "-c",
-		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
-		return fmt.Errorf("cleanup for %s: %w", label, err)
-	}
-	return nil
 }
 
 // snapshotCommit checks out all files from srcBranch and commits them with msg.
@@ -318,20 +305,15 @@ func (opts *Update) squashToOutputBranch() error {
 	}
 
 	// 2) clean worktree, then copy merge tree
-	if err := cleanWorktree("output branch"); err != nil {
-		return err
+	if err := helpers.CleanWorktree("output branch"); err != nil {
+		return fmt.Errorf("output branch: %w", err)
 	}
 	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
 		return fmt.Errorf("checkout %s content: %w", "merge", err)
 	}
 
 	// 3) optionally restore preserved paths from base (tests assert on 'git restore …')
-	for _, p := range opts.PreservePath {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			_ = exec.Command("git", "restore", "--source", opts.FromBranch, "--staged", "--worktree", p).Run()
-		}
-	}
+	opts.preservePaths()
 
 	// 4) stage and single squashed commit
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
@@ -345,7 +327,7 @@ func (opts *Update) squashToOutputBranch() error {
 // regenerateProjectWithVersion downloads the release binary for the specified version,
 // and runs the `alpha generate` command to re-scaffold the project
 func regenerateProjectWithVersion(version string) error {
-	tempDir, err := downloadReleaseVersionWith(version)
+	tempDir, err := helpers.DownloadReleaseVersionWith(version)
 	if err != nil {
 		return fmt.Errorf("failed to download release %s binary: %w", version, err)
 	}
@@ -372,70 +354,10 @@ func (opts *Update) prepareAncestorBranch() error {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
 	}
 	commitMessage := "Clean scaffolding from release version: " + opts.FromVersion
-	return commitIgnoreEmpty(commitMessage, "ancestor")
-}
-
-// commitIgnoreEmpty commits the staged changes with the provided message.
-func commitIgnoreEmpty(msg, ctx string) error {
-	cmd := exec.Command("git", "commit", "--no-verify", "-m", msg)
-	if err := cmd.Run(); err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) && ee.ExitCode() == 1 {
-			// nothing to commit
-			log.Info("No changes to commit", "context", ctx, "message", msg)
-			return nil
-		}
-		return fmt.Errorf("git commit failed (%s): %w", ctx, err)
+	if err := helpers.CommitIgnoreEmpty(commitMessage, "ancestor"); err != nil {
+		return fmt.Errorf("failed to commit ancestor branch: %w", err)
 	}
 	return nil
-}
-
-// downloadReleaseVersionWith downloads the specified released version from GitHub releases and saves it
-// to a temporary directory with executable permissions.
-// Returns the temporary directory path containing the binary.
-func downloadReleaseVersionWith(version string) (string, error) {
-	url := buildReleaseURL(version)
-
-	fs := afero.NewOsFs()
-	tempDir, err := afero.TempDir(fs, "", "kubebuilder"+version+"-")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-
-	binaryPath := tempDir + "/kubebuilder"
-	file, err := os.Create(binaryPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create the binary file: %w", err)
-	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Error("failed to close the file", "error", err)
-		}
-	}()
-
-	response, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to download the binary: %w", err)
-	}
-	defer func() {
-		if err = response.Body.Close(); err != nil {
-			log.Error("failed to close the connection", "error", err)
-		}
-	}()
-
-	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download the binary: HTTP %d", response.StatusCode)
-	}
-
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to write the binary content to file: %w", err)
-	}
-
-	if err := os.Chmod(binaryPath, 0o755); err != nil {
-		return "", fmt.Errorf("failed to make binary executable: %w", err)
-	}
-	return tempDir, nil
 }
 
 // cleanupBranch removes all files and folders in the current directory
@@ -485,7 +407,7 @@ func runAlphaGenerate(tempDir, version string) error {
 		}
 	}()
 
-	// TODO: we need improve the implementation from utils to allow us
+	// TODO: we need improve the implementation from helpers to allow us
 	// to pass the path of the binary and use it to run the alpha generate command.
 	cmd := exec.Command(tempBinaryPath, "alpha", "generate")
 	cmd.Stdout = os.Stdout
@@ -525,10 +447,13 @@ func (opts *Update) prepareOriginalBranch() error {
 		return fmt.Errorf("failed to stage all changes in current: %w", err)
 	}
 
-	return commitIgnoreEmpty(
+	if err := helpers.CommitIgnoreEmpty(
 		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, opts.OriginalBranch),
 		"original",
-	)
+	); err != nil {
+		return fmt.Errorf("failed to commit original branch: %w", err)
+	}
+	return nil
 }
 
 // prepareUpgradeBranch creates the 'upgrade' branch from ancestor and
