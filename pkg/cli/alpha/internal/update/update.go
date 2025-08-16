@@ -233,12 +233,7 @@ func (opts *Update) addCommitsToOutputBranch() error {
 	}
 
 	// 6) optionally restore preserved paths from base (review tests assert on 'git checkout …')
-	for _, p := range opts.PreservePath {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			_ = exec.Command("git", "checkout", opts.FromBranch, "--", p).Run()
-		}
-	}
+	opts.preservePaths()
 
 	// 7) stage and final commit message (non-squash path)
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
@@ -246,6 +241,20 @@ func (opts *Update) addCommitsToOutputBranch() error {
 	}
 
 	return opts.createFinalCommit()
+}
+
+// preservePaths checks out the paths specified in PreservePath
+func (opts *Update) preservePaths() {
+	for _, p := range opts.PreservePath {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if err := exec.Command("git", "checkout", opts.FromBranch, "--", p).Run(); err != nil {
+			// best-effort restore, but surface visibility for debugging
+			log.Warn("failed to restore preserved path", "path", p, "branch", opts.FromBranch, "error", err)
+		}
+	}
 }
 
 // cleanWorktree removes everything in the repo root except .git so the next
@@ -329,9 +338,6 @@ func (opts *Update) squashToOutputBranch() error {
 		return fmt.Errorf("stage output: %w", err)
 	}
 
-	// If you switched to the boolean signature (recommended):
-	// return opts.createFinalCommit(true)
-
 	// If you kept the no-arg version that reads opts.Squash, ensure opts.Squash==true before calling.
 	return opts.createFinalCommit()
 }
@@ -339,7 +345,7 @@ func (opts *Update) squashToOutputBranch() error {
 // regenerateProjectWithVersion downloads the release binary for the specified version,
 // and runs the `alpha generate` command to re-scaffold the project
 func regenerateProjectWithVersion(version string) error {
-	tempDir, err := binaryWithVersion(version)
+	tempDir, err := downloadReleaseVersionWith(version)
 	if err != nil {
 		return fmt.Errorf("failed to download release %s binary: %w", version, err)
 	}
@@ -352,13 +358,8 @@ func regenerateProjectWithVersion(version string) error {
 // prepareAncestorBranch prepares the ancestor branch by checking it out,
 // cleaning up the project files, and regenerating the project with the specified version.
 func (opts *Update) prepareAncestorBranch() error {
-	gitCmd := exec.Command("git", "checkout", "-b", opts.AncestorBranch, opts.FromBranch)
-	if err := gitCmd.Run(); err != nil {
+	if err := exec.Command("git", "checkout", "-b", opts.AncestorBranch, opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("failed to create %s from %s: %w", opts.AncestorBranch, opts.FromBranch, err)
-	}
-	checkoutCmd := exec.Command("git", "checkout", opts.AncestorBranch)
-	if err := checkoutCmd.Run(); err != nil {
-		return fmt.Errorf("failed to checkout base branch %s: %w", opts.AncestorBranch, err)
 	}
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s : %w", opts.AncestorBranch, err)
@@ -366,19 +367,33 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := regenerateProjectWithVersion(opts.FromVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with fromVersion %s: %w", opts.FromVersion, err)
 	}
-	gitCmd = exec.Command("git", "add", "--all")
+	gitCmd := exec.Command("git", "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
 	}
 	commitMessage := "Clean scaffolding from release version: " + opts.FromVersion
-	_ = exec.Command("git", "commit", "-m", commitMessage).Run()
+	return commitIgnoreEmpty(commitMessage, "ancestor")
+}
+
+// commitIgnoreEmpty commits the staged changes with the provided message.
+func commitIgnoreEmpty(msg, ctx string) error {
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", msg)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			// nothing to commit
+			log.Info("No changes to commit", "context", ctx, "message", msg)
+			return nil
+		}
+		return fmt.Errorf("git commit failed (%s): %w", ctx, err)
+	}
 	return nil
 }
 
-// binaryWithVersion downloads the specified released version from GitHub releases and saves it
+// downloadReleaseVersionWith downloads the specified released version from GitHub releases and saves it
 // to a temporary directory with executable permissions.
 // Returns the temporary directory path containing the binary.
-func binaryWithVersion(version string) (string, error) {
+func downloadReleaseVersionWith(version string) (string, error) {
 	url := buildReleaseURL(version)
 
 	fs := afero.NewOsFs()
@@ -510,10 +525,10 @@ func (opts *Update) prepareOriginalBranch() error {
 		return fmt.Errorf("failed to stage all changes in current: %w", err)
 	}
 
-	_ = exec.Command("git", "commit", "-m",
-		fmt.Sprintf("Add code from %s into %s",
-			opts.FromBranch, opts.OriginalBranch)).Run()
-	return nil
+	return commitIgnoreEmpty(
+		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, opts.OriginalBranch),
+		"original",
+	)
 }
 
 // prepareUpgradeBranch creates the 'upgrade' branch from ancestor and
@@ -542,7 +557,14 @@ func (opts *Update) prepareUpgradeBranch() error {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.UpgradeBranch, err)
 	}
 
-	_ = exec.Command("git", "commit", "-m", "Clean scaffolding from release version: "+opts.ToVersion).Run()
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", "Clean scaffolding from release version: "+opts.ToVersion)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			return nil // nothing to commit
+		}
+		return fmt.Errorf("failed to commit upgrade branch: %w", err)
+	}
 	return nil
 }
 
@@ -598,7 +620,15 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 		message += " Merge happened without conflicts."
 	}
 
-	_ = exec.Command("git", "commit", "-m", message).Run()
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", message)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			return nil // nothing to commit
+		}
+		return fmt.Errorf("failed to commit merge branch %s: %w", opts.MergeBranch, err)
+	}
 
+	log.Info("Merge completed", "branch", opts.MergeBranch, "message", message)
 	return nil
 }

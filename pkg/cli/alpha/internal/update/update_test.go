@@ -192,7 +192,7 @@ var _ = Describe("Prepare for internal update", func() {
 			"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {}"))
 		Expect(string(logs)).To(ContainSubstring("alpha generate"))
 		Expect(string(logs)).To(ContainSubstring("add --all"))
-		Expect(string(logs)).To(ContainSubstring("commit -m Clean scaffolding from release version: %s", fromVersion))
+		Expect(string(logs)).To(ContainSubstring("Clean scaffolding from release version: %s", fromVersion))
 	}
 
 	Context("PrepareAncestorBranch", func() {
@@ -236,7 +236,7 @@ var _ = Describe("Prepare for internal update", func() {
 
 	Context("BinaryWithVersion", func() {
 		It("Should scucceed to download the specified released version from GitHub releases", func() {
-			_, err = binaryWithVersion(opts.FromVersion)
+			_, err = downloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -249,7 +249,7 @@ var _ = Describe("Prepare for internal update", func() {
 				Reply(401).
 				Body(strings.NewReader(""))
 
-			_, err = binaryWithVersion(opts.FromVersion)
+			_, err = downloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("failed to download the binary: HTTP 401"))
 		})
@@ -327,7 +327,7 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(string(logs)).To(ContainSubstring("checkout %s -- .", opts.FromBranch))
 			Expect(string(logs)).To(ContainSubstring("add --all"))
 			Expect(string(logs)).To(ContainSubstring(
-				"commit -m Add code from %s into %s", opts.FromBranch, opts.OriginalBranch))
+				"commit --no-verify -m Add code from %s into %s", opts.FromBranch, opts.OriginalBranch))
 		})
 
 		It("Should fail prepareOriginalBranch", func() {
@@ -582,7 +582,9 @@ exit 0`
 			opts.Force = true
 			Expect(opts.mergeOriginalToUpgrade()).To(Succeed())
 			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("commit -m Merge from v4.8.0 to v4.9.0."))
+			Expect(string(s)).To(
+				ContainSubstring("commit --no-verify -m Merge from v4.8.0 to v4.9.0. " +
+					"With conflicts - manual resolution required"))
 		})
 	})
 
