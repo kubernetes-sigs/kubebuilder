@@ -2,25 +2,12 @@
 
 ## Overview
 
-`kubebuilder alpha update` upgrades your project’s scaffold to a newer scaffold version.
+`kubebuilder alpha update` upgrades your project’s scaffold to a newer Kubebuilder release using a **3-way Git merge**. It rebuilds clean scaffolds for the old and new versions, merges your current code into the new scaffold, and gives you a reviewable output branch.
+It takes care of the heavy lifting so you can focus on reviewing and resolving conflicts,
+not re-applying your code.
 
-It uses a **3-way merge** so you do less manual work. The command creates these branches:
-
-- **Ancestor**: clean scaffold from the **old** version
-- **Original**: your current project (from your base branch)
-- **Upgrade**: clean scaffold from the **new** version
-- **Merge**: result of merging **Original** into **Upgrade** (this is where conflicts appear)
-
-You can review and test the merge result before applying it to your main branch.
-Optionally, use **`--squash`** to put the merge result into **one commit** on a stable output branch (great for PRs).
-
-<aside class="note warning">
-<h1>Creates branches and deletes files</h1>
-
-This command creates branches like `tmp-kb-update-*` and removes files during the process.
-Make sure your work is committed before you run it.
-
-</aside>
+By default, the final result is **squashed into a single commit** on a dedicated output branch.
+If you prefer to keep the full history (no squash), use `--show-commits`.
 
 ## When to Use It
 
@@ -33,26 +20,45 @@ Use this command when you:
 
 ## How It Works
 
-1. **Detect versions**
-   Reads `--from-version` (or the `PROJECT` file) and `--to-version` (or uses the latest).
+You tell the tool the **new version**, and which branch has your project.
+It rebuilds both scaffolds, merges your code into the new one with a **3-way merge**,
+and gives you an output branch you can review and merge safely.
+You decide if you want one clean commit, the full history, or an auto-push to remote.
 
-2. **Create branches & re-scaffold**
-   - `tmp-ancestor-*`: clean scaffold from **from-version**
-   - `tmp-original-*`: snapshot of your **from-branch** (e.g., `main`)
-   - `tmp-upgrade-*`: clean scaffold from **to-version**
+### Step 1: Detect versions
+- It looks at your `PROJECT` file or the flags you pass.
+- Decides which **old version** you are coming from by reading the `cliVersion` field in the `PROJECT` file (if available).
+- Figures out which **new version** you want (defaults to the latest release).
+- Chooses which branch has your current code (defaults to `main`).
 
-3. **3-way merge**
-   Creates `tmp-merge-*` from **Upgrade** and merges **Original** into it.
-   Runs `make manifests generate fmt vet lint-fix` to normalise outputs.
-   Runs `make manifests generate fmt vet lint-fix` to normalize outputs.
+### Step 2: Create scaffolds
+The command creates three temporary branches:
+- **Ancestor**: a clean project scaffold from the **old version**.
+- **Original**: a snapshot of your **current code**.
+- **Upgrade**: a clean scaffold from the **new version**.
 
-4. **(Optional) Squash**
-   With `--squash`, copies the merge result to a stable output branch and commits **once**:
-   - Default output branch: `kubebuilder-alpha-update-to-<to-version>`
-   - Or set your own with `--output-branch`
-     If there are conflicts, the single commit will include conflict markers.
+### Step 3: Do a 3-way merge
+- Merges **Original** (your code) into **Upgrade** (the new scaffold) using Git’s **3-way merge**.
+- This keeps your customizations while pulling in upstream changes.
+- If conflicts happen:
+    - **Default** → stop and let you resolve them manually.
+    - **With `--force`** → continue and commit even with conflict markers. **(ideal for automation)**
+- Runs `make manifests generate fmt vet lint-fix` to tidy things up.
 
-## How to Use It
+### Step 4: Write the output branch
+- By default, everything is **squashed into one commit** on a safe output branch:
+  `kubebuilder-update-from-<from-version>-to-<to-version>`.
+- You can change the behavior:
+    - `--show-commits`: keep the full history.
+    - `--preserve-path`: in squash mode, restore specific files (like CI configs) from your base branch.
+    - `--output-branch`: pick a custom branch name.
+    - `--push`: push the result to `origin` automatically.
+
+### Step 5: Cleanup
+- Once the output branch is ready, all the temporary working branches are deleted.
+- You are left with one clean branch you can test, review, and merge back into your main branch.
+
+## How to Use It (commands)
 
 Run from your project root:
 
@@ -64,9 +70,9 @@ Pin versions and base branch:
 
 ```shell
 kubebuilder alpha update \
-  --from-version v4.5.2 \
-  --to-version   v4.6.0 \
-  --from-branch  main
+--from-version v4.5.2 \
+--to-version   v4.6.0 \
+--from-branch  main
 ```
 Automation-friendly (proceed even with conflicts):
 
@@ -74,28 +80,33 @@ Automation-friendly (proceed even with conflicts):
 kubebuilder alpha update --force
 ```
 
-Create a **single squashed commit** on a stable PR branch:
-
-```shell
-kubebuilder alpha update --force --squash
+Keep full history instead of squashing:
+```
+kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0 --force --show-commits
 ```
 
-Squash while **preserving** paths from your base branch (keep CI/workflows, docs, etc.):
+Default squash but **preserve** CI/workflows from the base branch:
 
 ```shell
-kubebuilder alpha update --force --squash \
-  --preserve-path .github/workflows \
-  --preserve-path docs
+kubebuilder alpha update --force \
+--preserve-path .github/workflows \
+--preserve-path docs
 ```
 
-Use a **custom output branch** name:
+Use a custom output branch name:
 
 ```shell
-kubebuilder alpha update --force --squash \
-  -output-branch upgrade/kb-to-v4.7.0
+kubebuilder alpha update --force \
+--output-branch upgrade/kb-to-v4.7.0
 ```
 
-## Merge Conflicts with `--force`
+Run update and push the result to origin:
+
+```shell
+kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push
+```
+
+## Handling Conflicts (`--force` vs default)
 
 When you use `--force`, Git finishes the merge even if there are conflicts.
 The commit will include markers like:
@@ -105,15 +116,35 @@ The commit will include markers like:
 Your changes
 =======
 Incoming changes
->>>>>>> tmp-original-…
+>>>>>>> (original)
 ```
 
-- **Without `--force`**: the command stops on `tmp-merge-*` and prints guidance; no commit is created.
-- **With `--force`**: the merge is committed (on `tmp-merge-*`, or on the output branch if using `--squash`) and contains the markers.
+This allows you to run the command in CI or cron jobs without manual intervention.
 
-## Commit message used in `--squash` mode
+- Without `--force`: the command stops on the merge branch and prints guidance; no commit is created.
+- With `--force`: the merge is committed (merge or output branch) and contains the markers.
 
-> [kubebuilder-automated-update]: update scaffold from <from> to <to>; (squashed 3-way merge)
+After you fix conflicts, always run:
+
+```shell
+make manifests generate fmt vet lint-fix
+# or
+make all
+```
+
+## Flags
+
+| Flag              | Description                                                                                                                                                 |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--from-version`  | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                              |
+| `--to-version`    | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                  |
+| `--from-branch`   | Git branch that holds your current project code. Defaults to `main`.                                                                                        |
+| `--force`         | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                           |
+| `--show-commits`  | Keep full history (do not squash). **Not compatible** with `--preserve-path`.                                                                               |
+| `--preserve-path` | Repeatable. **Squash mode only.** After copying the merge tree to the output branch, restore these paths from the base branch (e.g., `.github/workflows`).  |
+| `--output-branch` | Name of the output branch. Default: `kubebuilder-update-from-<from-version>-to-<to-version>`.                                                               |
+| `--push`          | Push the output branch to the `origin` remote after the update completes.                                                                                   |
+| `-h, --help`      | Show help for this command.                                                                                                                                 |
 
 <aside class="note warning">
 <h1>You might need to upgrade your project first</h1>
@@ -133,50 +164,18 @@ We use that value to pick the correct CLI for re-scaffolding.
 
 </aside>
 
-<aside class="note warning">
-You must resolve these conflicts before merging into `main` (or your base branch).
-<strong>After resolving conflicts, always run:</strong>
-
-```shell
-make manifests generate fmt vet lint-fix
-# or
-make all
-```
-
-</aside>
-
-## Flags
-
-| Flag              | Description                                                                                                                                |
-|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `--from-version`  | Kubebuilder version your project was created with. If unset, taken from the `PROJECT` file. |
-| `--to-version`    | Version to upgrade to. Defaults to the latest release.                                                                                     |
-| `--from-branch`   | Git branch that has your current project code. Defaults to `main`.                                                                          |
-| `--force`         | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (useful for CI/cron).                         |
-| `--squash`        | Write the merge result as **one commit** on a stable output branch.                                                                         |
-| `--preserve-path` | Repeatable. With `--squash`, restore these paths from the base branch (e.g., `--preserve-path .github/workflows`).                          |
-| `--output-branch` | Branch name to use for the squashed commit (default: `kubebuilder-alpha-update-to-<to-version>`).                                          |
-| `-h, --help`      | Show help for this command.                                                                                                                |
-
-<aside class="note">
-<h1>CLI Version Tracking</h1>
-
-Projects created with **Kubebuilder v4.6.0+** include `cliVersion` in the `PROJECT` file.
-We use that value to pick the correct CLI for re-scaffolding.
-
-If your project was created with an older version,
-you can set `--from-version` to the version you used.
-
-However, this command uses `kubebuilder alpha generate` under the hood.
-We tested projects created with <strong>v4.5.0+</strong>.
-If yours is older, first run `kubebuilder alpha generate` once to modernize the scaffold.
-After that, you can use `kubebuilder alpha update` for future upgrades.
-
-</aside>
-
 ## Demonstration
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/J8zonID__8k?si=WC-FXOHX0mCjph71" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<aside class="note">
+<h1>About this demo</h1>
+
+This video was recorded with Kubebuilder release `v7.0.1`.
+Since then, the command has been improved,
+so the current behavior may differ slightly from what is shown in the demo.
+
+</aside>
 
 ## Further Resources
 

@@ -16,18 +16,9 @@ limitations under the License.
 package alpha
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-// Figuring out ways to test run these tests similar to existing.
-// Currently unable to run without this on VSCode. Will remove once done
-func TestCommand(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "alpha")
-}
 
 var _ = Describe("NewScaffoldCommand", func() {
 	When("NewScaffoldCommand", func() {

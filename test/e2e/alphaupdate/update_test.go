@@ -125,19 +125,28 @@ var _ = Describe("kubebuilder", func() {
 
 			By("checking that Makefile is updated")
 			validateMakefileContent(kbc.Dir)
+
+			By("checking temporary branches were cleaned up locally")
+			outRefs, err := exec.Command("git", "-C", kbc.Dir, "for-each-ref",
+				"--format=%(refname:short)", "refs/heads").CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), string(outRefs))
+			Expect(string(outRefs)).NotTo(ContainSubstring("tmp-ancestor"))
+			Expect(string(outRefs)).NotTo(ContainSubstring("tmp-original"))
+			Expect(string(outRefs)).NotTo(ContainSubstring("tmp-upgrade"))
+			Expect(string(outRefs)).NotTo(ContainSubstring("tmp-merge"))
 		})
 
 		It("should update project from v4.5.2 to v4.7.0 with --force flag and create conflict markers", func() {
 			By("modifying original Makefile to use CONTROLLER_TOOLS_VERSION v0.17.3")
 			modifyMakefileControllerTools(kbc.Dir, "v0.17.3")
 
-			By("running alpha update with --force --squash")
+			By("running alpha update with --force (default behavior is squash)")
 			cmd := exec.Command(
 				kbc.BinaryName, "alpha", "update",
 				"--from-version", fromVersion,
 				"--to-version", toVersionWithConflict,
 				"--from-branch", "main",
-				"--force", "--squash",
+				"--force",
 			)
 			cmd.Dir = kbc.Dir
 			out, err := kbc.Run(cmd)
@@ -184,8 +193,8 @@ var _ = Describe("kubebuilder", func() {
 			Expect(makefileStr).To(ContainSubstring("CONTROLLER_TOOLS_VERSION ?= v0.18.0"),
 				"Expected latest scaffold version in conflict")
 
-			By("checking that the squashed branch is created with the expected commit message")
-			prBranch := "kubebuilder-alpha-update-to-" + toVersionWithConflict
+			By("checking that the output branch (squashed) exists and is 1 commit ahead of main")
+			prBranch := "kubebuilder-update-from-" + fromVersion + "-to-" + toVersionWithConflict
 
 			git := func(args ...string) ([]byte, error) {
 				cmd := exec.Command("git", args...)
@@ -198,22 +207,19 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("checking that exactly one squashed commit ahead of main")
-			out, err = git("rev-list", "--count", prBranch, "^main")
-			Expect(err).NotTo(HaveOccurred(), string(out))
-			Expect(strings.TrimSpace(string(out))).To(Equal("1"))
+			count, err := git("rev-list", "--count", prBranch, "^main")
+			Expect(err).NotTo(HaveOccurred(), string(count))
+			Expect(strings.TrimSpace(string(count))).To(Equal("1"))
 
 			By("checking commit message of the squashed branch")
-			out, err = git("log", "-1", "--pretty=%B", prBranch)
-			Expect(err).NotTo(HaveOccurred(), string(out))
+			msg, err := git("log", "-1", "--pretty=%B", prBranch)
+			Expect(err).NotTo(HaveOccurred(), string(msg))
 			expected := fmt.Sprintf(
-				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
-				fromVersion, toVersionWithConflict,
-			)
-			Expect(string(out)).To(ContainSubstring(expected))
+				":warning: (chore) [with conflicts] scaffold update: %s -> %s", fromVersion, toVersionWithConflict)
+			Expect(string(msg)).To(ContainSubstring(expected))
 		})
 
 		It("should stop when updating the project from v4.5.2 to v4.7.0 without the flag force", func() {
-			By("running alpha update without --force flag")
 			By("running alpha update without --force flag")
 			cmd := exec.Command(
 				kbc.BinaryName, "alpha", "update",
@@ -234,6 +240,40 @@ var _ = Describe("kubebuilder", func() {
 
 			By("checking that go module is upgraded")
 			validateCommonGoModule(kbc.Dir)
+		})
+
+		It("should preserve specified paths from base when squashing (e.g., .github/workflows)", func() {
+			By("adding a workflow on main branch that should be preserved")
+			wfDir := filepath.Join(kbc.Dir, ".github", "workflows")
+			Expect(os.MkdirAll(wfDir, 0o755)).To(Succeed())
+			wf := filepath.Join(wfDir, "ci.yml")
+			Expect(os.WriteFile(wf, []byte("name: KEEP_ME\n"), 0o644)).To(Succeed())
+
+			git := func(args ...string) {
+				c := exec.Command("git", args...)
+				c.Dir = kbc.Dir
+				o, e := c.CombinedOutput()
+				Expect(e).NotTo(HaveOccurred(), string(o))
+			}
+			git("add", ".github/workflows/ci.yml")
+			git("commit", "-m", "add ci workflow")
+
+			By("running update (default squash) with --preserve-path")
+			cmd := exec.Command(
+				kbc.BinaryName, "alpha", "update",
+				"--from-version", fromVersion,
+				"--to-version", toVersion,
+				"--from-branch", "main",
+				"--preserve-path", ".github/workflows",
+			)
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), string(out))
+
+			By("workflow content is preserved on output branch")
+			data, err := os.ReadFile(wf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(data)).To(ContainSubstring("KEEP_ME"))
 		})
 
 		It("should succeed with no action when from-version and to-version are the same", func() {
@@ -412,7 +452,7 @@ func hasConflictMarkers(projectDir string) bool {
 	if err != nil && hasMarker {
 		return true
 	}
-	return false
+	return hasMarker
 }
 
 func validateConflictState(projectDir string) {

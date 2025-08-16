@@ -25,28 +25,35 @@ import (
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
-// Mock response for binary executables
+// Helpers to keep lines short and consistent with production messages.
+func expNormalMsg(from, to string) string {
+	return fmt.Sprintf("(chore) scaffold update: %s -> %s", from, to)
+}
+
+func expConflictMsg(from, to string) string {
+	return fmt.Sprintf(":warning: (chore) [with conflicts] scaffold update: %s -> %s", from, to)
+}
+
+// Mock response for binary executables.
 func mockBinResponse(script, mockBin string) error {
 	err := os.WriteFile(mockBin, []byte(script), 0o755)
 	Expect(err).NotTo(HaveOccurred())
 	if err != nil {
-		return fmt.Errorf("Error Mocking bin response: %w", err)
+		return fmt.Errorf("error Mocking bin response: %w", err)
 	}
 	return nil
 }
 
-// Mock response from an url
+// Mock response from an URL.
 func mockURLResponse(body, url string, times, reply int) {
-	urlStrings := strings.Split(url, "/")
-	gockNew := strings.Join(urlStrings[0:3], "/")
-	get := "/" + strings.Join(urlStrings[3:], "/")
-	gock.New(gockNew).
-		Get(get).
-		Times(times).
-		Reply(reply).
-		Body(strings.NewReader(body))
+	parts := strings.Split(url, "/")
+	host := strings.Join(parts[0:3], "/")
+	path := "/" + strings.Join(parts[3:], "/")
+	gock.New(host).Get(path).Times(times).Reply(reply).Body(strings.NewReader(body))
 }
 
 var _ = Describe("Prepare for internal update", func() {
@@ -68,34 +75,31 @@ var _ = Describe("Prepare for internal update", func() {
 			FromBranch:  "main",
 		}
 
-		// Create temporary directory to house fake bin executables
+		// Create temporary directory to house fake bin executables.
 		tmpDir, err = os.MkdirTemp("", "temp-bin")
 		Expect(err).NotTo(HaveOccurred())
 
-		// Create a common file to log the command runs from the fake bin
+		// Common file to log command runs from the fake bin.
 		logFile = filepath.Join(tmpDir, "bin.log")
 
-		// Create fake bin executables
+		// Create fake bin executables.
 		mockGit = filepath.Join(tmpDir, "git")
 		mockMake = filepath.Join(tmpDir, "make")
 		mocksh = filepath.Join(tmpDir, "sh")
 		script := `#!/bin/bash
-            echo "$@" >> "` + logFile + `"
-           exit 0`
-		err = mockBinResponse(script, mockGit)
-		Expect(err).NotTo(HaveOccurred())
-		err = mockBinResponse(script, mockMake)
-		Expect(err).NotTo(HaveOccurred())
-		err = mockBinResponse(script, mocksh)
-		Expect(err).NotTo(HaveOccurred())
+echo "$@" >> "` + logFile + `"
+exit 0`
+		Expect(mockBinResponse(script, mockGit)).To(Succeed())
+		Expect(mockBinResponse(script, mockMake)).To(Succeed())
+		Expect(mockBinResponse(script, mocksh)).To(Succeed())
 
-		// Prepend temp bin directory to PATH env
+		// Prepend temp bin directory to PATH env.
 		oldPath = os.Getenv("PATH")
-		err = os.Setenv("PATH", tmpDir+":"+oldPath)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Setenv("PATH", tmpDir+":"+oldPath)).To(Succeed())
 
-		// Mock response from "https://github.com/kubernetes-sigs/kubebuilder/releases/download"
-		mockURLResponse(script, "https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 200)
+		// Mock GitHub release download.
+		mockURLResponse(script,
+			"https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 200)
 	})
 
 	AfterEach(func() {
@@ -104,169 +108,184 @@ var _ = Describe("Prepare for internal update", func() {
 		defer gock.Off()
 	})
 
+	// Helper that formats the expectations properly.
+	verifyLogs := func(newBranch, oldBranch, fromVersion string) {
+		logs, readErr := os.ReadFile(logFile)
+		Expect(readErr).NotTo(HaveOccurred())
+		s := string(logs)
+
+		Expect(s).To(ContainSubstring(
+			fmt.Sprintf("checkout -b %s %s", newBranch, oldBranch),
+		))
+		Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", newBranch)))
+		Expect(s).To(ContainSubstring(
+			"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {}",
+		))
+		Expect(s).To(ContainSubstring("alpha generate"))
+		Expect(s).To(ContainSubstring("add --all"))
+		Expect(s).To(ContainSubstring(
+			fmt.Sprintf("initial scaffold from release version: %s", fromVersion),
+		))
+	}
+
 	Context("Update", func() {
-		It("Should scucceed updating project using a default three-way Git merge", func() {
+		It("succeeds using a default three-way Git merge", func() {
 			err = opts.Update()
 			Expect(err).ToNot(HaveOccurred())
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
+			Expect(string(logs)).To(ContainSubstring(
+				fmt.Sprintf("checkout %s", opts.FromBranch),
+			))
 		})
-		It("Should fail when git command fails", func() {
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
+
+		It("fails when git command fails", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockGit)).To(Succeed())
+
 			err = opts.Update()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to checkout base branch %s", opts.FromBranch))
+			Expect(err.Error()).To(ContainSubstring(
+				fmt.Sprintf("failed to checkout base branch %s", opts.FromBranch),
+			))
 
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
+			Expect(string(logs)).To(ContainSubstring(
+				fmt.Sprintf("checkout %s", opts.FromBranch),
+			))
 		})
-		It("Should fail when kubebuilder binary could not be downloaded", func() {
-			gock.Off()
 
-			// mockURLResponse(fakeBinScript, "https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 401)
+		It("fails when kubebuilder binary cannot be downloaded", func() {
+			gock.Off()
 			gock.New("https://github.com").
 				Get("/kubernetes-sigs/kubebuilder/releases/download").
-				Times(2).
-				Reply(401).
-				Body(strings.NewReader(""))
+				Times(2).Reply(401).Body(strings.NewReader(""))
 
 			err = opts.Update()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to prepare ancestor branch"))
+
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
+			Expect(string(logs)).To(ContainSubstring(
+				fmt.Sprintf("checkout %s", opts.FromBranch),
+			))
 		})
 	})
 
 	Context("RegenerateProjectWithVersion", func() {
-		It("Should scucceed downloading release binary and running `alpha generate`", func() {
-			err = regenerateProjectWithVersion(opts.FromBranch)
+		It("succeeds downloading binary and running `alpha generate`", func() {
+			err = regenerateProjectWithVersion(opts.FromVersion)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should fail downloading release binary", func() {
-			// mockURLResponse(fakeBinScript, "https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 401)
+		It("fails downloading binary", func() {
 			gock.Off()
 			gock.New("https://github.com").
 				Get("/kubernetes-sigs/kubebuilder/releases/download").
-				Times(2).
-				Reply(401).
-				Body(strings.NewReader(""))
+				Times(2).Reply(401).Body(strings.NewReader(""))
 
-			err = regenerateProjectWithVersion(opts.FromBranch)
+			err = regenerateProjectWithVersion(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to download release %s binary", opts.FromBranch))
+			Expect(err.Error()).To(ContainSubstring(
+				fmt.Sprintf("failed to download release %s binary", opts.FromVersion),
+			))
 		})
 
-		It("Should fail running alpha generate", func() {
-			// mockURLResponse(fakeBinScript, "https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 200)
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
+		It("fails running alpha generate", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
 			gock.Off()
 			gock.New("https://github.com").
 				Get("/kubernetes-sigs/kubebuilder/releases/download").
-				Times(2).
-				Reply(200).
-				Body(strings.NewReader(fakeBinScript))
+				Times(2).Reply(200).Body(strings.NewReader(fail))
 
-			err = regenerateProjectWithVersion(opts.FromBranch)
+			err = regenerateProjectWithVersion(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to run alpha generate on ancestor branch"))
+			Expect(err.Error()).To(ContainSubstring(
+				"failed to run alpha generate on ancestor branch",
+			))
 		})
 	})
 
-	verifyLogs := func(newBranch, oldBranch, fromVersion string) {
-		logs, readErr := os.ReadFile(logFile)
-		Expect(readErr).NotTo(HaveOccurred())
-		Expect(string(logs)).To(ContainSubstring("checkout -b %s %s", newBranch, oldBranch))
-		Expect(string(logs)).To(ContainSubstring("checkout %s", newBranch))
-		Expect(string(logs)).To(ContainSubstring(
-			"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {}"))
-		Expect(string(logs)).To(ContainSubstring("alpha generate"))
-		Expect(string(logs)).To(ContainSubstring("add --all"))
-		Expect(string(logs)).To(ContainSubstring("commit -m Clean scaffolding from release version: %s", fromVersion))
-	}
-
 	Context("PrepareAncestorBranch", func() {
-		It("Should scucceed to prepare the ancestor branch", func() {
+		It("succeeds", func() {
 			err = opts.prepareAncestorBranch()
 			Expect(err).ToNot(HaveOccurred())
 			verifyLogs(opts.AncestorBranch, opts.FromBranch, opts.FromVersion)
 		})
 
-		It("Should fail to prepare the ancestor branch", func() {
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
+		It("fails creating branch", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockGit)).To(Succeed())
+
 			err = opts.prepareAncestorBranch()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to create %s from %s", opts.AncestorBranch, opts.FromBranch))
+			Expect(err.Error()).To(ContainSubstring(
+				fmt.Sprintf("failed to create %s from %s",
+					opts.AncestorBranch, opts.FromBranch),
+			))
 		})
 	})
 
 	Context("PrepareUpgradeBranch", func() {
-		It("Should scucceed PrepareUpgradeBranch", func() {
+		It("succeeds", func() {
 			err = opts.prepareUpgradeBranch()
 			Expect(err).ToNot(HaveOccurred())
 			verifyLogs(opts.UpgradeBranch, opts.AncestorBranch, opts.ToVersion)
 		})
 
-		It("Should fail PrepareUpgradeBranch", func() {
-			fakeBinScript := `#!/bin/bash
-							echo "$@" >> "` + logFile + `"
-							exit 1`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
+		It("fails creating branch", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockGit)).To(Succeed())
+
 			err = opts.prepareUpgradeBranch()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(
-				"failed to checkout %s branch off %s", opts.UpgradeBranch, opts.AncestorBranch))
+				fmt.Sprintf("failed to checkout %s branch off %s",
+					opts.UpgradeBranch, opts.AncestorBranch),
+			))
 		})
 	})
 
 	Context("BinaryWithVersion", func() {
-		It("Should scucceed to download the specified released version from GitHub releases", func() {
-			_, err = binaryWithVersion(opts.FromVersion)
+		It("succeeds to download the specified released version", func() {
+			_, err = helpers.DownloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should fail to download the specified released version from GitHub releases", func() {
-			// mockURLResponse(fakeBinScript, "https://github.com/kubernetes-sigs/kubebuilder/releases/download", 2, 401)
+		It("fails to download the specified released version", func() {
 			gock.Off()
 			gock.New("https://github.com").
 				Get("/kubernetes-sigs/kubebuilder/releases/download").
-				Times(2).
-				Reply(401).
-				Body(strings.NewReader(""))
+				Times(2).Reply(401).Body(strings.NewReader(""))
 
-			_, err = binaryWithVersion(opts.FromVersion)
+			_, err = helpers.DownloadReleaseVersionWith(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("failed to download the binary: HTTP 401"))
 		})
 	})
 
 	Context("CleanupBranch", func() {
-		It("Should scucceed executing cleanup command", func() {
+		It("succeeds executing cleanup command", func() {
 			err = cleanupBranch()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should fail executing cleanup command", func() {
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
-			err = mockBinResponse(fakeBinScript, mocksh)
-			Expect(err).ToNot(HaveOccurred())
+		It("fails executing cleanup command", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mocksh)).To(Succeed())
+
 			err = cleanupBranch()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to clean up files"))
@@ -274,27 +293,26 @@ var _ = Describe("Prepare for internal update", func() {
 	})
 
 	Context("RunMakeTargets", func() {
-		It("Should fail to run make commands", func() {
-			fakeBinScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
-			err = mockBinResponse(fakeBinScript, mockMake)
-			Expect(err).ToNot(HaveOccurred())
+		It("logs warning when make fails", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockMake)).To(Succeed())
 
+			// Should not panic even if make fails; just logs a warning.
 			runMakeTargets()
 		})
 	})
 
 	Context("RunAlphaGenerate", func() {
-		It("Should scucceed runAlphaGenerate", func() {
-			mockKubebuilder := filepath.Join(tmpDir, "kubebuilder")
-			KubebuilderScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 0`
-			err = mockBinResponse(KubebuilderScript, mockKubebuilder)
-			Expect(err).NotTo(HaveOccurred())
+		It("succeeds", func() {
+			mockKB := filepath.Join(tmpDir, "kubebuilder")
+			script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 0`
+			Expect(mockBinResponse(script, mockKB)).To(Succeed())
 
-			err = runAlphaGenerate(tmpDir, opts.FromBranch)
+			err = runAlphaGenerate(tmpDir, opts.FromVersion)
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, readErr := os.ReadFile(logFile)
@@ -302,88 +320,144 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(string(logs)).To(ContainSubstring("alpha generate"))
 		})
 
-		It("Should fail runAlphaGenerate", func() {
-			mockKubebuilder := filepath.Join(tmpDir, "kubebuilder")
-			KubebuilderScript := `#!/bin/bash
-			       echo "$@" >> "` + logFile + `"
-			       exit 1`
-			err = mockBinResponse(KubebuilderScript, mockKubebuilder)
-			Expect(err).NotTo(HaveOccurred())
+		It("fails", func() {
+			mockKB := filepath.Join(tmpDir, "kubebuilder")
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockKB)).To(Succeed())
 
-			err = runAlphaGenerate(tmpDir, opts.FromBranch)
+			err = runAlphaGenerate(tmpDir, opts.FromVersion)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to run alpha generate"))
 		})
 	})
 
 	Context("PrepareOriginalBranch", func() {
-		It("Should scucceed prepareOriginalBranch", func() {
+		It("succeeds", func() {
 			err = opts.prepareOriginalBranch()
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring("checkout -b %s", opts.OriginalBranch))
-			Expect(string(logs)).To(ContainSubstring("checkout %s -- .", opts.FromBranch))
-			Expect(string(logs)).To(ContainSubstring("add --all"))
-			Expect(string(logs)).To(ContainSubstring(
-				"commit -m Add code from %s into %s", opts.FromBranch, opts.OriginalBranch))
+			s := string(logs)
+
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("checkout -b %s", opts.OriginalBranch),
+			))
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("checkout %s -- .", opts.FromBranch),
+			))
+			Expect(s).To(ContainSubstring("add --all"))
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("original code from %s to keep changes", opts.FromBranch),
+			))
 		})
 
-		It("Should fail prepareOriginalBranch", func() {
-			fakeBinScript := `#!/bin/bash
-							echo "$@" >> "` + logFile + `"
-							exit 1`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
+		It("fails", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockGit)).To(Succeed())
+
 			err = opts.prepareOriginalBranch()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to checkout branch %s", opts.OriginalBranch))
+			Expect(err.Error()).To(ContainSubstring(
+				fmt.Sprintf("failed to checkout branch %s", opts.OriginalBranch),
+			))
 		})
 	})
 
 	Context("MergeOriginalToUpgrade", func() {
-		It("Should scucceed MergeOriginalToUpgrade", func() {
-			err = opts.mergeOriginalToUpgrade()
+		BeforeEach(func() {
+			// deterministic names for merge test
+			opts.UpgradeBranch = "tmp-upgrade-X"
+			opts.MergeBranch = "tmp-merge-X"
+			opts.OriginalBranch = "tmp-original-X"
+		})
+
+		It("succeeds and commits with normal message", func() {
+			_, err = opts.mergeOriginalToUpgrade()
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, readErr := os.ReadFile(logFile)
 			Expect(readErr).ToNot(HaveOccurred())
-			Expect(string(logs)).To(ContainSubstring("checkout -b %s %s", opts.MergeBranch, opts.UpgradeBranch))
-			Expect(string(logs)).To(ContainSubstring("checkout %s", opts.MergeBranch))
-			Expect(string(logs)).To(ContainSubstring("merge --no-edit --no-commit %s", opts.OriginalBranch))
-			Expect(string(logs)).To(ContainSubstring("add --all"))
-			Expect(string(logs)).To(ContainSubstring("Merge from %s to %s.", opts.FromVersion, opts.ToVersion))
-			Expect(string(logs)).To(ContainSubstring("Merge happened without conflicts"))
+			s := string(logs)
+
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("checkout -b %s %s", opts.MergeBranch, opts.UpgradeBranch),
+			))
+			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.MergeBranch)))
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("merge --no-edit --no-commit %s", opts.OriginalBranch),
+			))
+			Expect(s).To(ContainSubstring("add --all"))
+			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
 		})
 
-		It("Should fail MergeOriginalToUpgrade", func() {
-			fakeBinScript := `#!/bin/bash
-							echo "$@" >> "` + logFile + `"
-							exit 1`
-			err = mockBinResponse(fakeBinScript, mockGit)
-			Expect(err).ToNot(HaveOccurred())
-			err = opts.mergeOriginalToUpgrade()
+		It("fails when branch creation fails", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, mockGit)).To(Succeed())
+
+			_, err = opts.mergeOriginalToUpgrade()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(
-				"failed to create merge branch %s from %s", opts.MergeBranch, opts.OriginalBranch))
+				fmt.Sprintf("failed to create merge branch %s from %s",
+					opts.MergeBranch, opts.UpgradeBranch),
+			))
+		})
+
+		It("stops on conflicts when Force=false", func() {
+			failOnMerge := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "merge" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(failOnMerge, mockGit)).To(Succeed())
+
+			opts.Force = false
+			_, err = opts.mergeOriginalToUpgrade()
+			Expect(err).To(HaveOccurred())
+
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).NotTo(ContainSubstring("commit --no-verify -m"))
+		})
+
+		It("commits with conflict message when Force=true", func() {
+			failOnMerge := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "merge" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(failOnMerge, mockGit)).To(Succeed())
+
+			opts.Force = true
+			_, err = opts.mergeOriginalToUpgrade()
+			Expect(err).ToNot(HaveOccurred())
+
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring(
+				expConflictMsg(opts.FromVersion, opts.ToVersion),
+			))
 		})
 	})
 
 	Context("SquashToOutputBranch", func() {
 		BeforeEach(func() {
 			opts.FromBranch = "main"
+			opts.FromVersion = "v4.5.0"
 			opts.ToVersion = "v4.6.0"
 			if opts.MergeBranch == "" {
 				opts.MergeBranch = "tmp-merge-test"
 			}
 		})
 
-		It("should create/reset the output branch and commit one squashed snapshot", func() {
-			opts.OutputBranch = ""
-			opts.PreservePath = []string{".github/workflows"} // exercise the restore call
+		It("creates/resets output branch and commits one squashed snapshot", func() {
+			opts.OutputBranch = "" // default naming
+			opts.PreservePath = []string{".github/workflows"}
+			opts.ShowCommits = false
 
-			err = opts.squashToOutputBranch()
+			err = opts.squashToOutputBranch(false) // no conflicts
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, readErr := os.ReadFile(logFile)
@@ -391,32 +465,25 @@ var _ = Describe("Prepare for internal update", func() {
 			s := string(logs)
 
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
-			Expect(s).To(ContainSubstring(fmt.Sprintf(
-				"checkout -B kubebuilder-alpha-update-to-%s %s",
-				opts.ToVersion, opts.FromBranch,
-			)))
-			Expect(s).To(ContainSubstring(
-				"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +",
-			))
-			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
-			Expect(s).To(ContainSubstring(fmt.Sprintf(
-				"restore --source %s --staged --worktree .github/workflows",
+
+			expOut := fmt.Sprintf(
+				"checkout -B %s %s",
+				fmt.Sprintf("kubebuilder-update-from-%s-to-%s",
+					opts.FromVersion, opts.ToVersion),
 				opts.FromBranch,
-			)))
-			Expect(s).To(ContainSubstring("add --all"))
-
-			msg := fmt.Sprintf(
-				"[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
-				opts.FromVersion, opts.ToVersion,
 			)
-			Expect(s).To(ContainSubstring(msg))
+			Expect(s).To(ContainSubstring(expOut))
 
+			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
+			Expect(s).To(ContainSubstring("add --all"))
+			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
 			Expect(s).To(ContainSubstring("commit --no-verify -m"))
 		})
 
-		It("should respect a custom output branch name", func() {
+		It("respects a custom output branch name", func() {
 			opts.OutputBranch = "my-custom-branch"
-			err = opts.squashToOutputBranch()
+
+			err = opts.squashToOutputBranch(false)
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, _ := os.ReadFile(logFile)
@@ -425,7 +492,7 @@ var _ = Describe("Prepare for internal update", func() {
 			))
 		})
 
-		It("squash: no changes -> commit exits 1 but returns nil", func() {
+		It("no changes -> commit exits 1 but helper returns nil", func() {
 			fake := `#!/bin/bash
 echo "$@" >> "` + logFile + `"
 if [[ "$1" == "commit" ]]; then exit 1; fi
@@ -433,27 +500,52 @@ exit 0`
 			Expect(mockBinResponse(fake, mockGit)).To(Succeed())
 
 			opts.PreservePath = nil
-			Expect(opts.squashToOutputBranch()).To(Succeed())
+			Expect(opts.squashToOutputBranch(false)).To(Succeed())
 
 			s, _ := os.ReadFile(logFile)
 			Expect(string(s)).To(ContainSubstring("commit --no-verify -m"))
 		})
 
-		It("squash: trims preserve-path and skips blanks", func() {
+		It("trims preserve-path and skips blanks", func() {
 			opts.PreservePath = []string{" .github/workflows ", "", "docs"}
-			Expect(opts.squashToOutputBranch()).To(Succeed())
+			Expect(opts.squashToOutputBranch(false)).To(Succeed())
+
 			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree .github/workflows"))
-			Expect(string(s)).To(ContainSubstring("restore --source main --staged --worktree docs"))
+			Expect(string(s)).To(ContainSubstring("checkout main -- docs"))
+			Expect(string(s)).To(ContainSubstring("checkout main -- .github/workflows"))
+		})
+	})
+
+	Context("getOutputBranchName", func() {
+		It("returns default name when OutputBranch is empty", func() {
+			const fromVersion = "v4.5.0"
+			const toVersion = "v4.6.0"
+			opts.FromVersion = fromVersion
+			opts.ToVersion = toVersion
+			opts.OutputBranch = ""
+
+			want := fmt.Sprintf("kubebuilder-update-from-%s-to-%s", fromVersion, toVersion)
+			Expect(opts.getOutputBranchName()).To(Equal(want))
 		})
 
-		It("update: runs squash when --squash is set", func() {
-			opts.Squash = true
-			Expect(opts.Update()).To(Succeed())
-			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("checkout -B kubebuilder-alpha-update-to-" + opts.ToVersion + " main"))
-			Expect(string(s)).To(ContainSubstring("-c find . -mindepth 1"))
-			Expect(string(s)).To(ContainSubstring("checkout " + opts.MergeBranch + " -- ."))
+		It("returns custom name when OutputBranch is set", func() {
+			opts.OutputBranch = "my-custom"
+			Expect(opts.getOutputBranchName()).To(Equal("my-custom"))
+		})
+	})
+
+	Context("runAlphaGenerate PATH restoration", func() {
+		It("does not mutate process PATH (same even on failure)", func() {
+			tmp := filepath.Join(tmpDir, "kubebuilder")
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, tmp)).To(Succeed())
+
+			orig := os.Getenv("PATH")
+			err := runAlphaGenerate(tmpDir, "v4.5.0")
+			Expect(err).To(HaveOccurred())
+			Expect(os.Getenv("PATH")).To(Equal(orig))
 		})
 	})
 })

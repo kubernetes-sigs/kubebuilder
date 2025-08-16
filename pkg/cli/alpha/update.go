@@ -1,9 +1,12 @@
 /*
 Copyright 2025 The Kubernetes Authors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-	http://www.apache.org/licenses/LICENSE-2.0
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,42 +26,37 @@ import (
 )
 
 // NewUpdateCommand creates and returns a new Cobra command for updating Kubebuilder projects.
-// This command helps users upgrade their projects to newer versions of Kubebuilder by performing
-// a three-way merge between:
-// - The original scaffolding (ancestor)
-// - The user's current project state (current)
-// - The new version's scaffolding (upgrade)
-//
-// The update process creates multiple Git branches to facilitate the merge and help users
-// resolve any conflicts that may arise during the upgrade process.
 func NewUpdateCommand() *cobra.Command {
 	opts := update.Update{}
 	updateCmd := &cobra.Command{
 		Use:   "update",
-		Short: "Update your project to a newer version (3-way merge; optional single-commit)",
-		Long: `Upgrade your project scaffold using a 3-way merge strategy while preserving your code.
+		Short: "Update your project to a newer version (3-way merge; squash by default)",
+		Long: `Upgrade your project scaffold using a 3-way merge while preserving your code.
 
-The command creates temporary branches to perform the update:
-  - ancestor:  clean scaffold from the original version
-  - current:   your existing project state
-  - upgrade:   scaffold generated with the target version
-  - merge:     result of the 3-way merge (committed; conflict markers kept with --force)
+The updater uses four temporary branches during the run:
+  • ancestor : clean scaffold from the starting version (--from-version)
+  • original : snapshot of your current project (--from-branch)
+  • upgrade  : scaffold generated with the target version (--to-version)
+  • merge    : result of merging original into upgrade (conflicts possible)
 
-By default, the merge result is committed on the temporary 'merge' branch. 
-Use --squash to snapshot that result into a SINGLE commit on a stable branch,
-ready for a PR:
+Output branch & history:
+  • Default: SQUASH the merge result into ONE commit on:
+        kubebuilder-update-from-<from-version>-to-<to-version>
+  • --show-commits: keep full history (not compatible with --preserve-path).
 
-  kubebuilder-alpha-update-to-<to-version>
+Conflicts:
+  • Default: stop on conflicts and leave the merge branch for manual resolution.
+  • --force: commit with conflict markers so automation can proceed.
 
-This keeps history tidy (one commit per update run) and enables idempotent PRs.
+Other options:
+  • --preserve-path: restore paths from base when squashing (e.g., CI configs).
+  • --output-branch: override the output branch name.
+  • --push: push the output branch to 'origin' after the update.
 
-Notes:
-  • --force commits even if conflicts occur (markers are kept).
-  • --preserve-path lets you keep files from your base branch when squashing
-    (useful for CI configs like .github/workflows).
-  • --output-branch optionally overrides the default squashed branch name.
-
-Examples:
+Defaults:
+  • --from-version / --to-version: resolved from PROJECT and the latest release if unset.
+  • --from-branch: defaults to 'main' if not specified.`,
+		Example: `
   # Update from the version in PROJECT to the latest, stop on conflicts
   kubebuilder alpha update
 
@@ -68,28 +66,23 @@ Examples:
   # Update from v4.5.0 to v4.7.0 and keep conflict markers (automation-friendly)
   kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0 --force
 
-  # Same as above, but produce ONE squashed commit on a stable PR branch
-  kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0 --force --squash
+  # Keep full commit history instead of squashing
+  kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0 --force --show-commits
 
-  # Squash while preserving CI workflows from base (e.g., main) on the squashed branch
-  kubebuilder alpha update --force --squash --preserve-path .github/workflows
+  # Squash while preserving CI workflows from base (e.g., main)
+  kubebuilder alpha update --force --preserve-path .github/workflows
 
-  # Squash into a custom output branch name
-  kubebuilder alpha update --force --squash --output-branch my-update-branch
+  # Show commits into a custom output branch name
+  kubebuilder alpha update --force --show-commits --output-branch my-update-branch
 
-Behavior summary:
-  • Without --force:
-      - If conflicts occur during the 3-way merge, the command stops on the 'merge' branch
-        for manual resolution (no commit made).
-  • With --force:
-      - Conflicted files are committed on the 'merge' branch with conflict markers.
-  • With --squash:
-      - After the merge step, the exact 'merge' tree is copied to a new/updated branch
-        (default: kubebuilder-alpha-update-to-<to-version>) and committed ONCE, keeping markers
-        if present. This branch is intended for opening/refreshing a PR.`,
+  # Run update and push the output branch to origin (works with or without --show-commits)
+  kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push`,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
-			err := opts.Prepare()
-			if err != nil {
+			if opts.ShowCommits && len(opts.PreservePath) > 0 {
+				return fmt.Errorf("the --preserve-path flag is not supported with --show-commits")
+			}
+
+			if err := opts.Prepare(); err != nil {
 				return fmt.Errorf("failed to prepare update: %w", err)
 			}
 			return opts.Validate()
@@ -102,9 +95,8 @@ Behavior summary:
 	}
 
 	updateCmd.Flags().StringVar(&opts.FromVersion, "from-version", "",
-		"binary release version to upgrade from. Should match the version used to init the project and be"+
-			"a valid release version, e.g., v4.6.0. If not set, "+
-			"it defaults to the version specified in the PROJECT file. ")
+		"binary release version to upgrade from. Should match the version used to init the project and be "+
+			"a valid release version, e.g., v4.6.0. If not set, it defaults to the version specified in the PROJECT file.")
 	updateCmd.Flags().StringVar(&opts.ToVersion, "to-version", "",
 		"binary release version to upgrade to. Should be a valid release version, e.g., v4.7.0. "+
 			"If not set, it defaults to the latest release version available in the project repository.")
@@ -113,14 +105,15 @@ Behavior summary:
 	updateCmd.Flags().BoolVar(&opts.Force, "force", false,
 		"Force the update even if conflicts occur. Conflicted files will include conflict markers, and a "+
 			"commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).")
-	updateCmd.Flags().BoolVar(&opts.Squash, "squash", false,
-		"After merging, write a single squashed commit with the merge result to a fixed branch "+
-			"named kubebuilder-alpha-update-to-<to-version>.")
+	updateCmd.Flags().BoolVar(&opts.ShowCommits, "show-commits", false,
+		"If set, the update will keep the full history instead of squashing into a single commit.")
 	updateCmd.Flags().StringArrayVar(&opts.PreservePath, "preserve-path", nil,
-		"Paths to preserve from the base branch when squashing (repeatable). "+
+		"Paths to preserve from the base branch when squashing (repeatable). Not supported with --show-commits. "+
 			"Example: --preserve-path .github/workflows")
 	updateCmd.Flags().StringVar(&opts.OutputBranch, "output-branch", "",
-		"Override the default kubebuilder-alpha-update-to-<to-version> branch name (used with --squash).")
+		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
+	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
+		"Push the output branch to the remote repository after the update.")
 
 	return updateCmd
 }

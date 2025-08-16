@@ -14,20 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package update
+package helpers
 
 import (
-	"runtime"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("utils", func() {
-	Context("BuildReleaseURL", func() {
-		It("Should scucceed", func() {
-			output := buildReleaseURL("v4.5.0")
-			Expect(output).To(ContainSubstring(releaseURL, "v4.5.0", runtime.GOOS, runtime.GOARCH))
-		})
-	})
-})
+func TestCommand(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "alpha command: update helpers suite")
+}
