@@ -185,7 +185,7 @@ var _ = Describe("kubebuilder", func() {
 				"Expected latest scaffold version in conflict")
 
 			By("checking that the squashed branch is created with the expected commit message")
-			prBranch := "kubebuilder-alpha-update-to-" + toVersionWithConflict
+			prBranch := "kubebuilder-update-from-" + fromVersion + "-to-" + toVersionWithConflict
 
 			git := func(args ...string) ([]byte, error) {
 				cmd := exec.Command("git", args...)

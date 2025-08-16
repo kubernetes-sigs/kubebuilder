@@ -381,8 +381,8 @@ var _ = Describe("Prepare for internal update", func() {
 
 		It("should create/reset the output branch and commit one squashed snapshot", func() {
 			opts.OutputBranch = ""
-			opts.PreservePath = []string{".github/workflows"} // exercise the restore call
-
+			opts.PreservePath = []string{".github/workflows"}
+			opts.Squash = true
 			err = opts.squashToOutputBranch()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -391,10 +391,8 @@ var _ = Describe("Prepare for internal update", func() {
 			s := string(logs)
 
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s", opts.FromBranch)))
-			Expect(s).To(ContainSubstring(fmt.Sprintf(
-				"checkout -B kubebuilder-alpha-update-to-%s %s",
-				opts.ToVersion, opts.FromBranch,
-			)))
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("kubebuilder-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)))
 			Expect(s).To(ContainSubstring(
 				"-c find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +",
 			))
@@ -451,9 +449,178 @@ exit 0`
 			opts.Squash = true
 			Expect(opts.Update()).To(Succeed())
 			s, _ := os.ReadFile(logFile)
-			Expect(string(s)).To(ContainSubstring("checkout -B kubebuilder-alpha-update-to-" + opts.ToVersion + " main"))
+
+			Expect(string(s)).To(ContainSubstring(
+				fmt.Sprintf("kubebuilder-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)))
+			Expect(string(s)).To(ContainSubstring("main"))
 			Expect(string(s)).To(ContainSubstring("-c find . -mindepth 1"))
 			Expect(string(s)).To(ContainSubstring("checkout " + opts.MergeBranch + " -- ."))
+		})
+	})
+
+	Context("getOutputBranchName", func() {
+		It("returns the default name when OutputBranch is empty", func() {
+			const fromVersion = "v4.5.0"
+			const toVersion = "v4.6.0"
+			opts.FromVersion = fromVersion
+			opts.ToVersion = toVersion
+			opts.OutputBranch = ""
+			Expect(opts.getOutputBranchName()).
+				To(Equal(fmt.Sprintf("kubebuilder-update-from-%s-to-%s", fromVersion, toVersion)))
+		})
+
+		It("returns the custom name when OutputBranch is set", func() {
+			opts.OutputBranch = "my-custom"
+			Expect(opts.getOutputBranchName()).To(Equal("my-custom"))
+		})
+	})
+
+	Context("ensureOutputBranchPushed", func() {
+		BeforeEach(func() {
+			const fromVersion = "v4.5.0"
+			const toVersion = "v4.6.0"
+			opts.FromVersion = fromVersion
+			opts.ToVersion = toVersion
+			opts.OutputBranch = "" // use default naming
+		})
+
+		It("succeeds when git push returns 0", func() {
+			Expect(opts.ensureOutputBranchPushed()).To(Succeed())
+
+			b, _ := os.ReadFile(logFile)
+			Expect(string(b)).To(ContainSubstring(
+				"push -u origin kubebuilder-update-from-v4.5.0-to-v4.6.0"))
+		})
+
+		It("returns error when git push fails", func() {
+			f := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "push" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(f, mockGit)).To(Succeed())
+			Expect(opts.ensureOutputBranchPushed()).To(HaveOccurred())
+		})
+	})
+
+	Context("addCommitsToOutputBranch", func() {
+		BeforeEach(func() {
+			// set branch names so the method has something deterministic to use
+			opts.FromBranch = "test-branch"
+			opts.FromVersion = "v4.5.0"
+			opts.ToVersion = "v4.7.0"
+			opts.AncestorBranch = "tmp-ancestor-X"
+			opts.OriginalBranch = "tmp-original-X"
+			opts.UpgradeBranch = "tmp-upgrade-X"
+			opts.MergeBranch = "tmp-merge-X"
+		})
+
+		It("replays history in the expected order and commits", func() {
+			Expect(opts.addCommitsToOutputBranch()).To(Succeed())
+
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring("checkout test-branch"))
+			Expect(string(s)).To(ContainSubstring(
+				"checkout -B kubebuilder-update-from-v4.5.0-to-v4.7.0 test-branch"))
+			// ancestor snapshot
+			Expect(string(s)).To(ContainSubstring("checkout tmp-ancestor-X -- ."))
+			Expect(string(s)).To(ContainSubstring(
+				"commit --no-verify -m Clean scaffolding from release version: v4.5.0"))
+			// original snapshot
+			Expect(string(s)).To(ContainSubstring("checkout tmp-original-X -- ."))
+			Expect(string(s)).To(ContainSubstring(
+				"commit --no-verify -m Add code from test-branch into kubebuilder-update-from-v4.5.0-to-v4.7.0"))
+			// upgrade snapshot
+			Expect(string(s)).To(ContainSubstring("checkout tmp-upgrade-X -- ."))
+			Expect(string(s)).To(ContainSubstring(
+				"commit --no-verify -m Clean scaffolding from release version: v4.7.0"))
+			// merge snapshot
+			Expect(string(s)).To(ContainSubstring("checkout tmp-merge-X -- ."))
+			Expect(string(s)).To(ContainSubstring(
+				"commit --no-verify -m [kubebuilder-automated-update]: update scaffold from v4.5.0 to v4.7.0"))
+		})
+
+		It("propagates commit errors", func() {
+			// Make the 'commit' subcommand fail only during the first commit
+			f := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "commit" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(f, mockGit)).To(Succeed())
+			Expect(opts.addCommitsToOutputBranch()).To(HaveOccurred())
+		})
+	})
+
+	Context("mergeOriginalToUpgrade with conflicts", func() {
+		BeforeEach(func() {
+			opts.FromVersion = "v4.8.0"
+			opts.ToVersion = "v4.9.0"
+			opts.UpgradeBranch = "tmp-up"
+			opts.MergeBranch = "tmp-merge"
+			opts.OriginalBranch = "tmp-orig"
+		})
+
+		It("stops with error when Force is false", func() {
+			// Simulate 'git merge' returning exit code 1
+			failOnMerge := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "merge" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(failOnMerge, mockGit)).To(Succeed())
+			opts.Force = false
+			Expect(opts.mergeOriginalToUpgrade()).To(HaveOccurred())
+			// no commit should have been made
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).NotTo(ContainSubstring("commit -m"))
+		})
+
+		It("commits with notice when Force is true", func() {
+			failOnMerge := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "merge" ]]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(failOnMerge, mockGit)).To(Succeed())
+			opts.Force = true
+			Expect(opts.mergeOriginalToUpgrade()).To(Succeed())
+			s, _ := os.ReadFile(logFile)
+			Expect(string(s)).To(ContainSubstring("commit -m Merge from v4.8.0 to v4.9.0."))
+		})
+	})
+
+	Context("addCommitsToOutputBranch preserve-path behavior", func() {
+		BeforeEach(func() {
+			opts.FromBranch = "test"
+			opts.FromVersion = "v4.5.0"
+			opts.ToVersion = "v4.6.0"
+			opts.AncestorBranch = "tmp-ancestor-X"
+			opts.OriginalBranch = "tmp-original-X"
+			opts.UpgradeBranch = "tmp-upgrade-X"
+			opts.MergeBranch = "tmp-merge-X"
+		})
+
+		It("trims and restores preserved paths from base", func() {
+			opts.PreservePath = []string{" .github/workflows ", "", "docs"}
+			Expect(opts.addCommitsToOutputBranch()).To(Succeed())
+
+			s, _ := os.ReadFile(logFile)
+			// non-squash path uses 'git checkout <base> -- <path>'
+			Expect(string(s)).To(ContainSubstring("checkout test -- .github/workflows"))
+			Expect(string(s)).To(ContainSubstring("checkout test -- docs"))
+		})
+	})
+
+	Context("runAlphaGenerate PATH restoration", func() {
+		It("restores PATH even if alpha generate fails", func() {
+			// Make the downloaded binary exit 1 so runAlphaGenerate returns error
+			tmp := filepath.Join(tmpDir, "kubebuilder")
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			Expect(mockBinResponse(fail, tmp)).To(Succeed())
+
+			orig := os.Getenv("PATH")
+			err := runAlphaGenerate(tmpDir, "v4.5.0")
+			Expect(err).To(HaveOccurred())
+			Expect(os.Getenv("PATH")).To(Equal(orig))
 		})
 	})
 })
