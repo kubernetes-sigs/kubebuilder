@@ -19,16 +19,13 @@ package update
 import (
 	"errors"
 	"fmt"
-	"io"
 	log "log/slog"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/spf13/afero"
-
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
@@ -44,7 +41,7 @@ type Update struct {
 	Force bool
 
 	// Squash writes the merge result as a single commit on a stable branch when true.
-	// The branch defaults to "kubebuilder-alpha-update-to-<ToVersion>" unless OutputBranch is set.
+	// The branch defaults to "kubebuilder-update-from-<FromVersion>-to-<ToVersion>" unless OutputBranch is set.
 	Squash bool
 
 	// PreservePath lists paths to restore from the base branch when squashing (repeatable).
@@ -52,8 +49,11 @@ type Update struct {
 	PreservePath []string
 
 	// OutputBranch is the branch name to use with Squash.
-	// If empty, it defaults to "kubebuilder-alpha-update-to-<ToVersion>".
+	// If empty, it defaults to "kubebuilder-update-from-<FromVersion>-to-<ToVersion>".
 	OutputBranch string
+
+	// PushBranch if set will push the branch
+	PushBranch bool
 
 	// UpdateBranches
 	AncestorBranch string
@@ -118,11 +118,174 @@ func (opts *Update) Update() error {
 	if err := opts.mergeOriginalToUpgrade(); err != nil {
 		return fmt.Errorf("failed to merge upgrade into merge branch: %w", err)
 	}
+
 	// If requested, collapse the merge result into a single commit on a fixed branch
 	if opts.Squash {
 		if err := opts.squashToOutputBranch(); err != nil {
 			return fmt.Errorf("failed to squash to output branch: %w", err)
 		}
+	} else {
+		// If not squashing, just re-create the commit history from the base branch
+		if err := opts.addCommitsToOutputBranch(); err != nil {
+			return fmt.Errorf("failed to create output branch with clean history: %w", err)
+		}
+	}
+
+	// After output branch is ready, push and print helpful URLs (no gh)
+	if opts.PushBranch {
+		if err := opts.ensureOutputBranchPushed(); err != nil {
+			return fmt.Errorf("failed to push output branch: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// ensureOutputBranchPushed pushes the output branch to origin so the PR UI works.
+func (opts *Update) ensureOutputBranchPushed() error {
+	branch := opts.getOutputBranchName()
+	if err := exec.Command("git", "push", "-u", "origin", branch).Run(); err != nil {
+		return fmt.Errorf("failed to push branch %s: %w", branch, err)
+	}
+	return nil
+}
+
+// getOutputBranchName returns the output branch name
+func (opts *Update) getOutputBranchName() string {
+	if opts.OutputBranch != "" {
+		return opts.OutputBranch
+	}
+	return fmt.Sprintf("kubebuilder-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)
+}
+
+// addCommitsToOutputBranch reconstructs the output branch history step-by-step.
+// Instead of doing a simple `git checkout -b <out>` and committing once, this
+// method intentionally creates a linear sequence of commits:
+//
+//  1. Ancestor scaffold (old version)
+//  2. Original project code (user’s branch)
+//  3. Upgrade scaffold (new version)
+//  4. Merge result
+//
+// This is required to preserve a meaningful commit history when not squashing.
+// It gives reviewers a clear view of how scaffolding changed between releases,
+// separates generated code from user code, and makes the upgrade process more
+// auditable (e.g. bisecting or reverting just the scaffold vs. the user code).
+// If a single clean commit is preferred instead, the squashToOutputBranch()
+// path handles that case.
+func (opts *Update) addCommitsToOutputBranch() error {
+	out := opts.getOutputBranchName()
+
+	// 1) base -> out
+	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("checkout %s: %w", opts.FromBranch, err)
+	}
+	if err := exec.Command("git", "checkout", "-B", out, opts.FromBranch).Run(); err != nil {
+		return fmt.Errorf("create/reset %s from %s: %w", out, opts.FromBranch, err)
+	}
+
+	// 2) ancestor snapshot
+	if err := helpers.CleanWorktree("ancestor"); err != nil {
+		return fmt.Errorf("failed to clean ancestor branch: %w", err)
+	}
+	if err := snapshotCommit(
+		opts.AncestorBranch,
+		"Clean scaffolding from release version: "+opts.FromVersion,
+		"ancestor",
+	); err != nil {
+		return fmt.Errorf("failed to commit ancestor branch: %w", err)
+	}
+
+	// 3) original snapshot
+	if err := helpers.CleanWorktree("original"); err != nil {
+		return fmt.Errorf("failed to clean original branch: %w", err)
+	}
+	// custom message uses the output-branch name
+	if err := snapshotCommit(
+		opts.OriginalBranch,
+		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, out),
+		"original",
+	); err != nil {
+		return fmt.Errorf("failed to commit original branch: %w", err)
+	}
+
+	// 4) upgrade snapshot
+	if err := helpers.CleanWorktree("upgrade"); err != nil {
+		return fmt.Errorf("failed to clean upgrade branch: %w", err)
+	}
+	if err := snapshotCommit(
+		opts.UpgradeBranch,
+		"Clean scaffolding from release version: "+opts.ToVersion,
+		"upgrade",
+	); err != nil {
+		return fmt.Errorf("failed to commit upgrade branch: %w", err)
+	}
+
+	// 5) merge snapshot (no new merge; copy tree from the prepared merge branch)
+	if err := helpers.CleanWorktree("merge"); err != nil {
+		return fmt.Errorf("failed to clean merge branch: %w", err)
+	}
+	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout merge content: %w", err)
+	}
+
+	// 6) optionally restore preserved paths from base (review tests assert on 'git checkout …')
+	opts.preservePaths()
+
+	// 7) stage and final commit message (non-squash path)
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage output: %w", err)
+	}
+
+	return opts.createFinalCommit()
+}
+
+// preservePaths checks out the paths specified in PreservePath
+func (opts *Update) preservePaths() {
+	for _, p := range opts.PreservePath {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if err := exec.Command("git", "checkout", opts.FromBranch, "--", p).Run(); err != nil {
+			// best-effort restore, but surface visibility for debugging
+			log.Warn("failed to restore preserved path", "path", p, "branch", opts.FromBranch, "error", err)
+		}
+	}
+}
+
+// snapshotCommit checks out all files from srcBranch and commits them with msg.
+func snapshotCommit(srcBranch, msg, label string) error {
+	if err := exec.Command("git", "checkout", srcBranch, "--", ".").Run(); err != nil {
+		return fmt.Errorf("checkout %s content: %w", label, err)
+	}
+	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+		return fmt.Errorf("stage %s content: %w", label, err)
+	}
+	if err := exec.Command("git", "commit", "--no-verify", "-m", msg).Run(); err != nil {
+		return fmt.Errorf("commit %s: %w", label, err)
+	}
+	return nil
+}
+
+// createFinalCommit stages the changes and commits with a consistent message.
+// If squashed is true, appends a squash note. Exit code 1 from `git commit`
+// (nothing to commit) is treated as success.
+func (opts *Update) createFinalCommit() error {
+	msg := fmt.Sprintf("[kubebuilder-automated-update]: update scaffold from %s to %s",
+		opts.FromVersion, opts.ToVersion)
+	if opts.Squash {
+		msg = fmt.Sprintf("%s; (squashed 3-way merge)", msg)
+	}
+
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", msg)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		// Exit code 1 means "nothing to commit" -> treat as success
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			return nil
+		}
+		return fmt.Errorf("commit output branch: %w", err)
 	}
 	return nil
 }
@@ -131,13 +294,9 @@ func (opts *Update) Update() error {
 // on a branch derived from FromBranch (e.g., "main"). If PreservePath is set, those paths
 // are restored from the base branch after copying the merge tree, so CI config etc. stays put.
 func (opts *Update) squashToOutputBranch() error {
-	// Default output branch name if not provided
-	out := opts.OutputBranch
-	if out == "" {
-		out = "kubebuilder-alpha-update-to-" + opts.ToVersion
-	}
+	out := opts.getOutputBranchName()
 
-	// 1. Start from base (FromBranch)
+	// 1) base -> out
 	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("checkout %s: %w", opts.FromBranch, err)
 	}
@@ -145,42 +304,30 @@ func (opts *Update) squashToOutputBranch() error {
 		return fmt.Errorf("create/reset %s from %s: %w", out, opts.FromBranch, err)
 	}
 
-	// 2. Clean working tree (except .git) so the next checkout is a verbatim snapshot
-	if err := exec.Command("sh", "-c",
-		"find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +").Run(); err != nil {
-		return fmt.Errorf("cleanup output branch: %w", err)
+	// 2) clean worktree, then copy merge tree
+	if err := helpers.CleanWorktree("output branch"); err != nil {
+		return fmt.Errorf("output branch: %w", err)
 	}
-
-	// 3. Bring in the exact content from the merge branch (no re-merge -> no new conflicts)
 	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
-		return fmt.Errorf("checkout merge content: %w", err)
+		return fmt.Errorf("checkout %s content: %w", "merge", err)
 	}
 
-	// 4. Optionally restore preserved paths from base (keep CI, etc.)
-	for _, p := range opts.PreservePath {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			_ = exec.Command("git", "restore", "--source", opts.FromBranch, "--staged", "--worktree", p).Run()
-		}
-	}
+	// 3) optionally restore preserved paths from base (tests assert on 'git restore …')
+	opts.preservePaths()
 
-	// 5. One commit (keep markers; bypass hooks if repos have pre-commit on conflicts)
+	// 4) stage and single squashed commit
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
 		return fmt.Errorf("stage output: %w", err)
 	}
-	msg := fmt.Sprintf("[kubebuilder-automated-update]: update scaffold from %s to %s; (squashed 3-way merge)",
-		opts.FromVersion, opts.ToVersion)
-	if err := exec.Command("git", "commit", "--no-verify", "-m", msg).Run(); err != nil {
-		return nil
-	}
 
-	return nil
+	// If you kept the no-arg version that reads opts.Squash, ensure opts.Squash==true before calling.
+	return opts.createFinalCommit()
 }
 
 // regenerateProjectWithVersion downloads the release binary for the specified version,
 // and runs the `alpha generate` command to re-scaffold the project
 func regenerateProjectWithVersion(version string) error {
-	tempDir, err := binaryWithVersion(version)
+	tempDir, err := helpers.DownloadReleaseVersionWith(version)
 	if err != nil {
 		return fmt.Errorf("failed to download release %s binary: %w", version, err)
 	}
@@ -193,13 +340,8 @@ func regenerateProjectWithVersion(version string) error {
 // prepareAncestorBranch prepares the ancestor branch by checking it out,
 // cleaning up the project files, and regenerating the project with the specified version.
 func (opts *Update) prepareAncestorBranch() error {
-	gitCmd := exec.Command("git", "checkout", "-b", opts.AncestorBranch, opts.FromBranch)
-	if err := gitCmd.Run(); err != nil {
+	if err := exec.Command("git", "checkout", "-b", opts.AncestorBranch, opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("failed to create %s from %s: %w", opts.AncestorBranch, opts.FromBranch, err)
-	}
-	checkoutCmd := exec.Command("git", "checkout", opts.AncestorBranch)
-	if err := checkoutCmd.Run(); err != nil {
-		return fmt.Errorf("failed to checkout base branch %s: %w", opts.AncestorBranch, err)
 	}
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s : %w", opts.AncestorBranch, err)
@@ -207,61 +349,15 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := regenerateProjectWithVersion(opts.FromVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with fromVersion %s: %w", opts.FromVersion, err)
 	}
-	gitCmd = exec.Command("git", "add", "--all")
+	gitCmd := exec.Command("git", "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
 	}
 	commitMessage := "Clean scaffolding from release version: " + opts.FromVersion
-	_ = exec.Command("git", "commit", "-m", commitMessage).Run()
+	if err := helpers.CommitIgnoreEmpty(commitMessage, "ancestor"); err != nil {
+		return fmt.Errorf("failed to commit ancestor branch: %w", err)
+	}
 	return nil
-}
-
-// binaryWithVersion downloads the specified released version from GitHub releases and saves it
-// to a temporary directory with executable permissions.
-// Returns the temporary directory path containing the binary.
-func binaryWithVersion(version string) (string, error) {
-	url := buildReleaseURL(version)
-
-	fs := afero.NewOsFs()
-	tempDir, err := afero.TempDir(fs, "", "kubebuilder"+version+"-")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-
-	binaryPath := tempDir + "/kubebuilder"
-	file, err := os.Create(binaryPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create the binary file: %w", err)
-	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Error("failed to close the file", "error", err)
-		}
-	}()
-
-	response, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to download the binary: %w", err)
-	}
-	defer func() {
-		if err = response.Body.Close(); err != nil {
-			log.Error("failed to close the connection", "error", err)
-		}
-	}()
-
-	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download the binary: HTTP %d", response.StatusCode)
-	}
-
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to write the binary content to file: %w", err)
-	}
-
-	if err := os.Chmod(binaryPath, 0o755); err != nil {
-		return "", fmt.Errorf("failed to make binary executable: %w", err)
-	}
-	return tempDir, nil
 }
 
 // cleanupBranch removes all files and folders in the current directory
@@ -311,7 +407,7 @@ func runAlphaGenerate(tempDir, version string) error {
 		}
 	}()
 
-	// TODO: we need improve the implementation from utils to allow us
+	// TODO: we need improve the implementation from helpers to allow us
 	// to pass the path of the binary and use it to run the alpha generate command.
 	cmd := exec.Command(tempBinaryPath, "alpha", "generate")
 	cmd.Stdout = os.Stdout
@@ -351,9 +447,12 @@ func (opts *Update) prepareOriginalBranch() error {
 		return fmt.Errorf("failed to stage all changes in current: %w", err)
 	}
 
-	_ = exec.Command("git", "commit", "-m",
-		fmt.Sprintf("Add code from %s into %s",
-			opts.FromBranch, opts.OriginalBranch)).Run()
+	if err := helpers.CommitIgnoreEmpty(
+		fmt.Sprintf("Add code from %s into %s", opts.FromBranch, opts.OriginalBranch),
+		"original",
+	); err != nil {
+		return fmt.Errorf("failed to commit original branch: %w", err)
+	}
 	return nil
 }
 
@@ -383,7 +482,14 @@ func (opts *Update) prepareUpgradeBranch() error {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.UpgradeBranch, err)
 	}
 
-	_ = exec.Command("git", "commit", "-m", "Clean scaffolding from release version: "+opts.ToVersion).Run()
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", "Clean scaffolding from release version: "+opts.ToVersion)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			return nil // nothing to commit
+		}
+		return fmt.Errorf("failed to commit upgrade branch: %w", err)
+	}
 	return nil
 }
 
@@ -439,7 +545,15 @@ func (opts *Update) mergeOriginalToUpgrade() error {
 		message += " Merge happened without conflicts."
 	}
 
-	_ = exec.Command("git", "commit", "-m", message).Run()
+	cmd := exec.Command("git", "commit", "--no-verify", "-m", message)
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+			return nil // nothing to commit
+		}
+		return fmt.Errorf("failed to commit merge branch %s: %w", opts.MergeBranch, err)
+	}
 
+	log.Info("Merge completed", "branch", opts.MergeBranch, "message", message)
 	return nil
 }
