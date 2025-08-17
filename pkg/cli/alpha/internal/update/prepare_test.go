@@ -19,7 +19,6 @@ package update
 import (
 	"os"
 	"path/filepath"
-	"testing"
 
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
@@ -30,11 +29,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 )
-
-func TestCommand(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "update")
-}
 
 var _ = Describe("Prepare for internal update", func() {
 	var (
