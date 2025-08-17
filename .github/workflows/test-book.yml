@@ -47,6 +47,10 @@ jobs:
       - name: Create kind cluster
         run: kind create cluster
 
+      - name: Running make test for ${{ matrix.folder }}
+        working-directory: ${{ matrix.folder }}
+        run: make test
+
       - name: Running make test-e2e for ${{ matrix.folder }}
         working-directory: ${{ matrix.folder }}
         run: make test-e2e
