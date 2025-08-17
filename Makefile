@@ -144,7 +144,7 @@ go-apidiff:
 ##@ Tests
 
 .PHONY: test
-test: test-unit test-integration test-testdata test-book test-license ## Run the unit and integration tests (used in the CI)
+test: test-unit test-integration test-features test-testdata test-book test-license ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
 TEST_PKGS := ./pkg/... ./test/e2e/utils/...
@@ -156,10 +156,13 @@ test-coverage: ## Run unit tests creating the output to report coverage
 	- rm -rf *.out  # Remove all coverage files if exists
 	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang" $(TEST_PKGS)
 
+.PHONY: test-features
+test-features: ## Run the integration tests
+	./test/features.sh
+
 .PHONY: test-integration
 test-integration: ## Run the integration tests
 	./test/integration.sh
-	./test/features.sh
 
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated

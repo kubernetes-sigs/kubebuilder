@@ -1,0 +1,31 @@
+name: Coverage
+
+on:
+  push:
+    paths-ignore: ['**/*.md']
+  pull_request:
+    paths-ignore: ['**/*.md']
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+
+      - name: Run tests with coverage
+        run: make test-coverage
+
+      - name: Upload coverage to Coveralls
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage-all.out
