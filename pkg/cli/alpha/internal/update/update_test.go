@@ -72,7 +72,7 @@ var _ = Describe("Prepare for internal update", func() {
 		opts = Update{
 			FromVersion: "v4.5.0",
 			ToVersion:   "v4.6.0",
-			FromBranch:  "main",
+			FromBranch:  defaultBranch,
 		}
 
 		// Create temporary directory to house fake bin executables.
@@ -444,7 +444,7 @@ exit 0`
 
 	Context("SquashToOutputBranch", func() {
 		BeforeEach(func() {
-			opts.FromBranch = "main"
+			opts.FromBranch = defaultBranch
 			opts.FromVersion = "v4.5.0"
 			opts.ToVersion = "v4.6.0"
 			if opts.MergeBranch == "" {

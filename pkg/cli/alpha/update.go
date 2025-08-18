@@ -114,6 +114,7 @@ Defaults:
 		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
 	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
 		"Push the output branch to the remote repository after the update.")
-
+	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
+		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
 	return updateCmd
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package update
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -35,17 +36,29 @@ var _ = Describe("Prepare for internal update", func() {
 		tmpDir      string
 		workDir     string
 		projectFile string
+		mockGh      string
 		err         error
+
+		logFile string
+		oldPath string
+		opts    Update
 	)
 
 	BeforeEach(func() {
 		workDir, err = os.Getwd()
 		Expect(err).ToNot(HaveOccurred())
 
+		// 1) Create tmp dir and chdir first
 		tmpDir, err = os.MkdirTemp("", "kubebuilder-prepare-test")
 		Expect(err).ToNot(HaveOccurred())
 		err = os.Chdir(tmpDir)
 		Expect(err).ToNot(HaveOccurred())
+
+		// 2) Now that tmpDir exists, set logFile and PATH
+		logFile = filepath.Join(tmpDir, "bin.log")
+
+		oldPath = os.Getenv("PATH")
+		Expect(os.Setenv("PATH", tmpDir+string(os.PathListSeparator)+oldPath)).To(Succeed())
 
 		projectFile = filepath.Join(tmpDir, yaml.DefaultPath)
 
@@ -56,12 +69,25 @@ var _ = Describe("Prepare for internal update", func() {
 		gock.New("https://api.github.com").
 			Get("/repos/kubernetes-sigs/kubebuilder/releases/latest").
 			Reply(200).
-			JSON(map[string]string{
-				"tag_name": "v1.1.0",
-			})
+			JSON(map[string]string{"tag_name": "v1.1.0"})
+
+		// 3) Create the mock gh inside tmpDir (on PATH)
+		mockGh = filepath.Join(tmpDir, "gh")
+		ghOK := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  echo "acme/repo"
+  exit 0
+fi
+if [[ "$1" == "issue" && "$2" == "create" ]]; then
+  exit 0
+fi
+exit 0`
+		Expect(mockBinResponse(ghOK, mockGh)).To(Succeed())
 	})
 
 	AfterEach(func() {
+		Expect(os.Setenv("PATH", oldPath)).To(Succeed())
 		err = os.Chdir(workDir)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -102,7 +128,7 @@ var _ = Describe("Prepare for internal update", func() {
 				const version = ""
 				Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
 
-				err := options.Prepare()
+				err = options.Prepare()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).Should(ContainSubstring("failed to load PROJECT config"))
 			},
@@ -129,10 +155,10 @@ var _ = Describe("Prepare for internal update", func() {
 				const version = `version: "3"`
 				Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
 
-				config, err := common.LoadProjectConfig(tmpDir)
-				Expect(err).ToNot(HaveOccurred())
-				fromVersion, err := options.defineFromVersion(config)
-				Expect(err).ToNot(HaveOccurred())
+				config, errLoad := common.LoadProjectConfig(tmpDir)
+				Expect(errLoad).ToNot(HaveOccurred())
+				fromVersion, errLoad := options.defineFromVersion(config)
+				Expect(errLoad).ToNot(HaveOccurred())
 				Expect(fromVersion).To(BeEquivalentTo("v1.0.0"))
 			},
 			Entry("options", &Update{FromVersion: ""}),
@@ -147,11 +173,11 @@ var _ = Describe("Prepare for internal update", func() {
 				const version = `version: "3"`
 				Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
 
-				config, err := common.LoadProjectConfig(tmpDir)
-				Expect(err).NotTo(HaveOccurred())
-				fromVersion, err := options.defineFromVersion(config)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("no version specified in PROJECT file"))
+				config, errLoad := common.LoadProjectConfig(tmpDir)
+				Expect(errLoad).NotTo(HaveOccurred())
+				fromVersion, errLoad := options.defineFromVersion(config)
+				Expect(errLoad).To(HaveOccurred())
+				Expect(errLoad.Error()).To(ContainSubstring("no version specified in PROJECT file"))
 				Expect(fromVersion).To(Equal(""))
 			},
 			Entry("options", &Update{FromVersion: ""}),
@@ -168,5 +194,79 @@ var _ = Describe("Prepare for internal update", func() {
 			Entry("options", &Update{ToVersion: "v1.1.0"}),
 			Entry("options", &Update{}),
 		)
+	})
+
+	Context("OpenGitHubIssue", func() {
+		It("creates issue without conflicts", func() {
+			opts.FromBranch = defaultBranch
+			opts.FromVersion = "v4.5.1"
+			opts.ToVersion = "v4.8.0"
+
+			err = opts.openGitHubIssue(false)
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, readErr := os.ReadFile(logFile)
+			Expect(readErr).ToNot(HaveOccurred())
+			s := string(logs)
+
+			Expect(s).To(ContainSubstring("repo view --json nameWithOwner --jq .nameWithOwner"))
+			Expect(s).To(ContainSubstring("issue create"))
+
+			expURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1",
+				"acme/repo", opts.FromBranch, opts.getOutputBranchName())
+			Expect(s).To(ContainSubstring(expURL))
+			Expect(s).To(ContainSubstring(opts.ToVersion))
+			Expect(s).To(ContainSubstring(opts.FromVersion))
+		})
+
+		It("creates issue with conflicts template", func() {
+			opts.FromBranch = defaultBranch
+			opts.FromVersion = "v4.5.2"
+			opts.ToVersion = "v4.10.0"
+
+			err = opts.openGitHubIssue(true)
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, _ := os.ReadFile(logFile)
+			s := string(logs)
+			Expect(s).To(ContainSubstring("Resolve conflicts"))
+			Expect(s).To(ContainSubstring("make manifests generate fmt vet lint-fix"))
+		})
+
+		It("fails when repo detection fails", func() {
+			failRepo := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  exit 1
+fi
+exit 0`
+			Expect(mockBinResponse(failRepo, mockGh)).To(Succeed())
+
+			err = opts.openGitHubIssue(false)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
+		})
+
+		It("fails when issue creation fails", func() {
+			failIssue := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  echo "acme/repo"
+  exit 0
+fi
+if [[ "$1" == "issue" && "$2" == "create" ]]; then
+  exit 1
+fi
+exit 0`
+			Expect(mockBinResponse(failIssue, mockGh)).To(Succeed())
+
+			opts.FromBranch = defaultBranch
+			opts.FromVersion = "v4.5.0"
+			opts.ToVersion = "v4.6.0"
+
+			err = opts.openGitHubIssue(false)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to create GitHub Issue"))
+		})
 	})
 })
