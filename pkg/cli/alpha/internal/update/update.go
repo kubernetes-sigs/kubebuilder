@@ -77,6 +77,25 @@ type Update struct {
 	// CLI (`gh`) to be installed and authenticated in the local environment.
 	OpenGhIssue bool
 
+	// GitConfig holds per-invocation Git settings applied to every `git` command via
+	// `git -c key=value`.
+	//
+	// Examples:
+	//   []string{"merge.renameLimit=999999"}         // improve rename detection during merges
+	//   []string{"diff.renameLimit=999999"}          // improve rename detection during diffs
+	//   []string{"merge.conflictStyle=diff3"}        // show ancestor in conflict markers
+	//   []string{"rerere.enabled=true"}              // reuse recorded resolutions
+	//
+	// Defaults:
+	//   When no --git-config flags are provided, the updater adds:
+	//     []string{"merge.renameLimit=999999", "diff.renameLimit=999999"}
+	//
+	// Behavior:
+	//   • If one or more --git-config flags are supplied, those values are appended on top of the defaults.
+	//   • To disable the defaults entirely, include a literal "disable", for example:
+	//       --git-config disable --git-config rerere.enabled=true
+	GitConfig []string
+
 	// Temporary branches created during the update process. These are internal to the run
 	// and are surfaced for transparency/debugging:
 	//   - AncestorBranch: clean scaffold generated from FromVersion
@@ -160,7 +179,7 @@ Resolve conflicts there, complete the merge locally, and push the branch.
 // This helps apply new scaffolding changes while preserving custom code.
 func (opts *Update) Update() error {
 	log.Info("Checking out base branch", "branch", opts.FromBranch)
-	checkoutCmd := exec.Command("git", "checkout", opts.FromBranch)
+	checkoutCmd := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch)
 	if err := checkoutCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout base branch %s: %w", opts.FromBranch, err)
 	}
@@ -219,7 +238,7 @@ func (opts *Update) Update() error {
 	if opts.ShowCommits {
 		log.Info("Keeping commits history")
 		out := opts.getOutputBranchName()
-		if err := exec.Command("git", "checkout", "-b", out, opts.MergeBranch).Run(); err != nil {
+		if err := helpers.GitCmd(opts.GitConfig, "checkout", "-b", out, opts.MergeBranch).Run(); err != nil {
 			return fmt.Errorf("checkout %s: %w", out, err)
 		}
 	} else {
@@ -233,8 +252,8 @@ func (opts *Update) Update() error {
 	if opts.Push {
 		if opts.Push {
 			out := opts.getOutputBranchName()
-			_ = exec.Command("git", "checkout", out).Run()
-			if err := exec.Command("git", "push", "-u", "origin", out).Run(); err != nil {
+			_ = helpers.GitCmd(opts.GitConfig, "checkout", out).Run()
+			if err := helpers.GitCmd(opts.GitConfig, "push", "-u", "origin", out).Run(); err != nil {
 				return fmt.Errorf("failed to push %s: %w", out, err)
 			}
 		}
@@ -309,7 +328,7 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 }
 
 func (opts *Update) cleanupTempBranches() {
-	_ = exec.Command("git", "checkout", opts.getOutputBranchName()).Run()
+	_ = helpers.GitCmd(opts.GitConfig, "checkout", opts.getOutputBranchName()).Run()
 
 	branches := []string{
 		opts.AncestorBranch,
@@ -324,8 +343,8 @@ func (opts *Update) cleanupTempBranches() {
 			continue
 		}
 		// Delete only if it's a LOCAL branch.
-		if err := exec.Command("git", "show-ref", "--verify", "--quiet", "refs/heads/"+b).Run(); err == nil {
-			_ = exec.Command("git", "branch", "-D", b).Run()
+		if err := helpers.GitCmd(opts.GitConfig, "show-ref", "--verify", "--quiet", "refs/heads/"+b).Run(); err == nil {
+			_ = helpers.GitCmd(opts.GitConfig, "branch", "-D", b).Run()
 		}
 	}
 }
@@ -345,7 +364,7 @@ func (opts *Update) preservePaths() {
 		if p == "" {
 			continue
 		}
-		if err := exec.Command("git", "checkout", opts.FromBranch, "--", p).Run(); err != nil {
+		if err := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch, "--", p).Run(); err != nil {
 			log.Warn("failed to restore preserved path", "path", p, "branch", opts.FromBranch, "error", err)
 		}
 	}
@@ -358,10 +377,10 @@ func (opts *Update) squashToOutputBranch(hasConflicts bool) error {
 	out := opts.getOutputBranchName()
 
 	// 1) base -> out
-	if err := exec.Command("git", "checkout", opts.FromBranch).Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("checkout %s: %w", opts.FromBranch, err)
 	}
-	if err := exec.Command("git", "checkout", "-B", out, opts.FromBranch).Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", "-B", out, opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("create/reset %s from %s: %w", out, opts.FromBranch, err)
 	}
 
@@ -369,7 +388,7 @@ func (opts *Update) squashToOutputBranch(hasConflicts bool) error {
 	if err := helpers.CleanWorktree("output branch"); err != nil {
 		return fmt.Errorf("output branch: %w", err)
 	}
-	if err := exec.Command("git", "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", opts.MergeBranch, "--", ".").Run(); err != nil {
 		return fmt.Errorf("checkout %s content: %w", "merge", err)
 	}
 
@@ -377,7 +396,7 @@ func (opts *Update) squashToOutputBranch(hasConflicts bool) error {
 	opts.preservePaths()
 
 	// 4) stage and single squashed commit
-	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "add", "--all").Run(); err != nil {
 		return fmt.Errorf("stage output: %w", err)
 	}
 
@@ -404,7 +423,7 @@ func regenerateProjectWithVersion(version string) error {
 // prepareAncestorBranch prepares the ancestor branch by checking it out,
 // cleaning up the project files, and regenerating the project with the specified version.
 func (opts *Update) prepareAncestorBranch() error {
-	if err := exec.Command("git", "checkout", "-b", opts.AncestorBranch, opts.FromBranch).Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", "-b", opts.AncestorBranch, opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("failed to create %s from %s: %w", opts.AncestorBranch, opts.FromBranch, err)
 	}
 	if err := cleanupBranch(); err != nil {
@@ -413,7 +432,7 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := regenerateProjectWithVersion(opts.FromVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with fromVersion %s: %w", opts.FromVersion, err)
 	}
-	gitCmd := exec.Command("git", "add", "--all")
+	gitCmd := helpers.GitCmd(opts.GitConfig, "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
 	}
@@ -508,17 +527,17 @@ func envWithPrefixedPath(dir string) []string {
 // populates it with the user's actual project content from the default branch.
 // This represents the current state of the user's project.
 func (opts *Update) prepareOriginalBranch() error {
-	gitCmd := exec.Command("git", "checkout", "-b", opts.OriginalBranch)
+	gitCmd := helpers.GitCmd(opts.GitConfig, "checkout", "-b", opts.OriginalBranch)
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout branch %s: %w", opts.OriginalBranch, err)
 	}
 
-	gitCmd = exec.Command("git", "checkout", opts.FromBranch, "--", ".")
+	gitCmd = helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch, "--", ".")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout content from %s branch onto %s: %w", opts.FromBranch, opts.OriginalBranch, err)
 	}
 
-	gitCmd = exec.Command("git", "add", "--all")
+	gitCmd = helpers.GitCmd(opts.GitConfig, "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage all changes in current: %w", err)
 	}
@@ -535,13 +554,13 @@ func (opts *Update) prepareOriginalBranch() error {
 // generates fresh scaffolding using the current (latest) CLI version.
 // This represents what the project should look like with the new version.
 func (opts *Update) prepareUpgradeBranch() error {
-	gitCmd := exec.Command("git", "checkout", "-b", opts.UpgradeBranch, opts.AncestorBranch)
+	gitCmd := helpers.GitCmd(opts.GitConfig, "checkout", "-b", opts.UpgradeBranch, opts.AncestorBranch)
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout %s branch off %s: %w",
 			opts.UpgradeBranch, opts.AncestorBranch, err)
 	}
 
-	checkoutCmd := exec.Command("git", "checkout", opts.UpgradeBranch)
+	checkoutCmd := helpers.GitCmd(opts.GitConfig, "checkout", opts.UpgradeBranch)
 	if err := checkoutCmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout base branch %s: %w", opts.UpgradeBranch, err)
 	}
@@ -552,7 +571,7 @@ func (opts *Update) prepareUpgradeBranch() error {
 	if err := regenerateProjectWithVersion(opts.ToVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with version %s: %w", opts.ToVersion, err)
 	}
-	gitCmd = exec.Command("git", "add", "--all")
+	gitCmd = helpers.GitCmd(opts.GitConfig, "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.UpgradeBranch, err)
 	}
@@ -566,17 +585,17 @@ func (opts *Update) prepareUpgradeBranch() error {
 // mergeOriginalToUpgrade attempts to merge the upgrade branch
 func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 	hasConflicts := false
-	if err := exec.Command("git", "checkout", "-b", opts.MergeBranch, opts.UpgradeBranch).Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", "-b", opts.MergeBranch, opts.UpgradeBranch).Run(); err != nil {
 		return hasConflicts, fmt.Errorf("failed to create merge branch %s from %s: %w",
 			opts.MergeBranch, opts.UpgradeBranch, err)
 	}
 
-	checkoutCmd := exec.Command("git", "checkout", opts.MergeBranch)
+	checkoutCmd := helpers.GitCmd(opts.GitConfig, "checkout", opts.MergeBranch)
 	if err := checkoutCmd.Run(); err != nil {
 		return hasConflicts, fmt.Errorf("failed to checkout base branch %s: %w", opts.MergeBranch, err)
 	}
 
-	mergeCmd := exec.Command("git", "merge", "--no-edit", "--no-commit", opts.OriginalBranch)
+	mergeCmd := helpers.GitCmd(opts.GitConfig, "merge", "--no-edit", "--no-commit", opts.OriginalBranch)
 	err := mergeCmd.Run()
 	if err != nil {
 		var exitErr *exec.ExitError
@@ -608,7 +627,7 @@ func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 	}
 
 	// Step 4: Stage and commit
-	if err := exec.Command("git", "add", "--all").Run(); err != nil {
+	if err := helpers.GitCmd(opts.GitConfig, "add", "--all").Run(); err != nil {
 		return hasConflicts, fmt.Errorf("failed to stage merge results: %w", err)
 	}
 

@@ -53,6 +53,7 @@ The command creates three temporary branches:
     - `--restore-path`: in squash mode, restore specific files (like CI configs) from your base branch.
     - `--output-branch`: pick a custom branch name.
     - `--push`: push the result to `origin` automatically.
+    - `--git-config`: sets git configurations.
 
 ### Step 5: Cleanup
 - Once the output branch is ready, all the temporary working branches are deleted.
@@ -132,19 +133,46 @@ make manifests generate fmt vet lint-fix
 make all
 ```
 
+### Changing Extra Git configs only during the run (does not change your ~/.gitconfig)_
+
+By default, `kubebuilder alpha update` applies safe Git configs:
+`merge.renameLimit=999999`, `diff.renameLimit=999999`.
+You can add more, or disable them.
+
+- **Add more on top of defaults**
+```shell
+kubebuilder alpha update \
+  --git-config merge.conflictStyle=diff3 \
+  --git-config rerere.enabled=true
+```
+
+- **Disable defaults entirely**
+```shell
+kubebuilder alpha update --git-config disable
+```
+
+- **Disable defaults and set your own**
+
+```shell
+kubebuilder alpha update \
+  --git-config disable \
+  --git-config rerere.enabled=true
+```
+
 ## Flags
 
-| Flag              | Description                                                                                                                                                 |
-|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--from-version`  | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                              |
-| `--to-version`    | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                  |
-| `--from-branch`   | Git branch that holds your current project code. Defaults to `main`.                                                                                        |
-| `--force`         | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                           |
-| `--show-commits`  | Keep full history (do not squash). **Not compatible** with `--restore-path`.                                                                               |
-| `--restore-path` | Repeatable. **Squash mode only.** After copying the merge tree to the output branch, restore these paths from the base branch (e.g., `.github/workflows`).  |
-| `--output-branch` | Name of the output branch. Default: `kubebuilder-update-from-<from-version>-to-<to-version>`.                                                               |
-| `--push`          | Push the output branch to the `origin` remote after the update completes.                                                                                   |
-| `-h, --help`      | Show help for this command.                                                                                                                                 |
+| Flag               | Description                                                                                                                                                                                                                            |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--from-version`   | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                                                                                                         |
+| `--to-version`     | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                                                                                             |
+| `--from-branch`    | Git branch that holds your current project code. Defaults to `main`.                                                                                                                                                                   |
+| `--force`          | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                                                                                                      |
+| `--show-commits`   | Keep full history (do not squash). **Not compatible** with `--preserve-path`.                                                                                                                                                          |
+| `--restore-path`   | Repeatable. Paths to preserve from the base branch (repeatable). Not supported with --show-commits. (e.g., `.github/workflows`).                                                                                                       |
+| `--output-branch`  | Name of the output branch. Default: `kubebuilder-update-from-<from-version>-to-<to-version>`.                                                                                                                                          |
+| `--push`           | Push the output branch to the `origin` remote after the update completes.                                                                                                                                                              |
+| `--git-config`     | Repeatable. Pass per-invocation Git config as `-c key=value`. **Default** (if omitted): `-c merge.renameLimit=999999 -c diff.renameLimit=999999`. Your configs are applied on top. To disable defaults, include `--git-config disable` |
+| `-h, --help`       | Show help for this command.                                                                                                                                                                                                            |
 
 <aside class="note warning">
 <h1>You might need to upgrade your project first</h1>
