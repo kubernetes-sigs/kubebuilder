@@ -423,7 +423,7 @@ func (c *CLI) getInfoFromDefaults() {
 }
 
 const unstablePluginMsg = " (plugin version is unstable, there may be an upgrade available: " +
-	"https://kubebuilder.io/migration/plugin/plugins.html)"
+	"https://kubebuilder.io/plugins/plugins-versioning)"
 
 // resolvePlugins selects from the available plugins those that match the project version and plugin keys provided.
 func (c *CLI) resolvePlugins() error {
