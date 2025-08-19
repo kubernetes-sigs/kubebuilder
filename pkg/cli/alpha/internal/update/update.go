@@ -71,6 +71,12 @@ type Update struct {
 	// Push, when true, pushes the OutputBranch to the "origin" remote after the update completes.
 	Push bool
 
+	// OpenGhIssue, when true, automatically creates a GitHub issue after the update
+	// completes. The issue includes a pre-filled checklist and a compare link from
+	// the base branch (--from-branch) to the output branch. This requires the GitHub
+	// CLI (`gh`) to be installed and authenticated in the local environment.
+	OpenGhIssue bool
+
 	// Temporary branches created during the update process. These are internal to the run
 	// and are surfaced for transparency/debugging:
 	//   - AncestorBranch: clean scaffold generated from FromVersion
@@ -82,6 +88,73 @@ type Update struct {
 	UpgradeBranch  string
 	MergeBranch    string
 }
+
+const issueTitleTmpl = "[Action Required] Upgrade the Scaffold: %[2]s -> %[1]s"
+
+//nolint:lll
+const issueBodyTmpl = `## Description
+
+Upgrade your project to use the latest scaffold changes introduced in Kubebuilder [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s).  
+
+See the release notes from [%[3]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[3]s) to [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s) for details about the changes included in this upgrade.
+
+## What to do
+
+A scheduled workflow already attempted this upgrade and created the branch %[4]s to help you in this process.
+
+Create a Pull Request using the URL below to review the changes:
+%[2]s  
+
+## Next steps
+
+Verify the changes
+- Build the project  
+- Run tests  
+- Confirm everything still works
+
+:book: **More info:** https://kubebuilder.io/reference/commands/alpha_update
+`
+
+//nolint:lll
+const issueBodyTmplWithConflicts = `## Description
+
+Upgrade your project to use the latest scaffold changes introduced in Kubebuilder [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s).  
+
+See the release notes from [%[3]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[3]s) to [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s) for details about the changes included in this upgrade.
+
+## What to do
+
+A scheduled workflow already attempted this upgrade and created the branch (%[4]s) to help you in this process.
+
+:warning: **Conflicts were detected during the merge.**
+
+Create a Pull Request using the URL below to review the changes and resolve conflicts manually:
+%[2]s  
+
+## Next steps
+
+### 1. Resolve conflicts
+After fixing conflicts, run:
+~~~bash
+make manifests generate fmt vet lint-fix
+~~~
+
+### 2. Optional: work on a new branch
+To apply the update in a clean branch, run:
+~~~bash
+kubebuilder alpha update --output-branch my-fix-branch
+~~~
+
+This will create a new branch (my-fix-branch) with the update applied.  
+Resolve conflicts there, complete the merge locally, and push the branch.
+
+### 3. Verify the changes
+- Build the project  
+- Run tests  
+- Confirm everything still works
+
+:book: **More info:** https://kubebuilder.io/reference/commands/alpha_update
+`
 
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
@@ -170,6 +243,68 @@ func (opts *Update) Update() error {
 	opts.cleanupTempBranches()
 	log.Info("Update completed successfully")
 
+	if opts.OpenGhIssue {
+		if err := opts.openGitHubIssue(hasConflicts); err != nil {
+			return fmt.Errorf("failed to open GitHub issue: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (opts *Update) openGitHubIssue(hasConflicts bool) error {
+	log.Info("Creating GitHub Issue to track the need to update the project")
+	out := opts.getOutputBranchName()
+	repoCmd := exec.Command("gh", "repo", "view", "--json",
+		"nameWithOwner", "--jq", ".nameWithOwner")
+	repoBytes, err := repoCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to detect GitHub repository via `gh repo view`: %s", err)
+	}
+
+	repo := strings.TrimSpace(string(repoBytes))
+	createPRURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1",
+		repo, opts.FromBranch, out)
+
+	title := fmt.Sprintf(issueTitleTmpl, opts.ToVersion, opts.FromVersion)
+
+	// check if an issue with the same title already exists
+	checkCmd := exec.Command("gh", "issue", "list",
+		"--search", fmt.Sprintf("in:title \"%s\"", title),
+		"--json", "title")
+	checkOut, checkErr := checkCmd.Output()
+	if checkErr == nil && strings.Contains(string(checkOut), title) {
+		log.Info("GitHub Issue already exists, skipping creation", "title", title)
+		return nil
+	}
+
+	var body string
+	if hasConflicts {
+		body = fmt.Sprintf(issueBodyTmplWithConflicts,
+			opts.ToVersion,   // %[1]s -> ToVersion
+			createPRURL,      // %[2]s -> PR compare URL
+			opts.FromVersion, // %[3]s -> FromVersion
+			out,              // %[4]s -> OutputBranch
+		)
+	} else {
+		body = fmt.Sprintf(issueBodyTmpl,
+			opts.ToVersion,   // %[1]s -> ToVersion
+			createPRURL,      // %[2]s -> PR compare URL
+			opts.FromVersion, // %[3]s -> FromVersion
+			out,              // %[4]s -> OutputBranch
+		)
+	}
+
+	issueCmd := exec.Command("gh", "issue", "create",
+		"--title", title,
+		"--body", body,
+	)
+	issueCmd.Stdout = os.Stdout
+	issueCmd.Stderr = os.Stderr
+	if err := issueCmd.Run(); err != nil {
+		return fmt.Errorf("failed to create GitHub Issue: %s", err)
+	}
+	log.Info("GitHub Issue created to track the update", "pr", createPRURL)
 	return nil
 }
 

@@ -40,7 +40,7 @@ var _ = Describe("Prepare for internal update", func() {
 		opts = &Update{
 			FromVersion:    "v4.5.0",
 			ToVersion:      "v4.6.0",
-			FromBranch:     "main",
+			FromBranch:     defaultBranch,
 			OriginalBranch: "v4.6.0",
 		}
 

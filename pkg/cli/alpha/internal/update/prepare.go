@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 )
 
+const defaultBranch = "main"
+
 type releaseResponse struct {
 	TagName string `json:"tag_name"`
 }
@@ -37,7 +39,7 @@ func (opts *Update) Prepare() error {
 	if opts.FromBranch == "" {
 		// TODO: Check if is possible to use get to determine the default branch
 		log.Warn("No --from-branch specified, using 'main' as default")
-		opts.FromBranch = "main"
+		opts.FromBranch = defaultBranch
 	}
 
 	path, err := common.GetInputPath("")
