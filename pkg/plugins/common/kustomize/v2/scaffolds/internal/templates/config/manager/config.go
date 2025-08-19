@@ -110,7 +110,6 @@ spec:
           - --leader-elect
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
-        imagePullPolicy: IfNotPresent
         name: manager
         ports: []
         securityContext:
