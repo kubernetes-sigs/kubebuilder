@@ -451,6 +451,26 @@ func runMakeTargets() {
 	}
 }
 
+// hasMakefileConflict returns true if the Makefile (or makefile) is in conflict.
+func hasMakefileConflict() bool {
+	// Check unmerged entries for Makefile/makefile.
+	out, err := exec.Command("git", "ls-files", "-u", "--", "Makefile", "makefile").Output()
+	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
+		return true
+	}
+
+	// Fallback: file content contains conflict markers.
+	check := func(p string) bool {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return false
+		}
+		s := string(b)
+		return strings.Contains(s, "<<<<<<<") && strings.Contains(s, "=======") && strings.Contains(s, ">>>>>>>")
+	}
+	return check("Makefile") || check("makefile")
+}
+
 // runAlphaGenerate executes the old Kubebuilder version's 'alpha generate' command
 // to create clean scaffolding in the ancestor branch. This uses the downloaded
 // binary with the original PROJECT file to recreate the project's initial state.
@@ -581,7 +601,11 @@ func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 	}
 
 	// Best effort to run make targets to ensure the project is in a good state
-	runMakeTargets()
+	if hasMakefileConflict() {
+		log.Warn("Skipping make targets because the Makefile has merge conflicts.")
+	} else {
+		runMakeTargets()
+	}
 
 	// Step 4: Stage and commit
 	if err := exec.Command("git", "add", "--all").Run(); err != nil {
