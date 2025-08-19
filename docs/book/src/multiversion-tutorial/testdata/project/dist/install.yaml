@@ -8110,7 +8110,6 @@ spec:
         command:
         - /manager
         image: controller:latest
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz

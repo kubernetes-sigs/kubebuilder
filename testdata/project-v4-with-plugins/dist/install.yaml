@@ -992,7 +992,6 @@ spec:
         - name: MEMCACHED_IMAGE
           value: memcached:1.6.26-alpine3.19
         image: controller:latest
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
