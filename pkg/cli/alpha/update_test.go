@@ -36,7 +36,7 @@ var _ = Describe("NewUpdateCommand", func() {
 			Expect(flags.Lookup("from-branch")).NotTo(BeNil())
 			Expect(flags.Lookup("force")).NotTo(BeNil())
 			Expect(flags.Lookup("show-commits")).NotTo(BeNil())
-			Expect(flags.Lookup("preserve-path")).NotTo(BeNil())
+			Expect(flags.Lookup("restore-path")).NotTo(BeNil())
 			Expect(flags.Lookup("output-branch")).NotTo(BeNil())
 			Expect(flags.Lookup("push")).NotTo(BeNil())
 		})
