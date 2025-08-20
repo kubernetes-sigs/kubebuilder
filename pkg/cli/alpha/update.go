@@ -28,6 +28,7 @@ import (
 // NewUpdateCommand creates and returns a new Cobra command for updating Kubebuilder projects.
 func NewUpdateCommand() *cobra.Command {
 	opts := update.Update{}
+	var gitCfg []string
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update your project to a newer version (3-way merge; squash by default)",
@@ -52,6 +53,8 @@ Other options:
   • --restore-path: restore paths from base when squashing (e.g., CI configs).
   • --output-branch: override the output branch name.
   • --push: push the output branch to 'origin' after the update.
+  • --git-config: pass per-invocation Git config as -c key=value (repeatable). When not set,
+      defaults to -c merge.renameLimit=999999 to improve rename detection during merges.
 
 Defaults:
   • --from-version / --to-version: resolved from PROJECT and the latest release if unset.
@@ -76,10 +79,37 @@ Defaults:
   kubebuilder alpha update --force --show-commits --output-branch my-update-branch
 
   # Run update and push the output branch to origin (works with or without --show-commits)
-  kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push`,
+  kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push
+
+  # Add extra Git configs (no need to re-specify defaults)
+  kubebuilder alpha update --git-config merge.conflictStyle=diff3 --git-config rerere.enabled=true
+                                          
+  # Disable Git config defaults completely, use only custom configs
+  kubebuilder alpha update --git-config disable --git-config rerere.enabled=true`,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if opts.ShowCommits && len(opts.RestorePath) > 0 {
 				return fmt.Errorf("the --restore-path flag is not supported with --show-commits")
+			}
+
+			// Defaults always on unless "disable" is present anywhere
+			defaults := []string{"merge.renameLimit=999999", "diff.renameLimit=999999"}
+
+			hasDisable := false
+			filtered := make([]string, 0, len(gitCfg))
+			for _, v := range gitCfg {
+				if v == "disable" {
+					hasDisable = true
+					continue
+				}
+				filtered = append(filtered, v)
+			}
+
+			if hasDisable {
+				// no defaults; only user-provided configs (excluding "disable")
+				opts.GitConfig = filtered
+			} else {
+				// defaults + user configs (user can override by repeating keys)
+				opts.GitConfig = append(defaults, filtered...)
 			}
 
 			if err := opts.Prepare(); err != nil {
@@ -108,13 +138,19 @@ Defaults:
 	updateCmd.Flags().BoolVar(&opts.ShowCommits, "show-commits", false,
 		"If set, the update will keep the full history instead of squashing into a single commit.")
 	updateCmd.Flags().StringArrayVar(&opts.RestorePath, "restore-path", nil,
-		"Paths to preserve from the base branch when squashing (repeatable). Not supported with --show-commits. "+
-			"Example: --restore-path .github/workflows")
+		"Paths to preserve from the base branch (repeatable). Not supported with --show-commits.")
 	updateCmd.Flags().StringVar(&opts.OutputBranch, "output-branch", "",
 		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
 	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
 		"Push the output branch to the remote repository after the update.")
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
 		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
+	updateCmd.Flags().StringArrayVar(
+		&gitCfg,
+		"git-config",
+		nil,
+		"Per-invocation Git config (repeatable). "+
+			"Defaults: -c merge.renameLimit=999999 -c diff.renameLimit=999999. "+
+			"Your configs are applied on top. To disable defaults, include `--git-config disable`")
 	return updateCmd
 }

@@ -47,3 +47,13 @@ func CleanWorktree(label string) error {
 	}
 	return nil
 }
+
+// GitCmd creates a new git command with the provided git configuration
+func GitCmd(gitConfig []string, args ...string) *exec.Cmd {
+	gitArgs := make([]string, 0, len(gitConfig)*2+len(args))
+	for _, kv := range gitConfig {
+		gitArgs = append(gitArgs, "-c", kv)
+	}
+	gitArgs = append(gitArgs, args...)
+	return exec.Command("git", gitArgs...)
+}
