@@ -258,13 +258,13 @@ var _ = Describe("kubebuilder", func() {
 			git("add", ".github/workflows/ci.yml")
 			git("commit", "-m", "add ci workflow")
 
-			By("running update (default squash) with --preserve-path")
+			By("running update (default squash) with --restore-path")
 			cmd := exec.Command(
 				kbc.BinaryName, "alpha", "update",
 				"--from-version", fromVersion,
 				"--to-version", toVersion,
 				"--from-branch", "main",
-				"--preserve-path", ".github/workflows",
+				"--restore-path", ".github/workflows",
 			)
 			cmd.Dir = kbc.Dir
 			out, err := kbc.Run(cmd)

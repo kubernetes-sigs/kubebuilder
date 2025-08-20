@@ -56,11 +56,11 @@ type Update struct {
 	// unless OutputBranch is explicitly set.
 	ShowCommits bool
 
-	// PreservePath is a list of paths to restore from the base branch (FromBranch)
+	// RestorePath is a list of paths to restore from the base branch (FromBranch)
 	// when SQUASHING, so things like CI config remain unchanged.
 	// Example: []string{".github/workflows"}
 	// NOTE: This is ignored when ShowCommits == true.
-	PreservePath []string
+	RestorePath []string
 
 	// OutputBranch is the name of the branch that will receive the result:
 	//   - In squash mode (ShowCommits == false): the single squashed commit.
@@ -338,9 +338,9 @@ func (opts *Update) getOutputBranchName() string {
 	return fmt.Sprintf("kubebuilder-update-from-%s-to-%s", opts.FromVersion, opts.ToVersion)
 }
 
-// preservePaths checks out the paths specified in PreservePath
+// preservePaths checks out the paths specified in RestorePath
 func (opts *Update) preservePaths() {
-	for _, p := range opts.PreservePath {
+	for _, p := range opts.RestorePath {
 		p = strings.TrimSpace(p)
 		if p == "" {
 			continue
@@ -352,7 +352,7 @@ func (opts *Update) preservePaths() {
 }
 
 // squashToOutputBranch takes the exact tree of the MergeBranch and writes it as ONE commit
-// on a branch derived from FromBranch (e.g., "main"). If PreservePath is set, those paths
+// on a branch derived from FromBranch (e.g., "main"). If RestorePath is set, those paths
 // are restored from the base branch after copying the merge tree, so CI config etc. stays put.
 func (opts *Update) squashToOutputBranch(hasConflicts bool) error {
 	out := opts.getOutputBranchName()

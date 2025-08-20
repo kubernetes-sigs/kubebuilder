@@ -454,7 +454,7 @@ exit 0`
 
 		It("creates/resets output branch and commits one squashed snapshot", func() {
 			opts.OutputBranch = "" // default naming
-			opts.PreservePath = []string{".github/workflows"}
+			opts.RestorePath = []string{".github/workflows"}
 			opts.ShowCommits = false
 
 			err = opts.squashToOutputBranch(false) // no conflicts
@@ -499,15 +499,15 @@ if [[ "$1" == "commit" ]]; then exit 1; fi
 exit 0`
 			Expect(mockBinResponse(fake, mockGit)).To(Succeed())
 
-			opts.PreservePath = nil
+			opts.RestorePath = nil
 			Expect(opts.squashToOutputBranch(false)).To(Succeed())
 
 			s, _ := os.ReadFile(logFile)
 			Expect(string(s)).To(ContainSubstring("commit --no-verify -m"))
 		})
 
-		It("trims preserve-path and skips blanks", func() {
-			opts.PreservePath = []string{" .github/workflows ", "", "docs"}
+		It("trims restore-path and skips blanks", func() {
+			opts.RestorePath = []string{" .github/workflows ", "", "docs"}
 			Expect(opts.squashToOutputBranch(false)).To(Succeed())
 
 			s, _ := os.ReadFile(logFile)
