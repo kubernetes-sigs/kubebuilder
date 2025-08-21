@@ -9,6 +9,16 @@ not re-applying your code.
 By default, the final result is **squashed into a single commit** on a dedicated output branch.
 If you prefer to keep the full history (no squash), use `--show-commits`.
 
+<aside class="note">
+<h1>Automate your Updates</h1>
+
+You can reduce the burden of keeping your project up to date by using the
+[`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin which
+automates the process of running `kubebuilder alpha update` on a schedule
+workflow when new Kubebuilder releases are available.
+
+</aside>
+
 ## When to Use It
 
 Use this command when you:
@@ -207,6 +217,10 @@ so the current behavior may differ slightly from what is shown in the demo.
 
 ## Further Resources
 
-- WIP: Design proposal for update automation — https://github.com/kubernetes-sigs/kubebuilder/pull/4302
+- [AutoUpdate Plugin][autoupdate-plugin]
+- [Design proposal for update automation][design-proposal]
+- [Project configuration reference][project-config]
 
 [project-config]: ../../reference/project-config.md
+[autoupdate-plugin]: ./../../plugins/available/autoupdate-v1-alpha.md
+[design-proposal]: ./../../../../../designs/update_action.md

@@ -1,0 +1,109 @@
+/*
+Copyright 2025 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package github
+
+import (
+	"path/filepath"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+)
+
+var _ machinery.Template = &AutoUpdate{}
+
+// AutoUpdate scaffolds the GitHub Action to lint the project
+type AutoUpdate struct {
+	machinery.TemplateMixin
+	machinery.BoilerplateMixin
+}
+
+// SetTemplateDefaults implements machinery.Template
+func (f *AutoUpdate) SetTemplateDefaults() error {
+	if f.Path == "" {
+		f.Path = filepath.Join(".github", "workflows", "auto_update.yml")
+	}
+
+	f.TemplateBody = autoUpdateTemplate
+	f.IfExistsAction = machinery.SkipFile
+
+	return nil
+}
+
+const autoUpdateTemplate = `name: Auto Update
+
+# The 'kubebuilder alpha update 'command requires write access to the repository to create a branch
+# with the update files and allow you to open a pull request using the link provided in the issue.
+# The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
+# To protect your codebase, please ensure that you have branch protection rules configured for your 
+# main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
+permissions:
+  contents: write
+  issues: write
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 2" # Every Tuesday at 00:00 UTC
+
+jobs:
+  auto-update:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+
+    # Step 1: Checkout the repository.
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+        fetch-depth: 0
+    
+    # Step 2: Configure Git to create commits with the GitHub Actions bot.
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    # Step 3: Set up Go environment.
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    # Step 4: Install Kubebuilder.
+    - name: Install Kubebuilder
+      run: |
+        curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+        chmod +x kubebuilder
+        sudo mv kubebuilder /usr/local/bin/
+        kubebuilder version
+
+    # Step 5: Run the Kubebuilder alpha update command.
+    # More info: https://kubebuilder.io/reference/commands/alpha_update
+    - name: Run kubebuilder alpha update
+      run: |
+       # Executes the update command with specified flags.
+       # --force: Completes the merge even if conflicts occur, leaving conflict markers.
+       # --push: Automatically pushes the resulting output branch to the 'origin' remote.
+       # --restore-path: Preserves specified paths (e.g., CI workflow files) when squashing.
+       # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.
+        kubebuilder alpha update \
+          --force \
+          --push \
+          --restore-path .github/workflows \
+          --open-gh-issue
+`

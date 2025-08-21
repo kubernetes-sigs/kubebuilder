@@ -78,6 +78,10 @@ var _ = Describe("kubebuilder", func() {
 			err := kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")
 			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
 
+			By("Enabling the AutoUpdate plugin")
+			err = kbc.Edit("--plugins", "autoupdate.kubebuilder.io/v1-alpha")
+			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable autoupdate Plugin")
+
 			By("Generate API with Deploy Image plugin")
 			generateAPIWithDeployImage(kbc)
 

@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	autoupdate "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	hemlv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
@@ -104,6 +105,10 @@ func (opts *Generate) Generate() error {
 
 	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
 		return fmt.Errorf("error migrating Grafana plugin: %w", err)
+	}
+
+	if err = migrateAutoUpdatePlugin(projectConfig); err != nil {
+		return fmt.Errorf("error migrating AutoUpdate plugin: %w", err)
 	}
 
 	if hasHelmPlugin(projectConfig) {
@@ -231,6 +236,23 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	}
 
 	return kubebuilderGrafanaEdit()
+}
+
+func migrateAutoUpdatePlugin(s store.Store) error {
+	var autoUpdatePlugin struct{}
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdate.Plugin{}), autoUpdatePlugin)
+	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+		log.Info("Auto Update plugin not found, skipping migration")
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
+	}
+
+	args := []string{"edit", "--plugins", plugin.KeyFor(v1alpha.Plugin{})}
+	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
+	}
+	return nil
 }
 
 // Migrates the Deploy Image plugin.

@@ -126,7 +126,7 @@ Create a Pull Request using the URL below to review the changes:
 
 ## Next steps
 
-Verify the changes
+**Verify the changes**
 - Build the project  
 - Run tests  
 - Confirm everything still works
