@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/controllers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}
@@ -110,6 +111,8 @@ func (s *apiScaffolder) Scaffold() error {
 			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
+			&e2e.APITestUpdater{WireController: true},
+			&e2e.SuiteUpdater{WireController: true},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %w", err)
 		}

@@ -49,9 +49,8 @@ package e2e
 
 import (
 	"fmt"
-	"testing"
 	"os"
-	"os/exec"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -84,30 +83,7 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	// Check if api/ or internal/ directories exist (indicating controllers have been created)
-	hasControllers := false
-	if _, err := os.Stat("api"); err == nil {
-		hasControllers = true
-	}
-	if _, err := os.Stat("internal"); err == nil {
-		hasControllers = true
-	}
-
-	if hasControllers {
-		By("building the manager(Operator) image")
-		cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectImage))
-		_, err := utils.Run(cmd)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager(Operator) image")
-
-		// TODO(user): If you want to change the e2e test vendor from Kind, ensure the image is
-		// built and available before running the tests. Also, remove the following block.
-		By("loading the manager(Operator) image on Kind")
-		err = utils.LoadImageToKindClusterWithName(projectImage)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager(Operator) image into Kind")
-	} else {
-		By("skipping manager image build - no controllers found (bare init project)")
-		_, _ = fmt.Fprintf(GinkgoWriter, "This is a bare init project without APIs/controllers, skipping Docker build...\n")
-	}
+	// +kubebuilder:scaffold:e2e-setup
 
 	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
 	// To prevent errors when tests run in environments with CertManager already installed,
