@@ -126,7 +126,7 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 .PHONY: yamllint
 yamllint:
-	@files=$$(find testdata -name '*.yaml' ! -path 'testdata/*/dist/*'); \
+	@files=$$(find testdata -name '*.yaml' -o -name '*.yml' ! -path 'testdata/*/dist/*'); \
     	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest $$files -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
 
 .PHONY: golangci-lint
