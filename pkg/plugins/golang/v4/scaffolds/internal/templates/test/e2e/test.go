@@ -230,11 +230,26 @@ const metricsRoleBindingName = "{{ .ProjectName }}-metrics-binding"
 
 var _ = Describe("Manager", Ordered, func() {
 	var controllerPodName string
+	
+	// Check if this is a bare init project (no controllers yet)
+	hasControllers := false
+	if _, err := os.Stat("api"); err == nil {
+		hasControllers = true
+	}
+	if _, err := os.Stat("internal"); err == nil {
+		hasControllers = true
+	}
 
 	// Before running the tests, set up the environment by creating the namespace,
 	// enforce the restricted security policy to the namespace, installing CRDs,
 	// and deploying the controller.
 	BeforeAll(func() {
+		if !hasControllers {
+			By("skipping deployment tests - no controllers found (bare init project)")
+			Skip("This is a bare init project without APIs/controllers")
+			return
+		}
+
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
 		_, err := utils.Run(cmd)
@@ -453,6 +468,55 @@ var _ = Describe("Manager", Ordered, func() {
 		//    fmt.Sprintf(` + "`controller_runtime_reconcile_total{controller=\"%s\",result=\"success\"} 1`" + `,
 		//    strings.ToLower(<Kind>),
 		// ))
+	})
+})
+
+// Add a separate test context for bare init projects
+var _ = Describe("Bare Init Project", func() {
+	// Check if this is a bare init project (no controllers yet)
+	hasControllers := false
+	if _, err := os.Stat("api"); err == nil {
+		hasControllers = true
+	}
+	if _, err := os.Stat("internal"); err == nil {
+		hasControllers = true
+	}
+
+	It("should have the required project files", func() {
+		if hasControllers {
+			Skip("This test is only for bare init projects")
+			return
+		}
+
+		By("checking for PROJECT file")
+		_, err := os.Stat("PROJECT")
+		Expect(err).NotTo(HaveOccurred(), "PROJECT file should exist")
+
+		By("checking for Makefile")
+		_, err = os.Stat("Makefile")
+		Expect(err).NotTo(HaveOccurred(), "Makefile should exist")
+
+		By("checking for go.mod")
+		_, err = os.Stat("go.mod")
+		Expect(err).NotTo(HaveOccurred(), "go.mod should exist")
+
+		By("checking for main.go")
+		_, err = os.Stat(filepath.Join("cmd", "main.go"))
+		Expect(err).NotTo(HaveOccurred(), "cmd/main.go should exist")
+
+		By("checking for config directory")
+		_, err = os.Stat("config")
+		Expect(err).NotTo(HaveOccurred(), "config directory should exist")
+
+		By("checking for GitHub workflows")
+		_, err = os.Stat(filepath.Join(".github", "workflows", "test.yml"))
+		Expect(err).NotTo(HaveOccurred(), "test workflow should exist")
+
+		_, err = os.Stat(filepath.Join(".github", "workflows", "lint.yml"))
+		Expect(err).NotTo(HaveOccurred(), "lint workflow should exist")
+
+		_, err = os.Stat(filepath.Join(".github", "workflows", "test-e2e.yml"))
+		Expect(err).NotTo(HaveOccurred(), "e2e test workflow should exist")
 	})
 })
 

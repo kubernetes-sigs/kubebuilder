@@ -101,9 +101,20 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if p.repo == "" {
 		repoPath, err := golang.FindCurrentRepo()
 		if err != nil {
-			return fmt.Errorf("error finding current repository: %w", err)
+			// If we can't determine the repo, use a default based on the current directory name
+			dir, dirErr := os.Getwd()
+			if dirErr != nil {
+				return fmt.Errorf("error finding current repository: %w", err)
+			}
+			// Use the current directory name as a fallback
+			baseName := filepath.Base(dir)
+			p.repo = fmt.Sprintf("example.com/%s", baseName)
+			log.Warn("Could not determine repository path, using default", 
+				"default", p.repo,
+				"suggestion", "Use --repo flag to specify your module path (e.g., --repo github.com/user/project)")
+		} else {
+			p.repo = repoPath
 		}
-		p.repo = repoPath
 	}
 
 	if err := p.config.SetRepository(p.repo); err != nil {

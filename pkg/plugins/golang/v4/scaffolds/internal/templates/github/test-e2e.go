@@ -72,6 +72,9 @@ jobs:
       - name: Verify kind installation
         run: kind version
 
+      - name: Create kind cluster
+        run: kind create cluster
+
       - name: Running Test e2e
         run: |
           go mod tidy
