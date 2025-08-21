@@ -399,7 +399,7 @@ func initializeGitRepo(projectDir string) {
 		{"git", "config", "user.name", "Test User"},
 		{"git", "add", "-A"},
 		{"git", "commit", "-m", "Initial project with custom code"},
-		{"git", "checkout", "-b", "main"},
+		{"git", "branch", "-M", "main"},
 	}
 	for _, args := range commands {
 		cmd := exec.Command(args[0], args[1:]...)
