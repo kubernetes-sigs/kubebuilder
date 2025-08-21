@@ -260,4 +260,6 @@ var _ = Describe("Manager", Ordered, func() {
 })
 
 // +kubebuilder:scaffold:e2e-webhooks-checks
+
+// +kubebuilder:scaffold:e2e-helper-functions
 `
