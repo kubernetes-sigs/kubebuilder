@@ -300,7 +300,7 @@ exit 1`
 			Expect(mockBinResponse(fail, mockMake)).To(Succeed())
 
 			// Should not panic even if make fails; just logs a warning.
-			runMakeTargets()
+			runMakeTargets(false)
 		})
 	})
 
