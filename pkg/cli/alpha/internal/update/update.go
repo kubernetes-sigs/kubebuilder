@@ -17,6 +17,7 @@ limitations under the License.
 package update
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	log "log/slog"
@@ -77,6 +78,8 @@ type Update struct {
 	// CLI (`gh`) to be installed and authenticated in the local environment.
 	OpenGhIssue bool
 
+	UseGhModels bool
+
 	// GitConfig holds per-invocation Git settings applied to every `git` command via
 	// `git -c key=value`.
 	//
@@ -107,73 +110,6 @@ type Update struct {
 	UpgradeBranch  string
 	MergeBranch    string
 }
-
-const issueTitleTmpl = "[Action Required] Upgrade the Scaffold: %[2]s -> %[1]s"
-
-//nolint:lll
-const issueBodyTmpl = `## Description
-
-Upgrade your project to use the latest scaffold changes introduced in Kubebuilder [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s).  
-
-See the release notes from [%[3]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[3]s) to [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s) for details about the changes included in this upgrade.
-
-## What to do
-
-A scheduled workflow already attempted this upgrade and created the branch %[4]s to help you in this process.
-
-Create a Pull Request using the URL below to review the changes:
-%[2]s  
-
-## Next steps
-
-**Verify the changes**
-- Build the project  
-- Run tests  
-- Confirm everything still works
-
-:book: **More info:** https://kubebuilder.io/reference/commands/alpha_update
-`
-
-//nolint:lll
-const issueBodyTmplWithConflicts = `## Description
-
-Upgrade your project to use the latest scaffold changes introduced in Kubebuilder [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s).  
-
-See the release notes from [%[3]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[3]s) to [%[1]s](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%[1]s) for details about the changes included in this upgrade.
-
-## What to do
-
-A scheduled workflow already attempted this upgrade and created the branch (%[4]s) to help you in this process.
-
-:warning: **Conflicts were detected during the merge.**
-
-Create a Pull Request using the URL below to review the changes and resolve conflicts manually:
-%[2]s  
-
-## Next steps
-
-### 1. Resolve conflicts
-After fixing conflicts, run:
-~~~bash
-make manifests generate fmt vet lint-fix
-~~~
-
-### 2. Optional: work on a new branch
-To apply the update in a clean branch, run:
-~~~bash
-kubebuilder alpha update --output-branch my-fix-branch
-~~~
-
-This will create a new branch (my-fix-branch) with the update applied.  
-Resolve conflicts there, complete the merge locally, and push the branch.
-
-### 3. Verify the changes
-- Build the project  
-- Run tests  
-- Confirm everything still works
-
-:book: **More info:** https://kubebuilder.io/reference/commands/alpha_update
-`
 
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
@@ -274,56 +210,115 @@ func (opts *Update) Update() error {
 func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 	log.Info("Creating GitHub Issue to track the need to update the project")
 	out := opts.getOutputBranchName()
-	repoCmd := exec.Command("gh", "repo", "view", "--json",
-		"nameWithOwner", "--jq", ".nameWithOwner")
+
+	// Detect repo "owner/name"
+	repoCmd := exec.Command("gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
 	repoBytes, err := repoCmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to detect GitHub repository via `gh repo view`: %s", err)
 	}
-
 	repo := strings.TrimSpace(string(repoBytes))
-	createPRURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1",
-		repo, opts.FromBranch, out)
 
-	title := fmt.Sprintf(issueTitleTmpl, opts.ToVersion, opts.FromVersion)
+	createPRURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1", repo, opts.FromBranch, out)
+	title := fmt.Sprintf(helpers.IssueTitleTmpl, opts.ToVersion, opts.FromVersion)
 
-	// check if an issue with the same title already exists
+	// Skip if an open issue with same title already exists
 	checkCmd := exec.Command("gh", "issue", "list",
+		"--repo", repo,
+		"--state", "open",
 		"--search", fmt.Sprintf("in:title \"%s\"", title),
 		"--json", "title")
-	checkOut, checkErr := checkCmd.Output()
-	if checkErr == nil && strings.Contains(string(checkOut), title) {
+	if checkOut, checkErr := checkCmd.Output(); checkErr == nil && strings.Contains(string(checkOut), title) {
 		log.Info("GitHub Issue already exists, skipping creation", "title", title)
 		return nil
 	}
 
+	// Base issue body
 	var body string
 	if hasConflicts {
-		body = fmt.Sprintf(issueBodyTmplWithConflicts,
-			opts.ToVersion,   // %[1]s -> ToVersion
-			createPRURL,      // %[2]s -> PR compare URL
-			opts.FromVersion, // %[3]s -> FromVersion
-			out,              // %[4]s -> OutputBranch
-		)
+		body = fmt.Sprintf(helpers.IssueBodyTmplWithConflicts, opts.ToVersion, createPRURL, opts.FromVersion, out)
 	} else {
-		body = fmt.Sprintf(issueBodyTmpl,
-			opts.ToVersion,   // %[1]s -> ToVersion
-			createPRURL,      // %[2]s -> PR compare URL
-			opts.FromVersion, // %[3]s -> FromVersion
-			out,              // %[4]s -> OutputBranch
-		)
+		body = fmt.Sprintf(helpers.IssueBodyTmpl, opts.ToVersion, createPRURL, opts.FromVersion, out)
 	}
 
-	issueCmd := exec.Command("gh", "issue", "create",
+	log.Info("Creating GitHub Issue")
+	createCmd := exec.Command("gh", "issue", "create",
+		"--repo", repo,
 		"--title", title,
 		"--body", body,
 	)
-	issueCmd.Stdout = os.Stdout
-	issueCmd.Stderr = os.Stderr
-	if err := issueCmd.Run(); err != nil {
-		return fmt.Errorf("failed to create GitHub Issue: %s", err)
+	createOut, createErr := createCmd.CombinedOutput()
+	if createErr != nil {
+		return fmt.Errorf("failed to create GitHub issue: %v\n%s", createErr, string(createOut))
 	}
-	log.Info("GitHub Issue created to track the update", "pr", createPRURL)
+	outStr := string(createOut)
+
+	// Try to extract the issue URL from stdout
+	issueURL := helpers.FirstURL(outStr)
+
+	// Fallback: query the just-created issue by title
+	if issueURL == "" {
+		viewCmd := exec.Command("gh", "issue", "list",
+			"--repo", repo,
+			"--state", "open",
+			"--search", fmt.Sprintf("in:title \"%s\"", title),
+			"--json", "url",
+			"--jq", ".[0].url",
+		)
+		urlBytes, vErr := viewCmd.Output()
+		if vErr != nil {
+			log.Warn("could not determine issue URL from gh output", "stdout", outStr, "error", vErr)
+		}
+		issueURL = strings.TrimSpace(string(urlBytes))
+	}
+	log.Info("GitHub Issue created to track the update", "url", issueURL, "compare", createPRURL)
+
+	if opts.UseGhModels {
+		log.Info("Generating AI summary with gh models")
+
+		if issueURL == "" {
+			return fmt.Errorf("issue created but URL could not be determined")
+		}
+
+		releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s",
+			opts.ToVersion)
+
+		ctx := helpers.BuildFullPrompet(
+			opts.FromVersion, opts.ToVersion, opts.FromBranch, out,
+			createPRURL, releaseURL)
+
+		var outBuf, errBuf bytes.Buffer
+		cmd := exec.Command(
+			"gh", "models", "run", "openai/gpt-5",
+			"--system-prompt", helpers.AiPRPrompt,
+		)
+		cmd.Stdin = strings.NewReader(ctx)
+		cmd.Stdout = &outBuf
+		cmd.Stderr = &errBuf
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("gh models run failed: %w\nstderr:\n%s", err, errBuf.String())
+		}
+
+		summary := strings.TrimSpace(outBuf.String())
+		if summary != "" {
+			num := helpers.IssueNumberFromURL(issueURL)
+			target := issueURL
+			args := []string{"issue", "comment", "--repo", repo}
+			if num != "" {
+				target = num
+			}
+			args = append(args, target, "--body", summary)
+			commentCmd := exec.Command("gh", args...)
+			commentCmd.Stdout = os.Stdout
+			commentCmd.Stderr = os.Stderr
+			if err := commentCmd.Run(); err != nil {
+				return fmt.Errorf("failed to add AI summary comment: %s", err)
+			}
+			log.Info("AI summary comment added to the issue")
+		} else {
+			log.Warn("AI summary was empty, no comment added")
+		}
+	}
 	return nil
 }
 
@@ -343,7 +338,8 @@ func (opts *Update) cleanupTempBranches() {
 			continue
 		}
 		// Delete only if it's a LOCAL branch.
-		if err := helpers.GitCmd(opts.GitConfig, "show-ref", "--verify", "--quiet", "refs/heads/"+b).Run(); err == nil {
+		if err := helpers.GitCmd(opts.GitConfig,
+			"show-ref", "--verify", "--quiet", "refs/heads/"+b).Run(); err == nil {
 			_ = helpers.GitCmd(opts.GitConfig, "branch", "-D", b).Run()
 		}
 	}

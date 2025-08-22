@@ -266,7 +266,7 @@ exit 0`
 
 			err = opts.openGitHubIssue(false)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to create GitHub Issue"))
+			Expect(err.Error()).To(ContainSubstring("failed to create GitHub issue: exit status 1"))
 		})
 	})
 })

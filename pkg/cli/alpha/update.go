@@ -95,6 +95,9 @@ Defaults:
   # Run update and push the output branch to origin (works with or without --show-commits)
   kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push
 
+  # Create an issue and add an AI overview comment
+  kubebuilder alpha update --open-gh-issue --use-gh-models
+
   # Add extra Git configs (no need to re-specify defaults)
   kubebuilder alpha update --git-config merge.conflictStyle=diff3 --git-config rerere.enabled=true
                                           
@@ -103,6 +106,10 @@ Defaults:
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if opts.ShowCommits && len(opts.RestorePath) > 0 {
 				return fmt.Errorf("the --restore-path flag is not supported with --show-commits")
+			}
+
+			if opts.UseGhModels && !opts.OpenGhIssue {
+				return fmt.Errorf("the --use-gh-models requires --open-gh-issue to be set")
 			}
 
 			// Defaults always on unless "disable" is present anywhere
@@ -164,6 +171,12 @@ Defaults:
 		"Push the output branch to the remote repository after the update.")
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
 		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
+	updateCmd.Flags().BoolVar(
+		&opts.UseGhModels,
+		"use-gh-models",
+		false,
+		"Generate and post an AI summary comment to the GitHub Issue using `gh models run`. "+
+			"Requires --open-gh-issue and GitHub CLI (`gh`) with the `gh-models` extension.")
 	updateCmd.Flags().StringArrayVar(
 		&gitCfg,
 		"git-config",

@@ -52,6 +52,7 @@ const autoUpdateTemplate = `name: Auto Update
 permissions:
   contents: write
   issues: write
+  models: read
 
 on:
   workflow_dispatch:
@@ -92,7 +93,13 @@ jobs:
         sudo mv kubebuilder /usr/local/bin/
         kubebuilder version
 
-    # Step 5: Run the Kubebuilder alpha update command.
+    # Step 5: Install Models extension for GitHub CLI
+    - name: Install/upgrade gh-models extension
+      run: |
+        gh extension install github/gh-models --force
+        gh models --help >/dev/null
+
+    # Step 6: Run the Kubebuilder alpha update command.
     # More info: https://kubebuilder.io/reference/commands/alpha_update
     - name: Run kubebuilder alpha update
       run: |
@@ -101,9 +108,12 @@ jobs:
        # --push: Automatically pushes the resulting output branch to the 'origin' remote.
        # --restore-path: Preserves specified paths (e.g., CI workflow files) when squashing.
        # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.
+       # --open-gh-models: Adds an AI-generated comment to the created Issue with
+       #   a short overview of the scaffold changes and conflict-resolution guidance (If Any).
         kubebuilder alpha update \
           --force \
           --push \
           --restore-path .github/workflows \
-          --open-gh-issue
+          --open-gh-issue \
+          --use-gh-models
 `
