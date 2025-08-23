@@ -160,4 +160,4 @@ jobs:
 
       - name: Run make test-e2e on empty project
         working-directory: /tmp/basic-project-v4
-        run: CERT_MANAGER_INSTALL_SKIP=true make test-e2e
+        run: make test-e2e
