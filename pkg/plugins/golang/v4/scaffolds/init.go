@@ -184,6 +184,7 @@ func (s *initScaffolder) Scaffold() error {
 		&github.LintCi{
 			GolangciLintVersion: GolangciLintVersion,
 		},
+		&github.CopilotInstructions{},
 		&utils.Utils{},
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},
