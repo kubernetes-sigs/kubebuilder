@@ -16,6 +16,15 @@ manifests using controller-tools, if needed:
 make install
 ```
 
+<aside class="note">
+
+<h1>Too long annotations error</h1>
+
+If you encounter errors when applying the CRDs, due to `metadata.annotations` exceeding the
+262144 bytes limit, please refer to the specific entry in the [FAQ section](/faq#the-error-too-long-must-have-at-most-262144-bytes-is-faced-when-i-run-make-install-to-apply-the-crd-manifests-how-to-solve-it-why-this-error-is-faced).
+
+</aside>
+
 Now that we've installed our CRDs, we can run the controller against our
 cluster.  This will use whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
