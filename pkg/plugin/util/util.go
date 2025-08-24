@@ -293,3 +293,41 @@ func HasFileContentWith(path, text string) (bool, error) {
 
 	return strings.Contains(string(contents), text), nil
 }
+
+// InsertAfterLastMatchString inserts `toInsert` as a new line after the *last* line
+// that contains the given substring. Matching is case-sensitive.
+// Returns an error if no match is found.
+func InsertAfterLastMatchString(filename, substr, toInsert string) error {
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("read %q: %w", filename, err)
+	}
+
+	lines := strings.Split(string(b), "\n")
+
+	lastIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, substr) {
+			lastIdx = i
+		}
+	}
+	if lastIdx == -1 {
+		return fmt.Errorf("no lines containing %q found in %s", substr, filename)
+	}
+
+	// Insert after lastIdx
+	newLines := append([]string{}, lines[:lastIdx+1]...)
+	newLines = append(newLines, toInsert)
+	newLines = append(newLines, lines[lastIdx+1:]...)
+
+	// Ensure trailing newline
+	out := strings.Join(newLines, "\n")
+	if !strings.HasSuffix(out, "\n") {
+		out += "\n"
+	}
+
+	if err := os.WriteFile(filename, []byte(out), 0o644); err != nil {
+		return fmt.Errorf("write %q: %w", filename, err)
+	}
+	return nil
+}

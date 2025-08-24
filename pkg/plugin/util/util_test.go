@@ -397,4 +397,98 @@ version: "3"
 			Expect(found).To(BeFalse())
 		})
 	})
+
+	Describe("InsertAfterLastMatchString", Ordered, func() {
+		var (
+			basePath string
+			noNLPath string
+			origBase []byte
+			origNoNL []byte
+		)
+
+		BeforeAll(func() {
+			err := os.MkdirAll("testdata", 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			// File with multiple lines; includes both "COPY" and "copy" to verify case sensitivity
+			basePath = filepath.Join("testdata", "Dockerfile.string.test")
+			baseContent := "" +
+				"FROM golang:1.22\n" +
+				"WORKDIR /workspace\n" +
+				"COPY go.mod go.mod\n" + // match 1
+				"copy should-not-match.txt /tmp\n" + // lowercase 'copy' must NOT match
+				"COPY cmd/main.go cmd/main.go\n" + // match 2 (last match)
+				"# end\n"
+			_ = os.WriteFile(basePath, []byte(baseContent), 0o644)
+
+			// File without trailing newline
+			noNLPath = filepath.Join("testdata", "Dockerfile.string.nonl.test")
+			noNLContent := "" +
+				"FROM golang:1.22\n" +
+				"WORKDIR /workspace\n" +
+				"COPY go.mod go.mod\n" +
+				"RUN echo no-newline-at-end"
+			_ = os.WriteFile(noNLPath, []byte(noNLContent), 0o644)
+
+			origBase, _ = os.ReadFile(basePath)
+			origNoNL, _ = os.ReadFile(noNLPath)
+		})
+
+		AfterAll(func() {
+			_ = os.WriteFile(basePath, origBase, 0o644)
+			_ = os.WriteFile(noNLPath, origNoNL, 0o644)
+			_ = os.RemoveAll("testdata")
+		})
+
+		It("inserts after the last case-sensitive substring match", func() {
+			err := InsertAfterLastMatchString(basePath, "COPY ", "COPY api/ api/")
+			Expect(err).NotTo(HaveOccurred())
+
+			b, err := os.ReadFile(basePath)
+			Expect(err).NotTo(HaveOccurred())
+			s := string(b)
+
+			// Inserted exactly once
+			Expect(strings.Count(s, "COPY api/ api/")).To(Equal(1))
+			// Inserted after the LAST uppercase 'COPY ' (after cmd/main.go line)
+			Expect(s).To(ContainSubstring("COPY cmd/main.go cmd/main.go\nCOPY api/ api/\n# end\n"))
+			// Ensures lowercase 'copy' did not count as a match
+			Expect(strings.Contains(s, "should-not-match.txt")).To(BeTrue())
+		})
+
+		It("returns error when substring is not found", func() {
+			err := InsertAfterLastMatchString(basePath, "NOT_A_MATCH", "COPY api/ api/")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("adds a trailing newline when the file had none", func() {
+			err := InsertAfterLastMatchString(noNLPath, "COPY ", "COPY internal/ internal/")
+			Expect(err).NotTo(HaveOccurred())
+
+			b, err := os.ReadFile(noNLPath)
+			Expect(err).NotTo(HaveOccurred())
+			s := string(b)
+
+			// Inserted once
+			Expect(strings.Count(s, "COPY internal/ internal/")).To(Equal(1))
+			// Inserted right after the last 'COPY '
+			Expect(s).To(ContainSubstring("COPY go.mod go.mod\nCOPY internal/ internal/\nRUN echo no-newline-at-end\n"))
+			// File now ends with newline
+			Expect(strings.HasSuffix(s, "\n")).To(BeTrue())
+		})
+
+		It("does not disturb unrelated content/order", func() {
+			// reset file and run again to compare structure
+			_ = os.WriteFile(basePath, origBase, 0o644)
+			err := InsertAfterLastMatchString(basePath, "COPY ", "COPY api/ api/")
+			Expect(err).NotTo(HaveOccurred())
+
+			b, _ := os.ReadFile(basePath)
+			s := string(b)
+
+			Expect(s).To(ContainSubstring("FROM golang:1.22\nWORKDIR /workspace\n"))
+			Expect(s).To(ContainSubstring("copy should-not-match.txt /tmp\n")) // unchanged
+			Expect(s).To(ContainSubstring("COPY cmd/main.go cmd/main.go\nCOPY api/ api/\n# end\n"))
+		})
+	})
 })

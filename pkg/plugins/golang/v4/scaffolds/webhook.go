@@ -153,6 +153,10 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		}
 	}
 
+	if err := ensureDockerfileHasCopy("Dockerfile", "internal/", "internal/", "Controller"); err != nil {
+		log.Debug("Failed to update Dockerfile for Controller", "error", err)
+	}
+
 	// TODO: remove for go/v5
 	if !s.isLegacy {
 		if hasInternalController, err := pluginutil.HasFileContentWith("Dockerfile", "internal/controller"); err != nil {
