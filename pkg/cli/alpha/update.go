@@ -18,12 +18,26 @@ package alpha
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update"
+	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
 )
+
+func init() {
+	// Initialize consistent logging for alpha commands
+	opts := logging.HandlerOptions{
+		SlogOpts: slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		},
+	}
+	handler := logging.NewHandler(os.Stdout, opts)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+}
 
 // NewUpdateCommand creates and returns a new Cobra command for updating Kubebuilder projects.
 func NewUpdateCommand() *cobra.Command {
@@ -123,7 +137,8 @@ Defaults:
 		},
 		Run: func(_ *cobra.Command, _ []string) {
 			if err := opts.Update(); err != nil {
-				log.Fatalf("Update failed: %s", err)
+				slog.Error("Update failed", "error", err)
+				os.Exit(1)
 			}
 		},
 	}

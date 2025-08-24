@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"log"
 	"log/slog"
 	"os"
 
@@ -83,9 +82,11 @@ func Run() {
 		cli.WithCompletion(),
 	)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to create CLI", "error", err)
+		os.Exit(1)
 	}
 	if err := c.Run(); err != nil {
-		log.Fatal(err)
+		slog.Error("CLI run failed", "error", err)
+		os.Exit(1)
 	}
 }

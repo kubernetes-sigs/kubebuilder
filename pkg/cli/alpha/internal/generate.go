@@ -127,7 +127,6 @@ func (opts *Generate) Generate() error {
 	// This is to avoid blocking the migration flow due to non-critical issues during setup.
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
 	for _, target := range targets {
-		log.Info("Running make target", "target", target)
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
 			log.Warn("make target failed", "target", target, "error", err)

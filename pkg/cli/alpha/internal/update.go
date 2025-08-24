@@ -212,7 +212,6 @@ func (opts *Update) cleanUpAncestorBranch() error {
 func runMakeTargets() error {
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
 	for _, target := range targets {
-		log.Info("Running make command", "target", target)
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
 			return fmt.Errorf("make %s failed: %v", target, err)
