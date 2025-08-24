@@ -153,14 +153,20 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config. No-op if none exist.
-	@out="$$( $(KUSTOMIZE) build config/crd 2>/dev/null || true )"; \
-	if [ -n "$$out" ]; then echo "$$out" | $(KUBECTL) apply -f -; else echo "No CRDs to install; skipping."; fi
+install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	@if [ -d config/crd ] && [ -f config/crd/kustomization.yaml ]; then \
+		$(KUBECTL) apply -k config/crd; \
+	else \
+		echo "No CRDs to install; skipping."; \
+	fi
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion. No-op if none exist.
-	@out="$$( $(KUSTOMIZE) build config/crd 2>/dev/null || true )"; \
-	if [ -n "$$out" ]; then echo "$$out" | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -; else echo "No CRDs to delete; skipping."; fi
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	@if [ -d config/crd ] && [ -f config/crd/kustomization.yaml ]; then \
+		$(KUBECTL) delete -k config/crd --ignore-not-found=$(ignore-not-found); \
+	else \
+		echo "No CRDs to delete; skipping."; \
+	fi
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.

@@ -1,4 +1,5 @@
 /*
+
 Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,9 +53,7 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
-COPY cmd/main.go cmd/main.go
-COPY api/ api/
-COPY internal/ internal/
+COPY . .
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command

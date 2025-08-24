@@ -39,6 +39,23 @@ func (f *DockerIgnore) SetTemplateDefaults() error {
 }
 
 const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-# Ignore build and test binaries.
+# VCS & tooling
+.git
+.github
+.DS_Store
+
+# Build artifacts
 bin/
+dist/
+
+# Utilities
+hack/
+
+# Go junk you don't want in the image
+**/*_test.go
+coverage.*
+*.log
+
+# If you use vendor, remove this ignore or whitelist it instead
+vendor/
 `
