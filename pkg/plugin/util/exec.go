@@ -21,7 +21,6 @@ import (
 	log "log/slog"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 // RunCmd prints the provided message and command and then executes it binding stdout and stderr
@@ -29,7 +28,7 @@ func RunCmd(msg, cmd string, args ...string) error {
 	c := exec.Command(cmd, args...) //nolint:gosec
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	log.Info(msg, "command", strings.Join(c.Args, " "))
+	log.Info(msg)
 
 	if err := c.Run(); err != nil {
 		return fmt.Errorf("error running %q: %w", cmd, err)
