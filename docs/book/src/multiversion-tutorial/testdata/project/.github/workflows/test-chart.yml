@@ -58,6 +58,7 @@ jobs:
           kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
           kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
           kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs
 #        run: |

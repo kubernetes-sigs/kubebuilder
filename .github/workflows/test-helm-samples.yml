@@ -88,3 +88,70 @@ jobs:
       - name: Check Presence of ServiceMonitor
         run: |
           kubectl wait --namespace project-v4-with-plugins-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/project-v4-with-plugins-controller-manager-metrics-monitor
+
+  # Test scenario: 
+  # - scaffold project without creating webhooks, 
+  # - deploy helm chart without installing cert manager;
+  # - check that deployment has been deployed;
+  #
+  # Command to use to scaffold project without creating webhooks and so no need to install cert manager:
+  # - kubebuilder init
+  # - kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
+  # - kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
+  test-helm-no-webhooks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Install kubebuilder binary
+        run: make install
+
+      - name: Create test directory
+        run: mkdir -p test-helm-no-webhooks
+
+      - name: Scaffold project with kubebuilder commands
+        working-directory: test-helm-no-webhooks
+        run: |
+          go mod init test-helm-no-webhooks
+          kubebuilder init
+          kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
+          kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
+
+      - name: Build and load Docker image
+        working-directory: test-helm-no-webhooks
+        run: |
+          make docker-build IMG=test-helm-no-webhooks:v0.1.0
+          kind load docker-image test-helm-no-webhooks:v0.1.0
+
+      - name: Lint Helm chart
+        working-directory: test-helm-no-webhooks
+        run: helm lint ./dist/chart
+
+      - name: Deploy Helm chart without cert-manager
+        working-directory: test-helm-no-webhooks
+        run: helm install my-release ./dist/chart --create-namespace --namespace test-helm-no-webhooks-system
+
+      - name: Verify deployment is working
+        working-directory: test-helm-no-webhooks
+        run: |
+          helm status my-release --namespace test-helm-no-webhooks-system

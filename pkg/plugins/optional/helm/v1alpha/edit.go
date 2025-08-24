@@ -18,12 +18,16 @@ package v1alpha
 
 import (
 	"fmt"
+	log "log/slog"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds"
 )
 
@@ -84,4 +88,56 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 	// Track the resources following a declarative approach
 	return insertPluginMetaToConfig(p.config, pluginConfig{})
+}
+
+// PostScaffold automatically uncomments cert-manager installation when webhooks are present
+func (p *editSubcommand) PostScaffold() error {
+	hasWebhooks := hasWebhooksWith(p.config)
+
+	if hasWebhooks {
+		workflowFile := filepath.Join(".github", "workflows", "test-chart.yml")
+		if _, err := os.Stat(workflowFile); err != nil {
+			log.Info(
+				"Workflow file not found, unable to uncomment cert-manager installation",
+				"error", err,
+				"file", workflowFile,
+			)
+			return nil
+		}
+		//nolint:lll
+		target := `
+#      - name: Install cert-manager via Helm
+#        run: |
+#          helm repo add jetstack https://charts.jetstack.io
+#          helm repo update
+#          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+#
+#      - name: Wait for cert-manager to be ready
+#        run: |
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook`
+		if err := util.UncommentCode(workflowFile, target, "#"); err != nil {
+			hasUncommented, errCheck := util.HasFileContentWith(workflowFile, "- name: Install cert-manager via Helm")
+			if !hasUncommented || errCheck != nil {
+				log.Warn("Failed to uncomment cert-manager installation in workflow file", "error", err, "file", workflowFile)
+			}
+		}
+	}
+	return nil
+}
+
+func hasWebhooksWith(c config.Config) bool {
+	resources, err := c.GetResources()
+	if err != nil {
+		return false
+	}
+
+	for _, res := range resources {
+		if res.HasDefaultingWebhook() || res.HasValidationWebhook() || res.HasConversionWebhook() {
+			return true
+		}
+	}
+
+	return false
 }
