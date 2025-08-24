@@ -51,10 +51,8 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-# Copy the go source
-COPY cmd/main.go cmd/main.go
-COPY api/ api/
-COPY internal/ internal/
+# Copy the project code
+COPY . .
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
