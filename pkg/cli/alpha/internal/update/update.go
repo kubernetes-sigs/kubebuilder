@@ -458,36 +458,44 @@ func cleanupBranch() error {
 	return nil
 }
 
-// runMakeTargets is a helper function to run make with the targets necessary
-// to ensure all the necessary components are generated, formatted and linted.
-func runMakeTargets() {
-	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
-	for _, target := range targets {
-		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
-		if err != nil {
-			log.Warn("make target failed", "target", target, "error", err)
+// runMakeTargets runs the make targets needed to keep the tree consistent.
+// If skipConflicts is true, it avoids running targets that are guaranteed
+// to fail noisily when there are unresolved conflicts.
+func runMakeTargets(skipConflicts bool) {
+	if !skipConflicts {
+		for _, t := range []string{"manifests", "generate", "fmt", "vet", "lint-fix"} {
+			if err := util.RunCmd(fmt.Sprintf("Running make %s", t), "make", t); err != nil {
+				log.Warn("make target failed", "target", t, "error", err)
+			}
 		}
-	}
-}
-
-// hasMakefileConflict returns true if the Makefile (or makefile) is in conflict.
-func hasMakefileConflict() bool {
-	// Check unmerged entries for Makefile/makefile.
-	out, err := exec.Command("git", "ls-files", "-u", "--", "Makefile", "makefile").Output()
-	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
-		return true
+		return
 	}
 
-	// Fallback: file content contains conflict markers.
-	check := func(p string) bool {
-		b, err := os.ReadFile(p)
-		if err != nil {
-			return false
-		}
-		s := string(b)
-		return strings.Contains(s, "<<<<<<<") && strings.Contains(s, "=======") && strings.Contains(s, ">>>>>>>")
+	// Conflict-aware path: decide what to run based on repo state.
+	cs := helpers.DetectConflicts()
+	targets := helpers.DecideMakeTargets(cs)
+
+	if cs.Makefile {
+		log.Warn("Skipping all make targets because Makefile has merge conflicts")
+		return
 	}
-	return check("Makefile") || check("makefile")
+	if cs.API {
+		log.Warn("API conflicts detected; skipping make targets: manifests, generate")
+	}
+	if cs.AnyGo {
+		log.Warn("Go conflicts detected; skipping make targets: fmt, vet, lint-fix")
+	}
+
+	if len(targets) == 0 {
+		log.Warn("No make targets will be run due to conflicts")
+		return
+	}
+
+	for _, t := range targets {
+		if err := util.RunCmd(fmt.Sprintf("Running make %s", t), "make", t); err != nil {
+			log.Warn("make target failed", "target", t, "error", err)
+		}
+	}
 }
 
 // runAlphaGenerate executes the old Kubebuilder version's 'alpha generate' command
@@ -507,7 +515,7 @@ func runAlphaGenerate(tempDir, version string) error {
 	}
 
 	log.Info("Project scaffold generation complete", "version", version)
-	runMakeTargets()
+	runMakeTargets(false)
 	return nil
 }
 
@@ -620,11 +628,7 @@ func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 	}
 
 	// Best effort to run make targets to ensure the project is in a good state
-	if hasMakefileConflict() {
-		log.Warn("Skipping make targets because the Makefile has merge conflicts.")
-	} else {
-		runMakeTargets()
-	}
+	runMakeTargets(true)
 
 	// Step 4: Stage and commit
 	if err := helpers.GitCmd(opts.GitConfig, "add", "--all").Run(); err != nil {
