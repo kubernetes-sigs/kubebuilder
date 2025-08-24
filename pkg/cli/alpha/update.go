@@ -54,7 +54,7 @@ Other options:
   • --output-branch: override the output branch name.
   • --push: push the output branch to 'origin' after the update.
   • --git-config: pass per-invocation Git config as -c key=value (repeatable). When not set,
-      defaults to -c merge.renameLimit=999999 to improve rename detection during merges.
+      defaults are set to improve detection during merges.
 
 Defaults:
   • --from-version / --to-version: resolved from PROJECT and the latest release if unset.
@@ -92,7 +92,11 @@ Defaults:
 			}
 
 			// Defaults always on unless "disable" is present anywhere
-			defaults := []string{"merge.renameLimit=999999", "diff.renameLimit=999999"}
+			defaults := []string{
+				"merge.renameLimit=999999",
+				"diff.renameLimit=999999",
+				"merge.conflictStyle=merge",
+			}
 
 			hasDisable := false
 			filtered := make([]string, 0, len(gitCfg))
@@ -150,7 +154,7 @@ Defaults:
 		"git-config",
 		nil,
 		"Per-invocation Git config (repeatable). "+
-			"Defaults: -c merge.renameLimit=999999 -c diff.renameLimit=999999. "+
+			"Defaults: -c merge.renameLimit=999999 -c diff.renameLimit=999999 -c merge.conflictStyle=merge. "+
 			"Your configs are applied on top. To disable defaults, include `--git-config disable`")
 	return updateCmd
 }

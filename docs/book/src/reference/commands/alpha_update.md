@@ -146,13 +146,12 @@ make all
 ### Changing Extra Git configs only during the run (does not change your ~/.gitconfig)_
 
 By default, `kubebuilder alpha update` applies safe Git configs:
-`merge.renameLimit=999999`, `diff.renameLimit=999999`.
+`merge.renameLimit=999999`, `diff.renameLimit=999999`, `merge.conflictStyle=merge`
 You can add more, or disable them.
 
 - **Add more on top of defaults**
 ```shell
 kubebuilder alpha update \
-  --git-config merge.conflictStyle=diff3 \
   --git-config rerere.enabled=true
 ```
 
