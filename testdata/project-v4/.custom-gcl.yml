@@ -1,0 +1,7 @@
+version: v2.0.0
+name: golangci-custom-linters
+destination: ./bin
+
+plugins:
+  - module: sigs.k8s.io/kube-api-linter
+    version: latest
