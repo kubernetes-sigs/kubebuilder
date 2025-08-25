@@ -9,15 +9,13 @@ not re-applying your code.
 By default, the final result is **squashed into a single commit** on a dedicated output branch.
 If you prefer to keep the full history (no squash), use `--show-commits`.
 
-<aside class="note">
-<h1>Automate your Updates</h1>
-
-You can reduce the burden of keeping your project up to date by using the
+> **Tip:** You can reduce the burden of keeping your project up to date by using the
 [`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin which
 automates the process of running `kubebuilder alpha update` on a schedule
 workflow when new Kubebuilder releases are available.
-
-</aside>
+>
+> Moreover, you will be able to get help from AI models to understand what changes are needed to keep your project up to date
+and how to solve conflicts if any are faced.
 
 ## When to Use It
 
@@ -27,6 +25,7 @@ Use this command when you:
 - Prefer automation over manual file editing
 - Want to review scaffold changes on a separate branch
 - Want to focus on resolving merge conflicts (not re-applying your custom code)
+- Want an **AI-generated** overview of changes and guidance for resolving conflicts
 
 ## How It Works
 
@@ -64,6 +63,8 @@ The command creates three temporary branches:
     - `--output-branch`: pick a custom branch name.
     - `--push`: push the result to `origin` automatically.
     - `--git-config`: sets git configurations.
+    - `--open-gh-issue`: create a GitHub issue with a checklist and compare link (requires `gh`).
+    - `--use-gh-models`: add an AI overview **comment** to that issue using `gh models`
 
 ### Step 5: Cleanup
 - Once the output branch is ready, all the temporary working branches are deleted.
@@ -143,7 +144,48 @@ make manifests generate fmt vet lint-fix
 make all
 ```
 
-### Changing Extra Git configs only during the run (does not change your ~/.gitconfig)_
+## Using with GitHub Issues (`--open-gh-issue`) and AI (`--use-gh-models`) assistance
+
+Pass `--open-gh-issue` to have the command create a GitHub **Issue** in your repository
+to assist with the update. Also, if you also pass `--use-gh-models`, the tool posts a follow-up comment
+on that Issue with an AI-generated overview of the most important changes plus brief conflict-resolution
+guidance.
+
+### Examples
+
+Create an Issue with a compare link:
+```shell
+kubebuilder alpha update --open-gh-issue
+```
+
+Create an Issue **and** add an AI summary:
+```shell
+kubebuilder alpha update --open-gh-issue --use-gh-models
+```
+
+### What you’ll see
+
+The command opens an Issue that links to the diff so you can create the PR and review it, for example:
+
+<img width="638" height="482" alt="Example Issue" src="https://github.com/user-attachments/assets/589fd16b-7709-4cd5-b169-fd53d69790d4" />
+
+With `--use-gh-models`, an AI comment highlights key changes and suggests how to resolve any conflicts:
+
+<img width="715" height="424" alt="AI Example Comment" src="https://github.com/user-attachments/assets/3f8bc35d-8ba0-4fc5-931b-56b1cb238462" />
+
+You’ll also get a concise list of changed files to streamline the review:
+
+<img width="652" height="694" alt="Files Changed" src="https://github.com/user-attachments/assets/b7b46d44-078c-4e56-8a50-bdfcfac231a7" />
+
+If conflicts arise, AI-generated comments call them out and provide next steps:
+
+<img width="682" height="213" alt="Conflicts" src="https://github.com/user-attachments/assets/ed8cf95d-5272-4477-8d75-4e28546dde4e" />
+
+### Automation
+
+This integrates cleanly with automation. The [`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin can scaffold a GitHub Actions workflow that runs the command on a schedule (e.g., weekly). When a new Kubebuilder release is available, it opens an Issue with a compare link so you can create the PR and review it.
+
+## Changing Extra Git configs only during the run (does not change your ~/.gitconfig)_
 
 By default, `kubebuilder alpha update` applies safe Git configs:
 `merge.renameLimit=999999`, `diff.renameLimit=999999`, `merge.conflictStyle=merge`
@@ -170,18 +212,20 @@ kubebuilder alpha update \
 
 ## Flags
 
-| Flag               | Description                                                                                                                                                                                                                            |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--from-version`   | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                                                                                                         |
-| `--to-version`     | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                                                                                             |
-| `--from-branch`    | Git branch that holds your current project code. Defaults to `main`.                                                                                                                                                                   |
-| `--force`          | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                                                                                                      |
-| `--show-commits`   | Keep full history (do not squash). **Not compatible** with `--preserve-path`.                                                                                                                                                          |
-| `--restore-path`   | Repeatable. Paths to preserve from the base branch (repeatable). Not supported with --show-commits. (e.g., `.github/workflows`).                                                                                                       |
-| `--output-branch`  | Name of the output branch. Default: `kubebuilder-update-from-<from-version>-to-<to-version>`.                                                                                                                                          |
-| `--push`           | Push the output branch to the `origin` remote after the update completes.                                                                                                                                                              |
-| `--git-config`     | Repeatable. Pass per-invocation Git config as `-c key=value`. **Default** (if omitted): `-c merge.renameLimit=999999 -c diff.renameLimit=999999`. Your configs are applied on top. To disable defaults, include `--git-config disable` |
-| `-h, --help`       | Show help for this command.                                                                                                                                                                                                            |
+| Flag               | Description                                                                                                                                                                                                                             |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--force`          | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                                                                                                       |
+| `--from-branch`    | Git branch that holds your current project code. Defaults to `main`.                                                                                                                                                                    |
+| `--from-version`   | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                                                                                                          |
+| `--git-config`     | Repeatable. Pass per-invocation Git config as `-c key=value`. **Default** (if omitted): `-c merge.renameLimit=999999 -c diff.renameLimit=999999`. Your configs are applied on top. To disable defaults, include `--git-config disable`. |
+| `--open-gh-issue`  | Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).                                                                                                                          |
+| `--output-branch`  | Name of the output branch. Default: `kubebuilder-update-from-<from-version>-to-<to-version>`.                                                                                                                                           |
+| `--push`           | Push the output branch to the `origin` remote after the update completes.                                                                                                                                                               |
+| `--restore-path`   | Repeatable. Paths to preserve from the base branch when squashing (e.g., `.github/workflows`). **Not supported** with `--show-commits`.                                                                                                 |
+| `--show-commits`   | Keep full history (do not squash). **Not compatible** with `--restore-path`.                                                                                                                                                            |
+| `--to-version`     | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                                                                                              |
+| `--use-gh-models`  | Post an AI overview as an issue comment using `gh models`. Requires `gh` + `gh-models` extension. Effective only when `--open-gh-issue` is also set.                                                                                    |
+| `-h, --help`       | Show help for this command.                                                                                                                                                                                                             |
 
 <aside class="note warning">
 <h1>You might need to upgrade your project first</h1>

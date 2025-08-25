@@ -219,6 +219,12 @@ func (sp *Sample) GenerateSampleProject() {
 		"--resource", "--controller",
 	)
 	hackutils.CheckError("Creating the API", err)
+
+	slog.Info("Adding AutoUpdate Plugin")
+	err = sp.ctx.Edit(
+		"--plugins", "autoupdate/v1-alpha",
+	)
+	hackutils.CheckError("Initializing the getting started project", err)
 }
 
 // CodeGen will call targets to generate code

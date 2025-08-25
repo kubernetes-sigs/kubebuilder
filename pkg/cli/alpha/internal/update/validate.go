@@ -57,7 +57,21 @@ func (opts *Update) Validate() error {
 		}
 	}
 
+	if opts.UseGhModels && !isGhModelsExtensionInstalled() {
+		return fmt.Errorf("gh-models extension is not installed. To install the extension, run: " +
+			"gh extension install https://github.com/github/gh-models")
+	}
+
 	return nil
+}
+
+// isGhModelsExtensionInstalled checks if the gh-models extension is installed
+func isGhModelsExtensionInstalled() bool {
+	cmd := exec.Command("gh", "extension", "list")
+	if _, err := cmd.Output(); err != nil {
+		return false
+	}
+	return true
 }
 
 // validateGitRepo verifies if the current directory is a valid Git repository and checks for uncommitted changes.

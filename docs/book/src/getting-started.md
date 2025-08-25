@@ -408,6 +408,19 @@ The [Manager][manager] in the `cmd/main.go` file is responsible for managing the
 ```
 </details>
 
+### Use Kubebuilder plugins to scaffold additional options
+
+Now that you have a better understanding of how to create your own API and controller,
+let’s scaffold in this project the plugin [`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin]
+so that your project can be kept up to date with the latest Kubebuilder releases scaffolding changes
+and consequently adopt improvements from the ecosystem.
+
+```shell
+kubebuilder edit --plugins="autoupdate/v1-alpha"
+```
+
+Inspect the file `.github/workflows/auto-update.yml` to see how it works.
+
 ### Checking the Project running in the cluster
 
 At this point you can check the steps to validate the project
@@ -444,3 +457,4 @@ implemented for your controller.
 [deploy-image]: ./plugins/available/deploy-image-plugin-v1-alpha.md
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
+[autoupdate-plugin]: ./plugins/available/autoupdate-v1-alpha.md
