@@ -36,7 +36,9 @@ import (
 	helmv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
 
-func init() {
+// Run bootstraps & runs the CLI
+func Run() {
+	// Initialize custom logging handler FIRST - applies to ALL CLI operations
 	opts := logging.HandlerOptions{
 		SlogOpts: slog.HandlerOptions{
 			Level: slog.LevelInfo,
@@ -45,10 +47,6 @@ func init() {
 	handler := logging.NewHandler(os.Stdout, opts)
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
-}
-
-// Run bootstraps & runs the CLI
-func Run() {
 	// Bundle plugin which built the golang projects scaffold with base.go/v4 and kustomize/v2 plugins
 	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 4}),

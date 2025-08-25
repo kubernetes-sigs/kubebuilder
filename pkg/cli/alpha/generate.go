@@ -20,20 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
-	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
 )
-
-func init() {
-	// Initialize consistent logging for alpha commands
-	opts := logging.HandlerOptions{
-		SlogOpts: slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		},
-	}
-	handler := logging.NewHandler(os.Stdout, opts)
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-}
 
 // NewScaffoldCommand returns a new scaffold command, providing the `kubebuilder alpha generate`
 // feature to re-scaffold projects and assist users with updates.

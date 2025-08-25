@@ -17,12 +17,15 @@ limitations under the License.
 package update
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	log "log/slog"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -503,16 +506,77 @@ func runAlphaGenerate(tempDir, version string) error {
 	tempBinaryPath := tempDir + "/kubebuilder"
 	cmd := exec.Command(tempBinaryPath, "alpha", "generate")
 	cmd.Env = envWithPrefixedPath(tempDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	// Capture and reformat subprocess output to match our logging style
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start alpha generate: %w", err)
+	}
+
+	// Forward output while reformatting old-style logs
+	go forwardAndReformat(stdout, false)
+	go forwardAndReformat(stderr, true)
+
+	if err := cmd.Wait(); err != nil {
 		return fmt.Errorf("failed to run alpha generate: %w", err)
 	}
 
 	log.Info("Project scaffold generation complete", "version", version)
 	runMakeTargets(false)
 	return nil
+}
+
+// forwardAndReformat reads from a subprocess stream and reformats old-style logging to new style
+func forwardAndReformat(reader io.Reader, isStderr bool) {
+	scanner := bufio.NewScanner(reader)
+
+	// Regex to match old-style log format: level=info msg="message"
+	logPattern := regexp.MustCompile(`^level=(\w+)\s+msg="?([^"]*)"?(.*)$`)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Check if this line matches the old log format
+		if matches := logPattern.FindStringSubmatch(line); matches != nil {
+			level := strings.ToUpper(matches[1])
+			message := matches[2]
+			rest := matches[3]
+
+			// Convert to new format based on level
+			switch level {
+			case "INFO":
+				log.Info(message + rest)
+			case "WARN", "WARNING":
+				log.Warn(message + rest)
+			case "ERROR":
+				log.Error(message + rest)
+			case "DEBUG":
+				log.Debug(message + rest)
+			default:
+				// Fallback: print as-is to appropriate stream
+				if isStderr {
+					fmt.Fprintln(os.Stderr, line)
+				} else {
+					fmt.Println(line)
+				}
+			}
+		} else {
+			// Not a log line, print as-is to appropriate stream
+			if isStderr {
+				fmt.Fprintln(os.Stderr, line)
+			} else {
+				fmt.Println(line)
+			}
+		}
+	}
 }
 
 func envWithPrefixedPath(dir string) []string {

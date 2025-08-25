@@ -19,7 +19,7 @@ package internal
 import (
 	"errors"
 	"fmt"
-	log "log/slog"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -56,17 +56,17 @@ func (opts *Generate) Generate() error {
 		}
 		opts.OutputDir = cwd
 		if _, err = os.Stat(opts.OutputDir); err == nil {
-			log.Warn("Using current working directory to re-scaffold the project")
-			log.Warn("This directory will be cleaned up and all files removed before the re-generation")
+			slog.Warn("Using current working directory to re-scaffold the project")
+			slog.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
 			// Ensure we clean the correct directory
-			log.Info("Cleaning directory", "dir", opts.OutputDir)
+			slog.Info("Cleaning directory", "dir", opts.OutputDir)
 
 			// Use an absolute path to target files directly
 			cleanupCmd := fmt.Sprintf("rm -rf %s/*", opts.OutputDir)
 			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
 			if err != nil {
-				log.Error("Cleanup failed", "error", err)
+				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
 
@@ -77,7 +77,7 @@ func (opts *Generate) Generate() error {
 			)
 			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
 			if err != nil {
-				log.Error("Cleanup failed", "error", err)
+				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
 		}
@@ -123,13 +123,13 @@ func (opts *Generate) Generate() error {
 
 	// Run make targets to ensure the project is properly set up.
 	// These steps are performed on a best-effort basis: if any of the targets fail,
-	// we log a warning to inform the user, but we do not stop the process or return an error.
+	// we slog a warning to inform the user, but we do not stop the process or return an error.
 	// This is to avoid blocking the migration flow due to non-critical issues during setup.
 	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
 	for _, target := range targets {
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
-			log.Warn("make target failed", "target", target, "error", err)
+			slog.Warn("make target failed", "target", target, "error", err)
 		}
 	}
 
@@ -220,7 +220,7 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
 	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha.Plugin{}), grafanaPlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
-		log.Info("Grafana plugin not found, skipping migration")
+		slog.Info("Grafana plugin not found, skipping migration")
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("failed to decode grafana plugin config: %w", err)
@@ -241,7 +241,7 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 	var autoUpdatePlugin struct{}
 	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdate.Plugin{}), autoUpdatePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
-		log.Info("Auto Update plugin not found, skipping migration")
+		slog.Info("Auto Update plugin not found, skipping migration")
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
@@ -259,7 +259,7 @@ func migrateDeployImagePlugin(s store.Store) error {
 	var deployImagePlugin v1alpha1.PluginConfig
 	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha1.Plugin{}), &deployImagePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
-		log.Info("Deploy-image plugin not found, skipping migration")
+		slog.Info("Deploy-image plugin not found, skipping migration")
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("failed to decode deploy-image plugin config: %w", err)
@@ -300,7 +300,7 @@ func getInitArgs(s store.Store) []string {
 	// Replace outdated plugins and exit after the first replacement
 	for i, plg := range plugins {
 		if newPlugin, exists := outdatedPlugins[plg]; exists {
-			log.Warn("We checked that your PROJECT file is configured with deprecated layout. "+
+			slog.Warn("We checked that your PROJECT file is configured with deprecated layout. "+
 				"However, we will try our best to re-generate the project using new one",
 				"deprecated_layout", plg,
 				"new_layout", newPlugin)
@@ -503,8 +503,8 @@ func hasHelmPlugin(cfg store.Store) bool {
 		if errors.As(err, &config.PluginKeyNotFoundError{}) {
 			return false
 		}
-		// Log other errors if needed
-		log.Error("error decoding Helm plugin config", "error", err)
+		// slog other errors if needed
+		slog.Error("error decoding Helm plugin config", "error", err)
 		return false
 	}
 

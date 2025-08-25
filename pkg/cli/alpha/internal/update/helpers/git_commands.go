@@ -19,7 +19,7 @@ package helpers
 import (
 	"errors"
 	"fmt"
-	log "log/slog"
+	"log/slog"
 	"os/exec"
 )
 
@@ -30,7 +30,7 @@ func CommitIgnoreEmpty(msg, ctx string) error {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) && ee.ExitCode() == 1 {
 			// nothing to commit
-			log.Info("No changes to commit", "context", ctx, "message", msg)
+			slog.Info("No changes to commit", "context", ctx, "message", msg)
 			return nil
 		}
 		return fmt.Errorf("git commit failed (%s): %w", ctx, err)
