@@ -17,17 +17,15 @@ limitations under the License.
 package helpers
 
 import (
-	"errors"
+	"bufio"
+	"bytes"
 	"io/fs"
+	log "log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
-)
-
-var (
-	errFoundConflict = errors.New("found-conflict")
-	errGoConflict    = errors.New("go-conflict")
 )
 
 type ConflictSummary struct {
@@ -36,111 +34,203 @@ type ConflictSummary struct {
 	AnyGo    bool // any *.go file anywhere conflicted
 }
 
-func DetectConflicts() ConflictSummary {
-	return ConflictSummary{
-		Makefile: hasConflict("Makefile", "makefile"),
-		API:      hasConflict("api", "apis"),
-		AnyGo:    hasGoConflicts(), // checks all *.go in repo (index fast path + FS scan)
-	}
+// ConflictResult provides detailed conflict information for multiple use cases
+type ConflictResult struct {
+	Summary        ConflictSummary
+	SourceFiles    []string // conflicted source files
+	GeneratedFiles []string // conflicted generated files
 }
 
-// hasConflict: file/dir conflicts via index fast path + marker scan.
-func hasConflict(paths ...string) bool {
-	if len(paths) == 0 {
-		return false
-	}
-	// Fast path: any unmerged entry under these pathspecs?
-	args := append([]string{"ls-files", "-u", "--"}, paths...)
-	out, err := exec.Command("git", args...).Output()
-	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
-		return true
+// isGeneratedKB returns true for Kubebuilder-generated artifacts.
+// Moved from open_gh_issue.go to avoid duplication
+func isGeneratedKB(path string) bool {
+	return strings.Contains(path, "/zz_generated.") ||
+		strings.HasPrefix(path, "config/crd/bases/") ||
+		strings.HasPrefix(path, "config/rbac/") ||
+		path == "dist/install.yaml" ||
+		// Generated deepcopy files
+		strings.HasSuffix(path, "_deepcopy.go")
+}
+
+// FindConflictFiles performs unified conflict detection for both conflict handling and GitHub issue generation
+func FindConflictFiles() ConflictResult {
+	result := ConflictResult{
+		SourceFiles:    []string{},
+		GeneratedFiles: []string{},
 	}
 
-	// Fallback: scan for conflict markers.
-	hasMarkers := func(p string) bool {
-		// Best-effort, skip large likely-binaries.
-		if fi, err := os.Stat(p); err == nil && fi.Size() > 1<<20 {
-			return false
+	// Use git index for fast conflict detection first
+	gitConflicts := getGitIndexConflicts()
+
+	// Filesystem scan for conflict markers
+	fsConflicts := scanFilesystemForConflicts()
+
+	// Combine results and categorize
+	allConflicts := make(map[string]bool)
+	for _, f := range gitConflicts {
+		allConflicts[f] = true
+	}
+	for _, f := range fsConflicts {
+		allConflicts[f] = true
+	}
+
+	// Categorize into source vs generated
+	for file := range allConflicts {
+		if isGeneratedKB(file) {
+			result.GeneratedFiles = append(result.GeneratedFiles, file)
+		} else {
+			result.SourceFiles = append(result.SourceFiles, file)
 		}
-		b, err := os.ReadFile(p)
+	}
+
+	sort.Strings(result.SourceFiles)
+	sort.Strings(result.GeneratedFiles)
+
+	// Build summary for existing conflict.go usage
+	result.Summary = ConflictSummary{
+		Makefile: hasConflictInFiles(allConflicts, "Makefile", "makefile"),
+		API:      hasConflictInPaths(allConflicts, "api", "apis"),
+		AnyGo:    hasGoConflictInFiles(allConflicts),
+	}
+
+	return result
+}
+
+// DetectConflicts maintains backward compatibility
+func DetectConflicts() ConflictSummary {
+	return FindConflictFiles().Summary
+}
+
+// getGitIndexConflicts uses git ls-files to quickly find unmerged entries
+func getGitIndexConflicts() []string {
+	out, err := exec.Command("git", "ls-files", "-u").Output()
+	if err != nil {
+		return nil
+	}
+
+	conflicts := make(map[string]bool)
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 4 {
+			file := strings.Join(fields[3:], " ")
+			conflicts[file] = true
+		}
+	}
+
+	result := make([]string, 0, len(conflicts))
+	for file := range conflicts {
+		result = append(result, file)
+	}
+	return result
+}
+
+// scanFilesystemForConflicts scans the working directory for conflict markers
+func scanFilesystemForConflicts() []string {
+	type void struct{}
+	skipDir := map[string]void{
+		".git":   {},
+		"vendor": {},
+		"bin":    {},
+	}
+
+	const maxBytes = 2 << 20 // 2 MiB per file
+
+	markersPrefix := [][]byte{
+		[]byte("<<<<<<< "),
+		[]byte(">>>>>>> "),
+	}
+	markerExact := []byte("=======")
+
+	var conflicts []string
+
+	_ = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return false
+			return nil // best-effort
 		}
-		s := string(b)
-		return strings.Contains(s, "<<<<<<<") &&
-			strings.Contains(s, "=======") &&
-			strings.Contains(s, ">>>>>>>")
-	}
-
-	for _, root := range paths {
-		info, err := os.Stat(root)
-		if err != nil {
-			continue
-		}
-		if !info.IsDir() {
-			if hasMarkers(root) {
-				return true
-			}
-			continue
-		}
-
-		werr := filepath.WalkDir(root, func(p string, d fs.DirEntry, walkErr error) error {
-			if walkErr != nil || d.IsDir() {
-				return nil
-			}
-			// Skip obvious noise dirs.
-			if d.Name() == ".git" || strings.Contains(p, string(filepath.Separator)+".git"+string(filepath.Separator)) {
-				return nil
-			}
-			if hasMarkers(p) {
-				return errFoundConflict
+		// Skip unwanted directories
+		if d.IsDir() {
+			if _, ok := skipDir[d.Name()]; ok {
+				return filepath.SkipDir
 			}
 			return nil
-		})
-		if errors.Is(werr, errFoundConflict) {
+		}
+
+		// Quick size check
+		fi, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		if fi.Size() > maxBytes {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return nil
+		}
+		defer func() {
+			if cerr := f.Close(); cerr != nil {
+				log.Warn("failed to close file", "path", path, "error", cerr)
+			}
+		}()
+
+		found := false
+		sc := bufio.NewScanner(f)
+		// allow long lines (YAML/JSON)
+		buf := make([]byte, 0, 1024*1024)
+		sc.Buffer(buf, 4<<20)
+
+		for sc.Scan() {
+			b := sc.Bytes()
+			// starts with conflict markers
+			for _, p := range markersPrefix {
+				if bytes.HasPrefix(b, p) {
+					found = true
+					break
+				}
+			}
+			// exact middle marker line
+			if !found && bytes.Equal(b, markerExact) {
+				found = true
+			}
+			if found {
+				break
+			}
+		}
+
+		if found {
+			conflicts = append(conflicts, path)
+		}
+		return nil
+	})
+
+	return conflicts
+}
+
+// Helper functions for backward compatibility
+func hasConflictInFiles(conflicts map[string]bool, paths ...string) bool {
+	for _, path := range paths {
+		if conflicts[path] {
 			return true
 		}
 	}
 	return false
 }
 
-// hasGoConflicts: any *.go file conflicted (repo-wide).
-func hasGoConflicts(roots ...string) bool {
-	// Fast path: any unmerged *.go anywhere?
-	if out, err := exec.Command("git", "ls-files", "-u", "--", "*.go").Output(); err == nil {
-		if len(strings.TrimSpace(string(out))) > 0 {
-			return true
+func hasConflictInPaths(conflicts map[string]bool, pathPrefixes ...string) bool {
+	for file := range conflicts {
+		for _, prefix := range pathPrefixes {
+			if strings.HasPrefix(file, prefix+"/") || file == prefix {
+				return true
+			}
 		}
 	}
-	// Fallback: filesystem scan (repo-wide or limited to roots if provided).
-	if len(roots) == 0 {
-		roots = []string{"."}
-	}
-	for _, root := range roots {
-		werr := filepath.WalkDir(root, func(p string, d fs.DirEntry, walkErr error) error {
-			if walkErr != nil || d.IsDir() || !strings.HasSuffix(p, ".go") {
-				return nil
-			}
-			// Skip .git and large files.
-			if strings.Contains(p, string(filepath.Separator)+".git"+string(filepath.Separator)) {
-				return nil
-			}
-			if fi, err := os.Stat(p); err == nil && fi.Size() > 1<<20 {
-				return nil
-			}
-			b, err := os.ReadFile(p)
-			if err != nil {
-				return nil
-			}
-			s := string(b)
-			if strings.Contains(s, "<<<<<<<") &&
-				strings.Contains(s, "=======") &&
-				strings.Contains(s, ">>>>>>>") {
-				return errGoConflict
-			}
-			return nil
-		})
-		if errors.Is(werr, errGoConflict) {
+	return false
+}
+
+func hasGoConflictInFiles(conflicts map[string]bool) bool {
+	for file := range conflicts {
+		if strings.HasSuffix(file, ".go") {
 			return true
 		}
 	}

@@ -20,11 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/fs"
-	log "log/slog"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -178,102 +174,10 @@ List each conflicted file with a brief suggestion. For GENERATED files:
 - config/rbac/*.yaml: "Fix markers in controllers/webhooks; then run: make manifests"
 - dist/install.yaml: "Fix conflicts; then run: make build-installer"`
 
-// isGeneratedKB returns true for Kubebuilder-generated artifacts.
-func isGeneratedKB(path string) bool {
-	return strings.Contains(path, "/zz_generated.") ||
-		strings.HasPrefix(path, "config/crd/bases/") ||
-		strings.HasPrefix(path, "config/rbac/") ||
-		path == "dist/install.yaml"
-}
-
-// listConflictFiles walks the working directory and finds files that contain
-// Git conflict markers, splitting results into SOURCE vs GENERATED buckets.
-// This version does not rely on `git grep`.
+// listConflictFiles uses the unified conflict detection from conflict.go
 func listConflictFiles() (src []string, gen []string) {
-	type void struct{}
-	skipDir := map[string]void{
-		".git":   {},
-		"vendor": {},
-		"bin":    {},
-	}
-
-	// Heuristic: don't scan huge files
-	const maxBytes = 2 << 20 // 2 MiB per file
-
-	markersPrefix := [][]byte{
-		[]byte("<<<<<<< "),
-		[]byte(">>>>>>> "),
-	}
-	markerExact := []byte("=======")
-
-	_ = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil // best-effort
-		}
-		// Skip unwanted directories
-		if d.IsDir() {
-			if _, ok := skipDir[d.Name()]; ok {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Quick size check
-		fi, err := d.Info()
-		if err != nil {
-			return nil
-		}
-		if fi.Size() > maxBytes {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return nil
-		}
-		defer func() {
-			if cerr := f.Close(); cerr != nil {
-				log.Warn("failed to close file", "path", path, "error", cerr)
-			}
-		}()
-
-		found := false
-		sc := bufio.NewScanner(f)
-		// allow long lines (YAML/JSON)
-		buf := make([]byte, 0, 1024*1024)
-		sc.Buffer(buf, 4<<20)
-
-		for sc.Scan() {
-			b := sc.Bytes()
-			// starts with conflict markers
-			for _, p := range markersPrefix {
-				if bytes.HasPrefix(b, p) {
-					found = true
-					break
-				}
-			}
-			// exact middle marker line
-			if !found && bytes.Equal(b, markerExact) {
-				found = true
-			}
-			if found {
-				break
-			}
-		}
-		// ignore scan errors; best-effort
-		if found {
-			if isGeneratedKB(path) {
-				gen = append(gen, path)
-			} else {
-				src = append(src, path)
-			}
-		}
-		return nil
-	})
-
-	sort.Strings(src)
-	sort.Strings(gen)
-	return src, gen
+	conflicts := FindConflictFiles()
+	return conflicts.SourceFiles, conflicts.GeneratedFiles
 }
 
 func bulletList(items []string) string {
@@ -377,8 +281,11 @@ func excludedFromDiff(p string) bool {
 		p == "PROJECT" ||
 		p == "go.sum" ||
 		strings.HasPrefix(p, "grafana/") ||
-		strings.HasPrefix(p, "config/crd") ||
-		strings.HasPrefix(p, "config/samples")
+		strings.HasPrefix(p, "config/crd/bases/") ||
+		strings.HasPrefix(p, "hack/") ||
+		strings.HasPrefix(p, "bin/") ||
+		strings.HasPrefix(p, "vendor/") ||
+		strings.HasSuffix(p, ".log")
 }
 
 // Only files that matter for KB review context (after exclusions).
@@ -386,30 +293,54 @@ func importantFile(p string) bool {
 	if excludedFromDiff(p) {
 		return false
 	}
+
+	// Critical Kubebuilder files
 	//nolint:goconst
 	if p == "go.mod" || p == "Makefile" || p == "Dockerfile" {
 		return true
 	}
+
+	// Core source code
 	if strings.HasPrefix(p, "cmd/") ||
 		strings.HasPrefix(p, "controllers/") ||
-		(strings.HasPrefix(p, "api/") && strings.HasSuffix(p, "_types.go")) ||
-		strings.HasPrefix(p, "internal/") {
+		strings.HasPrefix(p, "internal/controller/") ||
+		strings.HasPrefix(p, "internal/webhook/") ||
+		(strings.HasPrefix(p, "api/") && strings.HasSuffix(p, "_types.go")) {
 		return true
 	}
-	// Meaningful config
-	if strings.HasPrefix(p, "config") {
+
+	// Test files (important for breaking changes)
+	if strings.HasPrefix(p, "test/") && (strings.HasSuffix(p, "_test.go") ||
+		strings.HasSuffix(p, ".go")) {
 		return true
 	}
+
+	// Important config files (not generated)
+	if strings.HasPrefix(p, "config/") {
+		// Include kustomization files and important config
+		if strings.HasSuffix(p, "kustomization.yaml") ||
+			strings.HasPrefix(p, "config/default/") ||
+			strings.HasPrefix(p, "config/manager/") ||
+			strings.HasPrefix(p, "config/webhook/") ||
+			strings.HasPrefix(p, "config/certmanager/") ||
+			strings.HasPrefix(p, "config/prometheus/") ||
+			strings.HasPrefix(p, "config/network-policy/") {
+			return true
+		}
+	}
+
 	return false
 }
 
 // Priority: lower number = earlier.
-// 0: go.mod
-// 1: Makefile
-// 2: Dockerfiles (images)
-// 3: Code (cmd/, controllers/, api/*_types.go, internal/)
-// 4: Config (config/default, config/manager)
-// 5: Config (config/*)
+// 0: go.mod (dependencies)
+// 1: Makefile (build automation)
+// 2: Dockerfile (container images)
+// 3: Core code (cmd/, controllers/, api/*_types.go, internal/)
+// 4: Critical config (config/default, config/manager)
+// 5: Webhook & security config (config/webhook, config/certmanager)
+// 6: Other config (config/*)
+// 7: Tests
 // 9: fallback
 func filePriority(p string) int {
 	switch {
@@ -421,13 +352,24 @@ func filePriority(p string) int {
 		return 2
 	case strings.HasPrefix(p, "cmd/"),
 		strings.HasPrefix(p, "controllers/"),
-		strings.HasPrefix(p, "internal/"),
+		strings.HasPrefix(p, "internal/controller/"),
+		strings.HasPrefix(p, "internal/webhook/"),
 		(strings.HasPrefix(p, "api/") && strings.HasSuffix(p, "_types.go")):
 		return 3
-	case strings.HasPrefix(p, "config/default/") || strings.HasPrefix(p, "config/manager/"):
+	case strings.HasPrefix(p, "config/default/"),
+		strings.HasPrefix(p, "config/manager/"),
+		p == "config/default/kustomization.yaml",
+		p == "config/manager/kustomization.yaml":
 		return 4
-	case strings.HasPrefix(p, "config/"):
+	case strings.HasPrefix(p, "config/webhook/"),
+		strings.HasPrefix(p, "config/certmanager/"),
+		strings.HasPrefix(p, "config/prometheus/"),
+		strings.HasPrefix(p, "config/network-policy/"):
 		return 5
+	case strings.HasPrefix(p, "config/"):
+		return 6
+	case strings.HasPrefix(p, "test/"):
+		return 7
 	default:
 		return 9
 	}
@@ -435,11 +377,12 @@ func filePriority(p string) int {
 
 //nolint:lll
 var (
-	reFlags    = regexp.MustCompile(`(?i)--(leader-elect|metrics-bind-address|health-probe-bind-address|\bzap)`)
-	reGo       = regexp.MustCompile(`(?i)^(?:\+|\-)\s*(package|import|type|func|const|var|//\+kubebuilder:rbac|//go:(?:build|generate)|return|if\s+err|log\.|fmt\.|errors?\.|client\.|ctrl\.|manager|scheme|requeue|context\.)`)
-	reYAMLKey  = regexp.MustCompile(`(?i)(apiVersion:|kind:|metadata:|name:|namespace:|image:|command:|args:|env:|resources:|limits:|requests:|ports:|securityContext:|readOnlyRootFilesystem|runAsNonRoot|seccompProfile|allowPrivilegeEscalation|capabilities|livenessProbe|readinessProbe)`)
-	reDocker   = regexp.MustCompile(`(?i)^(?:\+|\-)\s*(FROM|ARG|ENV|RUN|ENTRYPOINT|CMD|COPY|ADD)\b`)
-	reMakeLine = regexp.MustCompile(`(?i)^(?:\+|\-)\s*([A-Z0-9_]+)\s*[:?+]?=\s*|^(?:\+|\-)\s*(manifests|generate|fmt|vet|lint-fix|docker-build|test)\b`)
+	reFlags       = regexp.MustCompile(`(?i)--(leader-elect|metrics-bind-address|health-probe-bind-address|\bzap|secure-port|bind-address)`)
+	reGo          = regexp.MustCompile(`(?i)^(?:\+|\-)\s*(package|import|type|func|const|var|//\+kubebuilder:|//go:(?:build|generate)|return|if\s+err|log\.|fmt\.|errors?\.|client\.|ctrl\.|manager|scheme|requeue|context\.|SetupWithManager|Reconcile|reconcile\.Result)`)
+	reYAMLKey     = regexp.MustCompile(`(?i)(apiVersion:|kind:|metadata:|name:|namespace:|image:|command:|args:|env:|resources:|limits:|requests:|ports:|securityContext:|readOnlyRootFilesystem|runAsNonRoot|seccompProfile|allowPrivilegeEscalation|capabilities|livenessProbe|readinessProbe|namePrefix:|commonLabels:|bases:|patches:|replicas:)`)
+	reDocker      = regexp.MustCompile(`(?i)^(?:\+|\-)\s*(FROM|ARG|ENV|RUN|ENTRYPOINT|CMD|COPY|ADD|USER|WORKDIR)\b`)
+	reMakeLine    = regexp.MustCompile(`(?i)^(?:\+|\-)\s*([A-Z0-9_]+)\s*[:?+]?=\s*|^(?:\+|\-)\s*(manifests|generate|fmt|vet|lint-fix|docker-build|test|install|uninstall|deploy|undeploy|build-installer|controller-gen|kustomize)\b`)
+	reKubebuilder = regexp.MustCompile(`(?i)^(?:\+|\-)\s*(\/\/\+kubebuilder:|kubebuilder\s+(init|create|edit)|controller-runtime|sigs\.k8s\.io|k8s\.io\/api|k8s\.io\/apimachinery)`)
 )
 
 // keepGoModLine returns true for +/- go.mod lines we want to retain.
@@ -474,16 +417,19 @@ func interestingLine(path, line string) bool {
 	}
 	switch {
 	case strings.HasSuffix(path, ".go"):
-		return reGo.MatchString(line)
+		return reGo.MatchString(line) || reKubebuilder.MatchString(line)
 	case strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml"):
-		return reYAMLKey.MatchString(line) || reFlags.MatchString(line)
+		return reYAMLKey.MatchString(line) || reFlags.MatchString(line) || reKubebuilder.MatchString(line)
 	case path == "Makefile":
-		return reMakeLine.MatchString(line)
+		return reMakeLine.MatchString(line) || reKubebuilder.MatchString(line)
 	case path == "Dockerfile":
 		return reDocker.MatchString(line)
+	case strings.HasSuffix(path, "kustomization.yaml"):
+		// Kustomization files are critical for Kubebuilder config
+		return true
 	default:
-		// Unknown text files: only keep obvious flag changes, not deps.
-		return reFlags.MatchString(line)
+		// Unknown text files: keep Kubebuilder-related lines and obvious flag changes
+		return reFlags.MatchString(line) || reKubebuilder.MatchString(line)
 	}
 }
 

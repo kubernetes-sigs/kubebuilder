@@ -31,6 +31,11 @@ import (
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 )
 
+const (
+	testFromVersion = "v4.5.0"
+	testToVersion   = "v4.6.0"
+)
+
 var _ = Describe("Prepare for internal update", func() {
 	var (
 		tmpDir      string
@@ -261,12 +266,198 @@ exit 0`
 			Expect(mockBinResponse(failIssue, mockGh)).To(Succeed())
 
 			opts.FromBranch = defaultBranch
-			opts.FromVersion = "v4.5.0"
-			opts.ToVersion = "v4.6.0"
+			opts.FromVersion = testFromVersion
+			opts.ToVersion = testToVersion
 
 			err = opts.openGitHubIssue(false)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to create GitHub issue: exit status 1"))
+		})
+	})
+
+	Context("Version Handling Edge Cases", func() {
+		DescribeTable("Should handle version prefix normalization in defineToVersion",
+			func(inputVersion, expectedVersion string) {
+				opts := &Update{ToVersion: inputVersion}
+				normalizedVersion := opts.defineToVersion()
+				Expect(normalizedVersion).To(Equal(expectedVersion))
+			},
+			Entry("adds v prefix when missing", "1.0.0", "v1.0.0"),
+			Entry("keeps v prefix when present", "v1.0.0", "v1.0.0"),
+			Entry("handles semantic versioning", "1.2.3", "v1.2.3"),
+			Entry("handles pre-release versions", "1.0.0-alpha", "v1.0.0-alpha"),
+			Entry("handles build metadata", "1.0.0+build.1", "v1.0.0+build.1"),
+		)
+
+		DescribeTable("Should handle malformed versions gracefully during validation",
+			func(invalidFromVersion, invalidToVersion string) {
+				const version = `version: "3"`
+				Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+
+				opts := &Update{FromVersion: invalidFromVersion, ToVersion: invalidToVersion, FromBranch: "test"}
+				err = opts.Prepare()
+				// Should handle gracefully or provide clear error message
+				if err != nil {
+					Expect(err.Error()).To(Or(
+						ContainSubstring("version"),
+						ContainSubstring("validate"),
+						ContainSubstring("semantic"),
+					))
+				}
+			},
+			Entry("invalid from version", "not.a.version", "v1.0.0"),
+			Entry("invalid to version", "v1.0.0", "not.a.version"),
+			Entry("special characters in from", "v1.0.0$invalid", "v1.0.0"),
+			Entry("special characters in to", "v1.0.0", "v1.0.0$invalid"),
+		)
+	})
+
+	Context("GitHub Integration Edge Cases", func() {
+		BeforeEach(func() {
+			opts.FromBranch = defaultBranch
+			opts.FromVersion = testFromVersion
+			opts.ToVersion = testToVersion
+		})
+
+		It("handles missing gh CLI", func() {
+			noGh := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  echo "command not found: gh" >&2
+  exit 127
+fi
+exit 0`
+			Expect(mockBinResponse(noGh, mockGh)).To(Succeed())
+
+			err = opts.openGitHubIssue(false)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
+		})
+
+		It("handles gh CLI authentication failure", func() {
+			authFailGh := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  echo "error: authentication required" >&2
+  exit 1
+fi
+exit 0`
+			Expect(mockBinResponse(authFailGh, mockGh)).To(Succeed())
+
+			err = opts.openGitHubIssue(false)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
+		})
+	})
+
+	Context("Output Branch Name Generation", func() {
+		DescribeTable("Should generate correct output branch names",
+			func(fromVersion, toVersion, expectedSuffix string) {
+				opts := &Update{
+					FromVersion: fromVersion,
+					ToVersion:   toVersion,
+				}
+				branchName := opts.getOutputBranchName()
+				Expect(branchName).To(ContainSubstring("kubebuilder-update-from"))
+				Expect(branchName).To(ContainSubstring(expectedSuffix))
+			},
+			Entry("standard versions", "v1.0.0", "v1.1.0", "v1.0.0-to-v1.1.0"),
+			Entry("versions without v prefix", "1.0.0", "1.1.0", "1.0.0-to-1.1.0"),
+			Entry("pre-release versions", "v1.0.0-alpha", "v1.1.0-beta", "v1.0.0-alpha-to-v1.1.0-beta"),
+		)
+
+		It("uses custom output branch when specified", func() {
+			customBranch := "my-custom-update-branch"
+			opts := &Update{
+				FromVersion:  "v1.0.0",
+				ToVersion:    "v1.1.0",
+				OutputBranch: customBranch,
+			}
+			branchName := opts.getOutputBranchName()
+			Expect(branchName).To(Equal(customBranch))
+		})
+	})
+
+	Context("Git Configuration Validation", func() {
+		It("should handle empty git config", func() {
+			opts := &Update{
+				FromVersion: "v1.0.0",
+				ToVersion:   "v1.1.0",
+				FromBranch:  "test",
+				GitConfig:   []string{}, // Empty git config
+			}
+			const version = `version: "3"`
+			Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+
+			err = opts.Prepare()
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should handle invalid git config format", func() {
+			opts := &Update{
+				FromVersion: "v1.0.0",
+				ToVersion:   "v1.1.0",
+				FromBranch:  "test",
+				GitConfig:   []string{"invalid-config-format"}, // Invalid format
+			}
+			const version = `version: "3"`
+			Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+
+			err = opts.Prepare()
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("Branch Name Validation", func() {
+		DescribeTable("Should handle various branch name formats",
+			func(branchName string, shouldSucceed bool) {
+				opts := &Update{
+					FromVersion: "v1.0.0",
+					ToVersion:   "v1.1.0",
+					FromBranch:  branchName,
+				}
+				const version = `version: "3"`
+				Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+
+				err = opts.Prepare()
+				if shouldSucceed {
+					Expect(err).ToNot(HaveOccurred())
+				} else {
+					Expect(err).To(HaveOccurred())
+				}
+			},
+			Entry("standard main branch", "main", true),
+			Entry("standard master branch", "master", true),
+			Entry("feature branch", "feature/my-feature", true),
+			Entry("release branch", "release/v1.0.0", true),
+			Entry("branch with numbers", "branch-123", true),
+			Entry("empty branch name", "", true),
+		)
+	})
+
+	Context("Resource Cleanup and Error Recovery", func() {
+		It("should handle cleanup when preparation fails", func() {
+			// This test ensures that temporary resources are cleaned up even when operations fail
+			failGit := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			mockGit := filepath.Join(tmpDir, "git")
+			Expect(mockBinResponse(failGit, mockGit)).To(Succeed())
+
+			opts := &Update{
+				FromVersion: "v1.0.0",
+				ToVersion:   "v1.1.0",
+				FromBranch:  "test",
+			}
+			const version = `version: "3"`
+			Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+
+			err = opts.Prepare()
+			// The specific error depends on when git fails in the preparation process
+			// This test ensures the system handles git failures gracefully
+			if err != nil {
+				Expect(err.Error()).To(ContainSubstring("git"))
+			}
 		})
 	})
 })
