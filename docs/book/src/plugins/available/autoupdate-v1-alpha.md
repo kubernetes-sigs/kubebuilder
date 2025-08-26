@@ -7,6 +7,17 @@ Kubebuilder release is available — keeping your project **maintained, secure, 
 This automation uses the [`kubebuilder alpha update`][alpha-update-command] command with a **3-way merge strategy** to
 refresh your project scaffold, and wraps it in a GitHub Actions workflow that opens an **Issue** with a **Pull Request compare link** so you can create the PR and review it.
 
+<aside class="warning">
+<h1>Protect your branches</h1>
+
+This workflow by default **only** creates and pushes the merged files to a branch
+called `kubebuilder-update-from-<from-version>-to-<to-version>`.
+
+To keep your codebase safe, use branch protection rules to ensure that
+changes aren't pushed or merged without proper review.
+
+</aside>
+
 ## When to Use It
 
 - When you don’t deviate too much from the default scaffold — ensure that you see the note about customization [here](https://book.kubebuilder.io/versions_compatibility_supportability#project-customizations).
@@ -35,13 +46,14 @@ Whenever a new Kubebuilder release is available, the workflow will automatically
 
 <img width="638" height="482" alt="Example Issue" src="https://github.com/user-attachments/assets/589fd16b-7709-4cd5-b169-fd53d69790d4" />
 
-Moreover, AI models are used to help you understand what changes are needed to keep your project up to date,
-and to suggest resolutions if conflicts are encountered, as in the following example:
+By default, the workflow scaffolded uses `--use-gh-model` the flag to leverage in [AI models][ai-models] to help you understand
+what changes are needed. You'll get a concise list of changed files to streamline the review, for example:
 
-<img width="715" height="424" alt="AI Example Comment" src="https://github.com/user-attachments/assets/3f8bc35d-8ba0-4fc5-931b-56b1cb238462" />
+<img width="582" height="646" alt="Screenshot 2025-08-26 at 13 40 53" src="https://github.com/user-attachments/assets/d460a5af-5ca4-4dd5-afb8-7330dd6de148" />
 
-You will also see a list of files changed, making it easier to review the updates.
-And, if conflicts arise, a summary of the conflicts will be provided to help you resolve them.
+If conflicts arise, AI-generated comments call them out and provide next steps, such as:
+
+<img width="600" height="188" alt="Conflicts" src="https://github.com/user-attachments/assets/2142887a-730c-499a-94df-c717f09ab600" />
 
 ### Workflow details
 
@@ -66,15 +78,5 @@ The command called by the workflow is:
           --use-gh-models
 ```
 
-<aside class="warning">
-<h1>Protect your branches</h1>
-
-This workflow by default **only** creates and pushes the merged files to a branch
-called `kubebuilder-update-from-<from-version>-to-<to-version>`.
-
-To keep your codebase safe, use branch protection rules to ensure that
-changes aren't pushed or merged without proper review.
-
-</aside>
-
 [alpha-update-command]: ./../../reference/commands/alpha_update.md
+[ai-models]: https://docs.github.com/en/github-models/about-github-models

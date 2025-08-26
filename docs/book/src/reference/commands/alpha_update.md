@@ -9,23 +9,26 @@ not re-applying your code.
 By default, the final result is **squashed into a single commit** on a dedicated output branch.
 If you prefer to keep the full history (no squash), use `--show-commits`.
 
-> **Tip:** You can reduce the burden of keeping your project up to date by using the
-[`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin which
+<aside class="note">
+<H1> Automate this process </H1>
+
+You can reduce the burden of keeping your project up to date by using the
+[AutoUpdate Plugin][autoupdate-plugin] which
 automates the process of running `kubebuilder alpha update` on a schedule
 workflow when new Kubebuilder releases are available.
->
-> Moreover, you will be able to get help from AI models to understand what changes are needed to keep your project up to date
+
+Moreover, you will be able to get help from [AI models][ai-gh-models] to understand what changes are needed to keep your project up to date
 and how to solve conflicts if any are faced.
+
+</aside>
 
 ## When to Use It
 
 Use this command when you:
 
 - Want to move to a newer Kubebuilder version or plugin layout
-- Prefer automation over manual file editing
 - Want to review scaffold changes on a separate branch
 - Want to focus on resolving merge conflicts (not re-applying your custom code)
-- Want an **AI-generated** overview of changes and guidance for resolving conflicts
 
 ## How It Works
 
@@ -171,15 +174,10 @@ The command opens an Issue that links to the diff so you can create the PR and r
 
 With `--use-gh-models`, an AI comment highlights key changes and suggests how to resolve any conflicts:
 
-<img width="715" height="424" alt="AI Example Comment" src="https://github.com/user-attachments/assets/3f8bc35d-8ba0-4fc5-931b-56b1cb238462" />
+<img width="740" height="425" alt="Comment" src="https://github.com/user-attachments/assets/fb5f214e-be0e-43b8-a3fb-b5744ac8f66e" />
 
-You’ll also get a concise list of changed files to streamline the review:
-
-<img width="652" height="694" alt="Files Changed" src="https://github.com/user-attachments/assets/b7b46d44-078c-4e56-8a50-bdfcfac231a7" />
-
-If conflicts arise, AI-generated comments call them out and provide next steps:
-
-<img width="682" height="213" alt="Conflicts" src="https://github.com/user-attachments/assets/ed8cf95d-5272-4477-8d75-4e28546dde4e" />
+Moreover, AI models are used to help you understand what changes are needed to keep your project up to date,
+and to suggest resolutions if conflicts are encountered, as in the following example:
 
 ### Automation
 
@@ -210,6 +208,19 @@ kubebuilder alpha update \
   --git-config rerere.enabled=true
 ```
 
+<aside class="note warning">
+<h1>You might need to upgrade your project first</h1>
+
+This command uses `kubebuilder alpha generate` under the hood.
+We support projects created with <strong>v4.5.0+</strong>.
+If yours is older, first run `kubebuilder alpha generate` once to modernize the scaffold.
+After that, you can use `kubebuilder alpha update` for future upgrades.
+
+Projects created with **Kubebuilder v4.6.0+** include `cliVersion` in the `PROJECT` file.
+We use that value to pick the correct CLI for re-scaffolding.
+
+</aside>
+
 ## Flags
 
 | Flag               | Description                                                                                                                                                                                                                             |
@@ -226,24 +237,6 @@ kubebuilder alpha update \
 | `--to-version`     | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                                                                                              |
 | `--use-gh-models`  | Post an AI overview as an issue comment using `gh models`. Requires `gh` + `gh-models` extension. Effective only when `--open-gh-issue` is also set.                                                                                    |
 | `-h, --help`       | Show help for this command.                                                                                                                                                                                                             |
-
-<aside class="note warning">
-<h1>You might need to upgrade your project first</h1>
-
-This command uses `kubebuilder alpha generate` under the hood.
-We support projects created with <strong>v4.5.0+</strong>.
-If yours is older, first run `kubebuilder alpha generate` once to modernize the scaffold.
-After that, you can use `kubebuilder alpha update` for future upgrades.
-
-</aside>
-
-<aside class="note">
-<h1>CLI Version Tracking</h1>
-
-Projects created with **Kubebuilder v4.6.0+** include `cliVersion` in the `PROJECT` file.
-We use that value to pick the correct CLI for re-scaffolding.
-
-</aside>
 
 ## Demonstration
 
@@ -267,3 +260,4 @@ so the current behavior may differ slightly from what is shown in the demo.
 [project-config]: ../../reference/project-config.md
 [autoupdate-plugin]: ./../../plugins/available/autoupdate-v1-alpha.md
 [design-proposal]: ./../../../../../designs/update_action.md
+[ai-gh-models]: https://docs.github.com/en/github-models/about-github-models
