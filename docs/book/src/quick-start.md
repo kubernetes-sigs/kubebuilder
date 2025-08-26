@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://go.dev/dl/) version v1.23.0+
+- [go](https://go.dev/dl/) version v1.24.5+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -144,10 +144,20 @@ type Guestbook struct {
 </p>
 </details>
 
+
+<aside class="note">
+<h1> `+kubebuilder` markers </h1>
+
+`+kubebuilder` are [markers][markers] processed by [controller-gen][controller-gen]
+to generate CRDs and RBAC. Kubebuilder also provides [scaffolding markers][scaffolding-markers]
+to inject code into existing files and simplify common tasks. See `cmd/main.go` for examples.
+
+</aside>
+
 ## Test It Out
 
 You'll need a Kubernetes cluster to run against. You can use
-[KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or
+[KinD][kind] to get a local cluster for testing, or
 run against a remote cluster.
 
 <aside class="note">
@@ -202,14 +212,15 @@ make deploy IMG=<some-registry>/<project-name>:tag
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
 
-Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
-You can directly load your local image into your specified Kind cluster:
+Consider incorporating [Kind][kind] into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a [Kind][kind] cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified [Kind][kind] cluster:
 
 ```bash
 kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
 
+It is highly recommended to use [Kind][kind] for development purposes and CI.
 To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
 
 <h1>RBAC errors</h1>
@@ -234,19 +245,72 @@ Undeploy the controller to the cluster:
 ```bash
 make undeploy
 ```
+## Using Plugins
+
+Kubebuilder design is based on [Plugins][plugins] and you can use
+[available plugins][available-plugins] to add optional features to your project.
+
+### Creating an API and Controller with code to manage an image
+
+For example, you can scaffold an API and controller that
+manages container images by using the [deploy-image plugin][deploy-image-v1-alpha]:
+
+```bash
+kubebuilder create api --group webapp --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha"
+```
+
+This command generates:
+
+- The API definition in `api/v1alpha1/busybox_types.go`.
+- The controller logic in `internal/controllers/busybox_controller.go`.
+- A test scaffold in `internal/controllers/busybox_controller_test.go`, which uses [EnvTest][envtest] for integration-style testing.
+
+<aside class="note">
+<h1> References and Examples </h1>
+
+You can use the code of [DeployImage Plugin][deploy-image-v1-alpha] as a reference to create your project.
+They follow Kubernetes conventions and recommended good practices.
+
+</aside>
+
+### Keeping your project up to date with ecosystem changes
+
+Kubebuilder provides the [AutoUpdate Plugin][autoupdate-v1-alpha]
+to help keep your project aligned with the latest ecosystem changes.
+When a new release is available, the plugin opens an **Issue** with a
+Pull Request compare link. You can then review the updates and, if helpful,
+use [GitHub AI models][ai-gh-models] to understand what changes are needed to keep your project current.
+
+```bash
+kubebuilder edit --plugins="autoupdate/v1-alpha"
+```
+
+This command scaffolds a GitHub workflow file at `.github/workflows/autoupdate.yml`.
 
 ## Next Step
 
-- Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
-- Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
-  provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
+- Proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
+  provide a solid foundation.
+- Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
   understanding by developing a demo project.
+- Ensure that you understand the APIs and Groups concepts [Groups and Versions and Kinds, oh my!][gkv-doc]
+before designing your own API and project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://go.dev/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.go.dev/using-go-modules
-[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
 [getting-started]: getting-started.md
+[plugins]: plugins/plugins.md
+[available-plugins]: plugins/available-plugins.md
+[envtest]: ./reference/envtest.md
+[autoupdate-v1-alpha]: plugins/available/autoupdate-v1-alpha.md
+[deploy-image-v1-alpha]: plugins/available/deploy-image-plugin-v1-alpha.md
+[gkv-doc]: cronjob-tutorial/gvks.md
+[kind]: https://sigs.k8s.io/kind
+[markers]: reference/markers.md
+[controller-gen]: https://sigs.k8s.io/controller-tools/cmd/controller-gen
+[scaffolding-markers]: reference/markers/scaffold.md
+[ai-gh-models]: https://docs.github.com/en/github-models/about-github-models
