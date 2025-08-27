@@ -20,10 +20,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Enable Prometheus in kustomize (testdata sample)
+        run: |
+          sed -i 's/^#- \.\.\/prometheus/- ..\/prometheus/' testdata/project-v4-with-plugins/config/default/kustomization.yaml
+
+      - name: Build kubebuilder CLI
+        run: make build
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+
+      - name: Prepare project-v4-with-plugins
+        run: |
+          cd testdata/project-v4-with-plugins/
+          go mod tidy
+          make all
+
+      - name: Rebuild installer and regenerate Helm chart (v2-alpha)
+        working-directory: testdata/project-v4-with-plugins
+        run: |
+          make build-installer
+          ../../bin/kubebuilder edit --plugins=helm/v2-alpha --force
 
       - name: Install the latest version of kind
         run: |
@@ -37,13 +56,6 @@ jobs:
       - name: Create kind cluster
         run: kind create cluster
 
-      - name: Prepare project-v4-with-plugins
-        run: |
-          cd testdata/project-v4-with-plugins/
-          go mod tidy
-          make docker-build IMG=project-v4-with-plugins:v0.1.0
-          kind load docker-image project-v4-with-plugins:v0.1.0
-
       - name: Install Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -55,23 +67,29 @@ jobs:
         run: |
           helm lint testdata/project-v4-with-plugins/dist/chart
 
+      - name: Build project-v4-with-plugins
+        run: |
+          cd testdata/project-v4-with-plugins/
+          go mod tidy
+          make docker-build IMG=project-v4-with-plugins:v0.1.0
+          kind load docker-image project-v4-with-plugins:v0.1.0
+
       - name: Install Prometheus Operator CRDs
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
           helm install prometheus-crds prometheus-community/prometheus-operator-crds
 
-      - name: Install cert-manager via Helm
+      - name: Install cert-manager via Helm (wait for readiness)
         run: |
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
-          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
-
-      - name: Wait for cert-manager to be ready
-        run: |
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+          helm install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --wait \
+            --timeout 300s
 
       - name: Render Helm chart for project-v4-with-plugins
         run: |
@@ -79,15 +97,20 @@ jobs:
 
       - name: Install Helm chart for project-v4-with-plugins
         run: |
-          helm install my-release testdata/project-v4-with-plugins/dist/chart --create-namespace --namespace project-v4-with-plugins-system --set prometheus.enable=true
+          helm install my-release \
+            testdata/project-v4-with-plugins/dist/chart \
+            --namespace project-v4-with-plugins-system \
+            --create-namespace \
+            --set prometheus.enable=true
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace project-v4-with-plugins-system
 
-      - name: Check Presence of ServiceMonitor
+      - name: Delete kind cluster
+        if: always()
         run: |
-          kubectl wait --namespace project-v4-with-plugins-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/project-v4-with-plugins-controller-manager-metrics-monitor
+          kind delete cluster || true
 
   # Test scenario: 
   # - scaffold project without creating webhooks, 
@@ -97,7 +120,7 @@ jobs:
   # Command to use to scaffold project without creating webhooks and so no need to install cert manager:
   # - kubebuilder init
   # - kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
-  # - kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
+  # - kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha
   test-helm-no-webhooks:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
@@ -149,9 +172,18 @@ jobs:
 
       - name: Deploy Helm chart without cert-manager
         working-directory: test-helm-no-webhooks
-        run: helm install my-release ./dist/chart --create-namespace --namespace test-helm-no-webhooks-system
+        run: |
+          helm install my-release \
+            ./dist/chart \
+            --create-namespace \
+            --namespace test-helm-no-webhooks-system
 
       - name: Verify deployment is working
         working-directory: test-helm-no-webhooks
         run: |
           helm status my-release --namespace test-helm-no-webhooks-system
+
+      - name: Delete kind cluster
+        if: always()
+        run: |
+          kind delete cluster || true

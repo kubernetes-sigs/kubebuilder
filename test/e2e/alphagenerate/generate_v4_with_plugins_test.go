@@ -23,8 +23,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	hemlv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -188,10 +190,12 @@ func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string
 	Expect(grafanaConfig.Resources).To(BeEmpty(), "Expected zero resource for the Grafana plugin")
 
 	By("decoding the helm plugin configuration")
-	var helmConfig v1alpha1.PluginConfig
-	err = projectConfig.DecodePluginConfig("grafana.kubebuilder.io/v1-alpha", &helmConfig)
+	var helmConfig map[string]interface{}
+	// Use the proper plugin key from the plugin package
+	pluginKey := plugin.KeyFor(hemlv2alpha.Plugin{})
+	err = projectConfig.DecodePluginConfig(pluginKey, &helmConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
 
-	// Validate the resource configuration
-	Expect(helmConfig.Resources).To(BeEmpty(), "Expected zero resource for the Helm plugin")
+	// Validate the helm plugin configuration exists
+	Expect(helmConfig).NotTo(BeNil(), "Expected Helm plugin configuration to be present")
 }
