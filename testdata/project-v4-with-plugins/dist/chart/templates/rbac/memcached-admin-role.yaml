@@ -1,0 +1,22 @@
+{{- if .Values.rbacHelpers.enable }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project-v4-with-plugins
+    name: project-v4-with-plugins-memcached-admin-role
+rules:
+    - apiGroups:
+        - example.com.testproject.org
+      resources:
+        - memcacheds
+      verbs:
+        - '*'
+    - apiGroups:
+        - example.com.testproject.org
+      resources:
+        - memcacheds/status
+      verbs:
+        - get
+{{- end }}
