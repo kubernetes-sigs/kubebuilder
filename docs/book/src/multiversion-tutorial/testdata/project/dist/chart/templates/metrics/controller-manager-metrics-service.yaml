@@ -1,0 +1,20 @@
+{{- if .Values.metrics.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project
+        control-plane: controller-manager
+    name: project-controller-manager-metrics-service
+    namespace: {{ .Release.Namespace }}
+spec:
+    ports:
+        - name: https
+          port: 8443
+          protocol: TCP
+          targetPort: 8443
+    selector:
+        app.kubernetes.io/name: project
+        control-plane: controller-manager
+{{- end }}

@@ -34,6 +34,7 @@ import (
 	autoupdatev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	helmv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv2alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Run bootstraps & runs the CLI
@@ -72,6 +73,7 @@ func Run() {
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
 			&helmv1alpha1.Plugin{},
+			&helmv2alpha1.Plugin{},
 			&autoupdatev1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),

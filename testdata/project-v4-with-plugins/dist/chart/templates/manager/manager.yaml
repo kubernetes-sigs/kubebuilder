@@ -1,90 +1,87 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: project-v4-with-plugins-controller-manager
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "chart.labels" . | nindent 4 }}
-    control-plane: controller-manager
-spec:
-  replicas:  {{ .Values.controllerManager.replicas }}
-  selector:
-    matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
-      control-plane: controller-manager
-  template:
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/default-container: manager
-      labels:
-        {{- include "chart.labels" . | nindent 8 }}
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project-v4-with-plugins
         control-plane: controller-manager
-        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
-        {{- range $key, $value := .Values.controllerManager.pod.labels }}
-        {{ $key }}: {{ $value }}
-        {{- end }}
-        {{- end }}
-    spec:
-      containers:
-        - name: manager
-          args:
-            {{- range .Values.controllerManager.container.args }}
-            - {{ . }}
-            {{- end }}
-          command:
-            - /manager
-          image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
-          {{- if .Values.controllerManager.container.imagePullPolicy }}
-          imagePullPolicy: {{ .Values.controllerManager.container.imagePullPolicy }}
-          {{- end }}
-          {{- if .Values.controllerManager.container.env }}
-          env:
-            {{- range $key, $value := .Values.controllerManager.container.env }}
-            - name: {{ $key }}
-              value: {{ $value }}
-            {{- end }}
-          {{- end }}
-          livenessProbe:
-            {{- toYaml .Values.controllerManager.container.livenessProbe | nindent 12 }}
-          readinessProbe:
-            {{- toYaml .Values.controllerManager.container.readinessProbe | nindent 12 }}
-          {{- if .Values.webhook.enable }}
-          ports:
-            - containerPort: 9443
-              name: webhook-server
-              protocol: TCP
-          {{- end }}
-          resources:
-            {{- toYaml .Values.controllerManager.container.resources | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.controllerManager.container.securityContext | nindent 12 }}
-          {{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}
-          volumeMounts:
-            {{- if and .Values.webhook.enable .Values.certmanager.enable }}
-            - name: webhook-cert
-              mountPath: /tmp/k8s-webhook-server/serving-certs
-              readOnly: true
-            {{- end }}
-            {{- if and .Values.metrics.enable .Values.certmanager.enable }}
-            - name: metrics-certs
-              mountPath: /tmp/k8s-metrics-server/metrics-certs
-              readOnly: true
-            {{- end }}
-          {{- end }}
-      securityContext:
-        {{- toYaml .Values.controllerManager.securityContext | nindent 8 }}
-      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
-      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
-      {{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}
-      volumes:
-        {{- if and .Values.webhook.enable .Values.certmanager.enable }}
-        - name: webhook-cert
-          secret:
-            secretName: webhook-server-cert
-        {{- end }}
-        {{- if and .Values.metrics.enable .Values.certmanager.enable }}
-        - name: metrics-certs
-          secret:
-            secretName: metrics-server-cert
-        {{- end }}
-      {{- end }}
+    name: project-v4-with-plugins-controller-manager
+    namespace: {{ .Release.Namespace }}
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: project-v4-with-plugins
+            control-plane: controller-manager
+    template:
+        metadata:
+            annotations:
+                kubectl.kubernetes.io/default-container: manager
+            labels:
+                app.kubernetes.io/name: project-v4-with-plugins
+                control-plane: controller-manager
+        spec:
+            containers:
+                - args:
+                    - --metrics-bind-address=:8443
+                    - --leader-elect
+                    - --health-probe-bind-address=:8081
+                    {{- if .Values.certManager.enable }}
+                    - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+                    {{- end }}
+                  command:
+                    - /manager
+                  env:
+                    - name: BUSYBOX_IMAGE
+                      value: busybox:1.36.1
+                    - name: MEMCACHED_IMAGE
+                      value: memcached:1.6.26-alpine3.19
+                  image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+                  livenessProbe:
+                    httpGet:
+                        path: /healthz
+                        port: 8081
+                    initialDelaySeconds: 15
+                    periodSeconds: 20
+                  name: manager
+                  ports:
+                    - containerPort: 9443
+                      name: webhook-server
+                      protocol: TCP
+                  readinessProbe:
+                    httpGet:
+                        path: /readyz
+                        port: 8081
+                    initialDelaySeconds: 5
+                    periodSeconds: 10
+                  resources:
+                    limits:
+                        cpu: 500m
+                        memory: 128Mi
+                    requests:
+                        cpu: 10m
+                        memory: 64Mi
+                  securityContext:
+                    allowPrivilegeEscalation: false
+                    capabilities:
+                        drop:
+                            - ALL
+                    readOnlyRootFilesystem: true
+                  volumeMounts:
+                    {{- if .Values.certManager.enable }}
+                    - mountPath: /tmp/k8s-webhook-server/serving-certs
+                      name: webhook-certs
+                      readOnly: true
+                    {{- end }}
+            securityContext:
+                runAsNonRoot: true
+                seccompProfile:
+                    type: RuntimeDefault
+            serviceAccountName: project-v4-with-plugins-controller-manager
+            terminationGracePeriodSeconds: 10
+            volumes:
+                {{- if .Values.certManager.enable }}
+                - name: webhook-certs
+                  secret:
+                    secretName: webhook-server-cert
+                {{- end }}
