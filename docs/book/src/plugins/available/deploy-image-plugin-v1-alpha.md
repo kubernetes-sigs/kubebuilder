@@ -105,7 +105,7 @@ files are affected, in addition to the existing Kubebuilder scaffolding:
 [video]: https://youtu.be/UwPuRjjnMjY
 [operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
-[testdata]: ./.././../../../../testdata/project-v4-with-plugins
+[testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins
 [envtest]: ./../../reference/envtest.md
 [quick-start]: ./../../quick-start.md
 [create-apis]: ../../cronjob-tutorial/new-api.md

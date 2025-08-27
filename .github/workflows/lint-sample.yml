@@ -2,11 +2,15 @@ name: Lint Samples
 
 on:
   push:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - 'docs/book/src/**/testdata/**'
+      - '.github/workflows/lint-sample.yml'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - 'docs/book/src/**/testdata/**'
+      - '.github/workflows/lint-sample.yml'
 
 jobs:
   lint-samples:
@@ -25,7 +29,7 @@ jobs:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -39,7 +43,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.1.6
+          version: v2.3.0
           working-directory: ${{ matrix.folder }}
       - name: Run linter via makefile target
         working-directory: ${{ matrix.folder }}

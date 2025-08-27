@@ -14,8 +14,11 @@ limitations under the License.
 package alpha
 
 import (
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
+
 	"github.com/spf13/cobra"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
 )
 
@@ -60,7 +63,8 @@ If no output directory is provided, the current working directory will be cleane
 		},
 		Run: func(_ *cobra.Command, _ []string) {
 			if err := opts.Generate(); err != nil {
-				log.Fatalf("failed to generate project: %s", err)
+				slog.Error("failed to generate project", "error", err)
+				os.Exit(1)
 			}
 		},
 	}

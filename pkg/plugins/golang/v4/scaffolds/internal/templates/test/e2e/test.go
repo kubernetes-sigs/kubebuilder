@@ -17,7 +17,10 @@ limitations under the License.
 package e2e
 
 import (
+	"bytes"
 	"fmt"
+	log "log/slog"
+	"os"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -77,41 +80,59 @@ func (f *WebhookTestUpdater) GetMarkers() []machinery.Marker {
 
 // GetCodeFragments implements file.Inserter
 func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
-	codeFragments := machinery.CodeFragmentsMap{}
 	if !f.WireWebhook {
 		return nil
 	}
-	codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
-		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
-		webhookChecksFragment,
-	)
 
-	if f.Resource != nil && f.Resource.HasDefaultingWebhook() {
-		mutatingWebhookCode := fmt.Sprintf(mutatingWebhookChecksFragment, f.ProjectName)
-		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
-			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
-			mutatingWebhookCode,
-		)
+	filePath := f.GetPath()
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Warn("Unable to read file", "file", filePath, "error", err)
+		log.Warn("Webhook test code injection will be skipped for this file.")
+		log.Warn("This typically occurs when the file was removed and is missing.")
+		log.Warn("If you intend to scaffold webhook tests, ensure the file and its markers exist.")
+		return nil
 	}
 
-	if f.Resource.HasValidationWebhook() {
-		validatingWebhookCode := fmt.Sprintf(validatingWebhookChecksFragment, f.ProjectName)
-		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
-			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
-			validatingWebhookCode,
-		)
+	codeFragments := machinery.CodeFragmentsMap{}
+	markers := f.GetMarkers()
+
+	for _, marker := range markers {
+		if !bytes.Contains(content, []byte(marker.String())) {
+			log.Warn("Marker not found in file, skipping webhook test code injection",
+				"marker", marker.String(),
+				"file_path", filePath)
+			continue // skip this marker
+		}
+
+		var fragments []string
+		fragments = append(fragments, webhookChecksFragment)
+
+		if f.Resource != nil && f.Resource.HasDefaultingWebhook() {
+			mutatingWebhookCode := fmt.Sprintf(mutatingWebhookChecksFragment, f.ProjectName)
+			fragments = append(fragments, mutatingWebhookCode)
+		}
+
+		if f.Resource != nil && f.Resource.HasValidationWebhook() {
+			validatingWebhookCode := fmt.Sprintf(validatingWebhookChecksFragment, f.ProjectName)
+			fragments = append(fragments, validatingWebhookCode)
+		}
+
+		if f.Resource != nil && f.Resource.HasConversionWebhook() {
+			conversionWebhookCode := fmt.Sprintf(
+				conversionWebhookChecksFragment,
+				f.Resource.Kind,
+				f.Resource.Plural+"."+f.Resource.Group+"."+f.Resource.Domain,
+			)
+			fragments = append(fragments, conversionWebhookCode)
+		}
+
+		codeFragments[marker] = fragments
 	}
 
-	if f.Resource.HasConversionWebhook() {
-		conversionWebhookCode := fmt.Sprintf(
-			conversionWebhookChecksFragment,
-			f.Resource.Kind,
-			f.Resource.Plural+"."+f.Resource.Group+"."+f.Resource.Domain,
-		)
-		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
-			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
-			conversionWebhookCode,
-		)
+	if len(codeFragments) == 0 {
+		return nil
 	}
 
 	return codeFragments
@@ -177,8 +198,10 @@ const conversionWebhookChecksFragment = `It("should have CA injection for %[1]s 
 
 `
 
-var testCodeTemplate = `{{ .Boilerplate }}
+var testCodeTemplate = `//go:build e2e
+// +build e2e
 
+{{ .Boilerplate }}
 
 package e2e
 

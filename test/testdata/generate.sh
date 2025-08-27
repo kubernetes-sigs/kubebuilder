@@ -112,6 +112,9 @@ function scaffold_test_project {
   if [[ $project =~ with-plugins ]] ; then
     header_text 'Editing project with Helm plugin ...'
     $kb edit --plugins=helm.kubebuilder.io/v1-alpha
+
+    header_text 'Editing project with Auto Update plugin ...'
+    $kb edit --plugins=autoupdate.kubebuilder.io/v1-alpha
   fi
 
   # To avoid conflicts

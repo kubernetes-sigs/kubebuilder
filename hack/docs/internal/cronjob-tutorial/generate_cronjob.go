@@ -18,11 +18,12 @@ package cronjob
 
 import (
 	"fmt"
+	log "log/slog"
 	"os/exec"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
@@ -36,17 +37,17 @@ type Sample struct {
 
 // NewSample create a new instance of the cronjob sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of Cronjob...")
+	log.Info("Generating the sample context of Cronjob...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for cronjob sample project")
+	log.Info("destroying directory for cronjob sample project")
 	sp.ctx.Destroy()
 
-	log.Infof("refreshing tools and creating directory...")
+	log.Info("refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
 
 	hackutils.CheckError("creating directory for sample project", err)
@@ -54,7 +55,7 @@ func (sp *Sample) Prepare() {
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the cronjob project")
+	log.Info("Initializing the cronjob project")
 
 	err := sp.ctx.Init(
 		"--domain", "tutorial.kubebuilder.io",
@@ -64,7 +65,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Initializing the cronjob project", err)
 
-	log.Infof("Adding a new config type")
+	log.Info("Adding a new config type")
 	err = sp.ctx.CreateAPI(
 		"--group", "batch",
 		"--version", "v1",
@@ -73,7 +74,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating the API", err)
 
-	log.Infof("Implementing admission webhook")
+	log.Info("Implementing admission webhook")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v1",
@@ -85,7 +86,7 @@ func (sp *Sample) GenerateSampleProject() {
 
 // UpdateTutorial the cronjob tutorial with the scaffold changes
 func (sp *Sample) UpdateTutorial() {
-	log.Println("Update tutorial with cronjob code")
+	log.Info("Update tutorial with cronjob code")
 	// 1. update specs
 	sp.updateSpec()
 	// 2. update webhook
@@ -203,6 +204,12 @@ func (sp *Sample) updateSpec() {
 		`// Important: Run "make" to regenerate code after modifying this file`, cronjobList)
 	hackutils.CheckError("fixing cronjob_types.go", err)
 
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
+		`// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status`, docCommentStatusSub)
+	hackutils.CheckError("fixing cronjob_types.go", err)
+
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`SchemeBuilder.Register(&CronJob{}, &CronJobList{})
@@ -222,18 +229,10 @@ type CronJob struct {`+`
 	// fix lint
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`
+		`/
 	
-}`, "")
-	hackutils.CheckError("fixing cronjob_types.go", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`
-
-
-}`, "")
-	hackutils.CheckError("fixing cronjob_types.go", err)
+}`, "/")
+	hackutils.CheckError("fixing cronjob_types.go end of status", err)
 }
 
 func (sp *Sample) updateAPIStuff() {
@@ -398,7 +397,13 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 func (sp *Sample) updateWebhookTests() {
 	file := filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook_test.go")
 
-	err := pluginutil.ReplaceInFile(file,
+	err := pluginutil.InsertCode(file,
+		`// TODO (user): Add any additional imports if needed`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
+	err = pluginutil.ReplaceInFile(file,
 		webhookTestCreateDefaultingFragment,
 		webhookTestCreateDefaultingReplaceFragment)
 	hackutils.CheckError("replace create defaulting test", err)
@@ -663,22 +668,36 @@ func (sp *Sample) addControllerTest() {
 func (sp *Sample) updateE2E() {
 	cronjobE2ESuite := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_suite_test.go")
 	cronjobE2ETest := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_test.go")
+	cronjobE2EUtils := filepath.Join(sp.ctx.Dir, "test", "utils", "utils.go")
 	var err error
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `isCertManagerAlreadyInstalled = false`, isPrometheusInstalledVar)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding isPrometheusInstalledVar", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = BeforeSuite(func() {`, beforeSuitePrometheus)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code in the before suite", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite,
 		`// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.`,
 		checkPrometheusInstalled)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding code check if has prometheus", err)
+
+	err = pluginutil.InsertCode(cronjobE2EUtils,
+		`defaultKindCluster = "kind"`,
+		prometheusVersionURL)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus version and URL", err)
+
+	err = pluginutil.InsertCode(cronjobE2EUtils,
+		`return false
+}
+`,
+		prometheusUtilities)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus version and URL", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = AfterSuite(func() {`, afterSuitePrometheus)
-	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code after suite", err)
 
-	err = pluginutil.InsertCode(cronjobE2ETest, `Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")`, serviceMonitorE2e)
-	hackutils.CheckError("fixing test/e2e/e2e_test.go", err)
+	err = pluginutil.InsertCode(cronjobE2ETest, `Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")`,
+		serviceMonitorE2e)
+	hackutils.CheckError("fixing test/e2e/e2e_test.go by adding ServiceMonitor should exist", err)
 }

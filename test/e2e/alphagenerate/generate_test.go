@@ -20,18 +20,17 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("kubebuilder", func() {
@@ -78,6 +77,10 @@ var _ = Describe("kubebuilder", func() {
 			By("Enabling the Grafana plugin")
 			err := kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")
 			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
+
+			By("Enabling the AutoUpdate plugin")
+			err = kbc.Edit("--plugins", "autoupdate.kubebuilder.io/v1-alpha")
+			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable autoupdate Plugin")
 
 			By("Generate API with Deploy Image plugin")
 			generateAPIWithDeployImage(kbc)

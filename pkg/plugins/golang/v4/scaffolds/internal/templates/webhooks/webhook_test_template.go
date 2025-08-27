@@ -18,10 +18,9 @@ package webhooks
 
 import (
 	"fmt"
+	log "log/slog"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -34,6 +33,7 @@ type WebhookTest struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.IfNotExistsActionMixin
 
 	Force bool
 
@@ -61,7 +61,7 @@ func (f *WebhookTest) SetTemplateDefaults() error {
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Println(f.Path)
+	log.Info(f.Path)
 
 	webhookTestTemplate := webhookTestTemplate
 	templates := make([]string, 0)
@@ -79,6 +79,7 @@ func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
 	}
+	f.IfNotExistsAction = machinery.IgnoreFile
 
 	return nil
 }

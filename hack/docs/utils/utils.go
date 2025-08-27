@@ -17,16 +17,16 @@ limitations under the License.
 package utils
 
 import (
+	log "log/slog"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 // CheckError will exit with exit code 1 when err is not nil.
 func CheckError(msg string, err error) {
 	if err != nil {
-		log.Errorf("error %s: %s", msg, err)
+		log.Error("error occurred", "message", msg, "error", err)
 		os.Exit(1)
 	}
 }

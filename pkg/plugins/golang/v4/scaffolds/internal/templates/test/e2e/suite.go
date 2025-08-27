@@ -40,7 +40,10 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	return nil
 }
 
-var suiteTestTemplate = `{{ .Boilerplate }}
+var suiteTestTemplate = `//go:build e2e
+// +build e2e
+
+{{ .Boilerplate }}
 
 package e2e
 

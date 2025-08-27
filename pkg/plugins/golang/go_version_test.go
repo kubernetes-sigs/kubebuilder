@@ -17,6 +17,7 @@ limitations under the License.
 package golang
 
 import (
+	"errors"
 	"sort"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -24,6 +25,34 @@ import (
 )
 
 var _ = Describe("GoVersion", func() {
+	Context("String", func() {
+		It("patch is not empty", func() {
+			v := GoVersion{major: 1, minor: 1, patch: 1}
+			Expect(v.String()).To(Equal("go1.1.1"))
+		})
+		It("preRelease is not empty", func() {
+			v := GoVersion{major: 1, minor: 1, prerelease: "-alpha"}
+			Expect(v.String()).To(Equal("go1.1-alpha"))
+		})
+		It("default", func() {
+			v := GoVersion{major: 1, minor: 1}
+			Expect(v.String()).To(Equal("go1.1"))
+		})
+	})
+
+	Context("MustParse", func() {
+		It("succeeds", func() {
+			v := GoVersion{major: 1, minor: 1, patch: 1}
+			Expect(MustParse("go1.1.1")).To(Equal(v))
+		})
+		It("panics", func() {
+			triggerPanic := func() {
+				MustParse("go1.a")
+			}
+			Expect(triggerPanic).To(PanicWith(errors.New("invalid version string")))
+		})
+	})
+
 	Context("parse", func() {
 		var v GoVersion
 
@@ -127,6 +156,24 @@ var _ = Describe("GoVersion", func() {
 			Expect(versions).To(Equal(sortedVersions))
 		})
 	})
+})
+
+var _ = Describe("ValidateGoVersion", func() {
+	DescribeTable("should return no error for valid/supported go versions", func(minVersion, maxVersion GoVersion) {
+		Expect(ValidateGoVersion(minVersion, maxVersion)).To(Succeed())
+	},
+		Entry("for minVersion: 1.1.1 and maxVersion: 2000.1.1", GoVersion{major: 1, minor: 1, patch: 1},
+			GoVersion{major: 2000, minor: 1, patch: 1}),
+		Entry("for minVersion: 1.1.1 and maxVersion: 1.2000.2000", GoVersion{major: 1, minor: 1, patch: 1},
+			GoVersion{major: 1, minor: 2000, patch: 1}),
+	)
+
+	DescribeTable("should return error for invalid/unsupported go versions", func(minVersion, maxVersion GoVersion) {
+		Expect(ValidateGoVersion(minVersion, maxVersion)).NotTo(Succeed())
+	},
+		Entry("for invalid min and maxVersions", GoVersion{major: 2, minor: 2, patch: 2},
+			GoVersion{major: 1, minor: 1, patch: 1}),
+	)
 })
 
 var _ = Describe("checkGoVersion", func() {

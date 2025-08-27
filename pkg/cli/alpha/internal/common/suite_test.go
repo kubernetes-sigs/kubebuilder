@@ -14,15 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package update
+package common
 
 import (
-	"fmt"
-	"runtime"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-const releaseURL = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/%s/kubebuilder_%s_%s"
-
-func buildReleaseURL(version string) string {
-	return fmt.Sprintf(releaseURL, version, runtime.GOOS, runtime.GOARCH)
+func TestCommon(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Common Package Suite For Alpha Commands")
 }

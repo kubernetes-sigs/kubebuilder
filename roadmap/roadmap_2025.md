@@ -25,7 +25,7 @@ and losing their existing customizations on top.
   - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/2589)
   - [Pull Request](https://github.com/kubernetes-sigs/kubebuilder/pull/4254)
 
-- **Comprehensive E2E Testing**: Expand end-to-end tests for conversion webhooks to validate not only CA injection but also the conversion process itself.
+- **Comprehensive E2E Testing**: ✅ Complete ([Example](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.7.1/testdata/project-v4-with-plugins/test/e2e/e2e_test.go#L284-L296)) Expand end-to-end tests for conversion webhooks to validate not only CA injection but also the conversion process itself.
   - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4297)
 
 - **E2E Test Scaffolding**: Improve the E2E test scaffolds under `test/e2e` to validate conversion behavior beyond CA injection for conversion webhooks.
@@ -82,8 +82,10 @@ Align tutorials and sample projects with best practices to improve quality and u
 
 ## Provide Solutions to Keep Users Updated with the Latest Changes
 
-**Status:** Proposal in WIP
-[GitHub Proposal](https://github.com/kubernetes-sigs/kubebuilder/pull/4302)
+**Status:** (✅ feature complete from 4.8.0 )
+- Proposal: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/update_action.md
+- `kubebuilder alpha update` command implemented. More info: https://book.kubebuilder.io/reference/commands/alpha_update
+- AutoUpdate Plugin implemented as v1-alpha. More info: https://book.kubebuilder.io/plugins/available/autoupdate-v1-alpha
 
 ### Context
 Kubebuilder currently offers a "Help to Upgrade" feature via the `kubebuilder alpha generate` command, but applying updates requires significant manual effort.

@@ -18,9 +18,8 @@ package controllers
 
 import (
 	"fmt"
+	log "log/slog"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -56,7 +55,7 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Println(f.Path)
+	log.Info(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(controllerSuiteTestTemplate,
 		machinery.NewMarkerFor(f.Path, importMarker),

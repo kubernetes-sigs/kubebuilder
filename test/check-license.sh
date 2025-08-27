@@ -26,8 +26,16 @@ echo "Checking for license header..."
 allfiles=$(listFiles | grep -v -e './internal/bindata/...' -e '.devcontainer/post-install.sh' -e '.github/*')
 licRes=""
 for file in $allfiles; do
-  if ! head -n4 "${file}" | grep -Eq "(Copyright|generated|GENERATED|Licensed)" ; then
-    licRes="${licRes}\n"$(echo -e "  ${file}")
+  if [[ -f "$file" && "$(file --mime-type -b "$file")" == text/* ]]; then
+    # Read the first few lines but skip build tags for Go files
+    # Strip up to 3 lines starting with //go:build or // +build
+    stripped=$(head -n 30 "$file" \
+      | sed '/^\/\/go:build\|^\/\/ +build/d' \
+      | sed '/^\s*$/d' \
+      | head -n 10)
+    if ! echo "$stripped" | grep -Eq "(Copyright|generated|GENERATED|Licensed)" ; then
+      licRes="${licRes}\n  ${file}"
+    fi
   fi
 done
 if [ -n "${licRes}" ]; then

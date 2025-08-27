@@ -18,16 +18,22 @@ package update
 
 import (
 	"fmt"
+	log "log/slog"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
 // Validate checks the input info provided for the update and populates the cliVersion
 func (opts *Update) Validate() error {
+	if err := opts.validateEqualVersions(); err != nil {
+		return fmt.Errorf("failed to validate equal versions: %w", err)
+	}
 	if err := opts.validateGitRepo(); err != nil {
 		return fmt.Errorf("failed to validate git repository: %w", err)
 	}
@@ -43,7 +49,29 @@ func (opts *Update) Validate() error {
 	if err := validateReleaseAvailability(opts.ToVersion); err != nil {
 		return fmt.Errorf("unable to find release %s: %w", opts.ToVersion, err)
 	}
+
+	if opts.OpenGhIssue {
+		if err := exec.Command("gh", "--version").Run(); err != nil {
+			return fmt.Errorf("`gh` CLI not found or not authenticated. "+
+				"You must have gh instaled to use the --open-gh-issue option: %s", err)
+		}
+	}
+
+	if opts.UseGhModels && !isGhModelsExtensionInstalled() {
+		return fmt.Errorf("gh-models extension is not installed. To install the extension, run: " +
+			"gh extension install https://github.com/github/gh-models")
+	}
+
 	return nil
+}
+
+// isGhModelsExtensionInstalled checks if the gh-models extension is installed
+func isGhModelsExtensionInstalled() bool {
+	cmd := exec.Command("gh", "extension", "list")
+	if _, err := cmd.Output(); err != nil {
+		return false
+	}
+	return true
 }
 
 // validateGitRepo verifies if the current directory is a valid Git repository and checks for uncommitted changes.
@@ -94,20 +122,20 @@ func (opts *Update) validateSemanticVersions() error {
 
 // validateReleaseAvailability will verify if the binary to scaffold from-version flag is available
 func validateReleaseAvailability(version string) error {
-	url := buildReleaseURL(version)
+	url := helpers.BuildReleaseURL(version)
 	resp, err := http.Head(url)
 	if err != nil {
 		return fmt.Errorf("failed to check binary availability: %w", err)
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Errorf("failed to close connection: %s", err)
+			log.Error("failed to close connection", "error", err)
 		}
 	}()
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		log.Infof("Binary version %v is available", version)
+		log.Info("Binary version available", "version", version)
 		return nil
 	case http.StatusNotFound:
 		return fmt.Errorf("binary version %s not found. Check versions available in releases",
@@ -116,4 +144,24 @@ func validateReleaseAvailability(version string) error {
 		return fmt.Errorf("unexpected response %d when checking binary availability for version %s",
 			resp.StatusCode, version)
 	}
+}
+
+// validateEqualVersions checks if from-version and to-version are the same.
+// If they are equal, logs an appropriate message and exits successfully.
+func (opts *Update) validateEqualVersions() error {
+	if opts.FromVersion == opts.ToVersion {
+		// Check if this is the latest version to provide appropriate message
+		latestVersion, err := fetchLatestRelease()
+		if err != nil {
+			return fmt.Errorf("failed to fetch latest release for messaging: %w", err)
+		}
+
+		if opts.ToVersion == latestVersion {
+			log.Info("Your project already uses the latest version. No action taken.", "version", opts.FromVersion)
+		} else {
+			log.Info("Your project already uses the specified version. No action taken.", "version", opts.FromVersion)
+		}
+		os.Exit(0)
+	}
+	return nil
 }

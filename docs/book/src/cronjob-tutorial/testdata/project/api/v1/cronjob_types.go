@@ -81,6 +81,7 @@ type CronJobSpec struct {
 	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
 	// - "Replace": cancels currently running job and replaces it with a new one
 	// +optional
+	// +kubebuilder:default:=Allow
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
 
 	// suspend tells the controller to suspend subsequent executions, it does
@@ -89,6 +90,7 @@ type CronJobSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// jobTemplate defines the job that will be created when executing a CronJob.
+	// +required
 	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
 	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
@@ -146,11 +148,31 @@ type CronJobStatus struct {
 
 	// active defines a list of pointers to currently running jobs.
 	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
 	Active []corev1.ObjectReference `json:"active,omitempty"`
 
 	// lastScheduleTime defines when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+
+	// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+
+	// conditions represent the current state of the CronJob resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional
+	// - "Progressing": the resource is being created or updated
+	// - "Degraded": the resource failed to reach or maintain its desired state
+	//
+	// The status of each condition is one of True, False, or Unknown.
+	// +listType=map
+	// +listMapKey=type
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 /*

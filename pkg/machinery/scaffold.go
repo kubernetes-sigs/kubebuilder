@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	log "log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -236,7 +237,23 @@ func doTemplate(t Template) ([]byte, error) {
 func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
-		return fmt.Errorf("failed to load previous model: %w", err)
+		if os.IsNotExist(err) {
+			if withOptionalBehavior, ok := i.(HasIfNotExistsAction); ok {
+				switch withOptionalBehavior.GetIfNotExistsAction() {
+				case IgnoreFile:
+					log.Warn("Skipping missing file", "file", i.GetPath())
+					log.Warn("The code fragments will not be inserted.")
+					return nil
+				case ErrorIfNotExist:
+					return err
+				default:
+					return err
+				}
+			}
+			// If inserter doesn't implement HasIfNotExistsAction, return the original error
+			return err
+		}
+		return fmt.Errorf("failed to load previous model for %s: %w", i.GetPath(), err)
 	}
 
 	// Get valid code fragments

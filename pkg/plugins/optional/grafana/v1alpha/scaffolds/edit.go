@@ -19,16 +19,15 @@ package scaffolds
 import (
 	"fmt"
 	"io"
+	log "log/slog"
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha/scaffolds/internal/templates"
-
-	"sigs.k8s.io/yaml"
 )
 
 var _ plugins.Scaffolder = &editScaffolder{}
@@ -165,7 +164,7 @@ func fillMissingUnit(item templates.CustomMetricItem) templates.CustomMetricItem
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *editScaffolder) Scaffold() error {
-	log.Println("Generating Grafana manifests to visualize controller status...")
+	log.Info("Generating Grafana manifests to visualize controller status...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs)

@@ -42,7 +42,7 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [quickstart]: ./../../quick-start.md
-[testdata]: ./../../../../../testdata
+[testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata
 [plugins-main]: ./../../../../../cmd/main.go
 [kustomize-plugin]: ./../../plugins/available/kustomize-v2.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize

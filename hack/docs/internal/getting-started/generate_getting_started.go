@@ -17,14 +17,12 @@ limitations under the License.
 package gettingstarted
 
 import (
+	"log/slog"
 	"os/exec"
 	"path/filepath"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
-
-	log "github.com/sirupsen/logrus"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -35,7 +33,7 @@ type Sample struct {
 
 // NewSample create a new instance of the getting started sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of getting-started...")
+	slog.Info("Generating the sample context of getting-started...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
@@ -121,9 +119,6 @@ func (sp *Sample) updateAPI() {
 
 	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldSpecAPI, newSpecAPI)
 	hackutils.CheckError("replace spec api", err)
-
-	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldStatusAPI, newStatusAPI)
-	hackutils.CheckError("replace status api", err)
 }
 
 func (sp *Sample) updateSample() {
@@ -196,10 +191,10 @@ func (sp *Sample) updateController() {
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("Destroying directory for getting-started sample project")
+	slog.Info("Destroying directory for getting-started sample project")
 	sp.ctx.Destroy()
 
-	log.Infof("Refreshing tools and creating directory...")
+	slog.Info("Refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
 
 	hackutils.CheckError("Creating directory for sample project", err)
@@ -207,7 +202,7 @@ func (sp *Sample) Prepare() {
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the getting started project")
+	slog.Info("Initializing the getting started project")
 	err := sp.ctx.Init(
 		"--domain", "example.com",
 		"--repo", "example.com/memcached",
@@ -216,7 +211,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Initializing the getting started project", err)
 
-	log.Infof("Adding a new config type")
+	slog.Info("Adding a new config type")
 	err = sp.ctx.CreateAPI(
 		"--group", "cache",
 		"--version", "v1alpha1",
@@ -224,6 +219,12 @@ func (sp *Sample) GenerateSampleProject() {
 		"--resource", "--controller",
 	)
 	hackutils.CheckError("Creating the API", err)
+
+	slog.Info("Adding AutoUpdate Plugin")
+	err = sp.ctx.Edit(
+		"--plugins", "autoupdate/v1-alpha",
+	)
+	hackutils.CheckError("Initializing the getting started project", err)
 }
 
 // CodeGen will call targets to generate code
@@ -255,25 +256,6 @@ const (
 	// +optional
 	Size *int32 ` + "`json:\"size,omitempty\"`"
 )
-
-const oldStatusAPI = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file`
-
-const newStatusAPI = `// For Kubernetes API conventions, see:
-	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-	
-	// conditions represent the current state of the Memcached resource.
-	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
-	//
-	// Standard condition types include:
-	// - "Available": the resource is fully functional.
-	// - "Progressing": the resource is being created or updated.
-	// - "Degraded": the resource failed to reach or maintain its desired state.
-	//
-	// The status of each condition is one of True, False, or Unknown.
-	// +listType=map
-	// +listMapKey=type
-	Conditions []metav1.Condition ` + "`json:\"conditions,omitempty\"`"
 
 const sampleSizeFragment = `# TODO(user): edit the following value to ensure the number
   # of Pods/Instances your Operand must have on cluster

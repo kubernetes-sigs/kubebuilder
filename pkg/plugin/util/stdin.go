@@ -27,7 +27,7 @@ import (
 // true for "y" and false for "n"
 func YesNo(reader *bufio.Reader) bool {
 	for {
-		text := readstdin(reader)
+		text := readStdin(reader)
 		switch text {
 		case "y", "yes":
 			return true
@@ -39,9 +39,9 @@ func YesNo(reader *bufio.Reader) bool {
 	}
 }
 
-// Readstdin reads a line from stdin trimming spaces, and returns the value.
+// readStdin reads a line from stdin trimming spaces, and returns the value.
 // log.Fatal's if there is an error.
-func readstdin(reader *bufio.Reader) string {
+func readStdin(reader *bufio.Reader) string {
 	text, err := reader.ReadString('\n')
 	if err != nil {
 		log.Fatalf("Error when reading input: %v", err)

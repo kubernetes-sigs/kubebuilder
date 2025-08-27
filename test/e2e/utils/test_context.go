@@ -19,21 +19,25 @@ package utils
 import (
 	"fmt"
 	"io"
+	log "log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-
 	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
 const (
-	certmanagerVersion        = "v1.16.3"
-	certmanagerURLTmpl        = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
+	certmanagerVersion = "v1.16.3"
+	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
+
+	defaultKindCluster = "kind"
+	defaultKindBinary  = "kind"
+
 	prometheusOperatorVersion = "v0.77.1"
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
 		"releases/download/%s/bundle.yaml"
@@ -73,22 +77,32 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
 		CmdContext:     cc,
 	}
+
+	// For test outside of cluster we do not need to have kubectl
 	var k8sVersion *KubernetesVersion
-	v, err := kubectl.Version()
-	if err != nil {
+	fakeVersion := &KubernetesVersion{
+		ClientVersion: VersionInfo{
+			Major:      "1",
+			Minor:      "0",
+			GitVersion: "v1.0.0-fake",
+		},
+		ServerVersion: VersionInfo{
+			Major:      "1",
+			Minor:      "0",
+			GitVersion: "v1.0.0-fake",
+		},
+	}
+
+	var v KubernetesVersion
+	var lookupErr error
+
+	_, lookupErr = exec.LookPath("kubectl")
+	if lookupErr != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, "warning: kubectl not found in PATH; proceeding with fake version\n")
+		k8sVersion = fakeVersion
+	} else if v, err = kubectl.Version(); err != nil {
 		_, _ = fmt.Fprintf(GinkgoWriter, "warning: failed to get kubernetes version: %v\n", err)
-		k8sVersion = &KubernetesVersion{
-			ClientVersion: VersionInfo{
-				Major:      "1",
-				Minor:      "0",
-				GitVersion: "v1.0.0-fake",
-			},
-			ServerVersion: VersionInfo{
-				Major:      "1",
-				Minor:      "0",
-				GitVersion: "v1.0.0-fake",
-			},
-		}
+		k8sVersion = fakeVersion
 	} else {
 		k8sVersion = &v
 	}
@@ -251,7 +265,7 @@ func (t *TestContext) Destroy() {
 	if t.ImageName != "" {
 		// Check white space from image name
 		if len(strings.TrimSpace(t.ImageName)) == 0 {
-			log.Println("Image not set, skip cleaning up of docker image")
+			log.Info("Image not set, skip cleaning up of docker image")
 		} else {
 			cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
 			if _, err := t.Run(cmd); err != nil {
@@ -287,24 +301,32 @@ func (t *TestContext) RemoveNamespaceLabelToEnforceRestricted() error {
 
 // LoadImageToKindCluster loads a local docker image to the kind cluster
 func (t *TestContext) LoadImageToKindCluster() error {
-	cluster := "kind"
+	cluster := defaultKindCluster
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
 	}
 	kindOptions := []string{"load", "docker-image", t.ImageName, "--name", cluster}
-	cmd := exec.Command("kind", kindOptions...)
+	kindBinary := defaultKindBinary
+	if v, ok := os.LookupEnv("KIND"); ok {
+		kindBinary = v
+	}
+	cmd := exec.Command(kindBinary, kindOptions...)
 	_, err := t.Run(cmd)
 	return err
 }
 
 // LoadImageToKindClusterWithName loads a local docker image with the name informed to the kind cluster
 func (t TestContext) LoadImageToKindClusterWithName(image string) error {
-	cluster := "kind"
+	cluster := defaultKindCluster
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
 	}
 	kindOptions := []string{"load", "docker-image", "--name", cluster, image}
-	cmd := exec.Command("kind", kindOptions...)
+	kindBinary := defaultKindCluster
+	if v, ok := os.LookupEnv("KIND"); ok {
+		kindBinary = v
+	}
+	cmd := exec.Command(kindBinary, kindOptions...)
 	_, err := t.Run(cmd)
 	return err
 }

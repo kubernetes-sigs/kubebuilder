@@ -1,0 +1,43 @@
+name: Cross-Platform Tests
+
+# Trigger the workflow on pull requests and direct pushes to any branch
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      # This step is needed as the following one tries to remove
+      # kustomize for each test but has no permission to do so
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+
+      - name: Unit Tests
+        run: make test-unit
+
+      - name: Run Testdata
+        run: make test-testdata
+
+      - name: Run Integration Tests
+        run: make test-integration
+

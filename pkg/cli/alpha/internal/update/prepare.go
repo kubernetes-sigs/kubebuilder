@@ -19,14 +19,15 @@ package update
 import (
 	"encoding/json"
 	"fmt"
+	log "log/slog"
 	"net/http"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 )
+
+const defaultBranch = "main"
 
 type releaseResponse struct {
 	TagName string `json:"tag_name"`
@@ -37,8 +38,8 @@ type releaseResponse struct {
 func (opts *Update) Prepare() error {
 	if opts.FromBranch == "" {
 		// TODO: Check if is possible to use get to determine the default branch
-		log.Warning("No --from-branch specified, using 'main' as default")
-		opts.FromBranch = "main"
+		log.Warn("No --from-branch specified, using 'main' as default")
+		opts.FromBranch = defaultBranch
 	}
 
 	path, err := common.GetInputPath("")
@@ -59,7 +60,7 @@ func (opts *Update) Prepare() error {
 
 // defineFromVersion will return the CLI version to be used for the update with the v prefix.
 func (opts *Update) defineFromVersion(config store.Store) (string, error) {
-	if len(opts.FromBranch) == 0 && len(config.Config().GetCliVersion()) == 0 {
+	if len(opts.FromVersion) == 0 && len(config.Config().GetCliVersion()) == 0 {
 		return "", fmt.Errorf("no version specified in PROJECT file. " +
 			"Please use --from-version flag to specify the version to update from")
 	}
@@ -75,7 +76,7 @@ func (opts *Update) defineFromVersion(config store.Store) (string, error) {
 
 func (opts *Update) defineToVersion() string {
 	if len(opts.ToVersion) != 0 {
-		if !strings.HasPrefix(opts.FromVersion, "v") {
+		if !strings.HasPrefix(opts.ToVersion, "v") {
 			return "v" + opts.ToVersion
 		}
 		return opts.ToVersion
@@ -94,7 +95,7 @@ func fetchLatestRelease() (string, error) {
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Infof("failed to close connection: %s", err)
+			log.Info("failed to close connection", "error", err)
 		}
 	}()
 

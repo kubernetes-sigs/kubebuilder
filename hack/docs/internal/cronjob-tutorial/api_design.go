@@ -67,6 +67,7 @@ const cronjobSpecStruct = `
 	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
 	// - "Replace": cancels currently running job and replaces it with a new one
 	// +optional
+	// +kubebuilder:default:=Allow
 	ConcurrencyPolicy ConcurrencyPolicy` + " `" + `json:"concurrencyPolicy,omitempty"` + "`" + `
 
 	// suspend tells the controller to suspend subsequent executions, it does
@@ -75,6 +76,7 @@ const cronjobSpecStruct = `
 	Suspend *bool` + " `" + `json:"suspend,omitempty"` + "`" + `
 
 	// jobTemplate defines the job that will be created when executing a CronJob.
+	// +required
 	JobTemplate batchv1.JobTemplateSpec` + " `" + `json:"jobTemplate"` + "`" + `
 
 	// successfulJobsHistoryLimit defines the number of successful finished jobs to retain.
@@ -129,17 +131,23 @@ const cronjobList = `
 
 	// active defines a list of pointers to currently running jobs.
 	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
 	Active []corev1.ObjectReference` + " `" + `json:"active,omitempty"` + "`" + `
 
 	// lastScheduleTime defines when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time` + " `" + `json:"lastScheduleTime,omitempty"` + "`" + `
-}
+`
 
+const docCommentStatusSub = `
 /*
  Finally, we have the rest of the boilerplate that we've already discussed.
  As previously noted, we don't need to change this, except to mark that
  we want a status subresource, so that we behave like built-in kubernetes types.
 */
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 `

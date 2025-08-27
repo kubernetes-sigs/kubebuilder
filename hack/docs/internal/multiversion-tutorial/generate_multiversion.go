@@ -17,10 +17,10 @@ limitations under the License.
 package multiversion
 
 import (
+	log "log/slog"
 	"os/exec"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
@@ -33,23 +33,23 @@ type Sample struct {
 
 // NewSample create a new instance of the sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
-	log.Infof("Generating the sample context of MultiVersion Cronjob...")
+	log.Info("Generating the sample context of MultiVersion Cronjob...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("refreshing tools and creating directory for multiversion ...")
+	log.Info("refreshing tools and creating directory for multiversion ...")
 	err := sp.ctx.Prepare()
 	hackutils.CheckError("creating directory for multiversion project", err)
 }
 
 // GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the multiversion cronjob project")
+	log.Info("Initializing the multiversion cronjob project")
 
-	log.Infof("Creating v2 API")
+	log.Info("Creating v2 API")
 	err := sp.ctx.CreateAPI(
 		"--group", "batch",
 		"--version", "v2",
@@ -59,7 +59,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating the v2 API without controller", err)
 
-	log.Infof("Creating conversion webhook for v1")
+	log.Info("Creating conversion webhook for v1")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v1",
@@ -70,7 +70,7 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating conversion webhook for v1", err)
 
-	log.Infof("Workaround to fix the issue with the conversion webhook")
+	log.Info("Workaround to fix the issue with the conversion webhook")
 	// FIXME: This is a workaround to fix the issue with the conversion webhook
 	// We should be able to inject the code when we create webhooks with different
 	// types of webhooks. However, currently, we are not able to do that and we need to
@@ -80,7 +80,7 @@ func (sp *Sample) GenerateSampleProject() {
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Copying the code from cronjob tutorial", err)
 
-	log.Infof("Creating defaulting and validation webhook for v2")
+	log.Info("Creating defaulting and validation webhook for v2")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
 		"--version", "v2",
@@ -93,13 +93,21 @@ func (sp *Sample) GenerateSampleProject() {
 
 // UpdateTutorial the muilt-version sample tutorial with the scaffold changes
 func (sp *Sample) UpdateTutorial() {
-	log.Println("Update tutorial with multiversion code")
+	log.Info("Update tutorial with multiversion code")
 
 	// Update files according to the multiversion
 	sp.updateCronjobV1DueForce()
 	sp.updateAPIV1()
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
+
+	path := "internal/webhook/v1/cronjob_webhook_test.go"
+	err := pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
+		`// TODO (user): Add any additional imports if needed`,
+		`
+	"k8s.io/utils/ptr"`)
+	hackutils.CheckError("add import for webhook tests", err)
+
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
@@ -146,8 +154,8 @@ interfaces, a conversion webhook will be registered.
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -157,8 +165,8 @@ interfaces, a conversion webhook will be registered.
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: new(int32),
-				FailedJobsHistoryLimit:     new(int32),
+				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
+				FailedJobsHistoryLimit:     ptr.To(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -409,6 +417,17 @@ func (sp *Sample) updateAPIV1() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
+		`/*
+ Finally, we have the rest of the boilerplate that we've already discussed.
+ As previously noted, we don't need to change this, except to mark that
+ we want a status subresource, so that we behave like built-in kubernetes types.
+*/`,
+		``,
+	)
+	hackutils.CheckError("removing comment from cronjob tutorial", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, path),
 		`// +kubebuilder:object:root=true
 
 // CronJobList contains a list of CronJob`,
@@ -437,10 +456,11 @@ func (sp *Sample) updateAPIV1() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		boilerplateComment,
+		`// +kubebuilder:object:root=true
+// +kubebuilder:storageversion`,
 		boilerplateReplacement,
 	)
-	hackutils.CheckError("replacing boilerplate comment with storage version explanation", err)
+	hackutils.CheckError("add comment with storage version explanation", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
@@ -703,7 +723,8 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 	// Important: Run "make" to regenerate code after modifying this file
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html`,
-		`// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+		`// schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +required
 	Schedule CronSchedule `+"`json:\"schedule\"`"+`
 
 	/*
@@ -717,20 +738,38 @@ We'll leave our spec largely unchanged, except to change the schedule field to a
 		`// foo is an example field of CronJob. Edit cronjob_types.go to remove/update
 	// +optional
 	Foo *string `+"`json:\"foo,omitempty\"`",
-		cronJobSpecReplace,
+		cronjobSpecMore,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// CronJobStatus defines the observed state of CronJob.
-type CronJobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+		`)
+
 }`,
-		cronJobStatusReplace,
+		`)
+`,
 	)
 	hackutils.CheckError("replace Foo with cronjob spec fields", err)
+
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, path),
+		`type CronJobStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file`,
+		`
+	// active defines a list of pointers to currently running jobs.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
+	Active []corev1.ObjectReference `+"`json:\"active,omitempty\"`"+`
+
+	// lastScheduleTime defines the information when was the last time the job was successfully scheduled.
+	// +optional
+	LastScheduleTime *metav1.Time `+"`json:\"lastScheduleTime,omitempty\"`"+`
+`)
+	hackutils.CheckError("insert status for cronjob v2", err)
 
 	err = pluginutil.AppendCodeAtTheEnd(
 		filepath.Join(sp.ctx.Dir, path), `

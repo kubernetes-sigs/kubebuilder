@@ -17,9 +17,8 @@ limitations under the License.
 package api
 
 import (
+	log "log/slog"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -49,7 +48,7 @@ func (f *Types) SetTemplateDefaults() error {
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Println(f.Path)
+	log.Info(f.Path)
 
 	f.TemplateBody = typesTemplate
 
@@ -62,6 +61,7 @@ func (f *Types) SetTemplateDefaults() error {
 	return nil
 }
 
+//nolint:lll
 const typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
@@ -89,6 +89,23 @@ type {{ .Resource.Kind }}Spec struct {
 type {{ .Resource.Kind }}Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+
+	// conditions represent the current state of the {{ .Resource.Kind }} resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional
+	// - "Progressing": the resource is being created or updated
+	// - "Degraded": the resource failed to reach or maintain its desired state
+	//
+	// The status of each condition is one of True, False, or Unknown.
+	// +listType=map
+	// +listMapKey=type
+	// +optional
+	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty"` + "`" + `
 }
 
 // +kubebuilder:object:root=true

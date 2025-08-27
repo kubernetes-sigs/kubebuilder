@@ -17,27 +17,36 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
+
 	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
+	autoupdatev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	helmv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
 
-func init() {
-	// Disable timestamps on the default TextFormatter
-	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true})
-}
-
 // Run bootstraps & runs the CLI
 func Run() {
+	// Initialize custom logging handler FIRST - applies to ALL CLI operations
+	opts := logging.HandlerOptions{
+		SlogOpts: slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		},
+	}
+	handler := logging.NewHandler(os.Stdout, opts)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 	// Bundle plugin which built the golang projects scaffold with base.go/v4 and kustomize/v2 plugins
 	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 4}),
@@ -49,7 +58,7 @@ func Run() {
 	}
 	externalPlugins, err := cli.DiscoverExternalPlugins(fs.FS)
 	if err != nil {
-		logrus.Error(err)
+		slog.Error("error discovering external plugins", "error", err)
 	}
 
 	c, err := cli.New(
@@ -63,6 +72,7 @@ func Run() {
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
 			&helmv1alpha1.Plugin{},
+			&autoupdatev1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),
@@ -70,9 +80,11 @@ func Run() {
 		cli.WithCompletion(),
 	)
 	if err != nil {
-		logrus.Fatal(err)
+		slog.Error("failed to create CLI", "error", err)
+		os.Exit(1)
 	}
 	if err := c.Run(); err != nil {
-		logrus.Fatal(err)
+		slog.Error("CLI run failed", "error", err)
+		os.Exit(1)
 	}
 }
