@@ -39,7 +39,7 @@ import (
 
 const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
-	GolangciLintVersion = "v2.3.0"
+	GolangciLintVersion = "v2.4.0"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.21.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
