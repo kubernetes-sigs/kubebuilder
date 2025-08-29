@@ -156,6 +156,10 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	}
 
 	if isToUseHelmChart && !isToUseInstaller {
+		By("building the installer manifest for helm chart generation")
+		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
+		Expect(err).NotTo(HaveOccurred(), "Failed to build installer manifest")
+
 		By("building the helm-chart")
 		err = kbc.EditHelmPlugin()
 		Expect(err).NotTo(HaveOccurred(), "Failed to edit project to generate helm-chart")
@@ -171,9 +175,25 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		err = util.ReplaceInFile(values, "prometheus:\n  enable: false", "prometheus:\n  enable: true")
 		Expect(err).NotTo(HaveOccurred(), "Failed to enable prometheus in the chart/values.yaml")
 
-		By("updating values to set crd.keep false")
-		err = util.ReplaceInFile(values, "keep: true", "keep: false")
-		Expect(err).NotTo(HaveOccurred(), "Failed to set keep false in the chart/values.yaml")
+		if hasMetrics {
+			By("updating values to enable metrics")
+			err = util.ReplaceInFile(values, "metrics:\n  enable: false", "metrics:\n  enable: true")
+			Expect(err).NotTo(HaveOccurred(), "Failed to enable metrics in the chart/values.yaml")
+		}
+
+		if hasWebhook {
+			By("updating values to enable cert-manager")
+			err = util.ReplaceInFile(values, "keep: true", "keep: false")
+			Expect(err).NotTo(HaveOccurred(), "Failed to set keep false in the chart/values.yaml")
+		}
+		By("updating values to disable namespace creation")
+		err = util.ReplaceInFile(values, "create: true", "create: false")
+		Expect(err).NotTo(HaveOccurred(), "Failed to disable namespace creation in the chart/values.yaml")
+
+		By("updating values to use existing namespace")
+		targetNamespace := fmt.Sprintf("e2e-%s-system", kbc.TestSuffix)
+		err = util.ReplaceInFile(values, "name: \"\"", fmt.Sprintf("name: \"%s\"", targetNamespace))
+		Expect(err).NotTo(HaveOccurred(), "Failed to set namespace name in the chart/values.yaml")
 
 		By("install with Helm release")
 		err = kbc.HelmInstallRelease()
