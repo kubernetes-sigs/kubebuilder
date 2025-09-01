@@ -24,6 +24,11 @@ const cronjobSample = `
     spec:
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           containers:
           - name: hello
             image: busybox
@@ -31,6 +36,12 @@ const cronjobSample = `
             - /bin/sh
             - -c
             - date; echo Hello from the Kubernetes cluster
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: false
           restartPolicy: OnFailure`
 
 const certManagerForMetrics = `# - source: # Uncomment the following block to enable certificates for metrics
