@@ -109,6 +109,22 @@ generate-charts: build ## Re-generate the helm chart testdata and docs samples
 	(cd docs/book/src/cronjob-tutorial/testdata/project && make build-installer && ../../../../../../bin/kubebuilder edit --plugins=helm/v2-alpha)
 	(cd docs/book/src/multiversion-tutorial/testdata/project && make build-installer && ../../../../../../bin/kubebuilder edit --plugins=helm/v2-alpha)
 
+.PHONY: update-demo
+update-demo: ## Record and update the Kubebuilder demo using Asciinema
+	@./scripts/demo/generate-demo.sh
+
+.PHONY: setup-demo-cluster
+setup-demo-cluster: ## Set up Kind cluster for Kubebuilder demo
+	@./scripts/demo/setup-demo-cluster.sh
+
+.PHONY: clean-demo
+clean-demo: ## Clean up the demo Kind cluster and temporary directories
+	@echo "Cleaning up demo cluster..."
+	@kind delete cluster --name kubebuilder-demo || echo "Demo cluster was not found or already deleted"
+	@echo "Cleaning up temporary demo directories..."
+	@rm -rf /tmp/kubebuilder-demo-project /tmp/kb-demo-recording
+	@echo "Demo cleanup completed"
+
 .PHONY: check-docs
 check-docs: ## Run the script to ensure that the docs are updated
 	./hack/docs/check.sh

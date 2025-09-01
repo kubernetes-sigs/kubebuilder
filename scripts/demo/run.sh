@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Set up working directory in /tmp for clean demo
+cd /tmp
+rm -rf kubebuilder-demo-project
+mkdir kubebuilder-demo-project
+cd kubebuilder-demo-project
+
 clear
 . $(dirname ${BASH_SOURCE})/util.sh
 
