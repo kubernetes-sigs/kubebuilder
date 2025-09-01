@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -96,7 +97,13 @@ var _ = Describe("Manager", Ordered, func() {
 
 	// After each test, check for failures and collect logs, events,
 	// and pod descriptions for debugging.
-	AfterEach(func() {
+	AfterEach(func() {		By("Cleaning up test CronJob resources")
+		cmd := exec.Command("kubectl", "delete", "-f", "config/samples/batch_v1_cronjob.yaml", "-n", namespace, "--ignore-not-found=true")
+		_, _ = utils.Run(cmd)
+		cmd = exec.Command("kubectl", "delete", "-f", "config/samples/batch_v2_cronjob.yaml", "-n", namespace, "--ignore-not-found=true")
+		_, _ = utils.Run(cmd)
+
+
 		specReport := CurrentSpecReport()
 		if specReport.Failed() {
 			By("Fetching controller manager pod logs")
@@ -327,6 +334,35 @@ var _ = Describe("Manager", Ordered, func() {
 		//    fmt.Sprintf(`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
 		//    strings.ToLower(<Kind>),
 		// ))
+		It("Should successfully convert between v1 and v2 versions", func() {
+			By("Creating a v1 CronJob with sample data")
+			cmd := exec.Command("kubectl", "apply", "-f", "config/samples/batch_v1_cronjob.yaml", "-n", namespace)
+			_, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create v1 CronJob")
+
+			By("Verifying the v1 CronJob was created")
+			cmd = exec.Command("kubectl", "get", "cronjobs.v1.batch.tutorial.kubebuilder.io", "-n", namespace, "-o", "jsonpath={.items[0].metadata.name}")
+			v1Name, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to get v1 CronJob")
+			Expect(strings.TrimSpace(v1Name)).NotTo(BeEmpty(), "v1 CronJob name should not be empty")
+
+			By("Creating a v2 CronJob with sample data")
+			cmd = exec.Command("kubectl", "apply", "-f", "config/samples/batch_v2_cronjob.yaml", "-n", namespace)
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create v2 CronJob")
+
+			By("Verifying the v2 CronJob was created")
+			cmd = exec.Command("kubectl", "get", "cronjobs.v2.batch.tutorial.kubebuilder.io", "-n", namespace, "-o", "jsonpath={.items[0].metadata.name}")
+			v2Name, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to get v2 CronJob")
+			Expect(strings.TrimSpace(v2Name)).NotTo(BeEmpty(), "v2 CronJob name should not be empty")
+
+			By("Verifying conversion webhook is active by checking controller logs")
+			cmd = exec.Command("kubectl", "logs", "-l", "control-plane=controller-manager", "-n", namespace, "--tail=50")
+			logs, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to get controller logs")
+			Expect(logs).To(ContainSubstring("cronjob"), "Controller logs should contain cronjob references")
+		})
 	})
 })
 
