@@ -1,0 +1,750 @@
+/*
+Copyright 2025 The Kubernetes Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+package internal
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+)
+
+type fakeConfig struct {
+	config.Config
+	pluginChain []string
+	domain      string
+	repo        string
+	multigroup  bool
+	resources   []resource.Resource
+	pluginErr   error
+	getResErr   error
+	plugins     map[string]any
+}
+
+func (f *fakeConfig) GetPluginChain() []string { return f.pluginChain }
+func (f *fakeConfig) GetDomain() string        { return f.domain }
+func (f *fakeConfig) GetRepository() string    { return f.repo }
+func (f *fakeConfig) IsMultiGroup() bool       { return f.multigroup }
+func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
+	if f.getResErr != nil {
+		return nil, f.getResErr
+	}
+	return f.resources, nil
+}
+
+func (f *fakeConfig) DecodePluginConfig(key string, _ any) error {
+	if len(f.plugins) == 0 {
+		return config.PluginKeyNotFoundError{Key: key}
+	}
+	if f.pluginErr != nil {
+		return f.pluginErr
+	}
+	return nil
+}
+
+type fakeStore struct {
+	store.Store
+	cfg *fakeConfig
+}
+
+func (f *fakeStore) Config() config.Config { return f.cfg }
+func TestGenerateHelpers(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Generate helpers Suite")
+}
+
+// Mock response for binary executables.
+func mockBinResponse(script, mockBin string) error {
+	err := os.WriteFile(mockBin, []byte(script), 0o755)
+	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return fmt.Errorf("error Mocking bin response: %w", err)
+	}
+	return nil
+}
+
+func setPath(newPath string) (oldPath string, err error) {
+	oldPath = os.Getenv("PATH")
+	err = os.Setenv("PATH", newPath+":"+oldPath)
+	return
+}
+
+// Helper function for setting up temporary directories and mock binaries.
+func setupTempDirAndMockBinOnly() (tmpDir, oldPath string, err error) {
+	// Create temporary directory
+	tmpDir, err = os.MkdirTemp("", "temp-bin")
+	if err != nil {
+		return
+	}
+
+	// Common file to log command runs from the fake bin.
+	logFile := filepath.Join(tmpDir, "bin.log")
+
+	// Create fake bin executables.
+	mockKubebuilder := filepath.Join(tmpDir, "kubebuilder")
+	script := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 0`
+	if err = mockBinResponse(script, mockKubebuilder); err != nil {
+		return
+	}
+
+	mockSh := filepath.Join(tmpDir, "sh")
+	if err = mockBinResponse(script, mockSh); err != nil {
+		return
+	}
+
+	// Prepend temp bin directory to PATH env.
+	oldPath, err = setPath(tmpDir)
+	return
+}
+
+// Helper function for setting up temporary directories, mock binaries, and a dummy project file.
+func setupTempDirAndMockBinWithProjectFile() (tmpDir, oldPath string, err error) {
+	tmpDir, oldPath, err = setupTempDirAndMockBinOnly()
+	if err != nil {
+		return
+	}
+
+	// // Register Version 3 config
+	config.Register(config.Version{Number: 3}, func() config.Config {
+		return &v3.Cfg{Version: config.Version{Number: 3}}
+	})
+
+	// Create a project file with version 3
+	const version = `version: "3"`
+	projectFile := filepath.Join(tmpDir, yaml.DefaultPath)
+	Expect(os.WriteFile(projectFile, []byte(version), 0o644)).To(Succeed())
+	return
+}
+
+var _ = Describe("generate: validate", func() {
+	var (
+		tmpDir  string
+		oldPath string
+		err     error
+	)
+
+	// Validate
+	Context("Validate", func() {
+		Context("Success", func() {
+			BeforeEach(func() {
+				tmpDir, oldPath, err = setupTempDirAndMockBinWithProjectFile()
+				Expect(err).NotTo(HaveOccurred())
+			})
+			AfterEach(func() {
+				Expect(os.RemoveAll(tmpDir)).To(Succeed())
+				Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+			})
+			It("success", func() {
+				g := &Generate{InputDir: tmpDir}
+				Expect(g.Validate()).To(Succeed())
+			})
+		})
+
+		Context("Failure", func() {
+			BeforeEach(func() {
+				// Create temporary directory
+				tmpDir, err = os.MkdirTemp("", "temp")
+				Expect(err).NotTo(HaveOccurred())
+				oldPath, err = setPath(tmpDir)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			AfterEach(func() {
+				Expect(os.RemoveAll(tmpDir)).To(Succeed())
+				Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+			})
+			It("returns error if GetInputPath fails", func() {
+				g := &Generate{InputDir: filepath.Join(tmpDir, "notfound")}
+				Expect(g.Validate()).NotTo(Succeed())
+			})
+			It("returns error if kubebuilder not found", func() {
+				g := &Generate{InputDir: tmpDir}
+				Expect(g.Validate()).NotTo(Succeed())
+			})
+		})
+	})
+})
+
+var _ = Describe("generate: directory-helpers", func() {
+	var (
+		tmpDir string
+		err    error
+	)
+	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "testdir")
+		Expect(err).NotTo(HaveOccurred())
+	})
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+	})
+
+	// createDirectory
+	Context("createDirectory", func() {
+		It("creates directory successfully", func() {
+			dir := filepath.Join(tmpDir, "testdir-generate-go")
+			Expect(createDirectory(dir)).To(Succeed())
+			_, err = os.Stat(dir)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("returns error for invalid path", func() {
+			Expect(createDirectory("/dev/null/foo")).NotTo(Succeed())
+		})
+	})
+
+	// changeWorkingDirectory
+	Context("changeWorkingDirectory", func() {
+		var cwd string
+		BeforeEach(func() {
+			var err error
+			cwd, err = os.Getwd()
+			Expect(err).ToNot(HaveOccurred())
+		})
+		AfterEach(func() {
+			Expect(os.Chdir(cwd)).To(Succeed())
+		})
+		It("changes directory successfully", func() {
+			Expect(changeWorkingDirectory(tmpDir)).To(Succeed())
+		})
+		It("returns error for invalid path", func() {
+			Expect(changeWorkingDirectory("/dev/null/foo")).NotTo(Succeed())
+		})
+	})
+})
+
+var _ = Describe("generate: file-helpers", func() {
+	var (
+		tmpDir string
+		err    error
+	)
+	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "testdir")
+		Expect(err).NotTo(HaveOccurred())
+	})
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+	})
+
+	// copyFile
+	Context("copyFile", func() {
+		Context("success", func() {
+			var src, dst string
+			BeforeEach(func() {
+				src = filepath.Join(tmpDir, "src.txt")
+				dst = filepath.Join(tmpDir, "dst.txt")
+				Expect(os.WriteFile(src, []byte("hello"), 0o644)).To(Succeed())
+			})
+			AfterEach(func() {
+				Expect(os.Remove(src)).To(Succeed())
+				Expect(os.Remove(dst)).To(Succeed())
+			})
+
+			It("copies file successfully", func() {
+				Expect(copyFile(src, dst)).To(Succeed())
+				b, err := os.ReadFile(dst)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("hello"))
+			})
+		})
+
+		Context("failure", func() {
+			It("returns error if src does not exist", func() {
+				src := filepath.Join(tmpDir, "notfound")
+				dst := filepath.Join(tmpDir, "nowhere")
+				Expect(copyFile(src, dst)).NotTo(Succeed())
+			})
+		})
+	})
+})
+
+var _ = Describe("generate: get-args-helpers", func() {
+	// getInitArgs
+	Describe("getInitArgs", func() {
+		Context("for outdated plugins", func() {
+			When("v3 plugin is used", func() {
+				It("should return correct args for plugins, domain, repo", func() {
+					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3"}, domain: "foo.com", repo: "bar"}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+
+			When("alpha plugin is used", func() {
+				It("should return correct args for plugins, domain, repo", func() {
+					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3-alpha"}, domain: "foo.com", repo: "bar"}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+		})
+
+		Context("for latest plugins", func() {
+			When("latest plugin (v4) is used", func() {
+				It("returns correct args for plugins, domain, repo", func() {
+					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+		})
+	})
+
+	// getGVKFlags
+	Context("getGVKFlags", func() {
+		It("returns correct flags", func() {
+			res := resource.Resource{Plural: "foos"}
+			res.Group = "example.com"
+			res.Version = "v1"
+			res.Kind = "Foo"
+			flags := getGVKFlags(res)
+			Expect(flags).To(ContainElements("--plural", "foos", "--group", "example.com", "--version", "v1", "--kind", "Foo"))
+		})
+	})
+
+	// getGVKFlagsFromDeployImage
+	Context("getGVKFlagsFromDeployImage", func() {
+		It("returns correct flags", func() {
+			rd := v1alpha1.ResourceData{Group: "example.com", Version: "v1", Kind: "Foo"}
+			flags := getGVKFlagsFromDeployImage(rd)
+			Expect(flags).To(ContainElements("--group", "example.com", "--version", "v1", "--kind", "Foo"))
+		})
+	})
+
+	// getDeployImageOptions
+	Context("getDeployImageOptions", func() {
+		It("returns correct options", func() {
+			rd := v1alpha1.ResourceData{}
+			rd.Options.Image = "test-kubebuilder"
+			rd.Options.ContainerCommand = "echo 'Hello'"
+			rd.Options.ContainerPort = "8000"
+			rd.Options.RunAsUser = "test"
+			opts := getDeployImageOptions(rd)
+			Expect(opts).To(ContainElements("--image=test-kubebuilder",
+				"--image-container-command=echo 'Hello'",
+				"--image-container-port=8000",
+				"--run-as-user=test",
+				"--plugins=deploy-image.go.kubebuilder.io/v1-alpha"))
+		})
+	})
+
+	// getAPIResourceFlags
+	Context("getAPIResourceFlags", func() {
+		var res resource.Resource
+		BeforeEach(func() {
+			res = resource.Resource{API: &resource.API{}}
+		})
+
+		Context("returns correct flags", func() {
+			It("for nil API with Controller set", func() {
+				res.Controller = true
+				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller"))
+			})
+			It("for non nil API (namespaced not set) with Controller not set", func() {
+				res.API.CRDVersion = "v1"
+				res.API.Namespaced = true
+				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource", "--namespaced", "--controller=false"))
+			})
+			It("for non nil API (namespaced set) with Controller not set", func() {
+				res.API.CRDVersion = "v1"
+				res.API.Namespaced = false
+				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource", "--namespaced=false", "--controller=false"))
+			})
+		})
+	})
+	// getWebhookResourceFlags
+	Context("getWebhookResourceFlags", func() {
+		It("returns correct flags for specified resources", func() {
+			res := resource.Resource{
+				Path:     "external/test",
+				GVK:      resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+				External: true,
+				Webhooks: &resource.Webhooks{
+					Validation: true,
+					Defaulting: true,
+					Conversion: true,
+					Spoke:      []string{"v2"},
+				},
+			}
+			flags := getWebhookResourceFlags(res)
+			Expect(flags).To(ContainElements("--external-api-path", "external/test", "--external-api-domain", "test",
+				"--programmatic-validation", "--defaulting", "--conversion", "--spoke", "v2"))
+		})
+	})
+})
+
+var _ = Describe("generate: create-helpers", func() {
+	var (
+		tmpDir  string
+		oldPath string
+		err     error
+	)
+	BeforeEach(func() {
+		tmpDir, oldPath, err = setupTempDirAndMockBinOnly()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+		Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+	})
+
+	// createAPI
+	Describe("createAPI", func() {
+		Context("Without External flag", func() {
+			It("runs kubebuilder create api successfully for a resource", func() {
+				res := resource.Resource{
+					GVK:        resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+					Plural:     "examples",
+					API:        &resource.API{Namespaced: true},
+					Controller: true,
+				}
+				// Run createAPI and verify no errors
+				Expect(createAPI(res)).To(Succeed())
+			})
+		})
+
+		Context("With External flag set", func() {
+			It("runs kubebuilder create api successfully for a resource", func() {
+				res := resource.Resource{
+					GVK:        resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "external"},
+					Plural:     "examples",
+					API:        &resource.API{Namespaced: true},
+					Controller: true,
+					External:   true,
+					Path:       "external/path",
+				}
+				// Run createAPI and verify no errors
+				Expect(createAPI(res)).To(Succeed())
+			})
+		})
+	})
+
+	// createWebhook
+	Describe("createWebhook", func() {
+		It("runs kubebuilder create webhook successfully for a resource", func() {
+			res := resource.Resource{
+				GVK:      resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+				Plural:   "examples",
+				Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
+			}
+			// Run createWebhook and verify no errors
+			Expect(createWebhook(res)).To(Succeed())
+		})
+
+		It("ignores web creation if webhook resource is empty", func() {
+			res := resource.Resource{
+				GVK:      resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+				Plural:   "examples",
+				Webhooks: &resource.Webhooks{},
+			}
+			// Run createWebhook and verify no errors
+			Expect(createWebhook(res)).To(Succeed())
+		})
+	})
+
+	Describe("createAPIWithDeployImage", func() {
+		It("runs kubebuilder create api successfully with deploy image", func() {
+			resourceData := v1alpha1.ResourceData{
+				Group:   "example.com",
+				Version: "v1",
+				Kind:    "Example",
+			}
+			resourceData.Options.Image = "example-image"
+			resourceData.Options.ContainerCommand = "run"
+			resourceData.Options.ContainerPort = "8080"
+			resourceData.Options.Image = "test"
+			// Run createAPIWithDeployImage and verify no errors
+			Expect(createAPIWithDeployImage(resourceData)).To(Succeed())
+		})
+	})
+})
+
+var _ = Describe("generate: kubebuilder", func() {
+	var (
+		tmpDir  string
+		oldPath string
+		err     error
+	)
+
+	BeforeEach(func() {
+		tmpDir, oldPath, err = setupTempDirAndMockBinWithProjectFile()
+		Expect(err).NotTo(HaveOccurred())
+
+		// Mock getExecutablePathFunc to return the mock kubebuilder binary path
+		getExecutablePathFunc = func() (string, error) {
+			return filepath.Join(tmpDir, "kubebuilder"), nil
+		}
+	})
+
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+		Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+
+		// Restore the original getExecutablePath function
+		getExecutablePathFunc = getExecutablePath
+	})
+
+	Context("kubebuilderInit", func() {
+		It("runs kubebuilder init successfully", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(kubebuilderInit(store)).To(Succeed())
+		})
+	})
+
+	Context("kubebuilderCreate", func() {
+		It("runs kubebuilder create successfully for resources", func() {
+			cfg := &fakeConfig{
+				resources: []resource.Resource{
+					{Plural: "foos", GVK: resource.GVK{Group: "example.com", Version: "v1", Kind: "Foo"}},
+					{Plural: "bars", GVK: resource.GVK{Group: "example.com", Version: "v1", Kind: "Bar"}},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+			// Run kubebuilderCreate and verify no errors
+			Expect(kubebuilderCreate(store)).To(Succeed())
+		})
+	})
+
+	Context("kubebuilderEdit", func() {
+		It("runs kubebuilder edit successfully for multigroup layout", func() {
+			cfg := &fakeConfig{multigroup: true}
+			store := &fakeStore{cfg: cfg}
+			// Run kubebuilderEdit and verify no errors
+			Expect(kubebuilderEdit(store)).To(Succeed())
+		})
+	})
+
+	Context("kubebuilderGrafanaEdit", func() {
+		It("runs kubebuilder edit successfully for Grafana plugin", func() {
+			// Run kubebuilderGrafanaEdit and verify no errors
+			Expect(kubebuilderGrafanaEdit()).To(Succeed())
+		})
+	})
+
+	Context("kubebuilderHelmEdit", func() {
+		It("runs kubebuilder edit successfully for Helm plugin", func() {
+			// Run kubebuilderHelmEdit and verify no errors
+			Expect(kubebuilderHelmEdit()).To(Succeed())
+		})
+	})
+})
+
+var _ = Describe("generate: hasHelmPlugin", func() {
+	It("returns true if plugin present", func() {
+		cfg := &fakeConfig{plugins: map[string]any{"helm.kubebuilder.io/v1-alpha": true}}
+		store := &fakeStore{cfg: cfg}
+		Expect(hasHelmPlugin(store)).To(BeTrue())
+	})
+
+	It("returns false if plugin not found", func() {
+		cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "helm.kubebuilder.io/v1-alpha"}}
+		store := &fakeStore{cfg: cfg}
+		Expect(hasHelmPlugin(store)).To(BeFalse())
+	})
+})
+
+var _ = Describe("generate: migrate-plugins", func() {
+	var (
+		tmpDir  string
+		oldPath string
+		err     error
+	)
+	BeforeEach(func() {
+		tmpDir, oldPath, err = setupTempDirAndMockBinOnly()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+		Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+	})
+
+	Context("migrateGrafanaPlugin", func() {
+		It("skips migration as Grafana plugin not found", func() {
+			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "grafana.kubebuilder.io/v1-alpha"}}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateGrafanaPlugin(store, "src", "dest")).To(Succeed())
+		})
+
+		It("returns error if decoding Grafana plugin config fails", func() {
+			cfg := &fakeConfig{
+				pluginErr: fmt.Errorf("decoding error"),
+				plugins:   map[string]any{"grafana.kubebuilder.io/v1-alpha": true},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateGrafanaPlugin(store, "src", "dest")).NotTo(Succeed())
+		})
+
+		Context("success", func() {
+			var src, dest string
+			BeforeEach(func() {
+				// Create temporary directories for src and dest
+				src = filepath.Join(tmpDir, "src")
+				dest = filepath.Join(tmpDir, "dest")
+				Expect(os.MkdirAll(filepath.Join(src, "grafana/custom-metrics"), 0o755)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"),
+					[]byte("config"), 0o755)).To(Succeed())
+				Expect(os.MkdirAll(filepath.Join(dest, "grafana/custom-metrics"), 0o755)).To(Succeed())
+			})
+
+			AfterEach(func() {
+				Expect(os.RemoveAll(src)).To(Succeed())
+				Expect(os.RemoveAll(dest)).To(Succeed())
+			})
+
+			It("migrates Grafana plugin successfully", func() {
+				cfg := &fakeConfig{plugins: map[string]any{"grafana.kubebuilder.io/v1-alpha": true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, dest)).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("config"))
+			})
+		})
+	})
+
+	Context("migrateAutoUpdatePlugin", func() {
+		It("skips migration as AutoUpdate plugin not found", func() {
+			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "autoupdate.kubebuilder.io/v1-alpha"}}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateGrafanaPlugin(store, "src", "dest")).To(Succeed())
+		})
+
+		It("returns error if failed to decode Auto Update plugin", func() {
+			cfg := &fakeConfig{
+				pluginErr: fmt.Errorf("decoding error"),
+				plugins:   map[string]any{"autoupdate.kubebuilder.io/v1-alpha": true},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
+		})
+
+		It("migrates Auto Update plugin successfully", func() {
+			cfg := &fakeConfig{plugins: map[string]any{"autoupdate.kubebuilder.io/v1-alpha": true}}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+	})
+
+	Context("migrateDeployImagePlugin", func() {
+		It("returns error if failed to decode Deploy Image plugin", func() {
+			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "deploy-image.kubebuilder.io/v1-alpha"}}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateDeployImagePlugin(store)).To(Succeed())
+		})
+
+		It("returns error if decoding Deploy Image plugin config fails", func() {
+			cfg := &fakeConfig{
+				pluginErr: fmt.Errorf("decoding error"),
+				plugins:   map[string]any{"deploy-image.kubebuilder.io/v1-alpha": true},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateDeployImagePlugin(store)).NotTo(Succeed())
+		})
+
+		It("migrates Deploy Image plugin successfully", func() {
+			cfg := &fakeConfig{plugins: map[string]any{"deploy-image.kubebuilder.io/v1-alpha": true}}
+			store := &fakeStore{cfg: cfg}
+
+			// Mock resources for the plugin
+			resources := []v1alpha1.ResourceData{
+				{
+					Group:   "example.com",
+					Version: "v1",
+					Kind:    "Example",
+				},
+			}
+
+			cfg.pluginChain = []string{"deploy-image.kubebuilder.io/v1-alpha"}
+			store.cfg = cfg
+
+			// Use the mocked resources
+			for _, r := range resources {
+				Expect(createAPIWithDeployImage(r)).To(Succeed())
+			}
+			Expect(migrateDeployImagePlugin(store)).To(Succeed())
+		})
+	})
+})
+
+var _ = Describe("Generate", func() {
+	var (
+		tmpDir  string
+		oldPath string
+		cwd     string
+		err     error
+		g       *Generate
+	)
+
+	BeforeEach(func() {
+		tmpDir, oldPath, err = setupTempDirAndMockBinWithProjectFile()
+		Expect(err).NotTo(HaveOccurred())
+
+		// get the current working dir path
+		cwd, err = os.Getwd()
+		Expect(err).ToNot(HaveOccurred())
+
+		// Mock getExecutablePathFunc to return the mock kubebuilder binary path
+		getExecutablePathFunc = func() (string, error) {
+			return filepath.Join(tmpDir, "kubebuilder"), nil
+		}
+
+		// initialize Generate
+		g = &Generate{InputDir: tmpDir}
+	})
+
+	AfterEach(func() {
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+		Expect(os.Setenv("PATH", oldPath)).To(Succeed())
+		Expect(os.Chdir(cwd)).To(Succeed())
+
+		// Restore the original getExecutablePath function
+		getExecutablePathFunc = getExecutablePath
+	})
+
+	Context("outputDir is non empty", func() {
+		It("scaffolds the project in output dir", func() {
+			g.OutputDir = tmpDir
+			Expect(g.Generate()).To(Succeed())
+		})
+	})
+
+	Context("outputDir is empty", func() {
+		It("re-scaffolds the project in input dir", func() {
+			Expect(g.Generate()).To(Succeed())
+		})
+	})
+})
