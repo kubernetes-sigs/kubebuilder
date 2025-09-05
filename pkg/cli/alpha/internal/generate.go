@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
@@ -144,12 +144,29 @@ func (opts *Generate) Validate() error {
 		return fmt.Errorf("error getting input path %q: %w", opts.InputDir, err)
 	}
 
-	_, err = exec.LookPath("kubebuilder")
+	_, err = getExecutablePath()
 	if err != nil {
-		return fmt.Errorf("kubebuilder not found in the path: %w", err)
+		return err
 	}
 
 	return nil
+}
+
+// Helper function to get the PATH of binary.
+func getExecutablePath() (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("kubebuilder executable not found: %w", err)
+	}
+
+	realPath, err := filepath.EvalSymlinks(execPath)
+	if err != nil {
+		slog.Warn("Unable to resolve symbolic link", "execPath", execPath, "error", err)
+		// Fallback to execPath
+		return execPath, nil
+	}
+
+	return realPath, nil
 }
 
 // Helper function to create the output directory.
@@ -171,7 +188,11 @@ func changeWorkingDirectory(outputDir string) error {
 // Initializes the project with Kubebuilder.
 func kubebuilderInit(s store.Store) error {
 	args := append([]string{"init"}, getInitArgs(s)...)
-	if err := util.RunCmd("kubebuilder init", "kubebuilder", args...); err != nil {
+	execPath, err := getExecutablePath()
+	if err != nil {
+		return err
+	}
+	if err := util.RunCmd("kubebuilder init", execPath, args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder init command: %w", err)
 	}
 
