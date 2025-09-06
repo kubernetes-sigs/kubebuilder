@@ -1,0 +1,18 @@
+{{- if .Values.certManager.enable }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project-v4-with-plugins
+    name: project-v4-with-plugins-serving-cert
+    namespace: {{ .Release.Namespace }}
+spec:
+    dnsNames:
+        - project-v4-with-plugins-webhook-service.{{ .Release.Namespace }}.svc
+        - project-v4-with-plugins-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+    issuerRef:
+        kind: Issuer
+        name: {{ include "chart.name" . }}-selfsigned-issuer
+    secretName: webhook-server-cert
+{{- end }}

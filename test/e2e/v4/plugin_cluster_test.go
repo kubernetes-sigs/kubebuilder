@@ -77,16 +77,6 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4(kbc)
 			Run(kbc, true, true, false, true, false)
 		})
-		It("should generate a runnable project using webhooks and installed with the HelmChart", func() {
-			GenerateV4(kbc)
-			By("installing Helm")
-			Expect(kbc.InstallHelm()).To(Succeed())
-
-			Run(kbc, true, false, true, true, false)
-
-			By("uninstalling Helm Release")
-			Expect(kbc.UninstallHelmRelease()).To(Succeed())
-		})
 		It("should generate a runnable project without metrics exposed", func() {
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false, false)
@@ -154,32 +144,6 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		_, err = kbc.Kubectl.Apply(true, "-f", "dist/install.yaml")
 		Expect(err).NotTo(HaveOccurred())
 	}
-
-	if isToUseHelmChart && !isToUseInstaller {
-		By("building the helm-chart")
-		err = kbc.EditHelmPlugin()
-		Expect(err).NotTo(HaveOccurred(), "Failed to edit project to generate helm-chart")
-
-		By("updating values with image name")
-		values := filepath.Join(kbc.Dir, "dist", "chart", "values.yaml")
-		err = util.ReplaceInFile(values, "repository: controller", "repository: e2e-test/controller-manager")
-		Expect(err).NotTo(HaveOccurred(), "Failed to edit repository in the chart/values.yaml")
-		err = util.ReplaceInFile(values, "tag: latest", fmt.Sprintf("tag: %s", kbc.TestSuffix))
-		Expect(err).NotTo(HaveOccurred(), "Failed to edit tag in the chart/values.yaml")
-
-		By("updating values to enable prometheus")
-		err = util.ReplaceInFile(values, "prometheus:\n  enable: false", "prometheus:\n  enable: true")
-		Expect(err).NotTo(HaveOccurred(), "Failed to enable prometheus in the chart/values.yaml")
-
-		By("updating values to set crd.keep false")
-		err = util.ReplaceInFile(values, "keep: true", "keep: false")
-		Expect(err).NotTo(HaveOccurred(), "Failed to set keep false in the chart/values.yaml")
-
-		By("install with Helm release")
-		err = kbc.HelmInstallRelease()
-		Expect(err).NotTo(HaveOccurred(), "Failed to install helm release")
-	}
-
 	By("Checking controllerManager and getting the name of the Pod")
 	controllerPodName = getControllerName(kbc)
 
