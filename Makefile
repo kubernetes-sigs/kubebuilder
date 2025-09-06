@@ -108,6 +108,49 @@ generate-charts: build ## Re-generate the helm chart testdata and docs samples
 	(cd docs/book/src/cronjob-tutorial/testdata/project && ../../../../../../bin/kubebuilder edit --plugins=helm/v1-alpha)
 	(cd docs/book/src/multiversion-tutorial/testdata/project && ../../../../../../bin/kubebuilder edit --plugins=helm/v1-alpha)
 
+.PHONY: update-demo
+update-demo: ## Record and update the Kubebuilder demo using Asciinema
+	@echo "Recording new Kubebuilder demo with Asciinema..."
+	@echo "Prerequisites: asciinema, svg-term, kind, and kubectl must be installed"
+	@which asciinema > /dev/null || (echo "Error: asciinema not found. Install with: brew install asciinema" && exit 1)
+	@which svg-term > /dev/null || (echo "Error: svg-term not found. Install with: npm install -g svg-term-cli" && exit 1)
+	@which kind > /dev/null || (echo "Error: kind not found. Install with: brew install kind" && exit 1)
+	@which kubectl > /dev/null || (echo "Error: kubectl not found. Install from: https://kubernetes.io/docs/tasks/tools/install-kubectl/" && exit 1)
+	@echo "Setting up Kind cluster for demo..."
+	@./scripts/demo/setup-kind.sh
+	@echo "Verifying cluster connection..."
+	@kubectl cluster-info --context kind-kubebuilder-demo > /dev/null
+	@echo "Cleaning up any previous recording files..."
+	@rm -rf /tmp/kb-demo-recording
+	@mkdir -p /tmp/kb-demo-recording
+	@echo "Starting demo recording in 3 seconds..."
+	@sleep 3
+	@cd /tmp/kb-demo-recording && asciinema rec --command "$(shell pwd)/scripts/demo/run.sh" --env "DEMO_AUTO_RUN=1" --title "Kubebuilder Demo" --idle-time-limit 2 kb-demo.cast
+	@echo "Converting recording to SVG..."
+	@VERSION=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.0.0"); \
+	 svg-term --in=/tmp/kb-demo-recording/kb-demo.cast --out=docs/gif/kb-demo.$${VERSION}.svg --window --width=120 --height=30
+	@VERSION=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.0.0"); \
+	 echo "Demo updated! New file: docs/gif/kb-demo.$${VERSION}.svg"
+	@echo "Updating README.md with new demo..."
+	@VERSION=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.0.0"); \
+	 sed -i '' 's|docs/gif/kb-demo\.v[^)]*\.svg|docs/gif/kb-demo.'$${VERSION}'.svg|g' README.md
+	@echo "README.md updated with new demo file."
+	@echo "Cleaning up temporary files..."
+	@rm -rf /tmp/kb-demo-recording
+	@echo "To clean up the demo cluster, run: make clean-demo"
+
+.PHONY: setup-demo-cluster
+setup-demo-cluster: ## Set up Kind cluster for Kubebuilder demo
+	@./scripts/demo/setup-kind.sh
+
+.PHONY: clean-demo
+clean-demo: ## Clean up the demo Kind cluster and temporary directories
+	@echo "Cleaning up demo cluster..."
+	@kind delete cluster --name kubebuilder-demo || echo "Demo cluster was not found or already deleted"
+	@echo "Cleaning up temporary demo directories..."
+	@rm -rf /tmp/kubebuilder-demo-project /tmp/kb-demo-recording
+	@echo "Demo cleanup completed"
+
 .PHONY: check-docs
 check-docs: ## Run the script to ensure that the docs are updated
 	./hack/docs/check.sh
