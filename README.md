@@ -130,8 +130,9 @@ Before starting any work, please either comment on an existing issue or file a n
 
 ## Operating Systems Supported
 
-Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, you may encounter issues.
-Contributions towards supporting Windows are welcome.
+Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, we recommend you read the instructions in [here](docs/windows.md).
+
+Contributions towards supporting Windows are not planned.
 
 ## Versions Compatibility and Supportability
 
