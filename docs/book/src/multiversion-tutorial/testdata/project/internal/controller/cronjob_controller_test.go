@@ -41,6 +41,16 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
+// Helper function to check if a specific condition exists with expected status
+func hasCondition(conditions []metav1.Condition, conditionType string, expectedStatus metav1.ConditionStatus) bool {
+	for _, condition := range conditions {
+		if condition.Type == conditionType && condition.Status == expectedStatus {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
 Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
@@ -185,6 +195,82 @@ var _ = Describe("CronJob controller", func() {
 				g.Expect(createdCronjob.Status.Active).To(HaveLen(1), "should have exactly one active job")
 				g.Expect(createdCronjob.Status.Active[0].Name).To(Equal(JobName), "the wrong job is active")
 			}, timeout, interval).Should(Succeed(), "should list our active job %s in the active jobs list in status", JobName)
+
+			By("By checking that the CronJob status conditions are updated")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+				g.Expect(createdCronjob.Status.Conditions).ToNot(BeEmpty(), "status conditions should be present")
+
+				// Check that at least one condition is set
+				hasAvailableCondition := false
+				hasProgressingCondition := false
+				for _, condition := range createdCronjob.Status.Conditions {
+					if condition.Type == "Available" {
+						hasAvailableCondition = true
+						g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Available condition should be True when jobs are active")
+					}
+					if condition.Type == "Progressing" {
+						hasProgressingCondition = true
+						g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Progressing condition should be True when jobs are active")
+					}
+				}
+				g.Expect(hasAvailableCondition).To(BeTrue(), "should have Available condition")
+				g.Expect(hasProgressingCondition).To(BeTrue(), "should have Progressing condition")
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should handle suspended CronJobs correctly", func() {
+			By("By creating a suspended CronJob")
+			ctx := context.Background()
+			suspendedCronJobName := "test-suspended-cronjob"
+			suspended := true
+			cronJob := &cronjobv1.CronJob{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "batch.tutorial.kubebuilder.io/v1",
+					Kind:       "CronJob",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      suspendedCronJobName,
+					Namespace: CronjobNamespace,
+				},
+				Spec: cronjobv1.CronJobSpec{
+					Schedule: "*/1 * * * *",
+					Suspend:  &suspended,
+					JobTemplate: batchv1.JobTemplateSpec{
+						Spec: batchv1.JobSpec{
+							Template: v1.PodTemplateSpec{
+								Spec: v1.PodSpec{
+									Containers: []v1.Container{
+										{
+											Name:  "test-container",
+											Image: "test-image",
+										},
+									},
+									RestartPolicy: v1.RestartPolicyOnFailure,
+								},
+							},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, cronJob)).To(Succeed())
+
+			cronjobLookupKey := types.NamespacedName{Name: suspendedCronJobName, Namespace: CronjobNamespace}
+			createdCronjob := &cronjobv1.CronJob{}
+
+			By("By checking that the suspended CronJob has correct status conditions")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+				g.Expect(createdCronjob.Status.Conditions).ToNot(BeEmpty(), "status conditions should be present")
+
+				// Check Available condition for suspended CronJob
+				for _, condition := range createdCronjob.Status.Conditions {
+					if condition.Type == "Available" {
+						g.Expect(condition.Status).To(Equal(metav1.ConditionFalse), "Available condition should be False when suspended")
+						g.Expect(condition.Reason).To(Equal("Suspended"), "Reason should be Suspended")
+					}
+				}
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 
