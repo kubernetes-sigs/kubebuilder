@@ -101,6 +101,6 @@ func IsPrometheusCRDsInstalled() bool {
 
 const prometheusVersionURL = `
 
-	prometheusOperatorVersion = "v0.77.1"
+	prometheusOperatorVersion = "v0.85.0"
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
 		"releases/download/%s/bundle.yaml"`
