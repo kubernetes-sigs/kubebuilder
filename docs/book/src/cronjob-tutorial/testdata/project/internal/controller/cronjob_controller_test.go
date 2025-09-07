@@ -41,6 +41,16 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
+// Helper function to check if a specific condition exists with expected status
+func hasCondition(conditions []metav1.Condition, conditionType string, expectedStatus metav1.ConditionStatus) bool {
+	for _, condition := range conditions {
+		if condition.Type == conditionType && condition.Status == expectedStatus {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
 Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
