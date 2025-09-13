@@ -1,0 +1,35 @@
+{{- if .Values.prometheus.enable }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project
+        control-plane: controller-manager
+    name: {{ include "chart.name" . }}-controller-manager-metrics-monitor
+    namespace: {{ .Release.Namespace }}
+spec:
+    endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          path: /metrics
+          port: https
+          scheme: https
+          tlsConfig:
+            ca:
+                secret:
+                    key: ca.crt
+                    name: metrics-server-cert
+            cert:
+                secret:
+                    key: tls.crt
+                    name: metrics-server-cert
+            insecureSkipVerify: false
+            keySecret:
+                key: tls.key
+                name: metrics-server-cert
+            serverName: project-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: project
+            control-plane: controller-manager
+{{- end }}

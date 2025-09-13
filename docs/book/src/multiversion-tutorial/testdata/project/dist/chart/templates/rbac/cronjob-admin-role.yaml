@@ -1,0 +1,22 @@
+{{- if .Values.rbacHelpers.enable }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project
+    name: project-cronjob-admin-role
+rules:
+    - apiGroups:
+        - batch.tutorial.kubebuilder.io
+      resources:
+        - cronjobs
+      verbs:
+        - '*'
+    - apiGroups:
+        - batch.tutorial.kubebuilder.io
+      resources:
+        - cronjobs/status
+      verbs:
+        - get
+{{- end }}

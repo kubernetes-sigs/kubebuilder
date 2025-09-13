@@ -46,7 +46,7 @@ jobs:
         run: |
           helm lint ./dist/chart
 
-
+# TODO: Uncomment if cert-manager is enabled
       - name: Install cert-manager via Helm
         run: |
           helm repo add jetstack https://charts.jetstack.io

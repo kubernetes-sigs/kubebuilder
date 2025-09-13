@@ -7,7 +7,9 @@ domain: tutorial.kubebuilder.io
 layout:
 - go.kubebuilder.io/v4
 plugins:
-  helm.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v2-alpha:
+    manifests: dist/install.yaml
+    output: dist
 projectName: project
 repo: tutorial.kubebuilder.io/project
 resources:

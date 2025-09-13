@@ -19,6 +19,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 // Run e2e tests using the Ginkgo runner.
@@ -27,3 +30,32 @@ func TestE2E(t *testing.T) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting helm plugin kubebuilder suite\n")
 	RunSpecs(t, "Kubebuilder helm plugin e2e suite")
 }
+
+// BeforeSuite run before any specs are run to perform the required actions for all e2e Go tests.
+var _ = BeforeSuite(func() {
+	var err error
+
+	kbc, err := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(kbc.Prepare()).To(Succeed())
+
+	By("installing the cert-manager bundle")
+	Expect(kbc.InstallCertManager()).To(Succeed())
+
+	By("installing the Prometheus operator")
+	Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
+})
+
+// AfterSuite run after all the specs have run, regardless of whether any tests have failed to ensures that
+// all be cleaned up
+var _ = AfterSuite(func() {
+	kbc, err := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(kbc.Prepare()).To(Succeed())
+
+	By("uninstalling the Prometheus manager bundle")
+	kbc.UninstallPrometheusOperManager()
+
+	By("uninstalling the cert-manager bundle")
+	kbc.UninstallCertManager()
+})
