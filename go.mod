@@ -10,7 +10,7 @@ require (
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/mod v0.27.0
+	golang.org/x/mod v0.28.0
 	golang.org/x/text v0.29.0
 	golang.org/x/tools v0.36.0
 	helm.sh/helm/v3 v3.19.0
