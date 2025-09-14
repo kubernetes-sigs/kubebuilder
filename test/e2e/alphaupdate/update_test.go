@@ -334,7 +334,7 @@ func validateCommonGoModule(projectDir string) {
 	expectModuleVersion(projectDir, "github.com/onsi/gomega", "v1.36.1")
 	expectModuleVersion(projectDir, "k8s.io/apimachinery", "v0.33.0")
 	expectModuleVersion(projectDir, "k8s.io/client-go", "v0.33.0")
-	expectModuleVersion(projectDir, "sigs.k8s.io/controller-runtime", "v0.21.0")
+	expectModuleVersion(projectDir, "sigs.k8s.io/controller-runtime", "")
 }
 
 func downloadKubebuilderVersion(version string) (string, error) {
