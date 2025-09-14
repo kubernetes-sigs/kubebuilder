@@ -120,4 +120,44 @@ jobs:
       - name: Testing make test-e2e for project-v4-multigroup
         working-directory: testdata/project-v4-multigroup/
         run: |
-          make test-e2e          
+          make test-e2e
+
+  # Test to validate e2e integration when no APIs are scaffolded
+  e2e-test-basic-project:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Build kubebuilder CLI from this repo
+        run: make install
+
+      - name: Scaffold empty go/v4 project
+        run: |
+          mkdir -p /tmp/basic-project-v4
+          cd /tmp/basic-project-v4
+          kubebuilder init --plugins go/v4 --domain example.com --repo example.com/empty-operator
+          go mod tidy
+          make
+
+      - name: Run make test-e2e on empty project
+        working-directory: /tmp/basic-project-v4
+        run: make test-e2e
