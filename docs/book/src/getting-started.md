@@ -99,7 +99,10 @@ similar to how we do with any resource from the Kubernetes API.
 ```go
 // MemcachedStatus defines the observed state of Memcached
 type MemcachedStatus struct {
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+    // +listType=map
+    // +listMapKey=type
+    // +optional
+    Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 ```
 
