@@ -1,4 +1,17 @@
-# Helm Plugin (`helm/v1-alpha`)
+# Helm Plugin (`helm/v1-alpha`) - **DEPRECATED**
+
+<aside class="warning">
+<h1> Deprecated Plugin</h1>
+
+The `helm/v1-alpha` plugin is **deprecated**. Please use [`helm/v2-alpha`](./helm-v2-alpha.md) instead.
+
+The v2-alpha version provides:
+- Dynamic Helm chart generation from kustomize output
+- Better preservation of customizations (env vars, labels, annotations)
+- Organized template structure matching your config/ directory
+- More flexible configuration options
+
+</aside>
 
 The Helm plugin is an optional plugin that can be used to scaffold a Helm chart, allowing you to distribute the project using Helm.
 
