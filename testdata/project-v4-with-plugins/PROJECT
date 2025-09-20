@@ -7,7 +7,6 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
 plugins:
-  autoupdate.kubebuilder.io/v1-alpha: {}
   deploy-image.go.kubebuilder.io/v1-alpha:
     resources:
     - domain: testproject.org
@@ -26,7 +25,6 @@ plugins:
         image: busybox:1.36.1
       version: v1alpha1
   grafana.kubebuilder.io/v1-alpha: {}
-  helm.kubebuilder.io/v1-alpha: {}
 projectName: project-v4-with-plugins
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins
 resources:
