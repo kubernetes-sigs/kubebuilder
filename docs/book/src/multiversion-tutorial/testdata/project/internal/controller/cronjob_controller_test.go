@@ -201,21 +201,11 @@ var _ = Describe("CronJob controller", func() {
 				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
 				g.Expect(createdCronjob.Status.Conditions).ToNot(BeEmpty(), "status conditions should be present")
 
-				// Check that at least one condition is set
-				hasAvailableCondition := false
-				hasProgressingCondition := false
-				for _, condition := range createdCronjob.Status.Conditions {
-					if condition.Type == "Available" {
-						hasAvailableCondition = true
-						g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Available condition should be True when jobs are active")
-					}
-					if condition.Type == "Progressing" {
-						hasProgressingCondition = true
-						g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Progressing condition should be True when jobs are active")
-					}
-				}
-				g.Expect(hasAvailableCondition).To(BeTrue(), "should have Available condition")
-				g.Expect(hasProgressingCondition).To(BeTrue(), "should have Progressing condition")
+				// Check that the conditions are set correctly using the helper function
+				g.Expect(hasCondition(createdCronjob.Status.Conditions, "Available", metav1.ConditionTrue)).To(BeTrue(),
+					"CronJob should have Available condition set to True")
+				g.Expect(hasCondition(createdCronjob.Status.Conditions, "Progressing", metav1.ConditionTrue)).To(BeTrue(),
+					"CronJob should have Progressing condition set to True")
 			}, timeout, interval).Should(Succeed())
 		})
 

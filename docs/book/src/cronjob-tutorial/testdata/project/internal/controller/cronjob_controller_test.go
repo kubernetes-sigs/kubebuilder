@@ -195,6 +195,14 @@ var _ = Describe("CronJob controller", func() {
 				g.Expect(createdCronjob.Status.Active).To(HaveLen(1), "should have exactly one active job")
 				g.Expect(createdCronjob.Status.Active[0].Name).To(Equal(JobName), "the wrong job is active")
 			}, timeout, interval).Should(Succeed(), "should list our active job %s in the active jobs list in status", JobName)
+
+			By("By checking that the CronJob status conditions are properly set")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+				// Check that the Available condition is set to True when job is active
+				g.Expect(hasCondition(createdCronjob.Status.Conditions, "Available", metav1.ConditionTrue)).To(BeTrue(),
+					"CronJob should have Available condition set to True")
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 
