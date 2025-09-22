@@ -353,7 +353,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	fs.BoolP("help", "h", false, fmt.Sprintf("help for %s", c.commandName))
 
 	// Omit unknown flags to avoid parsing errors
-	fs.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
+	fs.ParseErrorsAllowlist = pflag.ParseErrorsAllowlist{UnknownFlags: true}
 
 	// Parse the arguments
 	if err := fs.Parse(os.Args[1:]); err != nil {

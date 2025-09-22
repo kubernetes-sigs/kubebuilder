@@ -78,5 +78,9 @@ The command called by the workflow is:
           --use-gh-models
 ```
 
+## Demonstration
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/dHNKx5jPSqc?si=wYwZZ0QLwFij10Sb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 [alpha-update-command]: ./../../reference/commands/alpha_update.md
 [ai-models]: https://docs.github.com/en/github-models/about-github-models

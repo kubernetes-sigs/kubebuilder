@@ -9,7 +9,6 @@
 > For more information and guidance see the discussion https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 
 [![Lint](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml/badge.svg)](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml)
-[![Unit tests](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/unit-tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
 [![Coverage Status](https://coveralls.io/repos/github/kubernetes-sigs/kubebuilder/badge.svg?branch=master)](https://coveralls.io/github/kubernetes-sigs/kubebuilder?branch=master)
 [![Latest release](https://badgen.net/github/release/kubernetes-sigs/kubebuilder)](https://github.com/kubernetes-sigs/kubebuilder/releases)
@@ -131,8 +130,9 @@ Before starting any work, please either comment on an existing issue or file a n
 
 ## Operating Systems Supported
 
-Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, you may encounter issues.
-Contributions towards supporting Windows are welcome.
+Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, we recommend you read the instructions in [here](docs/windows.md).
+
+Contributions towards supporting Windows are not planned.
 
 ## Versions Compatibility and Supportability
 

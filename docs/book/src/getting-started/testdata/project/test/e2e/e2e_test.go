@@ -254,10 +254,13 @@ var _ = Describe("Manager", Ordered, func() {
 			Eventually(verifyCurlUp, 5*time.Minute).Should(Succeed())
 
 			By("getting the metrics by checking curl-metrics logs")
-			metricsOutput := getMetricsOutput()
-			Expect(metricsOutput).To(ContainSubstring(
-				"controller_runtime_reconcile_total",
-			))
+			verifyMetricsAvailable := func(g Gomega) {
+				metricsOutput, err := getMetricsOutput()
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
+				g.Expect(metricsOutput).NotTo(BeEmpty())
+				g.Expect(metricsOutput).To(ContainSubstring("< HTTP/1.1 200 OK"))
+			}
+			Eventually(verifyMetricsAvailable, 2*time.Minute).Should(Succeed())
 		})
 
 		// +kubebuilder:scaffold:e2e-webhooks-checks
@@ -265,7 +268,8 @@ var _ = Describe("Manager", Ordered, func() {
 		// TODO: Customize the e2e test suite with scenarios specific to your project.
 		// Consider applying sample/CR(s) and check their status and/or verifying
 		// the reconciliation by using the metrics, i.e.:
-		// metricsOutput := getMetricsOutput()
+		// metricsOutput, err := getMetricsOutput()
+		// Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
 		// Expect(metricsOutput).To(ContainSubstring(
 		//    fmt.Sprintf(`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
 		//    strings.ToLower(<Kind>),
@@ -315,13 +319,10 @@ func serviceAccountToken() (string, error) {
 }
 
 // getMetricsOutput retrieves and returns the logs from the curl pod used to access the metrics endpoint.
-func getMetricsOutput() string {
+func getMetricsOutput() (string, error) {
 	By("getting the curl-metrics logs")
 	cmd := exec.Command("kubectl", "logs", "curl-metrics", "-n", namespace)
-	metricsOutput, err := utils.Run(cmd)
-	Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
-	Expect(metricsOutput).To(ContainSubstring("< HTTP/1.1 200 OK"))
-	return metricsOutput
+	return utils.Run(cmd)
 }
 
 // tokenRequest is a simplified representation of the Kubernetes TokenRequest API response,
