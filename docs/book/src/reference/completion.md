@@ -2,43 +2,59 @@
 The Kubebuilder completion script can be generated with the command `kubebuilder completion [bash|fish|powershell|zsh]`.
 Note that sourcing the completion script in your shell enables Kubebuilder autocompletion.
 
+## Bash
+
 <aside class="note">
 <h1>Prerequisites for Bash</h1>
 
 The completion Bash script depends on [bash-completion](https://github.com/scop/bash-completion), which means that you have to install this software first (you can test if you have bash-completion already installed). Also, ensure that your Bash version is 4.1+.
 
+```bash
+$ bash --version
+```
+
 </aside>
 
+- Check that bash is an available shell:
 
-- Once installed, go ahead and add the path `/usr/local/bin/bash` in the  `/etc/shells`.
+    ```bash
+    cat /etc/shells | grep '^.*/bash'
+    ```
 
-    `echo “/usr/local/bin/bash” > /etc/shells`
+- If not, add bash to `/etc/shells`. For example, if bash is at `/usr/local/bin/bash`:
 
-- Make sure to use installed shell by current user.
+    ```bash
+    echo "/usr/local/bin/bash" >> /etc/shells
+    ```
 
-    `chsh -s /usr/local/bin/bash`
+- Make sure the current user uses bash as their shell.
 
-- Add following content in /.bash_profile or ~/.bashrc
+    ```bash
+    chsh -s /usr/local/bin/bash
+    ```
 
-```
-# kubebuilder autocompletion
-if [ -f /usr/local/share/bash-completion/bash_completion ]; then
-. /usr/local/share/bash-completion/bash_completion
-fi
-. <(kubebuilder completion bash)
-```
+- Add following content to `~/.bash_profile` or `~/.bashrc`
+
+    ```bash
+    # kubebuilder autocompletion
+    if [ -f /usr/local/share/bash-completion/bash_completion ]; then
+        . /usr/local/share/bash-completion/bash_completion
+    fi
+        . <(kubebuilder completion bash)
+    ```
+
 - Restart terminal for the changes to be reflected or `source` the changed bash file.
 
-<aside class="note">
-<h1>Zsh</h1>
+    ```bash
+    . ~/.bash_profile
+    ```
+
+## Zsh
 
 Follow a similar protocol for `zsh` completion.
 
-</aside>
+## Fish
 
-<aside class="note">
-<h1>Fish</h1>
-
+```
 source (kubebuilder completion fish | psub)
-
-</aside>
+```
