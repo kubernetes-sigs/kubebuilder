@@ -85,8 +85,11 @@ var _ = Describe("kubebuilder", func() {
 			By("Generate API with Deploy Image plugin")
 			generateAPIWithDeployImage(kbc)
 
+			By("build the installer manifest")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+
 			By("Enabling Helm plugin")
-			err = kbc.Edit("--plugins", "helm.kubebuilder.io/v1-alpha")
+			err = kbc.Edit("--plugins", "helm.kubebuilder.io/v2-alpha")
 			Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Helm Plugin")
 
 			By("Re-generating the project with plugins")
@@ -354,7 +357,7 @@ func validateHelmPlugin(projectFile string) {
 
 	By("checking the Helm plugin in the PROJECT file")
 	var helmPluginConfig map[string]interface{}
-	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v1-alpha", &helmPluginConfig)
+	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v2-alpha", &helmPluginConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
 	Expect(helmPluginConfig).NotTo(BeNil(), "Expected Helm plugin configuration to be present in the PROJECT file")
 }

@@ -18,6 +18,7 @@ package helm
 
 import (
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,113 +29,102 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
-var _ = Describe("kubebuilder", func() {
-	Context("plugin helm/v1-alpha", func() {
-		var kbc *utils.TestContext
+var _ = Describe("Helm v2-alpha Plugin", func() {
+	var kbc *utils.TestContext
 
-		BeforeEach(func() {
-			var err error
-			kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
+	BeforeEach(func() {
+		var err error
+		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(kbc.Prepare()).To(Succeed())
+	})
+
+	AfterEach(func() {
+		kbc.Destroy()
+	})
+
+	Describe("Basic Functionality", func() {
+		It("should generate helm chart with dynamic kustomize-based templates", func() {
+			By("initializing a basic project")
+			initBasicProject(kbc)
+
+			By("creating API and controller resources")
+			createTestResources(kbc)
+
+			By("building installer manifest")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+
+			By("applying helm v2-alpha plugin")
+			err := kbc.EditHelmPlugin()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(kbc.Prepare()).To(Succeed())
+
+			By("validating generated helm chart structure")
+			validateBasicHelmChart(kbc)
+
+			By("verifying dynamic template generation")
+			validateDynamicTemplates(kbc)
+
+			By("checking plugin configuration tracking")
+			validatePluginConfig(kbc)
 		})
 
-		AfterEach(func() {
-			kbc.Destroy()
+		It("should handle webhooks correctly", func() {
+			By("initializing a project with webhooks")
+			initBasicProject(kbc)
+			createTestResources(kbc)
+			createWebhookResources(kbc)
+
+			By("building installer manifest with webhooks")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+
+			By("applying helm v2-alpha plugin")
+			err := kbc.EditHelmPlugin()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("validating webhook templates are generated")
+			validateWebhookTemplates(kbc)
+
+			By("verifying cert-manager integration")
+			validateCertManagerIntegration(kbc)
 		})
 
-		It("should extend an initialed project with helm plugin", func() {
-			initTheProject(kbc)
+		It("should support custom flags and preserve files", func() {
+			By("initializing project and building installer")
+			initBasicProject(kbc)
+			createTestResources(kbc)
+			Expect(kbc.Make("build-installer")).To(Succeed())
 
-			By("extend the project by adding helm plugin")
-			err := kbc.Edit(
-				"--plugins", "helm.kubebuilder.io/v1-alpha",
-			)
-			Expect(err).NotTo(HaveOccurred(), "Failed to edit the project")
+			By("applying plugin with custom output directory")
+			err := kbc.Edit("--plugins", "helm.kubebuilder.io/v2-alpha", "--output-dir", "custom-charts")
+			Expect(err).NotTo(HaveOccurred())
 
-			ensureCommonHelmFilesContent(kbc, false)
-		})
+			By("verifying chart is generated in custom directory")
+			validateCustomOutputDir(kbc, "custom-charts")
 
-		// This test is to ensure that the helm plugin can be added to a project
-		// that has already been initialized with the go/v4 plugin.
-		// As the project is getting extended with webhooks,
-		// it is needed to run the `kubebuilder edit --plugins helm.kubebuilder.io/v1-alpha` command
-		// with ` --force` again to ensure that the webhooks are enabled in the
-		// values.yaml file.
-		It("should extend an initialized project with helm plugin and webhooks", func() {
-			initTheProject(kbc)
+			By("re-running plugin without --force should preserve existing files")
+			err = kbc.Edit("--plugins", "helm.kubebuilder.io/v2-alpha", "--output-dir", "custom-charts")
+			Expect(err).NotTo(HaveOccurred())
 
-			By("extend the project by adding helm plugin")
-			err := kbc.Edit(
-				"--plugins", "helm.kubebuilder.io/v1-alpha",
-			)
-			Expect(err).NotTo(HaveOccurred(), "Failed to edit the project")
-
-			ensureCommonHelmFilesContent(kbc, false)
-			extendProjectWithWebhooks(kbc)
-
-			// after creating webhooks, we want to have the webhooks enabled
-			// in the values.yaml file, so we need to run `kubebuilder edit`
-			// with the --force flag for the helm plugin.
-			By("re-edit the project after creating webhooks")
-			err = kbc.Edit(
-				"--plugins", "helm.kubebuilder.io/v1-alpha", "--force",
-			)
-			Expect(err).NotTo(HaveOccurred(), "Failed to edit the project")
-
-			ensureCommonHelmFilesContent(kbc, true)
+			By("verifying files are preserved when not using --force")
+			validateFilePreservation(kbc, "custom-charts")
 		})
 	})
 })
 
-// ensureCommonHelmFilesContent tests common helm-chart files which got
-// generated by the helm/v1(-alpha) plugin
-func ensureCommonHelmFilesContent(kbc *utils.TestContext, webhookEnabled bool) {
-	var helmConfig helmv1alpha.Plugin
-	projectConfig := getConfigFromProjectFile(filepath.Join(kbc.Dir, "PROJECT"))
-
-	By("decoding the helm plugin configuration")
-	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v1-alpha", &helmConfig)
-	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
-
-	// loading the generated helm chart
-	chart, err := helmChartLoader.LoadDir(filepath.Join(kbc.Dir, "dist", "chart"))
-	Expect(err).NotTo(HaveOccurred(), "Failed to load helm chart")
-
-	// validating the helm chart metadata (Chart.yaml)
-	err = chart.Validate()
-	Expect(err).NotTo(HaveOccurred(), "Failed to validate helm chart")
-
-	// expect the chart-name equal to the name of the PROJECT
-	Expect(chart.Name()).To(Equal("e2e-"+kbc.TestSuffix), "Chart name doesn't match")
-
-	// expecting the existence of a manager.yaml file
-	var matchedFiles int
-	for _, templateFile := range chart.Templates {
-		switch templateFile.Name {
-		case "templates/manager/manager.yaml":
-			matchedFiles++
-		default:
-			matchedFiles += 0
-		}
-	}
-
-	Expect(matchedFiles).To(BeNumerically("==", 1))
-
-	// check if webhooks are enabled in the Chart.yaml
-	if webhookEnabled {
-		isEnabled := chart.Values["webhook"].(map[string]interface{})["enable"]
-		Expect(isEnabled).To(Equal(webhookEnabled), "webhook isn't enabled in the Chart.yaml")
-	}
+func initBasicProject(kbc *utils.TestContext) {
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+	)
+	Expect(err).NotTo(HaveOccurred())
 }
 
-// extendProjectWithWebhooks is creating API and scaffolding webhooks in the project
-func extendProjectWithWebhooks(kbc *utils.TestContext) {
-	By("creating API definition")
+func createTestResources(kbc *utils.TestContext) {
 	err := kbc.CreateAPI(
 		"--group", kbc.Group,
 		"--version", kbc.Version,
@@ -144,10 +134,11 @@ func extendProjectWithWebhooks(kbc *utils.TestContext) {
 		"--controller",
 		"--make=false",
 	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to create API")
+	Expect(err).NotTo(HaveOccurred())
+}
 
-	By("scaffolding mutating and validating webhooks")
-	err = kbc.CreateWebhook(
+func createWebhookResources(kbc *utils.TestContext) {
+	err := kbc.CreateWebhook(
 		"--group", kbc.Group,
 		"--version", kbc.Version,
 		"--kind", kbc.Kind,
@@ -155,30 +146,141 @@ func extendProjectWithWebhooks(kbc *utils.TestContext) {
 		"--programmatic-validation",
 		"--make=false",
 	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to scaffolding mutating webhook")
+	Expect(err).NotTo(HaveOccurred())
 
 	By("run make manifests")
 	Expect(kbc.Make("manifests")).To(Succeed())
 }
 
-// initTheProject initializes a project with the go/v4 plugin and sets the domain.
-func initTheProject(kbc *utils.TestContext) {
-	By("initializing a project")
-	err := kbc.Init(
-		"--plugins", "go/v4",
-		"--project-version", "3",
-		"--domain", kbc.Domain,
-	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
+func validateBasicHelmChart(kbc *utils.TestContext) {
+	chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+
+	By("verifying Chart.yaml exists and is valid")
+	chart, err := helmChartLoader.LoadDir(chartPath)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(chart.Validate()).To(Succeed())
+	Expect(chart.Name()).To(Equal("e2e-" + kbc.TestSuffix))
+
+	By("verifying essential files exist")
+	essentialFiles := []string{
+		"Chart.yaml",
+		"values.yaml",
+		".helmignore",
+		"templates/_helpers.tpl",
+	}
+	for _, file := range essentialFiles {
+		filePath := filepath.Join(chartPath, file)
+		Expect(filePath).To(BeAnExistingFile())
+	}
+}
+
+func validateDynamicTemplates(kbc *utils.TestContext) {
+	chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+
+	By("verifying templates directory structure matches config/ structure")
+	expectedDirs := []string{
+		"templates/manager",
+		"templates/rbac",
+		"templates/crd",
+		"templates/metrics",
+	}
+	for _, dir := range expectedDirs {
+		dirPath := filepath.Join(chartPath, dir)
+		Expect(dirPath).To(BeADirectory())
+	}
+
+	By("verifying manager deployment template exists")
+	managerTemplate := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+	Expect(managerTemplate).To(BeAnExistingFile())
+
+	By("verifying CRD templates exist")
+	crdDir := filepath.Join(chartPath, "templates", "crd")
+	files, err := afero.ReadDir(afero.NewOsFs(), crdDir)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(files).ToNot(BeEmpty())
+}
+
+func validateWebhookTemplates(kbc *utils.TestContext) {
+	chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+
+	By("verifying webhook directory exists")
+	webhookDir := filepath.Join(chartPath, "templates", "webhook")
+	Expect(webhookDir).To(BeADirectory())
+
+	By("verifying webhook configuration files exist")
+	files, err := afero.ReadDir(afero.NewOsFs(), webhookDir)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(files).ToNot(BeEmpty())
+
+	By("verifying webhook files contain webhook configurations")
+	foundValidatingWebhook := false
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		webhookFile := filepath.Join(webhookDir, file.Name())
+		content, err := afero.ReadFile(afero.NewOsFs(), webhookFile)
+		Expect(err).NotTo(HaveOccurred())
+		contentStr := string(content)
+		if strings.Contains(contentStr, "ValidatingWebhookConfiguration") {
+			foundValidatingWebhook = true
+			break
+		}
+	}
+	Expect(foundValidatingWebhook).To(BeTrue(), "Expected to find ValidatingWebhookConfiguration in webhook templates")
+}
+
+func validateCertManagerIntegration(kbc *utils.TestContext) {
+	chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+
+	By("verifying cert-manager templates exist")
+	certManagerDir := filepath.Join(chartPath, "templates", "cert-manager")
+	Expect(certManagerDir).To(BeADirectory())
+
+	By("verifying cert-manager is enabled in values.yaml")
+	valuesPath := filepath.Join(chartPath, "values.yaml")
+	valuesContent, err := afero.ReadFile(afero.NewOsFs(), valuesPath)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(string(valuesContent)).To(ContainSubstring("certManager:"))
+	Expect(string(valuesContent)).To(ContainSubstring("enable: true"))
+}
+
+func validatePluginConfig(kbc *utils.TestContext) {
+	By("verifying plugin configuration is tracked in PROJECT file")
+	projectPath := filepath.Join(kbc.Dir, "PROJECT")
+	projectConfig := getConfigFromProjectFile(projectPath)
+
+	var helmConfig helmv2alpha.Plugin
+	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v2-alpha", &helmConfig)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func validateCustomOutputDir(kbc *utils.TestContext, outputDir string) {
+	chartPath := filepath.Join(kbc.Dir, outputDir, "chart")
+
+	By("verifying chart exists in custom directory")
+	Expect(chartPath).To(BeADirectory())
+
+	By("verifying Chart.yaml in custom directory")
+	chartFile := filepath.Join(chartPath, "Chart.yaml")
+	Expect(chartFile).To(BeAnExistingFile())
+}
+
+func validateFilePreservation(kbc *utils.TestContext, outputDir string) {
+	chartPath := filepath.Join(kbc.Dir, outputDir, "chart")
+
+	By("verifying files still exist after re-run")
+	valuesFile := filepath.Join(chartPath, "values.yaml")
+	Expect(valuesFile).To(BeAnExistingFile())
+
+	chartFile := filepath.Join(chartPath, "Chart.yaml")
+	Expect(chartFile).To(BeAnExistingFile())
 }
 
 func getConfigFromProjectFile(projectFilePath string) config.Config {
-	By("loading the PROJECT configuration")
 	fs := afero.NewOsFs()
 	store := yaml.New(machinery.Filesystem{FS: fs})
 	err := store.LoadFrom(projectFilePath)
-	Expect(err).NotTo(HaveOccurred(), "Failed to load PROJECT configuration")
-
-	cfg := store.Config()
-	return cfg
+	Expect(err).NotTo(HaveOccurred())
+	return store.Config()
 }

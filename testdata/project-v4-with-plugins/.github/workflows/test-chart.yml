@@ -46,18 +46,17 @@ jobs:
         run: |
           helm lint ./dist/chart
 
-# TODO: Uncomment if cert-manager is enabled
-      - name: Install cert-manager via Helm
+
+      - name: Install cert-manager via Helm (wait for readiness)
         run: |
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
-          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
-
-      - name: Wait for cert-manager to be ready
-        run: |
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+          helm install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --wait \
+            --timeout 300s
 
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs
@@ -65,16 +64,6 @@ jobs:
 #          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 #          helm repo update
 #          helm install prometheus-crds prometheus-community/prometheus-operator-crds
-#
-#      - name: Install Prometheus via Helm
-#        run: |
-#          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-#          helm repo update
-#          helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
-#
-#      - name: Wait for Prometheus to be ready
-#        run: |
-#          kubectl wait --namespace monitoring --for=condition=available --timeout=300s deployment/prometheus-server
 
       - name: Install Helm chart for project
         run: |
@@ -83,8 +72,3 @@ jobs:
       - name: Check Helm release status
         run: |
           helm status my-release --namespace project-v4-with-plugins-system
-
-# TODO: Uncomment if prometheus.enabled is set to true to confirm that the ServiceMonitor gets created
-#      - name: Check Presence of ServiceMonitor
-#        run: |
-#          kubectl wait --namespace project-v4-with-plugins-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/project-v4-with-plugins-controller-manager-metrics-monitor

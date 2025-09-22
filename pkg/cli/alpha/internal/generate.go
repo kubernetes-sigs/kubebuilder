@@ -34,6 +34,7 @@ import (
 	autoupdate "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	hemlv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	hemlv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Generate store the required info for the command
@@ -111,8 +112,8 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error migrating AutoUpdate plugin: %w", err)
 	}
 
-	if hasHelmPlugin(projectConfig) {
-		if err = kubebuilderHelmEdit(); err != nil {
+	if hasHelm, isV2Alpha := hasHelmPlugin(projectConfig); hasHelm && isV2Alpha {
+		if err = kubebuilderHelmEditWithConfig(projectConfig); err != nil {
 			return fmt.Errorf("error editing Helm plugin: %w", err)
 		}
 	}
@@ -125,7 +126,7 @@ func (opts *Generate) Generate() error {
 	// These steps are performed on a best-effort basis: if any of the targets fail,
 	// we slog a warning to inform the user, but we do not stop the process or return an error.
 	// This is to avoid blocking the migration flow due to non-critical issues during setup.
-	targets := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
+	targets := []string{"fmt", "vet", "lint-fix"}
 	for _, target := range targets {
 		err := util.RunCmd(fmt.Sprintf("Running make %s", target), "make", target)
 		if err != nil {
@@ -490,7 +491,8 @@ func copyFile(src, des string) error {
 func grafanaConfigMigrate(src, des string) error {
 	grafanaConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", src)
 	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
-		return fmt.Errorf("grafana config path %s does not exist: %w", grafanaConfig, err)
+		slog.Info("Grafana config file not found, skipping file migration", "path", grafanaConfig)
+		return nil // Don't fail if config files don't exist
 	}
 	return copyFile(grafanaConfig, fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des))
 }
@@ -504,31 +506,75 @@ func kubebuilderGrafanaEdit() error {
 	return nil
 }
 
-// Edits the project to include the Helm plugin.
-func kubebuilderHelmEdit() error {
-	args := []string{"edit", "--plugins", plugin.KeyFor(hemlv1alpha.Plugin{})}
+// Edits the project to include the Helm plugin with tracked configuration.
+func kubebuilderHelmEditWithConfig(s store.Store) error {
+	var cfg struct {
+		ManifestsFile string `json:"manifests,omitempty"`
+		OutputDir     string `json:"output,omitempty"`
+	}
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(hemlv2alpha.Plugin{}), &cfg)
+	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+		// No previous configuration, use defaults
+		return kubebuilderHelmEdit(true)
+	} else if err != nil {
+		return fmt.Errorf("failed to decode helm plugin config: %w", err)
+	}
+
+	// Use tracked configuration values
+	pluginKey := plugin.KeyFor(hemlv2alpha.Plugin{})
+	args := []string{"edit", "--plugins", pluginKey}
+	if cfg.ManifestsFile != "" {
+		args = append(args, "--manifests", cfg.ManifestsFile)
+	}
+	if cfg.OutputDir != "" {
+		args = append(args, "--output-dir", cfg.OutputDir)
+	}
+
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
 	}
 	return nil
 }
 
-// hasHelmPlugin checks if the Helm plugin is present by inspecting the plugin chain or configuration.
-func hasHelmPlugin(cfg store.Store) bool {
+// Edits the project to include the Helm plugin.
+func kubebuilderHelmEdit(isV2Alpha bool) error {
+	var pluginKey string
+	if isV2Alpha {
+		pluginKey = plugin.KeyFor(hemlv2alpha.Plugin{})
+	} else {
+		pluginKey = plugin.KeyFor(hemlv1alpha.Plugin{})
+	}
+
+	args := []string{"edit", "--plugins", pluginKey}
+	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
+	}
+	return nil
+}
+
+// hasHelmPlugin checks if any Helm plugin (v1alpha or v2alpha) is present by inspecting
+// the plugin chain or configuration.
+func hasHelmPlugin(cfg store.Store) (bool, bool) {
 	var pluginConfig map[string]interface{}
 
-	// Decode the Helm plugin configuration to check if it's present
-	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv1alpha.Plugin{}), &pluginConfig)
+	// Check for v2alpha first (preferred)
+	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv2alpha.Plugin{}), &pluginConfig)
+	if err == nil {
+		return true, true // has helm plugin, is v2alpha
+	}
+
+	// Check for v1alpha
+	err = cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv1alpha.Plugin{}), &pluginConfig)
 	if err != nil {
-		// If the Helm plugin is not found, return false
+		// If neither Helm plugin is found, return false
 		if errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return false
+			return false, false
 		}
 		// slog other errors if needed
 		slog.Error("error decoding Helm plugin config", "error", err)
-		return false
+		return false, false
 	}
 
-	// Helm plugin is present
-	return true
+	// v1alpha Helm plugin is present
+	return true, false // has helm plugin, is not v2alpha
 }

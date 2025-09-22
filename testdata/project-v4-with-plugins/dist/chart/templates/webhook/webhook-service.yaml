@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: project-v4-with-plugins
+    name: project-v4-with-plugins-webhook-service
+    namespace: {{ .Release.Namespace }}
+spec:
+    ports:
+        - port: 443
+          protocol: TCP
+          targetPort: 9443
+    selector:
+        app.kubernetes.io/name: project-v4-with-plugins
+        control-plane: controller-manager

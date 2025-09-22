@@ -8,7 +8,9 @@ layout:
 - go.kubebuilder.io/v4
 plugins:
   autoupdate.kubebuilder.io/v1-alpha: {}
-  helm.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v2-alpha:
+    manifests: dist/install.yaml
+    output: dist
 projectName: project
 repo: example.com/memcached
 resources:
