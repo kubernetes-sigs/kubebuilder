@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
-	goPluginV4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
+	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 )
 
 func makeMockPluginsFor(projectVersion config.Version, pluginKeys ...string) []plugin.Plugin {
@@ -449,8 +449,8 @@ plugins:
 			It("should create a valid CLI", func() {
 				const version = "version string"
 				c, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithVersion(version),
 				)
 				Expect(err).NotTo(HaveOccurred())
@@ -479,8 +479,8 @@ plugins:
 		When("enabling completion", func() {
 			It("should create a valid CLI", func() {
 				c, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithCompletion(),
 				)
 				Expect(err).NotTo(HaveOccurred())
@@ -525,8 +525,8 @@ plugins:
 			It("should create a valid CLI for non-conflicting ones", func() {
 				extraCommand := &cobra.Command{Use: "extra"}
 				c, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithExtraCommands(extraCommand),
 				)
 				Expect(err).NotTo(HaveOccurred())
@@ -536,8 +536,8 @@ plugins:
 			It("should return an error for conflicting ones", func() {
 				extraCommand := &cobra.Command{Use: "init"}
 				c, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithExtraCommands(extraCommand),
 				)
 				Expect(err).To(HaveOccurred())
@@ -548,8 +548,8 @@ plugins:
 			It("should create a valid CLI for non-conflicting ones", func() {
 				extraAlphaCommand := &cobra.Command{Use: "extra"}
 				c, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithExtraAlphaCommands(extraAlphaCommand),
 				)
 				Expect(err).NotTo(HaveOccurred())
@@ -567,8 +567,8 @@ plugins:
 			It("should return an error for conflicting ones", func() {
 				extraAlphaCommand := &cobra.Command{Use: "extra"}
 				_, err = New(
-					WithPlugins(&goPluginV4.Plugin{}),
-					WithDefaultPlugins(projectVersion, &goPluginV4.Plugin{}),
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
 					WithExtraAlphaCommands(extraAlphaCommand, extraAlphaCommand),
 				)
 				Expect(err).To(HaveOccurred())

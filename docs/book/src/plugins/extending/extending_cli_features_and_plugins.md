@@ -241,7 +241,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
-	deployimage "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
     golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 
 )
@@ -276,7 +276,7 @@ func GetPluginsCLI() (*cli.CLI) {
 		// Register the plugins options which can be used to do the scaffolds via your CLI tool. See that we are using as example here the plugins which are implemented and provided by Kubebuilder
 		cli.WithPlugins(
 			gov3Bundle,
-			&deployimage.Plugin{},
+			&deployimagev1alpha1.Plugin{},
 		),
 
 		// Defines what will be the default plugin used by your binary. It means that will be the plugin used if no info be provided such as when the user runs `kubebuilder init`

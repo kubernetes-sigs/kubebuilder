@@ -30,11 +30,11 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
-	autoupdate "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	hemlv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
-	hemlv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
+	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Generate store the required info for the command
@@ -240,7 +240,7 @@ func kubebuilderCreate(s store.Store) error {
 // Migrates the Grafana plugin.
 func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha.Plugin{}), grafanaPlugin)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(grafanav1alpha.Plugin{}), grafanaPlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Grafana plugin not found, skipping migration")
 		return nil
@@ -261,7 +261,7 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 
 func migrateAutoUpdatePlugin(s store.Store) error {
 	var autoUpdatePlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdate.Plugin{}), autoUpdatePlugin)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdatev1alpha.Plugin{}), autoUpdatePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Auto Update plugin not found, skipping migration")
 		return nil
@@ -269,7 +269,7 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 		return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
 	}
 
-	args := []string{"edit", "--plugins", plugin.KeyFor(v1alpha.Plugin{})}
+	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
@@ -278,8 +278,8 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 
 // Migrates the Deploy Image plugin.
 func migrateDeployImagePlugin(s store.Store) error {
-	var deployImagePlugin v1alpha1.PluginConfig
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha1.Plugin{}), &deployImagePlugin)
+	var deployImagePlugin deployimagev1alpha1.PluginConfig
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(deployimagev1alpha1.Plugin{}), &deployImagePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Deploy-image plugin not found, skipping migration")
 		return nil
@@ -297,7 +297,7 @@ func migrateDeployImagePlugin(s store.Store) error {
 }
 
 // Creates an API with Deploy Image plugin.
-func createAPIWithDeployImage(resourceData v1alpha1.ResourceData) error {
+func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) error {
 	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
 	args = append(args, getDeployImageOptions(resourceData)...)
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
@@ -362,7 +362,7 @@ func getGVKFlags(res resource.Resource) []string {
 }
 
 // Gets the GVK flags for a Deploy Image resource.
-func getGVKFlagsFromDeployImage(resourceData v1alpha1.ResourceData) []string {
+func getGVKFlagsFromDeployImage(resourceData deployimagev1alpha1.ResourceData) []string {
 	var args []string
 	if resourceData.Group != "" {
 		args = append(args, "--group", resourceData.Group)
@@ -377,7 +377,7 @@ func getGVKFlagsFromDeployImage(resourceData v1alpha1.ResourceData) []string {
 }
 
 // Gets the options for a Deploy Image resource.
-func getDeployImageOptions(resourceData v1alpha1.ResourceData) []string {
+func getDeployImageOptions(resourceData deployimagev1alpha1.ResourceData) []string {
 	var args []string
 	if resourceData.Options.Image != "" {
 		args = append(args, fmt.Sprintf("--image=%s", resourceData.Options.Image))
@@ -391,7 +391,7 @@ func getDeployImageOptions(resourceData v1alpha1.ResourceData) []string {
 	if resourceData.Options.RunAsUser != "" {
 		args = append(args, fmt.Sprintf("--run-as-user=%s", resourceData.Options.RunAsUser))
 	}
-	args = append(args, fmt.Sprintf("--plugins=%s", plugin.KeyFor(v1alpha1.Plugin{})))
+	args = append(args, fmt.Sprintf("--plugins=%s", plugin.KeyFor(deployimagev1alpha1.Plugin{})))
 	return args
 }
 
@@ -499,7 +499,7 @@ func grafanaConfigMigrate(src, des string) error {
 
 // Edits the project to include the Grafana plugin.
 func kubebuilderGrafanaEdit() error {
-	args := []string{"edit", "--plugins", plugin.KeyFor(v1alpha.Plugin{})}
+	args := []string{"edit", "--plugins", plugin.KeyFor(grafanav1alpha.Plugin{})}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Grafana plugin: %w", err)
 	}
@@ -512,7 +512,7 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 		ManifestsFile string `json:"manifests,omitempty"`
 		OutputDir     string `json:"output,omitempty"`
 	}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(hemlv2alpha.Plugin{}), &cfg)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &cfg)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		// No previous configuration, use defaults
 		return kubebuilderHelmEdit(true)
@@ -521,7 +521,7 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 	}
 
 	// Use tracked configuration values
-	pluginKey := plugin.KeyFor(hemlv2alpha.Plugin{})
+	pluginKey := plugin.KeyFor(helmv2alpha.Plugin{})
 	args := []string{"edit", "--plugins", pluginKey}
 	if cfg.ManifestsFile != "" {
 		args = append(args, "--manifests", cfg.ManifestsFile)
@@ -540,9 +540,9 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 func kubebuilderHelmEdit(isV2Alpha bool) error {
 	var pluginKey string
 	if isV2Alpha {
-		pluginKey = plugin.KeyFor(hemlv2alpha.Plugin{})
+		pluginKey = plugin.KeyFor(helmv2alpha.Plugin{})
 	} else {
-		pluginKey = plugin.KeyFor(hemlv1alpha.Plugin{})
+		pluginKey = plugin.KeyFor(helmv1alpha.Plugin{})
 	}
 
 	args := []string{"edit", "--plugins", pluginKey}
@@ -558,13 +558,13 @@ func hasHelmPlugin(cfg store.Store) (bool, bool) {
 	var pluginConfig map[string]interface{}
 
 	// Check for v2alpha first (preferred)
-	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv2alpha.Plugin{}), &pluginConfig)
+	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &pluginConfig)
 	if err == nil {
 		return true, true // has helm plugin, is v2alpha
 	}
 
 	// Check for v1alpha
-	err = cfg.Config().DecodePluginConfig(plugin.KeyFor(hemlv1alpha.Plugin{}), &pluginConfig)
+	err = cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv1alpha.Plugin{}), &pluginConfig)
 	if err != nil {
 		// If neither Helm plugin is found, return false
 		if errors.As(err, &config.PluginKeyNotFoundError{}) {

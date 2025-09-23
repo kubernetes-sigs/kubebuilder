@@ -13,6 +13,7 @@ linters:
     - goconst
     - gocyclo
     - govet
+    - importas
     - ineffassign
     - lll
     - misspell
@@ -34,6 +35,23 @@ linters:
       disable:
         - fieldalignment
       enable-all: true
+    importas:
+      no-unaliased: true
+      alias:
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha
+          alias: helmv1alpha
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha
+          alias: helmv2alpha
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha
+          alias: grafanav1alpha
+        - pkg: "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
+          alias: autoupdatev1alpha
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1
+          alias: deployimagev1alpha1
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4
+          alias: golangv4
+        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2
+          alias: kustomizecommonv2
     nolintlint:
       allow-unused: false
     revive:
@@ -57,15 +75,16 @@ linters:
         - name: var-naming
           severity: warning
           arguments:
-            - ["ID"]            # allowed initialisms
-            - ["VM"]            # disallowed initialisms
-            - [                 # <-- this is a list containing one map
+            - ["ID"] # allowed initialisms
+            - ["VM"] # disallowed initialisms
+            - [
+                # <-- this is a list containing one map
                 {
                   skip-initialism-name-checks: true,
                   upper-case-const: true,
                   skip-package-name-checks: true,
-                  extra-bad-package-names: ["helpers", "models"]
-                }
+                  extra-bad-package-names: ["helpers", "models"],
+                },
               ]
         - name: var-declaration
         - name: package-comments
