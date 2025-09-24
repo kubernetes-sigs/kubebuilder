@@ -31,10 +31,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
-	autoupdatev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
-	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
-	helmv2alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
+	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
+	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Run bootstraps & runs the CLI
@@ -71,10 +71,10 @@ func Run() {
 			gov4Bundle,
 			&kustomizecommonv2.Plugin{},
 			&deployimagev1alpha1.Plugin{},
-			&grafanav1alpha1.Plugin{},
-			&helmv1alpha1.Plugin{},
-			&helmv2alpha1.Plugin{},
-			&autoupdatev1alpha1.Plugin{},
+			&grafanav1alpha.Plugin{},
+			&helmv1alpha.Plugin{},
+			&helmv2alpha.Plugin{},
+			&autoupdatev1alpha.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),
