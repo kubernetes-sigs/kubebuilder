@@ -65,4 +65,7 @@ go.work
 *.swp
 *.swo
 *~
+
+# Kubeconfig might contain secrets
+*.kubeconfig
 `
