@@ -22,6 +22,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 // Run e2e tests using the Ginkgo runner.
@@ -30,3 +32,14 @@ func TestE2E(t *testing.T) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting kubebuilder suite test for the alpha command generate\n")
 	RunSpecs(t, "Kubebuilder alpha generate suite")
 }
+
+var _ = BeforeSuite(func() {
+	run, why, _ := utils.ShouldRun(utils.Options{
+		RepoRoot:           ".",
+		Includes:           []string{"pkg/cli/alpha/", "test/e2e/alphagenerate/"},
+		SkipIfOnlyDocsYAML: true,
+	})
+	if !run {
+		Skip("skip: " + why)
+	}
+})
