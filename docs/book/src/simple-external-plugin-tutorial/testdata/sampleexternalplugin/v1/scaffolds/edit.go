@@ -22,7 +22,6 @@ import (
 
 	"v1/scaffolds/internal/templates/prometheus"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 	yamlv3 "sigs.k8s.io/yaml"
@@ -78,9 +77,9 @@ func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 
 // ProjectConfig represents the minimal PROJECT file structure we need
 type ProjectConfig struct {
-	Domain      string `json:"domain"`
-	ProjectName string `json:"projectName"`
-	Repo        string `json:"repo"`
+	Domain      string `yaml:"domain"`
+	ProjectName string `yaml:"projectName"`
+	Repo        string `yaml:"repo"`
 }
 
 // loadProjectConfig reads the PROJECT file and extracts necessary information
@@ -101,22 +100,25 @@ func loadProjectConfig() (*ProjectConfig, error) {
 		return nil, fmt.Errorf("failed to read PROJECT file: %w", err)
 	}
 
-	var cfg config.Config
+	var cfg ProjectConfig
 	if err := yamlv3.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal PROJECT file: %w", err)
 	}
 
-	projectName := "project"
-	if cfg.GetProjectName() != "" {
-		projectName = cfg.GetProjectName()
-	} else if cfg.GetRepository() != "" {
-		// Extract project name from repo path
-		projectName = filepath.Base(cfg.GetRepository())
+	// Set defaults if fields are empty
+	if cfg.Domain == "" {
+		cfg.Domain = "example.com"
+	}
+	if cfg.ProjectName == "" {
+		cfg.ProjectName = "project"
+		if cfg.Repo != "" {
+			// Extract project name from repo path
+			cfg.ProjectName = filepath.Base(cfg.Repo)
+		}
+	}
+	if cfg.Repo == "" {
+		cfg.Repo = cfg.Domain + "/" + cfg.ProjectName
 	}
 
-	return &ProjectConfig{
-		Domain:      cfg.GetDomain(),
-		ProjectName: projectName,
-		Repo:        cfg.GetRepository(),
-	}, nil
+	return &cfg, nil
 }

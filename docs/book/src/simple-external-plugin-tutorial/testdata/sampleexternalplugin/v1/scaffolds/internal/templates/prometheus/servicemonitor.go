@@ -29,7 +29,7 @@ type ServiceMonitorOptions func(*ServiceMonitor)
 // WithDomain sets the domain for the ServiceMonitor
 func WithDomain(domain string) ServiceMonitorOptions {
 	return func(sm *ServiceMonitor) {
-		sm.Content = fmt.Sprintf(serviceMonitorTemplate, domain)
+		sm.Content = fmt.Sprintf(serviceMonitorTemplate, domain, domain)
 	}
 }
 
@@ -53,7 +53,7 @@ func NewServiceMonitor(opts ...ServiceMonitorOptions) *ServiceMonitor {
 
 	// Set default content if not set by options
 	if sm.Content == "" {
-		sm.Content = fmt.Sprintf(serviceMonitorTemplate, "example.com")
+		sm.Content = fmt.Sprintf(serviceMonitorTemplate, "example.com", "example.com")
 	}
 
 	return sm
