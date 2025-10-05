@@ -16,15 +16,18 @@ limitations under the License.
 package scaffolds
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"v1/scaffolds/internal/templates/prometheus"
+	"github.com/spf13/afero"
 
+	"v1/internal/test/plugins/prometheus"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
-	yamlv3 "sigs.k8s.io/yaml"
 )
 
 var EditFlags = []external.Flag{}
@@ -77,48 +80,46 @@ func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 
 // ProjectConfig represents the minimal PROJECT file structure we need
 type ProjectConfig struct {
-	Domain      string `yaml:"domain"`
-	ProjectName string `yaml:"projectName"`
-	Repo        string `yaml:"repo"`
+	Domain      string
+	ProjectName string
+	Repo        string
 }
 
-// loadProjectConfig reads the PROJECT file and extracts necessary information
+// loadProjectConfig reads the PROJECT file using the kubebuilder config API.
 func loadProjectConfig() (*ProjectConfig, error) {
-	projectPath := filepath.Join(".", "PROJECT")
-
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		// Return default values if PROJECT file doesn't exist
-		return &ProjectConfig{
-			Domain:      "example.com",
-			ProjectName: "project",
-			Repo:        "example.com/project",
-		}, nil
-	}
-
-	data, err := os.ReadFile(projectPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read PROJECT file: %w", err)
-	}
-
-	var cfg ProjectConfig
-	if err := yamlv3.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal PROJECT file: %w", err)
-	}
-
-	// Set defaults if fields are empty
-	if cfg.Domain == "" {
-		cfg.Domain = "example.com"
-	}
-	if cfg.ProjectName == "" {
-		cfg.ProjectName = "project"
-		if cfg.Repo != "" {
-			// Extract project name from repo path
-			cfg.ProjectName = filepath.Base(cfg.Repo)
+	store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+	if err := store.Load(); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &ProjectConfig{
+				Domain:      "example.com",
+				ProjectName: "project",
+				Repo:        "example.com/project",
+			}, nil
 		}
-	}
-	if cfg.Repo == "" {
-		cfg.Repo = cfg.Domain + "/" + cfg.ProjectName
+		return nil, fmt.Errorf("failed to load PROJECT file: %w", err)
 	}
 
-	return &cfg, nil
+	cfg := store.Config()
+	if cfg == nil {
+		return nil, fmt.Errorf("PROJECT file is empty or invalid")
+	}
+
+	domain := cfg.GetDomain()
+	if domain == "" {
+		domain = "example.com"
+	}
+	projectName := cfg.GetProjectName()
+	if projectName == "" {
+		projectName = "project"
+	}
+	repo := cfg.GetRepository()
+	if repo == "" {
+		repo = fmt.Sprintf("%s/%s", domain, projectName)
+	}
+
+	return &ProjectConfig{
+		Domain:      domain,
+		ProjectName: projectName,
+		Repo:        repo,
+	}, nil
 }
