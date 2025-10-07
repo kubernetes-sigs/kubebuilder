@@ -45,15 +45,19 @@ type editKustomizeScaffolder struct {
 	force         bool
 	manifestsFile string
 	outputDir     string
+	kustomizeFile string
 }
 
 // NewKustomizeHelmScaffolder returns a new Scaffolder for HelmPlugin using kustomize output
-func NewKustomizeHelmScaffolder(cfg config.Config, force bool, manifestsFile, outputDir string) plugins.Scaffolder {
+func NewKustomizeHelmScaffolder(
+	cfg config.Config, force bool, manifestsFile, outputDir, kustomizeFile string,
+) plugins.Scaffolder {
 	return &editKustomizeScaffolder{
 		config:        cfg,
 		force:         force,
 		manifestsFile: manifestsFile,
 		outputDir:     outputDir,
+		kustomizeFile: kustomizeFile,
 	}
 }
 
@@ -112,7 +116,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 
 	// Read namePrefix from kustomization.yaml
 	// falls back to project name if not found/configured
-	prefix := kustomize.ReadNamePrefix("config/default/kustomization.yaml")
+	prefix := kustomize.ReadNamePrefix(s.kustomizeFile)
 	if prefix == "" {
 		prefix = s.config.GetProjectName()
 	} else {
@@ -130,7 +134,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	chartFiles := []machinery.Builder{
 		&github.HelmChartCI{},                        // GitHub Actions workflow for chart testing
 		&templates.HelmChart{OutputDir: s.outputDir}, // Chart.yaml metadata
-		&templates.HelmValuesBasic{ // values.yaml with dynamic config
+		&templates.HelmValuesBasic{
+			// values.yaml with dynamic config
 			HasWebhooks:      hasWebhooks,
 			HasMetrics:       hasMetrics,
 			DeploymentConfig: deploymentConfig,
