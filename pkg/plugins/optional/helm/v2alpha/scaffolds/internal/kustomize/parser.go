@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -150,4 +151,27 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	default:
 		resources.Other = append(resources.Other, obj)
 	}
+}
+
+func (pr *ParsedResources) EstimatePrefix(projectName string) string {
+	prefix := projectName
+	if pr.Deployment != nil {
+		if name := pr.Deployment.GetName(); name != "" {
+			deploymentPrefix, found := strings.CutSuffix(name, "-controller-manager")
+			if found {
+				prefix = deploymentPrefix
+			}
+		}
+	}
+	// Double check that the prefix is also the prefix for the service names
+	for _, svc := range pr.Services {
+		if name := svc.GetName(); name != "" {
+			if !strings.HasPrefix(name, prefix) {
+				// If not, fallback to just project name
+				prefix = projectName
+				break
+			}
+		}
+	}
+	return prefix
 }

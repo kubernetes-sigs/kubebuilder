@@ -6,7 +6,7 @@ metadata:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/name: project
         control-plane: controller-manager
-    name: {{ include "chart.name" . }}-controller-manager-metrics-monitor
+    name: project-controller-manager-metrics-monitor
     namespace: {{ .Release.Namespace }}
 spec:
     endpoints:
