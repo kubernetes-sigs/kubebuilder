@@ -48,12 +48,14 @@ const (
 // HelmTemplater handles converting YAML content to Helm templates
 type HelmTemplater struct {
 	projectName string
+	namePrefix  string
 }
 
 // NewHelmTemplater creates a new Helm templater
-func NewHelmTemplater(projectName string) *HelmTemplater {
+func NewHelmTemplater(projectName string, namePrefix string) *HelmTemplater {
 	return &HelmTemplater{
 		projectName: projectName,
+		namePrefix:  namePrefix,
 	}
 }
 
@@ -184,9 +186,14 @@ func (t *HelmTemplater) templateServiceMonitorNames(yamlContent string, resource
 
 	// Normalize suffix by stripping the project prefix if present
 	suffix := origName
-	prefix := t.projectName + "-"
+	prefix := t.namePrefix + "-"
 	if strings.HasPrefix(origName, prefix) {
 		suffix = strings.TrimPrefix(origName, prefix)
+	}
+
+	// If the prefix is not the project name, we should keep the original name intact
+	if prefix != t.projectName+"-" {
+		return yamlContent
 	}
 
 	// Only template if the intended target follows the conventional suffix

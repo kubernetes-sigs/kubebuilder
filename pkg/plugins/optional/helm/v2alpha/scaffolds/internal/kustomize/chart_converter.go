@@ -37,9 +37,9 @@ type ChartConverter struct {
 }
 
 // NewChartConverter creates a new chart converter with all necessary components
-func NewChartConverter(resources *ParsedResources, projectName, outputDir string) *ChartConverter {
+func NewChartConverter(resources *ParsedResources, projectName, namePrefix, outputDir string) *ChartConverter {
 	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(projectName)
+	templater := NewHelmTemplater(projectName, namePrefix)
 	writer := NewChartWriter(templater, outputDir)
 
 	return &ChartConverter{
