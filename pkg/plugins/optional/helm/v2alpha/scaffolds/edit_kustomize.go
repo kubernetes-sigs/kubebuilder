@@ -109,7 +109,18 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			slog.Warn("failed to remove stale generic ServiceMonitor", "path", staleSM, "error", rmErr)
 		}
 	}
-	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), s.outputDir)
+
+	// Read namePrefix from kustomization.yaml
+	// falls back to project name if not found/configured
+	prefix := kustomize.ReadNamePrefix("config/default/kustomization.yaml")
+	if prefix == "" {
+		prefix = s.config.GetProjectName()
+	} else {
+		// Remove trailing dash if present
+		prefix = strings.TrimSuffix(prefix, "-")
+	}
+
+	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), prefix, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files

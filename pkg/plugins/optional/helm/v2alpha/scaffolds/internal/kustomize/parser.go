@@ -151,3 +151,22 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.Other = append(resources.Other, obj)
 	}
 }
+
+// ReadNamePrefix reads the namePrefix from a kustomization.yaml file
+// Returns empty string if the file doesn't exist or has no namePrefix
+func ReadNamePrefix(kustomizationPath string) string {
+	data, err := os.ReadFile(kustomizationPath)
+	if err != nil {
+		return ""
+	}
+
+	var kustomization struct {
+		NamePrefix string `yaml:"namePrefix"`
+	}
+
+	if err := yaml.Unmarshal(data, &kustomization); err != nil {
+		return ""
+	}
+
+	return kustomization.NamePrefix
+}
