@@ -116,15 +116,15 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 
 	// Read namePrefix from kustomization.yaml
 	// falls back to project name if not found/configured
-	prefix := kustomize.ReadNamePrefix(s.kustomizeFile)
-	if prefix == "" {
-		prefix = s.config.GetProjectName()
+	namePrefix := kustomize.ReadNamePrefix(s.kustomizeFile)
+	if namePrefix == "" {
+		namePrefix = s.config.GetProjectName()
 	} else {
 		// Remove trailing dash if present
-		prefix = strings.TrimSuffix(prefix, "-")
+		namePrefix = strings.TrimSuffix(namePrefix, "-")
 	}
 
-	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), prefix, s.outputDir)
+	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), namePrefix, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files
@@ -150,7 +150,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	// provide one via kustomize (../prometheus). This avoids duplicate objects
 	// with the same name within the Helm chart.
 	if !hasPrometheus {
-		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir, NamePrefix: prefix})
+		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir, NamePrefix: namePrefix})
 	}
 
 	// Generate template files from kustomize output

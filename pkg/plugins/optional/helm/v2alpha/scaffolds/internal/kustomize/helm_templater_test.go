@@ -28,7 +28,7 @@ var _ = Describe("HelmTemplater", func() {
 	BeforeEach(func() {
 		templater = &HelmTemplater{
 			projectName: "test-project",
-			prefix:      "test-project",
+			namePrefix:  "test-project",
 		}
 	})
 
@@ -239,19 +239,19 @@ kind: ServiceMonitor
 metadata:
   name: test-project-controller-manager-metrics-monitor
 `
-			It("the prefix and project name are the same", func() {
+			It("the namePrefix and project name are the same", func() {
 				result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
-				// If the prefix and default chart name match, should use chart.name template
-				Expect(result).To(ContainSubstring("{{ include \"chart.name\" . }}"), "Should use chart.name template when prefix and project name match")
+				// If the namePrefix and default chart name match, should use chart.name template
+				Expect(result).To(ContainSubstring("{{ include \"chart.name\" . }}"), "Should use chart.name template when namePrefix and project name match")
 			})
-			It("the prefix and project name differ", func() {
+			It("the namePrefix and project name differ", func() {
 				templaterDiff := &HelmTemplater{
 					projectName: "project-with-a-long-name",
-					prefix:      "test-project",
+					namePrefix:  "test-project",
 				}
 				result := templaterDiff.ApplyHelmSubstitutions(content, serviceMonitorResource)
-				// If the prefix and default chart name differ, should use prefix variable
-				Expect(result).ToNot(ContainSubstring("{{ include \"chart.name\" . }}"), "Should not use chart.name template when prefix and project name differ")
+				// If the namePrefix and default chart name differ, should use namePrefix variable
+				Expect(result).ToNot(ContainSubstring("{{ include \"chart.name\" . }}"), "Should not use chart.name template when namePrefix and project name differ")
 			})
 		})
 
