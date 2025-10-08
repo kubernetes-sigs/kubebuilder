@@ -31,6 +31,9 @@ type ServiceMonitor struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 
+	// Prefix
+	NamePrefix string
+
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
 }
@@ -59,7 +62,7 @@ metadata:
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
     control-plane: controller-manager
-  name: {{ .ProjectName }}-controller-manager-metrics-monitor
+  name: {{ .NamePrefix }}-controller-manager-metrics-monitor
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
   endpoints:
@@ -69,7 +72,7 @@ spec:
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         {{ "{{- if .Values.certManager.enable }}" }}
-        serverName: {{ .ProjectName }}-controller-manager-metrics-service.{{ "{{ .Release.Namespace }}" }}.svc
+        serverName: {{ .NamePrefix }}-controller-manager-metrics-service.{{ "{{ .Release.Namespace }}" }}.svc
         # Apply secure TLS configuration with cert-manager
         insecureSkipVerify: false
         ca:

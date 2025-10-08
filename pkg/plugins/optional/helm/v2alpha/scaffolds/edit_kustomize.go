@@ -150,7 +150,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	// provide one via kustomize (../prometheus). This avoids duplicate objects
 	// with the same name within the Helm chart.
 	if !hasPrometheus {
-		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir})
+		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir, NamePrefix: prefix})
 	}
 
 	// Generate template files from kustomize output
