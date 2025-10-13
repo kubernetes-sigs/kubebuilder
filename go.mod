@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/mod v0.29.0
-	golang.org/x/text v0.29.0
+	golang.org/x/text v0.30.0
 	golang.org/x/tools v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.19.0
