@@ -37,8 +37,6 @@ const (
 	DefaultManifestsFile = "dist/install.yaml"
 	// DefaultOutputDir is the default output directory for Helm charts
 	DefaultOutputDir = "dist"
-	// DefaultKustomizeFile is the default path for kustomization.yaml
-	DefaultKustomizeFile = "config/default/kustomization.yaml"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -48,7 +46,6 @@ type editSubcommand struct {
 	force         bool
 	manifestsFile string
 	outputDir     string
-	kustomizePath string
 }
 
 //nolint:lll
@@ -101,8 +98,6 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
 		"path to the YAML file containing Kubernetes manifests from kustomize output")
-	fs.StringVar(&p.kustomizePath, "kustomize-path", DefaultKustomizeFile,
-		"path to the kustomization.yaml file used to generate the manifests file")
 	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
 }
 
@@ -119,7 +114,7 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		}
 	}
 
-	scaffolder := scaffolds.NewKustomizeHelmScaffolder(p.config, p.force, p.manifestsFile, p.outputDir, p.kustomizePath)
+	scaffolder := scaffolds.NewKustomizeHelmScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {

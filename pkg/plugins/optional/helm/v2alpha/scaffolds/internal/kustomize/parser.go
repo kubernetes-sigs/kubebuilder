@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -152,21 +153,25 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	}
 }
 
-// ReadNamePrefix reads the namePrefix from a kustomization.yaml file
-// Returns empty string if the file doesn't exist or has no namePrefix
-func ReadNamePrefix(kustomizationPath string) string {
-	data, err := os.ReadFile(kustomizationPath)
-	if err != nil {
-		return ""
+func (pr *ParsedResources) EstimatePrefix(projectName string) string {
+	prefix := projectName
+	if pr.Deployment != nil {
+		if name := pr.Deployment.GetName(); name != "" {
+			deploymentPrefix, found := strings.CutSuffix(projectName, "-controller-manager")
+			if found {
+				prefix = deploymentPrefix
+			}
+		}
 	}
-
-	var kustomization struct {
-		NamePrefix string `yaml:"namePrefix"`
+	// Double check that the prefix is also the prefix for the service names
+	for _, svc := range pr.Services {
+		if name := svc.GetName(); name != "" {
+			if !strings.HasPrefix(name, prefix) {
+				// If not, fallback to just project name
+				prefix = projectName
+				break
+			}
+		}
 	}
-
-	if err := yaml.Unmarshal(data, &kustomization); err != nil {
-		return ""
-	}
-
-	return kustomization.NamePrefix
+	return prefix
 }

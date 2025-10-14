@@ -45,19 +45,15 @@ type editKustomizeScaffolder struct {
 	force         bool
 	manifestsFile string
 	outputDir     string
-	kustomizeFile string
 }
 
 // NewKustomizeHelmScaffolder returns a new Scaffolder for HelmPlugin using kustomize output
-func NewKustomizeHelmScaffolder(
-	cfg config.Config, force bool, manifestsFile, outputDir, kustomizeFile string,
-) plugins.Scaffolder {
+func NewKustomizeHelmScaffolder(cfg config.Config, force bool, manifestsFile, outputDir string) plugins.Scaffolder {
 	return &editKustomizeScaffolder{
 		config:        cfg,
 		force:         force,
 		manifestsFile: manifestsFile,
 		outputDir:     outputDir,
-		kustomizeFile: kustomizeFile,
 	}
 }
 
@@ -113,17 +109,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			slog.Warn("failed to remove stale generic ServiceMonitor", "path", staleSM, "error", rmErr)
 		}
 	}
-
-	// Read namePrefix from kustomization.yaml
-	// falls back to project name if not found/configured
-	namePrefix := kustomize.ReadNamePrefix(s.kustomizeFile)
-	if namePrefix == "" {
-		namePrefix = s.config.GetProjectName()
-	} else {
-		// Remove trailing dash if present
-		namePrefix = strings.TrimSuffix(namePrefix, "-")
-	}
-
+	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
 	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), namePrefix, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
