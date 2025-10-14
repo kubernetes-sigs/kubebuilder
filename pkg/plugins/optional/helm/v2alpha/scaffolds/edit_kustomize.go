@@ -150,7 +150,20 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	// provide one via kustomize (../prometheus). This avoids duplicate objects
 	// with the same name within the Helm chart.
 	if !hasPrometheus {
-		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir, NamePrefix: namePrefix})
+		// Find the metrics service name from parsed resources
+		metricsServiceName := namePrefix + "-controller-manager-metrics-service"
+		for _, svc := range resources.Services {
+			if strings.Contains(svc.GetName(), "metrics-service") {
+				metricsServiceName = svc.GetName()
+				break
+			}
+		}
+
+		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{
+			OutputDir:   s.outputDir,
+			NamePrefix:  namePrefix,
+			ServiceName: metricsServiceName,
+		})
 	}
 
 	// Generate template files from kustomize output
