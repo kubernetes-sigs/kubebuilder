@@ -227,22 +227,29 @@ metadata:
 		})
 
 		Describe("should generate ServiceMonitor name correctly", func() {
-			serviceMonitorResource := &unstructured.Unstructured{}
-			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
-			serviceMonitorResource.SetKind("ServiceMonitor")
-			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+			var serviceMonitorResource *unstructured.Unstructured
+			var content string
 
-			// Test content must end with a newline
-			// If not, the `name` regex in the ServiceMonitor replacement will never match
-			content := `apiVersion: monitoring.coreos.com/v1
+			BeforeEach(func() {
+				serviceMonitorResource = &unstructured.Unstructured{}
+				serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+				serviceMonitorResource.SetKind("ServiceMonitor")
+				serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+				// Test content must end with a newline
+				// If not, the `name` regex in the ServiceMonitor replacement will never match
+				content = `apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: test-project-controller-manager-metrics-monitor
 `
+			})
+
 			It("the namePrefix and project name are the same", func() {
 				result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 				// If the namePrefix and default chart name match, should use chart.name template
-				Expect(result).To(ContainSubstring("{{ include \"chart.name\" . }}"), "Should use chart.name template when namePrefix and project name match")
+				Expect(result).To(ContainSubstring("{{ include \"chart.name\" . }}"),
+					"Should use chart.name template when namePrefix and project name match")
 			})
 			It("the namePrefix and project name differ", func() {
 				templaterDiff := &HelmTemplater{
@@ -251,7 +258,8 @@ metadata:
 				}
 				result := templaterDiff.ApplyHelmSubstitutions(content, serviceMonitorResource)
 				// If the namePrefix and default chart name differ, should use namePrefix variable
-				Expect(result).ToNot(ContainSubstring("{{ include \"chart.name\" . }}"), "Should not use chart.name template when namePrefix and project name differ")
+				Expect(result).ToNot(ContainSubstring("{{ include \"chart.name\" . }}"),
+					"Should not use chart.name template when namePrefix and project name differ")
 			})
 		})
 
