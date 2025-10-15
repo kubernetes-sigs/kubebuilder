@@ -28,6 +28,7 @@ var _ = Describe("HelmTemplater", func() {
 	BeforeEach(func() {
 		templater = &HelmTemplater{
 			projectName: "test-project",
+			namePrefix:  "test-project",
 		}
 	})
 
@@ -223,6 +224,43 @@ metadata:
 			// Should be wrapped with prometheus enable conditional
 			Expect(result).To(ContainSubstring("{{- if .Values.prometheus.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		Describe("should generate ServiceMonitor name correctly", func() {
+			var serviceMonitorResource *unstructured.Unstructured
+			var content string
+
+			BeforeEach(func() {
+				serviceMonitorResource = &unstructured.Unstructured{}
+				serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+				serviceMonitorResource.SetKind("ServiceMonitor")
+				serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+				// Test content must end with a newline
+				// If not, the `name` regex in the ServiceMonitor replacement will never match
+				content = `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+`
+			})
+
+			It("the namePrefix and project name are the same", func() {
+				result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+				// If the namePrefix and default chart name match, should use chart.name template
+				Expect(result).To(ContainSubstring("{{ include \"chart.name\" . }}"),
+					"Should use chart.name template when namePrefix and project name match")
+			})
+			It("the namePrefix and project name differ", func() {
+				templaterDiff := &HelmTemplater{
+					projectName: "project-with-a-long-name",
+					namePrefix:  "test-project",
+				}
+				result := templaterDiff.ApplyHelmSubstitutions(content, serviceMonitorResource)
+				// If the namePrefix and default chart name differ, should use namePrefix variable
+				Expect(result).ToNot(ContainSubstring("{{ include \"chart.name\" . }}"),
+					"Should not use chart.name template when namePrefix and project name differ")
+			})
 		})
 
 		It("should add metrics conditional for metrics services", func() {
