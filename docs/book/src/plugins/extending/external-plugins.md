@@ -30,13 +30,13 @@ structures.
 
 `PluginRequest` contains the data collected from the CLI and any previously executed plugins. Kubebuilder sends this data as a JSON object to the external plugin via `stdin`.
 
-**Example `PluginRequest` (triggered by `kubebuilder init --plugins sampleexternalplugin/v1 --domain my.domain`):**
+**Example `PluginRequest` (triggered by `kubebuilder edit --plugins sampleexternalplugin/v1`):**
 
 ```json
 {
   "apiVersion": "v1alpha1",
-  "args": ["--domain", "my.domain"],
-  "command": "init",
+  "args": [],
+  "command": "edit",
   "universe": {}
 }
 ```
@@ -49,13 +49,14 @@ structures.
 ```json
 {
   "apiVersion": "v1alpha1",
-  "command": "init",
+  "command": "edit",
   "metadata": {
-    "description": "The `init` subcommand initializes a project via Kubebuilder. It scaffolds a single file: `initFile`.",
-    "examples": "kubebuilder init --plugins sampleexternalplugin/v1 --domain my.domain"
+    "description": "The `edit` subcommand adds Prometheus ServiceMonitor configuration for monitoring your operator.",
+    "examples": "kubebuilder edit --plugins sampleexternalplugin/v1"
   },
   "universe": {
-    "initFile": "A file created with the `init` subcommand."
+    "config/prometheus/monitor.yaml": "# Prometheus ServiceMonitor manifest...",
+    "config/prometheus/kustomization.yaml": "resources:\n  - monitor.yaml\n"
   },
   "error": false,
   "errorMsgs": []
@@ -120,26 +121,15 @@ Otherwise, Kubebuilder would search for the plugins in a default path based on y
 You can now use it by calling the CLI commands:
 
 ```sh
-# Initialize a new project with the external plugin named `sampleplugin`
-kubebuilder init --plugins sampleplugin/v1
+# Update the project configuration with the sample external plugin
+# The sampleexternalplugin adds Prometheus ServiceMonitor configuration
+kubebuilder edit --plugins sampleexternalplugin/v1
 
-# Display help information of the `init` subcommand of the external plugin
-kubebuilder init --plugins sampleplugin/v1 --help
+# Display help information for the edit subcommand
+kubebuilder edit --plugins sampleexternalplugin/v1 --help
 
-# Create a new API with the above external plugin with a customized flag `number`
-kubebuilder create api --plugins sampleplugin/v1 --number 2
-
-# Create a webhook with the above external plugin with a customized flag `hooked`
-kubebuilder create webhook --plugins sampleplugin/v1 --hooked
-
-# Update the project configuration with the above external plugin
-kubebuilder edit --plugins sampleplugin/v1
-
-# Create new APIs with external plugins v1 and v2 by respecting the plugin chaining order
-kubebuilder create api --plugins sampleplugin/v1,sampleplugin/v2
-
-# Create new APIs with the go/v4 plugin and then pass those files to the external plugin by respecting the plugin chaining order
-kubebuilder create api --plugins go/v4,sampleplugin/v1
+# Plugin chaining example: Use go/v4 plugin first, then apply external plugin
+kubebuilder edit --plugins go/v4,sampleexternalplugin/v1
 ```
 
 ## Further resources

@@ -37,12 +37,8 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 	}
 
 	switch pr.Command {
-	case "init":
-		pluginResponse.Flags = scaffolds.InitFlags
-	case "create api":
-		pluginResponse.Flags = scaffolds.ApiFlags
-	case "create webhook":
-		pluginResponse.Flags = scaffolds.WebhookFlags
+	case "edit":
+		pluginResponse.Flags = scaffolds.EditFlags
 	default:
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
