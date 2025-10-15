@@ -16,12 +16,6 @@
 
 source "$(dirname "$0")/../common.sh"
 
-# To keep fixed the cert-manager version used in the scaffold of eternal types and go version used.
-CERT_MANAGER_MODULE="github.com/cert-manager/cert-manager"
-CERT_MANAGER_VERSION="${CERT_MANAGER_VERSION:-v1.18.2}"
-CERT_MANAGER_IMPORT="${CERT_MANAGER_MODULE}/pkg/apis/certmanager/v1"
-GO_VERSION_DIRECTIVE="${GO_VERSION_DIRECTIVE:-1.24.5}"
-
 # This function scaffolds test projects given a project name and flags.
 #
 # Usage:
@@ -39,10 +33,6 @@ function scaffold_test_project {
 
   header_text "Generating project ${project} with flags: ${init_flags}"
   go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
-  go mod edit -go="${GO_VERSION_DIRECTIVE}"
-  if [[ $project == "project-v4" || $project == "project-v4-multigroup" ]]; then
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-  fi
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
@@ -60,12 +50,9 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     # Controller for External types
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path="${CERT_MANAGER_IMPORT}" --external-api-domain=io
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for External types
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path="${CERT_MANAGER_IMPORT}" --external-api-domain=io
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --defaulting
     # Webhook for kubernetes Core type that is part of an api group
@@ -94,12 +81,9 @@ function scaffold_test_project {
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
     # Controller for External types
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path="${CERT_MANAGER_IMPORT}" --external-api-domain=io
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for External types
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path="${CERT_MANAGER_IMPORT}" --external-api-domain=io
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --programmatic-validation --make=false
     # Webhook for kubernetes Core type that is part of an api group
@@ -136,10 +120,6 @@ function scaffold_test_project {
   # To avoid conflicts
   rm -f go.sum
   go mod tidy
-  go mod edit -go="${GO_VERSION_DIRECTIVE}"
-  if [[ $project == "project-v4" || $project == "project-v4-multigroup" ]]; then
-    go mod edit -require="${CERT_MANAGER_MODULE}@${CERT_MANAGER_VERSION}"
-  fi
   popd
 }
 
