@@ -216,6 +216,41 @@ var _ = Describe("Manager", Ordered, func() {
 			}
 			Eventually(verifyMetricsServerStarted).Should(Succeed())
 
+			By("waiting for webhook service to be ready")
+			verifyWebhookServiceReady := func(g Gomega) {
+				const webhookServiceName = "project-webhook-service"
+
+				// Webhook service should exist since webhooks are configured
+				cmd := exec.Command("kubectl", "get", "service", webhookServiceName, "-n", namespace)
+				_, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Webhook service should exist but was not found")
+
+				// Check if webhook server is ready by verifying pod readiness
+				cmd = exec.Command("kubectl", "get", "pods", "-l", "control-plane=controller-manager",
+					"-n", namespace, "-o", "jsonpath={.items[0].status.conditions[?(@.type=='Ready')].status}")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(output).To(Equal("True"),
+					"Controller manager pod not ready (webhook server may not be accepting connections)")
+
+				// Check if webhook service endpoints are available
+				cmd = exec.Command("kubectl", "get", "endpoints", webhookServiceName,
+					"-n", namespace, "-o", "jsonpath={.subsets[*].addresses[*].ip}")
+				output, err = utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(output).NotTo(BeEmpty(), "Webhook service endpoints are not ready")
+
+				// Test webhook connectivity by checking if webhook server port is responding
+				cmd = exec.Command("kubectl", "run", "webhook-test", "--rm", "-i", "--restart=Never",
+					"--image=curlimages/curl:latest", "--",
+					"curl", "-k", "--connect-timeout", "5",
+					"https://"+webhookServiceName+"."+namespace+".svc:443/readyz")
+				_, err = utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Webhook server not responding on port 443")
+			}
+			Eventually(verifyWebhookServiceReady, 2*time.Minute).Should(Succeed())
+			// +kubebuilder:scaffold:e2e-webhooks-readiness
+
 			By("creating the curl-metrics pod to access the metrics endpoint")
 			cmd = exec.Command("kubectl", "run", "curl-metrics", "--restart=Never",
 				"--namespace", namespace,

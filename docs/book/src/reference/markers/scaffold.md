@@ -107,6 +107,7 @@ properly registered with the manager, so that the controller can reconcile the r
 | `+kubebuilder:scaffold:crdkustomizecainjectioname`                           | `config/default`             | Marks where CA injection patches are added for the conversion webhooks.                                                                                                                |
 | **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` | `config/crd`                 | Marks where CA injection patches are added for the webhooks. Replaced by `+kubebuilder:scaffold:crdkustomizecainjectionns` and `+kubebuilder:scaffold:crdkustomizecainjectioname`  |
 | `+kubebuilder:scaffold:manifestskustomizesamples` | `config/samples`           | Marks where Kustomize sample manifests are injected.                            |
+| `+kubebuilder:scaffold:e2e-webhooks-readiness` | `test/e2e`                   | Adds webhooks readiness checks in e2e tests before metrics collection.          |
 | `+kubebuilder:scaffold:e2e-webhooks-checks` | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
 
 <aside class="note warning">
