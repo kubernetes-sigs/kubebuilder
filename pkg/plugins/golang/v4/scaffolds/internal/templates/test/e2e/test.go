@@ -394,6 +394,41 @@ var _ = Describe("Manager", Ordered, func() {
 			}
 			Eventually(verifyMetricsServerStarted).Should(Succeed())
 
+			By("waiting for webhook service to be ready if webhooks are configured")
+			verifyWebhookServiceReady := func(g Gomega) {
+				// Check if webhook service exists first
+				cmd := exec.Command("kubectl", "get", "service", "{{ .ProjectName }}-webhook-service", "-n", namespace)
+				_, err := utils.Run(cmd)
+				if err != nil {
+					// No webhook service found, skip webhook checks
+					return
+				}
+
+				// Check if webhook server is ready by verifying pod readiness
+				cmd = exec.Command("kubectl", "get", "pods", "-l", "control-plane=controller-manager",
+					"-n", namespace, "-o", "jsonpath={.items[0].status.conditions[?(@.type=='Ready')].status}")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(output).To(Equal("True"), 
+					"Controller manager pod not ready (webhook server may not be accepting connections)")
+
+				// Check if webhook service endpoints are available
+				cmd = exec.Command("kubectl", "get", "endpoints", "{{ .ProjectName }}-webhook-service", 
+					"-n", namespace, "-o", "jsonpath={.subsets[*].addresses[*].ip}")
+				output, err = utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(output).NotTo(BeEmpty(), "Webhook service endpoints are not ready")
+
+				// Test webhook connectivity by checking if webhook server port is responding
+				cmd = exec.Command("kubectl", "run", "webhook-test", "--rm", "-i", "--restart=Never",
+					"--image=curlimages/curl:latest", "--",
+					"curl", "-k", "--connect-timeout", "5", 
+					"https://{{ .ProjectName }}-webhook-service."+namespace+".svc:443/readyz")
+				_, err = utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Webhook server not responding on port 443")
+			}
+			Eventually(verifyWebhookServiceReady, 2*time.Minute).Should(Succeed())
+
 			By("creating the curl-metrics pod to access the metrics endpoint")
 			cmd = exec.Command("kubectl", "run", "curl-metrics", "--restart=Never",
 				"--namespace", namespace,
