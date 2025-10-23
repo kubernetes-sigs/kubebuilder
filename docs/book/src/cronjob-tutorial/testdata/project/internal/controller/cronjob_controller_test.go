@@ -1,4 +1,5 @@
 /*
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,6 +14,14 @@ limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
 
+/*
+Ideally, we should have one `<kind>_controller_test.go` for each controller scaffolded and called in the `suite_test.go`.
+So, let's write our example test for the CronJob controller (`cronjob_controller_test.go.`)
+*/
+
+/*
+As usual, we start with the necessary imports. We also define some utility variables.
+*/
 package controller
 
 import (
@@ -47,11 +56,11 @@ func assertCondition(conditions []metav1.Condition, conditionType string, expect
 
 // Manually implement random string generation (compatible with Ginkgo versions below v2.1.0)
 func randomString(length int) string {
-	rand.Seed(time.Now().UnixNano() + int64(GinkgoParallelProcess()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(GinkgoParallelProcess())))
 	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	var sb strings.Builder
 	for i := 0; i < length; i++ {
-		sb.WriteRune(chars[rand.Intn(len(chars))])
+		sb.WriteRune(chars[r.Intn(len(chars))])
 	}
 	return sb.String()
 }
@@ -115,15 +124,16 @@ var _ = Describe("CronJob controller", func() {
 
 	// Use unique names for each test to prevent interference
 	var (
-		ns             = "cronjob-test-" + randomString(5) // Using manually implemented function
 		ctx            context.Context
 		cronJobName    string
+		ns             string
 		namespacedName types.NamespacedName
 	)
 
 	// Setup test namespace before each test
 	BeforeEach(func() {
 		ctx = context.Background()
+		ns = "cronjob-test-" + randomString(5)     // Using manually implemented function
 		cronJobName = "test-cj-" + randomString(5) // Using manually implemented function
 		namespacedName = types.NamespacedName{Name: cronJobName, Namespace: ns}
 
@@ -183,3 +193,7 @@ var _ = Describe("CronJob controller", func() {
 		})
 	})
 })
+
+/*
+	After writing all this code, you can run `go test ./...` in your `controllers/` directory again to run your new test!
+*/
