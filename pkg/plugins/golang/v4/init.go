@@ -198,7 +198,7 @@ func checkDir() error {
 				// The go.mod is allowed because user might run
 				// go mod init before use the plugin it for not be required inform
 				// the go module via the repo --flag.
-				//"go.mod",
+				// "go.mod",
 			}
 			for _, name := range reservedNames {
 				if info.Name() == name {
