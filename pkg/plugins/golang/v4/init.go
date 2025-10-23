@@ -190,6 +190,17 @@ func checkDir() error {
 			if isCapitalized && info.Name() != "PROJECT" {
 				return nil
 			}
+			allowedFiles := []string{
+				// User might use tool versions management tools to set up the environment including kubebuilder and go version
+				"mise.toml",      // mise-en-place configuration file
+				".tool-versions", // asdf configuration file
+			}
+			// Allow files used by tool versions management
+			for _, ext := range allowedFiles {
+				if info.Name() == ext {
+					return nil
+				}
+			}
 			disallowedExtensions := []string{
 				".go",
 				".yaml",
