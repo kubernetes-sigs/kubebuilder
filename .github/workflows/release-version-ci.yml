@@ -51,8 +51,8 @@ jobs:
         run: |
           mkdir test-operator && cd test-operator
           go mod init test-operator
-          chmod +x ../dist/kubebuilder_linux_amd64_v1/kubebuilder
-          ../dist/kubebuilder_linux_amd64_v1/kubebuilder init --domain example.com
+          chmod +x ../dist/kubebuilder_linux_$(go env GOARCH)_v1/kubebuilder
+          ../dist/kubebuilder_linux_$(go env GOARCH)_v1/kubebuilder init --domain example.com
 
           echo "PROJECT file content:"
           cat PROJECT
