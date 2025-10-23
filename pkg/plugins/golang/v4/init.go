@@ -168,7 +168,7 @@ func checkDir() error {
 			}
 
 			// Only care about top-level files and directories
-			if strings.Count(path, string(os.PathSeparator)) > 1 {
+			if strings.Count(path, string(os.PathSeparator)) > 0 {
 				return nil
 			}
 
