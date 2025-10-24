@@ -283,4 +283,42 @@ spec:
 			Expect(issuer.GetKind()).To(Equal("Issuer"))
 		})
 	})
+
+	Context("with custom prefix", func() {
+		BeforeEach(func() {
+			yamlContent := `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ln-controller-manager
+  namespace: long-name-test-system
+spec:
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ln-controller-manager-metrics-service
+  namespace: long-name-test-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: 8443
+  selector:
+    control-plane: ln-controller-manager
+`
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser = NewParser(tempFile)
+		})
+
+		It("should use the correct prefix", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(resources.EstimatePrefix("long-name")).To(Equal("ln"))
+		})
+	})
 })

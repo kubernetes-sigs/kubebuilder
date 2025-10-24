@@ -109,7 +109,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			slog.Warn("failed to remove stale generic ServiceMonitor", "path", staleSM, "error", rmErr)
 		}
 	}
-	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), s.outputDir)
+	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
+	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), namePrefix, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files
@@ -119,7 +120,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	chartFiles := []machinery.Builder{
 		&github.HelmChartCI{},                        // GitHub Actions workflow for chart testing
 		&templates.HelmChart{OutputDir: s.outputDir}, // Chart.yaml metadata
-		&templates.HelmValuesBasic{ // values.yaml with dynamic config
+		&templates.HelmValuesBasic{
+			// values.yaml with dynamic config
 			HasWebhooks:      hasWebhooks,
 			HasMetrics:       hasMetrics,
 			DeploymentConfig: deploymentConfig,
@@ -134,7 +136,20 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	// provide one via kustomize (../prometheus). This avoids duplicate objects
 	// with the same name within the Helm chart.
 	if !hasPrometheus {
-		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{OutputDir: s.outputDir})
+		// Find the metrics service name from parsed resources
+		metricsServiceName := namePrefix + "-controller-manager-metrics-service"
+		for _, svc := range resources.Services {
+			if strings.Contains(svc.GetName(), "metrics-service") {
+				metricsServiceName = svc.GetName()
+				break
+			}
+		}
+
+		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{
+			OutputDir:   s.outputDir,
+			NamePrefix:  namePrefix,
+			ServiceName: metricsServiceName,
+		})
 	}
 
 	// Generate template files from kustomize output

@@ -55,7 +55,7 @@ var _ = Describe("ChartConverter", func() {
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 
 		// Create converter
-		converter = NewChartConverter(resources, "test-project", "dist")
+		converter = NewChartConverter(resources, "test-project", "test-project", "dist")
 	})
 
 	Context("NewChartConverter", func() {
