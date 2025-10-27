@@ -69,17 +69,48 @@ func (f *HelmValuesBasic) SetTemplateDefaults() error {
 func (f *HelmValuesBasic) generateBasicValues() string {
 	var buf bytes.Buffer
 
+	// Extract values from kustomize output
+	imageRepo := "controller"    // default
+	imageTag := "latest"         // default
+	imageDigest := ""            // empty by default
+	pullPolicy := "IfNotPresent" // default
+
+	if f.DeploymentConfig != nil {
+		// Use extracted image values from kustomize
+		if img, ok := f.DeploymentConfig["image"].(map[string]interface{}); ok {
+			if repo, ok := img["repository"].(string); ok {
+				imageRepo = repo
+			}
+			// Digest takes precedence over tag
+			if dig, ok := img["digest"].(string); ok && dig != "" {
+				imageDigest = dig
+				imageTag = "" // clear tag when using digest
+			} else if tag, ok := img["tag"].(string); ok && tag != "" {
+				imageTag = tag
+			}
+		}
+		if pp, ok := f.DeploymentConfig["imagePullPolicy"].(string); ok && pp != "" {
+			pullPolicy = pp
+		}
+	}
+
 	// Controller Manager configuration
 	buf.WriteString(`# Configure the controller manager deployment
 controllerManager:
   replicas: 1
   
   image:
-    repository: controller
-    tag: latest
-    pullPolicy: IfNotPresent
+    repository: ` + imageRepo + "\n")
 
-`)
+	// Only include tag or digest, not both
+	if imageDigest != "" {
+		buf.WriteString(`    # Using digest from kustomize
+    digest: ` + imageDigest + "\n")
+	} else {
+		buf.WriteString(`    tag: ` + imageTag + "\n")
+	}
+
+	buf.WriteString(`    pullPolicy: ` + pullPolicy + "\n\n")
 
 	// Add extracted deployment configuration
 	f.addDeploymentConfig(&buf)

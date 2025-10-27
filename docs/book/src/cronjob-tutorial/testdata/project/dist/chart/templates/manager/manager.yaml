@@ -34,7 +34,12 @@ spec:
                     {{- end }}
                   command:
                     - /manager
+                  {{- if .Values.controllerManager.image.digest }}
+                  image: "{{ .Values.controllerManager.image.repository }}@{{ .Values.controllerManager.image.digest }}"
+                  {{- else }}
                   image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+                  {{- end }}
+                  imagePullPolicy: "{{ .Values.controllerManager.image.pullPolicy }}"
                   livenessProbe:
                     httpGet:
                         path: /healthz
@@ -52,13 +57,10 @@ spec:
                         port: 8081
                     initialDelaySeconds: 5
                     periodSeconds: 10
+                  {{- with .Values.controllerManager.resources }}
                   resources:
-                    limits:
-                        cpu: 500m
-                        memory: 128Mi
-                    requests:
-                        cpu: 10m
-                        memory: 64Mi
+{{- toYaml . | nindent 20 }}
+                  {{- end }}
                   securityContext:
                     allowPrivilegeEscalation: false
                     capabilities:

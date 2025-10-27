@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -128,11 +129,29 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 		return config
 	}
 
-	// Use the first container (manager container)
-	firstContainer, ok := containersList[0].(map[string]interface{})
-	if !ok {
-		return config
+	// Find manager container by name, fallback to first container
+	var targetContainer map[string]interface{}
+	for _, c := range containersList {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, nameOk := container["name"].(string); nameOk && name == "manager" {
+			targetContainer = container
+			break
+		}
 	}
+
+	// Fallback to first container if manager not found
+	if targetContainer == nil {
+		if firstContainer, ok := containersList[0].(map[string]interface{}); ok {
+			targetContainer = firstContainer
+		} else {
+			return config
+		}
+	}
+
+	firstContainer := targetContainer
 
 	// Extract environment variables
 	if env, envFound, envErr := unstructured.NestedFieldNoCopy(firstContainer, "env"); envFound && envErr == nil {
@@ -157,5 +176,48 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 		}
 	}
 
+	// Extract image configuration
+	if image, found, err := unstructured.NestedString(firstContainer, "image"); found && err == nil && image != "" {
+		config["image"] = parseImageString(image)
+	}
+
+	// Extract imagePullPolicy
+	if pullPolicy, found, err := unstructured.NestedString(firstContainer, "imagePullPolicy"); found && err == nil && pullPolicy != "" {
+		config["imagePullPolicy"] = pullPolicy
+	}
+
 	return config
+}
+
+// parseImageString parses "<repo>[@<digest>]" or "<repo>[:<tag>]".
+// It distinguishes registry ports from tags by requiring the tag colon
+// to come AFTER the last '/'.
+func parseImageString(image string) map[string]interface{} {
+	out := make(map[string]interface{})
+
+	// Digest form takes precedence
+	if at := strings.IndexByte(image, '@'); at != -1 {
+		out["repository"] = image[:at]
+		if at+1 < len(image) {
+			out["digest"] = image[at+1:]
+		}
+		return out
+	}
+
+	lastSlash := strings.LastIndexByte(image, '/')
+	lastColon := strings.LastIndexByte(image, ':')
+
+	// Tag only if the colon comes after the last slash
+	if lastColon != -1 && lastColon > lastSlash {
+		out["repository"] = image[:lastColon]
+		if lastColon+1 < len(image) {
+			out["tag"] = image[lastColon+1:]
+		}
+		return out
+	}
+
+	// Untagged/undigested; kube will pull :latest, but we surface it explicitly
+	out["repository"] = image
+	out["tag"] = "latest"
+	return out
 }

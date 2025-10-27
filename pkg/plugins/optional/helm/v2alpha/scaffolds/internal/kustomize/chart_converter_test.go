@@ -158,6 +158,12 @@ var _ = Describe("ChartConverter", func() {
 			Expect(config).NotTo(BeNil())
 			Expect(config).To(HaveKey("env"))
 			Expect(config).To(HaveKey("resources"))
+
+			// Verify image extraction
+			Expect(config).To(HaveKey("image"))
+			imageConfig := config["image"].(map[string]interface{})
+			Expect(imageConfig["repository"]).To(Equal("controller"))
+			Expect(imageConfig["tag"]).To(Equal("latest"))
 		})
 
 		It("should handle deployment without containers", func() {

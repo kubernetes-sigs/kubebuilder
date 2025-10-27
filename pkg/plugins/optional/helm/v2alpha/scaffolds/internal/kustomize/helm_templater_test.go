@@ -428,4 +428,111 @@ metadata:
 			Expect(result).To(Equal(malformedContent))
 		})
 	})
+
+	Context("image and resources templating", func() {
+		It("should template manager image, pullPolicy and resources with correct indentation", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: gcr.io/project/controller:v1.2.3
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should template image with digest/tag conditional
+			Expect(result).To(ContainSubstring(`{{- if .Values.controllerManager.image.digest }}`))
+			Expect(result).To(ContainSubstring(`image: "{{ .Values.controllerManager.image.repository }}@{{ .Values.controllerManager.image.digest }}"`))
+			Expect(result).To(ContainSubstring(`{{- else }}`))
+			Expect(result).To(ContainSubstring(`image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"`))
+			Expect(result).To(ContainSubstring(`{{- end }}`))
+
+			// Should template pullPolicy with quotes
+			Expect(result).To(ContainSubstring(`imagePullPolicy: "{{ .Values.controllerManager.image.pullPolicy }}"`))
+
+			// Should template resources with correct indentation (8 + 2 = 10 spaces for nindent)
+			Expect(result).To(ContainSubstring("{{- with .Values.controllerManager.resources }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent 10 }}"))
+
+			// Should NOT have hardcoded values
+			Expect(result).NotTo(ContainSubstring("gcr.io/project/controller:v1.2.3"))
+			Expect(result).NotTo(ContainSubstring("imagePullPolicy: Always"))
+			Expect(result).NotTo(ContainSubstring("cpu: 200m"))
+
+			// Should NOT have double indentation (no literal spaces before toYaml)
+			Expect(result).NotTo(ContainSubstring("  {{- toYaml"))
+		})
+
+		It("should preserve env and securityContext unchanged", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+        - name: CLUSTER_DOMAIN
+          value: cluster.local
+        securityContext:
+          runAsNonRoot: true`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// env and securityContext should be preserved exactly
+			Expect(result).To(ContainSubstring("CLUSTER_DOMAIN"))
+			Expect(result).To(ContainSubstring("cluster.local"))
+			Expect(result).To(ContainSubstring("runAsNonRoot: true"))
+		})
+
+		It("should template image with digest OR tag conditional logic", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: gcr.io/project/controller@sha256:abc123def456
+        imagePullPolicy: Always`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should template image with digest/tag conditional (same as tag test since we use conditional logic)
+			Expect(result).To(ContainSubstring(`{{- if .Values.controllerManager.image.digest }}`))
+			Expect(result).To(ContainSubstring(`image: "{{ .Values.controllerManager.image.repository }}@{{ .Values.controllerManager.image.digest }}"`))
+
+			// Should template pullPolicy
+			Expect(result).To(ContainSubstring(`imagePullPolicy: "{{ .Values.controllerManager.image.pullPolicy }}"`))
+
+			// Should NOT have hardcoded values
+			Expect(result).NotTo(ContainSubstring("gcr.io/project/controller@sha256:abc123def456"))
+			Expect(result).NotTo(ContainSubstring("imagePullPolicy: Always"))
+		})
+	})
 })

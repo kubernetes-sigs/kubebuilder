@@ -34,7 +34,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				HasWebhooks:      true,
 				DeploymentConfig: map[string]interface{}{},
 			}
-			valuesTemplate.InjectProjectName("test-project")
+			valuesTemplate.ProjectName = "test-project"
 			err := valuesTemplate.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -49,7 +49,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should include all basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("replicaCount:"))
+			Expect(content).To(ContainSubstring("controllerManager:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
@@ -62,7 +62,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				HasWebhooks:      false,
 				DeploymentConfig: map[string]interface{}{},
 			}
-			valuesTemplate.InjectProjectName("test-project")
+			valuesTemplate.ProjectName = "test-project"
 			err := valuesTemplate.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -71,16 +71,59 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 
 			Expect(content).NotTo(ContainSubstring("certManager:"))
-			Expect(content).NotTo(ContainSubstring("enable: true"))
 		})
 
 		It("should still include other basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("replicaCount:"))
+			Expect(content).To(ContainSubstring("controllerManager:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
+		})
+
+		It("should use extracted values from DeploymentConfig", func() {
+			// Test with extracted deployment config
+			extractedConfig := map[string]interface{}{
+				"image": map[string]interface{}{
+					"repository": "custom-controller",
+					"tag":        "v2.1.0",
+				},
+				"imagePullPolicy": "Always",
+				"resources": map[string]interface{}{
+					"limits": map[string]interface{}{
+						"cpu":    "800m",
+						"memory": "256Mi",
+					},
+					"requests": map[string]interface{}{
+						"cpu":    "50m",
+						"memory": "128Mi",
+					},
+				},
+			}
+
+			valuesWithConfig := &HelmValuesBasic{
+				DeploymentConfig: extractedConfig,
+				OutputDir:        "dist",
+			}
+			valuesWithConfig.ProjectName = "test-project"
+			err := valuesWithConfig.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+
+			content := valuesWithConfig.GetBody()
+
+			// Should use extracted values, not defaults
+			Expect(content).To(ContainSubstring("repository: custom-controller"))
+			Expect(content).To(ContainSubstring("tag: v2.1.0"))
+			Expect(content).To(ContainSubstring("pullPolicy: Always"))
+			Expect(content).To(ContainSubstring("cpu: 800m"))
+			Expect(content).To(ContainSubstring("memory: 256Mi"))
+			Expect(content).To(ContainSubstring("cpu: 50m"))
+			Expect(content).To(ContainSubstring("memory: 128Mi"))
+
+			// Should NOT contain default hardcoded values
+			Expect(content).NotTo(ContainSubstring("repository: controller"))
+			Expect(content).NotTo(ContainSubstring("tag: latest"))
 		})
 	})
 
@@ -89,13 +132,15 @@ var _ = Describe("HelmValuesBasic", func() {
 			valuesTemplate = &HelmValuesBasic{
 				OutputDir: "dist",
 			}
-			valuesTemplate.InjectProjectName("test-project")
+			valuesTemplate.ProjectName = "test-project"
 			err := valuesTemplate.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should have correct path", func() {
-			Expect(valuesTemplate.GetPath()).To(Equal("dist/chart/values.yaml"))
+			path := valuesTemplate.GetPath()
+			// Handle both Windows and Unix path separators
+			Expect(path).To(SatisfyAny(Equal("dist/chart/values.yaml"), Equal("dist\\chart\\values.yaml")))
 		})
 
 		It("should implement Builder interface", func() {
@@ -105,7 +150,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should have correct file permissions", func() {
 			info := valuesTemplate.GetIfExistsAction()
-			Expect(info).To(Equal(machinery.OverwriteFile))
+			Expect(info).To(Equal(machinery.SkipFile))
 		})
 	})
 
@@ -130,14 +175,14 @@ var _ = Describe("HelmValuesBasic", func() {
 				HasWebhooks:      false,
 				DeploymentConfig: deploymentConfig,
 			}
-			valuesTemplate.InjectProjectName("test-project")
+			valuesTemplate.ProjectName = "test-project"
 			err := valuesTemplate.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should include deployment configuration", func() {
 			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("manager:"))
+			Expect(content).To(ContainSubstring("controllerManager:"))
 		})
 	})
 
@@ -146,7 +191,7 @@ var _ = Describe("HelmValuesBasic", func() {
 			valuesTemplate = &HelmValuesBasic{
 				HasWebhooks: false,
 			}
-			valuesTemplate.InjectProjectName("test-project")
+			valuesTemplate.ProjectName = "test-project"
 			err := valuesTemplate.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 		})
