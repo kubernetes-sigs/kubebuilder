@@ -41,6 +41,16 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
+// Helper function to check if a specific condition exists with expected status
+func hasCondition(conditions []metav1.Condition, conditionType string, expectedStatus metav1.ConditionStatus) bool {
+	for _, condition := range conditions {
+		if condition.Type == conditionType && condition.Status == expectedStatus {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
 Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
@@ -185,6 +195,14 @@ var _ = Describe("CronJob controller", func() {
 				g.Expect(createdCronjob.Status.Active).To(HaveLen(1), "should have exactly one active job")
 				g.Expect(createdCronjob.Status.Active[0].Name).To(Equal(JobName), "the wrong job is active")
 			}, timeout, interval).Should(Succeed(), "should list our active job %s in the active jobs list in status", JobName)
+
+			By("By checking that the CronJob status conditions are properly set")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+				// Check that the Available condition is set to True when job is active
+				g.Expect(hasCondition(createdCronjob.Status.Conditions, "Available", metav1.ConditionTrue)).To(BeTrue(),
+					"CronJob should have Available condition set to True")
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 

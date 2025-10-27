@@ -33,6 +33,8 @@ const controllerImport = `import (
 	"github.com/robfig/cron"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ref "k8s.io/client-go/tools/reference"
@@ -64,6 +66,16 @@ type Clock interface {
 }
 
 // +kubebuilder:docs-gen:collapse=Clock
+
+// Definitions to manage status conditions
+const (
+	// typeAvailableCronJob represents the status of the CronJob reconciliation
+	typeAvailableCronJob = "Available"
+	// typeProgressingCronJob represents the status used when the CronJob is being reconciled
+	typeProgressingCronJob = "Progressing"
+	// typeDegradedCronJob represents the status used when the CronJob has encountered an error
+	typeDegradedCronJob = "Degraded"
+)
 
 /*
 Notice that we need a few more RBAC permissions -- since we're creating and
@@ -103,11 +115,35 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	*/
 	var cronJob batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
-		log.Error(err, "unable to fetch CronJob")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			// If the custom resource is not found then it usually means that it was deleted or not created
+			// In this way, we will stop the reconciliation
+			log.Info("CronJob resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get CronJob")
+		return ctrl.Result{}, err
+	}
+
+	// Initialize status conditions if not yet present
+	if len(cronJob.Status.Conditions) == 0 {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeProgressingCronJob,
+			Status:  metav1.ConditionUnknown,
+			Reason:  "Reconciling",
+			Message: "Starting reconciliation",
+		})
+		if err := r.Status().Update(ctx, &cronJob); err != nil {
+			log.Error(err, "Failed to update CronJob status")
+			return ctrl.Result{}, err
+		}
+
+		// Re-fetch the CronJob after updating the status
+		if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
+			log.Error(err, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, err
+		}
 	}
 
 	/*
@@ -120,6 +156,16 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	var childJobs kbatch.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
+		// Update status condition to reflect the error
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeDegradedCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "ReconciliationError",
+			Message: fmt.Sprintf("Failed to list child jobs: %v", err),
+		})
+		if statusErr := r.Status().Update(ctx, &cronJob); statusErr != nil {
+			log.Error(statusErr, "Failed to update CronJob status")
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -235,6 +281,58 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		filter and query log lines.
 	*/
 	log.V(1).Info("job count", "active jobs", len(activeJobs), "successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
+
+	// Check if CronJob is suspended
+	isSuspended := cronJob.Spec.Suspend != nil && *cronJob.Spec.Suspend
+
+	// Update status conditions based on current state
+	if isSuspended {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeAvailableCronJob,
+			Status:  metav1.ConditionFalse,
+			Reason:  "Suspended",
+			Message: "CronJob is suspended",
+		})
+	} else if len(failedJobs) > 0 {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeDegradedCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "JobsFailed",
+			Message: fmt.Sprintf("%d job(s) have failed", len(failedJobs)),
+		})
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeAvailableCronJob,
+			Status:  metav1.ConditionFalse,
+			Reason:  "JobsFailed",
+			Message: fmt.Sprintf("%d job(s) have failed", len(failedJobs)),
+		})
+	} else if len(activeJobs) > 0 {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeProgressingCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "JobsActive",
+			Message: fmt.Sprintf("%d job(s) are currently active", len(activeJobs)),
+		})
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeAvailableCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "JobsActive",
+			Message: fmt.Sprintf("CronJob is progressing with %d active job(s)", len(activeJobs)),
+		})
+	} else {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeAvailableCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "AllJobsCompleted",
+			Message: "All jobs have completed successfully",
+		})
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeProgressingCronJob,
+			Status:  metav1.ConditionFalse,
+			Reason:  "NoJobsActive",
+			Message: "No jobs are currently active",
+		})
+	}
 
 	/*
 		Using the data we've gathered, we'll update the status of our CRD.
@@ -389,6 +487,16 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	missedRun, nextRun, err := getNextSchedule(&cronJob, r.Now())
 	if err != nil {
 		log.Error(err, "unable to figure out CronJob schedule")
+		// Update status condition to reflect the schedule error
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeDegradedCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "InvalidSchedule",
+			Message: fmt.Sprintf("Failed to parse schedule: %v", err),
+		})
+		if statusErr := r.Status().Update(ctx, &cronJob); statusErr != nil {
+			log.Error(statusErr, "Failed to update CronJob status")
+		}
 		// we don't really care about requeuing until we get an update that
 		// fixes the schedule, so don't return an error
 		return ctrl.Result{}, nil
@@ -419,7 +527,16 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 	if tooLate {
 		log.V(1).Info("missed starting deadline for last run, sleeping till next")
-		// TODO(directxman12): events
+		// Update status condition to reflect missed deadline
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeDegradedCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "MissedSchedule",
+			Message: fmt.Sprintf("Missed starting deadline for run at %v", missedRun),
+		})
+		if statusErr := r.Status().Update(ctx, &cronJob); statusErr != nil {
+			log.Error(statusErr, "Failed to update CronJob status")
+		}
 		return scheduledResult, nil
 	}
 
@@ -500,10 +617,31 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	// ...and create it on the cluster
 	if err := r.Create(ctx, job); err != nil {
 		log.Error(err, "unable to create Job for CronJob", "job", job)
+		// Update status condition to reflect the error
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+			Type:    typeDegradedCronJob,
+			Status:  metav1.ConditionTrue,
+			Reason:  "JobCreationFailed",
+			Message: fmt.Sprintf("Failed to create job: %v", err),
+		})
+		if statusErr := r.Status().Update(ctx, &cronJob); statusErr != nil {
+			log.Error(statusErr, "Failed to update CronJob status")
+		}
 		return ctrl.Result{}, err
 	}
 
 	log.V(1).Info("created Job for CronJob run", "job", job)
+
+	// Update status condition to reflect successful job creation
+	meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
+		Type:    typeProgressingCronJob,
+		Status:  metav1.ConditionTrue,
+		Reason:  "JobCreated",
+		Message: fmt.Sprintf("Created job %s", job.Name),
+	})
+	if statusErr := r.Status().Update(ctx, &cronJob); statusErr != nil {
+		log.Error(statusErr, "Failed to update CronJob status")
+	}
 
 	/*
 		### 7: Requeue when we either see a running job or it's time for the next scheduled run

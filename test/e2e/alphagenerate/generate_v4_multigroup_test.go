@@ -24,7 +24,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -400,7 +400,7 @@ func validateV4MultigroupProjectFile(kbc *utils.TestContext, projectFile string)
 		"Wordpress API should have the expected path")
 
 	By("decoding the DeployImage plugin configuration")
-	var deployImageConfig v1alpha1.PluginConfig
+	var deployImageConfig deployimagev1alpha1.PluginConfig
 	err = projectConfig.DecodePluginConfig("deploy-image.go.kubebuilder.io/v1-alpha", &deployImageConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode DeployImage plugin configuration")
 
@@ -428,7 +428,7 @@ func validateV4MultigroupProjectFile(kbc *utils.TestContext, projectFile string)
 	Expect(options.Image).To(Equal("busybox:1.36.1"), "Expected image to match")
 
 	By("decoding the grafana plugin configuration")
-	var grafanaConfig v1alpha1.PluginConfig
+	var grafanaConfig deployimagev1alpha1.PluginConfig
 	err = projectConfig.DecodePluginConfig("grafana.kubebuilder.io/v1-alpha", &grafanaConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode DeployImage plugin configuration")
 

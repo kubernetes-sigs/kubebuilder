@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -333,7 +333,7 @@ func validateDeployImagePlugin(projectFile string) {
 	projectConfig := getConfigFromProjectFile(projectFile)
 
 	By("decoding the DeployImage plugin configuration")
-	var deployImageConfig v1alpha1.PluginConfig
+	var deployImageConfig deployimagev1alpha1.PluginConfig
 	err := projectConfig.DecodePluginConfig("deploy-image.go.kubebuilder.io/v1-alpha", &deployImageConfig)
 	Expect(err).NotTo(HaveOccurred(), "Failed to decode DeployImage plugin configuration")
 

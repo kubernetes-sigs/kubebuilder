@@ -183,11 +183,33 @@ make run
 
 ## Install Instances of Custom Resources
 
-If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your samples (make sure to edit them first if you've changed the
-API definition):
+If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your
+`config/samples/` directory.
+
+Edit `config/samples/webapp_v1_guestbook.yaml` to contain a valid `spec`. For example:
+
+```yaml
+# ...
+spec:
+  foo: bar
+```
+
+Hint: "foo" is a string field defined in `api/v1/guestbook_types.go`:
+
+```go
+// foo is an example field of Guestbook. Edit guestbook_types.go to remove/update
+// +optional
+Foo *string `json:"foo,omitempty"`
+```
 
 ```bash
 kubectl apply -k config/samples/
+```
+
+You can have a look at your applied resource now:
+
+```bash
+kubectl get guestbooks.webapp.my.domain guestbook-sample -o yaml
 ```
 
 ## Run It On the Cluster
