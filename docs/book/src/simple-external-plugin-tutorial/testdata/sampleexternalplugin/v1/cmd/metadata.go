@@ -39,6 +39,7 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 
 	// Here is an example of parsing multiple flags from a Kubebuilder external plugin request
 	flagsToParse := pflag.NewFlagSet("flagsFlags", pflag.ContinueOnError)
+	flagsToParse.Bool("init", false, "sets the init flag to true")
 	flagsToParse.Bool("edit", false, "sets the edit flag to true")
 
 	if err := flagsToParse.Parse(pr.Args); err != nil {
@@ -49,11 +50,16 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 		return pluginResponse
 	}
 
+	initFlag, _ := flagsToParse.GetBool("init")
 	editFlag, _ := flagsToParse.GetBool("edit")
 
 	// The Phase 2 Plugins implementation will only ever pass a single boolean flag
-	// argument in the JSON request `args` field. The flag will be `--edit` for `edit`
-	if editFlag {
+	// argument in the JSON request `args` field.
+	if initFlag {
+		// Populate the JSON response `metadata` field with a description
+		// and examples for the `init` subcommand
+		pluginResponse.Metadata = scaffolds.InitMeta
+	} else if editFlag {
 		// Populate the JSON response `metadata` field with a description
 		// and examples for the `edit` subcommand
 		pluginResponse.Metadata = scaffolds.EditMeta

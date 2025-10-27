@@ -26,6 +26,10 @@ kubebuilder init --plugins go/v4 --domain sample.domain.com --repo sample.domain
 kubebuilder edit --plugins sampleexternalplugin/v1
 
 # Ensure Prometheus assets were scaffolded
-test -f config/prometheus/monitor.yaml
+test -f config/prometheus/prometheus.yaml
 test -f config/prometheus/kustomization.yaml
 test -f config/default/kustomization_prometheus_patch.yaml
+
+# Clean up test files
+cd ../..
+rm -rf testdata/testplugin

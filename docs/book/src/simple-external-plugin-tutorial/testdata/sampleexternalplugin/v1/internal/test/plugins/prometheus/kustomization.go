@@ -30,7 +30,7 @@ func NewPrometheusKustomization() *PrometheusKustomization {
 }
 
 const prometheusKustomizationTemplate = `resources:
-  - monitor.yaml
+  - prometheus.yaml
 `
 
 // DefaultKustomizationPatch represents a patch to config/default/kustomization.yaml
@@ -47,12 +47,12 @@ func NewDefaultKustomizationPatch() *DefaultKustomizationPatch {
 	}
 }
 
-const defaultKustomizationPatchTemplate = `# [PROMETHEUS] To enable prometheus monitor, uncomment the following line in config/default/kustomization.yaml:
+const defaultKustomizationPatchTemplate = `# [PROMETHEUS] To enable prometheus monitoring, uncomment the following line in config/default/kustomization.yaml:
 #
 # In the resources section, add:
 # - ../prometheus
 #
-# This will include the Prometheus ServiceMonitor in your deployment.
+# This will include the Prometheus instance in your deployment.
 # Make sure you have the Prometheus Operator installed in your cluster.
 #
 # For more information, see: https://github.com/prometheus-operator/prometheus-operator

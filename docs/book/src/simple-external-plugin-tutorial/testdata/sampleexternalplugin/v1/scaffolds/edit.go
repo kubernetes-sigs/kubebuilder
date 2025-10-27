@@ -25,6 +25,7 @@ import (
 	"v1/internal/test/plugins/prometheus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3" // Register v3 config
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -33,7 +34,7 @@ import (
 var EditFlags = []external.Flag{}
 
 var EditMeta = plugin.SubcommandMetadata{
-	Description: "The `edit` subcommand of the sampleexternalplugin adds Prometheus ServiceMonitor configuration for monitoring your operator",
+	Description: "The `edit` subcommand of the sampleexternalplugin adds Prometheus instance configuration for monitoring your operator",
 	Examples: `
 	Add Prometheus monitoring to your project:
 	$ kubebuilder edit --plugins sampleexternalplugin/v1
@@ -58,8 +59,8 @@ func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 		return pluginResponse
 	}
 
-	// Create ServiceMonitor manifest
-	serviceMonitor := prometheus.NewServiceMonitor(
+	// Create Prometheus instance manifest
+	prometheusInstance := prometheus.NewPrometheusInstance(
 		prometheus.WithDomain(projectConfig.Domain),
 		prometheus.WithProjectName(projectConfig.ProjectName),
 	)
@@ -71,7 +72,7 @@ func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 	kustomizationPatch := prometheus.NewDefaultKustomizationPatch()
 
 	// Add files to universe
-	pluginResponse.Universe[serviceMonitor.Path] = serviceMonitor.Content
+	pluginResponse.Universe[prometheusInstance.Path] = prometheusInstance.Content
 	pluginResponse.Universe[kustomization.Path] = kustomization.Content
 	pluginResponse.Universe[kustomizationPatch.Path] = kustomizationPatch.Content
 

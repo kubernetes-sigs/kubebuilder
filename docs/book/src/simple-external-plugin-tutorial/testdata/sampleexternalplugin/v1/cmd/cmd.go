@@ -59,6 +59,9 @@ func Run() {
 
 	// Run logic depending on the command that is requested by Kubebuilder
 	switch pluginRequest.Command {
+	// the `init` subcommand is used to add features during project initialization
+	case "init":
+		response = scaffolds.InitCmd(pluginRequest)
 	// the `edit` subcommand is used to add optional features to an existing project
 	// This is a realistic use case for external plugins - adding optional monitoring
 	case "edit":

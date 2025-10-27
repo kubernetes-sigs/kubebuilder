@@ -30,6 +30,17 @@ structures.
 
 `PluginRequest` contains the data collected from the CLI and any previously executed plugins. Kubebuilder sends this data as a JSON object to the external plugin via `stdin`.
 
+**Example `PluginRequest` (triggered by `kubebuilder init --plugins sampleexternalplugin/v1`):**
+
+```json
+{
+  "apiVersion": "v1alpha1",
+  "args": [],
+  "command": "init",
+  "universe": {}
+}
+```
+
 **Example `PluginRequest` (triggered by `kubebuilder edit --plugins sampleexternalplugin/v1`):**
 
 ```json
@@ -51,12 +62,12 @@ structures.
   "apiVersion": "v1alpha1",
   "command": "edit",
   "metadata": {
-    "description": "The `edit` subcommand adds Prometheus ServiceMonitor configuration for monitoring your operator.",
+    "description": "The `edit` subcommand adds Prometheus instance configuration for monitoring your operator.",
     "examples": "kubebuilder edit --plugins sampleexternalplugin/v1"
   },
   "universe": {
-    "config/prometheus/monitor.yaml": "# Prometheus ServiceMonitor manifest...",
-    "config/prometheus/kustomization.yaml": "resources:\n  - monitor.yaml\n"
+    "config/prometheus/prometheus.yaml": "# Prometheus instance manifest...",
+    "config/prometheus/kustomization.yaml": "resources:\n  - prometheus.yaml\n"
   },
   "error": false,
   "errorMsgs": []
@@ -121,9 +132,14 @@ Otherwise, Kubebuilder would search for the plugins in a default path based on y
 You can now use it by calling the CLI commands:
 
 ```sh
-# Update the project configuration with the sample external plugin
-# The sampleexternalplugin adds Prometheus ServiceMonitor configuration
+# Initialize a new project with Prometheus monitoring
+kubebuilder init --plugins sampleexternalplugin/v1
+
+# Update an existing project with Prometheus monitoring
 kubebuilder edit --plugins sampleexternalplugin/v1
+
+# Display help information for the init subcommand
+kubebuilder init --plugins sampleexternalplugin/v1 --help
 
 # Display help information for the edit subcommand
 kubebuilder edit --plugins sampleexternalplugin/v1 --help
