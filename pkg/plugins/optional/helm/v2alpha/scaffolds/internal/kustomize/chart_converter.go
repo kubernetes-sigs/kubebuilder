@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -98,64 +99,149 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 
 	config := make(map[string]interface{})
 
-	// Extract from deployment spec
-	spec, found, err := unstructured.NestedFieldNoCopy(c.resources.Deployment.Object, "spec", "template", "spec")
-	if !found || err != nil {
+	specMap := extractDeploymentSpec(c.resources.Deployment)
+	if specMap == nil {
 		return config
+	}
+
+	extractPodSecurityContext(specMap, config)
+
+	container := firstManagerContainer(specMap)
+	if container == nil {
+		return config
+	}
+
+	extractContainerImage(container, config)
+	extractContainerEnv(container, config)
+	extractContainerResources(container, config)
+	extractContainerSecurityContext(container, config)
+
+	return config
+}
+
+func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]interface{} {
+	spec, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec")
+	if !found || err != nil {
+		return nil
 	}
 
 	specMap, ok := spec.(map[string]interface{})
 	if !ok {
-		return config
+		return nil
 	}
 
-	// Extract pod security context
-	if podSecurityContext, podSecFound, podSecErr := unstructured.NestedFieldNoCopy(specMap,
-		"securityContext"); podSecFound && podSecErr == nil {
+	return specMap
+}
+
+func extractPodSecurityContext(specMap map[string]interface{}, config map[string]interface{}) {
+	if podSecurityContext, podSecFound, podSecErr := unstructured.NestedFieldNoCopy(
+		specMap,
+		"securityContext",
+	); podSecFound && podSecErr == nil {
 		if podSecMap, podSecOk := podSecurityContext.(map[string]interface{}); podSecOk && len(podSecMap) > 0 {
 			config["podSecurityContext"] = podSecurityContext
 		}
 	}
+}
 
-	// Extract container configuration
+func firstManagerContainer(specMap map[string]interface{}) map[string]interface{} {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
-		return config
+		return nil
 	}
 
 	containersList, ok := containers.([]interface{})
 	if !ok || len(containersList) == 0 {
-		return config
+		return nil
 	}
 
-	// Use the first container (manager container)
 	firstContainer, ok := containersList[0].(map[string]interface{})
 	if !ok {
-		return config
+		return nil
 	}
 
-	// Extract environment variables
-	if env, envFound, envErr := unstructured.NestedFieldNoCopy(firstContainer, "env"); envFound && envErr == nil {
+	return firstContainer
+}
+
+func extractContainerEnv(container map[string]interface{}, config map[string]interface{}) {
+	if env, envFound, envErr := unstructured.NestedFieldNoCopy(container, "env"); envFound && envErr == nil {
 		if envList, envOk := env.([]interface{}); envOk && len(envList) > 0 {
 			config["env"] = envList
 		}
 	}
+}
 
-	// Extract resources
-	if resources, resFound, resErr := unstructured.NestedFieldNoCopy(firstContainer,
-		"resources"); resFound && resErr == nil {
+func extractContainerImage(container map[string]interface{}, config map[string]interface{}) {
+	imageRef, imageFound, imageErr := unstructured.NestedString(container, "image")
+	if !imageFound || imageErr != nil {
+		return
+	}
+
+	repository, tag, digest := splitImageReference(imageRef)
+	if repository == "" {
+		return
+	}
+
+	imageConfig := map[string]interface{}{
+		"repository": repository,
+	}
+
+	if tag != "" {
+		imageConfig["tag"] = tag
+	}
+
+	if digest != "" {
+		imageConfig["digest"] = digest
+	}
+
+	if pullPolicy, pullFound, pullErr := unstructured.NestedString(
+		container,
+		"imagePullPolicy",
+	); pullFound && pullErr == nil {
+		if trimmed := strings.TrimSpace(pullPolicy); trimmed != "" {
+			imageConfig["pullPolicy"] = trimmed
+		}
+	}
+
+	config["image"] = imageConfig
+}
+
+func extractContainerResources(container map[string]interface{}, config map[string]interface{}) {
+	if resources, resFound, resErr := unstructured.NestedFieldNoCopy(container, "resources"); resFound && resErr == nil {
 		if resourcesMap, resOk := resources.(map[string]interface{}); resOk && len(resourcesMap) > 0 {
 			config["resources"] = resources
 		}
 	}
+}
 
-	// Extract container security context
-	if securityContext, secFound, secErr := unstructured.NestedFieldNoCopy(firstContainer,
-		"securityContext"); secFound && secErr == nil {
+func extractContainerSecurityContext(container map[string]interface{}, config map[string]interface{}) {
+	if securityContext, secFound, secErr := unstructured.NestedFieldNoCopy(
+		container,
+		"securityContext",
+	); secFound && secErr == nil {
 		if secMap, secOk := securityContext.(map[string]interface{}); secOk && len(secMap) > 0 {
 			config["securityContext"] = securityContext
 		}
 	}
+}
 
-	return config
+func splitImageReference(imageRef string) (repository, tag, digest string) {
+	reference := strings.TrimSpace(imageRef)
+	if reference == "" {
+		return "", "", ""
+	}
+
+	if atIndex := strings.Index(reference, "@"); atIndex >= 0 {
+		digest = strings.TrimSpace(reference[atIndex+1:])
+		reference = reference[:atIndex]
+	}
+
+	lastSlash := strings.LastIndex(reference, "/")
+	lastColon := strings.LastIndex(reference, ":")
+	if lastColon > -1 && lastColon > lastSlash {
+		tag = strings.TrimSpace(reference[lastColon+1:])
+		reference = reference[:lastColon]
+	}
+
+	return strings.TrimSpace(reference), strings.TrimSpace(tag), strings.TrimSpace(digest)
 }

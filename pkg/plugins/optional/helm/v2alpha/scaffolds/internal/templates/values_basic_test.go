@@ -112,6 +112,12 @@ var _ = Describe("HelmValuesBasic", func() {
 	Context("with deployment configuration", func() {
 		BeforeEach(func() {
 			deploymentConfig := map[string]interface{}{
+				"image": map[string]interface{}{
+					"repository": "ghcr.io/example/controller",
+					"tag":        "v1.2.3",
+					"digest":     "sha256:abc123",
+					"pullPolicy": "Always",
+				},
 				"env": []interface{}{
 					map[string]interface{}{
 						"name":  "TEST_ENV",
@@ -137,7 +143,12 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should include deployment configuration", func() {
 			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("manager:"))
+			Expect(content).To(ContainSubstring("repository: ghcr.io/example/controller"))
+			Expect(content).To(ContainSubstring("tag: v1.2.3"))
+			Expect(content).To(ContainSubstring("digest: sha256:abc123"))
+			Expect(content).To(ContainSubstring("pullPolicy: Always"))
+			Expect(content).To(ContainSubstring("env:"))
+			Expect(content).To(ContainSubstring("resources:"))
 		})
 	})
 

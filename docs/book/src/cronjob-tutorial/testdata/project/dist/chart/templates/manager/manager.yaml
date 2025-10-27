@@ -34,7 +34,7 @@ spec:
                     {{- end }}
                   command:
                     - /manager
-                  image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+                  image: "{{- $image := .Values.controllerManager.image -}}{{ $image.repository }}{{- if $image.digest }}@{{ $image.digest }}{{- else if $image.tag }}:{{ $image.tag }}{{- end }}"
                   livenessProbe:
                     httpGet:
                         path: /healthz

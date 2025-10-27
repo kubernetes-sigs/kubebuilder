@@ -22,6 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+const controllerManagerImageHelmLine = "image: \"{{- $image := .Values.controllerManager.image -}}" +
+	"{{ $image.repository }}" +
+	"{{- if $image.digest }}@{{ $image.digest }}{{- else if $image.tag }}:{{ $image.tag }}{{- end }}\""
+
 var _ = Describe("HelmTemplater", func() {
 	var templater *HelmTemplater
 
@@ -34,6 +38,26 @@ var _ = Describe("HelmTemplater", func() {
 	// No global labels injection is performed by v2-alpha
 
 	Context("basic template processing", func() {
+		It("should template controller image reference using values", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring(controllerManagerImageHelmLine))
+		})
+
 		It("should replace kustomize managed-by labels with Helm equivalents", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")

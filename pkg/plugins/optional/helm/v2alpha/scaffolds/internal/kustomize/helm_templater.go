@@ -263,26 +263,36 @@ func (t *HelmTemplater) templateVolumes(yamlContent string) string {
 	return yamlContent
 }
 
+const controllerImageTemplate = `{{- $image := .Values.controllerManager.image -}}
+{{ $image.repository }}{{- if $image.digest }}@{{ $image.digest }}{{- else if $image.tag }}:{{ $image.tag }}{{- end }}`
+
 // templateImageReference converts hardcoded image references to Helm templates
 func (t *HelmTemplater) templateImageReference(yamlContent string) string {
-	// Replace hardcoded controller image with Helm template
-	// This handles the common case where kustomize outputs "controller:latest"
-	// or other hardcoded image references
-	imagePattern := regexp.MustCompile(`(\s+)image:\s+controller:latest`)
-	yamlContent = imagePattern.ReplaceAllString(yamlContent,
-		`${1}image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"`)
+	imageTemplate := strings.ReplaceAll(strings.TrimSpace(controllerImageTemplate), "\n", "")
 
-	// Also handle any other common image patterns that might appear
+	imagePattern := regexp.MustCompile(`(\s+)image:\s+controller:latest`)
+	yamlContent = imagePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		submatches := imagePattern.FindStringSubmatch(match)
+		if len(submatches) < 2 {
+			return match
+		}
+		indent := submatches[1]
+		return fmt.Sprintf(`%simage: "%s"`, indent, imageTemplate)
+	})
+
 	imagePattern2 := regexp.MustCompile(`(\s+)image:\s+([^"'\s]+):(latest|[\w\.\-]+)`)
 	yamlContent = imagePattern2.ReplaceAllStringFunc(yamlContent, func(match string) string {
-		// Only replace if it looks like a controller image (contains "controller" or "manager")
-		if strings.Contains(match, "controller") || strings.Contains(match, "manager") {
-			indentMatch := regexp.MustCompile(`^(\s+)`)
-			indent := indentMatch.FindString(match)
-			return fmt.Sprintf(
-				`%simage: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"`, indent)
+		if !strings.Contains(match, "controller") && !strings.Contains(match, "manager") {
+			return match
 		}
-		return match
+
+		submatches := imagePattern2.FindStringSubmatch(match)
+		if len(submatches) < 2 {
+			return match
+		}
+
+		indent := submatches[1]
+		return fmt.Sprintf(`%simage: "%s"`, indent, imageTemplate)
 	})
 
 	return yamlContent
