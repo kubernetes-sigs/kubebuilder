@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -97,65 +98,176 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 	}
 
 	config := make(map[string]interface{})
-
-	// Extract from deployment spec
-	spec, found, err := unstructured.NestedFieldNoCopy(c.resources.Deployment.Object, "spec", "template", "spec")
-	if !found || err != nil {
+	specMap := extractDeploymentSpec(c.resources.Deployment)
+	if specMap == nil {
 		return config
+	}
+
+	extractPodSecurityContext(specMap, config)
+
+	container := firstManagerContainer(specMap)
+	if container == nil {
+		return config
+	}
+
+	extractContainerEnv(container, config)
+	extractContainerImage(container, config)
+	extractContainerArgs(container, config)
+	extractContainerResources(container, config)
+	extractContainerSecurityContext(container, config)
+
+	return config
+}
+
+func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]interface{} {
+	spec, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec")
+	if !found || err != nil {
+		return nil
 	}
 
 	specMap, ok := spec.(map[string]interface{})
 	if !ok {
-		return config
+		return nil
 	}
 
-	// Extract pod security context
-	if podSecurityContext, podSecFound, podSecErr := unstructured.NestedFieldNoCopy(specMap,
-		"securityContext"); podSecFound && podSecErr == nil {
-		if podSecMap, podSecOk := podSecurityContext.(map[string]interface{}); podSecOk && len(podSecMap) > 0 {
-			config["podSecurityContext"] = podSecurityContext
-		}
+	return specMap
+}
+
+func extractPodSecurityContext(specMap map[string]interface{}, config map[string]interface{}) {
+	podSecurityContext, found, err := unstructured.NestedFieldNoCopy(specMap, "securityContext")
+	if !found || err != nil {
+		return
 	}
 
-	// Extract container configuration
+	podSecMap, ok := podSecurityContext.(map[string]interface{})
+	if !ok || len(podSecMap) == 0 {
+		return
+	}
+
+	config["podSecurityContext"] = podSecurityContext
+}
+
+func firstManagerContainer(specMap map[string]interface{}) map[string]interface{} {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
-		return config
+		return nil
 	}
 
 	containersList, ok := containers.([]interface{})
 	if !ok || len(containersList) == 0 {
-		return config
+		return nil
 	}
 
-	// Use the first container (manager container)
 	firstContainer, ok := containersList[0].(map[string]interface{})
 	if !ok {
-		return config
+		return nil
 	}
 
-	// Extract environment variables
-	if env, envFound, envErr := unstructured.NestedFieldNoCopy(firstContainer, "env"); envFound && envErr == nil {
-		if envList, envOk := env.([]interface{}); envOk && len(envList) > 0 {
-			config["env"] = envList
+	return firstContainer
+}
+
+func extractContainerEnv(container map[string]interface{}, config map[string]interface{}) {
+	env, found, err := unstructured.NestedFieldNoCopy(container, "env")
+	if !found || err != nil {
+		return
+	}
+
+	envList, ok := env.([]interface{})
+	if !ok || len(envList) == 0 {
+		return
+	}
+
+	config["env"] = envList
+}
+
+func extractContainerImage(container map[string]interface{}, config map[string]interface{}) {
+	imageValue, found, err := unstructured.NestedString(container, "image")
+	if !found || err != nil || imageValue == "" {
+		return
+	}
+
+	repository := imageValue
+	tag := "latest"
+	lastColon := strings.LastIndex(imageValue, ":")
+	lastSlash := strings.LastIndex(imageValue, "/")
+	if lastColon != -1 && lastColon > lastSlash {
+		repository = imageValue[:lastColon]
+		if lastColon+1 < len(imageValue) {
+			tag = imageValue[lastColon+1:]
 		}
 	}
 
-	// Extract resources
-	if resources, resFound, resErr := unstructured.NestedFieldNoCopy(firstContainer,
-		"resources"); resFound && resErr == nil {
-		if resourcesMap, resOk := resources.(map[string]interface{}); resOk && len(resourcesMap) > 0 {
-			config["resources"] = resources
-		}
+	pullPolicy, _, err := unstructured.NestedString(container, "imagePullPolicy")
+	if err != nil || pullPolicy == "" {
+		pullPolicy = "IfNotPresent"
 	}
 
-	// Extract container security context
-	if securityContext, secFound, secErr := unstructured.NestedFieldNoCopy(firstContainer,
-		"securityContext"); secFound && secErr == nil {
-		if secMap, secOk := securityContext.(map[string]interface{}); secOk && len(secMap) > 0 {
-			config["securityContext"] = securityContext
-		}
+	config["image"] = map[string]interface{}{
+		"repository": repository,
+		"tag":        tag,
+		"pullPolicy": pullPolicy,
+	}
+}
+
+func extractContainerArgs(container map[string]interface{}, config map[string]interface{}) {
+	args, found, err := unstructured.NestedFieldNoCopy(container, "args")
+	if !found || err != nil {
+		return
 	}
 
-	return config
+	argsList, ok := args.([]interface{})
+	if !ok || len(argsList) == 0 {
+		return
+	}
+
+	filteredArgs := make([]interface{}, 0, len(argsList))
+	for _, rawArg := range argsList {
+		strArg, ok := rawArg.(string)
+		if !ok {
+			filteredArgs = append(filteredArgs, rawArg)
+			continue
+		}
+
+		// The following arguments should not be exposed under args
+		// manager because they are not independently customizable
+		if strings.Contains(strArg, "--metrics-bind-address") ||
+			strings.Contains(strArg, "--health-probe-bind-address") ||
+			strings.Contains(strArg, "--webhook-cert-path") ||
+			strings.Contains(strArg, "--metrics-cert-path") {
+			continue
+		}
+		filteredArgs = append(filteredArgs, strArg)
+	}
+
+	if len(filteredArgs) > 0 {
+		config["args"] = filteredArgs
+	}
+}
+
+func extractContainerResources(container map[string]interface{}, config map[string]interface{}) {
+	resources, found, err := unstructured.NestedFieldNoCopy(container, "resources")
+	if !found || err != nil {
+		return
+	}
+
+	resourcesMap, ok := resources.(map[string]interface{})
+	if !ok || len(resourcesMap) == 0 {
+		return
+	}
+
+	config["resources"] = resources
+}
+
+func extractContainerSecurityContext(container map[string]interface{}, config map[string]interface{}) {
+	securityContext, found, err := unstructured.NestedFieldNoCopy(container, "securityContext")
+	if !found || err != nil {
+		return
+	}
+
+	secMap, ok := securityContext.(map[string]interface{})
+	if !ok || len(secMap) == 0 {
+		return
+	}
+
+	config["securityContext"] = securityContext
 }

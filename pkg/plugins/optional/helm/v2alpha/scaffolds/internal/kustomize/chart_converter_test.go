@@ -129,8 +129,16 @@ var _ = Describe("ChartConverter", func() {
 			// Set up deployment with environment variables
 			containers := []interface{}{
 				map[string]interface{}{
-					"name":  "manager",
-					"image": "controller:latest",
+					"name":            "manager",
+					"image":           "controller:latest",
+					"imagePullPolicy": "IfNotPresent",
+					"args": []interface{}{
+						"--metrics-bind-address=:8443",
+						"--leader-elect",
+						"--custom-flag=value",
+						"--health-probe-bind-address=:8081",
+						"--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs",
+					},
 					"env": []interface{}{
 						map[string]interface{}{
 							"name":  "TEST_ENV",
@@ -157,7 +165,22 @@ var _ = Describe("ChartConverter", func() {
 
 			Expect(config).NotTo(BeNil())
 			Expect(config).To(HaveKey("env"))
+			Expect(config).To(HaveKey("image"))
 			Expect(config).To(HaveKey("resources"))
+			Expect(config).To(HaveKey("args"))
+
+			imageConfig, ok := config["image"].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+			Expect(imageConfig["repository"]).To(Equal("controller"))
+			Expect(imageConfig["tag"]).To(Equal("latest"))
+			Expect(imageConfig["pullPolicy"]).To(Equal("IfNotPresent"))
+
+			args, ok := config["args"].([]interface{})
+			Expect(ok).To(BeTrue())
+			Expect(args).To(ContainElement("--leader-elect"))
+			Expect(args).To(ContainElement("--custom-flag=value"))
+			Expect(args).NotTo(ContainElement("--metrics-bind-address=:8443"))
+			Expect(args).NotTo(ContainElement("--health-probe-bind-address=:8081"))
 		})
 
 		It("should handle deployment without containers", func() {

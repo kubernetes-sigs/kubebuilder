@@ -23,20 +23,29 @@ spec:
         spec:
             containers:
                 - args:
+                    {{- if .Values.metrics.enable }}
                     - --metrics-bind-address=:8443
-                    - --leader-elect
+                    {{- else }}
+                    # Bind to :0 to disable the controller-runtime managed metrics server
+                    - --metrics-bind-address=0
+                    {{- end }}
                     - --health-probe-bind-address=:8081
+                    {{- range .Values.controllerManager.args }}
+                    - {{ . }}
+                    {{- end }}
                     {{- if .Values.certManager.enable }}
                     - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
                     {{- end }}
                   command:
                     - /manager
                   env:
-                    - name: BUSYBOX_IMAGE
-                      value: busybox:1.36.1
-                    - name: MEMCACHED_IMAGE
-                      value: memcached:1.6.26-alpine3.19
+                    {{- if .Values.controllerManager.env }}
+                    {{- toYaml .Values.controllerManager.env | nindent 20 }}
+                    {{- else }}
+                    []
+                    {{- end }}
                   image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+                  imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}
                   livenessProbe:
                     httpGet:
                         path: /healthz
@@ -55,18 +64,17 @@ spec:
                     initialDelaySeconds: 5
                     periodSeconds: 10
                   resources:
-                    limits:
-                        cpu: 500m
-                        memory: 128Mi
-                    requests:
-                        cpu: 10m
-                        memory: 64Mi
+                    {{- if .Values.controllerManager.resources }}
+                    {{- toYaml .Values.controllerManager.resources | nindent 20 }}
+                    {{- else }}
+                    {}
+                    {{- end }}
                   securityContext:
-                    allowPrivilegeEscalation: false
-                    capabilities:
-                        drop:
-                            - ALL
-                    readOnlyRootFilesystem: true
+                    {{- if .Values.controllerManager.securityContext }}
+                    {{- toYaml .Values.controllerManager.securityContext | nindent 20 }}
+                    {{- else }}
+                    {}
+                    {{- end }}
                   volumeMounts:
                     {{- if .Values.certManager.enable }}
                     - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -74,9 +82,11 @@ spec:
                       readOnly: true
                     {{- end }}
             securityContext:
-                runAsNonRoot: true
-                seccompProfile:
-                    type: RuntimeDefault
+              {{- if .Values.controllerManager.podSecurityContext }}
+              {{- toYaml .Values.controllerManager.podSecurityContext | nindent 14 }}
+              {{- else }}
+              {}
+              {{- end }}
             serviceAccountName: project-v4-with-plugins-controller-manager
             terminationGracePeriodSeconds: 10
             volumes:

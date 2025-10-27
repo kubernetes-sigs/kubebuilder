@@ -23,9 +23,16 @@ spec:
         spec:
             containers:
                 - args:
+                    {{- if .Values.metrics.enable }}
                     - --metrics-bind-address=:8443
-                    - --leader-elect
+                    {{- else }}
+                    # Bind to :0 to disable the controller-runtime managed metrics server
+                    - --metrics-bind-address=0
+                    {{- end }}
                     - --health-probe-bind-address=:8081
+                    {{- range .Values.controllerManager.args }}
+                    - {{ . }}
+                    {{- end }}
                     {{- if and .Values.certManager.enable .Values.metrics.enable }}
                     - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
                     {{- end }}
@@ -35,6 +42,7 @@ spec:
                   command:
                     - /manager
                   image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+                  imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}
                   livenessProbe:
                     httpGet:
                         path: /healthz
@@ -53,18 +61,17 @@ spec:
                     initialDelaySeconds: 5
                     periodSeconds: 10
                   resources:
-                    limits:
-                        cpu: 500m
-                        memory: 128Mi
-                    requests:
-                        cpu: 10m
-                        memory: 64Mi
+                    {{- if .Values.controllerManager.resources }}
+                    {{- toYaml .Values.controllerManager.resources | nindent 20 }}
+                    {{- else }}
+                    {}
+                    {{- end }}
                   securityContext:
-                    allowPrivilegeEscalation: false
-                    capabilities:
-                        drop:
-                            - ALL
-                    readOnlyRootFilesystem: true
+                    {{- if .Values.controllerManager.securityContext }}
+                    {{- toYaml .Values.controllerManager.securityContext | nindent 20 }}
+                    {{- else }}
+                    {}
+                    {{- end }}
                   volumeMounts:
                     {{- if and .Values.certManager.enable .Values.metrics.enable }}
                     - mountPath: /tmp/k8s-metrics-server/metrics-certs
@@ -77,9 +84,11 @@ spec:
                       readOnly: true
                     {{- end }}
             securityContext:
-                runAsNonRoot: true
-                seccompProfile:
-                    type: RuntimeDefault
+              {{- if .Values.controllerManager.podSecurityContext }}
+              {{- toYaml .Values.controllerManager.podSecurityContext | nindent 14 }}
+              {{- else }}
+              {}
+              {{- end }}
             serviceAccountName: project-controller-manager
             terminationGracePeriodSeconds: 10
             volumes:
