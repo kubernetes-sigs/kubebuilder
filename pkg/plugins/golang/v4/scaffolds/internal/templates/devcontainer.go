@@ -66,10 +66,7 @@ if ! grep -q "$BEGIN_MARKER" "$BASHRC_FILE"; then
     echo "fi" >> "$BASHRC_FILE"
     echo ". <(kind completion bash)" >> "$BASHRC_FILE"
     echo "$END_MARKER" >> "$BASHRC_FILE"
-    echo "Kind autocompletion added to $BASHRC_FILE"
     echo ""
-else
-    echo "Kind autocompletion already exists in $BASHRC_FILE"
 fi
 
 curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/linux/$(go env GOARCH)
@@ -88,10 +85,7 @@ if ! grep -q "$BEGIN_MARKER" "$BASHRC_FILE"; then
     echo "fi" >> "$BASHRC_FILE"
     echo ". <(kubebuilder completion bash)" >> "$BASHRC_FILE"
     echo "$END_MARKER" >> "$BASHRC_FILE"
-    echo "Kubebuilder autocompletion added to $BASHRC_FILE"
     echo ""
-else
-    echo "Kubebuilder autocompletion already exists in $BASHRC_FILE"
 fi
 
 KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
@@ -111,10 +105,7 @@ if ! grep -q "$BEGIN_MARKER" "$BASHRC_FILE"; then
     echo "fi" >> "$BASHRC_FILE"
     echo ". <(kubectl completion bash)" >> "$BASHRC_FILE"
     echo "$END_MARKER" >> "$BASHRC_FILE"
-    echo "Kubectl autocompletion added to $BASHRC_FILE"
     echo ""
-else
-    echo "Kubectl autocompletion already exists in $BASHRC_FILE"
 fi
 
 BEGIN_MARKER="# BEGIN docker autocompletion"
@@ -129,10 +120,7 @@ if ! grep -q "$BEGIN_MARKER" "$BASHRC_FILE"; then
     echo "fi" >> "$BASHRC_FILE"
     echo ". <(docker completion bash)" >> "$BASHRC_FILE"
     echo "$END_MARKER" >> "$BASHRC_FILE"
-    echo "Docker autocompletion added to $BASHRC_FILE"
     echo ""
-else
-    echo "Docker autocompletion already exists in $BASHRC_FILE"
 fi
 
 docker network create -d=bridge --subnet=172.19.0.0/24 kind
