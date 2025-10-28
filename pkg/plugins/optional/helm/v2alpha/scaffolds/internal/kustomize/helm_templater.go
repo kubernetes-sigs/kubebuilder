@@ -68,9 +68,6 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	// Apply namespace substitutions
 	yamlContent = t.substituteNamespace(yamlContent, resource)
 
-	// Template ServiceMonitor metadata.name to be chart.name-scoped for consistency
-	yamlContent = t.templateServiceMonitorNames(yamlContent, resource)
-
 	// Apply cert-manager and webhook-specific templating AFTER other substitutions
 	yamlContent = t.substituteCertManagerReferences(yamlContent, resource)
 
@@ -156,47 +153,6 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 
 // substituteCertManagerReferences applies cert-manager and webhook-specific template substitutions
 func (t *HelmTemplater) substituteCertManagerReferences(yamlContent string, _ *unstructured.Unstructured) string {
-	return yamlContent
-}
-
-// templateServiceNames ensures Service metadata.name uses Helm helpers for release-scoped naming.
-// It converts hardcoded names like "<project>-webhook-service" or
-// "<project>-controller-manager-metrics-service" to:
-//
-//	name: {{ include "chart.serviceName" (dict "suffix" "<suffix>" "context" .) }}
-// NOTE: Service names are intentionally left as project-scoped (no release prefix)
-// to match existing samples and e2e tests that refer to fixed service names.
-
-// templateServiceMonitorNames ensures ServiceMonitor metadata.name uses chart.name-based naming for consistency
-// with existing tests and samples. It converts names like "controller-manager-metrics-monitor" or
-// "<project>-controller-manager-metrics-monitor" to:
-//
-//	name: {{ include "chart.name" . }}-controller-manager-metrics-monitor
-func (t *HelmTemplater) templateServiceMonitorNames(yamlContent string, resource *unstructured.Unstructured) string {
-	if resource.GetKind() != kindServiceMonitor {
-		return yamlContent
-	}
-
-	origName := resource.GetName()
-	if origName == "" {
-		return yamlContent
-	}
-
-	// Normalize suffix by stripping the project prefix if present
-	suffix := origName
-	prefix := t.projectName + "-"
-	if strings.HasPrefix(origName, prefix) {
-		suffix = strings.TrimPrefix(origName, prefix)
-	}
-
-	// Only template if the intended target follows the conventional suffix
-	// This keeps any custom user-provided names intact
-	// For default scaffolding, suffix is typically "controller-manager-metrics-monitor"
-	templated := "{{ include \"chart.name\" . }}-" + suffix
-
-	nameRe := regexp.MustCompile("(?m)^([\t ]*)name:\\s*" + regexp.QuoteMeta(origName) + "\\s*$")
-	yamlContent = nameRe.ReplaceAllString(yamlContent, "${1}name: "+templated)
-
 	return yamlContent
 }
 

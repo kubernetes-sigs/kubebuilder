@@ -44,7 +44,8 @@ func NewChartWriter(templater *HelmTemplater, outputDir string) *ChartWriter {
 }
 
 // WriteResourceGroup writes a group of resources to a Helm template file
-func (w *ChartWriter) WriteResourceGroup(fs machinery.Filesystem, groupName string,
+func (w *ChartWriter) WriteResourceGroup(
+	fs machinery.Filesystem, groupName string,
 	resources []*unstructured.Unstructured,
 ) error {
 	// Special handling for namespace - write as single file
@@ -73,7 +74,8 @@ func (w *ChartWriter) writeNamespaceFile(fs machinery.Filesystem, namespace *uns
 }
 
 // writeGroupDirectory writes resources as files in a group-specific directory
-func (w *ChartWriter) writeGroupDirectory(fs machinery.Filesystem, groupName string,
+func (w *ChartWriter) writeGroupDirectory(
+	fs machinery.Filesystem, groupName string,
 	resources []*unstructured.Unstructured,
 ) error {
 	var finalContent bytes.Buffer
@@ -112,7 +114,8 @@ func (w *ChartWriter) shouldSplitFiles(groupName string) bool {
 }
 
 // writeSplitFiles writes each resource in the group to its own file
-func (w *ChartWriter) writeSplitFiles(fs machinery.Filesystem, groupName string,
+func (w *ChartWriter) writeSplitFiles(
+	fs machinery.Filesystem, groupName string,
 	resources []*unstructured.Unstructured,
 ) error {
 	// Create the group directory

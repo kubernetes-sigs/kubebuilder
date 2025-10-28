@@ -389,6 +389,23 @@ metadata:
 			Expect(result).To(ContainSubstring("name: test-project-controller-manager"))
 			Expect(result).NotTo(ContainSubstring("{{ include"))
 		})
+		It("should preserve name for ServiceMonitor", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Name should remain unchanged
+			Expect(result).To(ContainSubstring("name: test-project-controller-manager-metrics-monitor"))
+			Expect(result).NotTo(ContainSubstring("{{ include"))
+		})
 	})
 
 	Context("edge cases", func() {
