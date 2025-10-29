@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/spf13/pflag"
 
@@ -167,45 +166,34 @@ func checkDir() error {
 			if err != nil {
 				return fmt.Errorf("error walking path %q: %w", path, err)
 			}
-			// Allow directory trees starting with '.'
-			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
-				return filepath.SkipDir
+
+			if info.IsDir() {
+				if strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
+					return filepath.SkipDir
+				}
+				return nil
 			}
-			// Allow files starting with '.'
+
 			if strings.HasPrefix(info.Name(), ".") {
 				return nil
 			}
-			// Allow files ending with '.md' extension
-			if strings.HasSuffix(info.Name(), ".md") && !info.IsDir() {
-				return nil
-			}
-			// Allow capitalized files except PROJECT
-			isCapitalized := true
-			for _, l := range info.Name() {
-				if !unicode.IsUpper(l) {
-					isCapitalized = false
-					break
-				}
-			}
-			if isCapitalized && info.Name() != "PROJECT" {
-				return nil
-			}
+
 			disallowedExtensions := []string{
 				".go",
 				".yaml",
 				".mod",
 				".sum",
 			}
-			// Deny files with .go or .yaml or .mod or .sum extensions
+
 			for _, ext := range disallowedExtensions {
 				if strings.HasSuffix(info.Name(), ext) {
-					return nil
+					return fmt.Errorf("target directory is not empty and contains a disallowed file %q. "+
+						"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
+						path, strings.Join(disallowedExtensions, ", "))
 				}
 			}
-			// Do not allow any other file
-			return fmt.Errorf("target directory is not empty and contains a disallowed file %q. "+
-				"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
-				path, strings.Join(disallowedExtensions, ", "))
+
+			return nil
 		})
 	if err != nil {
 		return fmt.Errorf("error walking directory: %w", err)
