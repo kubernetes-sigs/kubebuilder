@@ -111,23 +111,49 @@ spec:
     spec:
       containers:
       - args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt
         - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs/tls.crt
         - --leader-elect
-        name: manager`
+        env:
+        - name: BUSYBOX_IMAGE
+          value: busybox:1.36.1
+        image: controller:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        name: manager
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: test-project-controller-manager`
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			// Should have proper conditional formatting for webhook cert path
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
-			Expect(result).To(ContainSubstring("- --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt"))
-
-			// Should have proper conditional formatting for metrics cert path
-			Expect(result).To(ContainSubstring("{{- if and .Values.certManager.enable .Values.metrics.enable }}"))
-			Expect(result).To(ContainSubstring("- --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs/tls.crt"))
-
-			// Should NOT have extra blank lines
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}\n\n"))
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
+			Expect(result).To(ContainSubstring("- --metrics-bind-address=:8443"))
+			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
+			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
+			Expect(result).To(ContainSubstring("{{- range .Values.controllerManager.args }}"))
+			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
+			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
+			Expect(result).To(ContainSubstring("image: " +
+				"\"{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}\""))
+			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}"))
+			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
 
 		It("should handle volume mounts with proper indentation", func() {

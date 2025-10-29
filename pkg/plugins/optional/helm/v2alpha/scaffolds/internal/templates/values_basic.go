@@ -18,7 +18,9 @@ package templates
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -70,16 +72,33 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 	var buf bytes.Buffer
 
 	// Controller Manager configuration
-	buf.WriteString(`# Configure the controller manager deployment
+	imageRepo := "controller"
+	imageTag := "latest"
+	imagePullPolicy := "IfNotPresent"
+	if f.DeploymentConfig != nil {
+		if imgCfg, ok := f.DeploymentConfig["image"].(map[string]interface{}); ok {
+			if repo, ok := imgCfg["repository"].(string); ok && repo != "" {
+				imageRepo = repo
+			}
+			if tag, ok := imgCfg["tag"].(string); ok && tag != "" {
+				imageTag = tag
+			}
+			if policy, ok := imgCfg["pullPolicy"].(string); ok && policy != "" {
+				imagePullPolicy = policy
+			}
+		}
+	}
+
+	buf.WriteString(fmt.Sprintf(`# Configure the controller manager deployment
 controllerManager:
   replicas: 1
   
   image:
-    repository: controller
-    tag: latest
-    pullPolicy: IfNotPresent
+    repository: %s
+    tag: %s
+    pullPolicy: %s
 
-`)
+`, imageRepo, imageTag, imagePullPolicy))
 
 	// Add extracted deployment configuration
 	f.addDeploymentConfig(&buf)
@@ -145,6 +164,8 @@ prometheus:
 
 // addDeploymentConfig adds extracted deployment configuration to the values
 func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
+	f.addArgsSection(buf)
+
 	if f.DeploymentConfig == nil {
 		// Add default sections with examples
 		f.addDefaultDeploymentSections(buf)
@@ -240,6 +261,33 @@ func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
 	f.addDefaultPodSecurityContext(buf)
 	f.addDefaultSecurityContext(buf)
 	f.addDefaultResources(buf)
+}
+
+// addArgsSection adds controller manager args section to the values file
+func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
+	buf.WriteString("  # Arguments\n")
+
+	if f.DeploymentConfig != nil {
+		if args, exists := f.DeploymentConfig["args"]; exists && args != nil {
+			if argsYaml, err := yaml.Marshal(args); err == nil {
+				if trimmed := strings.TrimSpace(string(argsYaml)); trimmed != "" && trimmed != "[]" {
+					lines := bytes.Split(argsYaml, []byte("\n"))
+					buf.WriteString("  args:\n")
+					for _, line := range lines {
+						if len(line) > 0 {
+							buf.WriteString("    ")
+							buf.Write(line)
+							buf.WriteString("\n")
+						}
+					}
+					buf.WriteString("\n")
+					return
+				}
+			}
+		}
+	}
+
+	buf.WriteString("  args: []\n\n")
 }
 
 // addDefaultPodSecurityContext adds default podSecurityContext section

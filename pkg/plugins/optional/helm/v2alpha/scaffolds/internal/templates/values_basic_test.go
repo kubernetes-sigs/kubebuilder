@@ -49,7 +49,9 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should include all basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("replicaCount:"))
+			Expect(content).To(ContainSubstring("controllerManager:"))
+			Expect(content).To(ContainSubstring("args: []"))
+			Expect(content).To(ContainSubstring("env: []"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
@@ -77,7 +79,8 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should still include other basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("replicaCount:"))
+			Expect(content).To(ContainSubstring("controllerManager:"))
+			Expect(content).To(ContainSubstring("args: []"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
@@ -112,11 +115,19 @@ var _ = Describe("HelmValuesBasic", func() {
 	Context("with deployment configuration", func() {
 		BeforeEach(func() {
 			deploymentConfig := map[string]interface{}{
+				"args": []interface{}{
+					"--leader-elect",
+				},
 				"env": []interface{}{
 					map[string]interface{}{
 						"name":  "TEST_ENV",
 						"value": "test-value",
 					},
+				},
+				"image": map[string]interface{}{
+					"repository": "example.com/custom-controller",
+					"tag":        "v1.2.3",
+					"pullPolicy": "Always",
 				},
 				"resources": map[string]interface{}{
 					"limits": map[string]interface{}{
@@ -137,7 +148,49 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should include deployment configuration", func() {
 			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("args:"))
+			Expect(content).To(ContainSubstring("- --leader-elect"))
+			Expect(content).To(ContainSubstring("env:"))
+			Expect(content).To(ContainSubstring("name: TEST_ENV"))
+			Expect(content).To(ContainSubstring("value: test-value"))
+			Expect(content).To(ContainSubstring("repository: example.com/custom-controller"))
+			Expect(content).To(ContainSubstring("tag: v1.2.3"))
+			Expect(content).To(ContainSubstring("pullPolicy: Always"))
+			Expect(content).To(ContainSubstring("resources:"))
+			Expect(content).To(ContainSubstring("cpu: 100m"))
+			Expect(content).To(ContainSubstring("memory: 128Mi"))
 			Expect(content).To(ContainSubstring("manager:"))
+		})
+	})
+
+	Context("with complex env variables", func() {
+		BeforeEach(func() {
+			valuesTemplate = &HelmValuesBasic{
+				DeploymentConfig: map[string]interface{}{
+					"env": []interface{}{
+						map[string]interface{}{
+							"name": "POD_NAMESPACE",
+							"valueFrom": map[string]interface{}{
+								"fieldRef": map[string]interface{}{
+									"fieldPath": "metadata.namespace",
+								},
+							},
+						},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should render nested env configuration", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("env:"))
+			Expect(content).To(ContainSubstring("name: POD_NAMESPACE"))
+			Expect(content).To(ContainSubstring("valueFrom:"))
+			Expect(content).To(ContainSubstring("fieldRef:"))
+			Expect(content).To(ContainSubstring("fieldPath: metadata.namespace"))
 		})
 	})
 
