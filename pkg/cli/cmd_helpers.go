@@ -63,12 +63,14 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 	}
 }
 
-// keySubcommandTuple represents a pairing of the key of a plugin with a plugin.Subcommand.
+// keySubcommandTuple pairs a plugin key with its subcommand.
+// key is the plugin's own key, configKey is the bundle key (if wrapped in a bundle).
 type keySubcommandTuple struct {
 	key        string
+	configKey  string
 	subcommand plugin.Subcommand
 
-	// skip will be used to flag subcommands that should be skipped after any hook returned a plugin.ExitError.
+	// skip marks subcommands that should be skipped after a plugin.ExitError.
 	skip bool
 }
 
@@ -76,31 +78,41 @@ type pluginChainSetter interface {
 	SetPluginChain([]string)
 }
 
-// filterSubcommands returns a list of plugin keys and subcommands from a filtered list of resolved plugins.
+// filterSubcommands returns plugin keys and subcommands from resolved plugins.
 func (c *CLI) filterSubcommands(
 	filter func(plugin.Plugin) bool,
 	extract func(plugin.Plugin) plugin.Subcommand,
 ) []keySubcommandTuple {
-	// Unbundle plugins
-	plugins := make([]plugin.Plugin, 0, len(c.resolvedPlugins))
+	tuples := make([]keySubcommandTuple, 0, len(c.resolvedPlugins))
 	for _, p := range c.resolvedPlugins {
-		if bundle, isBundle := p.(plugin.Bundle); isBundle {
-			plugins = append(plugins, bundle.Plugins()...)
-		} else {
-			plugins = append(plugins, p)
-		}
-	}
-
-	tuples := make([]keySubcommandTuple, 0, len(plugins))
-	for _, p := range plugins {
-		if filter(p) {
-			tuples = append(tuples, keySubcommandTuple{
-				key:        plugin.KeyFor(p),
-				subcommand: extract(p),
-			})
-		}
+		tuples = append(tuples, collectSubcommands(p, plugin.KeyFor(p), filter, extract)...)
 	}
 	return tuples
+}
+
+func collectSubcommands(
+	p plugin.Plugin,
+	configKey string,
+	filter func(plugin.Plugin) bool,
+	extract func(plugin.Plugin) plugin.Subcommand,
+) []keySubcommandTuple {
+	if bundle, isBundle := p.(plugin.Bundle); isBundle {
+		collected := make([]keySubcommandTuple, 0, len(bundle.Plugins()))
+		for _, nested := range bundle.Plugins() {
+			collected = append(collected, collectSubcommands(nested, configKey, filter, extract)...)
+		}
+		return collected
+	}
+
+	if !filter(p) {
+		return nil
+	}
+
+	return []keySubcommandTuple{{
+		key:        plugin.KeyFor(p),
+		configKey:  configKey,
+		subcommand: extract(p),
+	}}
 }
 
 // applySubcommandHooks runs the initialization hooks and configures the commands pre-run,
@@ -212,7 +224,9 @@ func (factory *executionHooksFactory) forEach(cb func(subcommand plugin.Subcomma
 			continue
 		}
 
-		err := cb(tuple.subcommand)
+		err := factory.withPluginChain(tuple, func() error {
+			return cb(tuple.subcommand)
+		})
 
 		var exitError plugin.ExitError
 		switch {
@@ -229,6 +243,67 @@ func (factory *executionHooksFactory) forEach(cb func(subcommand plugin.Subcomma
 	}
 
 	return nil
+}
+
+func (factory *executionHooksFactory) withPluginChain(tuple keySubcommandTuple, cb func() error) (err error) {
+	if tuple.configKey == "" {
+		return cb()
+	}
+
+	cfg := factory.store.Config()
+	if cfg == nil {
+		return cb()
+	}
+
+	// Temporarily move configKey to the front so GetPluginKeyForConfig finds it first.
+	// This ensures each bundled plugin saves config under the right key.
+	original := append([]string(nil), cfg.GetPluginChain()...)
+	newChain := moveKeyToFront(original, tuple.configKey)
+	changed := !equalStringSlices(original, newChain)
+	if changed {
+		if setErr := cfg.SetPluginChain(newChain); setErr != nil {
+			return fmt.Errorf("unable to set plugin chain for %q: %w", tuple.configKey, setErr)
+		}
+		defer func() {
+			if resetErr := cfg.SetPluginChain(original); resetErr != nil && err == nil {
+				err = fmt.Errorf("unable to reset plugin chain: %w", resetErr)
+			}
+		}()
+	}
+
+	return cb()
+}
+
+func moveKeyToFront(chain []string, key string) []string {
+	if len(chain) == 0 {
+		return []string{key}
+	}
+
+	if chain[0] == key {
+		return chain
+	}
+
+	newChain := make([]string, 0, len(chain)+1)
+	newChain = append(newChain, key)
+	for _, existing := range chain {
+		if existing == key {
+			continue
+		}
+		newChain = append(newChain, existing)
+	}
+	return newChain
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // preRunEFunc returns a cobra RunE function that loads the configuration, creates the resource,

@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
@@ -89,6 +90,56 @@ func (s *pluginChainCapturingSubcommand) SetPluginChain(chain []string) {
 	s.pluginChain = append([]string(nil), chain...)
 }
 
+type testCreateAPIPlugin struct {
+	name        string
+	version     plugin.Version
+	subcommand  *testCreateAPISubcommand
+	projectVers []config.Version
+}
+
+func newTestCreateAPIPlugin(name string, version plugin.Version) testCreateAPIPlugin {
+	return testCreateAPIPlugin{
+		name:        name,
+		version:     version,
+		subcommand:  &testCreateAPISubcommand{},
+		projectVers: []config.Version{{Number: 3}},
+	}
+}
+
+func (p testCreateAPIPlugin) Name() string                               { return p.name }
+func (p testCreateAPIPlugin) Version() plugin.Version                    { return p.version }
+func (p testCreateAPIPlugin) SupportedProjectVersions() []config.Version { return p.projectVers }
+func (p testCreateAPIPlugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand {
+	return p.subcommand
+}
+
+type testCreateAPISubcommand struct{}
+
+func (s *testCreateAPISubcommand) InjectResource(*resource.Resource) error {
+	return nil
+}
+
+func (s *testCreateAPISubcommand) Scaffold(machinery.Filesystem) error {
+	return nil
+}
+
+type fakeStore struct {
+	cfg config.Config
+}
+
+func (f *fakeStore) New(config.Version) error { return nil }
+func (f *fakeStore) Load() error              { return nil }
+func (f *fakeStore) LoadFrom(string) error    { return nil }
+func (f *fakeStore) Save() error              { return nil }
+func (f *fakeStore) SaveTo(string) error      { return nil }
+func (f *fakeStore) Config() config.Config    { return f.cfg }
+
+type captureSubcommand struct {
+	lastChain []string
+}
+
+func (c *captureSubcommand) Scaffold(machinery.Filesystem) error { return nil }
+
 var _ = Describe("CLI", func() {
 	var (
 		c              *CLI
@@ -101,6 +152,83 @@ var _ = Describe("CLI", func() {
 		}
 
 		projectVersion = config.Version{Number: 3}
+	})
+
+	Describe("filterSubcommands", func() {
+		It("propagates bundle keys to wrapped subcommands", func() {
+			bundleVersion := plugin.Version{Number: 1, Stage: stage.Alpha}
+
+			fooPlugin := newTestCreateAPIPlugin("deploy-image.go.kubebuilder.io", plugin.Version{Number: 1, Stage: stage.Alpha})
+			barPlugin := newTestCreateAPIPlugin("deploy-image.go.kubebuilder.io", plugin.Version{Number: 1, Stage: stage.Alpha})
+
+			fooBundle, err := plugin.NewBundleWithOptions(
+				plugin.WithName("deploy-image.foo.example.com"),
+				plugin.WithVersion(bundleVersion),
+				plugin.WithPlugins(fooPlugin),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			barBundle, err := plugin.NewBundleWithOptions(
+				plugin.WithName("deploy-image.bar.example.com"),
+				plugin.WithVersion(bundleVersion),
+				plugin.WithPlugins(barPlugin),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			c.resolvedPlugins = []plugin.Plugin{fooBundle, barBundle}
+
+			tuples := c.filterSubcommands(
+				func(p plugin.Plugin) bool {
+					_, isCreateAPI := p.(plugin.CreateAPI)
+					return isCreateAPI
+				},
+				func(p plugin.Plugin) plugin.Subcommand {
+					return p.(plugin.CreateAPI).GetCreateAPISubcommand()
+				},
+			)
+
+			Expect(tuples).To(HaveLen(2))
+			Expect(tuples[0].key).To(Equal("deploy-image.go.kubebuilder.io/v1-alpha"))
+			Expect(tuples[0].configKey).To(Equal("deploy-image.foo.example.com/v1-alpha"))
+			Expect(tuples[1].key).To(Equal("deploy-image.go.kubebuilder.io/v1-alpha"))
+			Expect(tuples[1].configKey).To(Equal("deploy-image.bar.example.com/v1-alpha"))
+		})
+	})
+
+	Describe("executionHooksFactory", func() {
+		It("temporarily reorders the plugin chain while invoking bundled subcommands", func() {
+			cfg := cfgv3.New()
+			Expect(cfg.SetPluginChain([]string{
+				"deploy-image.foo.example.com/v1-alpha",
+				"deploy-image.bar.example.com/v1-alpha",
+			})).To(Succeed())
+
+			store := &fakeStore{cfg: cfg}
+			first := &captureSubcommand{}
+			second := &captureSubcommand{}
+
+			factory := executionHooksFactory{
+				store: store,
+				subcommands: []keySubcommandTuple{
+					{configKey: "deploy-image.foo.example.com/v1-alpha", subcommand: first},
+					{configKey: "deploy-image.bar.example.com/v1-alpha", subcommand: second},
+				},
+				errorMessage: "test",
+			}
+
+			callErr := factory.forEach(func(sub plugin.Subcommand) error {
+				cs := sub.(*captureSubcommand)
+				cs.lastChain = append([]string(nil), store.Config().GetPluginChain()...)
+				return nil
+			}, "scaffold")
+			Expect(callErr).NotTo(HaveOccurred())
+			Expect(first.lastChain[0]).To(Equal("deploy-image.foo.example.com/v1-alpha"))
+			Expect(second.lastChain[0]).To(Equal("deploy-image.bar.example.com/v1-alpha"))
+			Expect(store.Config().GetPluginChain()).To(Equal([]string{
+				"deploy-image.foo.example.com/v1-alpha",
+				"deploy-image.bar.example.com/v1-alpha",
+			}))
+		})
 	})
 
 	Context("buildCmd", func() {

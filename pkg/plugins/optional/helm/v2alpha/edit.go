@@ -121,21 +121,36 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		return fmt.Errorf("error scaffolding Helm chart: %w", err)
 	}
 
-	// Track the plugin configuration following a declarative approach
+	// Save plugin config to PROJECT file
+	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
+	canonicalKey := plugin.KeyFor(Plugin{})
 	cfg := pluginConfig{}
-	if err = p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Skip tracking as the config doesn't support per-plugin configuration
-		return nil
-	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-		// Fail unless the key wasn't found, which just means it is the first time tracking
-		return fmt.Errorf("error decoding plugin configuration: %w", err)
+	if err = p.config.DecodePluginConfig(key, &cfg); err != nil {
+		switch {
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			// Config version doesn't support plugin metadata
+			return nil
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			if key != canonicalKey {
+				if err2 := p.config.DecodePluginConfig(canonicalKey, &cfg); err2 != nil {
+					if errors.As(err2, &config.UnsupportedFieldError{}) {
+						return nil
+					}
+					if !errors.As(err2, &config.PluginKeyNotFoundError{}) {
+						return fmt.Errorf("error decoding plugin configuration: %w", err2)
+					}
+				}
+			}
+		default:
+			return fmt.Errorf("error decoding plugin configuration: %w", err)
+		}
 	}
 
 	// Update configuration with current parameters
 	cfg.ManifestsFile = p.manifestsFile
 	cfg.OutputDir = p.outputDir
 
-	if err = p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+	if err = p.config.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
 	}
 

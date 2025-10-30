@@ -40,6 +40,51 @@ func SplitKey(key string) (string, string) {
 	return keyParts[0], keyParts[1]
 }
 
+// GetPluginKeyForConfig finds which key to use when saving plugin config.
+// When a plugin is wrapped in a bundle, the bundle's key appears in the chain instead of the plugin's key.
+// For example: "deploy-image.my-domain/v1-alpha" wraps "deploy-image.go.kubebuilder.io/v1-alpha".
+// Returns the plugin's own key if nothing matches.
+func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
+	pluginKey := KeyFor(p)
+
+	// Try exact match first
+	for _, key := range pluginChain {
+		if key == pluginKey {
+			return pluginKey
+		}
+	}
+
+	// No exact match. Try matching by base name + version to find bundled plugins.
+	pluginName, _ := SplitKey(pluginKey)
+	pluginVersion := p.Version().String()
+
+	// Get base name (part before first dot): "deploy-image.go.kubebuilder.io" -> "deploy-image"
+	baseName := pluginName
+	if idx := strings.Index(pluginName, "."); idx != -1 {
+		baseName = pluginName[:idx]
+	}
+
+	for _, key := range pluginChain {
+		name, version := SplitKey(key)
+		if version != pluginVersion {
+			continue
+		}
+
+		// Check if this key matches the base name
+		keyBaseName := name
+		if idx := strings.Index(name, "."); idx != -1 {
+			keyBaseName = name[:idx]
+		}
+
+		if keyBaseName == baseName {
+			return key
+		}
+	}
+
+	// Nothing matched, use plugin's own key
+	return pluginKey
+}
+
 // Validate ensures a Plugin is valid.
 func Validate(p Plugin) error {
 	if err := validateName(p.Name()); err != nil {

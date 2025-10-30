@@ -17,6 +17,7 @@ limitations under the License.
 package scaffolds
 
 import (
+	"errors"
 	"fmt"
 	log "log/slog"
 	"os"
@@ -141,13 +142,34 @@ func (s *editScaffolder) getDeployImagesEnvVars() map[string]string {
 		} `json:"resources"`
 	}{}
 
-	err := s.config.DecodePluginConfig(plugin.KeyFor(deployimagev1alpha1.Plugin{}), &pluginConfig)
-	if err == nil {
-		for _, res := range pluginConfig.Resources {
-			image, ok := res.Options["image"]
-			if ok {
-				deployImages[strings.ToUpper(res.Kind)] = image
+	key := plugin.GetPluginKeyForConfig(s.config.GetPluginChain(), deployimagev1alpha1.Plugin{})
+	canonicalKey := plugin.KeyFor(deployimagev1alpha1.Plugin{})
+
+	err := s.config.DecodePluginConfig(key, &pluginConfig)
+	if err != nil {
+		switch {
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			return deployImages
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			if key != canonicalKey {
+				if err2 := s.config.DecodePluginConfig(canonicalKey, &pluginConfig); err2 != nil {
+					if errors.As(err2, &config.UnsupportedFieldError{}) {
+						return deployImages
+					}
+					if !errors.As(err2, &config.PluginKeyNotFoundError{}) {
+						log.Warn("error decoding deploy-image configuration", "error", err2, "key", canonicalKey)
+					}
+				}
 			}
+		default:
+			log.Warn("error decoding deploy-image configuration", "error", err, "key", key)
+		}
+	}
+
+	for _, res := range pluginConfig.Resources {
+		image, ok := res.Options["image"]
+		if ok {
+			deployImages[strings.ToUpper(res.Kind)] = image
 		}
 	}
 	return deployImages

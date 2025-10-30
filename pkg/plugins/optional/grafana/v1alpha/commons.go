@@ -21,19 +21,36 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 // InsertPluginMetaToConfig will insert the metadata to the plugin configuration
 func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
-	err := target.DecodePluginConfig(pluginKey, cfg)
-	if !errors.As(err, &config.UnsupportedFieldError{}) {
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+	key := plugin.GetPluginKeyForConfig(target.GetPluginChain(), Plugin{})
+	canonicalKey := plugin.KeyFor(Plugin{})
+
+	if err := target.DecodePluginConfig(key, &cfg); err != nil {
+		switch {
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			return nil
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			if key != canonicalKey {
+				if err2 := target.DecodePluginConfig(canonicalKey, &cfg); err2 != nil {
+					if errors.As(err2, &config.UnsupportedFieldError{}) {
+						return nil
+					}
+					if !errors.As(err2, &config.PluginKeyNotFoundError{}) {
+						return fmt.Errorf("error decoding plugin configuration: %w", err2)
+					}
+				}
+			}
+		default:
 			return fmt.Errorf("error decoding plugin configuration: %w", err)
 		}
+	}
 
-		if err = target.EncodePluginConfig(pluginKey, cfg); err != nil {
-			return fmt.Errorf("error encoding plugin configuration: %w", err)
-		}
+	if err := target.EncodePluginConfig(key, cfg); err != nil {
+		return fmt.Errorf("error encoding plugin configuration: %w", err)
 	}
 
 	return nil

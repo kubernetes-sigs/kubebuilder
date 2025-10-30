@@ -243,12 +243,41 @@ func kubebuilderCreate(s store.Store) error {
 // Migrates the Grafana plugin.
 func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(grafanav1alpha.Plugin{}), grafanaPlugin)
-	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), grafanav1alpha.Plugin{})
+	canonicalKey := plugin.KeyFor(grafanav1alpha.Plugin{})
+	found := true
+	var err error
+
+	if err = s.Config().DecodePluginConfig(key, grafanaPlugin); err != nil {
+		switch {
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			found = false
+			if key != canonicalKey {
+				if err = s.Config().DecodePluginConfig(canonicalKey, grafanaPlugin); err != nil {
+					switch {
+					case errors.As(err, &config.PluginKeyNotFoundError{}):
+						// still not found
+					case errors.As(err, &config.UnsupportedFieldError{}):
+						slog.Info("Project config version does not support plugin metadata, skipping Grafana migration")
+						return nil
+					default:
+						return fmt.Errorf("failed to decode grafana plugin config: %w", err)
+					}
+				} else {
+					found = true
+				}
+			}
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			slog.Info("Project config version does not support plugin metadata, skipping Grafana migration")
+			return nil
+		default:
+			return fmt.Errorf("failed to decode grafana plugin config: %w", err)
+		}
+	}
+
+	if !found {
 		slog.Info("Grafana plugin not found, skipping migration")
 		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to decode grafana plugin config: %w", err)
 	}
 
 	if err = kubebuilderGrafanaEdit(); err != nil {
@@ -264,16 +293,45 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 
 func migrateAutoUpdatePlugin(s store.Store) error {
 	var autoUpdatePlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdatev1alpha.Plugin{}), autoUpdatePlugin)
-	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), autoupdatev1alpha.Plugin{})
+	canonicalKey := plugin.KeyFor(autoupdatev1alpha.Plugin{})
+	found := true
+	var err error
+
+	if err = s.Config().DecodePluginConfig(key, autoUpdatePlugin); err != nil {
+		switch {
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			found = false
+			if key != canonicalKey {
+				if err = s.Config().DecodePluginConfig(canonicalKey, autoUpdatePlugin); err != nil {
+					switch {
+					case errors.As(err, &config.PluginKeyNotFoundError{}):
+						// still not found
+					case errors.As(err, &config.UnsupportedFieldError{}):
+						slog.Info("Project config version does not support plugin metadata, skipping Auto Update migration")
+						return nil
+					default:
+						return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
+					}
+				} else {
+					found = true
+				}
+			}
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			slog.Info("Project config version does not support plugin metadata, skipping Auto Update migration")
+			return nil
+		default:
+			return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
+		}
+	}
+
+	if !found {
 		slog.Info("Auto Update plugin not found, skipping migration")
 		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to decode autoupdate plugin config: %w", err)
 	}
 
 	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
-	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
 	return nil
@@ -281,13 +339,43 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 
 // Migrates the Deploy Image plugin.
 func migrateDeployImagePlugin(s store.Store) error {
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), deployimagev1alpha1.Plugin{})
+	canonicalKey := plugin.KeyFor(deployimagev1alpha1.Plugin{})
 	var deployImagePlugin deployimagev1alpha1.PluginConfig
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(deployimagev1alpha1.Plugin{}), &deployImagePlugin)
-	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+	found := true
+
+	var err error
+	err = s.Config().DecodePluginConfig(key, &deployImagePlugin)
+	if err != nil {
+		switch {
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			found = false
+			if key != canonicalKey {
+				if err = s.Config().DecodePluginConfig(canonicalKey, &deployImagePlugin); err != nil {
+					switch {
+					case errors.As(err, &config.PluginKeyNotFoundError{}):
+						// still not found
+					case errors.As(err, &config.UnsupportedFieldError{}):
+						slog.Info("Project config version does not support plugin metadata, skipping Deploy Image migration")
+						return nil
+					default:
+						return fmt.Errorf("failed to decode deploy-image plugin config: %w", err)
+					}
+				} else {
+					found = true
+				}
+			}
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			slog.Info("Project config version does not support plugin metadata, skipping Deploy Image migration")
+			return nil
+		default:
+			return fmt.Errorf("failed to decode deploy-image plugin config: %w", err)
+		}
+	}
+
+	if !found {
 		slog.Info("Deploy-image plugin not found, skipping migration")
 		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to decode deploy-image plugin config: %w", err)
 	}
 
 	for _, r := range deployImagePlugin.Resources {
