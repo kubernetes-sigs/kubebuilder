@@ -41,6 +41,28 @@ structures.
 }
 ```
 
+**Note:** When executing commands other than `init` (e.g., `create api`, `create webhook`, `edit`), the `PluginRequest` will also include a `config` field containing the PROJECT file configuration:
+
+```json
+{
+  "apiVersion": "v1alpha1",
+  "args": ["--group", "crew", "--version", "v1", "--kind", "Captain"],
+  "command": "create api",
+  "universe": {},
+  "config": {
+    "domain": "my.domain",
+    "repo": "github.com/example/my-project",
+    "projectName": "my-project",
+    "version": "3",
+    "layout": ["go.kubebuilder.io/v4"],
+    "multigroup": false,
+    "resources": []
+  }
+}
+```
+
+The `config` field provides external plugins access to the PROJECT file configuration, enabling them to make informed decisions based on the project's settings. This field may be empty during the `init` command if the PROJECT file has not been created yet.
+
 ### PluginResponse
 
 `PluginResponse` contains the modifications made by the plugin to the project. This data is serialized as JSON and returned to Kubebuilder through `stdout`.
