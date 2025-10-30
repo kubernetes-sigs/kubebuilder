@@ -73,6 +73,9 @@ type Options struct {
 
 	// Spoke versions for conversion webhook
 	Spoke []string
+
+	// CustomWebhookPath allows setting a custom path for webhooks
+	CustomWebhookPath string
 }
 
 // UpdateResource updates the provided resource with the options
@@ -107,6 +110,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		if opts.DoConversion {
 			res.Webhooks.Conversion = true
 			res.Webhooks.Spoke = opts.Spoke
+		}
+		if opts.CustomWebhookPath != "" {
+			res.Webhooks.Path = opts.CustomWebhookPath
 		}
 	}
 

@@ -67,6 +67,10 @@ validating and/or conversion webhooks.
   # Create conversion webhook for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke v1
+
+  # Create a validating webhook with a custom path for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --programmatic-validation --custom-path /my-custom-webhook-path
 `, cliMeta.CommandName)
 }
 
@@ -87,6 +91,9 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
 		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
+
+	fs.StringVar(&p.options.CustomWebhookPath, "custom-path", "",
+		"Specify a custom webhook path. If not set, the default path will be used.")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,

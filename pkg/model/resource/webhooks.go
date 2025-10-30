@@ -35,6 +35,9 @@ type Webhooks struct {
 	Conversion bool `json:"conversion,omitempty"`
 
 	Spoke []string `json:"spoke,omitempty"`
+
+	// Path specifies a custom webhook path. If empty, the default path will be used.
+	Path string `json:"path,omitempty"`
 }
 
 // Validate checks that the Webhooks is valid.
@@ -73,6 +76,7 @@ func (webhooks Webhooks) Copy() Webhooks {
 		Validation:     webhooks.Validation,
 		Conversion:     webhooks.Conversion,
 		Spoke:          spokeCopy,
+		Path:           webhooks.Path,
 	}
 }
 
@@ -114,6 +118,15 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 		}
 	}
 
+	// Update Path if other has one set
+	if other.Path != "" {
+		if webhooks.Path == "" {
+			webhooks.Path = other.Path
+		} else if webhooks.Path != other.Path {
+			return fmt.Errorf("webhook paths do not match")
+		}
+	}
+
 	return nil
 }
 
@@ -121,7 +134,8 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 func (webhooks Webhooks) IsEmpty() bool {
 	return webhooks.WebhookVersion == "" &&
 		!webhooks.Defaulting && !webhooks.Validation &&
-		!webhooks.Conversion && len(webhooks.Spoke) == 0
+		!webhooks.Conversion && len(webhooks.Spoke) == 0 &&
+		webhooks.Path == ""
 }
 
 // AddSpoke adds a new spoke version to the Webhooks configuration.
