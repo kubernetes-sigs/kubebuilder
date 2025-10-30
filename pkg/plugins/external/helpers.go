@@ -161,7 +161,8 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 	// Marshal config to include in the request if config is provided
 	if cfg != nil {
-		configData, err := cfg.MarshalYAML()
+		var configData []byte
+		configData, err = cfg.MarshalYAML()
 		if err != nil {
 			return fmt.Errorf("error marshaling config: %w", err)
 		}

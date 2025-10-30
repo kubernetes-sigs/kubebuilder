@@ -42,11 +42,13 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	bindExternalPluginFlags(fs, "edit", p.Path, p.Args)
 }
 
+//nolint:dupl
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 	return nil
 }
 
+//nolint:dupl
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
