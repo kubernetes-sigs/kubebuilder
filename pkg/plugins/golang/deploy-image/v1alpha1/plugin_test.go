@@ -72,7 +72,7 @@ func TestGetPluginKeyForConfigIntegration(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // capture range variable
+		// capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			result := plugin.GetPluginKeyForConfig(tt.pluginChain, p)
 			if result != tt.expected {
