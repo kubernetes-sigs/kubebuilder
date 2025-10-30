@@ -56,7 +56,7 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.33.0"}"
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.34.0"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
 kind_version=0.29.0
 goarch=amd64
@@ -129,7 +129,7 @@ function fetch_tools {
     # compatibility with controller-runtime releases as of now. For more
     # details on the quest for a more robust solution, refer to the issue
     # raised in the controller-runtime repository: https://github.com/kubernetes-sigs/controller-runtime/issues/2744
-    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.22
   fi
 
   if [ -z "$SKIP_FETCH_TOOLS" ]; then
