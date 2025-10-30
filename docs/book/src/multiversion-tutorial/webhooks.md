@@ -3,9 +3,16 @@
 Our conversion is in place, so all that's left is to tell
 controller-runtime about our conversion.
 
-## Webhook setup...
+## Webhook setup for v1...
 
 {{#literatego ./testdata/project/internal/webhook/v1/cronjob_webhook.go}}
+
+## Webhook setup for v2...
+
+Since v2 has a different Schedule structure (using CronSchedule instead of a string), 
+we need a different webhook implementation:
+
+{{#literatego ./testdata/project/internal/webhook/v2/cronjob_webhook.go}}
 
 ## ...and `main.go`
 
