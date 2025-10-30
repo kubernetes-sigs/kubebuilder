@@ -35,6 +35,10 @@ type PluginRequest struct {
 	// Universe represents the modified file contents that gets updated over a series of plugin runs
 	// across the plugin chain. Initially, it starts out as empty.
 	Universe map[string]string `json:"universe"`
+
+	// Config contains the PROJECT file config. This field may be empty if the
+	// project is being initialized and the PROJECT file has not been created yet.
+	Config map[string]interface{} `json:"config,omitempty"`
 }
 
 // PluginResponse is returned to kubebuilder by the plugin and contains all files

@@ -30,7 +30,9 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	"sigs.k8s.io/yaml"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -149,12 +151,27 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 	return universe, nil
 }
 
-func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string) error {
+func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string, cfg config.Config) error {
 	var err error
 
 	req.Universe, err = getUniverseMap(fs)
 	if err != nil {
 		return fmt.Errorf("error getting universe map: %w", err)
+	}
+
+	// Marshal config to include in the request if config is provided
+	if cfg != nil {
+		configData, err := cfg.MarshalYAML()
+		if err != nil {
+			return fmt.Errorf("error marshaling config: %w", err)
+		}
+
+		var configMap map[string]interface{}
+		if err = yaml.Unmarshal(configData, &configMap); err != nil {
+			return fmt.Errorf("error unmarshaling config to map: %w", err)
+		}
+
+		req.Config = configMap
 	}
 
 	res, err := makePluginRequest(req, path)

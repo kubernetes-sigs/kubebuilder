@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -73,6 +74,28 @@ var _ OsWdGetter = &mockInValidOsWdGetter{}
 
 func (m *mockInValidOsWdGetter) GetCurrentDir() (string, error) {
 	return "", fmt.Errorf("error getting current directory")
+}
+
+// mockConfigOutputGetter captures the request to verify config is passed
+type mockConfigOutputGetter struct {
+	capturedRequest *external.PluginRequest
+}
+
+var _ ExecOutputGetter = &mockConfigOutputGetter{}
+
+func (m *mockConfigOutputGetter) GetExecOutput(reqBytes []byte, _ string) ([]byte, error) {
+	// Capture the request for verification
+	m.capturedRequest = &external.PluginRequest{}
+	if err := json.Unmarshal(reqBytes, m.capturedRequest); err != nil {
+		return nil, fmt.Errorf("error unmarshalling request: %w", err)
+	}
+
+	return []byte(`{
+		"command": "init", 
+		"error": false, 
+		"error_msg": "none", 
+		"universe": {"LICENSE": "Apache 2.0 License\n"}
+		}`), nil
 }
 
 type mockValidFlagOutputGetter struct{}
@@ -752,6 +775,133 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				content := universe[filepath.Join(file.path, file.name)]
 				Expect(content).To(Equal(file.content))
 			}
+		})
+	})
+
+	Context("with config injection", func() {
+		const filePerm os.FileMode = 755
+		var (
+			pluginFileName string
+			args           []string
+			f              afero.File
+			fs             machinery.Filesystem
+			mockGetter     *mockConfigOutputGetter
+			cfg            *v3.Cfg
+
+			err error
+		)
+
+		BeforeEach(func() {
+			mockGetter = &mockConfigOutputGetter{}
+			outputGetter = mockGetter
+			currentDirGetter = &mockValidOsWdGetter{}
+			fs = machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			pluginFileName = "externalPlugin.sh"
+			pluginFilePath := filepath.Join("tmp", "externalPlugin", pluginFileName)
+
+			err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), filePerm)
+			Expect(err).ToNot(HaveOccurred())
+
+			f, err = fs.FS.Create(pluginFilePath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(f).ToNot(BeNil())
+
+			_, err = fs.FS.Stat(pluginFilePath)
+			Expect(err).ToNot(HaveOccurred())
+
+			args = []string{"--domain", "example.com"}
+
+			// Create a config instance
+			cfg = &v3.Cfg{
+				Version:    v3.Version,
+				Domain:     "test.domain",
+				Repository: "github.com/test/repo",
+				Name:       "test-project",
+			}
+		})
+
+		It("should pass config to external plugin on init subcommand", func() {
+			i := initSubcommand{
+				Path:   pluginFileName,
+				Args:   args,
+				config: cfg,
+			}
+
+			err = i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify that config was captured in the request
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+			Expect(mockGetter.capturedRequest.Config["repo"]).To(Equal("github.com/test/repo"))
+			Expect(mockGetter.capturedRequest.Config["projectName"]).To(Equal("test-project"))
+		})
+
+		It("should pass config to external plugin on create api subcommand", func() {
+			c := createAPISubcommand{
+				Path:   pluginFileName,
+				Args:   args,
+				config: cfg,
+			}
+
+			err = c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify that config was captured in the request
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+		})
+
+		It("should pass config to external plugin on create webhook subcommand", func() {
+			c := createWebhookSubcommand{
+				Path:   pluginFileName,
+				Args:   args,
+				config: cfg,
+			}
+
+			err = c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify that config was captured in the request
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+		})
+
+		It("should pass config to external plugin on edit subcommand", func() {
+			e := editSubcommand{
+				Path:   pluginFileName,
+				Args:   args,
+				config: cfg,
+			}
+
+			err = e.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify that config was captured in the request
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+		})
+
+		It("should handle nil config gracefully", func() {
+			i := initSubcommand{
+				Path:   pluginFileName,
+				Args:   args,
+				config: nil,
+			}
+
+			err = i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify that request was made but config is nil
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).To(BeNil())
 		})
 	})
 })

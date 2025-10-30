@@ -19,6 +19,7 @@ package external
 import (
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
@@ -32,6 +33,8 @@ const (
 )
 
 type createAPISubcommand struct {
+	config config.Config
+
 	Path string
 	Args []string
 }
@@ -49,6 +52,11 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	bindExternalPluginFlags(fs, "api", p.Path, p.Args)
 }
 
+func (p *createAPISubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+	return nil
+}
+
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
@@ -56,7 +64,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		Args:       p.Args,
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p.config)
 	if err != nil {
 		return err
 	}
