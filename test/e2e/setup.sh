@@ -18,6 +18,22 @@ build_kb
 fetch_tools
 install_kind
 
+# Checks if Docker is available and running.
+# Exits with a helpful error message if Docker is not available.
+function check_docker {
+  if ! command -v docker &>/dev/null; then
+    echo "Error: docker is not installed. Please install Docker to run e2e tests." >&2
+    echo "Visit https://docs.docker.com/get-docker/ for installation instructions." >&2
+    exit 1
+  fi
+  
+  if ! docker info &>/dev/null; then
+    echo "Error: Docker daemon is not running. Please start Docker to run e2e tests." >&2
+    echo "Make sure Docker Desktop is running or start the Docker daemon." >&2
+    exit 1
+  fi
+}
+
 # Creates a named kind cluster given a k8s version.
 # The KIND_CLUSTER variable defines the cluster name and
 # is expected to be defined in the calling environment.
@@ -27,11 +43,12 @@ install_kind
 #   export KIND_CLUSTER=<kind cluster name>
 #   create_cluster <k8s version>
 function create_cluster {
+  check_docker
   echo "Getting kind config..."
   KIND_VERSION=$1
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
   : ${1:?"k8s version must be set as arg 1"}
-  if ! kind get clusters | grep -q $KIND_CLUSTER ; then
+  if ! kind get clusters 2>/dev/null | grep -q $KIND_CLUSTER ; then
     version_prefix="${KIND_VERSION%.*}"
     kind_config=$(dirname "$0")/kind-config.yaml
     if test -f $(dirname "$0")/kind-config-${version_prefix}.yaml; then
