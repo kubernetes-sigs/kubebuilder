@@ -26,7 +26,7 @@ import (
 // its key based on the plugin chain, supporting custom bundle names.
 func TestGetPluginKeyForConfigIntegration(t *testing.T) {
 	p := Plugin{}
-	
+
 	tests := []struct {
 		name        string
 		pluginChain []string
