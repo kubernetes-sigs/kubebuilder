@@ -26,7 +26,6 @@ function check_docker {
     echo "Visit https://docs.docker.com/get-docker/ for installation instructions." >&2
     exit 1
   fi
-
   if ! docker info &>/dev/null; then
     echo "Error: Docker daemon is not running. Please start Docker to run e2e tests." >&2
     echo "Make sure Docker Desktop is running or start the Docker daemon." >&2
