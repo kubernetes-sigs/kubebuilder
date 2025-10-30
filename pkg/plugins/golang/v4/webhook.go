@@ -124,6 +124,17 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("you cannot scaffold webhooks for external types using the legacy path")
 	}
 
+	// Validate custom webhook path if provided
+	if p.options.CustomWebhookPath != "" {
+		if !strings.HasPrefix(p.options.CustomWebhookPath, "/") {
+			return fmt.Errorf("custom webhook path must start with '/': %s", p.options.CustomWebhookPath)
+		}
+		// Ensure path doesn't contain spaces or special characters that could cause issues
+		if strings.ContainsAny(p.options.CustomWebhookPath, " \t\n\r") {
+			return fmt.Errorf("custom webhook path must not contain whitespace: %s", p.options.CustomWebhookPath)
+		}
+	}
+
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
 		if !isValidVersion(spoke, res, p.config) {
