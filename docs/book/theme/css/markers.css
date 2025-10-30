@@ -212,6 +212,11 @@ input.markers-summarize:checked ~ label.markers-summarize::before {
     margin-top: 0.125em;
 }
 
+/* Completely hide low-value collapsed sections (license text, imports) */
+details.collapse-hide {
+    display: none;
+}
+
 /* details elements (not markers) */
 details.collapse-code > summary {
     width: 100%;
@@ -246,6 +251,10 @@ details.collapse-code > summary pre span::after {
 
 details.collapse-code[open] > summary pre span::after {
     content: "";
+}
+
+details.collapse-code > summary pre span.collapse-summary::before {
+    content: "// ";
 }
 
 details.collapse-code > summary pre span::before {

@@ -242,10 +242,12 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 
 	for _, pair := range pairs {
 		if pair.collapse != "" {
-			// NB(directxman12): we add the hljs class to "cheat" and get the
-			// right background with theming, since hljs doesn't use CSS
-			// variables.
-			out.WriteString("<details class=\"collapse-code\"><summary class=\"hljs\"><pre class=\"hljs\"><span class=\"hljs-comment\">")
+			collapseClass := "collapse-code"
+			// Hide low-value sections entirely (licenses, imports, etc)
+			if strings.EqualFold(pair.collapse, "Apache License") || strings.EqualFold(pair.collapse, "Imports") {
+				collapseClass = "collapse-code collapse-hide"
+			}
+			out.WriteString("<details class=\"" + collapseClass + "\"><summary class=\"hljs\"><pre class=\"hljs\"><span class=\"collapse-summary\">")
 			out.WriteString(pair.collapse)
 			out.WriteString("</span></pre></summary>")
 		}

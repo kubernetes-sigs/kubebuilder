@@ -198,7 +198,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// +kubebuilder:docs-gen:collapse=old stuff
+	// +kubebuilder:docs-gen:collapse=Remaining code from main.go
 
 	if err := (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
@@ -239,5 +239,6 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-	// +kubebuilder:docs-gen:collapse=old stuff
 }
+
+// +kubebuilder:docs-gen:collapse=Remaining code from main.go
