@@ -9,7 +9,7 @@ controller-runtime about our conversion.
 
 ## Webhook setup for v2...
 
-Since v2 has a different Schedule structure (using CronSchedule instead of a string), 
+Since v2 has a different Schedule structure (using CronSchedule instead of a string),
 we need a different webhook implementation:
 
 {{#literatego ./testdata/project/internal/webhook/v2/cronjob_webhook.go}}
