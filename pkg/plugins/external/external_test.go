@@ -59,6 +59,31 @@ func (m *mockInValidOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, err
 	return nil, fmt.Errorf("error getting exec command output")
 }
 
+type mockPluginChainCaptureGetter struct {
+	capturedChain *[]string
+}
+
+var _ ExecOutputGetter = &mockPluginChainCaptureGetter{}
+
+func (m *mockPluginChainCaptureGetter) GetExecOutput(request []byte, _ string) ([]byte, error) {
+	// Parse the request to capture the plugin chain
+	var req external.PluginRequest
+	if err := json.Unmarshal(request, &req); err != nil {
+		return nil, fmt.Errorf("error unmarshalling request: %w", err)
+	}
+
+	// Capture the plugin chain
+	*m.capturedChain = req.PluginChain
+
+	// Return a valid response
+	return []byte(`{
+		"command": "init",
+		"error": false,
+		"error_msg": "none",
+		"universe": {"LICENSE": "Apache 2.0 License\n"}
+	}`), nil
+}
+
 type mockValidOsWdGetter struct{}
 
 var _ OsWdGetter = &mockValidOsWdGetter{}
@@ -752,6 +777,85 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				content := universe[filepath.Join(file.path, file.name)]
 				Expect(content).To(Equal(file.content))
 			}
+		})
+	})
+
+	Context("PluginChain is passed to external plugin", func() {
+		var (
+			pluginChainCaptured []string
+			mockOutputGetter    *mockPluginChainCaptureGetter
+		)
+
+		BeforeEach(func() {
+			mockOutputGetter = &mockPluginChainCaptureGetter{
+				capturedChain: &pluginChainCaptured,
+			}
+			outputGetter = mockOutputGetter
+			currentDirGetter = &mockValidOsWdGetter{}
+		})
+
+		It("should pass plugin chain to init subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			i := initSubcommand{
+				Path:        "test.sh",
+				Args:        []string{"--domain", "example.com"},
+				pluginChain: []string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"},
+			}
+
+			err := i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}))
+		})
+
+		It("should pass plugin chain to create api subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			c := createAPISubcommand{
+				Path:        "test.sh",
+				Args:        []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+			}
+
+			err := c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4"}))
+		})
+
+		It("should pass plugin chain to create webhook subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			w := createWebhookSubcommand{
+				Path:        "test.sh",
+				Args:        []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+				pluginChain: []string{"go.kubebuilder.io/v3"},
+			}
+
+			err := w.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v3"}))
+		})
+
+		It("should pass plugin chain to edit subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			e := editSubcommand{
+				Path:        "test.sh",
+				Args:        []string{"--multigroup"},
+				pluginChain: []string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"},
+			}
+
+			err := e.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"}))
 		})
 	})
 })

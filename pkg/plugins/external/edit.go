@@ -19,6 +19,7 @@ package external
 import (
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -27,8 +28,15 @@ import (
 var _ plugin.EditSubcommand = &editSubcommand{}
 
 type editSubcommand struct {
-	Path string
-	Args []string
+	Path        string
+	Args        []string
+	pluginChain []string
+}
+
+// InjectConfig injects the project configuration to access plugin chain information
+func (p *editSubcommand) InjectConfig(c config.Config) error {
+	p.pluginChain = c.GetPluginChain()
+	return nil
 }
 
 func (p *editSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -41,9 +49,10 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	req := external.PluginRequest{
-		APIVersion: defaultAPIVersion,
-		Command:    "edit",
-		Args:       p.Args,
+		APIVersion:  defaultAPIVersion,
+		Command:     "edit",
+		Args:        p.Args,
+		PluginChain: p.pluginChain,
 	}
 
 	err := handlePluginResponse(fs, req, p.Path)

@@ -35,6 +35,11 @@ type PluginRequest struct {
 	// Universe represents the modified file contents that gets updated over a series of plugin runs
 	// across the plugin chain. Initially, it starts out as empty.
 	Universe map[string]string `json:"universe"`
+
+	// PluginChain contains the full plugin chain being used for this project.
+	// This allows external plugins to know which other plugins are in use.
+	// Format: ["go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"]
+	PluginChain []string `json:"pluginChain,omitempty"`
 }
 
 // PluginResponse is returned to kubebuilder by the plugin and contains all files
