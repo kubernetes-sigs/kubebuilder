@@ -61,7 +61,7 @@ structures.
 }
 ```
 
-The `config` field provides external plugins access to the PROJECT file configuration, enabling them to make informed decisions based on the project's settings. This field may be empty during the `init` command if the PROJECT file has not been created yet.
+The `config` field provides external plugins access to the PROJECT file configuration, enabling them to make informed decisions based on the project's settings. This field will be omitted from the JSON entirely (not present) during the `init` command if the PROJECT file has not been created yet. External plugins should check for the presence of this field before attempting to use it.
 
 ### PluginResponse
 
