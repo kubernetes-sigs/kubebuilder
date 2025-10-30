@@ -279,7 +279,9 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 // Migrates the Deploy Image plugin.
 func migrateDeployImagePlugin(s store.Store) error {
 	var deployImagePlugin deployimagev1alpha1.PluginConfig
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(deployimagev1alpha1.Plugin{}), &deployImagePlugin)
+	// Use GetPluginKeyForConfig to support custom bundle names
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), deployimagev1alpha1.Plugin{})
+	err := s.Config().DecodePluginConfig(key, &deployImagePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Deploy-image plugin not found, skipping migration")
 		return nil

@@ -141,7 +141,9 @@ func (s *editScaffolder) getDeployImagesEnvVars() map[string]string {
 		} `json:"resources"`
 	}{}
 
-	err := s.config.DecodePluginConfig(plugin.KeyFor(deployimagev1alpha1.Plugin{}), &pluginConfig)
+	// Use GetPluginKeyForConfig to support custom bundle names
+	key := plugin.GetPluginKeyForConfig(s.config.GetPluginChain(), deployimagev1alpha1.Plugin{})
+	err := s.config.DecodePluginConfig(key, &pluginConfig)
 	if err == nil {
 		for _, res := range pluginConfig.Resources {
 			image, ok := res.Options["image"]
