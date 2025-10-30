@@ -36,12 +36,31 @@ type createAPISubcommand struct {
 	Path        string
 	Args        []string
 	pluginChain []string
+	config      config.Config
 }
 
-// InjectConfig injects the project configuration to access plugin chain information
+// InjectConfig injects the project configuration so external plugins can read the PROJECT file.
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
-	p.pluginChain = c.GetPluginChain()
+	p.config = c
+
+	if c == nil {
+		return nil
+	}
+
+	if chain := c.GetPluginChain(); len(chain) > 0 {
+		p.pluginChain = append([]string(nil), chain...)
+	}
+
 	return nil
+}
+
+func (p *createAPISubcommand) SetPluginChain(chain []string) {
+	if len(chain) == 0 {
+		p.pluginChain = nil
+		return
+	}
+
+	p.pluginChain = append([]string(nil), chain...)
 }
 
 func (p *createAPISubcommand) InjectResource(*resource.Resource) error {
@@ -65,7 +84,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		PluginChain: p.pluginChain,
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p.config)
 	if err != nil {
 		return err
 	}

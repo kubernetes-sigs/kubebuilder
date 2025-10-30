@@ -32,12 +32,31 @@ type createWebhookSubcommand struct {
 	Path        string
 	Args        []string
 	pluginChain []string
+	config      config.Config
 }
 
-// InjectConfig injects the project configuration to access plugin chain information
+// InjectConfig injects the project configuration so external plugins can read the PROJECT file.
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
-	p.pluginChain = c.GetPluginChain()
+	p.config = c
+
+	if c == nil {
+		return nil
+	}
+
+	if chain := c.GetPluginChain(); len(chain) > 0 {
+		p.pluginChain = append([]string(nil), chain...)
+	}
+
 	return nil
+}
+
+func (p *createWebhookSubcommand) SetPluginChain(chain []string) {
+	if len(chain) == 0 {
+		p.pluginChain = nil
+		return
+	}
+
+	p.pluginChain = append([]string(nil), chain...)
 }
 
 func (p *createWebhookSubcommand) InjectResource(*resource.Resource) error {
@@ -61,7 +80,7 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		PluginChain: p.pluginChain,
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p.config)
 	if err != nil {
 		return err
 	}
