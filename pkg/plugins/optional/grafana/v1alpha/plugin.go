@@ -29,7 +29,6 @@ const pluginName = "grafana." + plugins.DefaultNameQualifier
 var (
 	pluginVersion            = plugin.Version{Number: 1, Stage: stage.Alpha}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
-	pluginKey                = plugin.KeyFor(Plugin{})
 )
 
 // Plugin implements the plugin.Full interface

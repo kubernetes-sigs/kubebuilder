@@ -36,7 +36,7 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 
 	subcmdMeta.Examples = fmt.Sprintf(`  # Edit a common project with this plugin
   %[1]s edit --plugins=%[2]s
-`, cliMeta.CommandName, pluginKey)
+`, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

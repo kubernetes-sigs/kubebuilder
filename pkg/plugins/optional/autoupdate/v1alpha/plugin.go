@@ -46,7 +46,6 @@ const pluginName = "autoupdate." + plugins.DefaultNameQualifier
 var (
 	pluginVersion            = plugin.Version{Number: 1, Stage: stage.Alpha}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
-	pluginKey                = plugin.KeyFor(Plugin{})
 )
 
 // Plugin implements the plugin.Full interface
@@ -81,13 +80,16 @@ func (p Plugin) DeprecationWarning() string {
 
 // insertPluginMetaToConfig will insert the metadata to the plugin configuration
 func insertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
-	err := target.DecodePluginConfig(pluginKey, cfg)
+	// Get the correct plugin key from the plugin chain
+	key := plugin.GetPluginKeyForConfig(target.GetPluginChain(), Plugin{})
+
+	err := target.DecodePluginConfig(key, cfg)
 	if !errors.As(err, &config.UnsupportedFieldError{}) {
 		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
 			return fmt.Errorf("error decoding plugin configuration: %w", err)
 		}
 
-		if err = target.EncodePluginConfig(pluginKey, cfg); err != nil {
+		if err = target.EncodePluginConfig(key, cfg); err != nil {
 			return fmt.Errorf("error encoding plugin configuration: %w", err)
 		}
 	}

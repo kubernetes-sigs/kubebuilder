@@ -40,6 +40,59 @@ func SplitKey(key string) (string, string) {
 	return keyParts[0], keyParts[1]
 }
 
+// GetPluginKeyForConfig searches for a plugin key in the plugin chain that should be used for storing
+// plugin configuration. When a plugin is wrapped in a bundle with a custom name, the bundle's key will
+// be in the plugin chain instead of the plugin's own key.
+//
+// The function first tries to find the plugin's own key (via KeyFor). If not found, it looks for a key
+// with a matching name prefix (before the domain) and version. This handles the case where a plugin like
+// "deploy-image.go.kubebuilder.io/v1-alpha" is wrapped in a bundle named "deploy-image.my-domain/v1-alpha".
+//
+// If no match is found in the plugin chain, it falls back to using the plugin's own key.
+func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
+	pluginKey := KeyFor(p)
+
+	// First, try exact match
+	for _, key := range pluginChain {
+		if key == pluginKey {
+			return pluginKey
+		}
+	}
+
+	// If no exact match, look for a key with matching base name and version
+	// This handles custom bundles that wrap the plugin
+	pluginName, _ := SplitKey(pluginKey)
+	pluginVersion := p.Version().String()
+
+	// Extract the base name (part before the domain)
+	// E.g., "deploy-image.go.kubebuilder.io" -> "deploy-image"
+	baseName := pluginName
+	if idx := strings.Index(pluginName, "."); idx != -1 {
+		baseName = pluginName[:idx]
+	}
+
+	for _, key := range pluginChain {
+		name, version := SplitKey(key)
+		if version != pluginVersion {
+			continue
+		}
+
+		// Check if this key has the same base name
+		// E.g., "deploy-image.my-domain" has base name "deploy-image"
+		keyBaseName := name
+		if idx := strings.Index(name, "."); idx != -1 {
+			keyBaseName = name[:idx]
+		}
+
+		if keyBaseName == baseName {
+			return key
+		}
+	}
+
+	// Fall back to the plugin's own key if no match found
+	return pluginKey
+}
+
 // Validate ensures a Plugin is valid.
 func Validate(p Plugin) error {
 	if err := validateName(p.Name()); err != nil {
