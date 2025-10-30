@@ -30,16 +30,24 @@ structures.
 
 `PluginRequest` contains the data collected from the CLI and any previously executed plugins. Kubebuilder sends this data as a JSON object to the external plugin via `stdin`.
 
-**Example `PluginRequest` (triggered by `kubebuilder init --plugins sampleexternalplugin/v1 --domain my.domain`):**
+**Example `PluginRequest` (triggered by `kubebuilder init --plugins go/v4,sampleexternalplugin/v1 --domain my.domain`):**
 
 ```json
 {
   "apiVersion": "v1alpha1",
   "args": ["--domain", "my.domain"],
   "command": "init",
-  "universe": {}
+  "universe": {},
+  "pluginChain": ["go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2", "sampleexternalplugin/v1"]
 }
 ```
+
+**Fields:**
+- `apiVersion`: Version of the PluginRequest schema.
+- `args`: Command-line arguments passed to the plugin.
+- `command`: The subcommand being executed (e.g., `init`, `create api`, `create webhook`, `edit`).
+- `universe`: Map of file paths to contents, updated across the plugin chain.
+- `pluginChain` (optional): Array of plugin keys in the chain. This allows external plugins to determine which other plugins are being used. For example, a plugin can check if `go.kubebuilder.io/v4` or `go.kubebuilder.io/v3` is in the chain to adjust its scaffolding accordingly.
 
 ### PluginResponse
 
