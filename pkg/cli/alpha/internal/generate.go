@@ -240,7 +240,9 @@ func kubebuilderCreate(s store.Store) error {
 // Migrates the Grafana plugin.
 func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(grafanav1alpha.Plugin{}), grafanaPlugin)
+	// Use GetPluginKeyForConfig to support custom bundle names
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), grafanav1alpha.Plugin{})
+	err := s.Config().DecodePluginConfig(key, grafanaPlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Grafana plugin not found, skipping migration")
 		return nil
@@ -261,7 +263,9 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 
 func migrateAutoUpdatePlugin(s store.Store) error {
 	var autoUpdatePlugin struct{}
-	err := s.Config().DecodePluginConfig(plugin.KeyFor(autoupdatev1alpha.Plugin{}), autoUpdatePlugin)
+	// Use GetPluginKeyForConfig to support custom bundle names
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), autoupdatev1alpha.Plugin{})
+	err := s.Config().DecodePluginConfig(key, autoUpdatePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		slog.Info("Auto Update plugin not found, skipping migration")
 		return nil
