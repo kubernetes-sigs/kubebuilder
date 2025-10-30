@@ -129,7 +129,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		if !strings.HasPrefix(p.options.CustomWebhookPath, "/") {
 			return fmt.Errorf("custom webhook path must start with '/': %s", p.options.CustomWebhookPath)
 		}
-		// Ensure path doesn't contain spaces or special characters that could cause issues
+		// Ensure path doesn't contain whitespace that could cause issues
 		if strings.ContainsAny(p.options.CustomWebhookPath, " \t\n\r") {
 			return fmt.Errorf("custom webhook path must not contain whitespace: %s", p.options.CustomWebhookPath)
 		}
