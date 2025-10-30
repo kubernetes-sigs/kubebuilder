@@ -170,6 +170,8 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
+// +kubebuilder:docs-gen:collapse=Remaining code from suite_test.go
+
 /*
 Now that you have your controller running on a test cluster and a client ready to perform operations on your CronJob, we can start writing integration tests!
 */

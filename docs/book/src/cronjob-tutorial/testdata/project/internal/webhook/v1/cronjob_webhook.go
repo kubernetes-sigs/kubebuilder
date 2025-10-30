@@ -36,7 +36,7 @@ import (
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
-// +kubebuilder:docs-gen:collapse=Go imports
+// +kubebuilder:docs-gen:collapse=Imports
 
 /*
 Next, we'll setup a logger for the webhooks.
@@ -279,4 +279,4 @@ func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
 	return nil
 }
 
-// +kubebuilder:docs-gen:collapse=Validate object name
+// +kubebuilder:docs-gen:collapse=validateCronJobName() Code Implementation

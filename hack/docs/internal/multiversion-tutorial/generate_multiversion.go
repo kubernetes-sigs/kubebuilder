@@ -387,6 +387,194 @@ Most of the conversion is straightforward copying, except for converting our cha
 
 // ConvertTo converts this CronJob (v2) to the Hub version (v1).`)
 	hackutils.CheckError("replace covert info at hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		`// ConvertTo converts this CronJob (v2) to the Hub version (v1).
+func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*batchv1.CronJob)
+	log.Printf("ConvertTo: Converting CronJob from Spoke version v2 to Hub version v1;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	sched := src.Spec.Schedule
+	scheduleParts := []string{"*", "*", "*", "*", "*"}
+	if sched.Minute != nil {
+		scheduleParts[0] = string(*sched.Minute)
+	}
+	if sched.Hour != nil {
+		scheduleParts[1] = string(*sched.Hour)
+	}
+	if sched.DayOfMonth != nil {
+		scheduleParts[2] = string(*sched.DayOfMonth)
+	}
+	if sched.Month != nil {
+		scheduleParts[3] = string(*sched.Month)
+	}
+	if sched.DayOfWeek != nil {
+		scheduleParts[4] = string(*sched.DayOfWeek)
+	}
+	dst.Spec.Schedule = strings.Join(scheduleParts, " ")
+
+	/*
+		The rest of the conversion is pretty rote.
+	*/
+	// ObjectMeta
+	dst.ObjectMeta = src.ObjectMeta
+
+	// Spec
+	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
+	dst.Spec.ConcurrencyPolicy = batchv1.ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	dst.Spec.Suspend = src.Spec.Suspend
+	dst.Spec.JobTemplate = src.Spec.JobTemplate
+	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
+	dst.Spec.FailedJobsHistoryLimit = src.Spec.FailedJobsHistoryLimit
+
+	// Status
+	dst.Status.Active = src.Status.Active
+	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
+
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
+
+	return nil
+}`,
+		`// ConvertTo converts this CronJob (v2) to the Hub version (v1).
+func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*batchv1.CronJob)
+	log.Printf("ConvertTo: Converting CronJob from Spoke version v2 to Hub version v1;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	sched := src.Spec.Schedule
+	scheduleParts := []string{"*", "*", "*", "*", "*"}
+	if sched.Minute != nil {
+		scheduleParts[0] = string(*sched.Minute)
+	}
+	if sched.Hour != nil {
+		scheduleParts[1] = string(*sched.Hour)
+	}
+	if sched.DayOfMonth != nil {
+		scheduleParts[2] = string(*sched.DayOfMonth)
+	}
+	if sched.Month != nil {
+		scheduleParts[3] = string(*sched.Month)
+	}
+	if sched.DayOfWeek != nil {
+		scheduleParts[4] = string(*sched.DayOfWeek)
+	}
+	dst.Spec.Schedule = strings.Join(scheduleParts, " ")
+
+	/*
+		The rest of the conversion is pretty rote.
+	*/
+	// ObjectMeta
+	dst.ObjectMeta = src.ObjectMeta
+
+	// Spec
+	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
+	dst.Spec.ConcurrencyPolicy = batchv1.ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	dst.Spec.Suspend = src.Spec.Suspend
+	dst.Spec.JobTemplate = src.Spec.JobTemplate
+	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
+	dst.Spec.FailedJobsHistoryLimit = src.Spec.FailedJobsHistoryLimit
+
+	// Status
+	dst.Status.Active = src.Status.Active
+	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
+
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
+	return nil
+}`)
+	hackutils.CheckError("fix ConvertTo collapse marker placement at hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		`// ConvertFrom converts the Hub version (v1) to this CronJob (v2).
+func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*batchv1.CronJob)
+	log.Printf("ConvertFrom: Converting CronJob from Hub version v1 to Spoke version v2;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	schedParts := strings.Split(src.Spec.Schedule, " ")
+	if len(schedParts) != 5 {
+		return fmt.Errorf("invalid schedule: not a standard 5-field schedule")
+	}
+	partIfNeeded := func(raw string) *CronField {
+		if raw == "*" {
+			return nil
+		}
+		part := CronField(raw)
+		return &part
+	}
+	dst.Spec.Schedule.Minute = partIfNeeded(schedParts[0])
+	dst.Spec.Schedule.Hour = partIfNeeded(schedParts[1])
+	dst.Spec.Schedule.DayOfMonth = partIfNeeded(schedParts[2])
+	dst.Spec.Schedule.Month = partIfNeeded(schedParts[3])
+	dst.Spec.Schedule.DayOfWeek = partIfNeeded(schedParts[4])
+
+	/*
+		The rest of the conversion is pretty rote.
+	*/
+	// ObjectMeta
+	dst.ObjectMeta = src.ObjectMeta
+
+	// Spec
+	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
+	dst.Spec.ConcurrencyPolicy = ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	dst.Spec.Suspend = src.Spec.Suspend
+	dst.Spec.JobTemplate = src.Spec.JobTemplate
+	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
+	dst.Spec.FailedJobsHistoryLimit = src.Spec.FailedJobsHistoryLimit
+
+	// Status
+	dst.Status.Active = src.Status.Active
+	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
+
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
+
+	return nil
+}`,
+		`// ConvertFrom converts the Hub version (v1) to this CronJob (v2).
+func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*batchv1.CronJob)
+	log.Printf("ConvertFrom: Converting CronJob from Hub version v1 to Spoke version v2;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	schedParts := strings.Split(src.Spec.Schedule, " ")
+	if len(schedParts) != 5 {
+		return fmt.Errorf("invalid schedule: not a standard 5-field schedule")
+	}
+	partIfNeeded := func(raw string) *CronField {
+		if raw == "*" {
+			return nil
+		}
+		part := CronField(raw)
+		return &part
+	}
+	dst.Spec.Schedule.Minute = partIfNeeded(schedParts[0])
+	dst.Spec.Schedule.Hour = partIfNeeded(schedParts[1])
+	dst.Spec.Schedule.DayOfMonth = partIfNeeded(schedParts[2])
+	dst.Spec.Schedule.Month = partIfNeeded(schedParts[3])
+	dst.Spec.Schedule.DayOfWeek = partIfNeeded(schedParts[4])
+
+	/*
+		The rest of the conversion is pretty rote.
+	*/
+	// ObjectMeta
+	dst.ObjectMeta = src.ObjectMeta
+
+	// Spec
+	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
+	dst.Spec.ConcurrencyPolicy = ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	dst.Spec.Suspend = src.Spec.Suspend
+	dst.Spec.JobTemplate = src.Spec.JobTemplate
+	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
+	dst.Spec.FailedJobsHistoryLimit = src.Spec.FailedJobsHistoryLimit
+
+	// Status
+	dst.Status.Active = src.Status.Active
+	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
+
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
+	return nil
+}`)
+	hackutils.CheckError("fix ConvertFrom collapse marker placement at hub v2", err)
 }
 
 func (sp *Sample) updateAPIV1() {
@@ -466,7 +654,7 @@ func (sp *Sample) updateAPIV1() {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`// +kubebuilder:docs-gen:collapse=Root Object Definitions`,
-		`// +kubebuilder:docs-gen:collapse=old stuff`,
+		`// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_types.go`,
 	)
 	hackutils.CheckError("replacing docs-gen collapse comment", err)
 }
@@ -474,7 +662,13 @@ func (sp *Sample) updateAPIV1() {
 func (sp *Sample) updateWebhookV2() {
 	path := "internal/webhook/v2/cronjob_webhook.go"
 
-	err := pluginutil.InsertCode(
+	err := pluginutil.InsertCodeIfNotExist(
+		filepath.Join(sp.ctx.Dir, path),
+		"limitations under the License.\n*/",
+		"\n// +kubebuilder:docs-gen:collapse=Apache License")
+	hackutils.CheckError("adding Apache License collapse marker to webhook v2", err)
+
+	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
 		`import (
 	"context"
@@ -584,7 +778,7 @@ func (sp *Sample) updateMain() {
 		os.Exit(1)
 	}
 
-	// +kubebuilder:docs-gen:collapse=old stuff`,
+	// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
 		`if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -637,20 +831,18 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 		os.Exit(1)
 	}`,
 		`
-// +kubebuilder:docs-gen:collapse=existing setup
-`,
+ `,
 	)
-	hackutils.CheckError("insert // +kubebuilder:docs-gen:collapse=existing setup main.go", err)
+	hackutils.CheckError("insert doc marker existing setup main.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
 		`// +kubebuilder:scaffold:builder`,
 		`
 
-	/*
-	 */`,
+	// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
 	)
-	hackutils.CheckError("insert doc marker existing setup main.go", err)
+	hackutils.CheckError("insert opening collapse marker main.go", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
@@ -668,12 +860,15 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 	)
 	hackutils.CheckError("replace webhook setup explanation main.go", err)
 
-	err = pluginutil.ReplaceInFile(
+	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
-		`// +kubebuilder:docs-gen:collapse=old stuff`,
-		`// +kubebuilder:docs-gen:collapse=existing setup`,
+		`setupLog.Error(err, "problem running manager")
+		os.Exit(1)
+	}
+}`, `
+// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
 	)
-	hackutils.CheckError("replace +kubebuilder:docs-gen:collapse=old stuff main.go", err)
+	hackutils.CheckError("update main.go with final collapse marker", err)
 }
 
 func (sp *Sample) updateAPIV2() {

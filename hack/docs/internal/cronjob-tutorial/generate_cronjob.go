@@ -358,7 +358,7 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 		os.Exit(1)
 	}`, `
 
-	// +kubebuilder:docs-gen:collapse=old stuff`)
+	// +kubebuilder:docs-gen:collapse=Remaining code from main.go`)
 	hackutils.CheckError("fixing main.go", err)
 
 	err = pluginutil.InsertCode(
@@ -372,8 +372,9 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`setupLog.Error(err, "problem running manager")
 		os.Exit(1)
-	}`, `
-	// +kubebuilder:docs-gen:collapse=old stuff`)
+	}
+}`, `
+// +kubebuilder:docs-gen:collapse=Remaining code from main.go`)
 	hackutils.CheckError("fixing main.go", err)
 }
 

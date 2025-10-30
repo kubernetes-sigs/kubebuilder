@@ -60,7 +60,7 @@ const statusDesignComment = `/*
  serialization, as mentioned above.
 */`
 
-const boilerplateReplacement = `// +kubebuilder:docs-gen:collapse=old stuff
+const boilerplateReplacement = `// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_types.go
 
 /*
  Since we'll have more than one version, we'll need to mark a storage version.

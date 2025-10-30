@@ -83,10 +83,9 @@ type CronJobSpec struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=0
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
-
-	// +kubebuilder:docs-gen:collapse=The rest of Spec
-
 }
+
+// +kubebuilder:docs-gen:collapse=CronJobSpec Full Code
 
 /*
 Next, we'll need to define a type to hold our schedule.

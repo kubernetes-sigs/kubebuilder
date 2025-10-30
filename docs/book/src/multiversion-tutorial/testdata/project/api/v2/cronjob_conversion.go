@@ -90,8 +90,7 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
 
-	// +kubebuilder:docs-gen:collapse=rote conversion
-
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
 	return nil
 }
 
@@ -141,7 +140,6 @@ func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
 
-	// +kubebuilder:docs-gen:collapse=rote conversion
-
+	// +kubebuilder:docs-gen:collapse=rest of conversion Code Implementation
 	return nil
 }
