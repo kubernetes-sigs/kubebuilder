@@ -130,6 +130,7 @@
   - [Extending](./plugins/extending.md)
     - [CLI and Plugins](./plugins/extending/extending_cli_features_and_plugins.md)
     - [External Plugins](./plugins/extending/external-plugins.md)
+    - [Custom Markers](./plugins/extending/custom-markers.md)
     - [E2E Tests](./plugins/extending/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
