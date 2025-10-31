@@ -43,6 +43,9 @@ type Generate struct {
 	OutputDir string
 }
 
+// Define a variable to allow overriding the behavior of getExecutablePath for testing.
+var getExecutablePathFunc = getExecutablePath
+
 // Generate handles the migration and scaffolding process.
 func (opts *Generate) Generate() error {
 	projectConfig, err := common.LoadProjectConfig(opts.InputDir)
@@ -145,7 +148,7 @@ func (opts *Generate) Validate() error {
 		return fmt.Errorf("error getting input path %q: %w", opts.InputDir, err)
 	}
 
-	_, err = getExecutablePath()
+	_, err = getExecutablePathFunc()
 	if err != nil {
 		return err
 	}
@@ -189,7 +192,7 @@ func changeWorkingDirectory(outputDir string) error {
 // Initializes the project with Kubebuilder.
 func kubebuilderInit(s store.Store) error {
 	args := append([]string{"init"}, getInitArgs(s)...)
-	execPath, err := getExecutablePath()
+	execPath, err := getExecutablePathFunc()
 	if err != nil {
 		return err
 	}
