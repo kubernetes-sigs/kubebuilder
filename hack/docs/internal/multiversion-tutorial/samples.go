@@ -24,6 +24,11 @@ const sampleV2Code = `schedule:
     spec:
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           containers:
           - name: hello
             image: busybox
@@ -31,5 +36,11 @@ const sampleV2Code = `schedule:
             - /bin/sh
             - -c
             - date; echo Hello from the Kubernetes cluster
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: false
           restartPolicy: OnFailure
 `
