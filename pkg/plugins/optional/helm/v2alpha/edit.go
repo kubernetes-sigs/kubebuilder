@@ -122,8 +122,12 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Track the plugin configuration following a declarative approach
+	// Get the correct plugin key from the plugin chain - this handles the case where
+	// this plugin is wrapped in a bundle with a custom name
+	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
+
 	cfg := pluginConfig{}
-	if err = p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
+	if err = p.config.DecodePluginConfig(key, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
 		// Skip tracking as the config doesn't support per-plugin configuration
 		return nil
 	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
@@ -135,7 +139,7 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	cfg.ManifestsFile = p.manifestsFile
 	cfg.OutputDir = p.outputDir
 
-	if err = p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+	if err = p.config.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
 	}
 
