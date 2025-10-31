@@ -36,17 +36,27 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 		Flags:      []external.Flag{},
 	}
 
-	switch pr.Command {
+	// Parse args to determine which subcommand flags are being requested
+	var subcommand string
+	for _, arg := range pr.Args {
+		if arg == "--init" {
+			subcommand = "init"
+			break
+		} else if arg == "--edit" {
+			subcommand = "edit"
+			break
+		}
+	}
+
+	switch subcommand {
 	case "init":
 		pluginResponse.Flags = scaffolds.InitFlags
-	case "create api":
-		pluginResponse.Flags = scaffolds.ApiFlags
-	case "create webhook":
-		pluginResponse.Flags = scaffolds.WebhookFlags
+	case "edit":
+		pluginResponse.Flags = scaffolds.EditFlags
 	default:
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
-			"unrecognized command: " + pr.Command,
+			"unrecognized subcommand flag in args: " + string(rune(len(pr.Args))),
 		}
 	}
 
