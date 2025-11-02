@@ -23,7 +23,16 @@ if [ -z "${SKIP_KIND_CLEANUP:-}" ]; then
   trap delete_cluster EXIT
 fi
 
+# Wait a moment for the cluster control plane to be fully initialized
+echo "Ensuring cluster is fully initialized..."
+sleep 5
+
+# Export kubeconfig for the cluster
 kind export kubeconfig --kubeconfig $tmp_root/kubeconfig --name $KIND_CLUSTER
 export KUBECONFIG=$tmp_root/kubeconfig
+
+# Verify we can communicate with the cluster
+kubectl cluster-info
+echo "Cluster is ready for testing"
 
 test_cluster -v -ginkgo.v
