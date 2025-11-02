@@ -111,6 +111,7 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
+	sp.updateE2EWebhookConversion()
 }
 
 func (sp *Sample) updateCronjobV1DueForce() {
@@ -789,4 +790,120 @@ func (sp *Sample) CodeGen() {
 
 	err = sp.ctx.EditHelmPlugin()
 	hackutils.CheckError("Failed to enable helm plugin", err)
+}
+
+const webhookConversionE2ETest = `
+		It("should successfully convert between v1 and v2 versions", func() {
+			By("waiting for the webhook service to be ready")
+			Eventually(func(g Gomega) {
+				cmd := exec.Command("kubectl", "get", "endpoints", "-n", namespace, 
+					"-l", "control-plane=controller-manager", 
+					"-o", "jsonpath={.items[0].subsets[0].addresses[0].ip}")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to get webhook service endpoints")
+				g.Expect(strings.TrimSpace(output)).NotTo(BeEmpty(), "Webhook endpoint should have an IP")
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("creating a v1 CronJob with a specific schedule")
+			cmd := exec.Command("kubectl", "apply", "-f", "config/samples/batch_v1_cronjob.yaml", "-n", namespace)
+			_, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create v1 CronJob")
+
+		By("waiting for the v1 CronJob to be created")
+		Eventually(func(g Gomega) {
+			cmd := exec.Command("kubectl", "get", "cronjob.batch.tutorial.kubebuilder.io", "cronjob-sample", "-n", namespace)
+			output, err := utils.Run(cmd)
+			if err != nil {
+				// Log controller logs on failure for debugging
+				logCmd := exec.Command("kubectl", "logs", "-l", "control-plane=controller-manager", "-n", namespace, "--tail=50")
+				logs, _ := utils.Run(logCmd)
+				_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs when CronJob not found:\n%s\n", logs)
+			}
+			g.Expect(err).NotTo(HaveOccurred(), "v1 CronJob should exist, output: "+output)
+		}, time.Minute, time.Second).Should(Succeed())
+
+		By("fetching the v1 CronJob and verifying the schedule format")
+			cmd = exec.Command("kubectl", "get", "cronjob.v1.batch.tutorial.kubebuilder.io", "cronjob-sample",
+				"-n", namespace, "-o", "jsonpath={.spec.schedule}")
+			v1Schedule, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to get v1 CronJob schedule")
+			Expect(strings.TrimSpace(v1Schedule)).To(Equal("*/1 * * * *"),
+				"v1 schedule should be in cron format")
+
+			By("fetching the same CronJob as v2 and verifying the converted schedule")
+			Eventually(func(g Gomega) {
+				cmd := exec.Command("kubectl", "get", "cronjob.v2.batch.tutorial.kubebuilder.io", "cronjob-sample",
+					"-n", namespace, "-o", "jsonpath={.spec.schedule.minute}")
+				v2Minute, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to get v2 CronJob schedule")
+				g.Expect(strings.TrimSpace(v2Minute)).To(Equal("*/1"),
+					"v2 schedule.minute should be converted from v1 schedule")
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("creating a v2 CronJob with structured schedule fields")
+			cmd = exec.Command("kubectl", "apply", "-f", "config/samples/batch_v2_cronjob.yaml", "-n", namespace)
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create v2 CronJob")
+
+			By("verifying the v2 CronJob has the correct structured schedule")
+			Eventually(func(g Gomega) {
+				cmd := exec.Command("kubectl", "get", "cronjob.v2.batch.tutorial.kubebuilder.io", "cronjob-sample",
+					"-n", namespace, "-o", "jsonpath={.spec.schedule.minute}")
+				v2Minute, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to get v2 CronJob schedule")
+				g.Expect(strings.TrimSpace(v2Minute)).To(Equal("*/1"),
+					"v2 CronJob should have minute field set")
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("fetching the v2 CronJob as v1 and verifying schedule conversion")
+			Eventually(func(g Gomega) {
+				cmd := exec.Command("kubectl", "get", "cronjob.v1.batch.tutorial.kubebuilder.io", "cronjob-sample",
+					"-n", namespace, "-o", "jsonpath={.spec.schedule}")
+				v1Schedule, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to get converted v1 schedule")
+				// When v2 only has minute field set, it converts to "*/1 * * * *"
+				g.Expect(strings.TrimSpace(v1Schedule)).To(Equal("*/1 * * * *"),
+					"v1 schedule should be converted from v2 structured schedule")
+			}, time.Minute, time.Second).Should(Succeed())
+		})`
+
+func (sp *Sample) updateE2EWebhookConversion() {
+	cronjobE2ETest := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_test.go")
+
+	// Add strings import if not already present
+	err := pluginutil.InsertCodeIfNotExist(cronjobE2ETest,
+		`	"os/exec"
+	"path/filepath"
+	"time"`,
+		`
+	"strings"`)
+	hackutils.CheckError("adding strings import for e2e test", err)
+
+	// Add CronJob cleanup to the AfterEach block
+	err = pluginutil.InsertCode(cronjobE2ETest,
+		`	// After each test, check for failures and collect logs, events,
+	// and pod descriptions for debugging.
+	AfterEach(func() {`,
+		`
+		By("Cleaning up test CronJob resources")
+		cmd := exec.Command("kubectl", "delete", "-f", "config/samples/batch_v1_cronjob.yaml", "-n", namespace, "--ignore-not-found=true")
+		_, _ = utils.Run(cmd)
+		cmd = exec.Command("kubectl", "delete", "-f", "config/samples/batch_v2_cronjob.yaml", "-n", namespace, "--ignore-not-found=true")
+		_, _ = utils.Run(cmd)
+`)
+	hackutils.CheckError("adding CronJob cleanup to AfterEach", err)
+
+	// Add webhook conversion test after the existing TODO comment
+	err = pluginutil.InsertCode(cronjobE2ETest,
+		`		// TODO: Customize the e2e test suite with scenarios specific to your project.
+		// Consider applying sample/CR(s) and check their status and/or verifying
+		// the reconciliation by using the metrics, i.e.:
+		// metricsOutput, err := getMetricsOutput()
+		// Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
+		// Expect(metricsOutput).To(ContainSubstring(
+		//    fmt.Sprintf(`+"`"+`controller_runtime_reconcile_total{controller="%s",result="success"} 1`+"`"+`,
+		//    strings.ToLower(<Kind>),
+		// ))`,
+		webhookConversionE2ETest)
+	hackutils.CheckError("adding webhook conversion e2e test", err)
 }
