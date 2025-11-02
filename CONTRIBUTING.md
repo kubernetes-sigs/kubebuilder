@@ -157,7 +157,6 @@ a:
 - Patch fix: :bug: (`:bug:`)
 - Docs: :book: (`:book:`)
 - Infra/Tests/Other: :seedling: (`:seedling:`)
-- No release note: :ghost: (`:ghost:`)
 
 Use :ghost: (no release note) only for the PRs that change or revert unreleased
 changes, which don't deserve a release note. Please don't abuse it.
