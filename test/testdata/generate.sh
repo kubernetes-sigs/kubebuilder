@@ -47,8 +47,13 @@ function scaffold_test_project {
     $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion --make=false --spoke v2
 
+    # Create API with custom webhook paths (both defaulting and validation with different paths)
+    $kb create api --group crew --version v1 --kind Sailor --controller=true --resource=true --make=false
+    $kb create webhook --group crew --version v1 --kind Sailor --defaulting --programmatic-validation --defaulting-path=/custom-mutate-sailor --validation-path=/custom-validate-sailor --make=false
+
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
-    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
+    # Test defaulting without custom path and validation with custom path
+    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --programmatic-validation --validation-path=/custom-validate-admiral
     # Controller for External types
     $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for External types

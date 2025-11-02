@@ -46,6 +46,21 @@ resources:
   version: v2
 - api:
     crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Sailor
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    defaultingPath: /custom-mutate-sailor
+    validation: true
+    validationPath: /custom-validate-sailor
+    webhookVersion: v1
+- api:
+    crdVersion: v1
   controller: true
   domain: testproject.org
   group: crew
@@ -55,6 +70,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    validation: true
+    validationPath: /custom-validate-admiral
     webhookVersion: v1
 - controller: true
   domain: io

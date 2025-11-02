@@ -13,6 +13,16 @@ The above command will generate the `cronjob_conversion.go` next to our
 `cronjob_types.go` file, to avoid
 cluttering up our main types file with extra functions.
 
+<aside class="note">
+<h1>Conversion Webhooks and Custom Paths</h1>
+
+Unlike defaulting and validation webhooks, conversion webhooks do not support custom paths
+via command-line flags. Conversion webhooks use CRD conversion configuration
+(`.spec.conversion.webhook.clientConfig.service.path` in the CRD) rather than webhook
+marker annotations. The path for conversion webhooks is managed differently and cannot
+be customized through kubebuilder flags.
+</aside>
+
 ## Hub...
 
 First, we'll implement the hub.  We'll choose the v1 version as the hub:

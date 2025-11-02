@@ -25,6 +25,9 @@ resources:
 - admiral_admin_role.yaml
 - admiral_editor_role.yaml
 - admiral_viewer_role.yaml
+- sailor_admin_role.yaml
+- sailor_editor_role.yaml
+- sailor_viewer_role.yaml
 - firstmate_admin_role.yaml
 - firstmate_editor_role.yaml
 - firstmate_viewer_role.yaml

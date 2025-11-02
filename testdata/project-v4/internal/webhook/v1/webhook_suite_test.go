@@ -112,6 +112,9 @@ var _ = BeforeSuite(func() {
 	err = SetupCaptainWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = SetupSailorWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	err = SetupAdmiralWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 

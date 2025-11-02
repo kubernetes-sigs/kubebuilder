@@ -90,7 +90,9 @@ validate anything on deletion.
 
 /*
 This marker is responsible for generating a validation webhook manifest.
-*/`
+*/
+
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.`
 
 const customInterfaceDefaultInfo = `/*
 We use the ` + "`" + `webhook.CustomDefaulter` + "`" + `interface to set defaults to our CRD.

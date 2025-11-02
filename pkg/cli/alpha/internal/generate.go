@@ -462,9 +462,15 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	}
 	if res.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
+		if res.Webhooks.ValidationPath != "" {
+			args = append(args, "--validation-path", res.Webhooks.ValidationPath)
+		}
 	}
 	if res.HasDefaultingWebhook() {
 		args = append(args, "--defaulting")
+		if res.Webhooks.DefaultingPath != "" {
+			args = append(args, "--defaulting-path", res.Webhooks.DefaultingPath)
+		}
 	}
 	if res.HasConversionWebhook() {
 		args = append(args, "--conversion")
@@ -473,6 +479,7 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 				args = append(args, "--spoke", spoke)
 			}
 		}
+		// Note: conversion webhooks don't use custom path flags
 	}
 	return args
 }

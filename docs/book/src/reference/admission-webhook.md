@@ -30,6 +30,37 @@ object after your validation has accepted it.
 
 </aside>
 
+## Custom Webhook Paths
+
+By default, Kubebuilder generates webhook paths based on the resource's group, version, and kind. For example:
+- Mutating webhook for `batch/v1/CronJob`: `/mutate-batch-v1-cronjob`
+- Validating webhook for `batch/v1/CronJob`: `/validate-batch-v1-cronjob`
+
+You can specify custom paths for webhooks using dedicated flags:
+
+```bash
+# Custom path for defaulting webhook
+kubebuilder create webhook --group batch --version v1 --kind CronJob \
+  --defaulting --defaulting-path=/my-custom-mutate-path
+
+# Custom path for validation webhook
+kubebuilder create webhook --group batch --version v1 --kind CronJob \
+  --programmatic-validation --validation-path=/my-custom-validate-path
+
+# Both webhooks with different custom paths
+kubebuilder create webhook --group batch --version v1 --kind CronJob \
+  --defaulting --programmatic-validation \
+  --defaulting-path=/custom-mutate --validation-path=/custom-validate
+```
+
+<aside class="note">
+<h1>Version Requirements</h1>
+
+Custom webhook paths require **controller-runtime v0.21+**. In earlier versions (< `v0.21`), the webhook path follows a
+fixed pattern based on the resource's group, version, and kind, and cannot be customized.
+</aside>
+
+
 ## Handling Resource Status in Admission Webhooks
 
 <aside class="warning">

@@ -88,8 +88,7 @@ func (d *CronJobCustomDefaulter) Default(_ context.Context, obj runtime.Object) 
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
-// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
+// NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v2-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v2,name=vcronjob-v2.kb.io,admissionReviewVersions=v1
 
 // CronJobCustomValidator struct is responsible for validating the CronJob resource

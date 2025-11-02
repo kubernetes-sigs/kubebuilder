@@ -73,6 +73,12 @@ type Options struct {
 
 	// Spoke versions for conversion webhook
 	Spoke []string
+
+	// DefaultingPath is the custom path for the defaulting/mutating webhook
+	DefaultingPath string
+
+	// ValidationPath is the custom path for the validation webhook
+	ValidationPath string
 }
 
 // UpdateResource updates the provided resource with the options
@@ -100,9 +106,15 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
+			if opts.DefaultingPath != "" {
+				res.Webhooks.DefaultingPath = opts.DefaultingPath
+			}
 		}
 		if opts.DoValidation {
 			res.Webhooks.Validation = true
+			if opts.ValidationPath != "" {
+				res.Webhooks.ValidationPath = opts.ValidationPath
+			}
 		}
 		if opts.DoConversion {
 			res.Webhooks.Conversion = true

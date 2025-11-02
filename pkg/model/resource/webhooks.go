@@ -35,6 +35,14 @@ type Webhooks struct {
 	Conversion bool `json:"conversion,omitempty"`
 
 	Spoke []string `json:"spoke,omitempty"`
+
+	// DefaultingPath holds the custom path for the defaulting/mutating webhook.
+	// This path is used in the +kubebuilder:webhook marker annotation.
+	DefaultingPath string `json:"defaultingPath,omitempty"`
+
+	// ValidationPath holds the custom path for the validation webhook.
+	// This path is used in the +kubebuilder:webhook marker annotation.
+	ValidationPath string `json:"validationPath,omitempty"`
 }
 
 // Validate checks that the Webhooks is valid.
@@ -73,6 +81,8 @@ func (webhooks Webhooks) Copy() Webhooks {
 		Validation:     webhooks.Validation,
 		Conversion:     webhooks.Conversion,
 		Spoke:          spokeCopy,
+		DefaultingPath: webhooks.DefaultingPath,
+		ValidationPath: webhooks.ValidationPath,
 	}
 }
 
@@ -114,6 +124,14 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 		}
 	}
 
+	// Update custom paths (other takes precedence if not empty)
+	if other.DefaultingPath != "" {
+		webhooks.DefaultingPath = other.DefaultingPath
+	}
+	if other.ValidationPath != "" {
+		webhooks.ValidationPath = other.ValidationPath
+	}
+
 	return nil
 }
 
@@ -121,7 +139,8 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 func (webhooks Webhooks) IsEmpty() bool {
 	return webhooks.WebhookVersion == "" &&
 		!webhooks.Defaulting && !webhooks.Validation &&
-		!webhooks.Conversion && len(webhooks.Spoke) == 0
+		!webhooks.Conversion && len(webhooks.Spoke) == 0 &&
+		webhooks.DefaultingPath == "" && webhooks.ValidationPath == ""
 }
 
 // AddSpoke adds a new spoke version to the Webhooks configuration.
