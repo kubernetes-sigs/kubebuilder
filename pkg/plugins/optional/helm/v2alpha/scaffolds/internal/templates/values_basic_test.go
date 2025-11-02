@@ -49,7 +49,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should include all basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("controllerManager:"))
+			Expect(content).To(ContainSubstring("manager:"))
 			Expect(content).To(ContainSubstring("args: []"))
 			Expect(content).To(ContainSubstring("env: []"))
 			Expect(content).To(ContainSubstring("metrics:"))
@@ -79,7 +79,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should still include other basic sections", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).To(ContainSubstring("controllerManager:"))
+			Expect(content).To(ContainSubstring("manager:"))
 			Expect(content).To(ContainSubstring("args: []"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))

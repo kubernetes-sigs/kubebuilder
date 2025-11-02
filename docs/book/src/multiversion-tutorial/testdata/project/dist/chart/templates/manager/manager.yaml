@@ -30,7 +30,7 @@ spec:
                     - --metrics-bind-address=0
                     {{- end }}
                     - --health-probe-bind-address=:8081
-                    {{- range .Values.controllerManager.args }}
+                    {{- range .Values.manager.args }}
                     - {{ . }}
                     {{- end }}
                     {{- if and .Values.certManager.enable .Values.metrics.enable }}
@@ -41,8 +41,8 @@ spec:
                     {{- end }}
                   command:
                     - /manager
-                  image: "{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
-                  imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}
+                  image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+                  imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
                   livenessProbe:
                     httpGet:
                         path: /healthz
@@ -61,14 +61,14 @@ spec:
                     initialDelaySeconds: 5
                     periodSeconds: 10
                   resources:
-                    {{- if .Values.controllerManager.resources }}
-                    {{- toYaml .Values.controllerManager.resources | nindent 20 }}
+                    {{- if .Values.manager.resources }}
+                    {{- toYaml .Values.manager.resources | nindent 20 }}
                     {{- else }}
                     {}
                     {{- end }}
                   securityContext:
-                    {{- if .Values.controllerManager.securityContext }}
-                    {{- toYaml .Values.controllerManager.securityContext | nindent 20 }}
+                    {{- if .Values.manager.securityContext }}
+                    {{- toYaml .Values.manager.securityContext | nindent 20 }}
                     {{- else }}
                     {}
                     {{- end }}
@@ -84,8 +84,8 @@ spec:
                       readOnly: true
                     {{- end }}
             securityContext:
-              {{- if .Values.controllerManager.podSecurityContext }}
-              {{- toYaml .Values.controllerManager.podSecurityContext | nindent 14 }}
+              {{- if .Values.manager.podSecurityContext }}
+              {{- toYaml .Values.manager.podSecurityContext | nindent 14 }}
               {{- else }}
               {}
               {{- end }}

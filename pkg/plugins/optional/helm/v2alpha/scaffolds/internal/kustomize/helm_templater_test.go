@@ -147,12 +147,12 @@ spec:
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=:8443"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
 			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
-			Expect(result).To(ContainSubstring("{{- range .Values.controllerManager.args }}"))
+			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring("image: " +
-				"\"{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}\""))
-			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}"))
+				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}\""))
+			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
 
