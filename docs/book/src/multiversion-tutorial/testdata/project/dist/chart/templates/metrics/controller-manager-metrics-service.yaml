@@ -11,9 +11,9 @@ metadata:
 spec:
     ports:
         - name: https
-          port: 8443
+          port: {{ .Values.metrics.port }}
           protocol: TCP
-          targetPort: 8443
+          targetPort: {{ .Values.metrics.port }}
     selector:
         app.kubernetes.io/name: project
         control-plane: controller-manager
