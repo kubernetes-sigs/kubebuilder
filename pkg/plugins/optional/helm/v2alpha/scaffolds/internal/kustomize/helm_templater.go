@@ -216,7 +216,7 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 			}
 		}
 
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.controllerManager.env") {
+		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.env") {
 			return yamlContent
 		}
 
@@ -225,8 +225,8 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 
 		block := []string{
 			indentStr + "env:",
-			childIndent + "{{- if .Values.controllerManager.env }}",
-			childIndent + "{{- toYaml .Values.controllerManager.env | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- if .Values.manager.env }}",
+			childIndent + "{{- toYaml .Values.manager.env | nindent " + childIndentWidth + " }}",
 			childIndent + "{{- else }}",
 			childIndent + "[]",
 			childIndent + "{{- end }}",
@@ -273,7 +273,7 @@ func (t *HelmTemplater) templateResources(yamlContent string) string {
 			}
 		}
 
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.controllerManager.resources") {
+		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.resources") {
 			return yamlContent
 		}
 
@@ -282,8 +282,8 @@ func (t *HelmTemplater) templateResources(yamlContent string) string {
 
 		block := []string{
 			indentStr + "resources:",
-			childIndent + "{{- if .Values.controllerManager.resources }}",
-			childIndent + "{{- toYaml .Values.controllerManager.resources | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- if .Values.manager.resources }}",
+			childIndent + "{{- toYaml .Values.manager.resources | nindent " + childIndentWidth + " }}",
 			childIndent + "{{- else }}",
 			childIndent + "{}",
 			childIndent + "{{- end }}",
@@ -352,7 +352,7 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 			continue
 		}
 
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.controllerManager.podSecurityContext") {
+		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.podSecurityContext") {
 			return yamlContent
 		}
 
@@ -361,8 +361,8 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 
 		block := []string{
 			indentStr + "securityContext:",
-			childIndent + "{{- if .Values.controllerManager.podSecurityContext }}",
-			childIndent + "{{- toYaml .Values.controllerManager.podSecurityContext | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- if .Values.manager.podSecurityContext }}",
+			childIndent + "{{- toYaml .Values.manager.podSecurityContext | nindent " + childIndentWidth + " }}",
 			childIndent + "{{- else }}",
 			childIndent + "{}",
 			childIndent + "{{- end }}",
@@ -415,7 +415,7 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 			lookAheadEnd = len(lines)
 		}
 		joined := strings.Join(lines[i:lookAheadEnd], "\n")
-		if strings.Contains(joined, ".Values.controllerManager.securityContext") {
+		if strings.Contains(joined, ".Values.manager.securityContext") {
 			return yamlContent
 		}
 
@@ -424,8 +424,8 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 
 		block := []string{
 			indentStr + "securityContext:",
-			childIndent + "{{- if .Values.controllerManager.securityContext }}",
-			childIndent + "{{- toYaml .Values.controllerManager.securityContext | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- if .Values.manager.securityContext }}",
+			childIndent + "{{- toYaml .Values.manager.securityContext | nindent " + childIndentWidth + " }}",
 			childIndent + "{{- else }}",
 			childIndent + "{}",
 			childIndent + "{{- end }}",
@@ -459,7 +459,7 @@ func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string
 	}
 
 	match := yamlContent[loc[0]:loc[1]]
-	if strings.Contains(match, ".Values.controllerManager.args") {
+	if strings.Contains(match, ".Values.manager.args") {
 		return yamlContent
 	}
 
@@ -531,7 +531,7 @@ func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string
 	}
 
 	builder.WriteString(itemIndent)
-	builder.WriteString("{{- range .Values.controllerManager.args }}\n")
+	builder.WriteString("{{- range .Values.manager.args }}\n")
 	builder.WriteString(itemIndent)
 	builder.WriteString("- {{ . }}\n")
 	builder.WriteString(itemIndent)
@@ -560,7 +560,7 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 			continue
 		}
 
-		if strings.Contains(lines[i], ".Values.controllerManager.image.repository") {
+		if strings.Contains(lines[i], ".Values.manager.image.repository") {
 			return yamlContent
 		}
 
@@ -597,9 +597,8 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 		lines = append(lines[:i+1], append(filtered, lines[end:]...)...)
 		end = i + 1 + len(filtered)
 
-		//nolint:lll
-		imageLine := indentStr + "image: \"{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}\""
-		pullPolicyLine := indentStr + "imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}"
+		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}\""
+		pullPolicyLine := indentStr + "imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"
 
 		remainder := lines[end:]
 		if len(remainder) > 0 && strings.HasPrefix(strings.TrimSpace(remainder[0]), "imagePullPolicy:") {

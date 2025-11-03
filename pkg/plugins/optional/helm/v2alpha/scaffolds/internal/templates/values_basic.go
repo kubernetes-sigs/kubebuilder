@@ -90,7 +90,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 	}
 
 	buf.WriteString(fmt.Sprintf(`# Configure the controller manager deployment
-controllerManager:
+manager:
   replicas: 1
   
   image:

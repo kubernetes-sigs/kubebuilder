@@ -1,5 +1,5 @@
 # Configure the controller manager deployment
-controllerManager:
+manager:
   replicas: 1
   
   image:
