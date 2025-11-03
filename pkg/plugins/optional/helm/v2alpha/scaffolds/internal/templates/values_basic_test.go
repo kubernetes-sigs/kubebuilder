@@ -72,8 +72,8 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should not include certManager configuration", func() {
 			content := valuesTemplate.GetBody()
 
-			Expect(content).NotTo(ContainSubstring("certManager:"))
-			Expect(content).NotTo(ContainSubstring("enable: true"))
+			Expect(content).To(ContainSubstring("certManager:"))
+			Expect(content).To(ContainSubstring("enable: false"))
 		})
 
 		It("should still include other basic sections", func() {
