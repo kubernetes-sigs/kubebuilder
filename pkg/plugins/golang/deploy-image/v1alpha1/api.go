@@ -189,14 +189,29 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		return fmt.Errorf("error scaffolding deploy-image plugin: %w", err)
 	}
 
-	// Track the resources following a declarative approach
+	// Save resource info to PROJECT file
+	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
+	canonicalKey := plugin.KeyFor(Plugin{})
 	cfg := PluginConfig{}
-	if err = p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Skip tracking as the config doesn't support per-plugin configuration
-		return nil
-	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-		// Fail unless the key wasn't found, which just means it is the first resource tracked
-		return fmt.Errorf("error decoding plugin configuration: %w", err)
+	if err = p.config.DecodePluginConfig(key, &cfg); err != nil {
+		switch {
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			// Config version doesn't support plugin metadata
+			return nil
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			if key != canonicalKey {
+				if decodeErr := p.config.DecodePluginConfig(canonicalKey, &cfg); decodeErr != nil {
+					if errors.As(decodeErr, &config.UnsupportedFieldError{}) {
+						return nil
+					}
+					if !errors.As(decodeErr, &config.PluginKeyNotFoundError{}) {
+						return fmt.Errorf("error decoding plugin configuration: %w", decodeErr)
+					}
+				}
+			}
+		default:
+			return fmt.Errorf("error decoding plugin configuration: %w", err)
+		}
 	}
 
 	configDataOptions := options{
@@ -213,7 +228,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		Options: configDataOptions,
 	})
 
-	if err = p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+	if err = p.config.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
 	}
 

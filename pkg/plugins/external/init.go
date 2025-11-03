@@ -36,6 +36,7 @@ type initSubcommand struct {
 }
 
 // InjectConfig injects the project configuration to access plugin chain information
+
 func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 

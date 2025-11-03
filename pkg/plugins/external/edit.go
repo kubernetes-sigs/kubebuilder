@@ -36,6 +36,7 @@ type editSubcommand struct {
 }
 
 // InjectConfig injects the project configuration to access plugin chain information
+
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
