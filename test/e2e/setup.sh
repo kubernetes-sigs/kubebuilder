@@ -38,7 +38,10 @@ function create_cluster {
       kind_config=$(dirname "$0")/kind-config-${version_prefix}.yaml
     fi
     echo "Creating cluster..."
-    kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config ${kind_config} --image=kindest/node:$1
+    kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=5m --config ${kind_config} --image=kindest/node:$1
+    
+    echo "Waiting for cluster to be fully ready..."
+    kubectl wait --for=condition=Ready nodes --all --timeout=5m
   fi
 }
 
@@ -58,11 +61,27 @@ function delete_cluster {
 function test_cluster {
   local flags="$@"
 
-  docker pull memcached:1.6.26-alpine3.19
-  kind load docker-image --name $KIND_CLUSTER memcached:1.6.26-alpine3.19
+  # Detect the platform architecture for the kind cluster
+  # Kind clusters now run natively on the host architecture (arm64 on Apple Silicon, amd64 on x86)
+  local kind_platform="linux/amd64"
+  if [[ "$OSTYPE" == "darwin"* ]] && [[ "$(uname -m)" == "arm64" ]]; then
+    kind_platform="linux/arm64"
+  elif [[ "$(uname -m)" == "aarch64" ]]; then
+    kind_platform="linux/arm64"
+  fi
 
-  docker pull busybox:1.36.1
-  kind load docker-image --name $KIND_CLUSTER busybox:1.36.1
+  # Pull images for the correct platform
+  docker pull --platform ${kind_platform} memcached:1.6.26-alpine3.19
+  docker pull --platform ${kind_platform} busybox:1.36.1
+
+  # Load images directly with ctr to avoid kind's --all-platforms issue
+  # kind load docker-image uses --all-platforms internally which breaks with multi-platform manifests
+  docker save memcached:1.6.26-alpine3.19 | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin
+  
+  # Busybox has Docker save issues on some platforms, pull directly as fallback
+  if ! docker save busybox:1.36.1 2>/dev/null | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin 2>/dev/null; then
+    docker exec $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images pull --platform ${kind_platform} docker.io/library/busybox:1.36.1 >/dev/null 2>&1
+  fi
 
   go test $(dirname "$0")/deployimage $flags -timeout 30m
   go test $(dirname "$0")/v4 $flags -timeout 30m
