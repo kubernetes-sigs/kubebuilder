@@ -28,10 +28,44 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
+
+type chainAwareSubcommand interface {
+	SetPluginChain([]string)
+	InjectConfig(config.Config) error
+}
+
+var pluginChainTestCases = []struct {
+	name string
+	new  func() chainAwareSubcommand
+	get  func(chainAwareSubcommand) []string
+}{
+	{
+		name: "init",
+		new:  func() chainAwareSubcommand { return &initSubcommand{} },
+		get:  func(sub chainAwareSubcommand) []string { return sub.(*initSubcommand).pluginChain },
+	},
+	{
+		name: "edit",
+		new:  func() chainAwareSubcommand { return &editSubcommand{} },
+		get:  func(sub chainAwareSubcommand) []string { return sub.(*editSubcommand).pluginChain },
+	},
+	{
+		name: "create api",
+		new:  func() chainAwareSubcommand { return &createAPISubcommand{} },
+		get:  func(sub chainAwareSubcommand) []string { return sub.(*createAPISubcommand).pluginChain },
+	},
+	{
+		name: "create webhook",
+		new:  func() chainAwareSubcommand { return &createWebhookSubcommand{} },
+		get:  func(sub chainAwareSubcommand) []string { return sub.(*createWebhookSubcommand).pluginChain },
+	},
+}
 
 func TestExternalPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -98,6 +132,26 @@ var _ OsWdGetter = &mockInValidOsWdGetter{}
 
 func (m *mockInValidOsWdGetter) GetCurrentDir() (string, error) {
 	return "", fmt.Errorf("error getting current directory")
+}
+
+type mockConfigOutputGetter struct {
+	capturedRequest *external.PluginRequest
+}
+
+var _ ExecOutputGetter = &mockConfigOutputGetter{}
+
+func (m *mockConfigOutputGetter) GetExecOutput(reqBytes []byte, _ string) ([]byte, error) {
+	m.capturedRequest = &external.PluginRequest{}
+	if err := json.Unmarshal(reqBytes, m.capturedRequest); err != nil {
+		return nil, fmt.Errorf("error unmarshalling request: %w", err)
+	}
+
+	return []byte(`{
+		"command": "init", 
+		"error": false, 
+		"error_msg": "none", 
+		"universe": {"LICENSE": "Apache 2.0 License\n"}
+		}`), nil
 }
 
 type mockValidFlagOutputGetter struct{}
@@ -780,6 +834,42 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 		})
 	})
 
+	Context("plugin chain propagation", func() {
+		for _, tc := range pluginChainTestCases {
+			caseData := tc
+			Context(caseData.name, func() {
+				It("keeps the CLI-provided chain when config omits pluginChain", func() {
+					sub := caseData.new()
+
+					cliChain := []string{"cli.plugin/v1"}
+					sub.SetPluginChain(cliChain)
+
+					cliChain[0] = "mutated"
+					Expect(caseData.get(sub)).To(Equal([]string{"cli.plugin/v1"}))
+
+					cfg := v3.New()
+					Expect(sub.InjectConfig(cfg)).To(Succeed())
+					Expect(caseData.get(sub)).To(Equal([]string{"cli.plugin/v1"}))
+
+					sub.SetPluginChain(nil)
+					Expect(caseData.get(sub)).To(BeNil())
+				})
+
+				It("prefers the config plugin chain when present", func() {
+					sub := caseData.new()
+					sub.SetPluginChain([]string{"cli.plugin/v1"})
+
+					cfg := v3.New()
+					expected := []string{"config.plugin/v2"}
+					Expect(cfg.SetPluginChain(expected)).To(Succeed())
+
+					Expect(sub.InjectConfig(cfg)).To(Succeed())
+					Expect(caseData.get(sub)).To(Equal(expected))
+				})
+			})
+		}
+	})
+
 	Context("PluginChain is passed to external plugin", func() {
 		var (
 			pluginChainCaptured []string
@@ -852,6 +942,237 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				Args:        []string{"--multigroup"},
 				pluginChain: []string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"},
 			}
+
+			err := e.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"}))
+		})
+	})
+
+	Context("with config injection", func() {
+		const filePerm os.FileMode = 755
+		var (
+			pluginFileName string
+			args           []string
+			f              afero.File
+			fs             machinery.Filesystem
+			mockGetter     *mockConfigOutputGetter
+			cfg            *v3.Cfg
+			expectedChain  []string
+
+			err error
+		)
+
+		BeforeEach(func() {
+			mockGetter = &mockConfigOutputGetter{}
+			outputGetter = mockGetter
+			currentDirGetter = &mockValidOsWdGetter{}
+			fs = machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			pluginFileName = "externalPlugin.sh"
+			pluginFilePath := filepath.Join("tmp", "externalPlugin", pluginFileName)
+
+			err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), filePerm)
+			Expect(err).ToNot(HaveOccurred())
+
+			f, err = fs.FS.Create(pluginFilePath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(f).ToNot(BeNil())
+
+			_, err = fs.FS.Stat(pluginFilePath)
+			Expect(err).ToNot(HaveOccurred())
+
+			args = []string{"--domain", "example.com"}
+
+			cfg = &v3.Cfg{
+				Version:    v3.Version,
+				Domain:     "test.domain",
+				Repository: "github.com/test/repo",
+				Name:       "test-project",
+			}
+
+			expectedChain = []string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}
+			Expect(cfg.SetPluginChain(expectedChain)).To(Succeed())
+		})
+
+		It("should pass config to external plugin on init subcommand", func() {
+			i := initSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			Expect(i.InjectConfig(cfg)).To(Succeed())
+
+			err = i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+			Expect(mockGetter.capturedRequest.Config["repo"]).To(Equal("github.com/test/repo"))
+			Expect(mockGetter.capturedRequest.Config["projectName"]).To(Equal("test-project"))
+			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
+		})
+
+		It("should pass config to external plugin on create api subcommand", func() {
+			c := createAPISubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			Expect(c.InjectConfig(cfg)).To(Succeed())
+
+			err = c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
+		})
+
+		It("should pass config to external plugin on create webhook subcommand", func() {
+			c := createWebhookSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			Expect(c.InjectConfig(cfg)).To(Succeed())
+
+			err = c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
+		})
+
+		It("should pass config to external plugin on edit subcommand", func() {
+			e := editSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			Expect(e.InjectConfig(cfg)).To(Succeed())
+
+			err = e.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
+			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
+		})
+
+		It("should handle nil config gracefully", func() {
+			i := initSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			Expect(i.InjectConfig(nil)).To(Succeed())
+
+			err = i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mockGetter.capturedRequest).ToNot(BeNil())
+			Expect(mockGetter.capturedRequest.Config).To(BeNil())
+			Expect(mockGetter.capturedRequest.PluginChain).To(BeNil())
+		})
+	})
+
+	Context("PluginChain is passed to external plugin", func() {
+		var (
+			pluginChainCaptured []string
+			mockOutputGetter    *mockPluginChainCaptureGetter
+		)
+
+		BeforeEach(func() {
+			pluginChainCaptured = nil
+			mockOutputGetter = &mockPluginChainCaptureGetter{
+				capturedChain: &pluginChainCaptured,
+			}
+			outputGetter = mockOutputGetter
+			currentDirGetter = &mockValidOsWdGetter{}
+		})
+
+		It("should pass plugin chain to init subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			cfg := &v3.Cfg{Version: v3.Version}
+			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"})).To(Succeed())
+
+			i := initSubcommand{
+				Path: "test.sh",
+				Args: []string{"--domain", "example.com"},
+			}
+
+			Expect(i.InjectConfig(cfg)).To(Succeed())
+
+			err := i.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}))
+		})
+
+		It("should pass plugin chain to create api subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			cfg := &v3.Cfg{Version: v3.Version}
+			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4"})).To(Succeed())
+
+			c := createAPISubcommand{
+				Path: "test.sh",
+				Args: []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+			}
+
+			Expect(c.InjectConfig(cfg)).To(Succeed())
+
+			err := c.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4"}))
+		})
+
+		It("should pass plugin chain to create webhook subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			cfg := &v3.Cfg{Version: v3.Version}
+			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v3"})).To(Succeed())
+
+			w := createWebhookSubcommand{
+				Path: "test.sh",
+				Args: []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+			}
+
+			Expect(w.InjectConfig(cfg)).To(Succeed())
+
+			err := w.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v3"}))
+		})
+
+		It("should pass plugin chain to edit subcommand", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			cfg := &v3.Cfg{Version: v3.Version}
+			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"})).To(Succeed())
+
+			e := editSubcommand{
+				Path: "test.sh",
+				Args: []string{"--multigroup"},
+			}
+
+			Expect(e.InjectConfig(cfg)).To(Succeed())
 
 			err := e.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())

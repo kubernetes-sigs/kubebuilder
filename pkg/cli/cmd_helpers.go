@@ -72,6 +72,10 @@ type keySubcommandTuple struct {
 	skip bool
 }
 
+type pluginChainSetter interface {
+	SetPluginChain([]string)
+}
+
 // filterSubcommands returns a list of plugin keys and subcommands from a filtered list of resolved plugins.
 func (c *CLI) filterSubcommands(
 	filter func(plugin.Plugin) bool,
@@ -107,6 +111,16 @@ func (c *CLI) applySubcommandHooks(
 	errorMessage string,
 	createConfig bool,
 ) {
+	commandPluginChain := make([]string, len(subcommands))
+	for i, tuple := range subcommands {
+		commandPluginChain[i] = tuple.key
+	}
+	for _, tuple := range subcommands {
+		if setter, ok := tuple.subcommand.(pluginChainSetter); ok {
+			setter.SetPluginChain(commandPluginChain)
+		}
+	}
+
 	// In case we create a new project configuration we need to compute the plugin chain.
 	pluginChain := make([]string, 0, len(c.resolvedPlugins))
 	if createConfig {

@@ -32,12 +32,31 @@ type initSubcommand struct {
 	Path        string
 	Args        []string
 	pluginChain []string
+	config      config.Config
 }
 
 // InjectConfig injects the project configuration to access plugin chain information
 func (p *initSubcommand) InjectConfig(c config.Config) error {
-	p.pluginChain = c.GetPluginChain()
+	p.config = c
+
+	if c == nil {
+		return nil
+	}
+
+	if chain := c.GetPluginChain(); len(chain) > 0 {
+		p.pluginChain = append([]string(nil), chain...)
+	}
+
 	return nil
+}
+
+func (p *initSubcommand) SetPluginChain(chain []string) {
+	if len(chain) == 0 {
+		p.pluginChain = nil
+		return
+	}
+
+	p.pluginChain = append([]string(nil), chain...)
 }
 
 func (p *initSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -56,7 +75,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 		PluginChain: p.pluginChain,
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p.config)
 	if err != nil {
 		return err
 	}

@@ -77,6 +77,18 @@ func hasSubCommand(cmd *cobra.Command, name string) bool {
 	return false
 }
 
+type pluginChainCapturingSubcommand struct {
+	pluginChain []string
+}
+
+func (s *pluginChainCapturingSubcommand) Scaffold(machinery.Filesystem) error {
+	return nil
+}
+
+func (s *pluginChainCapturingSubcommand) SetPluginChain(chain []string) {
+	s.pluginChain = append([]string(nil), chain...)
+}
+
 var _ = Describe("CLI", func() {
 	var (
 		c              *CLI
@@ -428,6 +440,42 @@ plugins:
 
 			Expect(c.resolvePlugins()).To(Succeed())
 			Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
+		})
+	})
+
+	Context("applySubcommandHooks", func() {
+		var (
+			cmd        *cobra.Command
+			sub1, sub2 *pluginChainCapturingSubcommand
+			tuples     []keySubcommandTuple
+			chainKeys  []string
+		)
+
+		BeforeEach(func() {
+			cmd = &cobra.Command{}
+			sub1 = &pluginChainCapturingSubcommand{}
+			sub2 = &pluginChainCapturingSubcommand{}
+			tuples = []keySubcommandTuple{
+				{key: "alpha.kubebuilder.io/v1", subcommand: sub1},
+				{key: "beta.kubebuilder.io/v1", subcommand: sub2},
+			}
+			chainKeys = []string{"alpha.kubebuilder.io/v1", "beta.kubebuilder.io/v1"}
+		})
+
+		It("sets the plugin chain on subcommands", func() {
+			c.applySubcommandHooks(cmd, tuples, "test", false)
+
+			Expect(sub1.pluginChain).To(Equal(chainKeys))
+			Expect(sub2.pluginChain).To(Equal(chainKeys))
+		})
+
+		It("sets the plugin chain when creating a new configuration", func() {
+			c.resolvedPlugins = makeMockPluginsFor(projectVersion, chainKeys...)
+
+			c.applySubcommandHooks(cmd, tuples, "test", true)
+
+			Expect(sub1.pluginChain).To(Equal(chainKeys))
+			Expect(sub2.pluginChain).To(Equal(chainKeys))
 		})
 	})
 

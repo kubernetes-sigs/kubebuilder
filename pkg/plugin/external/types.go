@@ -40,6 +40,10 @@ type PluginRequest struct {
 	// This allows external plugins to know which other plugins are in use.
 	// Format: ["go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"]
 	PluginChain []string `json:"pluginChain,omitempty"`
+
+	// Config contains the PROJECT file config. This field may be empty if the
+	// project is being initialized and the PROJECT file has not been created yet.
+	Config map[string]interface{} `json:"config,omitempty"`
 }
 
 // PluginResponse is returned to kubebuilder by the plugin and contains all files
