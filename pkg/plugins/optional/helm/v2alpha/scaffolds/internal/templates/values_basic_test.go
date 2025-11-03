@@ -108,7 +108,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should have correct file permissions", func() {
 			info := valuesTemplate.GetIfExistsAction()
-			Expect(info).To(Equal(machinery.OverwriteFile))
+			Expect(info).To(Equal(machinery.SkipFile))
 		})
 	})
 
@@ -159,7 +159,6 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("resources:"))
 			Expect(content).To(ContainSubstring("cpu: 100m"))
 			Expect(content).To(ContainSubstring("memory: 128Mi"))
-			Expect(content).To(ContainSubstring("manager:"))
 		})
 	})
 
@@ -216,6 +215,191 @@ var _ = Describe("HelmValuesBasic", func() {
 			}
 			Expect(rbacHelpersIndex).To(BeNumerically(">", 0))
 			Expect(lines[rbacHelpersIndex+1]).To(ContainSubstring("enable: false"))
+		})
+	})
+
+	Context("Port configuration", func() {
+		Context("with default ports", func() {
+			BeforeEach(func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      true,
+					HasMetrics:       true,
+					DeploymentConfig: map[string]interface{}{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should include default webhook port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("webhook:"))
+				Expect(content).To(ContainSubstring("enable: true"))
+				Expect(content).To(ContainSubstring("port: 9443"))
+			})
+
+			It("should include certManager enabled", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("certManager:"))
+				Expect(content).To(ContainSubstring("enable: true"))
+			})
+
+			It("should include default metrics port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("metrics:"))
+				Expect(content).To(ContainSubstring("enable: true"))
+				Expect(content).To(ContainSubstring("port: 8443"))
+			})
+
+			It("should not expose health port in values", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).NotTo(ContainSubstring("healthPort"))
+			})
+		})
+
+		Context("with custom ports extracted from deployment", func() {
+			BeforeEach(func() {
+				deploymentConfig := map[string]interface{}{
+					"webhookPort": 9444,
+					"metricsPort": 9090,
+				}
+
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      true,
+					HasMetrics:       true,
+					DeploymentConfig: deploymentConfig,
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use custom webhook port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("webhook:"))
+				Expect(content).To(ContainSubstring("port: 9444"))
+				Expect(content).NotTo(ContainSubstring("port: 9443"))
+			})
+
+			It("should use custom metrics port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("metrics:"))
+				Expect(content).To(ContainSubstring("port: 9090"))
+				Expect(content).NotTo(ContainSubstring("port: 8443"))
+			})
+
+			It("should not expose health port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).NotTo(ContainSubstring("healthPort"))
+			})
+		})
+
+		Context("with partial custom ports", func() {
+			BeforeEach(func() {
+				deploymentConfig := map[string]interface{}{
+					"metricsPort": 9090,
+					// webhookPort not provided - should use default
+				}
+
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      true,
+					HasMetrics:       true,
+					DeploymentConfig: deploymentConfig,
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use custom metrics port and default webhook port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("port: 9090")) // custom metrics
+				Expect(content).To(ContainSubstring("port: 9443")) // default webhook
+			})
+
+			It("should not expose health port", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).NotTo(ContainSubstring("healthPort"))
+			})
+		})
+
+		Context("with no webhooks but with metrics", func() {
+			BeforeEach(func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      false,
+					HasMetrics:       true,
+					DeploymentConfig: map[string]interface{}{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not include webhook configuration", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).NotTo(ContainSubstring("webhook:"))
+			})
+
+			It("should include metrics port configuration", func() {
+				content := valuesTemplate.GetBody()
+				Expect(content).To(ContainSubstring("metrics:"))
+				Expect(content).To(ContainSubstring("port: 8443"))
+				Expect(content).NotTo(ContainSubstring("healthPort"))
+			})
+		})
+
+		Context("port configuration structure", func() {
+			BeforeEach(func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      true,
+					HasMetrics:       true,
+					DeploymentConfig: map[string]interface{}{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should have ports under webhook section", func() {
+				content := valuesTemplate.GetBody()
+				lines := strings.Split(content, "\n")
+
+				var webhookLine, portLine int
+				for i, line := range lines {
+					if strings.Contains(line, "webhook:") && !strings.Contains(line, "#") {
+						webhookLine = i
+					}
+					if webhookLine > 0 && i > webhookLine && strings.Contains(line, "port:") &&
+						strings.Contains(line, "9443") {
+						portLine = i
+						break
+					}
+				}
+
+				Expect(webhookLine).To(BeNumerically(">", 0))
+				Expect(portLine).To(BeNumerically(">", webhookLine))
+				Expect(portLine - webhookLine).To(BeNumerically("<=", 3))
+			})
+
+			It("should have port under metrics section", func() {
+				content := valuesTemplate.GetBody()
+				lines := strings.Split(content, "\n")
+
+				var metricsLine, portLine int
+				for i, line := range lines {
+					if strings.Contains(line, "metrics:") && !strings.Contains(line, "#") {
+						metricsLine = i
+					}
+					if metricsLine > 0 && i > metricsLine {
+						if strings.Contains(line, "port:") && strings.Contains(line, "8443") {
+							portLine = i
+						}
+					}
+				}
+
+				Expect(metricsLine).To(BeNumerically(">", 0))
+				Expect(portLine).To(BeNumerically(">", metricsLine))
+			})
 		})
 	})
 })

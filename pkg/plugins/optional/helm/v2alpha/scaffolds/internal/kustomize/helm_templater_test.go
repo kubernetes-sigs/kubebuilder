@@ -144,7 +144,7 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
 			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
-			Expect(result).To(ContainSubstring("- --metrics-bind-address=:8443"))
+			Expect(result).To(ContainSubstring("- --metrics-bind-address=:{{ .Values.metrics.port }}"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
 			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
@@ -469,6 +469,206 @@ metadata:
 
 			// Should return content as-is for malformed YAML
 			Expect(result).To(Equal(malformedContent))
+		})
+	})
+
+	Context("templatePorts", func() {
+		It("should template webhook service ports", func() {
+			webhookService := &unstructured.Unstructured{}
+			webhookService.SetAPIVersion("v1")
+			webhookService.SetKind("Service")
+			webhookService.SetName("test-project-webhook-service")
+
+			content := `apiVersion: v1
+kind: Service
+metadata:
+  name: test-project-webhook-service
+  namespace: test-project-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+    protocol: TCP
+  selector:
+    control-plane: controller-manager`
+
+			result := templater.templatePorts(content, webhookService)
+
+			// Should template webhook port
+			Expect(result).To(ContainSubstring("targetPort: {{ .Values.webhook.port }}"))
+			Expect(result).NotTo(ContainSubstring("targetPort: 9443"))
+		})
+
+		It("should template metrics service ports", func() {
+			metricsService := &unstructured.Unstructured{}
+			metricsService.SetAPIVersion("v1")
+			metricsService.SetKind("Service")
+			metricsService.SetName("test-project-controller-manager-metrics-service")
+
+			content := `apiVersion: v1
+kind: Service
+metadata:
+  name: test-project-controller-manager-metrics-service
+  namespace: test-project-system
+spec:
+  ports:
+  - port: 8443
+    targetPort: 8443
+    protocol: TCP
+    name: https
+  selector:
+    control-plane: controller-manager`
+
+			result := templater.templatePorts(content, metricsService)
+
+			// Should template metrics port
+			Expect(result).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("targetPort: {{ .Values.metrics.port }}"))
+			Expect(result).NotTo(ContainSubstring("port: 8443"))
+			Expect(result).NotTo(ContainSubstring("targetPort: 8443"))
+		})
+
+		It("should template webhook container ports in Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP`
+
+			result := templater.templatePorts(content, deployment)
+
+			// Should template webhook containerPort
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.webhook.port }}"))
+			Expect(result).NotTo(ContainSubstring("containerPort: 9443"))
+		})
+
+		It("should template health probe ports in Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("port: 8081"))
+			Expect(result).NotTo(ContainSubstring("{{ .Values"))
+		})
+
+		It("should template port-related args in Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --leader-elect`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).NotTo(ContainSubstring("--metrics-bind-address=:8443"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:8081"))
+			Expect(result).To(ContainSubstring("--leader-elect"))
+		})
+
+		It("should template custom port values", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --metrics-bind-address=:9090
+        - --health-probe-bind-address=:9091
+        - --webhook-port=9444
+        ports:
+        - containerPort: 9444
+          name: webhook-server
+        livenessProbe:
+          httpGet:
+            port: 9091`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("--webhook-port={{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:9091"))
+			Expect(result).To(ContainSubstring("port: 9091"))
+		})
+
+		It("should not template non-webhook/metrics resources", func() {
+			regularService := &unstructured.Unstructured{}
+			regularService.SetAPIVersion("v1")
+			regularService.SetKind("Service")
+			regularService.SetName("test-project-some-other-service")
+
+			content := `apiVersion: v1
+kind: Service
+metadata:
+  name: test-project-some-other-service
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080`
+
+			result := templater.templatePorts(content, regularService)
+
+			// Should not template regular service ports
+			Expect(result).To(ContainSubstring("port: 8080"))
+			Expect(result).To(ContainSubstring("targetPort: 8080"))
+			Expect(result).NotTo(ContainSubstring("{{ .Values"))
 		})
 	})
 })

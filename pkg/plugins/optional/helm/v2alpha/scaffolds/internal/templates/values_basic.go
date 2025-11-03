@@ -125,23 +125,32 @@ crd:
 `)
 
 	// Metrics configuration (enable if metrics artifacts detected in kustomize output)
+	metricsPort := 8443
+	if f.DeploymentConfig != nil {
+		if mp, ok := f.DeploymentConfig["metricsPort"].(int); ok && mp > 0 {
+			metricsPort = mp
+		}
+	}
+
 	if f.HasMetrics {
-		buf.WriteString(`# Controller metrics endpoint.
+		buf.WriteString(fmt.Sprintf(`# Controller metrics endpoint.
 # Enable to expose /metrics endpoint with RBAC protection.
 metrics:
   enable: true
+  port: %d  # Metrics server port
 
-`)
+`, metricsPort))
 	} else {
-		buf.WriteString(`# Controller metrics endpoint.
+		buf.WriteString(fmt.Sprintf(`# Controller metrics endpoint.
 # Enable to expose /metrics endpoint with RBAC protection.
 metrics:
   enable: false
+  port: %d  # Metrics server port
 
-`)
+`, metricsPort))
 	}
 
-	// Cert-manager configuration - only if certificates/webhooks are present
+	// Cert-manager configuration (always present, enabled based on webhooks)
 	if f.HasWebhooks {
 		buf.WriteString(`# Cert-manager integration for TLS certificates.
 # Required for webhook certificates and metrics endpoint certificates.
@@ -149,6 +158,30 @@ certManager:
   enable: true
 
 `)
+	} else {
+		buf.WriteString(`# Cert-manager integration for TLS certificates.
+# Required for webhook certificates and metrics endpoint certificates.
+certManager:
+  enable: false
+
+`)
+	}
+
+	// Webhook configuration - only if webhooks are present
+	if f.HasWebhooks {
+		webhookPort := 9443
+		if f.DeploymentConfig != nil {
+			if wp, ok := f.DeploymentConfig["webhookPort"].(int); ok && wp > 0 {
+				webhookPort = wp
+			}
+		}
+
+		buf.WriteString(fmt.Sprintf(`# Webhook server configuration
+webhook:
+  enable: true
+  port: %d  # Webhook server port
+
+`, webhookPort))
 	}
 
 	// Prometheus configuration

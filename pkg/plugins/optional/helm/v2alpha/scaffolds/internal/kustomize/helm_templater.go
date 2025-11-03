@@ -38,6 +38,7 @@ const (
 	kindIssuer             = "Issuer"
 	kindValidatingWebhook  = "ValidatingWebhookConfiguration"
 	kindMutatingWebhook    = "MutatingWebhookConfiguration"
+	kindDeployment         = "Deployment"
 
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
@@ -79,7 +80,7 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	yamlContent = t.substituteRBACValues(yamlContent)
 
 	// Apply deployment-specific templating
-	if resource.GetKind() == "Deployment" {
+	if resource.GetKind() == kindDeployment {
 		yamlContent = t.templateDeploymentFields(yamlContent)
 
 		// Apply conditional logic for cert-manager related fields in deployments
@@ -88,6 +89,11 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 		yamlContent = t.makeWebhookVolumesConditional(yamlContent)
 		yamlContent = t.makeMetricsVolumeMountsConditional(yamlContent)
 		yamlContent = t.makeMetricsVolumesConditional(yamlContent)
+	}
+
+	// Apply port templating for Services and Deployments
+	if resource.GetKind() == kindService || resource.GetKind() == kindDeployment {
+		yamlContent = t.templatePorts(yamlContent, resource)
 	}
 
 	// Final tidy-up: avoid accidental blank lines after Helm if-block starts
@@ -917,4 +923,61 @@ func (t *HelmTemplater) collapseBlankLineAfterIf(yamlContent string) string {
 		out = append(out, line)
 	}
 	return strings.Join(out, "\n")
+}
+
+// templatePorts replaces hardcoded port values with Helm template references
+// This makes ports configurable via values.yaml under webhook.port and metrics.port
+func (t *HelmTemplater) templatePorts(yamlContent string, resource *unstructured.Unstructured) string {
+	resourceName := resource.GetName()
+
+	// Determine if this is a webhook-related resource
+	isWebhook := strings.Contains(resourceName, "webhook")
+
+	// Determine if this is a metrics-related resource
+	isMetrics := strings.Contains(resourceName, "metrics")
+
+	// For Deployments, check for webhook ports in the content
+	if resource.GetKind() == kindDeployment {
+		// Check if this deployment has webhook-server ports
+		if strings.Contains(yamlContent, "webhook-server") || strings.Contains(yamlContent, "name: webhook") {
+			isWebhook = true
+		}
+	}
+
+	// Template webhook ports (9443 by default)
+	if isWebhook {
+		// Replace containerPort: 9443 (or any value) for webhook-server with template
+		if strings.Contains(yamlContent, "webhook-server") {
+			yamlContent = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*webhook-server)`).
+				ReplaceAllString(yamlContent, "${1}containerPort: {{ .Values.webhook.port }}${2}")
+		}
+
+		// Replace targetPort: 9443 with webhook.port template
+		yamlContent = regexp.MustCompile(`(\s*)targetPort:\s*9443`).
+			ReplaceAllString(yamlContent, "${1}targetPort: {{ .Values.webhook.port }}")
+	}
+
+	// Template metrics ports (8443 by default)
+	if isMetrics {
+		// Replace port: 8443 with metrics.port template
+		yamlContent = regexp.MustCompile(`(\s*)port:\s*8443`).
+			ReplaceAllString(yamlContent, "${1}port: {{ .Values.metrics.port }}")
+
+		// Replace targetPort: 8443 with metrics.port template
+		yamlContent = regexp.MustCompile(`(\s*)targetPort:\s*8443`).
+			ReplaceAllString(yamlContent, "${1}targetPort: {{ .Values.metrics.port }}")
+	}
+
+	// Template port-related arguments in Deployment
+	if resource.GetKind() == kindDeployment {
+		// Replace --metrics-bind-address=:8443 with templated version
+		yamlContent = regexp.MustCompile(`--metrics-bind-address=:[0-9]+`).
+			ReplaceAllString(yamlContent, "--metrics-bind-address=:{{ .Values.metrics.port }}")
+
+		// Replace --webhook-port=9443 with templated version (if present)
+		yamlContent = regexp.MustCompile(`--webhook-port=[0-9]+`).
+			ReplaceAllString(yamlContent, "--webhook-port={{ .Values.webhook.port }}")
+	}
+
+	return yamlContent
 }

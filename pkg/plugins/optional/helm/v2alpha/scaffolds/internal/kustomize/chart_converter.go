@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -113,6 +114,7 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 	extractContainerEnv(container, config)
 	extractContainerImage(container, config)
 	extractContainerArgs(container, config)
+	extractContainerPorts(container, config)
 	extractContainerResources(container, config)
 	extractContainerSecurityContext(container, config)
 
@@ -228,11 +230,21 @@ func extractContainerArgs(container map[string]interface{}, config map[string]in
 			continue
 		}
 
-		// The following arguments should not be exposed under args
-		// manager because they are not independently customizable
-		if strings.Contains(strArg, "--metrics-bind-address") ||
-			strings.Contains(strArg, "--health-probe-bind-address") ||
-			strings.Contains(strArg, "--webhook-cert-path") ||
+		// Extract port values from bind-address arguments and store them
+		// These arguments should not be exposed under args because they will be
+		// reconstructed from the port values in values.yaml
+		if strings.Contains(strArg, "--metrics-bind-address") {
+			if port := extractPortFromArg(strArg); port > 0 {
+				if _, exists := config["metricsPort"]; !exists {
+					config["metricsPort"] = port
+				}
+			}
+			continue
+		}
+		if strings.Contains(strArg, "--health-probe-bind-address") {
+			continue
+		}
+		if strings.Contains(strArg, "--webhook-cert-path") ||
 			strings.Contains(strArg, "--metrics-cert-path") {
 			continue
 		}
@@ -241,6 +253,67 @@ func extractContainerArgs(container map[string]interface{}, config map[string]in
 
 	if len(filteredArgs) > 0 {
 		config["args"] = filteredArgs
+	}
+}
+
+// extractPortFromArg extracts port number from arguments like "--metrics-bind-address=:8443"
+func extractPortFromArg(arg string) int {
+	// Handle formats: --flag=:8443, --flag=0.0.0.0:8443, etc.
+	parts := strings.Split(arg, "=")
+	if len(parts) != 2 {
+		return 0
+	}
+
+	portPart := parts[1]
+	// Remove leading : or host part
+	if idx := strings.LastIndex(portPart, ":"); idx != -1 {
+		portPart = portPart[idx+1:]
+	}
+
+	port, err := strconv.Atoi(portPart)
+	if err != nil || port <= 0 || port > 65535 {
+		return 0
+	}
+	return port
+}
+
+// extractContainerPorts extracts port configurations from container ports
+func extractContainerPorts(container map[string]interface{}, config map[string]interface{}) {
+	// Use NestedFieldNoCopy to avoid deep copy issues with int values
+	portsField, found, err := unstructured.NestedFieldNoCopy(container, "ports")
+	if !found || err != nil {
+		return
+	}
+
+	ports, ok := portsField.([]interface{})
+	if !ok {
+		return
+	}
+
+	for _, p := range ports {
+		portMap, ok := p.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		name, _ := portMap["name"].(string)
+		var containerPort int
+
+		// Try int64 first (from YAML unmarshaling)
+		if cp, ok := portMap["containerPort"].(int64); ok {
+			containerPort = int(cp)
+		} else if cp, ok := portMap["containerPort"].(int); ok {
+			containerPort = cp
+		} else {
+			continue
+		}
+
+		// Look for webhook-server port
+		if name == "webhook-server" || strings.Contains(name, "webhook") {
+			if _, exists := config["webhookPort"]; !exists {
+				config["webhookPort"] = containerPort
+			}
+		}
 	}
 }
 

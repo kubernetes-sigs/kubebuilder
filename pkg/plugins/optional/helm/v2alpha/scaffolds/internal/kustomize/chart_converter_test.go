@@ -183,9 +183,136 @@ var _ = Describe("ChartConverter", func() {
 			Expect(args).NotTo(ContainElement("--health-probe-bind-address=:8081"))
 		})
 
+		It("should extract port configurations from args", func() {
+			// Set up deployment with port-related args
+			containers := []interface{}{
+				map[string]interface{}{
+					"name":  "manager",
+					"image": "controller:latest",
+					"args": []interface{}{
+						"--metrics-bind-address=:8443",
+						"--health-probe-bind-address=:8081",
+						"--leader-elect",
+					},
+				},
+			}
+
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("metricsPort"))
+			Expect(config["metricsPort"]).To(Equal(8443))
+			Expect(config).NotTo(HaveKey("healthPort"))
+		})
+
+		It("should extract webhook port from container ports", func() {
+			// Set up deployment with webhook container port
+			containers := []interface{}{
+				map[string]interface{}{
+					"name":  "manager",
+					"image": "controller:latest",
+					"ports": []interface{}{
+						map[string]interface{}{
+							"containerPort": int64(9443),
+							"name":          "webhook-server",
+							"protocol":      "TCP",
+						},
+					},
+				},
+			}
+
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("webhookPort"))
+			Expect(config["webhookPort"]).To(Equal(9443))
+		})
+
+		It("should extract custom port values", func() {
+			// Set up deployment with custom ports
+			containers := []interface{}{
+				map[string]interface{}{
+					"name":  "manager",
+					"image": "controller:latest",
+					"args": []interface{}{
+						"--metrics-bind-address=:9090",
+						"--health-probe-bind-address=:9091",
+					},
+					"ports": []interface{}{
+						map[string]interface{}{
+							"containerPort": int64(9444),
+							"name":          "webhook-server",
+							"protocol":      "TCP",
+						},
+					},
+				},
+			}
+
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config["metricsPort"]).To(Equal(9090))
+			Expect(config["healthPort"]).To(BeNil())
+			Expect(config["webhookPort"]).To(Equal(9444))
+		})
+
 		It("should handle deployment without containers", func() {
 			config := converter.ExtractDeploymentConfig()
 			Expect(config).To(BeEmpty())
+		})
+	})
+
+	Context("extractPortFromArg", func() {
+		It("should extract port from :PORT format", func() {
+			port := extractPortFromArg("--metrics-bind-address=:8443")
+			Expect(port).To(Equal(8443))
+		})
+
+		It("should extract port from 0.0.0.0:PORT format", func() {
+			port := extractPortFromArg("--metrics-bind-address=0.0.0.0:8443")
+			Expect(port).To(Equal(8443))
+		})
+
+		It("should extract port from HOST:PORT format", func() {
+			port := extractPortFromArg("--health-probe-bind-address=localhost:8081")
+			Expect(port).To(Equal(8081))
+		})
+
+		It("should return 0 for invalid formats", func() {
+			port := extractPortFromArg("--invalid-arg")
+			Expect(port).To(Equal(0))
+
+			port = extractPortFromArg("--no-equals:8443")
+			Expect(port).To(Equal(0))
+
+			port = extractPortFromArg("--port=invalid")
+			Expect(port).To(Equal(0))
+		})
+
+		It("should return 0 for out-of-range ports", func() {
+			port := extractPortFromArg("--port=:0")
+			Expect(port).To(Equal(0))
+
+			port = extractPortFromArg("--port=:99999")
+			Expect(port).To(Equal(0))
 		})
 	})
 })

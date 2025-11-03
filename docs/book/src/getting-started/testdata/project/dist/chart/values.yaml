@@ -56,6 +56,12 @@ crd:
 # Enable to expose /metrics endpoint with RBAC protection.
 metrics:
   enable: true
+  port: 8443  # Metrics server port
+
+# Cert-manager integration for TLS certificates.
+# Required for webhook certificates and metrics endpoint certificates.
+certManager:
+  enable: false
 
 # Prometheus ServiceMonitor for metrics scraping.
 # Requires prometheus-operator to be installed in the cluster.
