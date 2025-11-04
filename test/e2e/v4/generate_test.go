@@ -18,6 +18,7 @@ package v4
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -174,6 +175,69 @@ func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
+}
+
+// GenerateV4WithCustomWebhookPath tests webhooks with custom paths
+func GenerateV4WithCustomWebhookPath(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+	creatingAPI(kbc)
+
+	By("scaffolding both defaulting and validation webhooks with different custom paths")
+	err := kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+		"--defaulting-path=/custom-mutate-path",
+		"--validation-path=/custom-validate-path",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold webhooks with custom paths")
+
+	By("verifying custom webhook paths in generated webhook file")
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+
+	// Read the webhook file and check if both custom paths are present
+	content, err := os.ReadFile(webhookFilePath)
+	Expect(err).NotTo(HaveOccurred(), "Failed to read webhook file")
+	Expect(string(content)).To(ContainSubstring("path=/custom-mutate-path"),
+		"Webhook file should contain custom defaulting path")
+	Expect(string(content)).To(ContainSubstring("path=/custom-validate-path"),
+		"Webhook file should contain custom validation path")
+
+	By("implementing the webhooks")
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhook")
+
+	scaffoldConversionWebhook(kbc)
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+
+	By("verifying that --defaulting-path requires --defaulting flag")
+	err = kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", "InvalidTest",
+		"--defaulting-path=/invalid-path",
+		"--make=false",
+	)
+	Expect(err).To(HaveOccurred(), "Should fail when --defaulting-path is used without --defaulting")
+	Expect(err.Error()).To(ContainSubstring("--defaulting-path can only be used with --defaulting"))
+
+	By("verifying that --validation-path requires --programmatic-validation flag")
+	err = kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", "InvalidTest",
+		"--validation-path=/invalid-path",
+		"--make=false",
+	)
+	Expect(err).To(HaveOccurred(), "Should fail when --validation-path is used without --programmatic-validation")
+	Expect(err.Error()).To(ContainSubstring("--validation-path can only be used with --programmatic-validation"))
 }
 
 func creatingAPI(kbc *utils.TestContext) {

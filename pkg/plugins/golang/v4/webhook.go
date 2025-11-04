@@ -67,6 +67,21 @@ validating and/or conversion webhooks.
   # Create conversion webhook for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke v1
+
+  # Create defaulting webhook with custom path for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting \
+    --defaulting-path=/my-custom-mutate-path
+  
+  # Create validation webhook with custom path for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
+    --programmatic-validation --validation-path=/my-custom-validate-path
+  
+  # Create both defaulting and validation webhooks with different custom paths
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
+    --defaulting --programmatic-validation \
+    --defaulting-path=/custom-mutate --validation-path=/custom-validate
 `, cliMeta.CommandName)
 }
 
@@ -87,6 +102,12 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
 		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
+
+	fs.StringVar(&p.options.DefaultingPath, "defaulting-path", "",
+		"Custom path for the defaulting/mutating webhook (only valid with --defaulting)")
+
+	fs.StringVar(&p.options.ValidationPath, "validation-path", "",
+		"Custom path for the validation webhook (only valid with --programmatic-validation)")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,
@@ -123,6 +144,14 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			return fmt.Errorf("invalid spoke version %q", spoke)
 		}
 		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
+	}
+
+	// Validate path flags are only used with appropriate webhook types
+	if p.options.DefaultingPath != "" && !p.options.DoDefaulting {
+		return fmt.Errorf("--defaulting-path can only be used with --defaulting")
+	}
+	if p.options.ValidationPath != "" && !p.options.DoValidation {
+		return fmt.Errorf("--validation-path can only be used with --programmatic-validation")
 	}
 
 	p.options.UpdateResource(p.resource, p.config)

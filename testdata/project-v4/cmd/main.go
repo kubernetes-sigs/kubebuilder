@@ -212,6 +212,20 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	if err := (&controller.SailorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Sailor")
+		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := webhookv1.SetupSailorWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Sailor")
+			os.Exit(1)
+		}
+	}
 	if err := (&controller.AdmiralReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

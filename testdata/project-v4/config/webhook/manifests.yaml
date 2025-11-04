@@ -104,12 +104,52 @@ webhooks:
     resources:
     - pods
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /custom-mutate-sailor
+  failurePolicy: Fail
+  name: msailor-v1.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sailors
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /custom-validate-admiral
+  failurePolicy: Fail
+  name: vadmiral-v1.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - admirales
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -149,4 +189,24 @@ webhooks:
     - UPDATE
     resources:
     - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /custom-validate-sailor
+  failurePolicy: Fail
+  name: vsailor-v1.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sailors
   sideEffects: None

@@ -94,6 +94,10 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4WithoutWebhooks(kbc)
 			Run(kbc, false, false, false, true, false)
 		})
+		It("should generate a runnable project with custom webhook paths", func() {
+			GenerateV4WithCustomWebhookPath(kbc)
+			Run(kbc, true, false, false, true, false)
+		})
 	})
 })
 

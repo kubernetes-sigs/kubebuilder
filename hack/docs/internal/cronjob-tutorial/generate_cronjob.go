@@ -471,13 +471,12 @@ Then, we set up the webhook with the manager.
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!`, webhooksNoticeMarker)
-	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute", err)
+	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute for webhook notice ", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
-		`// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
-// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.`, explanationValidateCRD)
-	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute", err)
+		`// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.`, explanationValidateCRD)
+	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute for explanation validate CRD", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),

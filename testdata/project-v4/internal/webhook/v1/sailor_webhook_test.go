@@ -24,20 +24,20 @@ import (
 	// TODO (user): Add any additional imports if needed
 )
 
-var _ = Describe("Admiral Webhook", func() {
+var _ = Describe("Sailor Webhook", func() {
 	var (
-		obj       *crewv1.Admiral
-		oldObj    *crewv1.Admiral
-		validator AdmiralCustomValidator
-		defaulter AdmiralCustomDefaulter
+		obj       *crewv1.Sailor
+		oldObj    *crewv1.Sailor
+		validator SailorCustomValidator
+		defaulter SailorCustomDefaulter
 	)
 
 	BeforeEach(func() {
-		obj = &crewv1.Admiral{}
-		oldObj = &crewv1.Admiral{}
-		validator = AdmiralCustomValidator{}
+		obj = &crewv1.Sailor{}
+		oldObj = &crewv1.Sailor{}
+		validator = SailorCustomValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
-		defaulter = AdmiralCustomDefaulter{}
+		defaulter = SailorCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
@@ -48,7 +48,7 @@ var _ = Describe("Admiral Webhook", func() {
 		// TODO (user): Add any teardown logic common to all tests
 	})
 
-	Context("When creating Admiral under Defaulting Webhook", func() {
+	Context("When creating Sailor under Defaulting Webhook", func() {
 		// TODO (user): Add logic for defaulting webhooks
 		// Example:
 		// It("Should apply defaults when a required field is empty", func() {
@@ -61,7 +61,7 @@ var _ = Describe("Admiral Webhook", func() {
 		// })
 	})
 
-	Context("When creating or updating Admiral under Validating Webhook", func() {
+	Context("When creating or updating Sailor under Validating Webhook", func() {
 		// TODO (user): Add logic for validating webhooks
 		// Example:
 		// It("Should deny creation if a required field is missing", func() {

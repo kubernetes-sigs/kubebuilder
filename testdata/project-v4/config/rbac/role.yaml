@@ -36,6 +36,7 @@ rules:
   - admirales
   - captains
   - firstmates
+  - sailors
   verbs:
   - create
   - delete
@@ -50,6 +51,7 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
+  - sailors/finalizers
   verbs:
   - update
 - apiGroups:
@@ -58,6 +60,7 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
+  - sailors/status
   verbs:
   - get
   - patch

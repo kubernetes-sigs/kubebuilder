@@ -160,6 +160,8 @@ validate anything on deletion.
 /*
 This marker is responsible for generating a validation webhook manifest.
 */
+
+// NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob-v1.kb.io,admissionReviewVersions=v1
 
 // CronJobCustomValidator struct is responsible for validating the CronJob resource
