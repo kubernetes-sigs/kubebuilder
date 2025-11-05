@@ -29,8 +29,9 @@ tested for this release by examining the [Makefile](https://github.com/kubernete
 
 ## Operating Systems Supported
 
-Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, you may encounter issues.
-Contributions towards supporting Windows are welcome
+Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, we recommend you read the instructions in [here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/windows.md).
+
+Contributions towards supporting Windows are not planned.
 
 <aside class="note warning">
 <h1>Project customizations</h1>
