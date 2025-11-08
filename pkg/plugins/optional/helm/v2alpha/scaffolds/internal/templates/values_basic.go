@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
