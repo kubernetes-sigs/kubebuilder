@@ -138,11 +138,6 @@ func isBlockComment(tok token.Token, lit string) bool {
 		return false
 	}
 
-	// skip if it's a license comment
-	if strings.Contains(lit, "Copyright") || strings.Contains(lit, "Licensed under") {
-		return false
-	}
-
 	return true
 }
 
@@ -189,6 +184,16 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 		var pos token.Pos
 		var lit string
 		pos, tok, lit = scan.Scan()
+
+		// skip license comment on headers
+		if tok == token.COMMENT && strings.HasPrefix(lit, "/*") {
+			lower := strings.ToLower(lit)
+			if strings.Contains(lower, "copyright") && strings.Contains(lower, "license") {
+				lastCodeBlockStart = file.Offset(pos) + len(lit)
+				continue
+			}
+		}
+
 		collapse := getCollapse(tok, lit)
 		if collapse != "" {
 			lastPair.collapse = collapse
@@ -243,9 +248,19 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 		}
 		prettyPath = prunedPath
 	}
-	out.WriteString(fmt.Sprintf(`<cite class="literate-source"><a href="%[1]s">%[2]s</a></cite>`, sourcePath, prettyPath))
+	shownSource := false
 
 	for _, pair := range pairs {
+		// skip truly empty pairs (e.g., leftovers from removed licenses)
+		if strings.TrimSpace(pair.comment) == "" && strings.TrimSpace(pair.code) == "" {
+			if pair.collapse == "" {
+				continue
+			}
+			if pair.collapse != "" {
+				continue
+			}
+		}
+
 		if pair.collapse != "" {
 			// NB(directxman12): we add the hljs class to "cheat" and get the
 			// right background with theming, since hljs doesn't use CSS
@@ -258,7 +273,13 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 			out.WriteString("\n")
 			out.WriteString(removeIndent(pair.comment))
 		}
-
+		// print the source label only once, above the first apparent code block
+		if !shownSource && strings.TrimSpace(pair.code) != "" {
+			fmt.Fprintf(out,
+				"\n\n<cite class=\"literate-source\"><a href=\"%s\">%s</a></cite>\n\n",
+				sourcePath, prettyPath)
+			shownSource = true
+		}
 		if strings.TrimSpace(pair.code) != "" {
 			out.WriteString("\n\n```go")
 			out.WriteString(wrapWithNewlines(pair.code))
