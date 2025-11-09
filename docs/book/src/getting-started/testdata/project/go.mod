@@ -1,6 +1,6 @@
 module example.com/memcached
 
-go 1.24.5
+go 1.24.6
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
