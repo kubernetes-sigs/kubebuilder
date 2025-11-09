@@ -46,6 +46,11 @@ type Resource struct {
 	// External specifies if the resource is defined externally.
 	External bool `json:"external,omitempty"`
 
+	// Module specifies the Go module path for external API dependencies.
+	// Can optionally include @version to pin the dependency (e.g., "github.com/org/repo@v1.2.3").
+	// This is only used when External is true.
+	Module string `json:"module,omitempty"`
+
 	// Core specifies if the resource is from Kubernetes API.
 	Core bool `json:"core,omitempty"`
 }

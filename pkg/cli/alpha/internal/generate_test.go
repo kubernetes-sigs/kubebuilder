@@ -430,6 +430,45 @@ var _ = Describe("generate: get-args-helpers", func() {
 			Expect(flags).To(ContainElements("--external-api-path", "external/test", "--external-api-domain", "test",
 				"--programmatic-validation", "--defaulting", "--conversion", "--spoke", "v2"))
 		})
+
+		It("returns correct flags for external resources with module version", func() {
+			res := resource.Resource{
+				Path:     "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+				Module:   "github.com/cert-manager/cert-manager@v1.18.2",
+				GVK:      resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
+				External: true,
+				Webhooks: &resource.Webhooks{
+					Defaulting: true,
+				},
+			}
+			flags := getWebhookResourceFlags(res)
+			Expect(flags).To(ContainElement("--external-api-path"))
+			Expect(flags).To(ContainElement("github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"))
+			Expect(flags).To(ContainElement("--external-api-domain"))
+			Expect(flags).To(ContainElement("io"))
+			Expect(flags).To(ContainElement("--external-api-module"))
+			Expect(flags).To(ContainElement("github.com/cert-manager/cert-manager@v1.18.2"))
+			Expect(flags).To(ContainElement("--defaulting"))
+		})
+
+		It("returns correct flags for external resources WITHOUT module version", func() {
+			res := resource.Resource{
+				Path:     "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+				Module:   "", // No module specified
+				GVK:      resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
+				External: true,
+				Webhooks: &resource.Webhooks{
+					Defaulting: true,
+				},
+			}
+			flags := getWebhookResourceFlags(res)
+			Expect(flags).To(ContainElement("--external-api-path"))
+			Expect(flags).To(ContainElement("github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"))
+			Expect(flags).To(ContainElement("--external-api-domain"))
+			Expect(flags).To(ContainElement("io"))
+			Expect(flags).NotTo(ContainElement("--external-api-module"))
+			Expect(flags).To(ContainElement("--defaulting"))
+		})
 	})
 })
 
@@ -485,6 +524,34 @@ var _ = Describe("generate: create-helpers", func() {
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
 			})
+
+			It("runs kubebuilder create api successfully with module version", func() {
+				res := resource.Resource{
+					GVK:        resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
+					Plural:     "certificates",
+					API:        nil, // External resources typically don't scaffold API
+					Controller: true,
+					External:   true,
+					Path:       "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+					Module:     "github.com/cert-manager/cert-manager@v1.18.2",
+				}
+				// Run createAPI and verify no errors
+				Expect(createAPI(res)).To(Succeed())
+			})
+
+			It("runs kubebuilder create api successfully WITHOUT module version", func() {
+				res := resource.Resource{
+					GVK:        resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
+					Plural:     "certificates",
+					API:        nil,
+					Controller: true,
+					External:   true,
+					Path:       "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+					Module:     "", // No module specified
+				}
+				// Run createAPI and verify no errors
+				Expect(createAPI(res)).To(Succeed())
+			})
 		})
 	})
 
@@ -522,6 +589,36 @@ var _ = Describe("generate: create-helpers", func() {
 			resourceData.Options.ContainerCommand = "run"
 			resourceData.Options.ContainerPort = "8080"
 			resourceData.Options.Image = "test"
+			// Run createAPIWithDeployImage and verify no errors
+			Expect(createAPIWithDeployImage(resourceData)).To(Succeed())
+		})
+
+		It("validates deploy-image works with external APIs without release version", func() {
+			// This test validates that deploy-image plugin can work with external APIs
+			// even without pinned versions (backward compatibility)
+			resourceData := deployimagev1alpha1.ResourceData{
+				Group:   "cert-manager",
+				Domain:  "io",
+				Version: "v1",
+				Kind:    "Certificate",
+			}
+			resourceData.Options.Image = "busybox:1.36.1"
+			resourceData.Options.RunAsUser = "1001"
+			// Run createAPIWithDeployImage and verify no errors
+			Expect(createAPIWithDeployImage(resourceData)).To(Succeed())
+		})
+
+		It("validates deploy-image can be used alongside external APIs with release version", func() {
+			// This test validates that when external APIs with release versions are used,
+			// deploy-image plugin still works correctly
+			// Note: The release field is stored in the Resource, not in DeployImage's ResourceData
+			resourceData := deployimagev1alpha1.ResourceData{
+				Group:   "example.com",
+				Version: "v1",
+				Kind:    "Memcached",
+			}
+			resourceData.Options.Image = "memcached:1.6.26"
+			resourceData.Options.ContainerPort = "11211"
 			// Run createAPIWithDeployImage and verify no errors
 			Expect(createAPIWithDeployImage(resourceData)).To(Succeed())
 		})

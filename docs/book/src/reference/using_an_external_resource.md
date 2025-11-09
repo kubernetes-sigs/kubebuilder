@@ -31,6 +31,25 @@ For example, if you're managing Certificates from Cert Manager:
 kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
+<aside class="note">
+<h1>Pinning External API Versions</h1>
+
+You can pin a specific version of the external API dependency using the `--external-api-module` flag:
+
+```shell
+kubebuilder create api --group certmanager --version v1 --kind Certificate \
+  --controller=true --resource=false \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=io \
+  --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+```
+
+The flag accepts the module path with optional version (e.g., `github.com/cert-manager/cert-manager@v1.18.2`).
+The module is stored in the PROJECT file and added to `go.mod` using `go get`,
+which cleanly adds it as a direct dependency without polluting go.mod with unnecessary indirect dependencies.
+
+</aside>
+
 See the RBAC [markers][markers-rbac] generated for this:
 
 ```go
@@ -75,10 +94,23 @@ definitions since the type is defined in an external project.
 
 ### Creating a Webhook to Manage an External Type
 
-Following an example:
+You can create webhooks for external types by providing the external API path, domain, and optionally the module:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer --defaulting --programmatic-validation --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+  --defaulting --programmatic-validation \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=cert-manager.io
+```
+
+You can also pin the version using the `--external-api-module` flag:
+
+```shell
+kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+  --defaulting --programmatic-validation \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=cert-manager.io \
+  --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
 
 ## Managing Core Types

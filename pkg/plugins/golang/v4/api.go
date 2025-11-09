@@ -116,6 +116,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
 		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
 			"markers and permissions for the external resources (e.g., cert-manager.io).")
+
+	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
+		"external API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
@@ -138,11 +141,17 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 
 	// Ensure that external API options cannot be used when creating an API in the project.
 	if p.options.DoAPI {
-		if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 {
-			return errors.New("cannot use '--external-api-path' or '--external-api-domain' " +
+		if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 ||
+			len(p.options.ExternalAPIModule) != 0 {
+			return errors.New("cannot use '--external-api-path', '--external-api-domain', or '--external-api-module' " +
 				"when creating an API in the project with '--resource=true'. " +
 				"Use '--resource=false' when referencing an external API")
 		}
+	}
+
+	// Validate that --external-api-module requires --external-api-path
+	if len(p.options.ExternalAPIModule) != 0 && len(p.options.ExternalAPIPath) == 0 {
+		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
 
 	p.options.UpdateResource(p.resource, p.config)
@@ -188,6 +197,16 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
+	// If external API with module specified, add it using go get
+	if p.resource.IsExternal() && p.resource.Module != "" {
+		log.Info("Adding external API dependency", "module", p.resource.Module)
+		// Use go get to add the dependency cleanly as a direct requirement
+		err := util.RunCmd("Add external API dependency", "go", "get", p.resource.Module)
+		if err != nil {
+			return fmt.Errorf("error adding external API dependency: %w", err)
+		}
+	}
+
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return fmt.Errorf("error updating go dependencies: %w", err)

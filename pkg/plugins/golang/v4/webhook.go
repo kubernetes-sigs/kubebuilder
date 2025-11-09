@@ -19,6 +19,7 @@ package v4
 import (
 	"errors"
 	"fmt"
+	log "log/slog"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -115,12 +116,15 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 			"This option will be removed in future versions.")
 
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
-		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
+		"Specify the Go package import path for the external API. This is used to scaffold webhooks for resources "+
 			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
 		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
 			"markers and permissions for the external resources (e.g., cert-manager.io).")
+
+	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
+		"external API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -152,6 +156,11 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	}
 	if p.options.ValidationPath != "" && !p.options.DoValidation {
 		return fmt.Errorf("--validation-path can only be used with --programmatic-validation")
+	}
+
+	// Validate that --external-api-module requires --external-api-path
+	if len(p.options.ExternalAPIModule) != 0 && len(p.options.ExternalAPIPath) == 0 {
+		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
 
 	p.options.UpdateResource(p.resource, p.config)
@@ -193,6 +202,16 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
+	// If external API with module specified, add it using go get
+	if p.resource.IsExternal() && p.resource.Module != "" {
+		log.Info("Adding external API dependency", "module", p.resource.Module)
+		// Use go get to add the dependency cleanly as a direct requirement
+		err := pluginutil.RunCmd("Add external API dependency", "go", "get", p.resource.Module)
+		if err != nil {
+			return fmt.Errorf("error adding external API dependency: %w", err)
+		}
+	}
+
 	err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return fmt.Errorf("error updating go dependencies: %w", err)

@@ -59,6 +59,14 @@ resources:
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
+  - controller: true
+    domain: io
+    external: true
+    group: cert-manager
+    kind: Certificate
+    path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+    module: github.com/cert-manager/cert-manager@v1.18.2
+    version: v1
 version: "3"
 ```
 ## Why do we need to store the plugins and data used?
@@ -127,6 +135,14 @@ resources:
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
+  - controller: true
+    domain: io
+    external: true
+    group: cert-manager
+    kind: Certificate
+    path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+    module: github.com/cert-manager/cert-manager@v1.18.2
+    version: v1
 version: "3"
 ```
 
@@ -152,6 +168,7 @@ Now let's check its layout fields definition:
 | `resources.path`                    | The import path for the API resource. It will be `<repo>/api/<kind>` unless the API added to the project is an external or core-type. For the core-types scenarios, the paths used are mapped [here][core-types]. Or either the path informed by the flag `--external-api-path` |
 | `resources.core`                    | It is `true` when  the group used is from Kubernetes API and the API resource is not defined on the project.                                                                                                                                                                    |
 | `resources.external`                | It is `true` when  the flag `--external-api-path` was used to generated the scaffold for an [External Type][external-type].                                                                                                                                                     |
+| `resources.module`                  | **(Optional)** The Go module path for external API dependencies, optionally including a version (e.g., `github.com/cert-manager/cert-manager@v1.18.2` or just `github.com/cert-manager/cert-manager`). Only used when `external` is `true`. Provided via the `--external-api-module` flag to explicitly pin a specific version in `go.mod` or to specify the module when it cannot be automatically determined from `--external-api-path`. If not provided, `go mod tidy` will resolve the dependency automatically. |
 | `resources.webhooks`                | Store the webhooks data when the sub-command `create webhook` is used.                                                                                                                                                                                                          |
 | `resources.webhooks.spoke`          | Store the API version that will act as the Spoke with the designated Hub version for conversion webhooks.                                                                                                                                                                       |
 | `resources.webhooks.webhookVersion` | The Kubernetes API version (`apiVersion`) used to scaffold the webhook resource.                                                                                                                                                                                                |
