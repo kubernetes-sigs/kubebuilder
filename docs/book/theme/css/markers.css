@@ -365,11 +365,6 @@ cite.literate-source > a::before {
     color: var(--fg);
 }
 
-/* hide the annoying "copy to clipboard" buttons */
-.literate pre > .buttons {
-    display: none;
-}
-
 /* add a bit of extra padding for readability */
 .literate pre code {
     padding-top: 0.75em;
