@@ -138,6 +138,11 @@ func isBlockComment(tok token.Token, lit string) bool {
 		return false
 	}
 
+	// skip if it's a license comment
+	if strings.Contains(lit, "Copyright") || strings.Contains(lit, "Licensed under") {
+		return false
+	}
+
 	return true
 }
 
