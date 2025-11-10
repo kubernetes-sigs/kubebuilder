@@ -5,8 +5,8 @@ files where additional code will be injected as new resources (such as controlle
 This enables Kubebuilder to seamlessly integrate newly generated components into the project without affecting
 user-defined code.
 
-<aside class="note warning">
-<H1>If you delete or change the `+kubebuilder:scaffold` markers</H1>
+<aside class="warning">
+    <h3>If you delete or change the `+kubebuilder:scaffold` markers</h3>
 
 The Kubebuilder CLI specifically looks for these markers in expected
 files during code generation. If the marker is moved or removed, the CLI will
@@ -109,8 +109,8 @@ properly registered with the manager, so that the controller can reconcile the r
 | `+kubebuilder:scaffold:manifestskustomizesamples` | `config/samples`           | Marks where Kustomize sample manifests are injected.                            |
 | `+kubebuilder:scaffold:e2e-webhooks-checks` | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
 
-<aside class="note warning">
-<h1> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </h1>
+<aside class="warning">
+    <h3> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </h3>
 
 If you find this marker in your code please:
 

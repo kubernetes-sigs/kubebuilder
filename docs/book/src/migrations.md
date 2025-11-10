@@ -29,8 +29,8 @@ The traditional process involves:
 All inputs used by Kubebuilder are tracked in the [PROJECT][project-config] file.
 If you use the CLI to generate your scaffolds, this file will record the project's configuration and metadata.
 
-<aside class="note warning">
-<h1>Project customizations</h1>
+<aside class="warning">
+    <h3>Project customizations</h3>
 
 After using the CLI to create your project, you are free to customise how you see fit.
 Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
@@ -46,8 +46,8 @@ the doc [What's in a basic project?][basic-project-doc]
 
 Kubebuilder provides alpha commands to assist with project upgrades.
 
-<aside class="note warning">
-<h1>Automation process will involve deleting all files to regenerate</h1>
+<aside class="warning">
+<h3>Automation process will involve deleting all files to regenerate</h3>
 Deletes all files except `.git` and `PROJECT`.
 </aside>
 

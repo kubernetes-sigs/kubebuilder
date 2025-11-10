@@ -10,8 +10,8 @@ The recommended way to migrate a `go/v3` project is to create a new `go/v4` proj
 copy over the API and the reconciliation code. The conversion will end up with a
 project that looks like a native go/v4 project layout (latest version).
 
-<aside class="note warning">
-<h1>Your Upgrade Assistant: The `alpha generate` command</h1>
+<aside class="warning">
+    <h3>Your Upgrade Assistant: The `alpha generate` command</h3>
 
 To upgrade your project you might want to use the command `kubebuilder alpha generate [OPTIONS]`.
 This command will re-scaffold the project using the current Kubebuilder version.

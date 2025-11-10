@@ -26,8 +26,8 @@ of its tooling. Additionally, you can find more information by reviewing the Kub
 </aside>
 
 
-<aside class="note warning">
-<h1>IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </h1>
+<aside class="warning">
+    <h3>IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </h3>
 
 **Artifacts provided under [https://storage.googleapis.com/kubebuilder-tools](https://storage.googleapis.com/kubebuilder-tools) are deprecated and Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these artifacts.**
 

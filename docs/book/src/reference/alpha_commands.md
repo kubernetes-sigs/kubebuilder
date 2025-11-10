@@ -6,8 +6,8 @@ project migration and scaffold regeneration.
 These commands are designed to simplify tasks that were previously manual and error-prone
 by automating or partially automating the process.
 
-<aside class="note warning">
-<h1>Alpha commands are experimental</h1>
+<aside class="warning">
+    <h3>Alpha commands are experimental</h3>
 
 Alpha commands are under active development and may change or be removed in future releases.
 They make local changes to your project and may delete files during execution.
