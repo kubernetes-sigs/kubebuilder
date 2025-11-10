@@ -16,33 +16,20 @@ limitations under the License.
 package scaffolds
 
 import (
-	"fmt"
+	"v1/internal/test/plugins/prometheus"
 
-	"v1/scaffolds/internal/templates"
-
-	"github.com/spf13/pflag"
-
+	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3" // Register v3 config
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
-var InitFlags = []external.Flag{
-	{
-		Name:    "domain",
-		Type:    "string",
-		Default: "example.domain.com",
-		Usage:   "sets the domain added in the scaffolded initFile.txt",
-	},
-}
+var InitFlags = []external.Flag{}
 
 var InitMeta = plugin.SubcommandMetadata{
-	Description: "The `init` subcommand of the sampleexternalplugin is meant to initialize a project via Kubebuilder. It scaffolds a single file: `initFile.txt`",
+	Description: "The `init` subcommand of the sampleexternalplugin adds Prometheus instance configuration during project initialization",
 	Examples: `
-	Scaffold with the defaults:
+	Initialize a new project with Prometheus monitoring:
 	$ kubebuilder init --plugins sampleexternalplugin/v1
-
-	Scaffold with a specific domain:
-	$ kubebuilder init --plugins sampleexternalplugin/v1 --domain sample.domain.com
 	`,
 }
 
@@ -54,25 +41,26 @@ func InitCmd(pr *external.PluginRequest) external.PluginResponse {
 		Universe:   pr.Universe,
 	}
 
-	// Here is an example of parsing a flag from a Kubebuilder external plugin request
-	flags := pflag.NewFlagSet("initFlags", pflag.ContinueOnError)
-	flags.String("domain", "example.domain.com", "sets the domain added in the scaffolded initFile.txt")
-	if err := flags.Parse(pr.Args); err != nil {
-		pluginResponse.Error = true
-		pluginResponse.ErrorMsgs = []string{
-			fmt.Sprintf("failed to parse flags: %s", err.Error()),
-		}
-		return pluginResponse
+	// For init command, we'll use default values since PROJECT file may not exist yet
+	projectConfig := &ProjectConfig{
+		ProjectName: "project",
 	}
-	domain, _ := flags.GetString("domain")
 
-	initFile := templates.NewInitFile(templates.WithDomain(domain))
+	// Create Prometheus instance manifest
+	prometheusInstance := prometheus.NewPrometheusInstance(
+		prometheus.WithProjectName(projectConfig.ProjectName),
+	)
 
-	// Phase 2 Plugins uses the concept of a "universe" to represent the filesystem for a plugin.
-	// This universe is a key:value mapping of filename:contents. Here we are adding the file
-	// "initFile.txt" to the universe with some content. When this is returned Kubebuilder will
-	// take all values within the "universe" and write them to the user's filesystem.
-	pluginResponse.Universe[initFile.Name] = initFile.Contents
+	// Create Kustomization for Prometheus resources
+	prometheusKustomization := prometheus.NewPrometheusKustomization()
+
+	// Create instructions for adding Prometheus to default kustomization
+	kustomizationPatch := prometheus.NewDefaultKustomizationPatch()
+
+	// Add files to universe
+	pluginResponse.Universe[prometheusInstance.Path] = prometheusInstance.Content
+	pluginResponse.Universe[prometheusKustomization.Path] = prometheusKustomization.Content
+	pluginResponse.Universe[kustomizationPatch.Path] = kustomizationPatch.Content
 
 	return pluginResponse
 }

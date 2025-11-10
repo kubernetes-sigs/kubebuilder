@@ -63,3 +63,7 @@ install: build ## Build and install the binary with the current source code. Use
 .PHONY: test-plugin
 test-plugin: ## Run the plugin test.
 	./test/test.sh
+
+.PHONY: clean
+clean: ## Clean build artifacts.
+	rm -rf ./bin

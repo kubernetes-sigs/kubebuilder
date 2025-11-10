@@ -1,5 +1,0 @@
-A simple text file created with the create api subcommand
-NUMBER: 2
-GROUP: samplegroup
-VERSION: v1
-KIND: SampleKind
