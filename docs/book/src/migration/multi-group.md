@@ -1,8 +1,8 @@
 # Single Group to Multi-Group
 
-<aside class="note warning">
+<aside class="warning">
 
-<h1>Note</h1>
+<h3>Note</h3>
 
 While Kubebuilder will not scaffold out a project structure compatible
 with multiple API groups in the same repository by default, it's possible
@@ -14,8 +14,8 @@ Note that the process mainly is to ensure that your  API(s) and controller(s) wi
 
 Let's migrate the [CronJob example][cronjob-tutorial].
 
-<aside class="note warning">
-<h1>Instructions vary per project layout</h1>
+<aside class="warning">
+    <h3>Instructions vary per project layout</h3>
 
 You can verify the version by looking at the PROJECT file. The currently default and
 recommended version is go/v4.

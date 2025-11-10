@@ -109,8 +109,8 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
 
-<aside class="note warning">
-<h1>Controller-runtime version updated has breaking changes</h1>
+<aside class="warning">
+    <h3>Controller-runtime version updated has breaking changes</h3>
 
 Check [sigs.k8s.io/controller-runtime release docs from 0.8.0+ version][controller-runtime] for breaking changes.
 

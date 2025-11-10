@@ -12,8 +12,8 @@ in newer Kubebuilder releases.
 You may choose to re-scaffold the project in-place (overwriting existing files) or in a separate
 directory for diff-based inspection and manual integration.
 
-<aside class="note warning">
-<h1>Deletes files during scaffold regeneration</h1>
+<aside class="warning">
+    <h3>Deletes files during scaffold regeneration</h3>
 When executed in-place, this command deletes all files except `.git` and `PROJECT`.
 
 Always back up your project or use version control before running this command.

@@ -4,8 +4,8 @@ By default, controller-runtime builds a global prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
 
-<aside class="note warning">
-<h1>IMPORTANT: If you are using `kube-rbac-proxy`</h1>
+<aside class="warning">
+    <h3>IMPORTANT: If you are using `kube-rbac-proxy`</h3>
 
 Please stop using the image `gcr.io/kubebuilder/kube-rbac-proxy` as soon as possible.
 Your projects will be affected and may fail to work if the image cannot be pulled.

@@ -208,8 +208,8 @@ kubebuilder alpha update \
   --git-config rerere.enabled=true
 ```
 
-<aside class="note warning">
-<h1>You might need to upgrade your project first</h1>
+<aside class="warning">
+    <h3>You might need to upgrade your project first</h3>
 
 This command uses `kubebuilder alpha generate` under the hood.
 We support projects created with <strong>v4.5.0+</strong>.

@@ -29,8 +29,8 @@ They introduce however multiple caveats into typical projects which is one of th
 - There is always the possibility to extract your APIs into a new repository and arguably also have more control over the release process in a project spanning multiple repos relying on the same API types.
 - It requires at least one [replace directive][replace-directives] either through `go.work` which is at least 2 more files plus an environment variable for build environments without GO_WORK or through `go.mod` replace, which has to be manually dropped and added for every release.
 
-<aside class="note warning">
-<h1>Implications on Maintenance efforts</h1>
+<aside class="warning">
+    <h3>Implications on Maintenance efforts</h3>
 
 When deciding to deviate from the standard kubebuilder `PROJECT` setup or the extended layouts offered by its plugins, it can result in increased maintenance overhead as there can be breaking changes in upstream that could break with the custom module structure described here.
 
@@ -133,8 +133,8 @@ go mod tidy
 Note that we used the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
 you can use the real version as well. However this will only work if the API Module is already available in the VCS.
 
-<aside class="note warning">
-<h1>Implications on controller releases</h1>
+<aside class="warning">
+    <h3>Implications on controller releases</h3>
 
 Since the main `go.mod` file now has a replace directive, it is important to drop it again before releasing your controller module.
 To achieve this you can simply run

@@ -2,8 +2,8 @@
 
 [Pprof][github], a Go profiling tool, helps identify performance bottlenecks in areas like CPU and memory usage. It's integrated with the controller-runtime library's HTTP server, enabling profiling via HTTP endpoints. You can visualize the data using go tool pprof. Since [Pprof][github] is built into controller-runtime, no separate installation is needed. [Manager options][manager-options-doc] make it easy to enable pprof and gather runtime metrics to optimize controller performance.
 
-<aside class="note warning">
-<h1>Not Recommended for Production</h1>
+<aside class="warning">
+    <h3>Not Recommended for Production</h3>
 
 While [Pprof][github] is an excellent tool for profiling and debugging, it is not recommended to leave it enabled in production environments. The primary reasons are:
 

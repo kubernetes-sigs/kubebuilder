@@ -49,8 +49,8 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * Required Envtest binaries are automatically downloaded
   * The minimum Go version is now `1.18` (previously it was `1.13`).
 
-<aside class="note warning">
-<h1>Project customizations</h1>
+<aside class="warning">
+    <h3>Project customizations</h3>
 
 After using the CLI to create your project, you are free to customise how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
 
@@ -62,8 +62,8 @@ For example, you should refrain from moving the scaffolded files, doing so will 
 
 So you want to upgrade your scaffolding to use the latest and greatest features then, follow up the following guide which will cover the steps in the most straightforward way to allow you to upgrade your project to get all latest changes and improvements.
 
-<aside class="note warning">
-<h1> Apple Silicon (M1) </h1>
+<aside class="warning">
+    <h3> Apple Silicon (M1) </h3>
 
 The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
 a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4` plugin

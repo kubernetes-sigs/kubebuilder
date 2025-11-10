@@ -34,8 +34,8 @@ Further details can be found in the [go/v4 plugin section][go/v4-doc]
 
 **_More details on this can be found at [here][kb-releases], but for the highlights, check below_**
 
-<aside class="note warning">
-<h1>Project customizations</h1>
+<aside class="warning">
+    <h3>Project customizations</h3>
 
 After using the CLI to create your project, you are free to customize how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
 

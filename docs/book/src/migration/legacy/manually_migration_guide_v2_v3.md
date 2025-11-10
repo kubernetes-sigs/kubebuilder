@@ -326,8 +326,8 @@ config version to the latest supported by your target plugin version before upgr
 
 The following steps describe the manual changes required to modify the project's layout enabling your project to use the `go/v3` plugin. These steps will not help you address all the bug fixes of the already generated scaffolds.
 
-<aside class="note warning">
-<h1> Deprecated APIs </h1>
+<aside class="warning">
+    <h3> Deprecated APIs </h3>
 
 The following steps will not migrate the API versions which are deprecated `apiextensions.k8s.io/v1beta1`, `admissionregistration.k8s.io/v1beta1`, `cert-manager.io/v1alpha2`.
 
@@ -500,8 +500,8 @@ You can check all changes applied to the Makefile by looking in the samples proj
 
 #### Update your controllers
 
-<aside class="note warning">
-<h1>Controller-runtime version updated has breaking changes</h1>
+<aside class="warning">
+    <h3>Controller-runtime version updated has breaking changes</h3>
 
 Check [sigs.k8s.io/controller-runtime release docs from 0.7.0+ version][controller-releases] for breaking changes.
 
@@ -524,8 +524,8 @@ func (r *<MyKind>Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 #### Update your controller and webhook test suite
 
-<aside class="note warning">
-<h1>Ginkgo V2 version update has breaking changes</h1>
+<aside class="warning">
+    <h3>Ginkgo V2 version update has breaking changes</h3>
 
 Check [Ginkgo V2 Migration Guide](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for breaking changes.
 
@@ -703,8 +703,8 @@ version: "3"
 
 You can try to re-create the APIS(CRDs) and Webhooks manifests by using the `--force` flag.
 
-<aside class="note warning">
-<h1>Before re-create</h1>
+<aside class="warning">
+    <h3>Before re-create</h3>
 
 Note, however, that the tool will re-scaffold the files which means that you will lose their content.
 
