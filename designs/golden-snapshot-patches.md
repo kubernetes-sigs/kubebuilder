@@ -1,19 +1,20 @@
 | Authors | Creation Date | Status | Extra |
 |---|---:|---|---|
-| vitorfloriano (drafted with Copilot) | 2025-11-11 | Draft | Implements: docs generation, patch overlays, snapshot testing |
+| vitorfloriano (drafted with AI-assistance) | 2025-11-11 | Draft | Implements: docs generation, patch overlays, snapshot testing |
 
-# Golden Snapshot Patches: Improving Docs Maintainability
+# Golden Snapshot Patches: Keeping Docs Updated with Less Overhead
 
-This proposal introduces "Golden Snapshot Patches" — a lightweight, auditable workflow for generating, customizing, including, and testing tutorial code snippets in the Kubebuilder book.
+This proposal introduces "Golden Snapshot Patches" - a lightweight, auditable workflow for maintaining the Kubebuilder book by keeping docs in Markdown, customizing code samples with patches, and snapshot-testing tutorial code snippets using golden files.
+
+---
 
 ## Example
 
 This section demonstrates how a real contributor would use Golden Snapshot Patches in practice. The goal is to show commands, file layout, and the expected test/CI feedback so reviewers can evaluate the end-user experience.
 
-Scenario: You (contributor/maintainer/docs writer) add a new code snippet to the getting-started tutorial that should come from the runnable sample project, but you also need a small customization in the sample for the example to read well.
+**Scenario**: You (contributor/maintainer/docs writer) add a new code snippet to the getting-started tutorial that should come from the runnable sample project, but you also need a small customization in the sample for the example to read well.
 
-1. Authoring the Markdown tutorial page
-
+### 1. Authoring the Markdown tutorial page
 - File: docs/book/src/getting-started/intro.md
 
 ````markdown
@@ -28,10 +29,10 @@ This section shows how to define the CronJob spec.
 Explain the CronJob fields and how they are used.
 ````
 Notes:
-- The _include_ uses mdBook's native line-range include: path: start:end.
-- The page is pure Markdown; no Go string literals or inlined HTML.
+- The _include_ uses mdBook's native line-range include: path:start:end.
+- **The page is pure Markdown**; no Go string literals or inlined HTML.
 
-2. Small tutorial-specific sample customization (as a patch)
+### 2. Small tutorial-specific sample customization (as a patch)
 
 - Directory: docs/book/src/getting-started/testdata/project.patches/
 - File: 01-cronjob_types.patch
@@ -41,7 +42,7 @@ Example unified-diff patch (kept small and focused):
 ```diff
 --- api/v1/cronjob_types.go
 +++ api/v1/cronjob_types.go
-@@ lines @@ type CronJobSpec struct {
+@@ -lines +lines @@ type CronJobSpec struct {
 +	// DefaultSuspend indicates the CronJob's default suspend.
 +	// This field is added for the tutorial to show defaulting behavior.
 +	// +optional
@@ -50,18 +51,17 @@ Example unified-diff patch (kept small and focused):
  	// ... other fields
  }
 ```
-
 Rationale:
-- Patches are tiny, reviewable diffs. They document intent in the PR and are visible in GitHub's unified diff viewers.
+- Patches are tiny, reviewable diffs. They document intent in the PR and are >visible in GitHub's unified diff viewers.
 
-3. Apply patches after generation (local dev)
+### 3. Apply patches after generation (local dev)
 
 Regeneration + apply step (Makefile target or ad-hoc):
 
 ```bash
 # regenerate runnable sample, then apply patches
-make samples-generate    # runs generate_samples.go -> populates testdata/project/
-./hack/docs/scripts/apply_patches.sh docs/book/src/getting-started/testdata/project \
+make samples-generate    # runs generate_samples.go -> populates testdata/project>/
+./hack/docs/scripts/apply_patches.sh docs/book/src/getting-started/testdata>>/project \
     docs/book/src/getting-started/testdata/project.patches
 ```
 
@@ -83,16 +83,20 @@ for p in "${patch_dir}"/*.patch; do
 done
 ```
 
-4. Render mdBook to produce actual markdown output (what users will see)
+### 4. Render mdBook to produce actual markdown output (what users will see)
+
+This can be achieved by simply adding the following option to `book.toml`:
 
 ```toml
-# This can be achieve by simply adding this option to book.toml
 [output.markdown]
 ```
+With that option, mdBook will build the HTML and Markdown output to `book/`.
 
-5. Snapshot test (local)
+### 5. Snapshot test (local)
 
 Run the tests that compare the rendered output for a page against the golden:
+
+The golden file will be the desired version of the markdown, which will start >with the first Markdown output we get from mdBook.
 
 ```bash
 # Normal test (fails if rendered output != golden)
@@ -116,7 +120,7 @@ Expected test failure output (example):
     -type CronJobSpec struct {
     -    Schedule string `json:"schedule"`
     -}
-    +type CronJobSpec struct {
+   +type CronJobSpec struct {
     +    DefaultSuspend *bool `json:"defaultSuspend,omitempty"`
     +    Schedule string `json:"schedule"`
     +}
@@ -124,22 +128,21 @@ Expected test failure output (example):
 ```
 
 This diff tells you:
-- The snippet extracted by `{{#include}}` changed because the patched sample added DefaultSuspend.
-- If the change is intentional, run `UPDATE_SNAPSHOTS=1` to accept & update the golden; otherwise, fix the patch or the `{{#include}}` range.
+- The snippet extracted by `{{#include}}` changed because the patched sample >added DefaultSuspend.
+- If the change is intentional, run `UPDATE_SNAPSHOTS=1` to accept & update the >golden; otherwise, fix the patch or the `{{#include}}` range.
 
-6. Updating goldens (intentional change)
+### 6. Updating goldens (intentional change)
 
-If the change is intended:
+If the change is intended, we can run scripts to update the golden files:
 
 ```bash
-# regenerate golden artifacts from rendered output (Makefile wraps this)
 make update-golden-files
 git add docs/book/src/getting-started/intro.md.golden
-git commit -m "docs(getting-started): update golden after intentional sample change"
+git commit -m "docs(getting-started): update golden after intentional sample >change"
 git push
 ```
 
-7. CI behavior
+### 7. CI behavior
 
 Docs CI job runs:
 
@@ -147,36 +150,29 @@ Docs CI job runs:
 2. `apply_patches` (apply overlays)
 3. `go test ./tests/docs` (snapshot assertions)
 
-- If snapshot test fails, CI job logs the diff and fails the PR job.
-- Reviewers see both the source Markdown and the changed golden in the PR when the contributor updates goldens; they can inspect the patch diffs to review sample customizations.
 
-8. UX considerations captured in this example
+If snapshot test fails, CI job logs the diff and fails the PR job.Reviewers see >both the source Markdown and the changed golden in the PR when >the contributor >updates goldens; they can inspect the patch diffs to review >sample >customizations.
+
+### 8. UX considerations captured in this example
 
 - Contributors edit Markdown only; no escaping or string constants required.
-- Contributors keep the sample runnable; small, reviewable patches express tutorial needs.
-- Snapshot test diffs are the contract: they make rendered-output changes visible and auditable.
-- The update flow (`UPDATE_SNAPSHOTS=1`) is explicit and intentionally gated.
+- Contributors keep the sample runnable; small, reviewable patches express >tutorial needs.
+- Snapshot test diffs are the contract: they make rendered-output changes >visible and auditable.
+- The golden update flow is explicit and intentionally gated.
+
+This example demonstrates the full workflow in which a contributor writes Markdown, generation produces samples, patches mutate the sample, mdBook renders the page, tests detect drift, and updating goldens is explicit. The flow is incremental and reviewable, minimizing surprises for maintainers and contributors.
 
 ---
 
-This Example demonstrates the full workflow in which a contributor writes Markdown, generation produces samples, patches mutate the sample, mdBook renders the page, tests detect drift, and updating goldens is explicit. The flow is incremental and reviewable, minimizing surprises for maintainers and contributors.
-
-## Open Questions
-
-The proposed workflow raise a few questions on how to implement certains aspects, like the following:
-
-1. How should we patch the samples: `git apply` vs `patch`?
-2. How granular should the golden be: entire book vs per-page vs per-section vs per-codeblock?
-3. Should we enforce golden updates in the contributor workflow?
-4. Should generated samples be ephemeral by default?
-
 ## Summary
 
-Golden Snapshot Patches is a lightweight, practical redesign of the Kubebuilder documentation generation workflow that shifts the source of truth for tutorial prose to Markdown, keeps sample projects fully generated and runnable, and makes tutorial-specific changes explicit and reviewable using standard unified-diff patches.
+Golden Snapshot Patches (GSP) is a lightweight, practical redesign of the Kubebuilder documentation generation workflow that shifts the source of truth for tutorial prose to Markdown, keeps sample projects fully generated and runnable, and makes tutorial-specific changes explicit and reviewable using standard unified-diff patches.
 
-Rather than embedding prose inside generated Go files and relying on a custom literate extractor, this approach applies small, focused `.patch` overlays to freshly-generated sample projects and uses mdBook's native `{{#include filename:lines}}` syntax to pull snippets into Markdown. The rendered pages are validated by simple snapshot tests that compare mdBook Markdown output to checked-in golden files; mismatches produce readable diffs that surface unintended drift or deliberate changes for reviewers.
+Rather than embedding prose inside generated Go files and relying on a custom preprocessor (literate extractor), this approach applies small, focused `.patch` overlays to freshly-generated sample projects and uses mdBook's native `{{#include filename:lines}}` syntax to pull snippets into Markdown. The rendered pages are validated by simple snapshot tests that compare mdBook Markdown output to checked-in golden files; mismatches produce readable diffs that surface unintended drift or deliberate changes for reviewers.
 
-This change directly addresses recurring problems observed in prior review cycles—fragile string constants, invisible whitespace/formatting regressions, brittle custom parsing, and tautological tests—by
+This change directly addresses recurring problems observed in prior review cycles, like fragile string constants, invisible whitespace/formatting regressions and brittle custom parsing.
+
+The proposed workflow improves contributors DX by:
 
 1. keeping prose where writers expect it
 2. keeping runnable code separate and testable
@@ -185,7 +181,7 @@ This change directly addresses recurring problems observed in prior review cycle
 
 The design is deliberately incremental and low-infrastructure: patches are standard `git diff`/`patch` files, snapshot tests are simple file comparisons, and Make targets/scripts orchestrate generation, patch application, rendering, and test execution.
 
-The end result is a more maintainable, auditable workflow that yields clearer PRs, faster reviews, and stronger guarantees that documentation examples continue to match runnable code.
+The end result is a more maintainable, auditable workflow that results in clearer PRs, faster reviews, and stronger guarantees that documentation examples continue to match runnable code.
 
 ## Motivation
 
@@ -207,22 +203,21 @@ This proposal addresses these concrete, recurring problems by moving to a simple
 ### Goals
 
 - Make tutorial prose the canonical source (Markdown), not embedded code strings.
-- Preserve automatic sample generation while making tutorial-specific edits explicit and reviewable.
+- Preserve automatic sample generation while making tutorial-specific edits explicit, testable and reviewable.
 - Validate the *rendered* documentation (what users see) with per-page snapshot tests and human-readable diffs.
 - Use standard, well-understood formats and tools (unified-diff patches, mdBook includes, golden files) to minimize new infra and lower maintenance burden.
 - Provide a clear, documented developer workflow (regenerate → apply patches → render → test → update goldens if intentional).
 
 ### Non-Goals
 
-- Introducing a heavy-weight preprocessor to inject markers into generated samples (this would increase coupling to the generator).
-- Replacing mdBook or changing rendering semantics; the design uses mdBook’s native include capability.
-- Forcing all conceptual examples into runnable samples; docs-only fragments remain an acceptable and documented option.
+- Introducing a heavy-weight preprocessor to inject markers into generated samples (that's basically what we are already doing with ´`literate.go`).
+- Replacing mdBook or changing rendering semantics; the design depends on mdBook’s native include and markdown output capabilities.
 
-By focusing on these motivations and goals, Golden Snapshot Patches aims to reduce the brittleness and review overhead that currently plague documentation maintenance while preserving runnable examples and improving reviewer confidence through explicit, testable artifacts.
+By focusing on these motivations and goals, GSP aims to reduce the brittleness and review overhead that currently plague documentation maintenance while preserving runnable examples and improving reviewer confidence through explicit, testable artifacts.
 
 ## Proposal
 
-This section specifies the concrete implementation plan and the exact developer workflow required to implement Golden Snapshot Patches. It describes how generated samples are produced, how tutorial customizations are expressed and applied, how mdBook includes are rendered, how snapshot tests run, and how CI enforces correctness.
+This section specifies the concrete implementation plan and the exact developer workflow required to implement GSP. It describes how generated samples are produced, how tutorial customizations are expressed and applied, how mdBook includes are rendered, how snapshot tests run, and how CI enforces correctness.
 
 Design principles
 - Keep prose in Markdown and use mdBook's native include syntax for snippets.
@@ -231,19 +226,15 @@ Design principles
 - Validate the actual rendered page with per-page golden files; provide an explicit update mode for intentional changes.
 - Use standard, well-understood tools (git/patch, mdBook, unified-diff) to minimize new infrastructure.
 
-Core components
+### Core components
 1. Generated sample project
-   - Location: docs/book/src/<tutorial>/testdata/project/
    - Produced by the existing generator (generate_samples.go / hack/docs workflow).
-   - Should be a normal filesystem tree; optionally initialize a git repo locally to allow `git apply` usage.
 
 2. Patch overlays
-   - Location: docs/book/src/<tutorial>/testdata/project.patches/
    - Format: unified-diff `.patch` files (produced by `git diff` or manually authored).
-   - Naming convention: `<nn>-short-description.patch` (numeric prefix to define deterministic ordering).
    - Each patch must be small, focused, and accompanied by a short README explaining intent and any ordering constraints.
-   - Apply method: prefer `git apply --index` (keeps index consistent) and fall back to `patch -p1` if needed.
-   - Failure behavior: patch application failure is a hard error in generation — present the failed patch, the hunk context, and the generated tree path for debugging.
+   - Apply method: `patch -p1` ( or git apply. TBD)
+   - Failure behavior: patch application failure is a hard error in generation - present the failed patch, the hunk context, and the generated tree path for debugging.
 
 3. Apply patches step
    - Implement a script `hack/docs/scripts/apply_patches.sh` (small, portable shell) or a tiny Go helper.
@@ -251,22 +242,16 @@ Core components
    - Script responsibilities:
      - Ensure the project root is correct.
      - Iterate patches in lexical order (numeric prefix enforces intended order).
-     - Try `git apply --index` and check for success; if it fails, run `patch -p1` as a fallback.
+     - Try `patch -p1` and check for success;
      - If a patch fails, print the failing patch, failing hunk, and example manual fix instructions and exit non-zero.
 
 4. Including snippets in Markdown
    - Writers use mdBook `{{#include path/to/file.go:start:end}}` for line-range inclusion.
-   - Prefer line ranges for simple extraction; for fragile sections, use docs-only fragments (see below).
+   - Prefer line ranges for simple extraction;
    - Keep prose and include directives in Markdown pages only.
 
-5. Docs-only fragments
-   - Location: docs/book/src/<tutorial>/fragments/
-   - Use when a snippet demonstrates an alternate approach or concept that should NOT be applied to the runnable sample.
-   - Include these via mdBook `{{#include fragments/foo.go}}`.
-   - Mark these clearly in prose as "docs-only".
-
-6. Rendering and golden extraction
-   - Build mdBook in markdown mode to get deterministic textual output: `mdbook build docs/book --output-format markdown`.
+5. Rendering and golden extraction
+   - Build mdBook in markdown mode to get deterministic textual output: `mdbook build` with `[output.markdown]` selected.
    - Extract the rendered page corresponding to each source `.md` file (the mdBook output directory contains per-page files).
    - Store checked-in golden snapshots next to source pages: `<page>.md.golden`.
    - For readability in PRs, golden files should be Markdown.
@@ -306,31 +291,60 @@ Core components
     - Add snapshot tests and ensure CI passes.
     - Iterate and migrate remaining tutorials incrementally; remove legacy extraction logic once all migrated.
 
-Error handling & UX
+### Error handling & UX
+
 - When patch apply fails: fail generation with error messages including patch filename, hunk context, and path to generated project.
 - When snapshot test fails: fail test and print diff + suggestion to update goldens.
 - Provide a developer `make` shorthand to run full flow locally and a shorter path for iterative work (e.g., `make samples-generate && mdbook serve`).
 
-Security & privacy
-- Patches and goldens are developer-authored content; treat them like any other source file.
-- CI should run in an isolated environment with cached toolchains to avoid network flakiness; generation should be deterministic when possible.
-
-Extensibility
-- The patch application helper can later accept a `--dry-run` mode to preview patches without mutating the generated project.
-- For teams that prefer a git-backed generated tree, generator can initialize a temporary git repo to allow `git apply` and easier diagnostics.
-
-### Repository layout (proposed vs current)
+## Repository layout (proposed vs current)
 
 Below are two trees:
 
-1. The proposed, opinionated layout for the Golden Snapshot Patches workflow with short annotations about what belongs in each directory.
-2. A focused slice of the current repository layout showing where the existing docs-generation files and related artifacts live today (only paths relevant to this proposal are included).
+A. A focused slice of the current repository layout showing where the existing docs-generation files and related artifacts live today (only paths relevant to this proposal are included).
 
-Use the proposed layout as a guide when migrating tutorials (pilot → full migration). The current layout shows the existing locations you will change or reference while migrating.
+B. The proposed, opinionated layout for the GSP workflow with short annotations about what belongs in each directory.
 
----
+### A. Current repository (focused slice relevant to this proposal)
 
-## Proposed architecture (annotated)
+This is a simplified view showing where the current docs generation and related files live today. Only files and directories relevant to the docs/sample generation, literate extraction, and the docs book are shown.
+
+```
+.
+├── docs
+│   └── book
+│       ├── book.toml
+│       ├── src                      <-- current tutorial markdown
+│       │   ├── cronjob-tutorial
+│       │   ├── getting-started
+│       │   └── multiversion-tutorial
+│       ├── theme
+│       └── utils
+│           └── preprocessors
+│               └── literate.go     <-- current code extractor
+├── hack
+│   └── docs                <-- orchestration scripts and generators
+│       ├── check.sh
+│       ├── generate.sh
+│       ├── generate_samples.go
+│       ├── internal
+│       │   ├── cronjob-tutorial
+│       │   ├── getting-started
+│       │   └── multiversion-tutorial
+│       └── utils           <-- helper functions used by generators
+├── pkg
+│   └── plugin
+│       └── util            <-- pluginutil used by generators
+```
+
+Notes:
+- `hack/docs/internal/*` is where the current approach implements many `InsertCode` / `ReplaceInFile` operations as Go string constants. Moving these customizations into `patches/` makes intent and diffs visible instead of hidden in Go constants.
+- `generate_samples.go` currently runs the whole generation → UpdateTutorial → CodeGen flow. The proposed change updates this flow to call `apply_patches.sh` after generation and before mdBook extraction.
+- `docs/book/utils/litgo/literate.go` is the existing custom parser that extracts comments from Go source and interleaves them with code. The proposal aims to stop using it (for migrated tutorials) in favor of direct mdBook includes and patches.
+- `docs/book/src/*` is already the home for tutorial Markdown; the proposal keeps prose here and uses mdBook `{{#include}}` to pull snippets from patched samples.
+- `check.sh` and `generate.sh` are existing CI helpers — they will map to the new `make` targets (or be adjusted) to integrate patch application and golden update steps.
+
+### B. Proposed architecture (annotated)
 
 ```
 .
@@ -366,47 +380,18 @@ Use the proposed layout as a guide when migrating tutorials (pilot → full migr
     ├── scripts
     └── preprocessors
 ```
+Use the proposed layout as a guide when migrating tutorials (pilot → full migration). The current layout shows the existing locations you will change or reference while migrating.
 
 ---
 
-## Current repository (focused slice relevant to this proposal)
+## Open Questions
 
-This is a simplified view showing where the current docs generation and related files live today. Only files and directories relevant to the docs/sample generation, literate extraction, and the docs book are shown.
+The proposed workflow raise a few questions on how to implement certains aspects, like the following:
 
-```
-.
-├── docs
-│   └── book
-│       ├── book.toml
-│       ├── src                      <-- current tutorial markdown
-│       │   ├── cronjob-tutorial
-│       │   ├── getting-started
-│       │   └── multiversion-tutorial
-│       ├── theme
-│       └── utils
-│           └── preprocessors
-│               └── literate.go     <-- current code extractor
-├── hack
-│   └── docs                <-- orchestration scripts and generators
-│       ├── check.sh
-│       ├── generate.sh
-│       ├── generate_samples.go
-│       ├── internal
-│       │   ├── cronjob-tutorial
-│       │   ├── getting-started
-│       │   └── multiversion-tutorial
-│       └── utils           <-- helper functions used by generators
-├── pkg
-│   └── plugin
-│       └── util            <-- pluginutil used by generators
-```
-
-Annotations / why these matter:
-- `hack/docs/internal/*` is where the current approach implements many `InsertCode` / `ReplaceInFile` operations as Go string constants. Moving these customizations into `patches/` makes intent and diffs visible instead of hidden in Go constants.
-- `generate_samples.go` currently runs the whole generation → UpdateTutorial → CodeGen flow. The proposed change updates this flow to call `apply_patches.sh` after generation and before mdBook extraction.
-- `docs/book/utils/litgo/literate.go` is the existing custom parser that extracts comments from Go source and interleaves them with code. The proposal aims to stop using it (for migrated tutorials) in favor of direct mdBook includes and patches.
-- `docs/book/src/*` is already the home for tutorial Markdown; the proposal keeps prose here and uses mdBook `{{#include}}` to pull snippets from patched samples.
-- `check.sh` and `generate.sh` are existing CI helpers — they will map to the new `make` targets (or be adjusted) to integrate patch application and golden update steps.
+1. How should we patch the samples: `git apply` vs `patch`?
+2. How granular should the golden be: entire book vs per-page vs per-section vs per-codeblock?
+3. Should we enforce golden updates in the contributor workflow?
+4. Should generated samples be ephemeral or tracked?
 
 ---
 
@@ -426,16 +411,17 @@ Annotations / why these matter:
 
 - As a reader of the documentation, I can trust that code snippets are taken from runnable samples (or are clearly labeled docs-only fragments), so that the examples are more likely to work when followed.
 
-- As a plugin/extension author, I can provide a patch or fragment to illustrate plugin-specific behavior, so that the book can show variations without coupling them into the core runnable sample.
-
 This proposal yields a reproducible, reviewable, and testable docs generation flow that prevents silent regressions, surfaces intended changes clearly, and keeps the editorial and engineering responsibilities neatly separated.
 
+<!-- //TODO
+<!--
 ### Implementation Details/Notes/Constraints [optional]
 
 <!-- What are the caveats to the implementation? What are some important details that
 didn't come across above. Go in to as much detail as necessary here. This might
 be a good place to talk about core concepts and how they relate. -->
 
+<!--
 ### Risks and Mitigations
 
 <!-- What are the risks of this proposal and how do we mitigate. Think broadly. For
@@ -446,6 +432,7 @@ How will security be reviewed and by whom? How will UX be reviewed and by whom?
 
 Consider including folks that also work outside your immediate sub-project. -->
 
+<!--
 ### Proof of Concept [optional]
 
 <!-- A demo showcasing a prototype of your design can be extremely useful to the
@@ -459,10 +446,12 @@ Be sure to include:
 - An embedded recording of the prototype in action.
 - A link to the repository hosting the changes that the prototype introduces. -->
 
+<!--
 ## Drawbacks
 
 <!-- The idea is to find the best form of an argument why this enhancement should _not_ be implemented. -->
 
+<!--
 ## Alternatives
 
 <!-- Similar to the `Drawbacks` section the `Alternatives` section is used to
