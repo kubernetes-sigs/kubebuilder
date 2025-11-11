@@ -39,10 +39,9 @@ Notes:
 Example unified-diff patch (kept small and focused):
 
 ```diff
-*** Begin Patch
-*** Update File: api/v1/cronjob_types.go
-@@
- type CronJobSpec struct {
+--- api/v1/cronjob_types.go
++++ api/v1/cronjob_types.go
+@@ lines @@ type CronJobSpec struct {
 +	// DefaultSuspend indicates the CronJob's default suspend.
 +	// This field is added for the tutorial to show defaulting behavior.
 +	// +optional
@@ -50,7 +49,6 @@ Example unified-diff patch (kept small and focused):
  	Schedule string `json:"schedule"`
  	// ... other fields
  }
-*** End Patch
 ```
 
 Rationale:
