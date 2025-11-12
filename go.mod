@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/v4
 
-go 1.25.0
+go 1.24.6
 
 require (
 	github.com/gobuffalo/flect v1.0.3
