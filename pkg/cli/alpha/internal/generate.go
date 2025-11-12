@@ -491,10 +491,14 @@ func createAPI(res resource.Resource) error {
 	args := append([]string{"create", "api"}, getGVKFlags(res)...)
 	args = append(args, getAPIResourceFlags(res)...)
 
-	// Add the external API path flag if the resource is external
+	// Add the external API flags if the resource is external
 	if res.IsExternal() {
 		args = append(args, "--external-api-path", res.Path)
 		args = append(args, "--external-api-domain", res.Domain)
+		// Add module if specified
+		if res.Module != "" {
+			args = append(args, "--external-api-module", res.Module)
+		}
 	}
 
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
@@ -547,6 +551,10 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	if res.IsExternal() {
 		args = append(args, "--external-api-path", res.Path)
 		args = append(args, "--external-api-domain", res.Domain)
+		// Add module if specified
+		if res.Module != "" {
+			args = append(args, "--external-api-module", res.Module)
+		}
 	}
 	if res.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")

@@ -170,6 +170,8 @@ func validateV4ProjectFile(kbc *utils.TestContext, projectFile string) {
 	Expect(certmanagerResource.Webhooks).To(BeNil(), "Certificate API should not have webhooks")
 	Expect(certmanagerResource.Path).To(Equal("github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"),
 		"Certificate API should have expected path")
+	Expect(certmanagerResource.Module).To(Equal("github.com/cert-manager/cert-manager@v1.18.2"),
+		"Certificate API should have module with version v1.18.2 stored in PROJECT file")
 
 	By("validating the External API with kind Issuer from certManager")
 	issuerGVK := resource.GVK{
@@ -187,6 +189,8 @@ func validateV4ProjectFile(kbc *utils.TestContext, projectFile string) {
 	Expect(issuerResource.API).To(BeNil(), "Issuer API should not have API scaffold")
 	Expect(issuerResource.Path).To(Equal("github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"),
 		"Issuer API should have expected path")
+	Expect(issuerResource.Module).To(Equal("github.com/cert-manager/cert-manager@v1.18.2"),
+		"Issuer API should have module with version v1.18.2 stored in PROJECT file")
 
 	By("validating the Webhook for Issuer API")
 	Expect(admiralResource.Webhooks.Defaulting).To(BeTrue(), "Issuer API should have a defaulting webhook")

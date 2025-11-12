@@ -57,9 +57,13 @@ type Options struct {
 	// ExternalAPIPath allows to inform a path for APIs not defined in the project
 	ExternalAPIPath string
 
-	// ExternalAPIPath allows to inform the resource domain to build the Qualified Group
+	// ExternalAPIDomain allows to inform the resource domain to build the Qualified Group
 	// to generate the RBAC markers
 	ExternalAPIDomain string
+
+	// ExternalAPIModule specifies the Go module path for the external API with optional version.
+	// Example: github.com/cert-manager/cert-manager@v1.18.2
+	ExternalAPIModule string
 
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
@@ -124,6 +128,14 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if len(opts.ExternalAPIPath) > 0 {
 		res.External = true
+		res.Path = opts.ExternalAPIPath
+		if len(opts.ExternalAPIDomain) > 0 {
+			res.Domain = opts.ExternalAPIDomain
+		}
+		// Store module path if provided
+		if len(opts.ExternalAPIModule) > 0 {
+			res.Module = opts.ExternalAPIModule
+		}
 	}
 
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
