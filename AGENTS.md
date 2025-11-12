@@ -5,13 +5,14 @@ It provides scaffolding and abstractions that accelerate the development of **co
 
 ## Quick Reference
 
-| Item | Value |
-|------|-------|
-| Language | Go >= 1.25 |
-| Module | `sigs.k8s.io/kubebuilder/v4` |
-| Binary | `./bin/kubebuilder` |
-| Core deps | `controller-runtime`, `controller-tools`, Helm, Kustomize |
-| Docs | https://book.kubebuilder.io |
+| Item       | Value                                                     |
+|------------|-----------------------------------------------------------|
+| Language   | Defined in the go.mod                                     |
+| Module     | `sigs.k8s.io/kubebuilder/v4`                              |
+| Binary     | `./bin/kubebuilder`                                       |
+| Core deps  | `controller-runtime`, `controller-tools`, Helm, Kustomize |
+| Docs       | https://book.kubebuilder.io                               |
+
 
 ## Directory Map
 
@@ -113,13 +114,10 @@ make test              # CI aggregate (all of above + license)
 - [ ] One commit per PR (squash all)
 - [ ] Add/update tests for new behavior
 - [ ] Add/update docs for new behavior
-- [ ] Run `make generate`
 - [ ] Run `make lint-fix`
+- [ ] Run `make install`
+- [ ] Run `make generate`
 - [ ] Run `make test-unit`
-- [ ] Update docs if adding features:
-  - `docs/book/src/reference/reference.md` for features
-  - `docs/book/src/plugins/plugins.md` for plugins
-  - `docs/book/src/reference/cli.md` for CLI changes
 
 ## Core Concepts
 
