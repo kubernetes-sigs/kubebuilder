@@ -14,6 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# prow calls this file currently, but we can just use `make test` to test
-# the set of things we want.
+# Source common.sh for environment setup (PATH, GOBIN, etc.)
+source "$(dirname "$0")/test/common.sh"
+
+# Build kubebuilder binary
+build_kb
+fetch_tools
+
+pushd . >/dev/null
+
 make test
+
+header_text "All tests passed!"
+
+popd >/dev/null

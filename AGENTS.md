@@ -32,7 +32,7 @@ pkg/
     external/            External plugin support
 docs/book/      mdBook sources + tutorial samples
 test/
-  e2e/          End-to-end tests (v4, helm, deployimage, alpha*)
+  e2e/          End-to-end tests requiring Kubernetes cluster (v4, helm, deployimage)
   testdata/     Testdata generation scripts
 testdata/       Generated sample projects (DO NOT EDIT)
 hack/docs/      Documentation generation scripts
@@ -82,8 +82,7 @@ make lint-fix   # Auto-fix Go code
 ### Testing
 ```bash
 make test-unit         # Fast unit tests (./pkg/..., ./test/e2e/utils/...)
-make test-integration  # Integration tests
-make test-features     # Feature tests
+make test-integration  # Integration tests (may create temp dirs, download binaries)
 make test-testdata     # Test all testdata projects
 make test-e2e-local    # Full e2e (creates kind cluster)
 make test              # CI aggregate (all of above + license)
@@ -190,6 +189,17 @@ kubebuilder alpha update    # Update to latest plugin versions
 - Test cases as specifications (Ginkgo: `Describe`, `It`, `Context`, `By`)
 - Use **Ginkgo v2** + **Gomega** for BDD-style tests.
 - Tests depending on the Kubebuilder binary should use: `utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")`
+
+### Test Organization
+- **Unit tests** (`*_test.go` in `pkg/`) - Test individual packages in isolation, fast
+- **Integration tests** (`*_integration_test.go` in `pkg/`) - Test multiple components together without cluster
+  - Must have `//go:build integration` tag at the top
+  - May create temp dirs, download binaries, or scaffold files
+  - Examples: alpha update, grafana scaffolding, helm chart generation
+- **E2E tests** (`test/e2e/`) - **ONLY** for tests requiring a Kubernetes cluster (KIND)
+  - `v4/plugin_cluster_test.go` - Test v4 plugin deployment
+  - `helm/plugin_cluster_test.go` - Test Helm chart deployment
+  - `deployimage/plugin_cluster_test.go` - Test deploy-image plugin
 
 ### Scaffolding
 - Use library helpers from `pkg/plugin/util/`

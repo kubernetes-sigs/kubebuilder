@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 /*
 Copyright 2025 The Kubernetes Authors.
 
@@ -14,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package alphaupdate
+package update
 
 import (
 	"bytes"
