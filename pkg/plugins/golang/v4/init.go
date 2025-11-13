@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/spf13/pflag"
 
@@ -158,57 +157,74 @@ func (p *initSubcommand) PostScaffold() error {
 	return nil
 }
 
-// checkDir will return error if the current directory has files which are not allowed.
-// Note that, it is expected that the directory to scaffold the project is cleaned.
-// Otherwise, it might face issues to do the scaffold.
+// checkDir checks the target directory before scaffolding:
+// 1. Returns error if key kubebuilder files already exist (prevents re-initialization)
+// 2. Warns if directory is not empty (but allows scaffolding to continue)
 func checkDir() error {
+	// Files scaffolded by 'kubebuilder init' that indicate the directory is already initialized.
+	// Blocking these prevents accidental re-initialization and file conflicts.
+	// Note: go.mod and go.sum are NOT blocked because:
+	//   - They may exist in pre-existing Go projects
+	//   - Kubebuilder will overwrite them (machinery.OverwriteFile)
+	//   - Testdata generation creates go.mod before running init
+	scaffoldedFiles := []string{
+		"PROJECT",                       // Kubebuilder project config (key indicator)
+		"Makefile",                      // Build automation
+		filepath.Join("cmd", "main.go"), // Controller manager entry point
+	}
+
+	// Check for existing scaffolded files
+	for _, file := range scaffoldedFiles {
+		if _, err := os.Stat(file); err == nil {
+			return fmt.Errorf("target directory is already initialized. "+
+				"Found existing kubebuilder file %q. "+
+				"Please run this command in a new directory or remove existing scaffolded files", file)
+		}
+	}
+
+	// Check if directory has any other files (warn only)
+	// Note: We ignore certain files that are expected or safely overwritten:
+	//   - go.mod and go.sum: Users may run `go mod init` before `kubebuilder init`
+	//   - .gitignore and .dockerignore: Safely overwritten by kubebuilder
+	//   - Other dot directories (.git, .vscode, .idea): Not scaffolded by kubebuilder
+	// However, we DO check .github directory since kubebuilder scaffolds workflows there
+	var hasFiles bool
 	err := filepath.Walk(".",
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return fmt.Errorf("error walking path %q: %w", path, err)
 			}
-			// Allow directory trees starting with '.'
-			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
-				return filepath.SkipDir
-			}
-			// Allow files starting with '.'
-			if strings.HasPrefix(info.Name(), ".") {
+			// Skip the current directory itself
+			if path == "." {
 				return nil
 			}
-			// Allow files ending with '.md' extension
-			if strings.HasSuffix(info.Name(), ".md") && !info.IsDir() {
-				return nil
-			}
-			// Allow capitalized files except PROJECT
-			isCapitalized := true
-			for _, l := range info.Name() {
-				if !unicode.IsUpper(l) {
-					isCapitalized = false
-					break
+			// Skip dot directories EXCEPT .github (which contains scaffolded workflows)
+			if info.IsDir() && strings.HasPrefix(info.Name(), ".") {
+				if info.Name() != ".github" {
+					return filepath.SkipDir
 				}
 			}
-			if isCapitalized && info.Name() != "PROJECT" {
-				return nil
-			}
-			disallowedExtensions := []string{
-				".go",
-				".yaml",
-				".mod",
-				".sum",
-			}
-			// Deny files with .go or .yaml or .mod or .sum extensions
-			for _, ext := range disallowedExtensions {
-				if strings.HasSuffix(info.Name(), ext) {
+			// Skip files that are expected or safely overwritten
+			ignoredFiles := []string{"go.mod", "go.sum"}
+			for _, ignored := range ignoredFiles {
+				if info.Name() == ignored {
 					return nil
 				}
 			}
-			// Do not allow any other file
-			return fmt.Errorf("target directory is not empty and contains a disallowed file %q. "+
-				"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
-				path, strings.Join(disallowedExtensions, ", "))
+			// Track if any other files/directories exist
+			hasFiles = true
+			return nil
 		})
 	if err != nil {
 		return fmt.Errorf("error walking directory: %w", err)
 	}
+
+	// Warn if directory is not empty (but don't block)
+	if hasFiles {
+		log.Warn("The target directory is not empty. " +
+			"Scaffolding may overwrite existing files or cause conflicts. " +
+			"It is recommended to initialize in an empty directory.")
+	}
+
 	return nil
 }
