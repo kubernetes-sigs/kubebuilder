@@ -22,6 +22,9 @@ jobs:
       - name: Remove pre-installed kustomize
         run: sudo rm -f /usr/local/bin/kustomize
 
+      - name: Install Kubebuilder
+        run: make install
+
       - name: Run tests with coverage
         run: make test-coverage
 
