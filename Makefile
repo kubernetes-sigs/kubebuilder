@@ -155,7 +155,7 @@ test-unit: ## Run the unit tests
 .PHONY: test-coverage
 test-coverage: ## Run unit tests creating the output to report coverage
 	- rm -rf *.out  # Remove all coverage files if exists
-	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang" $(TEST_PKGS)
+	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/..." $(TEST_PKGS)
 
 .PHONY: test-features
 test-features: ## Run the integration tests

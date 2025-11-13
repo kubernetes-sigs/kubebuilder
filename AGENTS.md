@@ -32,7 +32,7 @@ pkg/
     external/            External plugin support
 docs/book/      mdBook sources + tutorial samples
 test/
-  e2e/          End-to-end tests (v4, helm, grafana, deployimage, alpha*)
+  e2e/          End-to-end tests (v4, helm, deployimage, alpha*)
   testdata/     Testdata generation scripts
 testdata/       Generated sample projects (DO NOT EDIT)
 hack/docs/      Documentation generation scripts
