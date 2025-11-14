@@ -36,7 +36,7 @@ import (
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
-// +kubebuilder:docs-gen:collapse=Go imports
+// +kubebuilder:docs-gen:collapse=Imports
 
 /*
 Next, we'll setup a logger for the webhooks.
@@ -169,7 +169,7 @@ This marker is responsible for generating a validation webhook manifest.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomValidator struct {
+type CronJobCustomValidator struct { // +kubebuilder:docs-gen:collapse=Remaining Webhook Code
 	// TODO(user): Add more fields as needed for validation
 }
 
@@ -283,5 +283,3 @@ func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
 	}
 	return nil
 }
-
-// +kubebuilder:docs-gen:collapse=Validate object name

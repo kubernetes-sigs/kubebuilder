@@ -226,6 +226,7 @@ var _ = Describe("CronJob controller", func() {
 	})
 
 })
+// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_controller_test.go
 
 /*
 	After writing all this code, you can run` + " `" + `go test ./...` + "`" + ` in your` + " `" + `controllers/` + "`" + ` directory again to run your new test!

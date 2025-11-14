@@ -131,7 +131,7 @@ type CronJobStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// +kubebuilder:docs-gen:collapse=old stuff
+// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_types.go
 
 /*
  Since we'll have more than one version, we'll need to mark a storage version.
@@ -183,4 +183,4 @@ func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
 
-// +kubebuilder:docs-gen:collapse=old stuff
+// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_types.go

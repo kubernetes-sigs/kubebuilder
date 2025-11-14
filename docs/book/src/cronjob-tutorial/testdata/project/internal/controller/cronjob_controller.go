@@ -68,7 +68,7 @@ type Clock interface {
 	Now() time.Time
 }
 
-// +kubebuilder:docs-gen:collapse=Clock
+// +kubebuilder:docs-gen:collapse=Clock Code Implementation
 
 // Definitions to manage status conditions
 const (

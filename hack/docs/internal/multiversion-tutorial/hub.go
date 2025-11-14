@@ -73,7 +73,9 @@ const hubV2CovertTo = `sched := src.Spec.Schedule
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
 
-	// +kubebuilder:docs-gen:collapse=rote conversion`
+	return nil
+}
+// +kubebuilder:docs-gen:collapse=rote conversion`
 
 const hubV2ConvertFromCode = `schedParts := strings.Split(src.Spec.Schedule, " ")
 	if len(schedParts) != 5 {
@@ -109,5 +111,7 @@ const hubV2ConvertFromCode = `schedParts := strings.Split(src.Spec.Schedule, " "
 	// Status
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
-
-	// +kubebuilder:docs-gen:collapse=rote conversion`
+	
+	return nil
+}
+// +kubebuilder:docs-gen:collapse=rote conversion`

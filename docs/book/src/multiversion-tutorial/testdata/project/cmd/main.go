@@ -204,7 +204,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CronJob")
 		os.Exit(1)
 	}
-	// +kubebuilder:docs-gen:collapse=existing setup
 
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
@@ -225,9 +224,6 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
-	/*
-	 */
-
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
@@ -242,5 +238,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-	// +kubebuilder:docs-gen:collapse=existing setup
 }

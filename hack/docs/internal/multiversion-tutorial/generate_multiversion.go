@@ -89,6 +89,14 @@ func (sp *Sample) GenerateSampleProject() {
 		"--programmatic-validation",
 	)
 	hackutils.CheckError("Creating defaulting and validation webhook for v2", err)
+
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
+		`// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
+// as this struct is used only for temporary operations and does not need to be deeply copied.
+type CronJobCustomValidator struct {`,
+		`// +kubebuilder:docs-gen:collapse=Remaining Webhook Code`)
+	hackutils.CheckError("adding marker collapse", err)
 }
 
 // UpdateTutorial the muilt-version sample tutorial with the scaffold changes
@@ -287,6 +295,11 @@ interfaces, a conversion webhook will be registered.
 
 	`)
 	hackutils.CheckError("fix cronjob v1 tests after each", err)
+
+	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
+		"// +kubebuilder:docs-gen:collapse=validateCronJobName() Code Implementation",
+		``)
+	hackutils.CheckError("removing collapse valida for cronjob tutorial", err)
 }
 
 func (sp *Sample) updateSampleV2() {
@@ -354,7 +367,10 @@ methods to convert to/from the hub version.
 	// dst.Spec.Size = src.Spec.Replicas
 
 	// Copy ObjectMeta to preserve name, namespace, labels, etc.
-	dst.ObjectMeta = src.ObjectMeta`,
+	dst.ObjectMeta = src.ObjectMeta
+
+	return nil
+}`,
 		hubV2CovertTo)
 	hackutils.CheckError("replace covertTo at hub v2", err)
 
@@ -364,7 +380,11 @@ methods to convert to/from the hub version.
 	// dst.Spec.Replicas = src.Spec.Size
 
 	// Copy ObjectMeta to preserve name, namespace, labels, etc.
-	dst.ObjectMeta = src.ObjectMeta`,
+	dst.ObjectMeta = src.ObjectMeta
+
+	return nil
+}
+`,
 		hubV2ConvertFromCode)
 	hackutils.CheckError("replace covert from at hub v2", err)
 
@@ -466,7 +486,7 @@ func (sp *Sample) updateAPIV1() {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`// +kubebuilder:docs-gen:collapse=Root Object Definitions`,
-		`// +kubebuilder:docs-gen:collapse=old stuff`,
+		`// +kubebuilder:docs-gen:collapse=Remaining code from cronjob_types.go`,
 	)
 	hackutils.CheckError("replacing docs-gen collapse comment", err)
 }
@@ -474,7 +494,13 @@ func (sp *Sample) updateAPIV1() {
 func (sp *Sample) updateWebhookV2() {
 	path := "internal/webhook/v2/cronjob_webhook.go"
 
-	err := pluginutil.InsertCode(
+	err := pluginutil.InsertCodeIfNotExist(
+		filepath.Join(sp.ctx.Dir, path),
+		"limitations under the License.\n*/",
+		"\n// +kubebuilder:docs-gen:collapse=Apache License")
+	hackutils.CheckError("adding Apache License collapse marker to webhook v2", err)
+
+	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
 		`import (
 	"context"
@@ -584,7 +610,7 @@ func (sp *Sample) updateMain() {
 		os.Exit(1)
 	}
 
-	// +kubebuilder:docs-gen:collapse=old stuff`,
+	// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
 		`if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -637,18 +663,7 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 		os.Exit(1)
 	}`,
 		`
-// +kubebuilder:docs-gen:collapse=existing setup
-`,
-	)
-	hackutils.CheckError("insert // +kubebuilder:docs-gen:collapse=existing setup main.go", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, path),
-		`// +kubebuilder:scaffold:builder`,
-		`
-
-	/*
-	 */`,
+ `,
 	)
 	hackutils.CheckError("insert doc marker existing setup main.go", err)
 
@@ -668,12 +683,23 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 	)
 	hackutils.CheckError("replace webhook setup explanation main.go", err)
 
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, path),
+		`setupLog.Error(err, "problem running manager")
+		os.Exit(1)
+	}
+}`, `
+// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
+	)
+	hackutils.CheckError("update main.go with final collapse marker", err)
+
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// +kubebuilder:docs-gen:collapse=old stuff`,
-		`// +kubebuilder:docs-gen:collapse=existing setup`,
+		`// +kubebuilder:docs-gen:collapse=Remaining code from main.go
+
+// +kubebuilder:docs-gen:collapse=Remaining code from main.go`, ``,
 	)
-	hackutils.CheckError("replace +kubebuilder:docs-gen:collapse=old stuff main.go", err)
+	hackutils.CheckError("update main.go to remove final collapses", err)
 }
 
 func (sp *Sample) updateAPIV2() {
