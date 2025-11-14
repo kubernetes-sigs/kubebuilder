@@ -1,7 +1,46 @@
-.menu-title img {
-    vertical-align: bottom;
+/* Adds a thin border to the sidebar (aesthetics) */
+#sidebar {
+    border-right: 1px solid var(--theme-popup-border);
 }
 
-#sidebar-toggle-anchor:checked .page-wrapper {
-    margin-inline-start: calc(var(--sidebar-width) + var(--sidebar-resize-indicator-width));
+/* Sets the size of the logo on the menu bar */
+.large-logo-img {
+    height: 50px;
+}
+
+/* Centers the logo on the menu bar */
+.menu-title {
+    display: flex;
+    align-items: center; /* vertical centering */
+    justify-content: center; /* horizontal centering */
+}
+
+/* Fixes first header sliding under the menu bar when selected */
+.content {
+    overflow-y: clip;
+}
+
+/* Fixes contrast in codeblocks */
+pre > .hljs {
+    border: 1px solid var(--theme-popup-border);
+    border-radius: 6px;
+}
+
+/* Fixes scrollbar background color */
+html {
+    scrollbar-color: var(--scrollbar) transparent;
+}
+
+/* Fixes links formatting */
+.content a {
+    text-decoration: solid underline var(--links);
+}
+
+/* custom light theme */
+.light {
+    --sidebar-bg: #eef5ff;
+    --sidebar-fg: #334155;
+    --sidebar-non-existant: #7b8da8;
+    --sidebar-active: #466bb3;
+    --sidebar-spacer: #c9d3e0;
 }

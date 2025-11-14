@@ -21,7 +21,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        <link rel="shortcut icon" href="{{ path_to_root }}/logos/favicon.png">
+        <link rel="shortcut icon" href="{{ path_to_root }}/logos/kb-icon.svg">
         <link rel="stylesheet" href="{{ path_to_root }}css/variables.css">
         <link rel="stylesheet" href="{{ path_to_root }}css/general.css">
         <link rel="stylesheet" href="{{ path_to_root }}css/chrome.css">
@@ -119,10 +119,7 @@
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
                             <li role="none"><button role="menuitem" class="theme" id="light">{{ theme_option "Light" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">{{ theme_option "Rust" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">{{ theme_option "Coal" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">{{ theme_option "Navy" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">{{ theme_option "Ayu" }}</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">{{ theme_option "Dark" }}</button></li>
                         </ul>
                         {{#if search_enabled}}
                         <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
@@ -140,10 +137,10 @@
                                 <a href="https://book-v2.book.kubebuilder.io/"target="_blank" rel="noopener noreferrer">v2-book</a>
                                 <a href="https://book-v1.book.kubebuilder.io/"target="_blank" rel="noopener noreferrer">v1-book</a>
                             </div>
-                        </div>     
+                        </div>
                     </div>
 
-                    <h1 class="menu-title"><img alt="{{ book_title }}" src="{{ path_to_root }}/logos/logo-single-line.png"></h1>
+                    <h1 class="menu-title"><img alt="{{ book_title }}" class="large-logo-img" src="{{ path_to_root }}/logos/kb-logo-one-line.svg"></h1>
 
                     <div class="right-buttons">
                         <a href="{{ path_to_root }}print.html" title="Print this book" aria-label="Print this book">
