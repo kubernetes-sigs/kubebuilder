@@ -40,7 +40,7 @@ type BookConfig struct {
 
 // Book is an mdBook book.
 type Book struct {
-	Sections      []BookItem `json:"sections"`
+	Items         []BookItem `json:"items"`
 	NonExhaustive *struct{}  `json:"__non_exhaustive"`
 }
 
@@ -176,8 +176,8 @@ func EachItem(parentItem *BookItem, visitor ChapterVisitor) error {
 // all chapters in the book.
 func EachItemInBook(book *Book, visitor ChapterVisitor) error {
 	// pass a pointer to the structure, not the iteration variable
-	for i := range book.Sections {
-		if err := EachItem(&book.Sections[i], visitor); err != nil {
+	for i := range book.Items {
+		if err := EachItem(&book.Items[i], visitor); err != nil {
 			return err
 		}
 	}

@@ -1,6 +1,5 @@
 [book]
 authors = ["The Kubebuilder Maintainers"]
-multilingual = false
 src = "src"
 title = "The Kubebuilder Book"
 
@@ -17,9 +16,3 @@ command = "./litgo.sh"
 
 [preprocessor.markerdocs]
 command = "./markerdocs.sh"
-
-[context.environment]
-  environment = { GO_VERSION = "1.23" }
-
-[context.deploy-preview.environment]
-  environment = { GO_VERSION = "1.23" }
