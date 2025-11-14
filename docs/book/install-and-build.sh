@@ -39,7 +39,7 @@ if [[ ${arch} == "amd64" ]]; then
 elif [[ ${arch} == "x86" ]]; then
     arch="i686"
 elif [[ ${arch} == "arm64" ]]; then
-    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type. 
+    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type.
     # Once the mdbook is upgraded to latest, use 'aarch64'
     arch="x86_64"
 fi
@@ -58,7 +58,7 @@ case ${os} in
         ;;
     linux)
         # works for linux, too
-        target="unknown-${os}-gnu"
+        target="unknown-${os}-musl"
         ;;
     *)
         target="unknown-${os}"
@@ -67,7 +67,7 @@ esac
 
 # grab mdbook
 # we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-MDBOOK_VERSION="v0.4.40"
+MDBOOK_VERSION="v0.5.0"
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
 
