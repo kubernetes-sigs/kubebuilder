@@ -68,7 +68,7 @@ type Destroyer struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Destroyer
 	// +required
@@ -76,7 +76,7 @@ type Destroyer struct {
 
 	// status defines the observed state of Destroyer
 	// +optional
-	Status DestroyerStatus `json:"status,omitempty,omitzero"`
+	Status DestroyerStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -84,7 +84,7 @@ type Destroyer struct {
 // DestroyerList contains a list of Destroyer
 type DestroyerList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Destroyer `json:"items"`
 }
 

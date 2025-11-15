@@ -66,7 +66,7 @@ type Busybox struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Busybox
 	// +required
@@ -74,7 +74,7 @@ type Busybox struct {
 
 	// status defines the observed state of Busybox
 	// +optional
-	Status BusyboxStatus `json:"status,omitempty,omitzero"`
+	Status BusyboxStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -82,7 +82,7 @@ type Busybox struct {
 // BusyboxList contains a list of Busybox
 type BusyboxList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Busybox `json:"items"`
 }
 
