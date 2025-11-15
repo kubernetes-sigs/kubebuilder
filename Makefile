@@ -145,7 +145,7 @@ go-apidiff:
 ##@ Tests
 
 .PHONY: test
-test: test-unit test-integration test-testdata test-book test-license ## Run the unit and integration tests (used in the CI)
+test: test-unit test-integration test-testdata test-book test-license test-gomod ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
 TEST_PKGS := ./pkg/... ./test/e2e/utils/...
@@ -187,6 +187,10 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 .PHONY: test-license
 test-license:  ## Run the license check
 	./test/check-license.sh
+
+.PHONY: test-gomod
+test-gomod:  ## Run the Go module compatibility check
+	./test/check-gomod.sh
 
 .PHONY: test-external-plugin
 test-external-plugin: install  ## Run tests for external plugin
