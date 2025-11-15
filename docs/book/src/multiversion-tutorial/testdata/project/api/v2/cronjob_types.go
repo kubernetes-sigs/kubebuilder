@@ -186,7 +186,7 @@ type CronJob struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of CronJob
 	// +required
@@ -194,7 +194,7 @@ type CronJob struct {
 
 	// status defines the observed state of CronJob
 	// +optional
-	Status CronJobStatus `json:"status,omitempty,omitzero"`
+	Status CronJobStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -202,7 +202,7 @@ type CronJob struct {
 // CronJobList contains a list of CronJob
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []CronJob `json:"items"`
 }
 

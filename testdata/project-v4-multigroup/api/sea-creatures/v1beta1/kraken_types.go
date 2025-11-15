@@ -67,7 +67,7 @@ type Kraken struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Kraken
 	// +required
@@ -75,7 +75,7 @@ type Kraken struct {
 
 	// status defines the observed state of Kraken
 	// +optional
-	Status KrakenStatus `json:"status,omitempty,omitzero"`
+	Status KrakenStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type Kraken struct {
 // KrakenList contains a list of Kraken
 type KrakenList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Kraken `json:"items"`
 }
 

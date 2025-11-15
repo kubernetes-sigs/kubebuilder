@@ -68,7 +68,7 @@ type Admiral struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Admiral
 	// +required
@@ -76,7 +76,7 @@ type Admiral struct {
 
 	// status defines the observed state of Admiral
 	// +optional
-	Status AdmiralStatus `json:"status,omitempty,omitzero"`
+	Status AdmiralStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -84,7 +84,7 @@ type Admiral struct {
 // AdmiralList contains a list of Admiral
 type AdmiralList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Admiral `json:"items"`
 }
 

@@ -68,7 +68,7 @@ type Cruiser struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Cruiser
 	// +required
@@ -76,7 +76,7 @@ type Cruiser struct {
 
 	// status defines the observed state of Cruiser
 	// +optional
-	Status CruiserStatus `json:"status,omitempty,omitzero"`
+	Status CruiserStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -84,7 +84,7 @@ type Cruiser struct {
 // CruiserList contains a list of Cruiser
 type CruiserList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Cruiser `json:"items"`
 }
 
