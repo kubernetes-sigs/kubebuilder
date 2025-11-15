@@ -77,6 +77,7 @@
 
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
+  - [Strict Field Validation](./reference/strict-field-validation.md)
   - [Good Practices](./reference/good-practices.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
