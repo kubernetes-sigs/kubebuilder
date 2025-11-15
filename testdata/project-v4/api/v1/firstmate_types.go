@@ -68,7 +68,7 @@ type FirstMate struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of FirstMate
 	// +required
@@ -76,7 +76,7 @@ type FirstMate struct {
 
 	// status defines the observed state of FirstMate
 	// +optional
-	Status FirstMateStatus `json:"status,omitempty,omitzero"`
+	Status FirstMateStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -84,7 +84,7 @@ type FirstMate struct {
 // FirstMateList contains a list of FirstMate
 type FirstMateList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []FirstMate `json:"items"`
 }
 

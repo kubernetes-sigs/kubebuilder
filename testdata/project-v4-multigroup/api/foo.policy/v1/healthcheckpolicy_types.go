@@ -67,7 +67,7 @@ type HealthCheckPolicy struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of HealthCheckPolicy
 	// +required
@@ -75,7 +75,7 @@ type HealthCheckPolicy struct {
 
 	// status defines the observed state of HealthCheckPolicy
 	// +optional
-	Status HealthCheckPolicyStatus `json:"status,omitempty,omitzero"`
+	Status HealthCheckPolicyStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type HealthCheckPolicy struct {
 // HealthCheckPolicyList contains a list of HealthCheckPolicy
 type HealthCheckPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []HealthCheckPolicy `json:"items"`
 }
 
