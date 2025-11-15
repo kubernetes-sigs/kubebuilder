@@ -58,7 +58,7 @@ case ${os} in
         ;;
     linux)
         # works for linux, too
-        target="unknown-${os}-gnu"
+        target="unknown-${os}-musl"
         ;;
     *)
         target="unknown-${os}"
@@ -67,7 +67,7 @@ esac
 
 # grab mdbook
 # we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-MDBOOK_VERSION="v0.4.40"
+MDBOOK_VERSION="v0.5.0-beta.2" # TODO: using beta just for the migration (wait for 0.5.0 stable)
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
 
