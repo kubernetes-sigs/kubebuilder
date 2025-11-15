@@ -67,7 +67,7 @@ type Captain struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Captain
 	// +required
@@ -75,7 +75,7 @@ type Captain struct {
 
 	// status defines the observed state of Captain
 	// +optional
-	Status CaptainStatus `json:"status,omitempty,omitzero"`
+	Status CaptainStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type Captain struct {
 // CaptainList contains a list of Captain
 type CaptainList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Captain `json:"items"`
 }
 

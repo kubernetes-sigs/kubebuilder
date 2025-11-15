@@ -67,7 +67,7 @@ type Bar struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Bar
 	// +required
@@ -75,7 +75,7 @@ type Bar struct {
 
 	// status defines the observed state of Bar
 	// +optional
-	Status BarStatus `json:"status,omitempty,omitzero"`
+	Status BarStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type Bar struct {
 // BarList contains a list of Bar
 type BarList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Bar `json:"items"`
 }
 
