@@ -67,7 +67,7 @@ type Frigate struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Frigate
 	// +required
@@ -75,7 +75,7 @@ type Frigate struct {
 
 	// status defines the observed state of Frigate
 	// +optional
-	Status FrigateStatus `json:"status,omitempty,omitzero"`
+	Status FrigateStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type Frigate struct {
 // FrigateList contains a list of Frigate
 type FrigateList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Frigate `json:"items"`
 }
 

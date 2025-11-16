@@ -2,6 +2,8 @@ module sigs.k8s.io/kubebuilder/v4
 
 go 1.24.6
 
+retract v4.10.0 // invalid filename causes go get/install failure (#5211)
+
 require (
 	github.com/gobuffalo/flect v1.0.3
 	github.com/h2non/gock v1.2.0

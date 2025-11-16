@@ -67,7 +67,7 @@ type Wordpress struct {
 
 	// metadata is a standard object metadata
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
 
 	// spec defines the desired state of Wordpress
 	// +required
@@ -75,7 +75,7 @@ type Wordpress struct {
 
 	// status defines the observed state of Wordpress
 	// +optional
-	Status WordpressStatus `json:"status,omitempty,omitzero"`
+	Status WordpressStatus `json:"status,omitzero"`
 }
 
 // +kubebuilder:object:root=true
@@ -83,7 +83,7 @@ type Wordpress struct {
 // WordpressList contains a list of Wordpress
 type WordpressList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []Wordpress `json:"items"`
 }
 
