@@ -288,10 +288,10 @@ This command generates:
 - A test scaffold in `internal/controllers/busybox_controller_test.go`, which uses [EnvTest][envtest] for integration-style testing.
 
 <aside class="note">
-<h1> References and Examples </h1>
+<h1>References and Examples</h1>
 
-You can use the code of [DeployImage Plugin][deploy-image-v1-alpha] as a reference to create your project.
-They follow Kubernetes conventions and recommended good practices.
+Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a reference when creating your project.
+It follows Kubernetes conventions and recommended good practices.
 
 </aside>
 
