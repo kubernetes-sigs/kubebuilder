@@ -299,7 +299,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	if hasMetrics {
 		By("checking the metrics values to validate that the created resource object gets reconciled")
-		metricsOutput := getMetricsOutput(kbc)
+		metricsOutput := getMetricsOutput(controllerPodName, kbc)
 		Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
 			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
 			strings.ToLower(kbc.Kind),
@@ -392,7 +392,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
-			metricsOutput := getMetricsOutput(kbc)
+			metricsOutput := getMetricsOutput(controllerPodName, kbc)
 			conversionMetric := `controller_runtime_reconcile_total{controller="conversiontest",result="success"} 1`
 			Expect(metricsOutput).To(ContainSubstring(conversionMetric),
 				"Expected metric for successful ConversionTest reconciliation")
@@ -438,7 +438,7 @@ func getControllerName(kbc *utils.TestContext) string {
 }
 
 // getMetricsOutput return the metrics output from curl pod
-func getMetricsOutput(kbc *utils.TestContext) string {
+func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 	_, err := kbc.Kubectl.Command(
 		"get", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 	)
@@ -467,14 +467,16 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	Expect(err).NotTo(HaveOccurred(), "Controller-manager service should exist")
 
 	By("ensuring the service endpoint is ready")
+	metricsServiceName := fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix)
 	checkServiceEndpoint := func(g Gomega) {
 		var output string
-		output, err = kbc.Kubectl.Get(
-			true,
-			"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
-			"-o", "jsonpath={.subsets[*].addresses[*].ip}",
+		output, err = kbc.Kubectl.Command(
+			"get", "endpointslices.discovery.k8s.io",
+			"-n", kbc.Kubectl.Namespace,
+			"-l", fmt.Sprintf("kubernetes.io/service-name=%s", metricsServiceName),
+			"-o", "jsonpath={range .items[*]}{range .endpoints[*]}{.addresses[*]}{end}{end}",
 		)
-		g.Expect(err).NotTo(HaveOccurred(), "endpoints should exist")
+		g.Expect(err).NotTo(HaveOccurred(), "endpointslices should exist")
 		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
 	}
 	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
@@ -484,11 +486,36 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	// when using controller-runtime's WithAuthenticationAndAuthorization() with self-signed certificates.
 	// This delay appears to stem from Kubernetes itself, potentially due to changes in how it initializes
 	// service account tokens or handles TLS/service readiness.
-	//
-	// Without this delay, tests that curl the /metrics endpoint using a token can fail from k8s 1.33+.
-	// As a temporary workaround, we wait briefly before attempting to access metrics.
-	By("waiting briefly to ensure that the certs are provisioned and metrics are available")
-	time.Sleep(15 * time.Second)
+	By("ensuring the controller pod is fully ready before creating test pods")
+	verifyControllerPodReady := func(g Gomega) {
+		var output string
+		output, err = kbc.Kubectl.Get(
+			true,
+			"pod", controllerPodName,
+			"-o", "jsonpath={.status.conditions[?(@.type=='Ready')].status}",
+		)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(output).To(Equal("True"), "Controller pod not ready")
+	}
+	Eventually(verifyControllerPodReady, 3*time.Minute, time.Second).Should(Succeed())
+
+	webhookServiceName := fmt.Sprintf("e2e-%s-webhook-service", kbc.TestSuffix)
+	if _, err = kbc.Kubectl.Get(false, "service", webhookServiceName); err == nil {
+		By("waiting for the webhook service endpoints to be ready")
+		checkWebhookEndpoint := func(g Gomega) {
+			var output string
+			output, err = kbc.Kubectl.Command(
+				"get", "endpointslices.discovery.k8s.io",
+				"-n", kbc.Kubectl.Namespace,
+				"-l", fmt.Sprintf("kubernetes.io/service-name=%s", webhookServiceName),
+				"-o", "jsonpath={range .items[*]}{range .endpoints[*]}{.addresses[*]}{end}{end}",
+			)
+			g.Expect(err).NotTo(HaveOccurred(), "webhook endpoints should exist")
+			g.Expect(output).ShouldNot(BeEmpty(), "webhook endpoints not yet ready")
+		}
+		Eventually(checkWebhookEndpoint, 3*time.Minute, time.Second).Should(Succeed(),
+			"Webhook service endpoints should be ready")
+	}
 
 	By("creating a curl pod to access the metrics endpoint")
 	cmdOpts := cmdOptsToCreateCurlPod(kbc, token)

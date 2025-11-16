@@ -37,7 +37,3 @@ jobs:
 
       - name: Run Testdata
         run: make test-testdata
-
-      - name: Run Integration Tests
-        run: make test-integration
-

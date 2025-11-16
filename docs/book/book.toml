@@ -5,6 +5,8 @@ src = "src"
 title = "The Kubebuilder Book"
 
 [output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
 smart-punctuation = true
 additional-css = ["theme/css/markers.css", "theme/css/custom.css", "theme/css/version-dropdown.css"]
 git-repository-url = "https://github.com/kubernetes-sigs/kubebuilder"
