@@ -295,19 +295,17 @@ They follow Kubernetes conventions and recommended good practices.
 
 </aside>
 
-### Keeping your project up to date with ecosystem changes
+<aside class="note">
+<h1> Keeping your project up to date with ecosystem changes </h1>
 
-Kubebuilder provides the [AutoUpdate Plugin][autoupdate-v1-alpha]
-to help keep your project aligned with the latest ecosystem changes.
-When a new release is available, the plugin opens an **Issue** with a
-Pull Request compare link. You can then review the updates and, if helpful,
-use [GitHub AI models][ai-gh-models] to understand what changes are needed to keep your project current.
+Use the Kubebuilder [AutoUpdate Plugin][autoupdate-v1-alpha] to keep your project
+aligned with the latest ecosystem changes. When a new release is available,
+it automatically opens an issue with a PR comparison link so you can review and update easily.
 
 ```bash
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
-
-This command scaffolds a GitHub workflow file at `.github/workflows/autoupdate.yml`.
+</aside>
 
 ## Next Step
 
