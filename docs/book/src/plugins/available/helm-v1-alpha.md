@@ -50,6 +50,31 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
   under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you will need to manually reapply your customizations on top
   of the latest changes after regenerating the Helm chart.
 
+<aside class="note">
+<H1> Why CRDs are added under templates? </H1>
+
+Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
+
+The rationale is tied to how Helm itself handles CRDs.
+By default, Helm will install CRDs once during the initial release,
+but it will **ignore CRD changes** on subsequent upgrades.
+
+This can lead to surprising behavior where chart upgrades silently
+skip CRD updates, leaving clusters out of sync.
+
+To avoid endorsing this behavior, the Kubebuilder plugin follows the approach of packaging
+CRDs inside `templates/`. In this mode, Helm treats CRDs like
+any other resource, ensuring they are applied and upgraded as expected.
+While this prevents mixing CRDs and CRs of the same type in a single chart (since Helm cannot wait between creation steps), it ensures predictable and explicit lifecycle management of CRDs.
+
+In short:
+- **Helm `crds/` directory** → one-time install only, no upgrades.
+- **Kubebuilder `templates/crd`** → CRDs managed like other manifests, upgrades included.
+
+This design choice prioritizes correctness and maintainability over Helm's default convention,
+while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
+</aside>
+
 ## How to use it ?
 
 ### Basic Usage

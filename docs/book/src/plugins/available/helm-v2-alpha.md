@@ -116,7 +116,7 @@ The plugin creates a chart layout that matches your `config/`:
         └── servicemonitor.yaml
 ```
 
-<aside>
+<aside class="note">
 <H1> Why CRDs are added under templates? </H1>
 
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
@@ -137,7 +137,7 @@ In short:
 - **Helm `crds/` directory** → one-time install only, no upgrades.
 - **Kubebuilder `templates/crd`** → CRDs managed like other manifests, upgrades included.
 
-This design choice prioritizes correctness and maintainability over Helm’s default convention,
+This design choice prioritizes correctness and maintainability over Helm's default convention,
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
 </aside>
 
