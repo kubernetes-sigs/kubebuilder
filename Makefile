@@ -190,7 +190,7 @@ test-license:  ## Run the license check
 
 .PHONY: test-gomod
 test-gomod:  ## Run the Go module compatibility check
-	./test/check-gomod.sh
+	go run ./hack/test/check_go_module.go
 
 .PHONY: test-external-plugin
 test-external-plugin: install  ## Run tests for external plugin
