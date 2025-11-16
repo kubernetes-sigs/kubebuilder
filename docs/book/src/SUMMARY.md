@@ -8,7 +8,6 @@
 
 [Getting Started](./getting-started.md)
 
-[Versions Compatibility and Supportability](./versions_compatibility_supportability.md)
 ---
 
 - [Tutorial: Building CronJob](cronjob-tutorial/cronjob-tutorial.md)
@@ -114,6 +113,7 @@
     - [Reference](./reference/metrics-reference.md)
 
   - [Project config](./reference/project-config.md)
+  - [Versions Compatibility and Supportability](./versions_compatibility_supportability.md)
 
 ---
 
