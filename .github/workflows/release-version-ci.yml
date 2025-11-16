@@ -1,13 +1,9 @@
 name: Test GoReleaser and CLI Version
 
 on:
-  push:
-    paths:
-      - 'pkg/**'
-      - 'cmd/**'
-      - 'build/.goreleaser.yml'
-      - '.github/workflows/release-version-ci.yml'
   pull_request:
+    branches:
+      - master
     paths:
       - 'pkg/**'
       - 'cmd/**'
