@@ -33,8 +33,6 @@
 
   - [Writing tests](./cronjob-tutorial/writing-tests.md)
 
-  - [Epilogue](./cronjob-tutorial/epilogue.md)
-
 - [Tutorial: Multi-Version API](./multiversion-tutorial/tutorial.md)
 
   - [Changing things up](./multiversion-tutorial/api-changes.md)
