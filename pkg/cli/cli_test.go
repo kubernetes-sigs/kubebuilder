@@ -623,7 +623,14 @@ plugins:
 
 		When("providing a version string", func() {
 			It("should create a valid CLI", func() {
-				const version = "version string"
+				version := map[string]string{
+					"kubebuilder": "123",
+					"kubernetes": "123",
+					"buildDate": "2025/12/3",
+					"gitCommit": "0123fasdf0123",
+					"os": "os123",
+					"arch": "arch123",
+				}
 				c, err = New(
 					WithPlugins(&golangv4.Plugin{}),
 					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
@@ -648,7 +655,19 @@ plugins:
 				Expect(err).NotTo(HaveOccurred())
 				printed, _ := io.ReadAll(r)
 				Expect(string(printed)).To(Equal(
-					fmt.Sprintf("%s\n", version)))
+					fmt.Sprintf(`Kubebuilder:    %v
+Kubernetes:     %v
+Git Commit:     %v
+Build date:     %v
+OS/Arch:        %v/%v
+`,
+					version["kubebuilder"],
+					version["kubernetes"],
+					version["gitCommit"],
+					version["buildDate"],
+					version["os"],
+					version["arch"],
+					)))
 			})
 		})
 

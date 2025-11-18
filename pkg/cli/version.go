@@ -29,7 +29,19 @@ func (c CLI) newVersionCmd() *cobra.Command {
 		Long:    fmt.Sprintf("Print the %s version", c.commandName),
 		Example: fmt.Sprintf("%s version", c.commandName),
 		RunE: func(_ *cobra.Command, _ []string) error {
-			fmt.Println(c.version)
+			fmt.Printf(`Kubebuilder:    %v
+Kubernetes:     %v
+Git Commit:     %v
+Build date:     %v
+OS/Arch:        %v/%v
+`,
+			c.version["kubebuilder"],
+			c.version["kubernetes"],
+			c.version["gitCommit"],
+			c.version["buildDate"],
+			c.version["os"],
+			c.version["arch"],
+			)
 			return nil
 		},
 	}

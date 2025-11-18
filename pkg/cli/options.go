@@ -50,7 +50,7 @@ func WithCommandName(name string) Option {
 }
 
 // WithVersion is an Option that defines the version string of the CLI.
-func WithVersion(version string) Option {
+func WithVersion(version map[string]string) Option {
 	return func(c *CLI) error {
 		c.version = version
 		return nil

@@ -59,17 +59,19 @@ type version struct {
 }
 
 // versionString returns the Full CLI version
-func versionString() string {
+func versionMap() map[string]string {
 	kubeBuilderVersion = getKubebuilderVersion()
-
-	return fmt.Sprintf("Version: %#v", version{
-		kubeBuilderVersion,
-		kubernetesVendorVersion,
-		gitCommit,
-		buildDate,
-		goos,
-		goarch,
-	})
+	
+	version := map[string]string{
+		"kubebuilder": kubeBuilderVersion,
+		"kubernetes": kubernetesVendorVersion,
+		"buildDate": buildDate,
+		"gitCommit": gitCommit,
+		"os": goos,
+		"arch": goarch,
+	}
+	
+	return version
 }
 
 // getKubebuilderVersion returns only the CLI version string

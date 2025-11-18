@@ -540,7 +540,14 @@ var _ = Describe("CLI options", func() {
 
 	Context("WithVersion", func() {
 		It("should use the provided version string", func() {
-			version := "Version: 0.0.0"
+			version := map[string]string{
+				"kubebuilder": "123",
+				"kubernetes": "123",
+				"buildDate": "2025/12/3",
+				"gitCommit": "0123fasdf0123",
+				"os": "os123",
+				"arch": "arch123",
+			}
 			c, err = newCLI(WithVersion(version))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
