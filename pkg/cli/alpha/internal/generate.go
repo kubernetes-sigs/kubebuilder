@@ -521,6 +521,11 @@ func getAPIResourceFlags(res resource.Resource) []string {
 		} else {
 			args = append(args, "--namespaced=false")
 		}
+		if res.API.GenerateApplyConfiguration {
+			args = append(args, "--generate-apply-configuration")
+		} else {
+			args = append(args, "--generate-apply-configuration=false")
+		}
 	}
 	if res.Controller {
 		args = append(args, "--controller")

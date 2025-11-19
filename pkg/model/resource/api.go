@@ -27,6 +27,9 @@ type API struct {
 
 	// Namespaced is true if the API is namespaced.
 	Namespaced bool `json:"namespaced,omitempty"`
+
+	// GenerateApplyConfiguration indicates whether to generate applyconfiguration code for the resource.
+	GenerateApplyConfiguration bool `json:"generateApplyConfiguration,omitempty"`
 }
 
 // Validate checks that the API is valid.
@@ -64,6 +67,9 @@ func (api *API) Update(other *API) error {
 
 	// Update the namespace.
 	api.Namespaced = api.Namespaced || other.Namespaced
+
+	// Update the generate apply configuration flag.
+	api.GenerateApplyConfiguration = api.GenerateApplyConfiguration || other.GenerateApplyConfiguration
 
 	return nil
 }

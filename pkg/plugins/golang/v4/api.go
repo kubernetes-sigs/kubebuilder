@@ -104,6 +104,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, generate the resource without prompting the user")
 	p.resourceFlag = fs.Lookup("resource")
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+	fs.BoolVar(&p.options.GenerateApplyConfiguration, "generate-apply-configuration", false, "if set, generate applyconfiguration code for the resource")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")

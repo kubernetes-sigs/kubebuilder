@@ -64,7 +64,11 @@ func (f *Types) SetTemplateDefaults() error {
 //nolint:lll
 const typesTemplate = `{{ .Boilerplate }}
 
+{{ if .Resource.HasApplyConfiguration }}
 // +kubebuilder:ac:generate=true
+{{ else }}
+// +kubebuilder:ac:generate=false
+{{ end }}
 package {{ .Resource.Version }}
 
 import (
