@@ -49,7 +49,12 @@ func (Literate) SupportsOutput(_ string) bool { return true }
 
 // Process implements plugin.Plugin
 func (l Literate) Process(input *plugin.Input) error {
-	bookSrcDir := filepath.Join(input.Context.Root, input.Context.Config.Book.Src)
+	srcDir := input.Context.Config.Book.Src
+	if srcDir == "" {
+		srcDir = "src" // mdBook 0.5.0 no longer populates this field
+	}
+	bookSrcDir := filepath.Join(input.Context.Root, srcDir)
+
 	return plugin.EachCommand(&input.Book, "literatego", func(chapter *plugin.BookChapter, relPath string) (string, error) {
 		chapterDir := filepath.Dir(chapter.Path)
 		pathInfo := filePathInfo{

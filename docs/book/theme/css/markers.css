@@ -7,6 +7,12 @@
  * extract the actual relevant information.  Theoretically, this'll let us do
  * stuff like transform the information for different screen widths. */
 
+/* Removes the counter from marker definitions */
+dd:has(+ dd)::before,
+dd + dd::before {
+    content: normal;
+}
+
 /* the marker */
 .marker {
     display: flex;
@@ -65,14 +71,14 @@
     font-style: inherit;
 }
 .marker dl.args.summary dt:first-child::before {
-    content: ':';
+    content: ":";
 }
 .marker dl.args.summary dt::before {
-    content: ',';
+    content: ",";
 }
 /* hide in non-summary view */
 .marker dd.args {
-    display: none
+    display: none;
 }
 
 /* the description */
@@ -85,7 +91,7 @@
 
 /* all arguments */
 .marker dl.args dt.argument::after {
-    content: '=';
+    content: "=";
 }
 .marker dl.args dd.type {
     font-style: italic;
@@ -98,14 +104,16 @@
     font-size: 0.875em;
 }
 .marker .literal {
-    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+    font-family:
+        "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono",
+        monospace, monospace;
     font-size: 0.875em; /* please adjust the ace font size accordingly in editor.js */
 }
 .marker .argument.type::before {
-    content: '‹';
+    content: "‹";
 }
 .marker .argument.type::after {
-    content: '›';
+    content: "›";
 }
 
 /* summary args */
@@ -134,7 +142,7 @@
 }
 
 .marker .type .slice::before {
-    content: '[]';
+    content: "[]";
 }
 
 /* description args */
@@ -158,10 +166,10 @@
 
 /* summary view */
 .markers-summarize:checked ~ dl > .marker dd.args {
-    display: inline-block
+    display: inline-block;
 }
 .markers-summarize:checked ~ dl > .marker dd.description dl.args {
-    display: none
+    display: none;
 }
 .markers-summarize:checked ~ dl > .marker dd.description {
     margin-bottom: 0.25em;
@@ -172,11 +180,11 @@ input.markers-summarize {
 }
 label.markers-summarize::before {
     margin-right: 0.5em;
-    content: '\25bc';
+    content: "\25bc";
     display: inline-block;
 }
 input.markers-summarize:checked ~ label.markers-summarize::before {
-    content: '\25b6';
+    content: "\25b6";
 }
 
 /* misc */
@@ -280,7 +288,6 @@ details.collapse-code > summary::-webkit-details-marker {
     display: none;
 }
 
-
 /* diagrams */
 
 .diagrams {
@@ -296,12 +303,15 @@ details.collapse-code > summary::-webkit-details-marker {
     font-weight: bold;
 }
 
-.diagrams object, .diagrams svg {
+.diagrams object,
+.diagrams svg {
     max-width: 100%;
     max-height: 10em; /* force svg height to behave */
 }
 
-.diagrams path, .diagrams polyline, .diagrams circle {
+.diagrams path,
+.diagrams polyline,
+.diagrams circle {
     stroke: var(--fg);
 }
 
@@ -360,7 +370,9 @@ aside.note.warning > h1::before {
 /* literate source citations */
 cite.literate-source {
     font-size: 75%;
-    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+    font-family:
+        "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono",
+        monospace, monospace;
 }
 cite.literate-source::before {
     content: "$ ";

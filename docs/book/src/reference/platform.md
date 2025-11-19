@@ -18,7 +18,7 @@ The following covers what you need to do to provide the support for one or more 
 
 The images used in workloads such as in your Pods/Deployments will need to provide the support for this other platform.
 You can inspect the images using a ManifestList of supported platforms using the command
-[docker manifest inspect <image>][docker-manifest], i.e.:
+[`docker manifest inspect <image>`][docker-manifest], i.e.:
 
 ```shell
 $ docker manifest inspect myregistry/example/myimage:v0.0.1
