@@ -63,8 +63,11 @@ import (
 )
 
 var (
-	// SchemeGroupVersion is group version used to register these objects.
-	SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Resource.QualifiedGroup }}", Version: "{{ .Resource.Version }}"}
+	// GroupVersion is group version used to register these objects.
+	GroupVersion = schema.GroupVersion{Group: "{{ .Resource.QualifiedGroup }}", Version: "{{ .Resource.Version }}"}
+
+	// SchemeGroupVersion is necessary for applyconfiguration codegen.
+	SchemeGroupVersion = GroupVersion
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
