@@ -48,8 +48,8 @@ type CLI struct {
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.
 	commandName string
-	// Full CLI version string.
-	version map[string]string
+	// Full CLI version struct.
+	version *Version
 	// CLI version string (just the CLI version number, no extra information).
 	cliVersion string
 	// CLI root's command description.
@@ -526,7 +526,7 @@ func (c *CLI) addSubcommands() {
 	c.cmd.AddCommand(c.newInitCmd())
 
 	// kubebuilder version
-	// Only add version if a version string was provided
+	// Only add version if a version struct was provided
 	if c.version != nil {
 		c.cmd.AddCommand(c.newVersionCmd())
 	}
