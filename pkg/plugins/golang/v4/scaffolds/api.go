@@ -100,6 +100,7 @@ func (s *apiScaffolder) Scaffold() error {
 		if err := scaffold.Execute(
 			&api.Types{Force: s.force},
 			&api.Group{},
+			&api.Doc{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}

@@ -23,10 +23,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &Group{}
+var _ machinery.Template = &Doc{}
 
-// Group scaffolds the file that defines the registration methods for a certain group and version
-type Group struct {
+// Doc scaffolds the doc file that defines the groupName
+type Doc struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -34,42 +34,26 @@ type Group struct {
 }
 
 // SetTemplateDefaults implements machinery.Template
-func (f *Group) SetTemplateDefaults() error {
+func (f *Doc) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("api", "%[group]", "%[version]", "groupversion_info.go")
+			f.Path = filepath.Join("api", "%[group]", "%[version]", "doc.go")
 		} else {
-			f.Path = filepath.Join("api", "%[version]", "groupversion_info.go")
+			f.Path = filepath.Join("api", "%[version]", "doc.go")
 		}
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Info(f.Path)
-	f.TemplateBody = groupTemplate
+	f.TemplateBody = docTemplate
 
 	return nil
 }
 
 //nolint:lll
-const groupTemplate = `{{ .Boilerplate }}
+const docTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group.
-// +kubebuilder:object:generate=true
+// +groupName={{ .Resource.QualifiedGroup }}
 package {{ .Resource.Version }}
-
-import (
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
-)
-
-var (
-	// SchemeGroupVersion is group version used to register these objects.
-	SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Resource.QualifiedGroup }}", Version: "{{ .Resource.Version }}"}
-
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
-
-	// AddToScheme adds the types in this group-version to the given scheme.
-	AddToScheme = SchemeBuilder.AddToScheme
-)
 `
