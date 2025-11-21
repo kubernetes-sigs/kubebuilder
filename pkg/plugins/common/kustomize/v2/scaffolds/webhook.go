@@ -87,7 +87,6 @@ func (s *webhookScaffolder) Scaffold() error {
 	buildScaffold := []machinery.Builder{
 		&kdefault.ManagerWebhookPatch{},
 		&webhook.Kustomization{Force: s.force},
-		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 		&certmanager.Certificate{},
 		&certmanager.Issuer{},

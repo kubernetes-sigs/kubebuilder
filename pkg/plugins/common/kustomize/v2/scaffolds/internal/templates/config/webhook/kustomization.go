@@ -53,7 +53,4 @@ func (f *Kustomization) SetTemplateDefaults() error {
 const kustomizeWebhookTemplate = `resources:
 - manifests{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}.{{ .Resource.Webhooks.WebhookVersion }}{{ end }}.yaml
 - service.yaml
-
-configurations:
-- kustomizeconfig.yaml
 `
