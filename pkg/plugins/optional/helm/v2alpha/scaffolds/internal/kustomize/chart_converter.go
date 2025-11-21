@@ -105,7 +105,7 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 	}
 
 	extractPodSecurityContext(specMap, config)
-
+	extractImagePullSecrets(specMap, config)
 	container := firstManagerContainer(specMap)
 	if container == nil {
 		return config
@@ -133,6 +133,20 @@ func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]any
 	}
 
 	return specMap
+}
+
+func extractImagePullSecrets(specMap map[string]any, config map[string]any) {
+	imagePullSecrets, found, err := unstructured.NestedFieldNoCopy(specMap, "imagePullSecrets")
+	if !found || err != nil {
+		return
+	}
+
+	imagePullSecretsList, ok := imagePullSecrets.([]any)
+	if !ok || len(imagePullSecretsList) == 0 {
+		return
+	}
+
+	config["imagePullSecrets"] = imagePullSecretsList
 }
 
 func extractPodSecurityContext(specMap map[string]any, config map[string]any) {

@@ -228,6 +228,25 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  env: []\n\n")
 	}
 
+	// Add image pull secrets
+	if imagePullSecrets, exists := f.DeploymentConfig["imagePullSecrets"]; exists && imagePullSecrets != nil {
+		buf.WriteString("  # Image pull secrets\n")
+		buf.WriteString("  imagePullSecrets:\n")
+		if imagePullSecretsYaml, err := yaml.Marshal(imagePullSecrets); err == nil {
+			lines := bytes.SplitSeq(imagePullSecretsYaml, []byte("\n"))
+			for line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
+		}
+		buf.WriteString("\n")
+	} else {
+		f.addDefaultImagePullSecrets(buf)
+	}
+
 	// Add podSecurityContext
 	if podSecCtx, exists := f.DeploymentConfig["podSecurityContext"]; exists && podSecCtx != nil {
 		buf.WriteString("  # Pod-level security settings\n")
@@ -291,6 +310,7 @@ func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
 	buf.WriteString("  # Environment variables\n")
 	buf.WriteString("  env: []\n\n")
 
+	f.addDefaultImagePullSecrets(buf)
 	f.addDefaultPodSecurityContext(buf)
 	f.addDefaultSecurityContext(buf)
 	f.addDefaultResources(buf)
@@ -321,6 +341,12 @@ func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
 	}
 
 	buf.WriteString("  args: []\n\n")
+}
+
+// addDefaultImagePullSecrets adds default imagePullSecrets section
+func (f *HelmValuesBasic) addDefaultImagePullSecrets(buf *bytes.Buffer) {
+	buf.WriteString("  # Image pull secrets\n")
+	buf.WriteString("  imagePullSecrets: []\n\n")
 }
 
 // addDefaultPodSecurityContext adds default podSecurityContext section

@@ -274,6 +274,39 @@ var _ = Describe("ChartConverter", func() {
 			Expect(config["webhookPort"]).To(Equal(9444))
 		})
 
+		It("should extract imagePullSecrets", func() {
+			// Set up deployment with image pull secrets
+			containers := []any{
+				map[string]any{
+					"name":  "manager",
+					"image": "controller:latest",
+				},
+			}
+			imagePullSecrets := []any{
+				map[string]any{
+					"name": "test-secret",
+				},
+			}
+			// Set the image pull secrets
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				imagePullSecrets,
+				"spec", "template", "spec", "imagePullSecrets",
+			)
+			Expect(err).NotTo(HaveOccurred())
+			// Set the containers
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+			Expect(config).To(HaveKey("imagePullSecrets"))
+			Expect(config["imagePullSecrets"]).To(Equal(imagePullSecrets))
+		})
+
 		It("should handle deployment without containers", func() {
 			config := converter.ExtractDeploymentConfig()
 			Expect(config).To(BeEmpty())
