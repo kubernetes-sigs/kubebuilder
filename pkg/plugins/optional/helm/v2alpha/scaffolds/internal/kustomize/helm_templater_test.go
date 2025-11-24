@@ -230,6 +230,58 @@ metadata:
 			Expect(result).NotTo(ContainSubstring(`{{- include "chart.labels"`))
 			Expect(result).NotTo(ContainSubstring(`{{- include "chart.annotations"`))
 		})
+
+		It("should template imagePullSecrets", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: test-secret
+      containers:
+      - args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt
+        - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs/tls.crt
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("imagePullSecrets:"))
+			Expect(result).NotTo(ContainSubstring("test-secret"))
+		})
+
+		It("should template empty imagePullSecrets", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      imagePullSecrets: []
+      containers:
+      - args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt
+        - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs/tls.crt
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("imagePullSecrets:"))
+		})
 	})
 
 	Context("conditional wrapping", func() {
