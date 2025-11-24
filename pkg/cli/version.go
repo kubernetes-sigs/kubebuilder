@@ -22,6 +22,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version contains all the information related to the CLI version
+type Version struct {
+	KubeBuilderVersion string `json:"kubeBuilderVersion"`
+	KubernetesVendor   string `json:"kubernetesVendor"`
+	GitCommit          string `json:"gitCommit"`
+	BuildDate          string `json:"buildDate"`
+	GoOs               string `json:"goOs"`
+	GoArch             string `json:"goArch"`
+}
+
+// String implements Stringer for Version so we can format the output as needed
+func (v Version) String() string {
+	return fmt.Sprintf(
+		"Kubebuilder:\t%v\n"+
+			"Kubernetes:\t%v\n"+
+			"Git Commit:\t%v\n"+
+			"Build Date:\t%v\n"+
+			"OS/Arch:\t%v/%v",
+		v.KubeBuilderVersion,
+		v.KubernetesVendor,
+		v.GitCommit,
+		v.BuildDate,
+		v.GoOs,
+		v.GoArch)
+}
+
 func (c CLI) newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "version",
