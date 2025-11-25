@@ -190,6 +190,9 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	yamlContent = t.templateVolumeMounts(yamlContent)
 	yamlContent = t.templateVolumes(yamlContent)
 	yamlContent = t.templateControllerManagerArgs(yamlContent)
+	yamlContent = t.templateNodeSelector(yamlContent)
+	yamlContent = t.templateAffinity(yamlContent)
+	yamlContent = t.templateTolerations(yamlContent)
 
 	return yamlContent
 }
@@ -617,6 +620,141 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 		return strings.Join(newLines, "\n")
 	}
 
+	return yamlContent
+}
+
+func (t *HelmTemplater) templateNodeSelector(yamlContent string) string {
+	if !strings.Contains(yamlContent, "nodeSelector:") {
+		return yamlContent
+	}
+	lines := strings.Split(yamlContent, "\n")
+	for i := 0; i < len(lines); i++ {
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "nodeSelector") {
+			continue
+		}
+		end := i + 1
+		trimmed := strings.TrimSpace(lines[i])
+		if len(trimmed) == len("nodeSelector:") {
+			_, indentLen := leadingWhitespace(lines[i])
+			for j := end; j < len(lines); j++ {
+				_, indentLenLine := leadingWhitespace(lines[j])
+				if indentLenLine <= indentLen {
+					end = j
+					break
+				}
+			}
+		}
+
+		indentStr, indentLen := leadingWhitespace(lines[i])
+
+		var builder strings.Builder
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- with .Values.manager.nodeSelector }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("nodeSelector: ")
+		builder.WriteString("{{ toYaml . | nindent ")
+		builder.WriteString(strconv.Itoa(indentLen + 2))
+		builder.WriteString(" }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- end }}\n")
+
+		newBlock := strings.TrimRight(builder.String(), "\n")
+
+		newLines := append([]string{}, lines[:i]...)
+		newLines = append(newLines, strings.Split(newBlock, "\n")...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
+	return yamlContent
+}
+
+func (t *HelmTemplater) templateAffinity(yamlContent string) string {
+	if !strings.Contains(yamlContent, "affinity:") {
+		return yamlContent
+	}
+	lines := strings.Split(yamlContent, "\n")
+	for i := 0; i < len(lines); i++ {
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "affinity") {
+			continue
+		}
+		end := i + 1
+		trimmed := strings.TrimSpace(lines[i])
+		if len(trimmed) == len("affinity:") {
+			_, indentLen := leadingWhitespace(lines[i])
+			for j := end; j < len(lines); j++ {
+				_, indentLenLine := leadingWhitespace(lines[j])
+				if indentLenLine <= indentLen {
+					end = j
+					break
+				}
+			}
+		}
+
+		indentStr, indentLen := leadingWhitespace(lines[i])
+
+		var builder strings.Builder
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- with .Values.manager.affinity }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("affinity: ")
+		builder.WriteString("{{ toYaml . | nindent ")
+		builder.WriteString(strconv.Itoa(indentLen + 2))
+		builder.WriteString(" }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- end }}\n")
+
+		newBlock := strings.TrimRight(builder.String(), "\n")
+
+		newLines := append([]string{}, lines[:i]...)
+		newLines = append(newLines, strings.Split(newBlock, "\n")...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
+	return yamlContent
+}
+
+func (t *HelmTemplater) templateTolerations(yamlContent string) string {
+	if !strings.Contains(yamlContent, "tolerations:") {
+		return yamlContent
+	}
+	lines := strings.Split(yamlContent, "\n")
+	for i := 0; i < len(lines); i++ {
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "tolerations") {
+			continue
+		}
+		end := i + 1
+		trimmed := strings.TrimSpace(lines[i])
+		if len(trimmed) == len("tolerations:") {
+			_, indentLen := leadingWhitespace(lines[i])
+			for j := end; j < len(lines); j++ {
+				_, indentLenLine := leadingWhitespace(lines[j])
+				if indentLenLine <= indentLen {
+					end = j
+					break
+				}
+			}
+		}
+
+		indentStr, indentLen := leadingWhitespace(lines[i])
+
+		var builder strings.Builder
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- with .Values.manager.tolerations }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("tolerations: ")
+		builder.WriteString("{{ toYaml . | nindent ")
+		builder.WriteString(strconv.Itoa(indentLen + 2))
+		builder.WriteString(" }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- end }}\n")
+
+		newBlock := strings.TrimRight(builder.String(), "\n")
+
+		newLines := append([]string{}, lines[:i]...)
+		newLines = append(newLines, strings.Split(newBlock, "\n")...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
 	return yamlContent
 }
 

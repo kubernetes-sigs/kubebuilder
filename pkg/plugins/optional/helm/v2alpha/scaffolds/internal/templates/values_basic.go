@@ -284,6 +284,63 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	} else {
 		f.addDefaultResources(buf)
 	}
+
+	buf.WriteString("  # Pod's affinity\n")
+	if affinity, exists := f.DeploymentConfig["podAffinity"]; exists && affinity != nil {
+		buf.WriteString("  affinity:\n")
+		if affYaml, err := yaml.Marshal(affinity); err == nil {
+			lines := bytes.Split(affYaml, []byte("\n"))
+			for _, line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
+		}
+		buf.WriteString("\n")
+	} else {
+		buf.WriteString("  affinity: {}\n")
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("  # Pod's node selector\n")
+	if nodeSelector, exists := f.DeploymentConfig["podNodeSelector"]; exists && nodeSelector != nil {
+		buf.WriteString("  nodeSelector:\n")
+		if nodYaml, err := yaml.Marshal(nodeSelector); err == nil {
+			lines := bytes.Split(nodYaml, []byte("\n"))
+			for _, line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
+		}
+		buf.WriteString("\n")
+	} else {
+		buf.WriteString("  nodeSelector: {}\n")
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("  # Pod's tolerations\n")
+	if tolerations, exists := f.DeploymentConfig["podTolerations"]; exists && tolerations != nil {
+		buf.WriteString("  tolerations:\n")
+		if tolYaml, err := yaml.Marshal(tolerations); err == nil {
+			lines := bytes.Split(tolYaml, []byte("\n"))
+			for _, line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
+		}
+		buf.WriteString("\n")
+	} else {
+		buf.WriteString("  tolerations: []\n")
+		buf.WriteString("\n")
+	}
 }
 
 // addDefaultDeploymentSections adds default sections when no deployment config is available
