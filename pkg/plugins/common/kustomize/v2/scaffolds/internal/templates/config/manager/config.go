@@ -80,7 +80,7 @@ spec:
       # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
       # build your manager image using the makefile target docker-buildx.
-			affinity: {}
+      affinity: {}
       #   nodeAffinity:
       #     requiredDuringSchedulingIgnoredDuringExecution:
       #       nodeSelectorTerms:
@@ -96,8 +96,8 @@ spec:
       #             operator: In
       #             values:
       #               - linux
-			nodeSelector: {}
-			tolerations: []
+      nodeSelector: {}
+      tolerations: []
       securityContext:
         # Projects are configured by default to adhere to the "restricted" Pod Security Standards.
         # This ensures that deployments meet the highest security requirements for Kubernetes.
