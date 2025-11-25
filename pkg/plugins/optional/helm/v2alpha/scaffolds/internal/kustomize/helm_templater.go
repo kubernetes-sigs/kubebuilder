@@ -190,9 +190,9 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	yamlContent = t.templateVolumeMounts(yamlContent)
 	yamlContent = t.templateVolumes(yamlContent)
 	yamlContent = t.templateControllerManagerArgs(yamlContent)
-	yamlContent = t.templateNodeSelector(yamlContent)
-	yamlContent = t.templateAffinity(yamlContent)
-	yamlContent = t.templateTolerations(yamlContent)
+	yamlContent = t.templateBasicWithStatement(yamlContent, "nodeSelector", ".Values.manager.nodeSelector")
+	yamlContent = t.templateBasicWithStatement(yamlContent, "affinity", ".Values.manager.affinity")
+	yamlContent = t.templateBasicWithStatement(yamlContent, "tolerations", ".Values.manager.tolerations")
 
 	return yamlContent
 }
@@ -623,18 +623,19 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 	return yamlContent
 }
 
-func (t *HelmTemplater) templateNodeSelector(yamlContent string) string {
-	if !strings.Contains(yamlContent, "nodeSelector:") {
+func (t *HelmTemplater) templateBasicWithStatement(yamlContent string, key string, valuePath string) string {
+	yamlKey := fmt.Sprintf("%s:", key)
+	if !strings.Contains(yamlContent, yamlKey) {
 		return yamlContent
 	}
 	lines := strings.Split(yamlContent, "\n")
 	for i := 0; i < len(lines); i++ {
-		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "nodeSelector") {
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), key) {
 			continue
 		}
 		end := i + 1
 		trimmed := strings.TrimSpace(lines[i])
-		if len(trimmed) == len("nodeSelector:") {
+		if len(trimmed) == len(yamlKey) {
 			_, indentLen := leadingWhitespace(lines[i])
 			for j := end; j < len(lines); j++ {
 				_, indentLenLine := leadingWhitespace(lines[j])
@@ -649,100 +650,12 @@ func (t *HelmTemplater) templateNodeSelector(yamlContent string) string {
 
 		var builder strings.Builder
 		builder.WriteString(indentStr)
-		builder.WriteString("{{- with .Values.manager.nodeSelector }}\n")
-		builder.WriteString(indentStr)
-		builder.WriteString("nodeSelector: ")
-		builder.WriteString("{{ toYaml . | nindent ")
-		builder.WriteString(strconv.Itoa(indentLen + 2))
+		builder.WriteString("{{- with ")
+		builder.WriteString(valuePath)
 		builder.WriteString(" }}\n")
 		builder.WriteString(indentStr)
-		builder.WriteString("{{- end }}\n")
-
-		newBlock := strings.TrimRight(builder.String(), "\n")
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, strings.Split(newBlock, "\n")...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
-	}
-	return yamlContent
-}
-
-func (t *HelmTemplater) templateAffinity(yamlContent string) string {
-	if !strings.Contains(yamlContent, "affinity:") {
-		return yamlContent
-	}
-	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
-		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "affinity") {
-			continue
-		}
-		end := i + 1
-		trimmed := strings.TrimSpace(lines[i])
-		if len(trimmed) == len("affinity:") {
-			_, indentLen := leadingWhitespace(lines[i])
-			for j := end; j < len(lines); j++ {
-				_, indentLenLine := leadingWhitespace(lines[j])
-				if indentLenLine <= indentLen {
-					end = j
-					break
-				}
-			}
-		}
-
-		indentStr, indentLen := leadingWhitespace(lines[i])
-
-		var builder strings.Builder
-		builder.WriteString(indentStr)
-		builder.WriteString("{{- with .Values.manager.affinity }}\n")
-		builder.WriteString(indentStr)
-		builder.WriteString("affinity: ")
-		builder.WriteString("{{ toYaml . | nindent ")
-		builder.WriteString(strconv.Itoa(indentLen + 2))
-		builder.WriteString(" }}\n")
-		builder.WriteString(indentStr)
-		builder.WriteString("{{- end }}\n")
-
-		newBlock := strings.TrimRight(builder.String(), "\n")
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, strings.Split(newBlock, "\n")...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
-	}
-	return yamlContent
-}
-
-func (t *HelmTemplater) templateTolerations(yamlContent string) string {
-	if !strings.Contains(yamlContent, "tolerations:") {
-		return yamlContent
-	}
-	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
-		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "tolerations") {
-			continue
-		}
-		end := i + 1
-		trimmed := strings.TrimSpace(lines[i])
-		if len(trimmed) == len("tolerations:") {
-			_, indentLen := leadingWhitespace(lines[i])
-			for j := end; j < len(lines); j++ {
-				_, indentLenLine := leadingWhitespace(lines[j])
-				if indentLenLine <= indentLen {
-					end = j
-					break
-				}
-			}
-		}
-
-		indentStr, indentLen := leadingWhitespace(lines[i])
-
-		var builder strings.Builder
-		builder.WriteString(indentStr)
-		builder.WriteString("{{- with .Values.manager.tolerations }}\n")
-		builder.WriteString(indentStr)
-		builder.WriteString("tolerations: ")
-		builder.WriteString("{{ toYaml . | nindent ")
+		builder.WriteString(yamlKey)
+		builder.WriteString(" {{ toYaml . | nindent ")
 		builder.WriteString(strconv.Itoa(indentLen + 2))
 		builder.WriteString(" }}\n")
 		builder.WriteString(indentStr)
