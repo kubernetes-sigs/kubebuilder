@@ -210,15 +210,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Environment variables\n")
 		buf.WriteString("  env:\n")
 		if envYaml, err := yaml.Marshal(env); err == nil {
-			// Indent the YAML properly
-			lines := bytes.Split(envYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, envYaml)
 		} else {
 			buf.WriteString("    []\n")
 		}
@@ -233,14 +225,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Pod-level security settings\n")
 		buf.WriteString("  podSecurityContext:\n")
 		if secYaml, err := yaml.Marshal(podSecCtx); err == nil {
-			lines := bytes.Split(secYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, secYaml)
 		}
 		buf.WriteString("\n")
 	} else {
@@ -252,14 +237,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Container-level security settings\n")
 		buf.WriteString("  securityContext:\n")
 		if secYaml, err := yaml.Marshal(secCtx); err == nil {
-			lines := bytes.Split(secYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, secYaml)
 		}
 		buf.WriteString("\n")
 	} else {
@@ -271,14 +249,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Resource limits and requests\n")
 		buf.WriteString("  resources:\n")
 		if resYaml, err := yaml.Marshal(resources); err == nil {
-			lines := bytes.Split(resYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, resYaml)
 		}
 		buf.WriteString("\n")
 	} else {
@@ -289,14 +260,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	if affinity, exists := f.DeploymentConfig["podAffinity"]; exists && affinity != nil {
 		buf.WriteString("  affinity:\n")
 		if affYaml, err := yaml.Marshal(affinity); err == nil {
-			lines := bytes.Split(affYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, affYaml)
 		}
 		buf.WriteString("\n")
 	} else {
@@ -308,14 +272,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	if nodeSelector, exists := f.DeploymentConfig["podNodeSelector"]; exists && nodeSelector != nil {
 		buf.WriteString("  nodeSelector:\n")
 		if nodYaml, err := yaml.Marshal(nodeSelector); err == nil {
-			lines := bytes.Split(nodYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, nodYaml)
 		}
 		buf.WriteString("\n")
 	} else {
@@ -327,19 +284,23 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	if tolerations, exists := f.DeploymentConfig["podTolerations"]; exists && tolerations != nil {
 		buf.WriteString("  tolerations:\n")
 		if tolYaml, err := yaml.Marshal(tolerations); err == nil {
-			lines := bytes.Split(tolYaml, []byte("\n"))
-			for _, line := range lines {
-				if len(line) > 0 {
-					buf.WriteString("    ")
-					buf.Write(line)
-					buf.WriteString("\n")
-				}
-			}
+			f.IndentYamlProperly(buf, tolYaml)
 		}
 		buf.WriteString("\n")
 	} else {
 		buf.WriteString("  tolerations: []\n")
 		buf.WriteString("\n")
+	}
+}
+
+func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) {
+	lines := bytes.Split(envYaml, []byte("\n"))
+	for _, line := range lines {
+		if len(line) > 0 {
+			buf.WriteString("    ")
+			buf.Write(line)
+			buf.WriteString("\n")
+		}
 	}
 }
 
