@@ -189,7 +189,7 @@ func bulletList(items []string) string {
 
 // FirstURL is a helper to grab the first URL-looking token from gh stdout
 func FirstURL(s string) string {
-	for _, f := range strings.Fields(s) {
+	for f := range strings.FieldsSeq(s) {
 		if strings.HasPrefix(f, "http://") || strings.HasPrefix(f, "https://") {
 			// trim common trailing punctuation
 			return strings.TrimRight(f, ").,")
@@ -214,7 +214,7 @@ func listChangedFiles(base, head string) (src []string, gen []string) {
 	if err != nil {
 		return nil, nil // best-effort
 	}
-	for _, p := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for p := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		p = strings.TrimSpace(p)
 		if p == "" {
 			continue
@@ -531,10 +531,7 @@ func concatSelectedDiffs(base, head string, files []string, perFileLineCap, tota
 				break
 			}
 			// Trim last section to fit remaining budget
-			cut := remaining
-			if cut > len(section) {
-				cut = len(section)
-			}
+			cut := min(remaining, len(section))
 			b.WriteString(section[:cut])
 			b.WriteString("\n... [global diff budget reached] ...\n")
 			break

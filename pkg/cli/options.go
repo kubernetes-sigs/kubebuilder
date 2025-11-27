@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -193,12 +194,7 @@ func parseExternalPluginArgs() (args []string) {
 
 // isHostSupported checks whether the host system is supported or not.
 func isHostSupported(host string) bool {
-	for _, platform := range supportedPlatforms {
-		if host == platform {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(supportedPlatforms, host)
 }
 
 // getPluginsRoot gets the plugin root path.

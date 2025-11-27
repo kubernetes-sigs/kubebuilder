@@ -201,7 +201,7 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "env:" {
 			continue
 		}
@@ -254,7 +254,7 @@ func (t *HelmTemplater) templateResources(yamlContent string) string {
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "resources:" {
 			continue
 		}
@@ -332,7 +332,7 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "securityContext:" {
 			continue
 		}
@@ -390,7 +390,7 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "securityContext:" {
 			continue
 		}
@@ -416,10 +416,7 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 			continue
 		}
 
-		lookAheadEnd := end + 5
-		if lookAheadEnd > len(lines) {
-			lookAheadEnd = len(lines)
-		}
+		lookAheadEnd := min(end+5, len(lines))
 		joined := strings.Join(lines[i:lookAheadEnd], "\n")
 		if strings.Contains(joined, ".Values.manager.securityContext") {
 			return yamlContent
@@ -706,12 +703,13 @@ func (t *HelmTemplater) makeWebhookVolumesConditional(yamlContent string) string
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})
@@ -744,12 +742,13 @@ func (t *HelmTemplater) makeWebhookVolumeMountsConditional(yamlContent string) s
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})
@@ -780,12 +779,13 @@ func (t *HelmTemplater) makeMetricsVolumesConditional(yamlContent string) string
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})
@@ -823,12 +823,13 @@ func (t *HelmTemplater) makeMetricsVolumeMountsConditional(yamlContent string) s
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})
