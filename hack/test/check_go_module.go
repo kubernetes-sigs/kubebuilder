@@ -75,7 +75,7 @@ func checkFilePaths() error {
 	}
 
 	var invalidPaths []string
-	for _, line := range strings.Split(string(out), "\n") {
+	for line := range strings.SplitSeq(string(out), "\n") {
 		path := strings.TrimSpace(line)
 		if path == "" {
 			continue
@@ -140,14 +140,14 @@ func readGoModInfo() (modulePath, goVersion string, err error) {
 		line := strings.TrimSpace(sc.Text())
 
 		// Read module path from first line
-		if strings.HasPrefix(line, "module ") {
-			modulePath = strings.TrimSpace(strings.TrimPrefix(line, "module "))
+		if after, ok := strings.CutPrefix(line, "module "); ok {
+			modulePath = strings.TrimSpace(after)
 			log.Info("Found module path", "module", modulePath)
 		}
 
 		// Read Go version
-		if strings.HasPrefix(line, "go ") {
-			goVersion = strings.TrimSpace(strings.TrimPrefix(line, "go "))
+		if after, ok := strings.CutPrefix(line, "go "); ok {
+			goVersion = strings.TrimSpace(after)
 			log.Info("Found Go version", "version", goVersion)
 		}
 

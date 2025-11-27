@@ -18,6 +18,7 @@ package resource
 
 import (
 	"fmt"
+	"slices"
 )
 
 // Webhooks contains information about scaffolded webhooks
@@ -146,10 +147,8 @@ func (webhooks Webhooks) IsEmpty() bool {
 // AddSpoke adds a new spoke version to the Webhooks configuration.
 func (webhooks *Webhooks) AddSpoke(version string) {
 	// Ensure the version is not already present
-	for _, v := range webhooks.Spoke {
-		if v == version {
-			return
-		}
+	if slices.Contains(webhooks.Spoke, version) {
+		return
 	}
 	webhooks.Spoke = append(webhooks.Spoke, version)
 }

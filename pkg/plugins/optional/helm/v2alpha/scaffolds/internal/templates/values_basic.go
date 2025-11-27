@@ -35,7 +35,7 @@ type HelmValuesBasic struct {
 	machinery.ProjectNameMixin
 
 	// DeploymentConfig stores extracted deployment configuration (env, resources, security contexts)
-	DeploymentConfig map[string]interface{}
+	DeploymentConfig map[string]any
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
 	// Force if true allows overwriting the scaffolded file
@@ -76,7 +76,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 	imageTag := "latest"
 	imagePullPolicy := "IfNotPresent"
 	if f.DeploymentConfig != nil {
-		if imgCfg, ok := f.DeploymentConfig["image"].(map[string]interface{}); ok {
+		if imgCfg, ok := f.DeploymentConfig["image"].(map[string]any); ok {
 			if repo, ok := imgCfg["repository"].(string); ok && repo != "" {
 				imageRepo = repo
 			}
@@ -211,8 +211,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  env:\n")
 		if envYaml, err := yaml.Marshal(env); err == nil {
 			// Indent the YAML properly
-			lines := bytes.Split(envYaml, []byte("\n"))
-			for _, line := range lines {
+			lines := bytes.SplitSeq(envYaml, []byte("\n"))
+			for line := range lines {
 				if len(line) > 0 {
 					buf.WriteString("    ")
 					buf.Write(line)
@@ -233,8 +233,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Pod-level security settings\n")
 		buf.WriteString("  podSecurityContext:\n")
 		if secYaml, err := yaml.Marshal(podSecCtx); err == nil {
-			lines := bytes.Split(secYaml, []byte("\n"))
-			for _, line := range lines {
+			lines := bytes.SplitSeq(secYaml, []byte("\n"))
+			for line := range lines {
 				if len(line) > 0 {
 					buf.WriteString("    ")
 					buf.Write(line)
@@ -252,8 +252,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Container-level security settings\n")
 		buf.WriteString("  securityContext:\n")
 		if secYaml, err := yaml.Marshal(secCtx); err == nil {
-			lines := bytes.Split(secYaml, []byte("\n"))
-			for _, line := range lines {
+			lines := bytes.SplitSeq(secYaml, []byte("\n"))
+			for line := range lines {
 				if len(line) > 0 {
 					buf.WriteString("    ")
 					buf.Write(line)
@@ -271,8 +271,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Resource limits and requests\n")
 		buf.WriteString("  resources:\n")
 		if resYaml, err := yaml.Marshal(resources); err == nil {
-			lines := bytes.Split(resYaml, []byte("\n"))
-			for _, line := range lines {
+			lines := bytes.SplitSeq(resYaml, []byte("\n"))
+			for line := range lines {
 				if len(line) > 0 {
 					buf.WriteString("    ")
 					buf.Write(line)

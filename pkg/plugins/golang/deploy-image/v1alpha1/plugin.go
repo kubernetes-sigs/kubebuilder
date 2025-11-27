@@ -61,7 +61,7 @@ type ResourceData struct {
 	Domain  string  `json:"domain,omitempty"`
 	Version string  `json:"version"`
 	Kind    string  `json:"kind"`
-	Options options `json:"options,omitempty"`
+	Options options `json:"options"`
 }
 
 type options struct {

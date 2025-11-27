@@ -147,8 +147,8 @@ func (w *ChartWriter) generateFileName(resource *unstructured.Unstructured, inde
 		// Remove project prefix from the filename for cleaner file names
 		projectPrefix := w.templater.projectName + "-"
 		fileName := name
-		if strings.HasPrefix(name, projectPrefix) {
-			fileName = strings.TrimPrefix(name, projectPrefix)
+		if after, ok := strings.CutPrefix(name, projectPrefix); ok {
+			fileName = after
 		}
 
 		// Handle special cases where filename might be empty after prefix removal
