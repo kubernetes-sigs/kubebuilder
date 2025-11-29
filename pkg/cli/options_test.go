@@ -80,7 +80,43 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(plgPath).To(Equal(fmt.Sprintf("%s/.config/kubebuilder/plugins", homePath)))
 			})
 
-			It("should return error when the host is not darwin / linux", func() {
+			// It("should return error when the host is not darwin / linux", func() {
+			It("should return the correct path for the windows OS with LOCALAPPDATA", func() {
+				originalLocalAppData := os.Getenv("LOCALAPPDATA")
+				defer func() {
+					if originalLocalAppData != "" {
+						os.Setenv("LOCALAPPDATA", originalLocalAppData)
+					} else {
+						os.Unsetenv("LOCALAPPDATA")
+					}
+				}()
+
+				testPath := filepath.Join("C:", "Users", "TestUser", "AppData", "Local")
+				err := os.Setenv("LOCALAPPDATA", testPath)
+				Expect(err).ToNot(HaveOccurred())
+
+				plgPath, err := getPluginsRoot("windows")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(plgPath).To(Equal(filepath.Join(testPath, "kubebuilder", "plugins")))
+			})
+
+			It("should return the correct path for the windows OS without LOCALAPPDATA", func() {
+				originalLocalAppData := os.Getenv("LOCALAPPDATA")
+				defer func() {
+					if originalLocalAppData != "" {
+						os.Setenv("LOCALAPPDATA", originalLocalAppData)
+					}
+				}()
+
+				err := os.Unsetenv("LOCALAPPDATA")
+				Expect(err).ToNot(HaveOccurred())
+
+				plgPath, err := getPluginsRoot("windows")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(plgPath).To(ContainSubstring(filepath.Join("AppData", "Local", "kubebuilder", "plugins")))
+			})
+
+			It("should return error when the host is not darwin / linux / windows", func() {
 				plgPath, err := getPluginsRoot("random")
 				Expect(plgPath).To(Equal(""))
 				Expect(err).To(HaveOccurred())
@@ -122,7 +158,14 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(plgPath).To(Equal(fmt.Sprintf("%s/kubebuilder/plugins", xdghome)))
 			})
 
-			It("should return error when the host is not darwin / linux", func() {
+			// It("should return error when the host is not darwin / linux", func() {
+            It("should return the user given path for windows OS", func() {
+				plgPath, err := getPluginsRoot("windows")
+				Expect(plgPath).To(Equal(customPath))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should report error when the host is not darwin / linux / windows", func() {
 				plgPath, err := getPluginsRoot("random")
 				Expect(plgPath).To(Equal(""))
 				Expect(err).To(HaveOccurred())
