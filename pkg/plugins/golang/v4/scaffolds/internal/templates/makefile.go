@@ -118,14 +118,14 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook paths="$(CONTROLLER_GEN_PATHS)" output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	{{ if .BoilerplatePath -}}
-	"$(CONTROLLER_GEN)" object:headerFile={{printf "%q" .BoilerplatePath}} paths="./..."
+	"$(CONTROLLER_GEN)" object:headerFile={{printf "%q" .BoilerplatePath}} paths="$(CONTROLLER_GEN_PATHS)"
 	{{- else -}}
-	"$(CONTROLLER_GEN)" object paths="./..."
+	"$(CONTROLLER_GEN)" object paths="$(CONTROLLER_GEN_PATHS)"
 	{{- end }}
 
 .PHONY: fmt
@@ -253,17 +253,72 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 ##@ Dependencies
 
 ## Location to install dependencies to
-LOCALBIN ?= $(shell pwd)/bin
+LOCALBIN ?= $(CURDIR)/bin
+
+# WINDOWS_CYGWIN_FIX: Convert Cygwin/Git Bash paths to Windows paths for Go tools
+# This is necessary because:
+# - Cygwin make uses /cygdrive/c/... paths (CYGWIN_NT)
+# - Git Bash (MINGW64) uses /c/... paths (MINGW64_NT) but make might use /cygdrive/c/...
+# - Windows Go expects C:/... paths
+# We handle both formats with two sed expressions
+define convert-to-windows-path
+$(shell echo "$(1)" | sed -e 's|^/cygdrive/\([a-z]\)|\1:|' -e 's|^/\([a-z]\)/|\1:/|' 2>/dev/null || echo "$(1)")
+endef
+
+# WINDOWS_CYGWIN_FIX: Convert Windows path to MINGW/Cygwin path for shell commands
+# In MINGW64, we need /d/path format, not /cygdrive/d/path
+define convert-to-mingw-path
+$(shell echo "$(1)" | sed -e 's|^/cygdrive/\([a-z]\)|\1:|' -e 's|^\([a-z]\):|/\1|' 2>/dev/null || echo "$(1)")
+endef
+
+# WINDOWS_CYGWIN_FIX: Detect if we're in MINGW/Cygwin environment
+UNAME_S := $(shell uname -s 2>/dev/null || echo "")
+IS_MINGW := $(shell echo "$(UNAME_S)" | grep -qi mingw && echo "yes" || echo "")
+IS_CYGWIN := $(shell echo "$(UNAME_S)" | grep -qi cygwin && echo "yes" || echo "")
+
+LOCALBIN_FOR_GO := $(call convert-to-windows-path,$(LOCALBIN))
+
+# WINDOWS_CYGWIN_FIX: For MINGW64, convert paths for shell commands
+ifeq ($(IS_MINGW),yes)
+LOCALBIN_FOR_SHELL := $(call convert-to-mingw-path,$(LOCALBIN))
+else
+LOCALBIN_FOR_SHELL := $(LOCALBIN)
+endif
+
 $(LOCALBIN):
 	mkdir -p "$(LOCALBIN)"
 
 ## Tool Binaries
 KUBECTL ?= kubectl
 KIND ?= kind
+# WINDOWS_CYGWIN_FIX: Add .exe extension on Windows and use correct path format
+ifeq ($(OS),Windows_NT)
+KUSTOMIZE ?= $(LOCALBIN_FOR_SHELL)/kustomize.exe
+CONTROLLER_GEN ?= $(LOCALBIN_FOR_SHELL)/controller-gen.exe
+ENVTEST ?= $(LOCALBIN_FOR_SHELL)/setup-envtest.exe
+GOLANGCI_LINT = $(LOCALBIN_FOR_SHELL)/golangci-lint.exe
+else ifeq ($(IS_MINGW),yes)
+KUSTOMIZE ?= $(LOCALBIN_FOR_SHELL)/kustomize.exe
+CONTROLLER_GEN ?= $(LOCALBIN_FOR_SHELL)/controller-gen.exe
+ENVTEST ?= $(LOCALBIN_FOR_SHELL)/setup-envtest.exe
+GOLANGCI_LINT = $(LOCALBIN_FOR_SHELL)/golangci-lint.exe
+else ifeq ($(IS_CYGWIN),yes)
+KUSTOMIZE ?= $(LOCALBIN)/kustomize.exe
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen.exe
+ENVTEST ?= $(LOCALBIN)/setup-envtest.exe
+GOLANGCI_LINT = $(LOCALBIN)/golangci-lint.exe
+else
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+endif
+
+# WINDOWS_CYGWIN_FIX: Get Go module name for controller-gen paths
+# On Windows/Cygwin, controller-gen cannot resolve relative paths like "./..." correctly
+# because it's a Windows binary running in a Cygwin environment. We use the module name instead.
+GO_MODULE := $(shell go list -m 2>/dev/null || echo "")
+CONTROLLER_GEN_PATHS := $(if $(GO_MODULE),$(GO_MODULE)/...,./...)
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= {{ .KustomizeVersion }}
@@ -283,12 +338,12 @@ GOLANGCI_LINT_VERSION ?= {{ .GolangciLintVersion }}
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
-	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+	@$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
+	@$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 .PHONY: setup-envtest
 setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
@@ -301,27 +356,34 @@ setup-envtest: envtest ## Download the binaries required for ENVTEST in the loca
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
+	@$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	@$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
-# $1 - target path with name of binary
+# $1 - target path with name of binary (may include .exe extension in MINGW/Cygwin)
 # $2 - package url which can be installed
 # $3 - specific version of package
 define go-install-tool
-@[ -f "$(1)-$(3)" ] && [ "$$(readlink -- "$(1)" 2>/dev/null)" = "$(1)-$(3)" ] || { \
+@[ -f "$(1)-$(3)" ] || [ -f "$(1)-$(3).exe" ] || { \
 set -e; \
 package=$(2)@$(3) ;\
 echo "Downloading $${package}" ;\
-rm -f "$(1)" ;\
-GOBIN="$(LOCALBIN)" go install $${package} ;\
-mv "$(LOCALBIN)/$$(basename "$(1)")" "$(1)-$(3)" ;\
-} ;\
-ln -sf "$$(realpath "$(1)-$(3)")" "$(1)"
+rm -f "$(1)" "$(1).exe" "$(1)-$(3)" "$(1)-$(3).exe" ;\
+GOBIN="$(LOCALBIN_FOR_GO)" go install $${package} ;\
+binary_name=$$(basename "$(1)" .exe) ;\
+bin_dir=$$(dirname "$(1)") ;\
+if [ -f "$${bin_dir}/$${binary_name}.exe" ]; then \
+	mv "$${bin_dir}/$${binary_name}.exe" "$${bin_dir}/$${binary_name}-$(3).exe" ;\
+	cp "$${bin_dir}/$${binary_name}-$(3).exe" "$${bin_dir}/$${binary_name}.exe" ;\
+elif [ -f "$${bin_dir}/$${binary_name}" ]; then \
+	mv "$${bin_dir}/$${binary_name}" "$${bin_dir}/$${binary_name}-$(3)" ;\
+	ln -sf "$${binary_name}-$(3)" "$${bin_dir}/$${binary_name}" 2>/dev/null || cp "$${bin_dir}/$${binary_name}-$(3)" "$${bin_dir}/$${binary_name}" ;\
+fi ;\
+}
 endef
 
 define gomodver
