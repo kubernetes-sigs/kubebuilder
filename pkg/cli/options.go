@@ -236,6 +236,15 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	case "linux":
 		slog.Debug("Detected host is Linux.")
 		pluginsRoot = filepath.Join(".config", pluginsRelativePath)
+	case "windows":
+		slog.Debug("Detected host is Windows.")
+		// Use LOCALAPPDATA for Windows plugin storage
+		localAppData := os.Getenv("LOCALAPPDATA")
+		if localAppData != "" {
+			return filepath.Join(localAppData, pluginsRelativePath), nil
+		}
+		// Fallback to user home directory if LOCALAPPDATA is not set
+		pluginsRoot = filepath.Join("AppData", "Local", pluginsRelativePath)
 	}
 
 	userHomeDir, err := os.UserHomeDir()
