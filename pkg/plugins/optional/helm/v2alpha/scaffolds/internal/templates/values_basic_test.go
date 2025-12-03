@@ -159,6 +159,9 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("resources:"))
 			Expect(content).To(ContainSubstring("cpu: 100m"))
 			Expect(content).To(ContainSubstring("memory: 128Mi"))
+			Expect(content).To(ContainSubstring("affinity: {}"))
+			Expect(content).To(ContainSubstring("nodeSelector: {}"))
+			Expect(content).To(ContainSubstring("tolerations: []"))
 		})
 	})
 

@@ -190,6 +190,9 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	yamlContent = t.templateVolumeMounts(yamlContent)
 	yamlContent = t.templateVolumes(yamlContent)
 	yamlContent = t.templateControllerManagerArgs(yamlContent)
+	yamlContent = t.templateBasicWithStatement(yamlContent, "nodeSelector", ".Values.manager.nodeSelector")
+	yamlContent = t.templateBasicWithStatement(yamlContent, "affinity", ".Values.manager.affinity")
+	yamlContent = t.templateBasicWithStatement(yamlContent, "tolerations", ".Values.manager.tolerations")
 
 	return yamlContent
 }
@@ -617,6 +620,54 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 		return strings.Join(newLines, "\n")
 	}
 
+	return yamlContent
+}
+
+func (t *HelmTemplater) templateBasicWithStatement(yamlContent string, key string, valuePath string) string {
+	yamlKey := fmt.Sprintf("%s:", key)
+	if !strings.Contains(yamlContent, yamlKey) {
+		return yamlContent
+	}
+	lines := strings.Split(yamlContent, "\n")
+	for i := 0; i < len(lines); i++ {
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), key) {
+			continue
+		}
+		end := i + 1
+		trimmed := strings.TrimSpace(lines[i])
+		if len(trimmed) == len(yamlKey) {
+			_, indentLen := leadingWhitespace(lines[i])
+			for j := end; j < len(lines); j++ {
+				_, indentLenLine := leadingWhitespace(lines[j])
+				if indentLenLine <= indentLen {
+					end = j
+					break
+				}
+			}
+		}
+
+		indentStr, indentLen := leadingWhitespace(lines[i])
+
+		var builder strings.Builder
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- with ")
+		builder.WriteString(valuePath)
+		builder.WriteString(" }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString(yamlKey)
+		builder.WriteString(" {{ toYaml . | nindent ")
+		builder.WriteString(strconv.Itoa(indentLen + 2))
+		builder.WriteString(" }}\n")
+		builder.WriteString(indentStr)
+		builder.WriteString("{{- end }}\n")
+
+		newBlock := strings.TrimRight(builder.String(), "\n")
+
+		newLines := append([]string{}, lines[:i]...)
+		newLines = append(newLines, strings.Split(newBlock, "\n")...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
 	return yamlContent
 }
 

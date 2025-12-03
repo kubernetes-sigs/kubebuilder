@@ -105,6 +105,9 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 	}
 
 	extractPodSecurityContext(specMap, config)
+	extractPodNodeSelector(specMap, config)
+	extractPodTolerations(specMap, config)
+	extractPodAffinity(specMap, config)
 
 	container := firstManagerContainer(specMap)
 	if container == nil {
@@ -147,6 +150,48 @@ func extractPodSecurityContext(specMap map[string]interface{}, config map[string
 	}
 
 	config["podSecurityContext"] = podSecurityContext
+}
+
+func extractPodNodeSelector(specMap map[string]interface{}, config map[string]interface{}) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "nodeSelector")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.(map[string]interface{})
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podNodeSelector"] = result
+}
+
+func extractPodTolerations(specMap map[string]interface{}, config map[string]interface{}) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "tolerations")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.([]interface{})
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podTolerations"] = result
+}
+
+func extractPodAffinity(specMap map[string]interface{}, config map[string]interface{}) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "affinity")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.(map[string]interface{})
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podAffinity"] = result
 }
 
 func firstManagerContainer(specMap map[string]interface{}) map[string]interface{} {
