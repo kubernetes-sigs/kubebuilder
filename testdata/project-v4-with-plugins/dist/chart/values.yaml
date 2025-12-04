@@ -18,6 +18,9 @@ manager:
     - name: MEMCACHED_IMAGE
       value: memcached:1.6.26-alpine3.19
 
+  # Image pull secrets
+  imagePullSecrets: []
+
   # Pod-level security settings
   podSecurityContext:
     runAsNonRoot: true
