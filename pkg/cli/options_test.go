@@ -539,12 +539,19 @@ var _ = Describe("CLI options", func() {
 	})
 
 	Context("WithVersion", func() {
-		It("should use the provided version string", func() {
-			version := "Version: 0.0.0"
-			c, err = newCLI(WithVersion(version))
+		It("should use the provided version struct", func() {
+			version := Version{
+				KubeBuilderVersion: "123",
+				KubernetesVendor:   "123",
+				GitCommit:          "asdf1324",
+				BuildDate:          "2025-11-19",
+				GoOs:               "os123",
+				GoArch:             "arch123",
+			}
+			c, err = newCLI(WithVersion(&version))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
-			Expect(c.version).To(Equal(version))
+			Expect(c.version).To(Equal(&version))
 		})
 	})
 
