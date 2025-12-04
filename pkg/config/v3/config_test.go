@@ -195,7 +195,7 @@ var _ = Describe("Cfg", func() {
 
 		DescribeTable("ResourcesLength should return the number of resources",
 			func(n int) {
-				for i := 0; i < n; i++ {
+				for range n {
 					c.Resources = append(c.Resources, resWithoutPlural)
 				}
 				Expect(c.ResourcesLength()).To(Equal(n))
@@ -379,7 +379,7 @@ var _ = Describe("Cfg", func() {
 				Name:        name,
 				PluginChain: pluginChain,
 				Plugins: pluginConfigs{
-					key: map[string]interface{}{
+					key: map[string]any{
 						"data-1": "",
 					},
 				},
@@ -391,7 +391,7 @@ var _ = Describe("Cfg", func() {
 				Name:        name,
 				PluginChain: pluginChain,
 				Plugins: pluginConfigs{
-					key: map[string]interface{}{
+					key: map[string]any{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
 					},
@@ -508,10 +508,10 @@ var _ = Describe("Cfg", func() {
 					},
 				},
 				Plugins: pluginConfigs{
-					"plugin-x": map[string]interface{}{
+					"plugin-x": map[string]any{
 						"data-1": "single plugin datum",
 					},
-					"plugin-y/v1": map[string]interface{}{
+					"plugin-y/v1": map[string]any{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
 						"data-3": []string{"plugin value 3", "plugin value 4"},

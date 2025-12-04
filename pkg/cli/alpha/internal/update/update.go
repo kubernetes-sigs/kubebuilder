@@ -583,8 +583,8 @@ func envWithPrefixedPath(dir string) []string {
 	env := os.Environ()
 	prefix := "PATH="
 	for i, kv := range env {
-		if strings.HasPrefix(kv, prefix) {
-			env[i] = "PATH=" + dir + string(os.PathListSeparator) + strings.TrimPrefix(kv, prefix)
+		if after, ok := strings.CutPrefix(kv, prefix); ok {
+			env[i] = "PATH=" + dir + string(os.PathListSeparator) + after
 			return env
 		}
 	}

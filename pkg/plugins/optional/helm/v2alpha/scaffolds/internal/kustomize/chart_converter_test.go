@@ -127,26 +127,26 @@ var _ = Describe("ChartConverter", func() {
 	Context("ExtractDeploymentConfig", func() {
 		It("should extract deployment configuration correctly", func() {
 			// Set up deployment with environment variables
-			containers := []interface{}{
-				map[string]interface{}{
+			containers := []any{
+				map[string]any{
 					"name":            "manager",
 					"image":           "controller:latest",
 					"imagePullPolicy": "IfNotPresent",
-					"args": []interface{}{
+					"args": []any{
 						"--metrics-bind-address=:8443",
 						"--leader-elect",
 						"--custom-flag=value",
 						"--health-probe-bind-address=:8081",
 						"--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs",
 					},
-					"env": []interface{}{
-						map[string]interface{}{
+					"env": []any{
+						map[string]any{
 							"name":  "TEST_ENV",
 							"value": "test-value",
 						},
 					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "100m",
 							"memory": "128Mi",
 						},
@@ -169,13 +169,13 @@ var _ = Describe("ChartConverter", func() {
 			Expect(config).To(HaveKey("resources"))
 			Expect(config).To(HaveKey("args"))
 
-			imageConfig, ok := config["image"].(map[string]interface{})
+			imageConfig, ok := config["image"].(map[string]any)
 			Expect(ok).To(BeTrue())
 			Expect(imageConfig["repository"]).To(Equal("controller"))
 			Expect(imageConfig["tag"]).To(Equal("latest"))
 			Expect(imageConfig["pullPolicy"]).To(Equal("IfNotPresent"))
 
-			args, ok := config["args"].([]interface{})
+			args, ok := config["args"].([]any)
 			Expect(ok).To(BeTrue())
 			Expect(args).To(ContainElement("--leader-elect"))
 			Expect(args).To(ContainElement("--custom-flag=value"))
@@ -185,11 +185,11 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should extract port configurations from args", func() {
 			// Set up deployment with port-related args
-			containers := []interface{}{
-				map[string]interface{}{
+			containers := []any{
+				map[string]any{
 					"name":  "manager",
 					"image": "controller:latest",
-					"args": []interface{}{
+					"args": []any{
 						"--metrics-bind-address=:8443",
 						"--health-probe-bind-address=:8081",
 						"--leader-elect",
@@ -213,12 +213,12 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should extract webhook port from container ports", func() {
 			// Set up deployment with webhook container port
-			containers := []interface{}{
-				map[string]interface{}{
+			containers := []any{
+				map[string]any{
 					"name":  "manager",
 					"image": "controller:latest",
-					"ports": []interface{}{
-						map[string]interface{}{
+					"ports": []any{
+						map[string]any{
 							"containerPort": int64(9443),
 							"name":          "webhook-server",
 							"protocol":      "TCP",
@@ -242,16 +242,16 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should extract custom port values", func() {
 			// Set up deployment with custom ports
-			containers := []interface{}{
-				map[string]interface{}{
+			containers := []any{
+				map[string]any{
 					"name":  "manager",
 					"image": "controller:latest",
-					"args": []interface{}{
+					"args": []any{
 						"--metrics-bind-address=:9090",
 						"--health-probe-bind-address=:9091",
 					},
-					"ports": []interface{}{
-						map[string]interface{}{
+					"ports": []any{
+						map[string]any{
 							"containerPort": int64(9444),
 							"name":          "webhook-server",
 							"protocol":      "TCP",

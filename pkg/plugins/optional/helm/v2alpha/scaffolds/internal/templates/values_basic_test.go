@@ -32,7 +32,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
 				HasWebhooks:      true,
-				DeploymentConfig: map[string]interface{}{},
+				DeploymentConfig: map[string]any{},
 			}
 			valuesTemplate.InjectProjectName("test-project")
 			err := valuesTemplate.SetTemplateDefaults()
@@ -62,7 +62,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
 				HasWebhooks:      false,
-				DeploymentConfig: map[string]interface{}{},
+				DeploymentConfig: map[string]any{},
 			}
 			valuesTemplate.InjectProjectName("test-project")
 			err := valuesTemplate.SetTemplateDefaults()
@@ -114,23 +114,23 @@ var _ = Describe("HelmValuesBasic", func() {
 
 	Context("with deployment configuration", func() {
 		BeforeEach(func() {
-			deploymentConfig := map[string]interface{}{
-				"args": []interface{}{
+			deploymentConfig := map[string]any{
+				"args": []any{
 					"--leader-elect",
 				},
-				"env": []interface{}{
-					map[string]interface{}{
+				"env": []any{
+					map[string]any{
 						"name":  "TEST_ENV",
 						"value": "test-value",
 					},
 				},
-				"image": map[string]interface{}{
+				"image": map[string]any{
 					"repository": "example.com/custom-controller",
 					"tag":        "v1.2.3",
 					"pullPolicy": "Always",
 				},
-				"resources": map[string]interface{}{
-					"limits": map[string]interface{}{
+				"resources": map[string]any{
+					"limits": map[string]any{
 						"cpu":    "100m",
 						"memory": "128Mi",
 					},
@@ -165,12 +165,12 @@ var _ = Describe("HelmValuesBasic", func() {
 	Context("with complex env variables", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
-				DeploymentConfig: map[string]interface{}{
-					"env": []interface{}{
-						map[string]interface{}{
+				DeploymentConfig: map[string]any{
+					"env": []any{
+						map[string]any{
 							"name": "POD_NAMESPACE",
-							"valueFrom": map[string]interface{}{
-								"fieldRef": map[string]interface{}{
+							"valueFrom": map[string]any{
+								"fieldRef": map[string]any{
 									"fieldPath": "metadata.namespace",
 								},
 							},
@@ -224,7 +224,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      true,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()
@@ -259,7 +259,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		Context("with custom ports extracted from deployment", func() {
 			BeforeEach(func() {
-				deploymentConfig := map[string]interface{}{
+				deploymentConfig := map[string]any{
 					"webhookPort": 9444,
 					"metricsPort": 9090,
 				}
@@ -296,7 +296,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		Context("with partial custom ports", func() {
 			BeforeEach(func() {
-				deploymentConfig := map[string]interface{}{
+				deploymentConfig := map[string]any{
 					"metricsPort": 9090,
 					// webhookPort not provided - should use default
 				}
@@ -328,7 +328,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      false,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()
@@ -353,7 +353,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      true,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()

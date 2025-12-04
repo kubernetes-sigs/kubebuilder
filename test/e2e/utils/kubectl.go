@@ -128,8 +128,8 @@ func (vi *VersionInfo) parseVersionInts() (err error) {
 
 // KubernetesVersion holds a subset of both client and server versions.
 type KubernetesVersion struct {
-	ClientVersion VersionInfo `json:"clientVersion,omitempty"`
-	ServerVersion VersionInfo `json:"serverVersion,omitempty"`
+	ClientVersion VersionInfo `json:"clientVersion"`
+	ServerVersion VersionInfo `json:"serverVersion"`
 }
 
 func (v *KubernetesVersion) prepare() error {

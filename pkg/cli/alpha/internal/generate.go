@@ -661,7 +661,7 @@ func kubebuilderHelmEdit(isV2Alpha bool) error {
 // hasHelmPlugin checks if any Helm plugin (v1alpha or v2alpha) is present by inspecting
 // the plugin chain or configuration.
 func hasHelmPlugin(cfg store.Store) (bool, bool) {
-	var pluginConfig map[string]interface{}
+	var pluginConfig map[string]any
 
 	// Check for v2alpha first (preferred)
 	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &pluginConfig)

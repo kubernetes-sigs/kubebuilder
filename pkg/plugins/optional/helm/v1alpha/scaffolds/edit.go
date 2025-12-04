@@ -194,8 +194,8 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 			fmt.Errorf("failed to read %q: %w", manifestFile, err)
 	}
 
-	docs := strings.Split(string(content), "---")
-	for _, doc := range docs {
+	docs := strings.SplitSeq(string(content), "---")
+	for doc := range docs {
 		var webhookConfig struct {
 			Kind     string `yaml:"kind"`
 			Webhooks []struct {
