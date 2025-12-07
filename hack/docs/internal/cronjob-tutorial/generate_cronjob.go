@@ -367,15 +367,6 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 		os.Exit(1)
 	}`, mainEnableWebhook)
 	hackutils.CheckError("fixing main.go", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
-}`, `
-// +kubebuilder:docs-gen:collapse=Remaining code from main.go`)
-	hackutils.CheckError("fixing main.go", err)
 }
 
 func (sp *Sample) updateMakefile() {
