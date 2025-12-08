@@ -109,7 +109,7 @@ func getGitIndexConflicts() []string {
 	}
 
 	conflicts := make(map[string]bool)
-	for _, line := range strings.Split(string(out), "\n") {
+	for line := range strings.SplitSeq(string(out), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) >= 4 {
 			file := strings.Join(fields[3:], " ")

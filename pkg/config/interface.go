@@ -94,10 +94,10 @@ type Config interface {
 
 	// DecodePluginConfig decodes a plugin config stored in Config into configObj, which must be a pointer.
 	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
-	DecodePluginConfig(key string, configObj interface{}) error
+	DecodePluginConfig(key string, configObj any) error
 	// EncodePluginConfig encodes a config object into Config by overwriting the existing object stored under key.
 	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
-	EncodePluginConfig(key string, configObj interface{}) error
+	EncodePluginConfig(key string, configObj any) error
 
 	/* Persistence */
 
