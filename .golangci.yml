@@ -16,6 +16,7 @@ linters:
     - importas
     - ineffassign
     - lll
+    - modernize
     - misspell
     - nakedret
     - nolintlint
@@ -52,6 +53,12 @@ linters:
           alias: golangv4
         - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2
           alias: kustomizecommonv2
+    modernize:
+      disable:
+      # Suggest replacing omitempty with omitzero for struct fields.
+      # Disable this check for now since it introduces too many changes in our existing codebase.
+      # See https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#hdr-Analyzer_omitzero for more details.
+        - omitzero
     nolintlint:
       allow-unused: false
     revive:

@@ -201,7 +201,7 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "env:" {
 			continue
 		}
@@ -254,7 +254,7 @@ func (t *HelmTemplater) templateResources(yamlContent string) string {
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "resources:" {
 			continue
 		}
@@ -332,7 +332,7 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "securityContext:" {
 			continue
 		}
@@ -390,7 +390,7 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "securityContext:" {
 			continue
 		}
@@ -416,10 +416,7 @@ func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) str
 			continue
 		}
 
-		lookAheadEnd := end + 5
-		if lookAheadEnd > len(lines) {
-			lookAheadEnd = len(lines)
-		}
+		lookAheadEnd := min(end+5, len(lines))
 		joined := strings.Join(lines[i:lookAheadEnd], "\n")
 		if strings.Contains(joined, ".Values.manager.securityContext") {
 			return yamlContent
@@ -684,37 +681,40 @@ func (t *HelmTemplater) makeContainerArgsConditional(yamlContent string) string 
 	return yamlContent
 }
 
+func makeYamlContent(match string) string {
+	lines := strings.Split(match, "\n")
+	if len(lines) > 0 {
+		indent := ""
+		if len(lines[0]) > 0 && lines[0][0] == ' ' {
+			// Count leading spaces
+			for _, char := range lines[0] {
+				if char == ' ' {
+					indent += " "
+				} else {
+					break
+				}
+			}
+		}
+
+		// Reconstruct the block with conditional wrapper
+		var result strings.Builder
+		result.WriteString(fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent))
+		for _, line := range lines {
+			result.WriteString(line + "\n")
+		}
+		result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+		return result.String()
+	}
+	return match
+}
+
 // makeWebhookVolumesConditional makes webhook volumes conditional on certManager.enable
 func (t *HelmTemplater) makeWebhookVolumesConditional(yamlContent string) string {
 	// Make webhook volumes conditional on certManager.enable
 	if strings.Contains(yamlContent, "webhook-certs") && strings.Contains(yamlContent, "secretName: webhook-server-cert") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		volumePattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*webhook-certs[\s\S]*?secretName:\s*webhook-server-cert`)
-		yamlContent = volumePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-			lines := strings.Split(match, "\n")
-			if len(lines) > 0 {
-				indent := ""
-				if len(lines[0]) > 0 && lines[0][0] == ' ' {
-					// Count leading spaces
-					for _, char := range lines[0] {
-						if char == ' ' {
-							indent += " "
-						} else {
-							break
-						}
-					}
-				}
-
-				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent)
-				for _, line := range lines {
-					result += line + "\n"
-				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
-			}
-			return match
-		})
+		yamlContent = volumePattern.ReplaceAllStringFunc(yamlContent, makeYamlContent)
 	}
 
 	return yamlContent
@@ -728,31 +728,7 @@ func (t *HelmTemplater) makeWebhookVolumeMountsConditional(yamlContent string) s
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		mountPattern := regexp.MustCompile(
 			`([ \t]+)-\s*mountPath:\s*/tmp/k8s-webhook-server/serving-certs[\s\S]*?readOnly:\s*true`)
-		yamlContent = mountPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-			lines := strings.Split(match, "\n")
-			if len(lines) > 0 {
-				indent := ""
-				if len(lines[0]) > 0 && lines[0][0] == ' ' {
-					// Count leading spaces
-					for _, char := range lines[0] {
-						if char == ' ' {
-							indent += " "
-						} else {
-							break
-						}
-					}
-				}
-
-				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent)
-				for _, line := range lines {
-					result += line + "\n"
-				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
-			}
-			return match
-		})
+		yamlContent = mountPattern.ReplaceAllStringFunc(yamlContent, makeYamlContent)
 	}
 
 	return yamlContent
@@ -780,12 +756,13 @@ func (t *HelmTemplater) makeMetricsVolumesConditional(yamlContent string) string
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})
@@ -823,12 +800,13 @@ func (t *HelmTemplater) makeMetricsVolumeMountsConditional(yamlContent string) s
 				}
 
 				// Reconstruct the block with conditional wrapper
-				result := fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				var result strings.Builder
+				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
 				for _, line := range lines {
-					result += line + "\n"
+					result.WriteString(line + "\n")
 				}
-				result += fmt.Sprintf("%s{{- end }}", indent)
-				return result
+				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				return result.String()
 			}
 			return match
 		})

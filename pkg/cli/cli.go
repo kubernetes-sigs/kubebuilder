@@ -240,7 +240,7 @@ func isAlphaGenerateCommand(args []string) bool {
 	positional := []string{}
 	skip := false
 
-	for i := 0; i < len(args); i++ {
+	for i := range args {
 		arg := args[i]
 
 		// Skip flags and their values

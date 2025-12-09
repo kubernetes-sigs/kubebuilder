@@ -78,7 +78,7 @@ type Cfg struct {
 type pluginConfigs map[string]pluginConfig
 
 // pluginConfig is an arbitrary plugin configuration object.
-type pluginConfig interface{}
+type pluginConfig any
 
 // New returns a new config.Config
 func New() config.Config {
@@ -309,7 +309,7 @@ func (c Cfg) ListWebhookVersions() []string {
 }
 
 // DecodePluginConfig implements config.Config
-func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
+func (c Cfg) DecodePluginConfig(key string, configObj any) error {
 	if len(c.Plugins) == 0 {
 		return config.PluginKeyNotFoundError{Key: key}
 	}
@@ -330,13 +330,13 @@ func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
 }
 
 // EncodePluginConfig will return an error if used on any project version < v3.
-func (c *Cfg) EncodePluginConfig(key string, configObj interface{}) error {
+func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 	// Get object's bytes and set them under key in extra fields.
 	b, err := yaml.Marshal(configObj)
 	if err != nil {
 		return fmt.Errorf("failed to convert %T object to bytes: %w", configObj, err)
 	}
-	var fields map[string]interface{}
+	var fields map[string]any
 	if err := yaml.Unmarshal(b, &fields); err != nil {
 		return fmt.Errorf("failed to unmarshal %T object bytes: %w", configObj, err)
 	}

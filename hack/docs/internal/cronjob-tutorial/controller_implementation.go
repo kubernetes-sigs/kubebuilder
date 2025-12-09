@@ -27,6 +27,7 @@ than those scaffolded for us.  We'll talk about each one when we use it.
 const controllerImport = `import (
 	"context"
 	"fmt"
+	"maps"
 	"sort"
 	"time"
 
@@ -591,13 +592,9 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			},
 			Spec: *cronJob.Spec.JobTemplate.Spec.DeepCopy(),
 		}
-		for k, v := range cronJob.Spec.JobTemplate.Annotations {
-			job.Annotations[k] = v
-		}
+		maps.Copy(job.Annotations, cronJob.Spec.JobTemplate.Annotations)
 		job.Annotations[scheduledTimeAnnotation] = scheduledTime.Format(time.RFC3339)
-		for k, v := range cronJob.Spec.JobTemplate.Labels {
-			job.Labels[k] = v
-		}
+		maps.Copy(job.Labels, cronJob.Spec.JobTemplate.Labels)
 		if err := ctrl.SetControllerReference(cronJob, job, r.Scheme); err != nil {
 			return nil, err
 		}

@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -167,7 +168,7 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 			return fmt.Errorf("error marshaling config: %w", err)
 		}
 
-		var configMap map[string]interface{}
+		var configMap map[string]any
 		if err = yaml.Unmarshal(configData, &configMap); err != nil {
 			return fmt.Errorf("error unmarshaling config to map: %w", err)
 		}
@@ -320,14 +321,9 @@ var (
 	// they are already bound by kubebuilder
 	gvkArgFilter = func(arg string) bool {
 		arg = strings.Replace(arg, "--", "", 1)
-		for _, invalidFlagName := range []string{
+		return !slices.Contains([]string{
 			"group", "version", "kind",
-		} {
-			if arg == invalidFlagName {
-				return false
-			}
-		}
-		return true
+		}, arg)
 	}
 
 	// see helpArgFilter

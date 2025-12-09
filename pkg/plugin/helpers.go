@@ -19,6 +19,7 @@ package plugin
 import (
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -48,10 +49,8 @@ func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
 	pluginKey := KeyFor(p)
 
 	// Try exact match first
-	for _, key := range pluginChain {
-		if key == pluginKey {
-			return pluginKey
-		}
+	if slices.Contains(pluginChain, pluginKey) {
+		return pluginKey
 	}
 
 	// No exact match. Try matching by base name + version to find bundled plugins.
