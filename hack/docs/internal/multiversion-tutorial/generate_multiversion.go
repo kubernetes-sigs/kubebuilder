@@ -682,24 +682,6 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 	*/`,
 	)
 	hackutils.CheckError("replace webhook setup explanation main.go", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, path),
-		`setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
-}`, `
-// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
-	)
-	hackutils.CheckError("update main.go with final collapse marker", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, path),
-		`// +kubebuilder:docs-gen:collapse=Remaining code from main.go
-
-// +kubebuilder:docs-gen:collapse=Remaining code from main.go`, ``,
-	)
-	hackutils.CheckError("update main.go to remove final collapses", err)
 }
 
 func (sp *Sample) updateAPIV2() {

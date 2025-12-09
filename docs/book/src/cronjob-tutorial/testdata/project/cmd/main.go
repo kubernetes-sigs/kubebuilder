@@ -240,5 +240,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-// +kubebuilder:docs-gen:collapse=Remaining code from main.go
