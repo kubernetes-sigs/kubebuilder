@@ -183,6 +183,7 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	// Template configuration fields
 	yamlContent = t.templateImageReference(yamlContent)
 	yamlContent = t.templateEnvironmentVariables(yamlContent)
+	yamlContent = t.templateImagePullSecrets(yamlContent)
 	yamlContent = t.templatePodSecurityContext(yamlContent)
 	yamlContent = t.templateContainerSecurityContext(yamlContent)
 	yamlContent = t.templateResources(yamlContent)
@@ -322,6 +323,57 @@ func (t *HelmTemplater) templateVolumeMounts(yamlContent string) string {
 func (t *HelmTemplater) templateVolumes(yamlContent string) string {
 	// For webhook volumes, we keep them as-is since they're required for webhook functionality
 	// They will be conditionally included based on webhook configuration
+	return yamlContent
+}
+
+// templateImagePullSecrets exposes imagePullSecrets via values.yaml
+func (t *HelmTemplater) templateImagePullSecrets(yamlContent string) string {
+	if !strings.Contains(yamlContent, "imagePullSecrets:") {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	for i := range lines {
+		// Use prefix to allow `imagePullSecrets: []` to be preserved
+		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "imagePullSecrets:") {
+			continue
+		}
+		indentStr, indentLen := leadingWhitespace(lines[i])
+		end := i + 1
+		for ; end < len(lines); end++ {
+			trimmed := strings.TrimSpace(lines[end])
+			if trimmed == "" {
+				break
+			}
+			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
+			if lineIndent < indentLen {
+				break
+			}
+			if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
+				break
+			}
+		}
+
+		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.imagePullSecrets") {
+			return yamlContent
+		}
+
+		childIndent := indentStr + "  "
+		childIndentWidth := strconv.Itoa(len(childIndent))
+
+		block := []string{
+			indentStr + "{{- if .Values.manager.imagePullSecrets }}",
+			indentStr + "imagePullSecrets:",
+			childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
+			indentStr + "{{- end }}",
+		}
+
+		newLines := append([]string{}, lines[:i]...)
+		newLines = append(newLines, block...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
+
 	return yamlContent
 }
 

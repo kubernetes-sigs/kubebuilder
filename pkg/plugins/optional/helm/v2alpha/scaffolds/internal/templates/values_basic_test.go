@@ -55,6 +55,7 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
 	})
 
@@ -84,6 +85,7 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
 	})
 
@@ -159,6 +161,33 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("resources:"))
 			Expect(content).To(ContainSubstring("cpu: 100m"))
 			Expect(content).To(ContainSubstring("memory: 128Mi"))
+		})
+	})
+
+	Context("with multiple imagePullSecrets", func() {
+		BeforeEach(func() {
+			valuesTemplate = &HelmValuesBasic{
+				DeploymentConfig: map[string]any{
+					"imagePullSecrets": []any{
+						map[string]any{
+							"name": "test-secret",
+						},
+						map[string]any{
+							"name": "test-secret2",
+						},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-private-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should render multiple imagePullSecrets", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("imagePullSecrets:"))
+			Expect(content).To(ContainSubstring("- name: test-secret"))
+			Expect(content).To(ContainSubstring("- name: test-secret2"))
 		})
 	})
 
