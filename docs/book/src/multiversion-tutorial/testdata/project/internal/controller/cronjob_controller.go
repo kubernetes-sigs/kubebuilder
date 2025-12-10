@@ -26,7 +26,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/robfig/cron"
@@ -373,11 +373,19 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// NB: deleting these are "best effort" -- if we fail on a particular one,
 	// we won't requeue just to finish the deleting.
 	if cronJob.Spec.FailedJobsHistoryLimit != nil {
-		sort.Slice(failedJobs, func(i, j int) bool {
-			if failedJobs[i].Status.StartTime == nil {
-				return failedJobs[j].Status.StartTime != nil
+		slices.SortStableFunc(failedJobs, func(a, b *kbatch.Job) int {
+			aStartTime := a.Status.StartTime
+			bStartTime := b.Status.StartTime
+			if aStartTime == nil && bStartTime != nil {
+				return 1
 			}
-			return failedJobs[i].Status.StartTime.Before(failedJobs[j].Status.StartTime)
+
+			if aStartTime.Before(bStartTime) {
+				return -1
+			} else if bStartTime.Before(aStartTime) {
+				return 1
+			}
+			return 0
 		})
 		for i, job := range failedJobs {
 			if int32(i) >= int32(len(failedJobs))-*cronJob.Spec.FailedJobsHistoryLimit {
@@ -392,11 +400,19 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if cronJob.Spec.SuccessfulJobsHistoryLimit != nil {
-		sort.Slice(successfulJobs, func(i, j int) bool {
-			if successfulJobs[i].Status.StartTime == nil {
-				return successfulJobs[j].Status.StartTime != nil
+		slices.SortStableFunc(successfulJobs, func(a, b *kbatch.Job) int {
+			aStartTime := a.Status.StartTime
+			bStartTime := b.Status.StartTime
+			if aStartTime == nil && bStartTime != nil {
+				return 1
 			}
-			return successfulJobs[i].Status.StartTime.Before(successfulJobs[j].Status.StartTime)
+
+			if aStartTime.Before(bStartTime) {
+				return -1
+			} else if bStartTime.Before(aStartTime) {
+				return 1
+			}
+			return 0
 		})
 		for i, job := range successfulJobs {
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {

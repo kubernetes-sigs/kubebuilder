@@ -18,7 +18,7 @@ package cli
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -101,6 +101,6 @@ func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
 	for version := range versionSet {
 		projectVersions = append(projectVersions, strconv.Quote(version.String()))
 	}
-	sort.Strings(projectVersions)
+	slices.Sort(projectVersions)
 	return projectVersions
 }

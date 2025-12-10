@@ -24,7 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -83,8 +83,8 @@ func FindConflictFiles() ConflictResult {
 		}
 	}
 
-	sort.Strings(result.SourceFiles)
-	sort.Strings(result.GeneratedFiles)
+	slices.Sort(result.SourceFiles)
+	slices.Sort(result.GeneratedFiles)
 
 	// Build summary for existing conflict.go usage
 	result.Summary = ConflictSummary{

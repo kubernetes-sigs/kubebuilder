@@ -17,7 +17,7 @@ limitations under the License.
 package plugin
 
 import (
-	"sort"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -178,8 +178,8 @@ var _ = Describe("CommonSupportedProjectVersions", func() {
 			{plugins: []Plugin{p1, p2, p3, p4}, versions: []config.Version{}},
 		} {
 			versions := CommonSupportedProjectVersions(tc.plugins...)
-			sort.Slice(versions, func(i int, j int) bool {
-				return versions[i].Compare(versions[j]) == -1
+			slices.SortStableFunc(versions, func(a, b config.Version) int {
+				return a.Compare(b)
 			})
 			Expect(versions).To(Equal(tc.versions))
 		}
