@@ -161,6 +161,76 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("resources:"))
 			Expect(content).To(ContainSubstring("cpu: 100m"))
 			Expect(content).To(ContainSubstring("memory: 128Mi"))
+			Expect(content).To(ContainSubstring("affinity: {}"))
+			Expect(content).To(ContainSubstring("nodeSelector: {}"))
+			Expect(content).To(ContainSubstring("tolerations: []"))
+		})
+	})
+
+	Context("with nodeSelector, affinity and tolerations configuration", func() {
+		BeforeEach(func() {
+			deploymentConfig := map[string]any{
+				"podNodeSelector": map[string]string{
+					"kubernetes.io/os": "linux",
+				},
+				"podTolerations": []map[string]string{
+					{
+						"key":      "key1",
+						"operator": "Equal",
+						"effect":   "NoSchedule",
+					},
+				},
+				"podAffinity": map[string]any{
+					"nodeAffinity": map[string]any{
+						"requiredDuringSchedulingIgnoredDuringExecution": map[string]any{
+							"nodeSelectorTerms": []any{
+								map[string]any{
+									"matchExpressions": []any{
+										map[string]any{
+											"key":      "topology.kubernetes.io/zone",
+											"operator": "In",
+											"values":   []string{"antarctica-east1", "antarctica-east2"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks:      false,
+				DeploymentConfig: deploymentConfig,
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should include default values", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring(`  # Manager pod's node selector
+  nodeSelector:
+    kubernetes.io/os: linux`))
+
+			Expect(content).To(ContainSubstring(`  # Manager pod's tolerations
+  tolerations:
+    - effect: NoSchedule
+      key: key1
+      operator: Equal`))
+
+			Expect(content).To(ContainSubstring(`  # Manager pod's affinity
+  affinity:
+    nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+                - matchExpressions:
+                    - key: topology.kubernetes.io/zone
+                      operator: In
+                      values:
+                        - antarctica-east1
+                        - antarctica-east2`))
 		})
 	})
 

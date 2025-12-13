@@ -191,6 +191,24 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	yamlContent = t.templateVolumeMounts(yamlContent)
 	yamlContent = t.templateVolumes(yamlContent)
 	yamlContent = t.templateControllerManagerArgs(yamlContent)
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"nodeSelector",
+		"spec.template.spec",
+		".Values.manager.nodeSelector",
+	)
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"affinity",
+		"spec.template.spec",
+		".Values.manager.affinity",
+	)
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"tolerations",
+		"spec.template.spec",
+		".Values.manager.tolerations",
+	)
 
 	return yamlContent
 }
@@ -667,6 +685,88 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 	}
 
 	return yamlContent
+}
+
+func (t *HelmTemplater) templateBasicWithStatement(
+	yamlContent string,
+	key string,
+	parentKey string,
+	valuePath string,
+) string {
+	lines := strings.Split(yamlContent, "\n")
+	yamlKey := fmt.Sprintf("%s:", key)
+
+	var start, end int
+	var indentLen int
+	if !strings.Contains(yamlContent, yamlKey) {
+		// Find parent block start if the key is missing
+		pKeyParts := strings.Split(parentKey, ".")
+		pKeyIdx := 0
+		pKeyInit := false
+		currIndent := 0
+		for i := range len(lines) {
+			_, lineIndent := leadingWhitespace(lines[i])
+			if pKeyInit && lineIndent <= currIndent {
+				return yamlContent
+			}
+			if !strings.HasPrefix(strings.TrimSpace(lines[i]), pKeyParts[pKeyIdx]) {
+				continue
+			}
+
+			// Parent key part found
+			pKeyIdx++
+			pKeyInit = true
+			if pKeyIdx >= len(pKeyParts) {
+				start = i + 1
+				end = start
+				break
+			}
+		}
+		_, indentLen = leadingWhitespace(lines[start])
+	} else {
+		// Find the existing block
+		for i := range len(lines) {
+			if !strings.HasPrefix(strings.TrimSpace(lines[i]), key) {
+				continue
+			}
+			start = i
+			end = i + 1
+			trimmed := strings.TrimSpace(lines[i])
+			if len(trimmed) == len(yamlKey) {
+				_, indentLenSearch := leadingWhitespace(lines[i])
+				for j := end; j < len(lines); j++ {
+					_, indentLenLine := leadingWhitespace(lines[j])
+					if indentLenLine <= indentLenSearch {
+						end = j
+						break
+					}
+				}
+			}
+		}
+		_, indentLen = leadingWhitespace(lines[start])
+	}
+
+	indentStr := strings.Repeat(" ", indentLen)
+
+	var builder strings.Builder
+	builder.WriteString(indentStr)
+	builder.WriteString("{{- with ")
+	builder.WriteString(valuePath)
+	builder.WriteString(" }}\n")
+	builder.WriteString(indentStr)
+	builder.WriteString(yamlKey)
+	builder.WriteString(" {{ toYaml . | nindent ")
+	builder.WriteString(strconv.Itoa(indentLen + 4))
+	builder.WriteString(" }}\n")
+	builder.WriteString(indentStr)
+	builder.WriteString("{{- end }}\n")
+
+	newBlock := strings.TrimRight(builder.String(), "\n")
+
+	newLines := append([]string{}, lines[:start]...)
+	newLines = append(newLines, strings.Split(newBlock, "\n")...)
+	newLines = append(newLines, lines[end:]...)
+	return strings.Join(newLines, "\n")
 }
 
 // makeWebhookAnnotationsConditional makes only cert-manager annotations conditional, not the entire webhook
