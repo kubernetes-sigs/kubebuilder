@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"golang.org/x/mod/semver"
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 )
 
 const (
@@ -48,28 +49,20 @@ var (
 	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 )
 
-// version contains all the information related to the CLI version
-type version struct {
-	KubeBuilderVersion string `json:"kubeBuilderVersion"`
-	KubernetesVendor   string `json:"kubernetesVendor"`
-	GitCommit          string `json:"gitCommit"`
-	BuildDate          string `json:"buildDate"`
-	GoOs               string `json:"goOs"`
-	GoArch             string `json:"goArch"`
-}
-
 // versionString returns the Full CLI version
-func versionString() string {
+func versionStruct() *cli.Version {
 	kubeBuilderVersion = getKubebuilderVersion()
 
-	return fmt.Sprintf("Version: %#v", version{
-		kubeBuilderVersion,
-		kubernetesVendorVersion,
-		gitCommit,
-		buildDate,
-		goos,
-		goarch,
-	})
+	version := cli.Version{
+		KubeBuilderVersion: kubeBuilderVersion,
+		KubernetesVendor:   kubernetesVendorVersion,
+		GitCommit:          gitCommit,
+		BuildDate:          buildDate,
+		GoOs:               goos,
+		GoArch:             goarch,
+	}
+
+	return &version
 }
 
 // getKubebuilderVersion returns only the CLI version string
