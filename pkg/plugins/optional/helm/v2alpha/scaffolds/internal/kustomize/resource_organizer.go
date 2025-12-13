@@ -83,6 +83,12 @@ func (o *ResourceOrganizer) OrganizeByFunction() map[string][]*unstructured.Unst
 		groups["other"] = o.resources.Other
 	}
 
+	// Generic Services - Services that are neither webhook nor metrics
+	genericServices := o.collectGenericServices()
+	if len(genericServices) > 0 {
+		groups["services"] = genericServices
+	}
+
 	return groups
 }
 
@@ -150,6 +156,18 @@ func (o *ResourceOrganizer) collectMetricsResources() []*unstructured.Unstructur
 	return metricsResources
 }
 
+// collectGenericServices gathers all other service resources
+func (o *ResourceOrganizer) collectGenericServices() []*unstructured.Unstructured {
+	var generic []*unstructured.Unstructured
+
+	for _, service := range o.resources.Services {
+		if o.isGenericService(service) {
+			generic = append(generic, service)
+		}
+	}
+	return generic
+}
+
 // collectPrometheusResources gathers prometheus related resources
 func (o *ResourceOrganizer) collectPrometheusResources() []*unstructured.Unstructured {
 	var prometheusResources []*unstructured.Unstructured
@@ -170,4 +188,10 @@ func (o *ResourceOrganizer) isWebhookService(service *unstructured.Unstructured)
 func (o *ResourceOrganizer) isMetricsService(service *unstructured.Unstructured) bool {
 	serviceName := service.GetName()
 	return strings.Contains(serviceName, "metrics")
+}
+
+// isGenericService determines if a service is a generic service to
+// include all remaining Services that are not webhook or metrics
+func (o *ResourceOrganizer) isGenericService(service *unstructured.Unstructured) bool {
+	return !o.isWebhookService(service) && !o.isMetricsService(service)
 }
