@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"path"
 	"slices"
-	"sort"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -161,8 +160,8 @@ func CommonSupportedProjectVersions(plugins ...Plugin) []config.Version {
 	}
 
 	// Sort the output to guarantee consistency
-	sort.Slice(supportedProjectVersions, func(i int, j int) bool {
-		return supportedProjectVersions[i].Compare(supportedProjectVersions[j]) == -1
+	slices.SortStableFunc(supportedProjectVersions, func(a, b config.Version) int {
+		return a.Compare(b)
 	})
 
 	return supportedProjectVersions

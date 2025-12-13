@@ -7,6 +7,7 @@ linters:
     - asciicheck
     - bidichk
     - copyloopvar
+    - depguard
     - dupl
     - errcheck
     - ginkgolinter
@@ -29,6 +30,12 @@ linters:
     - wrapcheck
     - whitespace
   settings:
+    depguard:
+      rules:
+        forbid-pkg-errors:
+          deny:
+            - pkg: sort
+              desc: Should be replaced with slices package
     ginkgolinter:
       forbid-focus-container: true
       forbid-spec-pollution: true

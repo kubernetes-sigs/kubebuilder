@@ -17,7 +17,7 @@ limitations under the License.
 package v3
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -314,7 +314,7 @@ var _ = Describe("Cfg", func() {
 				},
 			)
 			versions := c.ListCRDVersions()
-			sort.Strings(versions) // ListCRDVersions has no order guarantee so sorting for reproducibility
+			slices.Sort(versions) // ListCRDVersions has no order guarantee so sorting for reproducibility
 			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
 		})
 
@@ -342,7 +342,7 @@ var _ = Describe("Cfg", func() {
 				},
 			)
 			versions := c.ListWebhookVersions()
-			sort.Strings(versions) // ListWebhookVersions has no order guarantee so sorting for reproducibility
+			slices.Sort(versions) // ListWebhookVersions has no order guarantee so sorting for reproducibility
 			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
 		})
 	})

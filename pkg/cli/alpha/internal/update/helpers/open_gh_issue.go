@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -225,8 +225,8 @@ func listChangedFiles(base, head string) (src []string, gen []string) {
 			src = append(src, p)
 		}
 	}
-	sort.Strings(src)
-	sort.Strings(gen)
+	slices.Sort(src)
+	slices.Sort(gen)
 	return src, gen
 }
 
@@ -500,12 +500,12 @@ func concatSelectedDiffs(base, head string, files []string, perFileLineCap, tota
 			candidates = append(candidates, p)
 		}
 	}
-	sort.Slice(candidates, func(i, j int) bool {
-		pi, pj := filePriority(candidates[i]), filePriority(candidates[j])
+	slices.SortStableFunc(candidates, func(a, b string) int {
+		pi, pj := filePriority(a), filePriority(b)
 		if pi != pj {
-			return pi < pj
+			return pi - pj
 		}
-		return candidates[i] < candidates[j] // stable alphabetical within same priority
+		return strings.Compare(a, b) // stable alphabetical within same priority
 	})
 
 	// Emit diffs until the global budget is hit
