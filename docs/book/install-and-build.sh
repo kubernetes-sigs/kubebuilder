@@ -85,7 +85,7 @@ go install sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERS
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
-gobin=${GOBIN:-$(go env GOPATH)/bin} # GOBIN won't always be set :-/
+gobin=${gobin:-$(go env GOPATH)/bin} # GOBIN won't always be set :-/
 
 export PATH=${gobin}:$PATH
 verb=${1:-build}
