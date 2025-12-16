@@ -175,6 +175,7 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&templates.Readme{CommandName: s.commandName},
+		&templates.Agents{CommandName: s.commandName},
 		&templates.Golangci{},
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},
