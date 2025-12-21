@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/v4
 
-go 1.24.6
+go 1.25.3
 
 retract v4.10.0 // invalid filename causes go get/install failure (#5211)
 
