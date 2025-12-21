@@ -77,7 +77,7 @@ curl -fL -o /tmp/mdbook.${ext} "${MDBOOK_URL}"
 ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
-CONTROLLER_GEN_VERSION="v0.19.0"
+CONTROLLER_GEN_VERSION="v0.20.0"
 
 echo "grabbing the controller-gen version: ${CONTROLLER_GEN_VERSION}"
 go version
