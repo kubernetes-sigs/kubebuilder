@@ -65,6 +65,7 @@ linters:
     - unconvert
     - unparam
     - unused
+    - kubeapilinter
   settings:
     revive:
       rules:
@@ -73,6 +74,17 @@ linters:
     modernize:
       disable:
         - omitzero
+    custom:
+      kubeapilinter:
+        type: module
+        description: "Kube API Linter plugin"
+        original-url: "sigs.k8s.io/kube-api-linter"
+        settings:
+          linters: {}
+          lintersConfig:
+            optionalfields:
+              pointers:
+                preference: WhenRequired
   exclusions:
     generated: lax
     rules:
@@ -83,6 +95,9 @@ linters:
           - dupl
           - lll
         path: internal/*
+      - path-except: "^api/"
+        linters:
+          - kubeapilinter
     paths:
       - third_party$
       - builtin$
