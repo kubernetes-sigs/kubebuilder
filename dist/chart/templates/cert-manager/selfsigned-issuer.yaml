@@ -1,0 +1,12 @@
+{{- if .Values.certManager.enable }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ .Release.Name }}
+    name: {{ include "chart.name" . }}-selfsigned-issuer
+    namespace: {{ .Release.Namespace }}
+spec:
+    selfSigned: {}
+{{- end }}
