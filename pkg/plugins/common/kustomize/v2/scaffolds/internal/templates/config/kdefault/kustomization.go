@@ -260,6 +260,32 @@ patches:
 #         delimiter: '/'
 #         index: 1
 #         create: true
+replacements:
+  - source:
+      kind: Issuer
+      group: cert-manager.io
+      version: v1
+      name: selfsigned-issuer
+      fieldPath: .metadata.name
+    targets:
+      - select:
+          kind: Certificate
+          group: cert-manager.io
+          version: v1
+          name: serving-cert
+        fieldPaths:
+          - .spec.issuerRef.name
+        options:
+          create: true
+      - select:
+          kind: Certificate
+          group: cert-manager.io
+          version: v1
+          name: metrics-certs
+        fieldPaths:
+          - .spec.issuerRef.name
+        options:
+          create: true
 
 # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
