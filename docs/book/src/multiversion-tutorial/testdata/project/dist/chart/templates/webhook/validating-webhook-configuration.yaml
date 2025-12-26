@@ -3,15 +3,15 @@ kind: ValidatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-serving-cert
+        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.namePrefix }}-serving-cert
         {{- end }}
-    name: project-validating-webhook-configuration
+    name: {{ .Values.namePrefix }}-validating-webhook-configuration
 webhooks:
     - admissionReviewVersions:
         - v1
       clientConfig:
         service:
-            name: project-webhook-service
+            name: {{ .Values.namePrefix }}-webhook-service
             namespace: {{ .Release.Namespace }}
             path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
       failurePolicy: Fail
@@ -31,7 +31,7 @@ webhooks:
         - v1
       clientConfig:
         service:
-            name: project-webhook-service
+            name: {{ .Values.namePrefix }}-webhook-service
             namespace: {{ .Release.Namespace }}
             path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
       failurePolicy: Fail

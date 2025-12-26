@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
     annotations:
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-serving-cert
+        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.namePrefix }}-serving-cert
         controller-gen.kubebuilder.io/version: v0.20.0
     name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
@@ -12,7 +12,7 @@ spec:
         webhook:
             clientConfig:
                 service:
-                    name: project-webhook-service
+                    name: {{ .Values.namePrefix }}-webhook-service
                     namespace: {{ .Release.Namespace }}
                     path: /convert
             conversionReviewVersions:

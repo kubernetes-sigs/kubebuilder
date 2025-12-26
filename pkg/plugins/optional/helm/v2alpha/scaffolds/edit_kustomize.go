@@ -110,7 +110,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		}
 	}
 	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
-	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), s.outputDir)
+	chartConverter := kustomize.NewChartConverter(resources, namePrefix, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files
@@ -127,6 +127,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			DeploymentConfig: deploymentConfig,
 			OutputDir:        s.outputDir,
 			Force:            s.force,
+			NamePrefix:       namePrefix,
 		},
 		&templates.HelmIgnore{OutputDir: s.outputDir},       // .helmignore file
 		&charttemplates.HelmHelpers{OutputDir: s.outputDir}, // _helpers.tpl template functions
