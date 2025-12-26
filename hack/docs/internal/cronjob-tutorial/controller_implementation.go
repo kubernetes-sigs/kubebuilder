@@ -140,7 +140,18 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			return ctrl.Result{}, err
 		}
 
-		// Re-fetch the CronJob after updating the status
+		/*
+		After updating the status, we re-fetch the CronJob to ensure we are working with
+		the latest version of the object from the API server.
+		
+		Kubernetes uses optimistic concurrency, meaning that any update (including a
+		status update) may change the resource version. If we continue reconciliation
+		with a stale copy, subsequent updates may fail with a conflict such as:
+		"the object has been modified; please apply your changes to the latest version and try again".
+		
+		By re-fetching here, we keep our reconciliation logic in sync with the actual
+		cluster state and avoid unnecessary conflicts and requeues.
+		*/
 		if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
 			log.Error(err, "Failed to re-fetch CronJob")
 			return ctrl.Result{}, err
@@ -157,6 +168,15 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	var childJobs kbatch.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
+		/*
+		Before updating, ensure we have the latest state of the resource to avoid
+		conflict errors (e.g. "the object has been modified") that would re-trigger
+		the reconcile loop.
+		*/
+		if fetchErr := r.Get(ctx, req.NamespacedName, &cronJob); fetchErr != nil {
+			log.Error(fetchErr, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, fetchErr
+		}
 		// Update status condition to reflect the error
 		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
 			Type:    typeDegradedCronJob,
@@ -504,6 +524,10 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	missedRun, nextRun, err := getNextSchedule(&cronJob, r.Now())
 	if err != nil {
 		log.Error(err, "unable to figure out CronJob schedule")
+		if fetchErr := r.Get(ctx, req.NamespacedName, &cronJob); fetchErr != nil {
+			log.Error(fetchErr, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, fetchErr
+		}
 		// Update status condition to reflect the schedule error
 		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
 			Type:    typeDegradedCronJob,
@@ -544,6 +568,10 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 	if tooLate {
 		log.V(1).Info("missed starting deadline for last run, sleeping till next")
+		if fetchErr := r.Get(ctx, req.NamespacedName, &cronJob); fetchErr != nil {
+			log.Error(fetchErr, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, fetchErr
+		}
 		// Update status condition to reflect missed deadline
 		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
 			Type:    typeDegradedCronJob,
@@ -630,6 +658,10 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	// ...and create it on the cluster
 	if err := r.Create(ctx, job); err != nil {
 		log.Error(err, "unable to create Job for CronJob", "job", job)
+		if fetchErr := r.Get(ctx, req.NamespacedName, &cronJob); fetchErr != nil {
+			log.Error(fetchErr, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, fetchErr
+		}
 		// Update status condition to reflect the error
 		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
 			Type:    typeDegradedCronJob,
@@ -645,6 +677,10 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 
 	log.V(1).Info("created Job for CronJob run", "job", job)
 
+	if fetchErr := r.Get(ctx, req.NamespacedName, &cronJob); fetchErr != nil {
+		log.Error(fetchErr, "Failed to re-fetch CronJob")
+		return ctrl.Result{}, fetchErr
+	}
 	// Update status condition to reflect successful job creation
 	meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{
 		Type:    typeProgressingCronJob,
