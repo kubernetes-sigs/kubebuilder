@@ -4,8 +4,8 @@ kind: Issuer
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-selfsigned-issuer
+        app.kubernetes.io/name: {{ include "project.name" . }}
+    name: {{ include "project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     selfSigned: {}

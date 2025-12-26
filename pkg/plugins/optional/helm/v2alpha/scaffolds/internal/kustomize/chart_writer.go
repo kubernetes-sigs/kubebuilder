@@ -145,7 +145,7 @@ func (w *ChartWriter) generateFileName(resource *unstructured.Unstructured, inde
 	// Try to use the resource name if available
 	if name := resource.GetName(); name != "" {
 		// Remove project prefix from the filename for cleaner file names
-		projectPrefix := w.templater.projectName + "-"
+		projectPrefix := w.templater.detectedPrefix + "-"
 		fileName := name
 		if after, ok := strings.CutPrefix(name, projectPrefix); ok {
 			fileName = after

@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-    name: project-metrics-reader
+    name: {{ include "project.resourceName" (dict "suffix" "metrics-reader" "context" $) }}
 rules:
     - nonResourceURLs:
         - /metrics

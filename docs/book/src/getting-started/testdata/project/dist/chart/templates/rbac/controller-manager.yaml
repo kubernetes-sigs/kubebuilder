@@ -3,6 +3,6 @@ kind: ServiceAccount
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-controller-manager
+        app.kubernetes.io/name: {{ include "project.name" . }}
+    name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
     namespace: {{ .Release.Namespace }}

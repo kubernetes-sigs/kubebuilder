@@ -4,9 +4,9 @@ kind: ServiceMonitor
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "project.name" . }}
         control-plane: controller-manager
-    name: project-controller-manager-metrics-monitor
+    name: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-monitor" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     endpoints:
@@ -27,9 +27,9 @@ spec:
             keySecret:
                 key: tls.key
                 name: metrics-server-cert
-            serverName: project-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+            serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
     selector:
         matchLabels:
-            app.kubernetes.io/name: project
+            app.kubernetes.io/name: {{ include "project.name" . }}
             control-plane: controller-manager
 {{- end }}
