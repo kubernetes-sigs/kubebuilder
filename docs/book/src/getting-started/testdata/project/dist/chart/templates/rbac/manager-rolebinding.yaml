@@ -3,13 +3,13 @@ kind: ClusterRoleBinding
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-manager-rolebinding
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+    name: {{ .Values.namePrefix }}-manager-rolebinding
 roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: project-manager-role
+    name: {{ .Values.namePrefix }}-manager-role
 subjects:
     - kind: ServiceAccount
-      name: project-controller-manager
+      name: {{ .Values.namePrefix }}-controller-manager
       namespace: {{ .Release.Namespace }}

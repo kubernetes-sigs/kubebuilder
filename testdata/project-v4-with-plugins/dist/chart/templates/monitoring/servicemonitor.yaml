@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
     control-plane: controller-manager
-  name: project-v4-with-plugins-controller-manager-metrics-monitor
+  name: {{ .Values.namePrefix }}-controller-manager-metrics-monitor
   namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
@@ -15,7 +15,7 @@ spec:
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         {{- if .Values.certManager.enable }}
-        serverName: project-v4-with-plugins-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+        serverName: {{ .Values.namePrefix }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
         # Apply secure TLS configuration with cert-manager
         insecureSkipVerify: false
         ca:
