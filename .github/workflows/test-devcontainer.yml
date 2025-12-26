@@ -2,8 +2,9 @@ name: Test DevContainer Image
 
 on:
   push:
-    - 'testdata/**'
-    - '.github/workflows/test-devcontainer.yml'
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-devcontainer.yml'
   pull_request:
     paths:
       - 'testdata/**'

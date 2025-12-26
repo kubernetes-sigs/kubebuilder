@@ -13,7 +13,6 @@ made towards achieving them:
 
 - [Roadmap 2024](roadmap_2024.md)
 - [Roadmap 2025](roadmap_2025.md)
-- [Roadmap 2026](roadmap_2026.md)
 
 ## :point_right: New plugins/RFEs to provide integrations within other Projects
 

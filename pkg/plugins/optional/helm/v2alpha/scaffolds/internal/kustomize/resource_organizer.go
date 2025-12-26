@@ -38,49 +38,86 @@ func NewResourceOrganizer(resources *ParsedResources) *ResourceOrganizer {
 func (o *ResourceOrganizer) OrganizeByFunction() map[string][]*unstructured.Unstructured {
 	groups := make(map[string][]*unstructured.Unstructured)
 
+	// Track resources that were explicitly handled
+	used := map[*unstructured.Unstructured]bool{}
+
 	// CRDs - Custom Resource Definitions
 	if len(o.resources.CustomResourceDefinitions) > 0 {
 		groups["crd"] = o.resources.CustomResourceDefinitions
+		for _, r := range o.resources.CustomResourceDefinitions {
+			used[r] = true
+		}
 	}
 
 	// RBAC - Role-Based Access Control resources
 	rbacResources := o.collectRBACResources()
 	if len(rbacResources) > 0 {
 		groups["rbac"] = rbacResources
+		for _, r := range rbacResources {
+			used[r] = true
+		}
 	}
 
 	// Manager - Deployment and related resources
 	if o.resources.Deployment != nil {
 		groups["manager"] = []*unstructured.Unstructured{o.resources.Deployment}
+		used[o.resources.Deployment] = true
 	}
 
 	// Metrics - Metrics services and related resources
 	metricsResources := o.collectMetricsResources()
 	if len(metricsResources) > 0 {
 		groups["metrics"] = metricsResources
+		for _, r := range metricsResources {
+			used[r] = true
+		}
 	}
 
 	// Webhook - Webhook configurations and webhook services
 	webhookResources := o.collectWebhookResources()
 	if len(webhookResources) > 0 {
 		groups["webhook"] = webhookResources
+		for _, r := range webhookResources {
+			used[r] = true
+		}
 	}
 
 	// Cert-manager - Certificate issuers and related resources
 	certManagerResources := o.collectCertManagerResources()
 	if len(certManagerResources) > 0 {
 		groups["cert-manager"] = certManagerResources
+		for _, r := range certManagerResources {
+			used[r] = true
+		}
 	}
 
 	// Prometheus - Prometheus ServiceMonitors and monitoring resources
 	prometheusResources := o.collectPrometheusResources()
 	if len(prometheusResources) > 0 {
 		groups["prometheus"] = prometheusResources
+		for _, r := range prometheusResources {
+			used[r] = true
+		}
 	}
 
-	// Other - Any remaining resources
+	// Other - Any remaining known resources
 	if len(o.resources.Other) > 0 {
 		groups["other"] = o.resources.Other
+		for _, r := range o.resources.Other {
+			used[r] = true
+		}
+	}
+
+	// Extras - any resource from install.yaml not explicitly handled above
+	extras := []*unstructured.Unstructured{}
+	for _, r := range o.resources.All() {
+		if !used[r] {
+			extras = append(extras, r)
+		}
+	}
+
+	if len(extras) > 0 {
+		groups["extras"] = extras
 	}
 
 	return groups
@@ -153,21 +190,17 @@ func (o *ResourceOrganizer) collectMetricsResources() []*unstructured.Unstructur
 // collectPrometheusResources gathers prometheus related resources
 func (o *ResourceOrganizer) collectPrometheusResources() []*unstructured.Unstructured {
 	var prometheusResources []*unstructured.Unstructured
-
 	// ServiceMonitors
 	prometheusResources = append(prometheusResources, o.resources.ServiceMonitors...)
-
 	return prometheusResources
 }
 
 // isWebhookService determines if a service is webhook-related
 func (o *ResourceOrganizer) isWebhookService(service *unstructured.Unstructured) bool {
-	serviceName := service.GetName()
-	return strings.Contains(serviceName, "webhook")
+	return strings.Contains(service.GetName(), "webhook")
 }
 
 // isMetricsService determines if a service is metrics-related
 func (o *ResourceOrganizer) isMetricsService(service *unstructured.Unstructured) bool {
-	serviceName := service.GetName()
-	return strings.Contains(serviceName, "metrics")
+	return strings.Contains(service.GetName(), "metrics")
 }

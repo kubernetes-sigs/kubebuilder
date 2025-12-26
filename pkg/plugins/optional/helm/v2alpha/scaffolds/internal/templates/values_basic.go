@@ -210,7 +210,15 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Environment variables\n")
 		buf.WriteString("  env:\n")
 		if envYaml, err := yaml.Marshal(env); err == nil {
-			f.IndentYamlProperly(buf, envYaml)
+			// Indent the YAML properly
+			lines := bytes.SplitSeq(envYaml, []byte("\n"))
+			for line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
 		} else {
 			buf.WriteString("    []\n")
 		}
@@ -244,7 +252,14 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Pod-level security settings\n")
 		buf.WriteString("  podSecurityContext:\n")
 		if secYaml, err := yaml.Marshal(podSecCtx); err == nil {
-			f.IndentYamlProperly(buf, secYaml)
+			lines := bytes.SplitSeq(secYaml, []byte("\n"))
+			for line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
 		}
 		buf.WriteString("\n")
 	} else {
@@ -256,7 +271,14 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Container-level security settings\n")
 		buf.WriteString("  securityContext:\n")
 		if secYaml, err := yaml.Marshal(secCtx); err == nil {
-			f.IndentYamlProperly(buf, secYaml)
+			lines := bytes.SplitSeq(secYaml, []byte("\n"))
+			for line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
 		}
 		buf.WriteString("\n")
 	} else {
@@ -268,58 +290,18 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  # Resource limits and requests\n")
 		buf.WriteString("  resources:\n")
 		if resYaml, err := yaml.Marshal(resources); err == nil {
-			f.IndentYamlProperly(buf, resYaml)
+			lines := bytes.SplitSeq(resYaml, []byte("\n"))
+			for line := range lines {
+				if len(line) > 0 {
+					buf.WriteString("    ")
+					buf.Write(line)
+					buf.WriteString("\n")
+				}
+			}
 		}
 		buf.WriteString("\n")
 	} else {
 		f.addDefaultResources(buf)
-	}
-
-	buf.WriteString("  # Manager pod's affinity\n")
-	if affinity, exists := f.DeploymentConfig["podAffinity"]; exists && affinity != nil {
-		buf.WriteString("  affinity:\n")
-		if affYaml, err := yaml.Marshal(affinity); err == nil {
-			f.IndentYamlProperly(buf, affYaml)
-		}
-		buf.WriteString("\n")
-	} else {
-		buf.WriteString("  affinity: {}\n")
-		buf.WriteString("\n")
-	}
-
-	buf.WriteString("  # Manager pod's node selector\n")
-	if nodeSelector, exists := f.DeploymentConfig["podNodeSelector"]; exists && nodeSelector != nil {
-		buf.WriteString("  nodeSelector:\n")
-		if nodYaml, err := yaml.Marshal(nodeSelector); err == nil {
-			f.IndentYamlProperly(buf, nodYaml)
-		}
-		buf.WriteString("\n")
-	} else {
-		buf.WriteString("  nodeSelector: {}\n")
-		buf.WriteString("\n")
-	}
-
-	buf.WriteString("  # Manager pod's tolerations\n")
-	if tolerations, exists := f.DeploymentConfig["podTolerations"]; exists && tolerations != nil {
-		buf.WriteString("  tolerations:\n")
-		if tolYaml, err := yaml.Marshal(tolerations); err == nil {
-			f.IndentYamlProperly(buf, tolYaml)
-		}
-		buf.WriteString("\n")
-	} else {
-		buf.WriteString("  tolerations: []\n")
-		buf.WriteString("\n")
-	}
-}
-
-func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) {
-	lines := bytes.SplitSeq(envYaml, []byte("\n"))
-	for line := range lines {
-		if len(line) > 0 {
-			buf.WriteString("    ")
-			buf.Write(line)
-			buf.WriteString("\n")
-		}
 	}
 }
 

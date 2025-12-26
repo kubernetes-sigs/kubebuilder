@@ -28,6 +28,8 @@ import (
 
 // ParsedResources holds Kubernetes resources organized by type for Helm chart generation
 type ParsedResources struct {
+	// All resources parsed from install.yaml
+	AllResources []*unstructured.Unstructured
 	// Core Kubernetes resources
 	Namespace  *unstructured.Unstructured
 	Deployment *unstructured.Unstructured
@@ -82,6 +84,7 @@ func (p *Parser) Parse() (*ParsedResources, error) {
 func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	decoder := yaml.NewDecoder(reader)
 	resources := &ParsedResources{
+		AllResources:              make([]*unstructured.Unstructured, 0),
 		CustomResourceDefinitions: make([]*unstructured.Unstructured, 0),
 		Roles:                     make([]*unstructured.Unstructured, 0),
 		ClusterRoles:              make([]*unstructured.Unstructured, 0),
@@ -110,6 +113,13 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		}
 
 		obj := &unstructured.Unstructured{Object: doc}
+		// Core resources must not be treated as extras or webhook candidates
+		gvk := obj.GroupVersionKind()
+		if gvk.Group == "" {
+			continue
+		}
+		// Track ALL non-core resources
+		resources.AllResources = append(resources.AllResources, obj)
 		p.categorizeResource(obj, resources)
 	}
 
@@ -174,4 +184,8 @@ func (pr *ParsedResources) EstimatePrefix(projectName string) string {
 		}
 	}
 	return prefix
+}
+
+func (pr *ParsedResources) All() []*unstructured.Unstructured {
+	return pr.AllResources
 }

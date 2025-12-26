@@ -188,35 +188,6 @@ controllerManager:
       cpu: 10m
       memory: 64Mi
 
-  # Manager pod's affinity
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/arch
-              operator: In
-              values:
-                - amd64
-                - arm64
-                - ppc64le
-                - s390x
-            - key: kubernetes.io/os
-              operator: In
-              values:
-                - linux
-
-  # Manager pod's node selector
-  nodeSelector:
-    kubernetes.io/os: linux
-
-  # Manager pod's tolerations
-  tolerations:
-    - key: "node.kubernetes.io/unreachable"
-      operator: "Exists"
-      effect: "NoExecute"
-      tolerationSeconds: 6000
-
 # Essential RBAC permissions (required for controller operation)
 # These include ServiceAccount, controller permissions, leader election, and metrics access
 # Note: Essential RBAC is always enabled as it's required for the controller to function

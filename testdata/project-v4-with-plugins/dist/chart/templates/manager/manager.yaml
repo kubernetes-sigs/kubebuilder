@@ -21,15 +21,6 @@ spec:
                 app.kubernetes.io/name: project-v4-with-plugins
                 control-plane: controller-manager
         spec:
-            {{- with .Values.manager.tolerations }}
-            tolerations: {{ toYaml . | nindent 16 }}
-            {{- end }}
-            {{- with .Values.manager.affinity }}
-            affinity: {{ toYaml . | nindent 16 }}
-            {{- end }}
-            {{- with .Values.manager.nodeSelector }}
-            nodeSelector: {{ toYaml . | nindent 16 }}
-            {{- end }}
             containers:
                 - args:
                     {{- if .Values.metrics.enable }}

@@ -40,15 +40,6 @@ manager:
         cpu: 10m
         memory: 64Mi
 
-  # Manager pod's affinity
-  affinity: {}
-
-  # Manager pod's node selector
-  nodeSelector: {}
-
-  # Manager pod's tolerations
-  tolerations: []
-
 # Essential RBAC permissions (required for controller operation)
 # These include ServiceAccount, controller permissions, leader election, and metrics access
 # Note: Essential RBAC is always enabled as it's required for the controller to function

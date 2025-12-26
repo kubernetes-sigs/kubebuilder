@@ -13,6 +13,9 @@ docs/book/src/docs
 \#*#
 *.swp
 
+# Skip bazel dirs
+/bazel-*
+
 # skip bin dirs
 **/bin
 **/testbin

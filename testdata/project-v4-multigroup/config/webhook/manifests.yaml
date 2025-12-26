@@ -10,26 +10,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-crew-testproject-org-v1-captain
-  failurePolicy: Fail
-  name: mcaptain-v1.kb.io
-  rules:
-  - apiGroups:
-    - crew.testproject.org
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - captains
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-apps-v1-deployment
   failurePolicy: Fail
   name: mdeployment-v1.kb.io
@@ -43,26 +23,6 @@ webhooks:
     - UPDATE
     resources:
     - deployments
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-ship-testproject-org-v1-destroyer
-  failurePolicy: Fail
-  name: mdestroyer-v1.kb.io
-  rules:
-  - apiGroups:
-    - ship.testproject.org
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - destroyers
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -84,21 +44,15 @@ webhooks:
     resources:
     - issuers
   sideEffects: None
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: validating-webhook-configuration
-webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-crew-testproject-org-v1-captain
+      path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain-v1.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -116,20 +70,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-ship-testproject-org-v2alpha1-cruiser
+      path: /mutate-ship-testproject-org-v1-destroyer
   failurePolicy: Fail
-  name: vcruiser-v2alpha1.kb.io
+  name: mdestroyer-v1.kb.io
   rules:
   - apiGroups:
     - ship.testproject.org
     apiVersions:
-    - v2alpha1
+    - v1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - cruisers
+    - destroyers
   sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -149,6 +109,46 @@ webhooks:
     - UPDATE
     resources:
     - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate--v1-pod
+  failurePolicy: Fail
+  name: vpod-v1.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-crew-testproject-org-v1-captain
+  failurePolicy: Fail
+  name: vcaptain-v1.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - captains
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -176,17 +176,17 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate--v1-pod
+      path: /validate-ship-testproject-org-v2alpha1-cruiser
   failurePolicy: Fail
-  name: vpod-v1.kb.io
+  name: vcruiser-v2alpha1.kb.io
   rules:
   - apiGroups:
-    - ""
+    - ship.testproject.org
     apiVersions:
-    - v1
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - pods
+    - cruisers
   sideEffects: None

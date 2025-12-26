@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -58,6 +59,16 @@ func NewChartConverter(resources *ParsedResources, projectName, outputDir string
 func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	// Organize resources by their logical function
 	resourceGroups := c.organizer.OrganizeByFunction()
+
+	// WARNING for unhandled resources
+	if extras, ok := resourceGroups["extras"]; ok && len(extras) > 0 {
+		fmt.Fprintln(
+			os.Stderr,
+			"WARNING: Found Kubernetes resources in install.yaml that are not "+
+				"recognized by helm/v2-alpha scaffolding. "+
+				"These resources were added under templates/extras.",
+		)
+	}
 
 	// Write each group to appropriate template files
 	for groupName, resources := range resourceGroups {
@@ -106,10 +117,6 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 
 	extractPodSecurityContext(specMap, config)
 	extractImagePullSecrets(specMap, config)
-	extractPodNodeSelector(specMap, config)
-	extractPodTolerations(specMap, config)
-	extractPodAffinity(specMap, config)
-
 	container := firstManagerContainer(specMap)
 	if container == nil {
 		return config
@@ -165,48 +172,6 @@ func extractPodSecurityContext(specMap map[string]any, config map[string]any) {
 	}
 
 	config["podSecurityContext"] = podSecurityContext
-}
-
-func extractPodNodeSelector(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "nodeSelector")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.(map[string]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podNodeSelector"] = result
-}
-
-func extractPodTolerations(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "tolerations")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.([]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podTolerations"] = result
-}
-
-func extractPodAffinity(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "affinity")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.(map[string]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podAffinity"] = result
 }
 
 func firstManagerContainer(specMap map[string]any) map[string]any {

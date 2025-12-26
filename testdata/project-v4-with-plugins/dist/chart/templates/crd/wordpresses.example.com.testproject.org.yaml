@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
     annotations:
         cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-v4-with-plugins-serving-cert
-        controller-gen.kubebuilder.io/version: v0.20.0
+        controller-gen.kubebuilder.io/version: v0.19.0
     name: wordpresses.example.com.testproject.org
 spec:
     conversion:
