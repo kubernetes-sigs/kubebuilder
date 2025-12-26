@@ -1,3 +1,6 @@
+# Prefix for all resource names
+namePrefix: project-v4-with-plugins
+
 # Configure the controller manager deployment
 manager:
   replicas: 1

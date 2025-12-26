@@ -4,15 +4,15 @@ kind: Certificate
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-serving-cert
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+    name: {{ .Values.namePrefix }}-serving-cert
     namespace: {{ .Release.Namespace }}
 spec:
     dnsNames:
-        - project-webhook-service.{{ .Release.Namespace }}.svc
-        - project-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+        - {{ .Values.namePrefix }}-webhook-service.{{ .Release.Namespace }}.svc
+        - {{ .Values.namePrefix }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
     issuerRef:
         kind: Issuer
-        name: {{ include "chart.name" . }}-selfsigned-issuer
+        name: {{ .Values.namePrefix }}-selfsigned-issuer
     secretName: webhook-server-cert
 {{- end }}
