@@ -3,7 +3,7 @@ kind: Role
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
     name: project-leader-election-role
     namespace: {{ .Release.Namespace }}
 rules:

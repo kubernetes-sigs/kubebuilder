@@ -17,6 +17,8 @@ limitations under the License.
 package kustomize
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -59,7 +61,8 @@ spec:
 
 			// Should replace kustomize managed-by with Helm template
 			Expect(result).To(ContainSubstring("app.kubernetes.io/managed-by: {{ .Release.Service }}"))
-			Expect(result).To(ContainSubstring("app.kubernetes.io/name: test-project"))
+			// Should replace app.kubernetes.io/name with chart name template
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
 			Expect(result).To(ContainSubstring("control-plane: controller-manager"))
 
 			// Should substitute namespace
@@ -483,6 +486,221 @@ metadata:
 			// Name should remain unchanged
 			Expect(result).To(ContainSubstring("name: test-project-controller-manager-metrics-monitor"))
 			Expect(result).NotTo(ContainSubstring("{{ include"))
+		})
+	})
+
+	Context("app.kubernetes.io/name label templating", func() {
+		It("should template app.kubernetes.io/name for Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+    control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for Service", func() {
+			service := &unstructured.Unstructured{}
+			service.SetAPIVersion("v1")
+			service.SetKind("Service")
+			service.SetName("test-project-webhook-service")
+
+			content := `apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, service)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for ServiceAccount", func() {
+			sa := &unstructured.Unstructured{}
+			sa.SetAPIVersion("v1")
+			sa.SetKind("ServiceAccount")
+			sa.SetName("test-project-controller-manager")
+
+			content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, sa)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for ClusterRole", func() {
+			clusterRole := &unstructured.Unstructured{}
+			clusterRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			clusterRole.SetKind("ClusterRole")
+			clusterRole.SetName("test-project-manager-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, clusterRole)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for Role", func() {
+			role := &unstructured.Unstructured{}
+			role.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			role.SetKind("Role")
+			role.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, role)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for RoleBinding", func() {
+			rb := &unstructured.Unstructured{}
+			rb.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			rb.SetKind("RoleBinding")
+			rb.SetName("test-project-leader-election-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, rb)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for ClusterRoleBinding", func() {
+			crb := &unstructured.Unstructured{}
+			crb.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			crb.SetKind("ClusterRoleBinding")
+			crb.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, crb)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for Certificate", func() {
+			cert := &unstructured.Unstructured{}
+			cert.SetAPIVersion("cert-manager.io/v1")
+			cert.SetKind("Certificate")
+			cert.SetName("test-project-serving-cert")
+
+			content := `apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, cert)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template app.kubernetes.io/name for Issuer", func() {
+			issuer := &unstructured.Unstructured{}
+			issuer.SetAPIVersion("cert-manager.io/v1")
+			issuer.SetKind("Issuer")
+			issuer.SetName("test-project-selfsigned-issuer")
+
+			content := `apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, issuer)
+
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should handle label already templated without breaking", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should keep the template as-is
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).ToNot(ContainSubstring("app.kubernetes.io/name: test-project"))
+		})
+
+		It("should template multiple occurrences in same resource", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: test-project
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-project`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// All three should be templated
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
+			// Count occurrences - should be 3
+			count := strings.Count(result, "app.kubernetes.io/name: {{ include \"chart.name\" . }}")
+			Expect(count).To(Equal(3))
 		})
 	})
 

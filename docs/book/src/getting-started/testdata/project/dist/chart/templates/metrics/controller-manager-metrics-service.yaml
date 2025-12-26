@@ -4,7 +4,7 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
         control-plane: controller-manager
     name: project-controller-manager-metrics-service
     namespace: {{ .Release.Namespace }}
@@ -15,6 +15,6 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.metrics.port }}
     selector:
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
         control-plane: controller-manager
 {{- end }}

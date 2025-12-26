@@ -3,7 +3,7 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
     name: project-webhook-service
     namespace: {{ .Release.Namespace }}
 spec:
@@ -12,5 +12,5 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.webhook.port }}
     selector:
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
         control-plane: controller-manager

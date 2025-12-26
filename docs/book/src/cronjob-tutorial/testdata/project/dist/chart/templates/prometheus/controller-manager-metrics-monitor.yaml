@@ -4,7 +4,7 @@ kind: ServiceMonitor
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
         control-plane: controller-manager
     name: project-controller-manager-metrics-monitor
     namespace: {{ .Release.Namespace }}
@@ -30,6 +30,6 @@ spec:
             serverName: project-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
     selector:
         matchLabels:
-            app.kubernetes.io/name: project
+            app.kubernetes.io/name: {{ include "chart.name" . }}
             control-plane: controller-manager
 {{- end }}
