@@ -31,13 +31,6 @@ builds:
   - id: kubebuilder
     binary: kubebuilder
     mod_timestamp: "{{ .CommitTimestamp }}"
-    ldflags:
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.kubeBuilderVersion={{ .Version }}
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.goos={{ .Os }}
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.goarch={{ .Arch }}
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.gitCommit={{ .Commit }}
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.buildDate={{ .Date }}
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
     targets:
       - linux_amd64
       - linux_arm64
@@ -46,7 +39,6 @@ builds:
       - darwin_amd64
       - darwin_arm64
     env:
-      - KUBERNETES_VERSION=1.35.0
       - CGO_ENABLED=0
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
