@@ -21,6 +21,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/spf13/afero"
+
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
@@ -119,7 +121,16 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
+	sp.updateControllerTest()
 	sp.updateE2EWebhookConversion()
+}
+
+func (sp *Sample) updateControllerTest() {
+	testContent := []byte(multiversionControllerTest)
+	fs := afero.NewOsFs()
+	testPath := filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go")
+	err := afero.WriteFile(fs, testPath, testContent, 0o600)
+	hackutils.CheckError("replacing controller test for multiversion", err)
 }
 
 func (sp *Sample) updateCronjobV1DueForce() {
