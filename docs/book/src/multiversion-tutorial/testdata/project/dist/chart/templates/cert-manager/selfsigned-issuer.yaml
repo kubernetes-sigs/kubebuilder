@@ -6,7 +6,7 @@ metadata:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/name: project
     name: project-selfsigned-issuer
-    namespace: {{ .Release.Namespace }}
+    namespace: system
 spec:
     selfSigned: {}
 {{- end }}

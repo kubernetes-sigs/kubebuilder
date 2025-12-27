@@ -12,4 +12,4 @@ roleRef:
 subjects:
     - kind: ServiceAccount
       name: project-v4-with-plugins-controller-manager
-      namespace: {{ .Release.Namespace }}
+      namespace: system

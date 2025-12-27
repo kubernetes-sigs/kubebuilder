@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
     control-plane: controller-manager
-  name: project-v4-system
+  name: system
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -263,7 +263,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-v4-system/project-v4-serving-cert
+    cert-manager.io/inject-ca-from: system/project-v4-serving-cert
     controller-gen.kubebuilder.io/version: v0.20.0
   name: firstmates.crew.testproject.org
 spec:
@@ -273,7 +273,7 @@ spec:
       clientConfig:
         service:
           name: project-v4-webhook-service
-          namespace: project-v4-system
+          namespace: system
           path: /convert
       conversionReviewVersions:
       - v1
@@ -639,7 +639,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
   name: project-v4-controller-manager
-  namespace: project-v4-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -1076,7 +1076,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-controller-manager
-  namespace: project-v4-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1092,7 +1092,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-controller-manager
-  namespace: project-v4-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1105,7 +1105,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-controller-manager
-  namespace: project-v4-system
+  namespace: system
 ---
 apiVersion: v1
 kind: Service
@@ -1115,7 +1115,7 @@ metadata:
     app.kubernetes.io/name: project-v4
     control-plane: controller-manager
   name: project-v4-controller-manager-metrics-service
-  namespace: project-v4-system
+  namespace: system
 spec:
   ports:
   - name: https
@@ -1133,7 +1133,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
   name: project-v4-webhook-service
-  namespace: project-v4-system
+  namespace: system
 spec:
   ports:
   - port: 443
@@ -1151,7 +1151,7 @@ metadata:
     app.kubernetes.io/name: project-v4
     control-plane: controller-manager
   name: project-v4-controller-manager
-  namespace: project-v4-system
+  namespace: system
 spec:
   replicas: 1
   selector:
@@ -1227,7 +1227,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
   name: project-v4-metrics-certs
-  namespace: project-v4-system
+  namespace: system
 spec:
   dnsNames:
   - SERVICE_NAME.SERVICE_NAMESPACE.svc
@@ -1244,11 +1244,11 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
   name: project-v4-serving-cert
-  namespace: project-v4-system
+  namespace: system
 spec:
   dnsNames:
-  - project-v4-webhook-service.project-v4-system.svc
-  - project-v4-webhook-service.project-v4-system.svc.cluster.local
+  - project-v4-webhook-service.system.svc
+  - project-v4-webhook-service.system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: project-v4-selfsigned-issuer
@@ -1261,7 +1261,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
   name: project-v4-selfsigned-issuer
-  namespace: project-v4-system
+  namespace: system
 spec:
   selfSigned: {}
 ---
@@ -1269,7 +1269,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-v4-system/project-v4-serving-cert
+    cert-manager.io/inject-ca-from: system/project-v4-serving-cert
   name: project-v4-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -1277,7 +1277,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /mutate-crew-testproject-org-v1-admiral
   failurePolicy: Fail
   name: madmiral-v1.kb.io
@@ -1297,7 +1297,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: mcaptain-v1.kb.io
@@ -1317,7 +1317,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /mutate-apps-v1-deployment
   failurePolicy: Fail
   name: mdeployment-v1.kb.io
@@ -1337,7 +1337,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
@@ -1357,7 +1357,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /mutate--v1-pod
   failurePolicy: Fail
   name: mpod-v1.kb.io
@@ -1377,7 +1377,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /custom-mutate-sailor
   failurePolicy: Fail
   name: msailor-v1.kb.io
@@ -1397,7 +1397,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-v4-system/project-v4-serving-cert
+    cert-manager.io/inject-ca-from: system/project-v4-serving-cert
   name: project-v4-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -1405,7 +1405,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /custom-validate-admiral
   failurePolicy: Fail
   name: vadmiral-v1.kb.io
@@ -1425,7 +1425,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: vcaptain-v1.kb.io
@@ -1445,7 +1445,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /validate-apps-v1-deployment
   failurePolicy: Fail
   name: vdeployment-v1.kb.io
@@ -1465,7 +1465,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-webhook-service
-      namespace: project-v4-system
+      namespace: system
       path: /custom-validate-sailor
   failurePolicy: Fail
   name: vsailor-v1.kb.io

@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-v4-with-plugins-serving-cert
+        cert-manager.io/inject-ca-from: system/project-v4-with-plugins-serving-cert
         {{- end }}
     name: project-v4-with-plugins-validating-webhook-configuration
 webhooks:
@@ -12,7 +12,7 @@ webhooks:
       clientConfig:
         service:
             name: project-v4-with-plugins-webhook-service
-            namespace: {{ .Release.Namespace }}
+            namespace: system
             path: /validate-example-com-testproject-org-v1alpha1-memcached
       failurePolicy: Fail
       name: vmemcached-v1alpha1.kb.io

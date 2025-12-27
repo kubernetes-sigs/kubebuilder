@@ -82,6 +82,7 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.CertManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
+		&kdefault.NamespaceTransformer{},
 		&networkpolicy.Kustomization{},
 		&networkpolicy.PolicyAllowMetrics{},
 		&prometheus.Kustomization{},
