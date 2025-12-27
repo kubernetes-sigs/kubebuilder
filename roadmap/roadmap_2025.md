@@ -63,7 +63,7 @@ providing a seamless and intuitive experience.
 
 ## Align Tutorials and Samples with Best Practices Proposed by DeployImage Plugin
 
-**Status:** Partially Complete
+**Status:** ✅ Complete
 
 ### Context
 The existing tutorials lack consistency with best practices and the layout proposed by the DeployImage plugin.
@@ -74,7 +74,7 @@ Align tutorials and sample projects with best practices to improve quality and u
 ### Goals
 - **Controller Logic Consistency**: Standardize tutorial controller logic to match the DeployImage plugin’s scaffolded controller, including conditions, finalizers, and status updates.
 
-- **Conditional Status in CronJob Spec**: (✅ Complete) Incorporate conditional status handling in the CronJob spec to reflect best practices.
+- **Conditional Status in CronJob Spec**: Incorporate conditional status handling in the CronJob spec to reflect best practices.
 
 - **Test Logic Consistency**: Ensure tutorial test logic mirrors the tests scaffolded by the DeployImage plugin, adapting as needed for specific cases.
 
