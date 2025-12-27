@@ -158,23 +158,77 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 	return yamlContent
 }
 
-// substituteCertManagerReferences applies cert-manager and webhook-specific template substitutions
-func (t *HelmTemplater) substituteCertManagerReferences(yamlContent string, _ *unstructured.Unstructured) string {
+// substituteCertManagerReferences applies cert-manager and webhook-specific template
+// substitutions
+func (t *HelmTemplater) substituteCertManagerReferences(
+	yamlContent string,
+	resource *unstructured.Unstructured,
+) string {
+	kind := resource.GetKind()
+
+	// Template the Issuer resource name itself
+	if kind == kindIssuer {
+		yamlContent = t.substituteIssuerName(yamlContent)
+	}
+
+	// Template cert-manager.io/inject-ca-from annotations that reference certificate names
+	yamlContent = t.substituteCertManagerAnnotations(yamlContent)
+
 	return yamlContent
 }
 
 // addHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents
-func (t *HelmTemplater) addHelmLabelsAndAnnotations(yamlContent string, _ *unstructured.Unstructured) string {
+func (t *HelmTemplater) addHelmLabelsAndAnnotations(
+	yamlContent string,
+	_ *unstructured.Unstructured,
+) string {
 	// Replace app.kubernetes.io/managed-by: kustomize with Helm template
 	// Use regex to handle different whitespace patterns
 	managedByRegex := regexp.MustCompile(`(\s*)app\.kubernetes\.io/managed-by:\s+kustomize`)
 	yamlContent = managedByRegex.ReplaceAllString(yamlContent, "${1}app.kubernetes.io/managed-by: {{ .Release.Service }}")
+
+	// Replace hardcoded project name in app.kubernetes.io/name label with chart name template
+	// This applies to ALL resources for consistency with Helm best practices
+	hardcodedNameLabel := "app.kubernetes.io/name: " + t.projectName
+	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + chartNameTemplate + "\" . }}"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
 
 	return yamlContent
 }
 
 // substituteRBACValues applies RBAC-specific template substitutions
 func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
+	return yamlContent
+}
+
+// substituteIssuerName replaces hardcoded issuer name with templated name
+func (t *HelmTemplater) substituteIssuerName(yamlContent string) string {
+	// Replace hardcoded issuer name in metadata.name
+	hardcodedIssuerName := "name: " + t.projectName + "-selfsigned-issuer"
+	templatedIssuerName := "name: {{ include \"" + chartNameTemplate + "\" . }}-selfsigned-issuer"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedIssuerName, templatedIssuerName)
+
+	return yamlContent
+}
+
+// substituteCertManagerAnnotations replaces hardcoded certificate references in cert-manager annotations
+func (t *HelmTemplater) substituteCertManagerAnnotations(yamlContent string) string {
+	// Replace hardcoded certificate name in cert-manager.io/inject-ca-from annotation
+	// Pattern: cert-manager.io/inject-ca-from: namespace/project-name-serving-cert
+	// The annotation format is: namespace/certificate-name
+	// After kustomize substitution, namespace is already templated as {{ .Release.Namespace }}
+	// We need to template the certificate name part
+
+	// Replace serving-cert reference
+	hardcodedServingCert := t.projectName + "-serving-cert"
+	templatedServingCert := "{{ include \"" + chartNameTemplate + "\" . }}-serving-cert"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedServingCert, templatedServingCert)
+
+	// Replace metrics-certs reference
+	hardcodedMetricsCert := t.projectName + "-metrics-certs"
+	templatedMetricsCert := "{{ include \"" + chartNameTemplate + "\" . }}-metrics-certs"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedMetricsCert, templatedMetricsCert)
+
 	return yamlContent
 }
 

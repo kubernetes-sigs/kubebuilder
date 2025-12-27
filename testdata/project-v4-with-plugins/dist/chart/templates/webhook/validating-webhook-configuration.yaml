@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-v4-with-plugins-serving-cert
+        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "chart.name" . }}-serving-cert
         {{- end }}
     name: project-v4-with-plugins-validating-webhook-configuration
 webhooks:

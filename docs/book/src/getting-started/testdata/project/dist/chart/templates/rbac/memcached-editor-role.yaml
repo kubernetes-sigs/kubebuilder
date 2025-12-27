@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
     name: project-memcached-editor-role
 rules:
     - apiGroups:

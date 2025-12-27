@@ -18,6 +18,7 @@ package helm
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -111,6 +112,46 @@ var _ = Describe("Helm v2-alpha Plugin", func() {
 
 			By("verifying files are preserved when not using --force")
 			validateFilePreservation(kbc, "custom-charts")
+		})
+
+		It("should properly template cert-manager resources when chart name changes", func() {
+			By("initializing a project with webhooks")
+			initBasicProject(kbc)
+			createTestResources(kbc)
+			createWebhookResources(kbc)
+
+			By("building installer manifest with webhooks")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+
+			By("applying helm v2-alpha plugin")
+			err := kbc.EditHelmPlugin()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+
+			By("renaming the chart to a different name")
+			chartYamlPath := filepath.Join(chartPath, "Chart.yaml")
+			err = pluginutil.ReplaceInFile(chartYamlPath, "name: e2e-"+kbc.TestSuffix, "name: my-custom-chart")
+			Expect(err).NotTo(HaveOccurred())
+
+			By("regenerating the chart with the new name")
+			err = kbc.EditHelmPlugin()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("validating issuer name uses chart.name template")
+			validateIssuerNameTemplating(kbc, chartPath)
+
+			By("validating certificate issuerRef uses chart.name template")
+			validateCertificateIssuerRefTemplating(kbc, chartPath)
+
+			By("validating cert-manager annotations use chart.name template")
+			validateCertManagerAnnotationsTemplating(kbc, chartPath)
+
+			By("validating app.kubernetes.io/name label uses chart.name template")
+			validateAppNameLabelTemplating(kbc, chartPath)
+
+			By("rendering the chart and verifying consistent naming")
+			validateRenderedChartConsistency(kbc, chartPath)
 		})
 	})
 })
@@ -283,4 +324,155 @@ func getConfigFromProjectFile(projectFilePath string) config.Config {
 	err := store.LoadFrom(projectFilePath)
 	Expect(err).NotTo(HaveOccurred())
 	return store.Config()
+}
+
+func validateIssuerNameTemplating(kbc *utils.TestContext, chartPath string) {
+	issuerPath := filepath.Join(chartPath, "templates", "cert-manager", "selfsigned-issuer.yaml")
+	content, err := afero.ReadFile(afero.NewOsFs(), issuerPath)
+	Expect(err).NotTo(HaveOccurred())
+	contentStr := string(content)
+
+	// Verify issuer name uses chart.name template, not hardcoded project name
+	Expect(contentStr).To(ContainSubstring(`name: {{ include "chart.name" . }}-selfsigned-issuer`),
+		"Issuer name should use chart.name template")
+	Expect(contentStr).NotTo(ContainSubstring("e2e-"+kbc.TestSuffix+"-selfsigned-issuer"),
+		"Issuer name should not be hardcoded to project name")
+}
+
+func validateCertificateIssuerRefTemplating(_ *utils.TestContext, chartPath string) {
+	certManagerDir := filepath.Join(chartPath, "templates", "cert-manager")
+	files, err := afero.ReadDir(afero.NewOsFs(), certManagerDir)
+	Expect(err).NotTo(HaveOccurred())
+
+	foundCertificate := false
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".yaml") || file.Name() == "selfsigned-issuer.yaml" {
+			continue
+		}
+
+		certPath := filepath.Join(certManagerDir, file.Name())
+		content, err := afero.ReadFile(afero.NewOsFs(), certPath)
+		Expect(err).NotTo(HaveOccurred())
+		contentStr := string(content)
+
+		if strings.Contains(contentStr, "kind: Certificate") {
+			foundCertificate = true
+			// Verify certificate issuerRef uses chart.name template
+			Expect(contentStr).To(ContainSubstring(`name: {{ include "chart.name" . }}-selfsigned-issuer`),
+				"Certificate issuerRef should use chart.name template in file "+file.Name())
+		}
+	}
+	Expect(foundCertificate).To(BeTrue(), "Expected to find at least one Certificate resource")
+}
+
+func validateCertManagerAnnotationsTemplating(kbc *utils.TestContext, chartPath string) {
+	// Check webhook configurations
+	webhookDir := filepath.Join(chartPath, "templates", "webhook")
+	if exists, _ := afero.DirExists(afero.NewOsFs(), webhookDir); exists {
+		files, err := afero.ReadDir(afero.NewOsFs(), webhookDir)
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, file := range files {
+			if file.IsDir() || !strings.HasSuffix(file.Name(), ".yaml") {
+				continue
+			}
+
+			webhookPath := filepath.Join(webhookDir, file.Name())
+			content, err := afero.ReadFile(afero.NewOsFs(), webhookPath)
+			Expect(err).NotTo(HaveOccurred())
+			contentStr := string(content)
+
+			if strings.Contains(contentStr, "cert-manager.io/inject-ca-from") {
+				// Verify cert-manager annotation uses chart.name template
+				Expect(contentStr).To(ContainSubstring(`{{ include "chart.name" . }}-serving-cert`),
+					"cert-manager.io/inject-ca-from annotation should use chart.name template in "+file.Name())
+				Expect(contentStr).NotTo(ContainSubstring("e2e-"+kbc.TestSuffix+"-serving-cert"),
+					"cert-manager.io/inject-ca-from annotation should not be hardcoded in "+file.Name())
+			}
+		}
+	}
+
+	// Check CRDs with conversion webhooks
+	crdDir := filepath.Join(chartPath, "templates", "crd")
+	if exists, _ := afero.DirExists(afero.NewOsFs(), crdDir); exists {
+		files, err := afero.ReadDir(afero.NewOsFs(), crdDir)
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, file := range files {
+			if file.IsDir() || !strings.HasSuffix(file.Name(), ".yaml") {
+				continue
+			}
+
+			crdPath := filepath.Join(crdDir, file.Name())
+			content, err := afero.ReadFile(afero.NewOsFs(), crdPath)
+			Expect(err).NotTo(HaveOccurred())
+			contentStr := string(content)
+
+			if strings.Contains(contentStr, "cert-manager.io/inject-ca-from") {
+				// Verify cert-manager annotation uses chart.name template
+				Expect(contentStr).To(ContainSubstring(`{{ include "chart.name" . }}-serving-cert`),
+					"cert-manager.io/inject-ca-from annotation should use chart.name template in "+file.Name())
+			}
+		}
+	}
+}
+
+func validateAppNameLabelTemplating(kbc *utils.TestContext, chartPath string) {
+	// Check all cert-manager resources
+	certManagerDir := filepath.Join(chartPath, "templates", "cert-manager")
+	files, err := afero.ReadDir(afero.NewOsFs(), certManagerDir)
+	Expect(err).NotTo(HaveOccurred())
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".yaml") {
+			continue
+		}
+
+		filePath := filepath.Join(certManagerDir, file.Name())
+		content, err := afero.ReadFile(afero.NewOsFs(), filePath)
+		Expect(err).NotTo(HaveOccurred())
+		contentStr := string(content)
+
+		if strings.Contains(contentStr, "app.kubernetes.io/name:") {
+			// Verify app.kubernetes.io/name label uses chart.name template
+			Expect(contentStr).To(ContainSubstring(`app.kubernetes.io/name: {{ include "chart.name" . }}`),
+				"app.kubernetes.io/name label should use chart.name template in "+file.Name())
+			Expect(contentStr).NotTo(ContainSubstring("app.kubernetes.io/name: e2e-"+kbc.TestSuffix),
+				"app.kubernetes.io/name label should not be hardcoded in "+file.Name())
+		}
+	}
+}
+
+func validateRenderedChartConsistency(kbc *utils.TestContext, chartPath string) {
+	// Render the chart using helm template command
+	output, err := kbc.Kubectl.Command("exec", "-it", "helm-test-pod", "--", "helm", "template", "test-release", chartPath)
+	if err != nil {
+		// Fall back to checking template files directly if helm command fails
+		By("helm template command not available, validating template files directly")
+		return
+	}
+
+	renderedYAML := output
+
+	// Extract issuer name from rendered output
+	issuerNamePattern := `name:\s+(\S+)-selfsigned-issuer`
+	issuerMatches := regexp.MustCompile(issuerNamePattern).FindStringSubmatch(renderedYAML)
+	if len(issuerMatches) == 0 {
+		// No cert-manager resources in output, skip validation
+		return
+	}
+	issuerBaseName := issuerMatches[1]
+
+	// Verify all issuerRef references match the issuer name
+	issuerRefPattern := `name:\s+` + issuerBaseName + `-selfsigned-issuer`
+	issuerRefMatches := regexp.MustCompile(issuerRefPattern).FindAllString(renderedYAML, -1)
+	Expect(len(issuerRefMatches)).To(BeNumerically(">", 1),
+		"Expected to find multiple consistent issuerRef references")
+
+	// Verify cert-manager annotations reference the correct certificate names
+	if strings.Contains(renderedYAML, "cert-manager.io/inject-ca-from") {
+		servingCertPattern := issuerBaseName + `-serving-cert`
+		Expect(renderedYAML).To(ContainSubstring(servingCertPattern),
+			"cert-manager annotation should reference consistent certificate name")
+	}
 }

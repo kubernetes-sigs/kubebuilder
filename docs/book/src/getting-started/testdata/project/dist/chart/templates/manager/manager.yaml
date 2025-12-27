@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
         control-plane: controller-manager
     name: project-controller-manager
     namespace: {{ .Release.Namespace }}
@@ -11,14 +11,14 @@ spec:
     replicas: 1
     selector:
         matchLabels:
-            app.kubernetes.io/name: project
+            app.kubernetes.io/name: {{ include "chart.name" . }}
             control-plane: controller-manager
     template:
         metadata:
             annotations:
                 kubectl.kubernetes.io/default-container: manager
             labels:
-                app.kubernetes.io/name: project
+                app.kubernetes.io/name: {{ include "chart.name" . }}
                 control-plane: controller-manager
         spec:
             {{- with .Values.manager.tolerations }}
