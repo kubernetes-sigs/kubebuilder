@@ -12,8 +12,8 @@ webhooks:
         - v1
       clientConfig:
         service:
-            name: {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-            namespace: {{ .Release.Namespace }}
+            name: webhook-service
+            namespace: system
             path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
       failurePolicy: Fail
       name: vcronjob-v1.kb.io
@@ -32,8 +32,8 @@ webhooks:
         - v1
       clientConfig:
         service:
-            name: {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-            namespace: {{ .Release.Namespace }}
+            name: webhook-service
+            namespace: system
             path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
       failurePolicy: Fail
       name: vcronjob-v2.kb.io

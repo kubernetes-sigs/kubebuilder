@@ -1,0 +1,14 @@
+# This namespace transformer adds a namespace to resources that don't
+# already have one. Resources with an explicitly set namespace (e.g., from RBAC markers) will
+# preserve their namespace. This allows controllers to manage resources across multiple namespaces
+# while applying a default namespace to resources that don't specify one.
+#
+# More info: https://kubectl.docs.kubernetes.io/references/kustomize/builtins/#_namespacetransformer_
+apiVersion: builtin
+kind: NamespaceTransformer
+metadata:
+  name: namespace-transformer
+  namespace: project-system
+# Only add namespace to resources that don't have one set
+# This preserves namespaces from RBAC markers (e.g., +kubebuilder:rbac:namespace=infrastructure)
+unsetOnly: true

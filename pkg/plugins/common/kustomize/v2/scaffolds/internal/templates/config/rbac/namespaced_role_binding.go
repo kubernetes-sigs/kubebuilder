@@ -57,5 +57,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: controller-manager
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 `

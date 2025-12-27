@@ -284,7 +284,7 @@ spec:
       clientConfig:
         service:
           name: project-v4-with-plugins-webhook-service
-          namespace: project-v4-with-plugins-system
+          namespace: system
           path: /convert
       conversionReviewVersions:
       - v1
@@ -1108,8 +1108,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-with-plugins-webhook-service
-      namespace: project-v4-with-plugins-system
+      name: webhook-service
+      namespace: system
       path: /validate-example-com-testproject-org-v1alpha1-memcached
   failurePolicy: Fail
   name: vmemcached-v1alpha1.kb.io

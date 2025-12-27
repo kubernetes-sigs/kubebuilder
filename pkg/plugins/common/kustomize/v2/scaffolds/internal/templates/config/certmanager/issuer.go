@@ -54,7 +54,7 @@ metadata:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: selfsigned-issuer
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 spec:
   selfSigned: {}
 `

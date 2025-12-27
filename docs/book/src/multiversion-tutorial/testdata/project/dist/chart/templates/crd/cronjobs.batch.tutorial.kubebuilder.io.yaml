@@ -16,7 +16,7 @@ spec:
             clientConfig:
                 service:
                     name: {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-                    namespace: {{ .Release.Namespace }}
+                    namespace: system
                     path: /convert
             conversionReviewVersions:
                 - v1

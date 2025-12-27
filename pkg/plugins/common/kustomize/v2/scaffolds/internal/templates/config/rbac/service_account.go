@@ -48,5 +48,5 @@ metadata:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 `

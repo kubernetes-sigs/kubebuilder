@@ -52,7 +52,7 @@ metadata:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: allow-webhook-traffic
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 spec:
   podSelector:
     matchLabels:
