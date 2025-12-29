@@ -4,7 +4,7 @@ The Kubebuilder Project is released on an as-needed basis. The process is as fol
 
 **Note:** Releases are done from the `release-MAJOR.MINOR` branches. For PATCH releases it is not required
 to create a new branch. Instead, you will just need to ensure that all major fixes are cherry-picked into the respective
-`release-MAJOR.MINOR` branch. To know more about versioning check https://semver.org/.
+`release-MAJOR.MINOR` branch. To know more about versioning, check https://semver.org/.
 
 **Note:** Before `3.5.*` release this project was released based on `MAJOR`. A change to the
 process was done to ensure that we have an aligned process under the org (similar to `controller-runtime` and
@@ -33,7 +33,7 @@ process was done to ensure that we have an aligned process under the org (simila
 
 1. Create a new tag with the correct version from the new `release-<MAJOR.MINOR>` branch
 2. Verify the Release Github Action. It should build the assets and publish in the draft release
-3. You also need to manually add the changelog generated above on the release page and publish it. Now, the source code is released !
+3. You also need to manually add the changelog generated above on the release page and publish it. Now, the source code is released!
 
 ### Update the website docs (https://book.kubebuilder.io/quick-start.html)
 
