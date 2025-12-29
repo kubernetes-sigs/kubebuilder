@@ -33,7 +33,7 @@ process was done to ensure that we have an aligned process under the org (simila
 
 1. Create a new tag with the correct version from the new `release-<MAJOR.MINOR>` branch
 2. Verify the Release Github Action. It should build the assets and publish in the draft release
-3. You also need to manually add the changelog generated above on the release page and publish it. Now, the code source is released !
+3. You also need to manually add the changelog generated above on the release page and publish it. Now, the source code is released !
 
 ### Update the website docs (https://book.kubebuilder.io/quick-start.html)
 
