@@ -79,7 +79,7 @@ Kubebuilder projects requires artifacts which are used to do test with ENV TEST 
 These artifacts can be checked in the service page: https://storage.googleapis.com/kubebuilder-tools
 
 The build is made from the branch [tools-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases) and the trigger will call the `build/cloudbuild_tools.yaml` passing
-as argument the architecture and the SO that should be used, e.g:
+as argument the architecture and the OS that should be used, e.g:
 
 <img width="553" alt="Screenshot 2022-04-30 at 10 15 41" src="https://user-images.githubusercontent.com/7708031/166099666-ae9cd2df-73fe-47f6-a987-464f63df9a19.png">
 
