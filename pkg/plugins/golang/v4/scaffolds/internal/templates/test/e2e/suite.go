@@ -65,7 +65,7 @@ var (
 	// These variables are useful if CertManager is already installed, avoiding
 	// re-installation and conflicts.
 	skipCertManagerInstall = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
-	// certManagerWasInstalledByTest will be set true is installed during the test.
+	// certManagerWasInstalledByTest will be set true if installed during test.
 	certManagerWasInstalledByTest = false
 
 	// projectImage is the name of the image which will be build and loaded
