@@ -74,18 +74,19 @@ PROJECT                        Kubebuilder metadata Auto-generated (DO NOT EDIT)
 ` + "```" + `
 api/<group>/<version>/*_types.go       CRD schemas by group
 internal/controller/<group>/*          Controllers by group
-internal/webhook/<group>/*             Webhooks by group (if present)
+internal/webhook/<group>/<version>/*   Webhooks by group and version (if present)
 ` + "```" + `
 
 Multi-group layout organizes APIs by group name (e.g., ` + "`batch`" + `, ` + "`apps`" + `). Check the ` + "`PROJECT`" + ` file for ` + "`multigroup: true`" + `.
 
 **To convert to multi-group layout:**
 1. Run: ` + "`{{ .CommandName }} edit --multigroup=true`" + `
-2. Move existing APIs: ` + "`mkdir api/<group> && mv api/<version> api/<group>/`" + `
-3. Move controllers: ` + "`mkdir internal/controller/<group> && mv internal/controller/*.go internal/controller/<group>/`" + `
-4. Move webhooks (if any): ` + "`mkdir internal/webhook/<group> && mv internal/webhook/*.go internal/webhook/<group>/`" + `
+2. Move APIs: ` + "`mkdir -p api/<group> && mv api/<version> api/<group>/`" + `
+3. Move controllers: ` + "`mkdir -p internal/controller/<group> && mv internal/controller/*.go internal/controller/<group>/`" + `
+4. Move webhooks (if present): ` + "`mkdir -p internal/webhook/<group> && mv internal/webhook/<version> internal/webhook/<group>/`" + `
 5. Update import paths in all files
 6. Fix ` + "`path`" + ` in ` + "`PROJECT`" + ` file for each resource
+7. Update test suite CRD paths (add one more ` + "`..`" + ` to relative paths)
 
 ## Critical Rules
 
@@ -280,7 +281,7 @@ The **deploy-image plugin** scaffolds a complete controller following good pract
 
 Generated code includes: status conditions (` + "`metav1.Condition`" + `), finalizers, owner references, events, idempotent reconciliation.
 
-## How to Distribute Your Project
+## Distribution Options
 
 ### Option 1: YAML Bundle (Kustomize)
 
