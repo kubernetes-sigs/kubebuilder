@@ -374,9 +374,19 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 
 // InstallHelm installs Helm in the e2e server.
 func (t *TestContext) InstallHelm() error {
+	// Check if Helm is already installed
+	checkCmd := exec.Command("helm", "version")
+	_, err := t.Run(checkCmd)
+	if err == nil {
+		// Helm is already installed, skip installation
+		_, _ = fmt.Fprintf(GinkgoWriter, "Helm is already installed, skipping installation\n")
+		return nil
+	}
+
+	// Install Helm if not found
 	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", helmInstallScript))
-	_, err := t.Run(cmd)
+	_, err = t.Run(cmd)
 	if err != nil {
 		return err
 	}
