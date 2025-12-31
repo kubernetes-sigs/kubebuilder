@@ -28,6 +28,8 @@ Manual migration is more complex than automated methods but gives you complete c
 2. **Migrate to latest** - Re-scaffold with latest version, port code
 
 This keeps your project working at each step and simplifies porting.
+AI migration helpers are provided to automate repetitive tasks.
+See [AI Migration Helpers](./ai-helpers.md) for AI instructions that automate both phases.
 
 **For future updates:** Once migrated, use the [AutoUpdate plugin][autoupdate-plugin] or [alpha update][alpha-update] command to automatically update scaffolds with 3-way merge while preserving customizations.
 
@@ -50,6 +52,14 @@ git checkout -b reorganize
 ```
 
 ### 1.2 Reorganize file locations
+
+<aside class="note">
+
+<h1>Skip if Using AI Migration Helper</h1>
+
+If you used [Step 1: Reorganize to New Layout](./reorganize-layout.md) AI migration helper, your project is already reorganized. Skip to [Phase 2](#phase-2-migrate-to-latest-version).
+
+</aside>
 
 Move files to new layout:
 
@@ -141,6 +151,14 @@ find . -not -path './.git*' -not -name '.' -not -name '..' -delete
 ### 2.1 Identify your module and domain
 
 Identify the information you'll need for initialization from your backup.
+
+<aside class="note">
+
+<h1>Skip if Using AI Migration Helper</h1>
+
+If you used [Step 2: Discovery CLI Commands](./discovery-commands.md) AI migration helper, you already have a complete script with all commands. Execute it and skip to [Step 4: Port Your Custom Code](#step-4-port-your-custom-code).
+
+</aside>
 
 **Module path** - Check your backup's `go.mod` file:
 
@@ -441,6 +459,16 @@ make manifests && make build
 ```
 
 ## Step 4: Port Your Custom Code
+
+<aside class="note">
+
+<h1>Using AI Migration Helper</h1>
+
+If you used [Step 3: Port Custom Code](./port-code.md) AI migration helper, your code is already ported.
+
+You may skip to [Step 5](#step-5-test-and-verify). However, it's still recommended to at least review the following steps and do manual validation to ensure all code was properly ported.
+
+</aside>
 
 Manually port your custom business logic and configurations from the backup to the new project.
 
