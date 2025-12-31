@@ -8,17 +8,6 @@ This guide outlines the manual steps to migrate your existing Kubebuilder
 project to a newer version of the Kubebuilder framework. This process involves
 re-scaffolding your project and manually porting over your custom code and configurations.
 
-<aside class="warning">
-<h1>About Manual Migration</h1>
-
-Manual migration is more complex and susceptible to errors compared to automated methods.
-However, this approach gives you complete control and visibility into every change, which is valuable when:
-- Your project has significant customizations
-- You want to understand the new project structure thoroughly
-- Automated tools are not available for your project version
-
-</aside>
-
 From Kubebuilder `v3.0.0` onwards, all inputs used by Kubebuilder are tracked in the [PROJECT][project-config] file.
 Ensure that you check this file in your current project to verify the recorded configuration and metadata.
 Review the [PROJECT file documentation][project-config] for a better understanding.
@@ -27,39 +16,110 @@ Also, before starting, it is recommended to check [What's in a basic project?][b
 to better understand the project layouts and structure.
 
 
-## Step 1: Prepare Your Current Project
+<aside class="warning">
+<h1>About Manual Migration</h1>
 
-Before starting the migration, you need to backup your work and identify key project information.
+Manual migration is more complex than automated methods but gives you complete control. Use manual migration when:
+- Your project has significant customizations
+- Automated tools aren't available for your version yet
 
-### 1.1 Create a backup branch
+**Two-phase approach (recommended for legacy layouts):**
+1. **Reorganize layout** - Move files to new structure (controllers → internal/controller, webhooks → internal/webhook, main.go → cmd), update imports, test, commit
+2. **Migrate to latest** - Re-scaffold with latest version, port code
 
-Create a branch from your current codebase to preserve your work:
+This keeps your project working at each step and simplifies porting.
+
+**For future updates:** Once migrated, use the [AutoUpdate plugin][autoupdate-plugin] or [alpha update][alpha-update] command to automatically update scaffolds with 3-way merge while preserving customizations.
+
+</aside>
+
+
+## Phase 1: Reorganize to New Layout (Required only for Legacy Layouts)
+
+**Only needed if ANY of these are true:**
+- Controllers are NOT in `internal/controller/`
+- Webhooks are NOT in `internal/webhook/`
+- Main is NOT in `cmd/`
+
+**Skip this phase if** your project already uses `internal/controller/`, `internal/webhook/`, and `cmd/main.go`.
+
+### 1.1 Create a reorganization branch
+
+```bash
+git checkout -b reorganize
+```
+
+### 1.2 Reorganize file locations
+
+Move files to new layout:
+
+```bash
+# If you have controllers/ directory
+mkdir -p internal/controller
+mv controllers/* internal/controller/
+rmdir controllers
+
+# OR if you have pkg/controllers/ directory
+mkdir -p internal/controller
+mv pkg/controllers/* internal/controller/
+
+# If you have webhooks in api/v1/ or apis/v1/
+mkdir -p internal/webhook/v1
+mv api/v1/*_webhook* internal/webhook/v1/ 2>/dev/null || mv apis/v1/*_webhook* internal/webhook/v1/ 2>/dev/null || echo "No webhook files found to move (this is expected if your project has no webhooks)"
+
+# If main.go is in root
+mkdir -p cmd
+mv main.go cmd/
+```
+
+### 1.3 Update package declarations
+
+After moving files, update package declarations:
+
+**Controllers:** Change `package controllers` → `package controller` in all `*_controller.go` and `*_controller_test.go` files.
+
+**Webhooks:** Keep version as package name (e.g., `package v1` stays `package v1` in `internal/webhook/v1/`).
+
+### 1.4 Update import paths
+
+Find and update all imports:
+
+```bash
+grep -r "pkg/controllers\|/controllers\"" --include="*.go"
+```
+
+In each file found, update:
+- Imports: `<module>/controllers` or `<module>/pkg/controllers` → `<module>/internal/controller`
+- References: `controllers.TypeName` → `controller.TypeName`
+
+### 1.5 Update Dockerfile (if needed)
+
+If your Dockerfile has explicit COPY statements for moved paths, update them to reflect the new structure, or simplify to `COPY . .` and use `.dockerignore` to exclude unnecessary files.
+
+### 1.6 Verify and commit
+
+Build and test the reorganized project:
+
+```bash
+make generate manifests
+make build && make test
+```
+
+If successful, commit the layout changes. Your project now uses the new layout. Proceed to Phase 2.
+
+## Phase 2: Migrate to Latest Version
+
+### Step 1: Prepare Your Current Project
+
+### 1.1 Create a migration branch
+
+Create a branch from your current codebase:
 
 ```bash
 git checkout -b migration
 ```
 
-<aside class="note">
-<h1>Understanding the PROJECT file</h1>
-
-From Kubebuilder `v3.0.0` onwards, the `PROJECT` file tracks all inputs and scaffolding metadata,
-including APIs, controllers, webhooks, plugins, and project configuration. This file is essential
-for automated migration tools like `alpha generate` and `alpha update`.
-
-If your project was created before `v3.0.0`:
-- You will not have a `PROJECT` file
-- You'll need to identify your APIs, controllers, and webhooks manually by examining the directory structure
-- Automated migration tools won't work; you must use the manual process
-
-Recommendation: When re-scaffolding, use Kubebuilder CLI for all APIs, controllers, and webhooks
-(including those for external types like Kubernetes built-in resources). This creates a clean base state
-that works smoothly with future automated migrations and updates.
-
-</aside>
-
 ### 1.2 Create a backup
-
-Create a directory to hold all your current project files as a backup:
 
 ```bash
 mkdir ../migration-backup
@@ -68,7 +128,7 @@ cp -r . ../migration-backup/
 
 ### 1.3 Clean your project directory
 
-Remove all files except `.git` from your current project directory to start fresh:
+Remove all files except `.git`:
 
 ```bash
 find . -not -path './.git*' -not -name '.' -not -name '..' -delete
@@ -76,46 +136,16 @@ find . -not -path './.git*' -not -name '.' -not -name '..' -delete
 
 ## Step 2: Initialize the New Project
 
-You have two options: use `alpha generate` if your project has a `PROJECT` file, or manually initialize.
-
-<aside class="note">
-<h1>Option A: Try alpha generate first</h1>
-
-Recommended for projects created with Kubebuilder `v3.0.0`+.
-
-If your project has a `PROJECT` file, you can try using `alpha generate`:
-
-```shell
-kubebuilder alpha generate
-```
-
-This will re-scaffold everything that was created using the CLI based on your `PROJECT` file.
-
-Limitations:
-- Only works for projects created with Kubebuilder `v3.0.0` or later
-- Only re-scaffolds APIs, controllers, and webhooks that were created using the CLI
-- May leave a partial initial state if you have manually created resources
-- You will need to verify and manually re-scaffold anything that was created outside the CLI
-
-If `alpha generate` completes successfully, you can skip to [Step 3.1](#31-identify-all-your-apis) to verify everything was scaffolded correctly, then proceed to [Step 4](#step-4-port-your-custom-code).
-
-See the [alpha generate command reference](../reference/commands/alpha_generate.md) for details.
-
-</aside>
-
-### Option B: Manual Initialization
-
-If `alpha generate` doesn't work or you prefer manual control, follow these steps:
+**About the PROJECT file:** From v3.0.0+, the `PROJECT` file tracks all scaffolding metadata. If you have one and used CLI for all resources, try `kubebuilder alpha generate` first. Otherwise, follow the manual steps below to identify and re-scaffold all resources.
 
 ### 2.1 Identify your module and domain
 
-First, identify the information you'll need for initialization. You can compare with your main branch or check the backup directory.
+Identify the information you'll need for initialization from your backup.
 
-**Module path** - Check your `go.mod` file:
+**Module path** - Check your backup's `go.mod` file:
 
 ```bash
-# Compare with main branch
-git show main:go.mod
+cat ../migration-backup/go.mod
 ```
 
 Look for the module line:
@@ -124,11 +154,10 @@ Look for the module line:
 module tutorial.kubebuilder.io/migration-project
 ```
 
-**Domain** - Check your `PROJECT` file (if it exists):
+**Domain** - Check your backup's `PROJECT` file:
 
 ```bash
-# Compare with main branch
-git show main:PROJECT
+cat ../migration-backup/PROJECT
 ```
 
 Look for the domain line:
@@ -136,18 +165,6 @@ Look for the domain line:
 ```yaml
 domain: tutorial.kubebuilder.io
 ```
-
-<aside class="note">
-<h1>Alternative: Use backup directory</h1>
-
-If you prefer, you can view these files from your backup directory:
-
-```bash
-cat ../migration-backup/go.mod
-cat ../migration-backup/PROJECT
-```
-
-</aside>
 
 If you don't have a `PROJECT` file (versions < `v3.0.0`),
 check your CRD files under `config/crd/bases/` or examine the API group names.
@@ -183,7 +200,7 @@ Replace with your actual domain and repository (module path).
 
 ### 2.4 Enable multi-group support (if needed)
 
-**Multi-group** projects organize APIs into different groups, with each group in its own directory.
+Multi-group projects organize APIs into different groups, with each group in its own directory.
 This is useful when you have APIs for different purposes or domains.
 
 **Check if your project uses multi-group layout** by examining your backup's directory structure:
@@ -198,11 +215,7 @@ This is useful when you have APIs for different purposes or domains.
   - `api/crew/v1/captain_types.go`
   - `api/sea/v1/ship_types.go`
 
-You can also check your backup's `PROJECT` file for:
-
-```yaml
-multigroup: true
-```
+You can also check your backup's `PROJECT` file for `multigroup: true`.
 
 **If your project uses multi-group layout**, enable it before creating APIs:
 
@@ -213,12 +226,11 @@ kubebuilder edit --multigroup=true
 <aside class="warning">
 <h1>Important</h1>
 
-This must be done before creating any APIs if you want the multi-group layout.
+This must be done before creating any APIs to ensure they're scaffolded in the multi-group structure.
 
 </aside>
 
-When following this guide for any to latest migration, you'll naturally get the new layout since you're creating
-a fresh v4 project and porting your code into it.
+When following this guide, you'll get the new layout automatically since you're creating a fresh project with the latest version and porting your code into it.
 
 ## Step 3: Re-scaffold APIs and Controllers
 
@@ -231,16 +243,15 @@ regardless of whether you have a `PROJECT` file**, as not all resources may have
 
 **Check the directory structure** in your backup to ensure you don't miss any manually created resources:
 
-- Look in the `api/` directory for `*_types.go` files:
-  - Single-group: `api/v1/cronjob_types.go` → extract: version `v1`, kind `CronJob`, group from imports
-  - Multi-group: `api/batch/v1/cronjob_types.go` → extract: group `batch`, version `v1`, kind `CronJob`
+- Look in the `api/` directory (or `apis/` for projects generated with older Kubebuilder versions) for `*_types.go` files:
+  - Single-group: `api/v1/cronjob_types.go` - extract: version `v1`, kind `CronJob`, group from imports
+  - Multi-group: `api/batch/v1/cronjob_types.go` - extract: group `batch`, version `v1`, kind `CronJob`
 
-- Check for controllers. The location depends on the Kubebuilder version:
-  - **Newer versions (v3+):** `internal/controller/cronjob_controller.go`
-  - **Older versions:** `controllers/cronjob_controller.go`
-  - A file like `cronjob_controller.go` indicates a controller exists for that kind
+- Check for controllers in these locations:
+  - **Current:** `internal/controller/cronjob_controller.go` or `internal/controller/<group>/cronjob_controller.go`
+  - **Legacy:** `controllers/cronjob_controller.go` or `pkg/controllers/cronjob_controller.go`
 
-**If you used the CLI to create all APIs from Kubebuilder `v3.0.0+` you should have then in the `PROJECT` file** under the `resources` section, such as:
+**If you used the CLI to create all APIs from Kubebuilder `v3.0.0+` you should have them in the `PROJECT` file** under the `resources` section, such as:
 
 ```yaml
 resources:
@@ -326,8 +337,9 @@ If your original project has webhooks, you need to re-scaffold them.
 **Identify webhooks in your backup project:**
 
 1. **From directory structure**, look for webhook files:
-   - Legacy location: `api/v1/<kind>_webhook.go` or `api/<group>/<version>/<kind>_webhook.go`
-   - Current location: `internal/webhook/<version>/<kind>_webhook.go`
+   - Legacy location (v3 and earlier): `api/v1/<kind>_webhook.go` or `api/<group>/<version>/<kind>_webhook.go`
+   - Current location (single-group): `internal/webhook/<version>/<kind>_webhook.go`
+   - Current location (multi-group): `internal/webhook/<group>/<version>/<kind>_webhook.go`
 
 2. **From `PROJECT` file** (if available), check each resource's webhooks section:
 
@@ -371,24 +383,26 @@ The hub implements `Hub()` marker interface, while spokes implement `ConvertTo()
 
 **Setting up conversion webhooks:**
 
-The conversion webhook is created for the **hub** version, with spoke versions specified using the `--spoke` flag:
+Create the conversion webhook for the **hub** version, with spoke versions specified using the `--spoke` flag.
+
+**Note:** In the examples below, we use `v1` as the hub for illustration. Choose the version in your project that should be the central conversion point—typically your most feature-complete and stable storage version, not necessarily the oldest or newest.
 
 ```bash
-kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --spoke v1
+kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2
 ```
 
 This command:
-- Creates the conversion webhook infrastructure for version `v2` (the hub)
-- Sets up conversion for version `v1` (the spoke) to convert to/from `v2`
-- Generates `cronjob_conversion.go` files with conversion method stubs
+- Creates conversion webhook for `v1` as the **hub** version
+- Configures `v2` as a **spoke** that converts to/from the hub `v1`
+- Generates `*_conversion.go` files with conversion method stubs
 
-**For multiple spokes**, you can specify them as a comma-separated list:
+**For multiple spokes**, specify them as a comma-separated list:
 
 ```bash
-kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --spoke v1,v1alpha1
+kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2,v1alpha1
 ```
 
-This sets up `v2` as the hub with both `v1` and `v1alpha1` as spokes.
+This sets up `v1` as the **hub** with both `v2` and `v1alpha1` as **spokes**.
 
 **What you need to implement:**
 
@@ -423,14 +437,12 @@ More info: [Webhook Overview][webhook-overview], [Admission Webhook][admission-w
 After scaffolding all webhooks, verify everything compiles:
 
 ```bash
-make manifests
-make generate
-make build
+make manifests && make build
 ```
 
 ## Step 4: Port Your Custom Code
 
-Now you need to manually port your custom business logic and configurations from the backup to the new project.
+Manually port your custom business logic and configurations from the backup to the new project.
 
 <aside class="note">
 <h1>Use diff tools</h1>
@@ -459,6 +471,13 @@ Compare and merge your custom API fields and markers from your backup project.
 
 See [CRD Generation][crd-generation], [CRD Validation][crd-validation], and [Markers][markers] for all available markers.
 
+**If your APIs reference a parent package** (e.g., `scheduling.GroupName`), port it:
+
+```bash
+mkdir -p api/<group>/
+cp ../migration-backup/apis/<group>/groupversion_info.go api/<group>/
+```
+
 After porting API definitions, regenerate and verify:
 
 ```bash
@@ -472,7 +491,8 @@ This ensures your API types and CRD manifests are properly generated before movi
 
 **Files to compare:**
 
-- **File location:** `internal/controller/<kind>_controller.go` (or `controllers/` in older versions)
+- **Current single-group:** `internal/controller/<kind>_controller.go`
+- **Current multi-group:** `internal/controller/<group>/<kind>_controller.go`
 
 **What to port:**
 
@@ -501,9 +521,9 @@ Webhooks have changed location between Kubebuilder versions. Be aware of the pat
 - `api/v1/<kind>_webhook.go`
 - `api/<group>/<version>/<kind>_webhook.go`
 
-**Current webhook location** (Kubebuilder v4+):
-- `internal/webhook/v1/<kind>_webhook.go`
-- `internal/webhook/<version>/<kind>_webhook.go`
+**Current webhook location:**
+- Single-group: `internal/webhook/<version>/<kind>_webhook.go`
+- Multi-group: `internal/webhook/<group>/<version>/<kind>_webhook.go`
 
 **What to port:**
 
@@ -537,22 +557,30 @@ make manifests
 make build
 ```
 
-### 4.4 Configure Kustomize manifests
+### 4.4 Port main.go customizations (if any)
+
+**File:** `cmd/main.go`
+
+Most projects don't need to customize `main.go` as Kubebuilder handles all the standard setup automatically
+(registering APIs, setting up controllers and webhooks, manager initialization, metrics, etc.).
+
+Only port customizations that are not part of the standard scaffold. Compare your backup `main.go` with the
+new scaffolded one to identify any custom logic you added.
+
+### 4.5 Configure Kustomize manifests
 
 The `config/` directory contains Kustomize manifests for deploying your operator. Compare with your backup to ensure all configurations are properly set up.
 
 **Review and update these directories:**
 
 1. **`config/default/kustomization.yaml`** - Main kustomization file
-   - Ensure that webhook configurations is enabled if you have webhooks (`uncomment webhook-related patches`)
-   - Ensure that cert-manager is enabled if using webhooks (`uncomment certmanager resources`)
+   - Ensure webhook configurations are enabled if you have webhooks (uncomment webhook-related patches)
+   - Ensure cert-manager is enabled if using webhooks (uncomment certmanager resources)
    - Enable or disable metrics endpoint based on your original configuration
    - Review namespace and name prefix settings
 
 2. **`config/manager/`** - Controller manager deployment
-   - Usually no changes needed unless you have customizations, such as:
-   - If needed: compare resource limits and requests with your backup
-   - If needed: check environment variables
+   - Usually no changes are needed unless you have customizations. In that case, compare resource limits and requests with your backup and check environment variables
 
 3. **`config/rbac/`** - RBAC configurations
    - Usually auto-generated from markers - no manual changes needed
@@ -572,42 +600,23 @@ make all
 make build-installer
 ```
 
-### 4.5 Port main.go customizations (if any)
-
-**File:** `cmd/main.go`
-
-Most projects don't need to customize `main.go` as Kubebuilder handles all the standard setup automatically
-(registering APIs, setting up controllers and webhooks, manager initialization, metrics, etc.).
-
-Only port customizations that are not part of the standard scaffold. Compare your backup `main.go` with the
-new scaffolded one to identify any custom logic you added.
-
 ### 4.6 Port additional customizations
 
-Now try building and testing the project to identify any missing pieces:
+Port any additional packages, dependencies, and customizations from your backup:
+
+**Additional packages** (e.g., `pkg/util`):
 
 ```bash
-make all
+cp -r ../migration-backup/pkg/<package-name> pkg/
+# Update import paths (works on both macOS and Linux)
+find pkg/ -name "*.go" -exec sed -i.bak 's|<module>/apis/|<module>/api/|g' {} \;
+find pkg/ -name "*.go.bak" -delete
 ```
 
-If you encounter issues, you may need to port additional customizations from your backup:
+For dependencies, run `go mod tidy` or copy `go.mod`/`go.sum` from backup for complex projects.
 
-**Dependencies** (`go.mod`):
-- Compare your backup `go.mod` with the new one
-- Add any additional dependencies not part of the standard scaffold:
-  ```bash
-  go get <package-name>@<version>
-  ```
-- Then tidy up:
-  ```bash
-  go mod tidy
-  ```
+Check for additional customizations (Makefile, Dockerfile, test files). Use diff tools to compare with backup and identify missed files.
 
-Compare your project structure with your backup to identify any other custom files or directories you may have added, such as:
-
-- Compare the two **Makefiles** carefully using diff tools you may have custom targets: deployment helpers, code generation scripts, etc.
-- Compare the **Dockerfile** you may have some custom build configurations:
-- Ensure that you ported any testing-related files and configurations if you have tests in your project.
 
 <aside class="note">
 <h1>Using diff tools</h1>
@@ -617,15 +626,42 @@ your current branch with your main branch. This helps identify any files you may
 
 </aside>
 
-After porting all customizations, run the full build and test cycle:
+After porting all customizations, verify everything builds:
 
 ```bash
 make all
 ```
 
-## Step 5: Test and Deploy
+## Step 5: Test and Verify
 
-Thoroughly test your migrated project to ensure everything works as expected.
+Compare against the backup to ensure all customizations were correctly ported, such as:
+
+```bash
+diff -r --brief ../migration-backup/ . | grep "Only in ../migration-backup"
+```
+
+Run tests and verify functionality:
+
+```bash
+make test && make lint-fix
+```
+
+Deploy to a test cluster (e.g. [kind][kind-doc]) and verify the changes (i.e. validate expected behavior, run regression checks, confirm the full CI pipeline still passes, and execute the e2e tests).
+
+<aside class="note">
+
+<h1>If You Have a Helm Chart</h1>
+
+If you had a Helm chart to distribute your project, you may want to regenerate it with the [helm/v2-alpha plugin](../plugins/available/helm-v2-alpha.md), then apply your customizations.
+
+```bash
+kubebuilder edit --plugins=helm/v2-alpha
+```
+
+Compare your backup's `chart/values.yaml` and custom templates with the newly generated chart, and apply your customizations and ensure that all is still working
+as before.
+
+</aside>
 
 ## Additional Resources
 
@@ -660,3 +696,6 @@ Thoroughly test your migrated project to ensure everything works as expected.
 [cert-manager]: ../cronjob-tutorial/cert-manager.md
 [envtest]: ../reference/envtest.md
 [standard-go-project]: https://github.com/golang-standards/project-layout
+[kind-doc]: ../reference/kind.md
+[autoupdate-plugin]: ../plugins/available/autoupdate-v1-alpha.md
+[alpha-update]: ../reference/commands/alpha_update.md
