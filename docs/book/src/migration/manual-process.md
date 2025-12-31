@@ -183,7 +183,7 @@ Replace with your actual domain and repository (module path).
 
 ### 2.4 Enable multi-group support (if needed)
 
-**Multi-group** projects organize APIs into different groups, with each group in its own directory.
+Multi-group projects organize APIs into different groups, with each group in its own directory.
 This is useful when you have APIs for different purposes or domains.
 
 **Check if your project uses multi-group layout** by examining your backup's directory structure:
@@ -198,11 +198,7 @@ This is useful when you have APIs for different purposes or domains.
   - `api/crew/v1/captain_types.go`
   - `api/sea/v1/ship_types.go`
 
-You can also check your backup's `PROJECT` file for:
-
-```yaml
-multigroup: true
-```
+You can also check your backup's `PROJECT` file for `multigroup: true`.
 
 **If your project uses multi-group layout**, enable it before creating APIs:
 
@@ -213,7 +209,7 @@ kubebuilder edit --multigroup=true
 <aside class="warning">
 <h1>Important</h1>
 
-This must be done before creating any APIs if you want the multi-group layout.
+This must be done before creating any APIs to ensure they're scaffolded in the multi-group structure.
 
 </aside>
 
@@ -235,12 +231,13 @@ regardless of whether you have a `PROJECT` file**, as not all resources may have
   - Single-group: `api/v1/cronjob_types.go` → extract: version `v1`, kind `CronJob`, group from imports
   - Multi-group: `api/batch/v1/cronjob_types.go` → extract: group `batch`, version `v1`, kind `CronJob`
 
-- Check for controllers. The location depends on the Kubebuilder version:
-  - **Newer versions (v3+):** `internal/controller/cronjob_controller.go`
-  - **Older versions:** `controllers/cronjob_controller.go`
+- Check for controllers. The location depends on the Kubebuilder version and layout:
+  - **v4 single-group:** `internal/controller/cronjob_controller.go`
+  - **v4 multi-group:** `internal/controller/batch/cronjob_controller.go`
+  - **v3:** `internal/controller/cronjob_controller.go` or `controllers/cronjob_controller.go`
   - A file like `cronjob_controller.go` indicates a controller exists for that kind
 
-**If you used the CLI to create all APIs from Kubebuilder `v3.0.0+` you should have then in the `PROJECT` file** under the `resources` section, such as:
+**If you used the CLI to create all APIs from Kubebuilder `v3.0.0+` you should have them in the `PROJECT` file** under the `resources` section, such as:
 
 ```yaml
 resources:
@@ -326,8 +323,9 @@ If your original project has webhooks, you need to re-scaffold them.
 **Identify webhooks in your backup project:**
 
 1. **From directory structure**, look for webhook files:
-   - Legacy location: `api/v1/<kind>_webhook.go` or `api/<group>/<version>/<kind>_webhook.go`
-   - Current location: `internal/webhook/<version>/<kind>_webhook.go`
+   - Legacy location (v3 and earlier): `api/v1/<kind>_webhook.go` or `api/<group>/<version>/<kind>_webhook.go`
+   - Current location (v4+, single-group): `internal/webhook/<version>/<kind>_webhook.go`
+   - Current location (v4+, multi-group): `internal/webhook/<group>/<version>/<kind>_webhook.go`
 
 2. **From `PROJECT` file** (if available), check each resource's webhooks section:
 
@@ -371,24 +369,26 @@ The hub implements `Hub()` marker interface, while spokes implement `ConvertTo()
 
 **Setting up conversion webhooks:**
 
-The conversion webhook is created for the **hub** version, with spoke versions specified using the `--spoke` flag:
+Create the conversion webhook for the **hub** version, with spoke versions specified using the `--spoke` flag:
 
 ```bash
-kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --spoke v1
+kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2
 ```
 
 This command:
-- Creates the conversion webhook infrastructure for version `v2` (the hub)
-- Sets up conversion for version `v1` (the spoke) to convert to/from `v2`
-- Generates `cronjob_conversion.go` files with conversion method stubs
+- Creates the conversion webhook infrastructure for version `v1` (the hub)
+- Sets up conversion for version `v2` (the spoke) to convert to/from `v1`
+- Generates `*_conversion.go` files with conversion method stubs
 
-**For multiple spokes**, you can specify them as a comma-separated list:
+Choose your most stable/complete version as the hub (often your oldest stable version).
+
+**For multiple spokes**, specify them as a comma-separated list:
 
 ```bash
-kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --spoke v1,v1alpha1
+kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2,v1alpha1
 ```
 
-This sets up `v2` as the hub with both `v1` and `v1alpha1` as spokes.
+This sets up `v1` as the hub with both `v2` and `v1alpha1` as spokes.
 
 **What you need to implement:**
 
@@ -472,7 +472,9 @@ This ensures your API types and CRD manifests are properly generated before movi
 
 **Files to compare:**
 
-- **File location:** `internal/controller/<kind>_controller.go` (or `controllers/` in older versions)
+- **v4 single-group:** `internal/controller/<kind>_controller.go`
+- **v4 multi-group:** `internal/controller/<group>/<kind>_controller.go`
+- **v3:** `internal/controller/<kind>_controller.go` or `controllers/<kind>_controller.go`
 
 **What to port:**
 
@@ -502,8 +504,8 @@ Webhooks have changed location between Kubebuilder versions. Be aware of the pat
 - `api/<group>/<version>/<kind>_webhook.go`
 
 **Current webhook location** (Kubebuilder v4+):
-- `internal/webhook/v1/<kind>_webhook.go`
-- `internal/webhook/<version>/<kind>_webhook.go`
+- Single-group: `internal/webhook/<version>/<kind>_webhook.go`
+- Multi-group: `internal/webhook/<group>/<version>/<kind>_webhook.go`
 
 **What to port:**
 
@@ -544,13 +546,13 @@ The `config/` directory contains Kustomize manifests for deploying your operator
 **Review and update these directories:**
 
 1. **`config/default/kustomization.yaml`** - Main kustomization file
-   - Ensure that webhook configurations is enabled if you have webhooks (`uncomment webhook-related patches`)
-   - Ensure that cert-manager is enabled if using webhooks (`uncomment certmanager resources`)
+   - Ensure webhook configurations are enabled if you have webhooks (uncomment webhook-related patches)
+   - Ensure cert-manager is enabled if using webhooks (uncomment certmanager resources)
    - Enable or disable metrics endpoint based on your original configuration
    - Review namespace and name prefix settings
 
 2. **`config/manager/`** - Controller manager deployment
-   - Usually no changes needed unless you have customizations, such as:
+   - Usually no changes needed unless you have customizations
    - If needed: compare resource limits and requests with your backup
    - If needed: check environment variables
 
@@ -603,11 +605,11 @@ If you encounter issues, you may need to port additional customizations from you
   go mod tidy
   ```
 
-Compare your project structure with your backup to identify any other custom files or directories you may have added, such as:
+Compare your project structure with your backup to identify any other custom files or directories you may have added:
 
-- Compare the two **Makefiles** carefully using diff tools you may have custom targets: deployment helpers, code generation scripts, etc.
-- Compare the **Dockerfile** you may have some custom build configurations:
-- Ensure that you ported any testing-related files and configurations if you have tests in your project.
+- **Makefile** - Compare carefully using diff tools; you may have custom targets (deployment helpers, code generation scripts, etc.)
+- **Dockerfile** - Check for custom build configurations
+- **Testing files** - Ensure you ported any testing-related files and configurations
 
 <aside class="note">
 <h1>Using diff tools</h1>
@@ -623,9 +625,53 @@ After porting all customizations, run the full build and test cycle:
 make all
 ```
 
-## Step 5: Test and Deploy
+## Step 5: Test and Verify
 
-Thoroughly test your migrated project to ensure everything works as expected.
+Test your migrated project to ensure everything works correctly.
+
+### 5.1 Run local tests
+
+Run the full test suite:
+
+```bash
+make test           # Run all tests
+make lint-fix       # Fix any code style issues
+```
+
+### 5.2 Test locally with a cluster
+
+Deploy to a local test cluster (Use [kind][kind-doc]):
+
+```bash
+# Create a kind cluster if you don't have one
+kind create cluster
+
+# Build and deploy
+make docker-build docker-push IMG=<your-registry>/project:latest
+make deploy IMG=<your-registry>/project:latest
+
+# Or load image directly to kind
+make docker-build IMG=project:latest
+kind load docker-image project:latest
+make deploy IMG=project:latest
+
+# Test with sample resources
+kubectl apply -k config/samples/
+
+# Check controller logs
+kubectl logs -n <project>-system deployment/<project>-controller-manager -c manager -f
+```
+
+### 5.3 Verify migration completeness
+
+Compare your migrated project with the backup to ensure nothing was missed:
+
+```bash
+# Check for any custom files you may have missed
+diff -r --brief ../migration-backup/ . | grep "Only in ../migration-backup"
+```
+
+Review any files found and determine if they need to be ported.
 
 ## Additional Resources
 
@@ -660,3 +706,4 @@ Thoroughly test your migrated project to ensure everything works as expected.
 [cert-manager]: ../cronjob-tutorial/cert-manager.md
 [envtest]: ../reference/envtest.md
 [standard-go-project]: https://github.com/golang-standards/project-layout
+[kind-doc]: ../reference/kind.md
