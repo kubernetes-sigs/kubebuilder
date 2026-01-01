@@ -120,12 +120,12 @@ See the [`alpha generate` command reference](./reference/commands/alpha_generate
 ### Fully Manual Migration
 
 For complete control, you can manually migrate by creating a new project with the latest Kubebuilder
-version and porting your code over. This approach is more time-consuming but gives you full visibility
-into every change.
+version and porting your code over.
 
-In this process, you will mainly run all commands from scratch to create a new project, APIs, controllers,
-webhooks, and other resources as needed. Then, you will manually copy your business logic and customizations
-from your old project to the new one.
+In this process, you will run all commands from scratch to create a new project, APIs, controllers,
+webhooks, and other resources. Then, manually copy your business logic and customizations from your old project to the new one.
+
+To streamline this one-time migration, [AI Migration Helpers](./migration/ai-helpers.md) have been added to automate repetitive tasks.
 
 <aside class="note">
 <h1>When to Use Manual Migration</h1>
@@ -139,7 +139,7 @@ Use this approach when:
 
 </aside>
 
-See the [Manual Migration Process Guide](./migration/manual-process.md) for a complete step-by-step walkthrough.
+See the [Manual Migration Process Guide](./migration/manual-process.md) for a complete step-by-step walkthrough with AI helpers.
 
 [project-config]: ./reference/project-config.md
 [basic-project-doc]: ./cronjob-tutorial/basic-project.md

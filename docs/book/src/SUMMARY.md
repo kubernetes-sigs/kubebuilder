@@ -48,6 +48,10 @@
 - [Migrations](./migrations.md)
 
   - [Manual Migration Process](./migration/manual-process.md)
+    - [Using AI](./migration/ai-helpers.md)
+      - [Step 1: Reorganize Layout](./migration/reorganize-layout.md)
+      - [Step 2: Discovery Commands](./migration/discovery-commands.md)
+      - [Step 3: Port Code](./migration/port-code.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
 - [Alpha Commands](./reference/alpha_commands.md)
