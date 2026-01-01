@@ -137,8 +137,8 @@ Generate a controller that deploys and manages a container image (nginx, redis, 
 
 ` + "```bash" + `
 # Example: deploying memcached
-{{ .CommandName }} create api --group example.com --version v1alpha1 --kind Memcached \\
-  --image=memcached:alpine \\
+{{ .CommandName }} create api --group example.com --version v1alpha1 --kind Memcached \
+  --image=memcached:alpine \
   --plugins=deploy-image.go.kubebuilder.io/v1-alpha
 ` + "```" + `
 
@@ -148,22 +148,22 @@ Scaffolds good-practice code: reconciliation logic, status conditions, finalizer
 ### Create Webhooks
 ` + "```bash" + `
 # Validation + defaulting
-{{ .CommandName }} create webhook --group <group> --version <version> --kind <Kind> \\
+{{ .CommandName }} create webhook --group <group> --version <version> --kind <Kind> \
   --defaulting --programmatic-validation
 
 # Conversion webhook (for multi-version APIs)
-{{ .CommandName }} create webhook --group <group> --version v1 --kind <Kind> \\
+{{ .CommandName }} create webhook --group <group> --version v1 --kind <Kind> \
   --conversion --spoke v2
 ` + "```" + `
 
 ### Controller for Core Kubernetes Types
 ` + "```bash" + `
 # Watch Pods
-{{ .CommandName }} create api --group core --version v1 --kind Pod \\
+{{ .CommandName }} create api --group core --version v1 --kind Pod \
   --controller=true --resource=false
 
 # Watch Deployments
-{{ .CommandName }} create api --group apps --version v1 --kind Deployment \\
+{{ .CommandName }} create api --group apps --version v1 --kind Deployment \
   --controller=true --resource=false
 ` + "```" + `
 
@@ -173,11 +173,11 @@ Watch resources from external APIs (cert-manager, Argo CD, Istio, etc.):
 
 ` + "```bash" + `
 # Example: watching cert-manager Certificate resources
-{{ .CommandName }} create api \\
-  --group cert-manager --version v1 --kind Certificate \\
-  --controller=true --resource=false \\
-  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \\
-  --external-api-domain=io \\
+{{ .CommandName }} create api \
+  --group cert-manager --version v1 --kind Certificate \
+  --controller=true --resource=false \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ` + "```" + `
 
@@ -187,11 +187,11 @@ Watch resources from external APIs (cert-manager, Argo CD, Istio, etc.):
 
 ` + "```bash" + `
 # Example: validating external resources
-{{ .CommandName }} create webhook \\
-  --group cert-manager --version v1 --kind Issuer \\
-  --defaulting \\
-  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \\
-  --external-api-domain=io \\
+{{ .CommandName }} create webhook \
+  --group cert-manager --version v1 --kind Issuer \
+  --defaulting \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ` + "```" + `
 
@@ -268,14 +268,17 @@ kubectl logs -n <project>-system deployment/<project>-controller-manager -c mana
 - **Create all types together**: ` + "`--defaulting --programmatic-validation --conversion`" + `
 - **Avoid re-scaffolding**: Adding types later requires ` + "`--force`" + ` (overwrites file)
 - **If using** ` + "`--force`" + `: Backup custom logic first, then restore after scaffolding
-- **For multi-version APIs**: Use hub-and-spoke pattern (` + "`--conversion --spoke v2`" + `){{ if .IsKubebuilderCLI }}
+- **For multi-version APIs**: Use hub-and-spoke pattern (` + "`--conversion --spoke v2`" + `)
+  - Hub version: Usually oldest stable version (v1)
+  - Spoke versions: Newer versions that convert to/from hub (v2, v3)
+  - Example: ` + "`--group crew --version v1 --kind Captain --conversion --spoke v2`" + ` (v1 is hub, v2 is spoke){{ if .IsKubebuilderCLI }}
 
 ### Learning from Examples
 
 The **deploy-image plugin** scaffolds a complete controller following good practices. Use it as a reference implementation:
 
 ` + "```bash" + `
-{{ .CommandName }} create api --group example --version v1alpha1 --kind MyApp \\
+{{ .CommandName }} create api --group example --version v1alpha1 --kind MyApp \
   --image=<your-image> --plugins=deploy-image.go.kubebuilder.io/v1-alpha
 ` + "```" + `
 

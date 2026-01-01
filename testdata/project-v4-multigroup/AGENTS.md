@@ -83,8 +83,8 @@ Generate a controller that deploys and manages a container image (nginx, redis, 
 
 ```bash
 # Example: deploying memcached
-kubebuilder create api --group example.com --version v1alpha1 --kind Memcached \\
-  --image=memcached:alpine \\
+kubebuilder create api --group example.com --version v1alpha1 --kind Memcached \
+  --image=memcached:alpine \
   --plugins=deploy-image.go.kubebuilder.io/v1-alpha
 ```
 
@@ -94,22 +94,22 @@ Scaffolds good-practice code: reconciliation logic, status conditions, finalizer
 ### Create Webhooks
 ```bash
 # Validation + defaulting
-kubebuilder create webhook --group <group> --version <version> --kind <Kind> \\
+kubebuilder create webhook --group <group> --version <version> --kind <Kind> \
   --defaulting --programmatic-validation
 
 # Conversion webhook (for multi-version APIs)
-kubebuilder create webhook --group <group> --version v1 --kind <Kind> \\
+kubebuilder create webhook --group <group> --version v1 --kind <Kind> \
   --conversion --spoke v2
 ```
 
 ### Controller for Core Kubernetes Types
 ```bash
 # Watch Pods
-kubebuilder create api --group core --version v1 --kind Pod \\
+kubebuilder create api --group core --version v1 --kind Pod \
   --controller=true --resource=false
 
 # Watch Deployments
-kubebuilder create api --group apps --version v1 --kind Deployment \\
+kubebuilder create api --group apps --version v1 --kind Deployment \
   --controller=true --resource=false
 ```
 
@@ -119,11 +119,11 @@ Watch resources from external APIs (cert-manager, Argo CD, Istio, etc.):
 
 ```bash
 # Example: watching cert-manager Certificate resources
-kubebuilder create api \\
-  --group cert-manager --version v1 --kind Certificate \\
-  --controller=true --resource=false \\
-  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \\
-  --external-api-domain=io \\
+kubebuilder create api \
+  --group cert-manager --version v1 --kind Certificate \
+  --controller=true --resource=false \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ```
 
@@ -133,11 +133,11 @@ kubebuilder create api \\
 
 ```bash
 # Example: validating external resources
-kubebuilder create webhook \\
-  --group cert-manager --version v1 --kind Issuer \\
-  --defaulting \\
-  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \\
-  --external-api-domain=io \\
+kubebuilder create webhook \
+  --group cert-manager --version v1 --kind Issuer \
+  --defaulting \
+  --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ```
 
@@ -215,13 +215,16 @@ kubectl logs -n <project>-system deployment/<project>-controller-manager -c mana
 - **Avoid re-scaffolding**: Adding types later requires `--force` (overwrites file)
 - **If using** `--force`: Backup custom logic first, then restore after scaffolding
 - **For multi-version APIs**: Use hub-and-spoke pattern (`--conversion --spoke v2`)
+  - Hub version: Usually oldest stable version (v1)
+  - Spoke versions: Newer versions that convert to/from hub (v2, v3)
+  - Example: `--group crew --version v1 --kind Captain --conversion --spoke v2` (v1 is hub, v2 is spoke)
 
 ### Learning from Examples
 
 The **deploy-image plugin** scaffolds a complete controller following good practices. Use it as a reference implementation:
 
 ```bash
-kubebuilder create api --group example --version v1alpha1 --kind MyApp \\
+kubebuilder create api --group example --version v1alpha1 --kind MyApp \
   --image=<your-image> --plugins=deploy-image.go.kubebuilder.io/v1-alpha
 ```
 
