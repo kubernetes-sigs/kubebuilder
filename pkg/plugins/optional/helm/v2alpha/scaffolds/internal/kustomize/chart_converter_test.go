@@ -95,6 +95,60 @@ var _ = Describe("ChartConverter", func() {
 			Expect(exists).To(BeTrue())
 		})
 
+		It("should write extras resources to templates/extras directory", func() {
+			// Add a manual service that doesn't match webhook or metrics patterns
+			manualService := &unstructured.Unstructured{}
+			manualService.SetAPIVersion("v1")
+			manualService.SetKind("Service")
+			manualService.SetName("my-alert-service")
+			manualService.SetNamespace("test-system")
+			resources.Services = []*unstructured.Unstructured{manualService}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Check that the extras directory was created
+			exists, err := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// Check that the service file was created
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+			Expect(files[0].Name()).To(Equal("my-alert-service.yaml"))
+		})
+
+		It("should not create extras directory when all services are categorized", func() {
+			// Add only webhook and metrics services
+			webhookService := &unstructured.Unstructured{}
+			webhookService.SetAPIVersion("v1")
+			webhookService.SetKind("Service")
+			webhookService.SetName("webhook-service")
+			webhookService.SetNamespace("test-system")
+
+			metricsService := &unstructured.Unstructured{}
+			metricsService.SetAPIVersion("v1")
+			metricsService.SetKind("Service")
+			metricsService.SetName("metrics-service")
+			metricsService.SetNamespace("test-system")
+
+			resources.Services = []*unstructured.Unstructured{webhookService, metricsService}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Check that extras directory was NOT created
+			exists, existsErr := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(existsErr).NotTo(HaveOccurred())
+			if exists {
+				// If it exists, it should be empty
+				files, readErr := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(files).To(BeEmpty())
+			}
+		})
+
 		It("should deduplicate identical resources within a group", func() {
 			// Prepare two identical Services in the metrics group
 			metricsSvc1 := &unstructured.Unstructured{}

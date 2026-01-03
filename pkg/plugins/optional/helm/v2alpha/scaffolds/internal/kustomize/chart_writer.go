@@ -110,7 +110,8 @@ func (w *ChartWriter) convertToYAML(resource *unstructured.Unstructured) string 
 // shouldSplitFiles determines if resources in a group should be written as individual files
 func (w *ChartWriter) shouldSplitFiles(groupName string) bool {
 	return groupName == "crd" || groupName == "cert-manager" || groupName == "webhook" ||
-		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics"
+		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics" ||
+		groupName == "extras"
 }
 
 // writeSplitFiles writes each resource in the group to its own file
