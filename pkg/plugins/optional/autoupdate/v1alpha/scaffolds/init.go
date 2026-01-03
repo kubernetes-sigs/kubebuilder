@@ -33,11 +33,16 @@ type initScaffolder struct {
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
+
+	// useGHModels determines if GitHub Models AI summary should be enabled
+	useGHModels bool
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder() plugins.Scaffolder {
-	return &initScaffolder{}
+func NewInitScaffolder(useGHModels bool) plugins.Scaffolder {
+	return &initScaffolder{
+		useGHModels: useGHModels,
+	}
 }
 
 // InjectFS implements cmdutil.Scaffolder
@@ -54,7 +59,7 @@ func (s *initScaffolder) Scaffold() error {
 	)
 
 	err := scaffold.Execute(
-		&github.AutoUpdate{},
+		&github.AutoUpdate{UseGHModels: s.useGHModels},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to execute init scaffold: %w", err)

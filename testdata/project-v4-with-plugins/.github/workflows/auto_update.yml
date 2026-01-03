@@ -1,14 +1,14 @@
 name: Auto Update
 
-# The 'kubebuilder alpha update 'command requires write access to the repository to create a branch
+# The 'kubebuilder alpha update' command requires write access to the repository to create a branch
 # with the update files and allow you to open a pull request using the link provided in the issue.
 # The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
 # To protect your codebase, please ensure that you have branch protection rules configured for your 
 # main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
 permissions:
-  contents: write
-  issues: write
-  models: read
+  contents: write  # Create and push the update branch
+  issues: write    # Create GitHub Issue with PR link
+  models: read     # Use GitHub Models for AI summaries
 
 on:
   workflow_dispatch:
@@ -21,27 +21,27 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    # Step 1: Checkout the repository.
+    # Checkout the repository.
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
-    
-    # Step 2: Configure Git to create commits with the GitHub Actions bot.
+
+    # Configure Git to create commits with the GitHub Actions bot.
     - name: Configure Git
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    # Step 3: Set up Go environment.
+    # Set up Go environment.
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: stable
 
-    # Step 4: Install Kubebuilder.
+    # Install Kubebuilder.
     - name: Install Kubebuilder
       run: |
         curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
@@ -49,13 +49,13 @@ jobs:
         sudo mv kubebuilder /usr/local/bin/
         kubebuilder version
 
-    # Step 5: Install Models extension for GitHub CLI
-    - name: Install/upgrade gh-models extension
+    # Install Models extension for GitHub CLI.
+    - name: Install gh-models extension
       run: |
         gh extension install github/gh-models --force
         gh models --help >/dev/null
 
-    # Step 6: Run the Kubebuilder alpha update command.
+    # Run the Kubebuilder alpha update command.
     # More info: https://kubebuilder.io/reference/commands/alpha_update
     - name: Run kubebuilder alpha update
       # Executes the update command with specified flags.
@@ -64,7 +64,7 @@ jobs:
       # --restore-path: Preserves specified paths (e.g., CI workflow files) when squashing.
       # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.
       # --use-gh-models: Adds an AI-generated comment to the created Issue with
-      #   a short overview of the scaffold changes and conflict-resolution guidance (If Any).
+      #   a short overview of the scaffold changes and conflict-resolution guidance (if any).
       run: |
         kubebuilder alpha update \
           --force \
