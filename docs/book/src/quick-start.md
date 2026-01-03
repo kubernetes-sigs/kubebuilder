@@ -272,49 +272,35 @@ make undeploy
 Kubebuilder design is based on [Plugins][plugins] and you can use
 [available plugins][available-plugins] to add optional features to your project.
 
-### Creating an API and Controller with code to manage an image
+<aside class="note">
+<h1>References and Examples</h1>
 
-For example, you can scaffold an API and controller that
-manages container images by using the [deploy-image plugin][deploy-image-v1-alpha]:
+Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a reference when creating your project. It follows Kubernetes conventions and recommended good practices. For example:
 
 ```bash
 kubebuilder create api --group webapp --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha"
 ```
-
-This command generates:
-
-- The API definition in `api/v1alpha1/busybox_types.go`.
-- The controller logic in `internal/controllers/busybox_controller.go`.
-- A test scaffold in `internal/controllers/busybox_controller_test.go`, which uses [EnvTest][envtest] for integration-style testing.
-
-<aside class="note">
-<h1>References and Examples</h1>
-
-Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a reference when creating your project.
-It follows Kubernetes conventions and recommended good practices.
 
 </aside>
 
 <aside class="note">
 <h1> Keeping your project up to date with ecosystem changes </h1>
 
-Use the Kubebuilder [AutoUpdate Plugin][autoupdate-v1-alpha] to keep your project
+Use [AutoUpdate Plugin][autoupdate-v1-alpha] to keep your project
 aligned with the latest ecosystem changes. When a new release is available,
 it automatically opens an issue with a PR comparison link so you can review and update easily.
 
 ```bash
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
+
 </aside>
 
-## Next Step
+## Next Steps
 
-- Proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
-  provide a solid foundation.
-- Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
-  understanding by developing a demo project.
-- Ensure that you understand the APIs and Groups concepts [Groups and Versions and Kinds, oh my!][gkv-doc]
-before designing your own API and project.
+- [Getting Started Guide][getting-started] (~30 min) - build a solid foundation
+- [CronJob Tutorial][cronjob-tutorial] - learn by building a demo project
+- [Groups, Versions, and Kinds][gkv-doc] - understand API design concepts
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
