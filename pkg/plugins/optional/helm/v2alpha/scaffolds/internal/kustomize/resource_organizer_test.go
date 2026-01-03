@@ -271,6 +271,26 @@ var _ = Describe("ResourceOrganizer", func() {
 			Expect(groups["extras"]).To(ContainElement(secret))
 		})
 
+		It("should ensure extras resources receive Helm label templating", func() {
+			manualService := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "v1",
+					"kind":       "Service",
+					"metadata": map[string]any{
+						"name":      "my-custom-service",
+						"namespace": "test-system",
+					},
+				},
+			}
+			resources.Services = append(resources.Services, manualService)
+
+			organizer = NewResourceOrganizer(resources)
+			groups := organizer.OrganizeByFunction()
+
+			Expect(groups).To(HaveKey("extras"))
+			Expect(groups["extras"]).To(HaveLen(1))
+		})
+
 		It("should categorize all standard resource types correctly", func() {
 			deployment := &unstructured.Unstructured{
 				Object: map[string]any{
@@ -365,4 +385,3 @@ var _ = Describe("ResourceOrganizer", func() {
 		})
 	})
 })
-

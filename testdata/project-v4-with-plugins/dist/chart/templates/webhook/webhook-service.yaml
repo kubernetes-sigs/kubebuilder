@@ -4,6 +4,8 @@ metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     name: {{ .Values.namePrefix }}-webhook-service
     namespace: {{ .Release.Namespace }}
 spec:
@@ -13,4 +15,6 @@ spec:
           targetPort: {{ .Values.webhook.port }}
     selector:
         app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager

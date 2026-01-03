@@ -205,19 +205,37 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ 
 	return yamlContent
 }
 
-// addHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents
+// addHelmLabelsAndAnnotations replaces kustomize labels with Helm equivalents and adds missing Helm labels.
+// Following Helm best practices: https://helm.sh/docs/chart_best_practices/labels/#standard-labels
 func (t *HelmTemplater) addHelmLabelsAndAnnotations(
 	yamlContent string,
 	_ *unstructured.Unstructured,
 ) string {
-	// Replace app.kubernetes.io/managed-by: kustomize with Helm template
-	// Use regex to handle different whitespace patterns
 	managedByRegex := regexp.MustCompile(`(\s*)app\.kubernetes\.io/managed-by:\s+kustomize`)
 	yamlContent = managedByRegex.ReplaceAllString(yamlContent, "${1}app.kubernetes.io/managed-by: {{ .Release.Service }}")
 
 	hardcodedNameLabel := "app.kubernetes.io/name: " + t.detectedPrefix
 	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + chartNameTemplate + "\" . }}"
 	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
+
+	yamlContent = t.addMissingHelmLabels(yamlContent)
+
+	return yamlContent
+}
+
+// addMissingHelmLabels adds Helm standard labels that are not provided by kustomize.
+// Adds helm.sh/chart and app.kubernetes.io/instance as per Helm best practices.
+func (t *HelmTemplater) addMissingHelmLabels(yamlContent string) string {
+	nameLabelsPattern := regexp.MustCompile(`([ \t]*)app\.kubernetes\.io/name:.*\n`)
+
+	yamlContent = nameLabelsPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		indentPattern := regexp.MustCompile(`^([ \t]*)`)
+		indent := indentPattern.FindStringSubmatch(match)[1]
+
+		return match +
+			indent + "helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}\n" +
+			indent + "app.kubernetes.io/instance: {{ .Release.Name }}\n"
+	})
 
 	return yamlContent
 }

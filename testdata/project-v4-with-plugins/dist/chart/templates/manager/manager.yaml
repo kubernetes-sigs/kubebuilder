@@ -4,6 +4,8 @@ metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager
     name: {{ .Values.namePrefix }}-controller-manager
     namespace: {{ .Release.Namespace }}
@@ -12,6 +14,8 @@ spec:
     selector:
         matchLabels:
             app.kubernetes.io/name: {{ include "chart.name" . }}
+            helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
             control-plane: controller-manager
     template:
         metadata:
@@ -19,6 +23,8 @@ spec:
                 kubectl.kubernetes.io/default-container: manager
             labels:
                 app.kubernetes.io/name: {{ include "chart.name" . }}
+                helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+                app.kubernetes.io/instance: {{ .Release.Name }}
                 control-plane: controller-manager
         spec:
             {{- with .Values.manager.tolerations }}

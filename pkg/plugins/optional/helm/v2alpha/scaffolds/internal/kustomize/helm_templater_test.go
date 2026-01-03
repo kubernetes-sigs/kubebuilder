@@ -509,6 +509,30 @@ metadata:
 			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
 		})
 
+		It("should add Helm standard labels after app.kubernetes.io/name", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+    app.kubernetes.io/managed-by: kustomize`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should replace existing labels
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"chart.name\" . }}"))
+			Expect(result).To(ContainSubstring("app.kubernetes.io/managed-by: {{ .Release.Service }}"))
+
+			// Should add missing Helm standard labels (per Helm best practices)
+			Expect(result).To(ContainSubstring("helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}"))
+			Expect(result).To(ContainSubstring("app.kubernetes.io/instance: {{ .Release.Name }}"))
+		})
+
 		It("should template app.kubernetes.io/name for Service", func() {
 			service := &unstructured.Unstructured{}
 			service.SetAPIVersion("v1")
