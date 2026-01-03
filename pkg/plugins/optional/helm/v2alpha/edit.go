@@ -56,7 +56,8 @@ This plugin dynamically generates Helm chart templates by parsing the output of 
 (dist/install.yaml by default). The generated chart preserves all customizations made to your kustomize 
 configuration including environment variables, labels, and annotations.
 
-The chart structure mirrors your config/ directory organization for easy maintenance.`
+The chart structure mirrors your config/ directory organization. Resources not matching the standard 
+layout (custom Services, ConfigMaps, etc.) are placed in templates/extras/ for validation.`
 
 	subcmdMeta.Examples = fmt.Sprintf(`# Generate Helm chart from default manifests (dist/install.yaml) to default output (dist/)
   %[1]s edit --plugins=%[2]s
@@ -90,6 +91,7 @@ The generated chart structure mirrors your config/ directory:
     ├── rbac/
     ├── manager/
     ├── webhook/
+    ├── extras/
     └── ...
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }

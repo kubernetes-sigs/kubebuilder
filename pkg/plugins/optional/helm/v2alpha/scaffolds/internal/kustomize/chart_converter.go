@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -60,6 +61,11 @@ func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	// Organize resources by their logical function
 	resourceGroups := c.organizer.OrganizeByFunction()
 
+	// Check for extras resources and emit warning
+	if extrasResources, hasExtras := resourceGroups["extras"]; hasExtras && len(extrasResources) > 0 {
+		c.warnAboutExtrasResources(extrasResources)
+	}
+
 	// Write each group to appropriate template files
 	for groupName, resources := range resourceGroups {
 		if len(resources) > 0 {
@@ -72,6 +78,21 @@ func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	}
 
 	return nil
+}
+
+// warnAboutExtrasResources emits a warning about resources that don't fit standard categories.
+// These resources are placed in templates/extras/ and should be validated.
+func (c *ChartConverter) warnAboutExtrasResources(resources []*unstructured.Unstructured) {
+	var message strings.Builder
+	message.WriteString("resources not matching standard layout found and added to templates/extras:\n")
+
+	for _, resource := range resources {
+		kind := resource.GetKind()
+		name := resource.GetName()
+		message.WriteString(fmt.Sprintf("  - %s/%s\n", kind, name))
+	}
+
+	slog.Warn(message.String())
 }
 
 // dedupeResources removes exact duplicate resources by keying on
