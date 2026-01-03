@@ -662,14 +662,14 @@ func (sp *Sample) updateE2E() {
 	cronjobE2EUtils := filepath.Join(sp.ctx.Dir, "test", "utils", "utils.go")
 	var err error
 
-	err = pluginutil.InsertCode(cronjobE2ESuite, `isCertManagerAlreadyInstalled = false`, isPrometheusInstalledVar)
+	err = pluginutil.InsertCode(cronjobE2ESuite, `shouldCleanupCertManager = false`, isPrometheusInstalledVar)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding isPrometheusInstalledVar", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = BeforeSuite(func() {`, beforeSuitePrometheus)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code in the before suite", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite,
-		`// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.`,
+		`setupCertManager()`,
 		checkPrometheusInstalled)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding code check if has prometheus", err)
 
