@@ -67,8 +67,11 @@ test: manifests generate fmt vet setup-envtest ## Run tests.
 
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
 # The default setup assumes Kind is pre-installed and builds/loads the Manager Docker image locally.
-# CertManager is installed by default; skip with:
-# - CERT_MANAGER_INSTALL_SKIP=true
+# Environment variables:
+# - KIND_CLUSTER: Name of the Kind cluster (default: project-test-e2e)
+# - KUBE_CONTEXT: Kubectl context to use (default: current-context)
+# - CERT_MANAGER_INSTALL_SKIP=true: Skip CertManager installation
+# Note: When KIND_CLUSTER=my-cluster, the kubectl context will be "kind-my-cluster"
 KIND_CLUSTER ?= project-test-e2e
 
 .PHONY: setup-test-e2e

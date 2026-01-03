@@ -189,6 +189,7 @@ test-testdata: ## Run the tests of the testdata directory
 .PHONY: test-e2e-local
 test-e2e-local: ## Run the end-to-end tests locally
 	## To keep the same kind cluster between test runs, use `SKIP_KIND_CLEANUP=1 make test-e2e-local`
+	## To lock to a specific kubectl context, use `KUBE_CONTEXT=kind-test make test-e2e-local`
 	./test/e2e/local.sh
 
 .PHONY: test-e2e-ci
