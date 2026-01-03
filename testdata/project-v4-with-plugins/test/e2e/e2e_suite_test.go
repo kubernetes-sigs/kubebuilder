@@ -71,11 +71,13 @@ var _ = AfterSuite(func() {
 // Skips installation if CERT_MANAGER_INSTALL_SKIP=true or if already present.
 func setupCertManager() {
 	if os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true" {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Skipping CertManager installation (CERT_MANAGER_INSTALL_SKIP=true)\n")
 		return
 	}
 
 	By("checking if CertManager is already installed")
 	if utils.IsCertManagerCRDsInstalled() {
+		_, _ = fmt.Fprintf(GinkgoWriter, "CertManager is already installed. Skipping installation.\n")
 		return
 	}
 
@@ -90,6 +92,7 @@ func setupCertManager() {
 // This ensures we only remove what we installed.
 func teardownCertManager() {
 	if !shouldCleanupCertManager {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Skipping CertManager cleanup (not installed by this suite)\n")
 		return
 	}
 
