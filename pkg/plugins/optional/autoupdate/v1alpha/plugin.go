@@ -28,7 +28,7 @@ import (
 )
 
 //nolint:lll
-const metaDataDescription = `This plugin scaffolds a GitHub Action that helps you keep your project aligned with the latest Kubebuilder improvements. With a tiny amount of setup, you’ll receive **automatic issue notifications** whenever a new Kubebuilder release is available. Each issue includes a **compare link** so you can open a Pull Request with one click and review the changes safely.
+const metaDataDescription = `This plugin scaffolds a GitHub Action that helps you keep your project aligned with the latest Kubebuilder improvements. With a tiny amount of setup, you'll receive **automatic issue notifications** whenever a new Kubebuilder release is available. Each issue includes a **compare link** so you can open a Pull Request with one click and review the changes safely.
 
 Under the hood, the workflow runs 'kubebuilder alpha update' using a **3-way merge strategy** to refresh your scaffold while preserving your code. It creates and pushes an update branch, then opens a GitHub **Issue** containing the PR URL you can use to review and merge.
 
@@ -39,7 +39,16 @@ Under the hood, the workflow runs 'kubebuilder alpha update' using a **3-way mer
 3) **Permissions required** (via the built-in 'GITHUB_TOKEN'):
    - **contents: write** — needed to create and push the update branch.
    - **issues: write** — needed to create the tracking Issue with the PR link.
-4) **Protect your branches**: Enable **branch protection rules** so automated changes **cannot** be pushed directly. All updates must go through a Pull Request for review.`
+   - **models: read** (optional) — only required if using --use-gh-models flag for AI-generated summaries.
+4) **Protect your branches**: Enable **branch protection rules** so automated changes **cannot** be pushed directly. All updates must go through a Pull Request for review.
+
+### Optional: GitHub Models AI Summary
+
+By default, the workflow does NOT use GitHub Models. To enable AI-generated summaries in GitHub issues:
+  - Ensure your repository/organization has permissions to use GitHub Models.
+  - Re-run: kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
+
+Without this flag, the workflow will still work but won't include AI summaries (avoiding 403 Forbidden errors).`
 
 const pluginName = "autoupdate." + plugins.DefaultNameQualifier
 
@@ -56,7 +65,10 @@ type Plugin struct {
 
 var _ plugin.Init = Plugin{}
 
-type pluginConfig struct{}
+// PluginConfig defines the structure that will be used to track the data
+type PluginConfig struct {
+	UseGHModels bool `json:"useGHModels,omitempty"`
+}
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
@@ -79,7 +91,7 @@ func (p Plugin) DeprecationWarning() string {
 }
 
 // insertPluginMetaToConfig will insert the metadata to the plugin configuration
-func insertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
+func insertPluginMetaToConfig(target config.Config, cfg PluginConfig) error {
 	key := plugin.GetPluginKeyForConfig(target.GetPluginChain(), Plugin{})
 	canonicalKey := plugin.KeyFor(Plugin{})
 

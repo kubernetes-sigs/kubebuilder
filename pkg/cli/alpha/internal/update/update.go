@@ -117,6 +117,12 @@ type Update struct {
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
 func (opts *Update) Update() error {
+	// Inform users about GitHub Models if they're opening an issue but not using AI summary
+	if opts.OpenGhIssue && !opts.UseGhModels {
+		log.Info("Consider enabling GitHub Models to get an AI summary to help with the update")
+		log.Info("Use the --use-gh-models flag if your project/organization has permission to use GitHub Models")
+	}
+
 	log.Info("Checking out base branch", "branch", opts.FromBranch)
 	checkoutCmd := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch)
 	if err := checkoutCmd.Run(); err != nil {

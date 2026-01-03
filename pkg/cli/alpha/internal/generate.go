@@ -292,18 +292,19 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 }
 
 func migrateAutoUpdatePlugin(s store.Store) error {
-	var autoUpdatePlugin struct{}
 	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), autoupdatev1alpha.Plugin{})
 	canonicalKey := plugin.KeyFor(autoupdatev1alpha.Plugin{})
+	var autoUpdatePlugin autoupdatev1alpha.PluginConfig
 	found := true
-	var err error
 
-	if err = s.Config().DecodePluginConfig(key, autoUpdatePlugin); err != nil {
+	var err error
+	err = s.Config().DecodePluginConfig(key, &autoUpdatePlugin)
+	if err != nil {
 		switch {
 		case errors.As(err, &config.PluginKeyNotFoundError{}):
 			found = false
 			if key != canonicalKey {
-				if err = s.Config().DecodePluginConfig(canonicalKey, autoUpdatePlugin); err != nil {
+				if err = s.Config().DecodePluginConfig(canonicalKey, &autoUpdatePlugin); err != nil {
 					switch {
 					case errors.As(err, &config.PluginKeyNotFoundError{}):
 						// still not found
@@ -331,6 +332,9 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 	}
 
 	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
+	if autoUpdatePlugin.UseGHModels {
+		args = append(args, "--use-gh-models")
+	}
 	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
