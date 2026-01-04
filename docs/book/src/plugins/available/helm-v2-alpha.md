@@ -75,6 +75,19 @@ kubebuilder edit --plugins=helm/v2-alpha \
   --output-dir=helm-charts
 ```
 
+### Removing Helm Charts
+
+To remove the Helm chart from your project:
+
+```shell
+kubebuilder delete --plugins helm/v2-alpha
+```
+
+This removes:
+- `dist/chart/` directory
+- `.github/workflows/test-chart.yml`
+- Plugin configuration from PROJECT file
+
 ## Chart structure
 
 The plugin generates a chart layout that mirrors your `config/` directory:
