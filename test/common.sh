@@ -48,6 +48,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# Force a static development version for ALL scripts that source common.sh.
+# This ensures PROJECT files in both /testdata and /docs remain consistent.
+export KUBEBUILDER_TEST_VERSION="(devel)"
+
 # Enable tracing in this script off by setting the TRACE variable in your
 # environment to any value:
 #
