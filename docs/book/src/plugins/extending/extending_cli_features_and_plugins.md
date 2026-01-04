@@ -62,7 +62,9 @@ of the following CLI commands:
 - `init`: Initializes the project structure.
 - `create api`: Scaffolds a new API and controller.
 - `create webhook`: Scaffolds a new webhook.
-- `edit`: edit the project structure.
+- `delete api`: Deletes an API and its associated files.
+- `delete webhook`: Deletes a webhook and its associated files.
+- `edit`: Updates the project structure.
 
 Here’s an example of using the `init` subcommand with a custom plugin:
 

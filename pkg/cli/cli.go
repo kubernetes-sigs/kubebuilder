@@ -519,6 +519,15 @@ func (c *CLI) addSubcommands() {
 		c.cmd.AddCommand(createCmd)
 	}
 
+	// kubebuilder delete
+	deleteCmd := c.newDeleteCmd()
+	// kubebuilder delete api
+	deleteCmd.AddCommand(c.newDeleteAPICmd())
+	deleteCmd.AddCommand(c.newDeleteWebhookCmd())
+	if deleteCmd.HasSubCommands() {
+		c.cmd.AddCommand(deleteCmd)
+	}
+
 	// kubebuilder edit
 	c.cmd.AddCommand(c.newEditCmd())
 
