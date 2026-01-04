@@ -56,6 +56,43 @@ var _ = Describe("Resource", func() {
 			Expect(res.Validate()).To(Succeed())
 		})
 
+		It("should succeed with empty API", func() {
+			Expect(Resource{GVK: gvk, Plural: plural, API: &API{}}.Validate()).To(Succeed())
+		})
+
+		It("should succeed with empty Webhooks", func() {
+			Expect(Resource{GVK: gvk, Plural: plural, Webhooks: &Webhooks{}}.Validate()).To(Succeed())
+		})
+
+		It("should succeed with nil API", func() {
+			Expect(Resource{GVK: gvk, Plural: plural, API: nil}.Validate()).To(Succeed())
+		})
+
+		It("should succeed with nil Webhooks", func() {
+			Expect(Resource{GVK: gvk, Plural: plural, Webhooks: nil}.Validate()).To(Succeed())
+		})
+
+		It("should fail for invalid Plural with specific error", func() {
+			r := Resource{GVK: gvk, Plural: "Plural"}
+			err := r.Validate()
+			Expect(err).NotTo(Succeed())
+			Expect(err.Error()).To(ContainSubstring("invalid Plural"))
+		})
+
+		It("should fail for invalid API with wrapped error", func() {
+			r := Resource{GVK: gvk, Plural: plural, API: &API{CRDVersion: "1"}}
+			err := r.Validate()
+			Expect(err).NotTo(Succeed())
+			Expect(err.Error()).To(ContainSubstring("invalid API"))
+		})
+
+		It("should fail for invalid Webhooks with wrapped error", func() {
+			r := Resource{GVK: gvk, Plural: plural, Webhooks: &Webhooks{WebhookVersion: "1"}}
+			err := r.Validate()
+			Expect(err).NotTo(Succeed())
+			Expect(err.Error()).To(ContainSubstring("invalid Webhooks"))
+		})
+
 		DescribeTable("should fail for invalid Resources",
 			func(res Resource) { Expect(res.Validate()).NotTo(Succeed()) },
 			// Ensure that the rest of the fields are valid to check each part
@@ -206,6 +243,16 @@ var _ = Describe("Resource", func() {
 
 			It("should return false if an irregular plural form is used", func() {
 				Expect(Resource{GVK: gvk, Plural: "types"}.IsRegularPlural()).To(BeFalse())
+			})
+		})
+
+		Context("IsExternal", func() {
+			It("should return true if the resource is external", func() {
+				Expect(Resource{External: true}.IsExternal()).To(BeTrue())
+			})
+
+			It("should return false if the resource is not external", func() {
+				Expect(Resource{External: false}.IsExternal()).To(BeFalse())
 			})
 		})
 	})
