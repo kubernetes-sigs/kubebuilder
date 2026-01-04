@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-    name: project-v4-with-plugins-metrics-auth-rolebinding
+    name: {{ .Values.namePrefix }}-metrics-auth-rolebinding
 roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: project-v4-with-plugins-metrics-auth-role
+    name: {{ .Values.namePrefix }}-metrics-auth-role
 subjects:
     - kind: ServiceAccount
-      name: project-v4-with-plugins-controller-manager
+      name: {{ .Values.namePrefix }}-controller-manager
       namespace: {{ .Release.Namespace }}
 {{- end }}

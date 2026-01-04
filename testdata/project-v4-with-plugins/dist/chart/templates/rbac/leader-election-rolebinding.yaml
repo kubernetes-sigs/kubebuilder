@@ -3,14 +3,14 @@ kind: RoleBinding
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-leader-election-rolebinding
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+    name: {{ .Values.namePrefix }}-leader-election-rolebinding
     namespace: {{ .Release.Namespace }}
 roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: project-v4-with-plugins-leader-election-role
+    name: {{ .Values.namePrefix }}-leader-election-role
 subjects:
     - kind: ServiceAccount
-      name: project-v4-with-plugins-controller-manager
+      name: {{ .Values.namePrefix }}-controller-manager
       namespace: {{ .Release.Namespace }}
