@@ -1,0 +1,32 @@
+name: Coverage Quality Gate
+
+on:
+  pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', 'hack/**', 'designs/**']
+
+jobs:
+  coverage-check:
+    name: Ensure Coverage Does Not Decrease
+    runs-on: ubuntu-latest
+    steps:
+      - name: Codecov Check
+        run: echo "Coverage quality is checked by Codecov status checks in the PR"
+        
+      - name: Coverage Info
+        run: |
+          echo "Coverage is tracked by Codecov"
+          echo "View detailed coverage at: https://codecov.io/gh/kubernetes-sigs/kubebuilder"
+          echo "Coverage status will appear as a check on this PR"
+          echo ""
+          echo "Coverage is collected from:"
+          echo "  - Unit tests (coverage.yml)"
+          echo "  - Integration tests (coverage.yml)"
+          echo "  - E2E cluster tests (e2e-coverage.yml)"
+          echo ""
+          echo "Files excluded from coverage:"
+          echo "  - Test files (*_test.go)"
+          echo "  - Template files (scaffolds/internal/templates/**)"
+          echo "  - Documentation (docs/**, **/*.md)"
+          echo "  - Configuration files (**/*.yaml, **/*.yml)"
+          echo "  - Scripts (hack/**, **/*.sh)"
+

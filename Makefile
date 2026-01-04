@@ -157,9 +157,14 @@ test-integration: install ## Run the integration tests (requires kubebuilder bin
 	go test -race -tags=integration -timeout 30m $(TEST_PKGS)
 
 .PHONY: test-coverage
-test-coverage: ## Run unit and integration tests with coverage report
+test-coverage: ## Run unit and integration tests with coverage report (for Codecov)
 	- rm -rf *.out  # Remove all coverage files if exists
-	go test -race -failfast -tags=integration -timeout 30m -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang/...,./pkg/plugins/external/...,./pkg/plugins/optional/grafana/...,./pkg/plugins/optional/helm/v2alpha/..." $(TEST_PKGS)
+	go test -race -failfast -tags=integration -timeout 30m -coverprofile=coverage-all.out -coverpkg="./pkg/..." $(TEST_PKGS)
+
+.PHONY: test-e2e-coverage
+test-e2e-coverage: install ## Run e2e tests with coverage (requires kind cluster)
+	- rm -rf coverage-e2e*.out
+	./test/e2e/local.sh -coverprofile=coverage-e2e.out -coverpkg="./pkg/..."
 
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated

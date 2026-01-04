@@ -1,0 +1,54 @@
+name: E2E Coverage
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore: ['**/*.md', 'docs/**', 'hack/**', 'designs/**']
+  pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', 'hack/**', 'designs/**']
+
+jobs:
+  e2e-coverage:
+    name: E2E Cluster Tests with Coverage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install Kubebuilder
+        run: make install
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Run E2E cluster tests with coverage
+        run: ./test/e2e/coverage.sh
+        # Note: E2E tests scaffold projects, build them, deploy to kind cluster,
+        # and verify they work end-to-end (requires Kubernetes cluster)
+
+      - name: Upload E2E coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage-e2e.out
+          flags: e2e
+          name: e2e-cluster-tests
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+        # Note: For public repos, token is optional but recommended
+        # If CODECOV_TOKEN is not set, it will still work for public repos
+

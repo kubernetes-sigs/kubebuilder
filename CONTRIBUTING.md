@@ -63,7 +63,7 @@ Following the targets that can be used to test your changes locally.
 | make test           | Runs tests in shell (`./test.sh`)                             | yes                  |
 | make lint           | Run [golangci][golangci] lint checks                          | yes                  |
 | make lint-fix       | Run [golangci][golangci] to automatically perform fixes       | no                   |
-| make test-coverage  | Run coveralls to check the % of code covered by tests         | yes                  |
+| make test-coverage  | Run unit+integration tests with coverage (uploads to Codecov) | yes                  |
 | make check-testdata | Checks if the testdata dir is updated with the latest changes | yes                  |
 | make test-e2e-local | Runs the CI e2e tests locally                                 | no                   |
 

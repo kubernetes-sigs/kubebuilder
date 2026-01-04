@@ -1,0 +1,76 @@
+# Codecov configuration
+# See: https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...90"
+  
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%  # Allow 1% decrease
+        base: auto
+        flags:
+          - unit
+          - integration
+          - e2e
+    patch:
+      default:
+        target: auto
+        threshold: 5%  # New code should have reasonable coverage
+
+# Flags allow us to see coverage breakdown by test type
+# - unit: Unit tests (no external dependencies)
+# - integration: Integration tests (scaffold projects, test file generation, no cluster)
+# - e2e: E2E tests (scaffold + build + deploy to kind cluster + verify)
+flags:
+  unit:
+    paths:
+      - pkg/
+    carryforward: true
+  integration:
+    paths:
+      - pkg/
+    carryforward: true
+  e2e:
+    paths:
+      - pkg/
+    carryforward: true
+
+# Ignore files/paths that shouldn't be measured
+ignore:
+  - "**/*_test.go"
+  - "**/test/**"
+  - "**/testdata/**"
+  - "hack/**"
+  - "docs/**"
+  - "**/*.md"
+  - "**/*.yaml"
+  - "**/*.yml"
+  - "**/*.json"
+  - "**/*.sh"
+  - "build/**"
+  - "designs/**"
+  - "roadmap/**"
+  - "scripts/**"
+  # Template files - these are mostly static strings
+  - "pkg/plugins/**/scaffolds/internal/templates/**"
+  - "pkg/plugins/golang/v4/scaffolds/internal/templates/**"
+  - "pkg/plugins/golang/deploy-image/**/scaffolds/internal/templates/**"
+  - "pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/**"
+  - "pkg/plugins/optional/**/scaffolds/internal/templates/**"
+
+# Comment on PRs with coverage information
+comment:
+  layout: "reach,diff,flags,tree,footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+# GitHub checks
+github_checks:
+  annotations: true
+

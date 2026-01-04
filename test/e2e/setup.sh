@@ -87,3 +87,19 @@ function test_cluster {
   go test $(dirname "$0")/v4 $flags -timeout 30m
   go test $(dirname "$0")/helm $flags -timeout 30m
 }
+
+# Test cluster with coverage - merges coverage from all e2e test packages
+function test_cluster_with_coverage {
+  local e2e_dir=$(dirname "$0")
+  
+  # Run each e2e test suite with coverage
+  go test $e2e_dir/deployimage -v -ginkgo.vv -timeout 30m -coverprofile=coverage-e2e-deployimage.out -coverpkg=./pkg/...
+  go test $e2e_dir/v4 -v -ginkgo.vv -timeout 30m -coverprofile=coverage-e2e-v4.out -coverpkg=./pkg/...
+  go test $e2e_dir/helm -v -ginkgo.vv -timeout 30m -coverprofile=coverage-e2e-helm.out -coverpkg=./pkg/...
+  
+  # Merge coverage files
+  echo "mode: atomic" > coverage-e2e.out
+  tail -n +2 coverage-e2e-deployimage.out >> coverage-e2e.out 2>/dev/null || true
+  tail -n +2 coverage-e2e-v4.out >> coverage-e2e.out 2>/dev/null || true
+  tail -n +2 coverage-e2e-helm.out >> coverage-e2e.out 2>/dev/null || true
+}
