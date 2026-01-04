@@ -152,3 +152,37 @@ func (webhooks *Webhooks) AddSpoke(version string) {
 	}
 	webhooks.Spoke = append(webhooks.Spoke, version)
 }
+
+// Set replaces the webhook configuration with the provided one.
+// Unlike Update which merges/adds, Set completely replaces the configuration.
+// This is useful for delete operations where fields need to be removed.
+func (webhooks *Webhooks) Set(other *Webhooks) {
+	if other == nil {
+		// Clear all fields
+		webhooks.WebhookVersion = ""
+		webhooks.Defaulting = false
+		webhooks.Validation = false
+		webhooks.Conversion = false
+		webhooks.Spoke = nil
+		webhooks.DefaultingPath = ""
+		webhooks.ValidationPath = ""
+		return
+	}
+
+	// Replace with other's values
+	webhooks.WebhookVersion = other.WebhookVersion
+	webhooks.Defaulting = other.Defaulting
+	webhooks.Validation = other.Validation
+	webhooks.Conversion = other.Conversion
+
+	// Deep copy spoke versions
+	if len(other.Spoke) > 0 {
+		webhooks.Spoke = make([]string, len(other.Spoke))
+		copy(webhooks.Spoke, other.Spoke)
+	} else {
+		webhooks.Spoke = nil
+	}
+
+	webhooks.DefaultingPath = other.DefaultingPath
+	webhooks.ValidationPath = other.ValidationPath
+}

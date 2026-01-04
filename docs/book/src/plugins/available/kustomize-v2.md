@@ -70,14 +70,18 @@ The kustomize plugin implements the following subcommands:
 
 * init (`$ kubebuilder init [OPTIONS]`)
 * create api (`$ kubebuilder create api [OPTIONS]`)
-* create webhook (`$ kubebuilder create api [OPTIONS]`)
+* create webhook (`$ kubebuilder create webhook [OPTIONS]`)
+* delete api (`$ kubebuilder delete api [OPTIONS]`)
+* delete webhook (`$ kubebuilder delete webhook [OPTIONS]`)
 
 <aside class="note">
-<h1>Create API and Webhook</h1>
+<h1>Create and Delete</h1>
 
-The implementation for the `create api` subcommand scaffolds the kustomize
-manifests specific to each API. See more [here][kustomize-create-api].
-The same applies to `create webhook`.
+The `create api` subcommand scaffolds kustomize manifests specific to each API
+(CRD bases, samples, RBAC). See more [here][kustomize-create-api].
+
+The `delete api` subcommand removes these manifests when the API is deleted.
+The same applies to `create webhook` and `delete webhook`.
 
 </aside>
 
