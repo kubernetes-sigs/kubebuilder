@@ -38,6 +38,8 @@ var (
 	_ plugin.Init          = Plugin{}
 	_ plugin.CreateAPI     = Plugin{}
 	_ plugin.CreateWebhook = Plugin{}
+	_ plugin.DeleteAPI     = Plugin{}
+	_ plugin.DeleteWebhook = Plugin{}
 )
 
 // Plugin implements the plugin.Full interface
@@ -45,6 +47,8 @@ type Plugin struct {
 	initSubcommand
 	createAPISubcommand
 	createWebhookSubcommand
+	deleteAPISubcommand
+	deleteWebhookSubcommand
 }
 
 // Name returns the name of the plugin
@@ -65,6 +69,14 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 // GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
+}
+
+// GetDeleteAPISubcommand will return the subcommand which is responsible for cleaning up API kustomize files
+func (p Plugin) GetDeleteAPISubcommand() plugin.DeleteAPISubcommand { return &p.deleteAPISubcommand }
+
+// GetDeleteWebhookSubcommand will return the subcommand which is responsible for cleaning up webhook kustomize files
+func (p Plugin) GetDeleteWebhookSubcommand() plugin.DeleteWebhookSubcommand {
+	return &p.deleteWebhookSubcommand
 }
 
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated

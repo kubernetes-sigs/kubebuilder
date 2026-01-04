@@ -63,7 +63,10 @@ type Plugin struct {
 	initSubcommand
 }
 
-var _ plugin.Init = Plugin{}
+var (
+	_ plugin.Init             = Plugin{}
+	_ plugin.HasDeleteSupport = Plugin{}
+)
 
 // PluginConfig defines the structure that will be used to track the data
 type PluginConfig struct {
@@ -84,6 +87,9 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcom
 
 // GetInitSubcommand will return the subcommand which is responsible for init autoupdate plugin
 func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
+
+// SupportsDelete returns true indicating this plugin supports deletion via Edit --delete
+func (Plugin) SupportsDelete() bool { return true }
 
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
 func (p Plugin) DeprecationWarning() string {

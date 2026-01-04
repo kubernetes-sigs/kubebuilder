@@ -19,7 +19,9 @@ package v1alpha
 import (
 	"fmt"
 	log "log/slog"
+	"path/filepath"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -33,6 +35,7 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	config      config.Config
 	useGHModels bool
+	delete      bool
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -49,6 +52,7 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.useGHModels, "use-gh-models", false,
 		"enable GitHub Models AI summary in the scaffolded workflow (requires GitHub Models permissions)")
+	fs.BoolVar(&p.delete, "delete", false, "delete auto-update workflow from the project")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -68,6 +72,10 @@ func (p *editSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
+	if p.delete {
+		return p.deleteAutoUpdateWorkflow(fs)
+	}
+
 	if err := insertPluginMetaToConfig(p.config, PluginConfig{UseGHModels: p.useGHModels}); err != nil {
 		return fmt.Errorf("error inserting project plugin meta to configuration: %w", err)
 	}
@@ -76,6 +84,41 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding edit subcommand: %w", err)
+	}
+
+	return nil
+}
+
+func (p *editSubcommand) deleteAutoUpdateWorkflow(fs machinery.Filesystem) error {
+	log.Info("Deleting auto-update workflow...")
+
+	workflowFile := filepath.Join(".github", "workflows", "auto_update.yml")
+
+	if exists, _ := afero.Exists(fs.FS, workflowFile); exists {
+		if err := fs.FS.Remove(workflowFile); err != nil {
+			log.Warn("Failed to delete workflow file", "file", workflowFile, "error", err)
+		} else {
+			log.Info("Deleted workflow file", "file", workflowFile)
+			fmt.Println("\nDeleted auto-update workflow")
+		}
+	} else {
+		log.Warn("Workflow file not found", "file", workflowFile)
+		fmt.Println("\nWorkflow file not found (may have been already deleted)")
+	}
+
+	// Remove plugin config from PROJECT by encoding empty struct
+	// Empty struct will be omitted from YAML during marshaling
+	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
+	if err := p.config.EncodePluginConfig(key, struct{}{}); err != nil {
+		canonicalKey := plugin.KeyFor(Plugin{})
+		if key != canonicalKey {
+			if err2 := p.config.EncodePluginConfig(canonicalKey, struct{}{}); err2 != nil {
+				log.Warn("Failed to remove plugin configuration from PROJECT file",
+					"provided_key_error", err, "canonical_key_error", err2)
+			}
+		} else {
+			log.Warn("Failed to remove plugin config", "error", err)
+		}
 	}
 
 	return nil

@@ -18,6 +18,7 @@ package v3
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -277,6 +278,48 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	return nil
 }
 
+// RemoveResource implements config.Config
+func (c *Cfg) RemoveResource(gvk resource.GVK) error {
+	indexToRemove := -1
+	for i, r := range c.Resources {
+		// Match by Group, Version, Kind (not domain, as core types may not have domain set)
+		if r.Group == gvk.Group && r.Version == gvk.Version && r.Kind == gvk.Kind {
+			indexToRemove = i
+			break
+		}
+	}
+
+	if indexToRemove == -1 {
+		return fmt.Errorf("failed to remove resource: resource with GVK {%q %q %q} not found",
+			gvk.Group, gvk.Version, gvk.Kind)
+	}
+
+	// Remove the resource by slicing around it
+	c.Resources = append(c.Resources[:indexToRemove], c.Resources[indexToRemove+1:]...)
+	return nil
+}
+
+// SetResourceWebhooks implements config.Config
+func (c *Cfg) SetResourceWebhooks(gvk resource.GVK, webhooks *resource.Webhooks) error {
+	for i, r := range c.Resources {
+		// Match by Group, Version, Kind (not domain)
+		if r.Group == gvk.Group && r.Version == gvk.Version && r.Kind == gvk.Kind {
+			if webhooks == nil {
+				c.Resources[i].Webhooks = nil
+			} else {
+				if c.Resources[i].Webhooks == nil {
+					c.Resources[i].Webhooks = &resource.Webhooks{}
+				}
+				c.Resources[i].Webhooks.Set(webhooks)
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("failed to set webhooks: resource with GVK {%q %q %q} not found",
+		gvk.Group, gvk.Version, gvk.Kind)
+}
+
 // HasGroup implements config.Config
 func (c Cfg) HasGroup(group string) bool {
 	// Return true if the target group is found in the tracked resources
@@ -348,6 +391,19 @@ func (c Cfg) DecodePluginConfig(key string, configObj any) error {
 }
 
 // EncodePluginConfig will return an error if used on any project version < v3.
+//
+// Plugin Configuration Deletion:
+//
+// To remove a plugin's configuration from the PROJECT file, pass an anonymous empty struct (struct{}{}).
+// This explicitly signals the intent to delete the plugin's configuration entry.
+//
+// Example:
+//
+//	// Delete plugin configuration
+//	err := config.EncodePluginConfig("my-plugin.example.com/v1", struct{}{})
+//
+// Note: Named empty structs or structs with omitempty fields that evaluate to empty
+// will be stored as "{}" in the PROJECT file, not deleted. Only struct{}{} triggers deletion.
 func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 	// Get object's bytes and set them under key in extra fields.
 	b, err := yaml.Marshal(configObj)
@@ -361,8 +417,28 @@ func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 	if c.Plugins == nil {
 		c.Plugins = make(map[string]pluginConfig)
 	}
-	c.Plugins[key] = fields
+	// If fields is empty and configObj is an anonymous empty struct,
+	// delete the key from the plugins map (used for plugin deletion).
+	// Named structs with omitempty fields that evaluate to empty will still be stored as {}.
+	if len(fields) == 0 && isAnonymousEmptyStruct(configObj) {
+		delete(c.Plugins, key)
+	} else {
+		c.Plugins[key] = fields
+	}
 	return nil
+}
+
+// isAnonymousEmptyStruct checks if the given value is an anonymous empty struct (struct{}{}).
+//
+// This function is used by EncodePluginConfig to distinguish between:
+//   - struct{}{} → explicit deletion signal (returns true)
+//   - type MyConfig struct{} → empty named struct (returns false, will be stored as {})
+//   - Structs with omitempty fields that evaluate to empty (returns false, will be stored as {})
+//
+// Only anonymous empty structs (struct{}{}) trigger configuration deletion from the PROJECT file.
+func isAnonymousEmptyStruct(v any) bool {
+	typ := reflect.TypeOf(v)
+	return typ.Kind() == reflect.Struct && typ.Name() == "" && typ.NumField() == 0
 }
 
 // MarshalYAML implements config.Config

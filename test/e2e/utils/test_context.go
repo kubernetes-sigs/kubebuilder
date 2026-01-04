@@ -242,6 +242,39 @@ func (t *TestContext) CreateWebhook(resourceOptions ...string) error {
 	return err
 }
 
+// DeleteAPI is for running `kubebuilder delete api`
+func (t *TestContext) DeleteAPI(resourceOptions ...string) error {
+	resourceOptions = append([]string{"delete", "api"}, resourceOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
+// DeleteWebhook is for running `kubebuilder delete webhook`
+func (t *TestContext) DeleteWebhook(resourceOptions ...string) error {
+	resourceOptions = append([]string{"delete", "webhook"}, resourceOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
+// Delete is for running `kubebuilder delete` (for optional plugins)
+func (t *TestContext) Delete(resourceOptions ...string) error {
+	resourceOptions = append([]string{"delete"}, resourceOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
+// HasFile checks if a file exists in the test project directory
+func (t *TestContext) HasFile(path string) bool {
+	_, err := os.Stat(filepath.Join(t.Dir, path))
+	return err == nil
+}
+
 // Regenerate is for running `kubebuilder alpha generate`
 func (t *TestContext) Regenerate(resourceOptions ...string) error {
 	resourceOptions = append([]string{"alpha", "generate"}, resourceOptions...)

@@ -31,13 +31,19 @@ var (
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
-var _ plugin.Full = Plugin{}
+var (
+	_ plugin.Full          = Plugin{}
+	_ plugin.DeleteAPI     = Plugin{}
+	_ plugin.DeleteWebhook = Plugin{}
+)
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
 	initSubcommand
 	createAPISubcommand
 	createWebhookSubcommand
+	deleteAPISubcommand
+	deleteWebhookSubcommand
 	editSubcommand
 }
 
@@ -59,6 +65,14 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 // GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
+}
+
+// GetDeleteAPISubcommand will return the subcommand which is responsible for deleting apis
+func (p Plugin) GetDeleteAPISubcommand() plugin.DeleteAPISubcommand { return &p.deleteAPISubcommand }
+
+// GetDeleteWebhookSubcommand will return the subcommand which is responsible for deleting webhooks
+func (p Plugin) GetDeleteWebhookSubcommand() plugin.DeleteWebhookSubcommand {
+	return &p.deleteWebhookSubcommand
 }
 
 // GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project

@@ -133,6 +133,8 @@ External plugins can support the following Kubebuilder subcommands:
 - `init`: Project initialization
 - `create api`: Scaffold Kubernetes API definitions
 - `create webhook`: Scaffold Kubernetes webhooks
+- `delete api`: Delete Kubernetes API definitions and associated files
+- `delete webhook`: Delete Kubernetes webhooks and associated files
 - `edit`: Update project configuration
 
 **Optional subcommands for enhanced user experience:**

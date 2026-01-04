@@ -21,7 +21,11 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
-var _ plugin.Full = Plugin{}
+var (
+	_ plugin.Full          = Plugin{}
+	_ plugin.DeleteAPI     = Plugin{}
+	_ plugin.DeleteWebhook = Plugin{}
+)
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
@@ -69,6 +73,22 @@ func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 // GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand {
 	return &editSubcommand{
+		Path: p.Path,
+		Args: p.Args,
+	}
+}
+
+// GetDeleteAPISubcommand will return the subcommand which is responsible for deleting apis
+func (p Plugin) GetDeleteAPISubcommand() plugin.DeleteAPISubcommand {
+	return &deleteAPISubcommand{
+		Path: p.Path,
+		Args: p.Args,
+	}
+}
+
+// GetDeleteWebhookSubcommand will return the subcommand which is responsible for deleting webhooks
+func (p Plugin) GetDeleteWebhookSubcommand() plugin.DeleteWebhookSubcommand {
+	return &deleteWebhookSubcommand{
 		Path: p.Path,
 		Args: p.Args,
 	}

@@ -30,4 +30,4 @@ docs/book/src/docs
 /testdata/**legacy**
 
 ## Skip testdata files that generate by tests using TestContext
-**/e2e-*/**
+e2e-*

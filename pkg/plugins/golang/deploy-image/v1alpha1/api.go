@@ -115,12 +115,19 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"the controller and its spec in the API (CRD/CR). (i.e --image-container-port=\"11211\") ")
 	fs.StringVar(&p.runAsUser, "run-as-user", "", "User-Id for the container formed will be set to this value")
 
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
-	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
+	// Bind make flags only if not already defined (defensive for plugin chaining)
+	if fs.Lookup("make") == nil {
+		fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	}
+	if fs.Lookup("manifests") == nil {
+		fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
+	}
 
 	p.options = &goPlugin.Options{}
 
-	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	if fs.Lookup("plural") == nil {
+		fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	}
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

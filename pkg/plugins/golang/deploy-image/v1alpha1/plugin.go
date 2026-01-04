@@ -31,11 +31,15 @@ var (
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
-var _ plugin.CreateAPI = Plugin{}
+var (
+	_ plugin.CreateAPI = Plugin{}
+	_ plugin.DeleteAPI = Plugin{}
+)
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
 	createAPISubcommand
+	deleteAPISubcommand
 }
 
 // Name returns the name of the plugin
@@ -49,6 +53,9 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 
 // GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
+
+// GetDeleteAPISubcommand will return the subcommand which is responsible for cleaning up plugin metadata
+func (p Plugin) GetDeleteAPISubcommand() plugin.DeleteAPISubcommand { return &p.deleteAPISubcommand }
 
 // PluginConfig defines the structure that will be used to track the data
 type PluginConfig struct {

@@ -31,6 +31,10 @@ kubebuilder create api --plugins=pluginA,pluginB,pluginC
 OR
 kubebuilder create webhook --plugins=pluginA,pluginB,pluginC
 OR
+kubebuilder delete api --plugins=pluginA,pluginB,pluginC
+OR
+kubebuilder delete webhook --plugins=pluginA,pluginB,pluginC
+OR
 kubebuilder edit --plugins=pluginA,pluginB,pluginC
 ```
 

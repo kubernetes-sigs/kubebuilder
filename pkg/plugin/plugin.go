@@ -69,6 +69,29 @@ type Edit interface {
 	GetEditSubcommand() EditSubcommand
 }
 
+// DeleteAPI is an interface for plugins that provide a `delete api` subcommand.
+type DeleteAPI interface {
+	Plugin
+	// GetDeleteAPISubcommand returns the underlying DeleteAPISubcommand interface.
+	GetDeleteAPISubcommand() DeleteAPISubcommand
+}
+
+// DeleteWebhook is an interface for plugins that provide a `delete webhook` subcommand.
+type DeleteWebhook interface {
+	Plugin
+	// GetDeleteWebhookSubcommand returns the underlying DeleteWebhookSubcommand interface.
+	GetDeleteWebhookSubcommand() DeleteWebhookSubcommand
+}
+
+// HasDeleteSupport is an interface for plugins that support deletion via the Edit interface
+// (e.g., optional plugins like helm, grafana, autoupdate that use --delete flag).
+// This explicitly marks plugins that handle deletion through Edit rather than DeleteAPI/DeleteWebhook.
+type HasDeleteSupport interface {
+	Edit
+	// SupportsDelete returns true if the plugin supports deletion through its Edit subcommand.
+	SupportsDelete() bool
+}
+
 // Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands.
 type Full interface {
 	Init
