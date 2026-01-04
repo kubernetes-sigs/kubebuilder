@@ -472,6 +472,52 @@ func init() {
 				Expect(err).To(MatchError(FileAlreadyExistsError{path: path}))
 			})
 		})
+
+		Context("WithConfig option", func() {
+			It("should set repository in imports.LocalPrefix", func() {
+				cfg := cfgv3.New()
+				_ = cfg.SetRepository("github.com/example/test")
+
+				scaffold := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithConfig(cfg))
+
+				Expect(scaffold.injector.config).NotTo(BeNil())
+				Expect(scaffold.injector.config.GetRepository()).To(Equal("github.com/example/test"))
+			})
+		})
+
+		Context("inserter with missing file", func() {
+			It("should skip when IgnoreFile action is used", func() {
+				err := s.Execute(
+					fakeInserterWithIfNotExists{
+						fakeInserter: fakeInserter{
+							fakeBuilder: fakeBuilder{path: "missing.go"},
+							codeFragments: CodeFragmentsMap{
+								NewMarkerFor("missing.go", "-"): {"new code\n"},
+							},
+						},
+						ifNotExistsAction: IgnoreFile,
+					},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should error when ErrorIfNotExist action is used", func() {
+				err := s.Execute(
+					fakeInserterWithIfNotExists{
+						fakeInserter: fakeInserter{
+							fakeBuilder: fakeBuilder{path: "missing.go"},
+							codeFragments: CodeFragmentsMap{
+								NewMarkerFor("missing.go", "-"): {"new code\n"},
+							},
+						},
+						ifNotExistsAction: ErrorIfNotExist,
+					},
+				)
+
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 })
 
@@ -566,4 +612,18 @@ func (f fakeInserter) GetMarkers() []Marker {
 // GetCodeFragments implements Inserter
 func (f fakeInserter) GetCodeFragments() CodeFragmentsMap {
 	return f.codeFragments
+}
+
+var (
+	_ Inserter             = fakeInserterWithIfNotExists{}
+	_ HasIfNotExistsAction = fakeInserterWithIfNotExists{}
+)
+
+type fakeInserterWithIfNotExists struct {
+	fakeInserter
+	ifNotExistsAction IfNotExistsAction
+}
+
+func (f fakeInserterWithIfNotExists) GetIfNotExistsAction() IfNotExistsAction {
+	return f.ifNotExistsAction
 }

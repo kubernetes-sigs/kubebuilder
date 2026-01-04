@@ -19,6 +19,7 @@ package machinery
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	log "log/slog"
 	"os"
@@ -238,7 +239,7 @@ func doTemplate(t Template) ([]byte, error) {
 func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			if withOptionalBehavior, ok := i.(HasIfNotExistsAction); ok {
 				switch withOptionalBehavior.GetIfNotExistsAction() {
 				case IgnoreFile:
