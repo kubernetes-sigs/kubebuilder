@@ -78,9 +78,11 @@ func (o *ResourceOrganizer) OrganizeByFunction() map[string][]*unstructured.Unst
 		groups["prometheus"] = prometheusResources
 	}
 
-	// Other - Any remaining resources
-	if len(o.resources.Other) > 0 {
-		groups["other"] = o.resources.Other
+	// Extras - Uncategorized resources (services, configmaps, secrets, etc. not fitting above categories)
+	// This includes both uncategorized services and all resources from the "Other" category
+	extrasResources := o.collectExtrasResources()
+	if len(extrasResources) > 0 {
+		groups["extras"] = extrasResources
 	}
 
 	return groups
@@ -170,4 +172,21 @@ func (o *ResourceOrganizer) isWebhookService(service *unstructured.Unstructured)
 func (o *ResourceOrganizer) isMetricsService(service *unstructured.Unstructured) bool {
 	serviceName := service.GetName()
 	return strings.Contains(serviceName, "metrics")
+}
+
+// collectExtrasResources gathers uncategorized resources that don't fit standard categories
+func (o *ResourceOrganizer) collectExtrasResources() []*unstructured.Unstructured {
+	var extrasResources []*unstructured.Unstructured
+
+	// Collect services that are neither webhook nor metrics services
+	for _, service := range o.resources.Services {
+		if !o.isWebhookService(service) && !o.isMetricsService(service) {
+			extrasResources = append(extrasResources, service)
+		}
+	}
+
+	// Collect all other uncategorized resources (ConfigMaps, Secrets, etc.)
+	extrasResources = append(extrasResources, o.resources.Other...)
+
+	return extrasResources
 }

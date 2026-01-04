@@ -4,8 +4,8 @@ kind: ClusterRole
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-wordpress-editor-role
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+    name: {{ .Values.namePrefix }}-wordpress-editor-role
 rules:
     - apiGroups:
         - example.com.testproject.org
