@@ -326,6 +326,10 @@ var _ = Describe("Cover plugin util helpers", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		It("should error if regex is invalid", func() {
+			Expect(ReplaceRegexInFile(path, `\K`, "Z")).NotTo(Succeed())
+		})
+
 		It("should replace all regex matches", func() {
 			Expect(ReplaceRegexInFile(path, `\d+`, "X")).To(Succeed())
 			b, err := os.ReadFile(path)
@@ -335,10 +339,6 @@ var _ = Describe("Cover plugin util helpers", func() {
 
 		It("should error if regex not found", func() {
 			Expect(ReplaceRegexInFile(path, `notfound`, "Y")).NotTo(Succeed())
-		})
-
-		It("should error if regex is invalid", func() {
-			Expect(ReplaceRegexInFile(path, `\K`, "Z")).NotTo(Succeed())
 		})
 	})
 

@@ -1216,3 +1216,71 @@ func getMetadata() plugin.SubcommandMetadata {
 		Examples:    "Test examples",
 	}
 }
+
+var _ = Describe("Plugin", func() {
+	var p Plugin
+
+	BeforeEach(func() {
+		p = Plugin{
+			PName:    "testplugin",
+			PVersion: plugin.Version{Number: 1},
+			PSupportedProjectVersions: []config.Version{
+				{Number: 3},
+			},
+			Path: "/path/to/plugin",
+			Args: []string{"--flag", "value"},
+		}
+	})
+
+	It("should return the plugin name", func() {
+		Expect(p.Name()).To(Equal("testplugin"))
+	})
+
+	It("should return the plugin version", func() {
+		Expect(p.Version()).To(Equal(plugin.Version{Number: 1}))
+	})
+
+	It("should return supported project versions", func() {
+		Expect(p.SupportedProjectVersions()).To(Equal([]config.Version{{Number: 3}}))
+	})
+
+	It("should return init subcommand", func() {
+		sub := p.GetInitSubcommand()
+		Expect(sub).NotTo(BeNil())
+		initSub, ok := sub.(*initSubcommand)
+		Expect(ok).To(BeTrue())
+		Expect(initSub.Path).To(Equal("/path/to/plugin"))
+		Expect(initSub.Args).To(Equal([]string{"--flag", "value"}))
+	})
+
+	It("should return create API subcommand", func() {
+		sub := p.GetCreateAPISubcommand()
+		Expect(sub).NotTo(BeNil())
+		apiSub, ok := sub.(*createAPISubcommand)
+		Expect(ok).To(BeTrue())
+		Expect(apiSub.Path).To(Equal("/path/to/plugin"))
+		Expect(apiSub.Args).To(Equal([]string{"--flag", "value"}))
+	})
+
+	It("should return create webhook subcommand", func() {
+		sub := p.GetCreateWebhookSubcommand()
+		Expect(sub).NotTo(BeNil())
+		webhookSub, ok := sub.(*createWebhookSubcommand)
+		Expect(ok).To(BeTrue())
+		Expect(webhookSub.Path).To(Equal("/path/to/plugin"))
+		Expect(webhookSub.Args).To(Equal([]string{"--flag", "value"}))
+	})
+
+	It("should return edit subcommand", func() {
+		sub := p.GetEditSubcommand()
+		Expect(sub).NotTo(BeNil())
+		editSub, ok := sub.(*editSubcommand)
+		Expect(ok).To(BeTrue())
+		Expect(editSub.Path).To(Equal("/path/to/plugin"))
+		Expect(editSub.Args).To(Equal([]string{"--flag", "value"}))
+	})
+
+	It("should return empty deprecation warning", func() {
+		Expect(p.DeprecationWarning()).To(BeEmpty())
+	})
+})

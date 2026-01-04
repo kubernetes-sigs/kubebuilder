@@ -216,5 +216,31 @@ var _ = Describe("Bundle", func() {
 				Expect(err).To(HaveOccurred())
 			}
 		})
+
+		It("should store and return the deprecation warning", func() {
+			deprecationMsg := "This bundle is deprecated, please use v2"
+			b, err := NewBundleWithOptions(
+				WithName(name),
+				WithVersion(v),
+				WithDeprecationMessage(deprecationMsg),
+				WithPlugins(p1),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			deprecated, ok := b.(Deprecated)
+			Expect(ok).To(BeTrue())
+			Expect(deprecated.DeprecationWarning()).To(Equal(deprecationMsg))
+		})
+
+		It("should return empty string when no deprecation warning is set", func() {
+			b, err := NewBundleWithOptions(
+				WithName(name),
+				WithVersion(v),
+				WithPlugins(p1),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			deprecated, ok := b.(Deprecated)
+			Expect(ok).To(BeTrue())
+			Expect(deprecated.DeprecationWarning()).To(BeEmpty())
+		})
 	})
 })
