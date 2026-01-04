@@ -59,19 +59,13 @@ func Run() {
 
 	// Run logic depending on the command that is requested by Kubebuilder
 	switch pluginRequest.Command {
-	// the `init` subcommand is often used when initializing a new project
+	// the `init` subcommand is used to add features during project initialization
 	case "init":
 		response = scaffolds.InitCmd(pluginRequest)
-	// the `create api` subcommand is often used after initializing a project
-	// with the `init` subcommand to create a controller and CRDs for a
-	// provided group, version, and kind
-	case "create api":
-		response = scaffolds.ApiCmd(pluginRequest)
-	// the `create webhook` subcommand is often used after initializing a project
-	// with the `init` subcommand to create a webhook for a provided
-	// group, version, and kind
-	case "create webhook":
-		response = scaffolds.WebhookCmd(pluginRequest)
+	// the `edit` subcommand is used to add optional features to an existing project
+	// This is a realistic use case for external plugins - adding optional monitoring
+	case "edit":
+		response = scaffolds.EditCmd(pluginRequest)
 	// the `flags` subcommand is used to customize the flags that
 	// the Kubebuilder cli will bind for use with this plugin
 	case "flags":

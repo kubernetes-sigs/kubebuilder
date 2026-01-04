@@ -22,5 +22,14 @@ cd testdata/testplugin
 rm -rf *
 
 # Run Kubebuilder commands inside the testplugin directory
-kubebuilder init --plugins sampleexternalplugin/v1 --domain sample.domain.com
-kubebuilder create api --plugins sampleexternalplugin/v1 --number 2 --group samplegroup --version v1 --kind SampleKind
+kubebuilder init --plugins go/v4 --domain sample.domain.com --repo sample.domain.com/test-operator
+kubebuilder edit --plugins sampleexternalplugin/v1
+
+# Ensure Prometheus assets were scaffolded
+test -f config/prometheus/prometheus.yaml
+test -f config/prometheus/kustomization.yaml
+test -f config/default/kustomization_prometheus_patch.yaml
+
+# Clean up test files
+cd ../..
+rm -rf testdata/testplugin
