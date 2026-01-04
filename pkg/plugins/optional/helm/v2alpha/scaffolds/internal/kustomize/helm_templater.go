@@ -39,6 +39,7 @@ const (
 	kindValidatingWebhook  = "ValidatingWebhookConfiguration"
 	kindMutatingWebhook    = "MutatingWebhookConfiguration"
 	kindDeployment         = "Deployment"
+	kindCRD                = "CustomResourceDefinition"
 
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
@@ -49,13 +50,14 @@ const (
 
 // HelmTemplater handles converting YAML content to Helm templates
 type HelmTemplater struct {
-	projectName string
+	// The actual namePrefix detected from kustomize resources
+	detectedPrefix string
 }
 
 // NewHelmTemplater creates a new Helm templater
-func NewHelmTemplater(projectName string) *HelmTemplater {
+func NewHelmTemplater(detectedPrefix string) *HelmTemplater {
 	return &HelmTemplater{
-		projectName: projectName,
+		detectedPrefix: detectedPrefix,
 	}
 }
 
@@ -72,6 +74,8 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 
 	// Apply cert-manager and webhook-specific templating AFTER other substitutions
 	yamlContent = t.substituteCertManagerReferences(yamlContent, resource)
+
+	yamlContent = t.substituteResourceNamesWithPrefix(yamlContent, resource)
 
 	// Apply labels and annotations from Helm chart
 	yamlContent = t.addHelmLabelsAndAnnotations(yamlContent, resource)
@@ -111,7 +115,7 @@ func (t *HelmTemplater) substituteProjectNames(yamlContent string, _ *unstructur
 
 // substituteNamespace replaces hardcoded namespace references with Release.Namespace
 func (t *HelmTemplater) substituteNamespace(yamlContent string, resource *unstructured.Unstructured) string {
-	hardcodedNamespace := t.projectName + "-system"
+	hardcodedNamespace := t.detectedPrefix + "-system"
 	namespaceTemplate := "{{ .Release.Namespace }}"
 
 	// Replace hardcoded namespace references everywhere, including in the Namespace resource
@@ -146,35 +150,111 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 			"SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local", metricsServiceFQDNCluster)
 
 		// Also replace hardcoded service names
-		hardcodedMetricsService := t.projectName + "-controller-manager-metrics-service"
+		hardcodedMetricsService := t.detectedPrefix + "-controller-manager-metrics-service"
 		yamlContent = strings.ReplaceAll(yamlContent, hardcodedMetricsService, metricsServiceTemplate)
+	} else if strings.Contains(name, "serving-cert") || strings.Contains(name, "webhook") {
+		webhookServiceTemplate := "{{ .Values.namePrefix }}-webhook-service"
+		hardcodedWebhookServiceShort := t.detectedPrefix + "-webhook-service"
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedWebhookServiceShort, webhookServiceTemplate)
 	}
 
-	// Replace hardcoded issuer reference with templated one
-	hardcodedIssuer := t.projectName + "-selfsigned-issuer"
-	templatedIssuer := "{{ include \"" + chartNameTemplate + "\" . }}-selfsigned-issuer"
-	yamlContent = strings.ReplaceAll(yamlContent, hardcodedIssuer, templatedIssuer)
+	return yamlContent
+}
+
+// substituteCertManagerReferences applies cert-manager specific template substitutions
+func (t *HelmTemplater) substituteCertManagerReferences(
+	yamlContent string,
+	resource *unstructured.Unstructured,
+) string {
+	kind := resource.GetKind()
+
+	if kind == kindIssuer || kind == kindCertificate {
+		hardcodedIssuerRef := t.detectedPrefix + "-selfsigned-issuer"
+		templatedIssuerRef := "{{ .Values.namePrefix }}-selfsigned-issuer"
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedIssuerRef, templatedIssuerRef)
+	}
+
+	if kind == kindValidatingWebhook || kind == kindMutatingWebhook || kind == kindCRD {
+		hardcodedService := "name: " + t.detectedPrefix + "-webhook-service"
+		templatedService := "name: {{ .Values.namePrefix }}-webhook-service"
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedService, templatedService)
+	}
+
+	yamlContent = t.substituteCertManagerAnnotations(yamlContent)
+	return yamlContent
+}
+
+// substituteResourceNamesWithPrefix templates ALL resource names to use namePrefix from values.yaml
+func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ *unstructured.Unstructured) string {
+	namePattern := regexp.MustCompile(
+		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(t.detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
+
+	yamlContent = namePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		parts := namePattern.FindStringSubmatch(match)
+		if len(parts) < 4 {
+			return match
+		}
+
+		indent := parts[1]
+		fieldName := parts[2]
+		suffix := parts[3]
+
+		return indent + fieldName + ": {{ .Values.namePrefix }}" + suffix
+	})
 
 	return yamlContent
 }
 
-// substituteCertManagerReferences applies cert-manager and webhook-specific template substitutions
-func (t *HelmTemplater) substituteCertManagerReferences(yamlContent string, _ *unstructured.Unstructured) string {
-	return yamlContent
-}
-
-// addHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents
-func (t *HelmTemplater) addHelmLabelsAndAnnotations(yamlContent string, _ *unstructured.Unstructured) string {
-	// Replace app.kubernetes.io/managed-by: kustomize with Helm template
-	// Use regex to handle different whitespace patterns
+// addHelmLabelsAndAnnotations replaces kustomize labels with Helm equivalents and adds missing Helm labels.
+// Following Helm best practices: https://helm.sh/docs/chart_best_practices/labels/#standard-labels
+func (t *HelmTemplater) addHelmLabelsAndAnnotations(
+	yamlContent string,
+	_ *unstructured.Unstructured,
+) string {
 	managedByRegex := regexp.MustCompile(`(\s*)app\.kubernetes\.io/managed-by:\s+kustomize`)
 	yamlContent = managedByRegex.ReplaceAllString(yamlContent, "${1}app.kubernetes.io/managed-by: {{ .Release.Service }}")
+
+	hardcodedNameLabel := "app.kubernetes.io/name: " + t.detectedPrefix
+	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + chartNameTemplate + "\" . }}"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
+
+	yamlContent = t.addMissingHelmLabels(yamlContent)
+
+	return yamlContent
+}
+
+// addMissingHelmLabels adds Helm standard labels that are not provided by kustomize.
+// Adds helm.sh/chart and app.kubernetes.io/instance as per Helm best practices.
+func (t *HelmTemplater) addMissingHelmLabels(yamlContent string) string {
+	nameLabelsPattern := regexp.MustCompile(`([ \t]*)app\.kubernetes\.io/name:.*\n`)
+
+	yamlContent = nameLabelsPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		indentPattern := regexp.MustCompile(`^([ \t]*)`)
+		indent := indentPattern.FindStringSubmatch(match)[1]
+
+		return match +
+			indent + "helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}\n" +
+			indent + "app.kubernetes.io/instance: {{ .Release.Name }}\n"
+	})
 
 	return yamlContent
 }
 
 // substituteRBACValues applies RBAC-specific template substitutions
 func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
+	return yamlContent
+}
+
+// substituteCertManagerAnnotations replaces hardcoded certificate references in annotations
+func (t *HelmTemplater) substituteCertManagerAnnotations(yamlContent string) string {
+	hardcodedServingCert := t.detectedPrefix + "-serving-cert"
+	templatedServingCert := "{{ .Values.namePrefix }}-serving-cert"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedServingCert, templatedServingCert)
+
+	hardcodedMetricsCert := t.detectedPrefix + "-metrics-certs"
+	templatedMetricsCert := "{{ .Values.namePrefix }}-metrics-certs"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedMetricsCert, templatedMetricsCert)
+
 	return yamlContent
 }
 

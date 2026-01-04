@@ -3,8 +3,10 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-webhook-service
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ .Values.namePrefix }}-webhook-service
     namespace: {{ .Release.Namespace }}
 spec:
     ports:
@@ -12,5 +14,7 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.webhook.port }}
     selector:
-        app.kubernetes.io/name: project-v4-with-plugins
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager

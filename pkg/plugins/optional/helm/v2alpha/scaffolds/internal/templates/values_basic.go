@@ -44,6 +44,8 @@ type HelmValuesBasic struct {
 	HasWebhooks bool
 	// HasMetrics is true when metrics service/monitor were found in the config
 	HasMetrics bool
+	// NamePrefix is the detected kustomize namePrefix used for resource names
+	NamePrefix string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -89,7 +91,16 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 		}
 	}
 
-	buf.WriteString(fmt.Sprintf(`# Configure the controller manager deployment
+	// Add namePrefix at the top (detected from kustomize)
+	namePrefix := f.NamePrefix
+	if namePrefix == "" {
+		namePrefix = f.ProjectName
+	}
+
+	buf.WriteString(fmt.Sprintf(`# Prefix for all resource names
+namePrefix: %s
+
+# Configure the controller manager deployment
 manager:
   replicas: 1
   
@@ -98,7 +109,7 @@ manager:
     tag: %s
     pullPolicy: %s
 
-`, imageRepo, imageTag, imagePullPolicy))
+`, namePrefix, imageRepo, imageTag, imagePullPolicy))
 
 	// Add extracted deployment configuration
 	f.addDeploymentConfig(&buf)

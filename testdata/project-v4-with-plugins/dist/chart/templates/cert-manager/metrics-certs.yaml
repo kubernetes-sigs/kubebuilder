@@ -4,8 +4,10 @@ kind: Certificate
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-metrics-certs
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ .Values.namePrefix }}-metrics-certs
     namespace: {{ .Release.Namespace }}
 spec:
     dnsNames:
@@ -13,6 +15,6 @@ spec:
         - {{ include "chart.serviceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.{{ include "chart.namespaceName" . }}.svc.cluster.local
     issuerRef:
         kind: Issuer
-        name: {{ include "chart.name" . }}-selfsigned-issuer
+        name: {{ .Values.namePrefix }}-selfsigned-issuer
     secretName: metrics-server-cert
 {{- end }}

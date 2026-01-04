@@ -4,9 +4,11 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager
-    name: project-v4-with-plugins-controller-manager-metrics-service
+    name: {{ .Values.namePrefix }}-controller-manager-metrics-service
     namespace: {{ .Release.Namespace }}
 spec:
     ports:
@@ -15,6 +17,8 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.metrics.port }}
     selector:
-        app.kubernetes.io/name: project-v4-with-plugins
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager
 {{- end }}

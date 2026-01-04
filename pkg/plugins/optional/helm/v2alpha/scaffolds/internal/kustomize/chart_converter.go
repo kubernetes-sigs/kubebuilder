@@ -18,6 +18,7 @@ package kustomize
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -28,9 +29,10 @@ import (
 
 // ChartConverter orchestrates the conversion of kustomize output to Helm chart templates
 type ChartConverter struct {
-	resources   *ParsedResources
-	projectName string
-	outputDir   string
+	resources *ParsedResources
+	// The actual namePrefix detected from kustomize resources
+	detectedPrefix string
+	outputDir      string
 
 	// Components for conversion
 	organizer *ResourceOrganizer
@@ -39,18 +41,18 @@ type ChartConverter struct {
 }
 
 // NewChartConverter creates a new chart converter with all necessary components
-func NewChartConverter(resources *ParsedResources, projectName, outputDir string) *ChartConverter {
+func NewChartConverter(resources *ParsedResources, detectedPrefix, outputDir string) *ChartConverter {
 	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(projectName)
+	templater := NewHelmTemplater(detectedPrefix)
 	writer := NewChartWriter(templater, outputDir)
 
 	return &ChartConverter{
-		resources:   resources,
-		projectName: projectName,
-		outputDir:   outputDir,
-		organizer:   organizer,
-		templater:   templater,
-		writer:      writer,
+		resources:      resources,
+		detectedPrefix: detectedPrefix,
+		outputDir:      outputDir,
+		organizer:      organizer,
+		templater:      templater,
+		writer:         writer,
 	}
 }
 
@@ -58,6 +60,11 @@ func NewChartConverter(resources *ParsedResources, projectName, outputDir string
 func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	// Organize resources by their logical function
 	resourceGroups := c.organizer.OrganizeByFunction()
+
+	// Check for extras resources and emit warning
+	if extrasResources, hasExtras := resourceGroups["extras"]; hasExtras && len(extrasResources) > 0 {
+		c.warnAboutExtrasResources(extrasResources)
+	}
 
 	// Write each group to appropriate template files
 	for groupName, resources := range resourceGroups {
@@ -71,6 +78,21 @@ func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	}
 
 	return nil
+}
+
+// warnAboutExtrasResources emits a warning about resources that don't fit standard categories.
+// These resources are placed in templates/extras/ and should be validated.
+func (c *ChartConverter) warnAboutExtrasResources(resources []*unstructured.Unstructured) {
+	var message strings.Builder
+	message.WriteString("resources not matching standard layout found and added to templates/extras:\n")
+
+	for _, resource := range resources {
+		kind := resource.GetKind()
+		name := resource.GetName()
+		message.WriteString(fmt.Sprintf("  - %s/%s\n", kind, name))
+	}
+
+	slog.Warn(message.String())
 }
 
 // dedupeResources removes exact duplicate resources by keying on

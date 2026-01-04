@@ -4,9 +4,11 @@ kind: ServiceMonitor
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         control-plane: controller-manager
-    name: project-controller-manager-metrics-monitor
+    name: {{ .Values.namePrefix }}-controller-manager-metrics-monitor
     namespace: {{ .Release.Namespace }}
 spec:
     endpoints:
@@ -27,9 +29,11 @@ spec:
             keySecret:
                 key: tls.key
                 name: metrics-server-cert
-            serverName: project-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+            serverName: {{ .Values.namePrefix }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
     selector:
         matchLabels:
-            app.kubernetes.io/name: project
+            app.kubernetes.io/name: {{ include "chart.name" . }}
+            helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
             control-plane: controller-manager
 {{- end }}

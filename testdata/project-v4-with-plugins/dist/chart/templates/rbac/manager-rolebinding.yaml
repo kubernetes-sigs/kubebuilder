@@ -3,13 +3,15 @@ kind: ClusterRoleBinding
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-manager-rolebinding
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ .Values.namePrefix }}-manager-rolebinding
 roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: project-v4-with-plugins-manager-role
+    name: {{ .Values.namePrefix }}-manager-role
 subjects:
     - kind: ServiceAccount
-      name: project-v4-with-plugins-controller-manager
+      name: {{ .Values.namePrefix }}-controller-manager
       namespace: {{ .Release.Namespace }}
