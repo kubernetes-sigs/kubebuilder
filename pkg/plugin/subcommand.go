@@ -66,6 +66,24 @@ type HasPostScaffold interface {
 	PostScaffold() error
 }
 
+// HasPluginChain is an interface that implements the optional plugin chain injection method.
+// This allows subcommands to receive the full chain of plugins being executed in the current command,
+// enabling cross-plugin coordination and validation.
+//
+// The plugin chain is automatically injected by the CLI before subcommand execution.
+// Plugins should implement this interface if they need to:
+//   - Validate that required companion plugins are present in the chain
+//   - Coordinate behavior with other plugins in the execution sequence
+//   - Check plugin execution order
+type HasPluginChain interface {
+	// SetPluginChain injects the current plugin chain into the subcommand.
+	// The chain represents the ordered list of plugin keys being executed for this command.
+	//
+	// Example chain:
+	// ["go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2", "deploy-image.go.kubebuilder.io/v1-alpha"]
+	SetPluginChain(chain []string)
+}
+
 // Subcommand is a base interface for all subcommands.
 type Subcommand interface {
 	Scaffolder
@@ -84,6 +102,18 @@ type CreateAPISubcommand interface {
 
 // CreateWebhookSubcommand is an interface that represents a `create wekbhook` subcommand.
 type CreateWebhookSubcommand interface {
+	Subcommand
+	RequiresResource
+}
+
+// DeleteAPISubcommand is an interface that represents a `delete api` subcommand.
+type DeleteAPISubcommand interface {
+	Subcommand
+	RequiresResource
+}
+
+// DeleteWebhookSubcommand is an interface that represents a `delete webhook` subcommand.
+type DeleteWebhookSubcommand interface {
 	Subcommand
 	RequiresResource
 }

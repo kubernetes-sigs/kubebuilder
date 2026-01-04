@@ -62,7 +62,10 @@ type Plugin struct {
 	editSubcommand
 }
 
-var _ plugin.Edit = Plugin{}
+var (
+	_ plugin.Init             = Plugin{}
+	_ plugin.HasDeleteSupport = Plugin{}
+)
 
 // PluginConfig defines the structure that will be used to track the data
 type PluginConfig struct {
@@ -80,6 +83,12 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 
 // GetEditSubcommand will return the subcommand which is responsible for adding and/or edit a autoupdate
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+// GetInitSubcommand will return the subcommand which is responsible for init autoupdate plugin
+func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
+
+// SupportsDelete returns true indicating this plugin supports deletion via Edit --delete
+func (Plugin) SupportsDelete() bool { return true }
 
 // Description returns a short description of the plugin
 func (Plugin) Description() string {

@@ -276,6 +276,89 @@ var _ = Describe("Cfg", func() {
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
+		It("RemoveResource should remove the resource if it exists", func() {
+			c.Resources = append(c.Resources, res)
+			l := len(c.Resources)
+			Expect(c.RemoveResource(res.GVK)).To(Succeed())
+			Expect(c.Resources).To(HaveLen(l - 1))
+			Expect(c.HasResource(res.GVK)).To(BeFalse())
+		})
+
+		It("RemoveResource should return an error if the resource does not exist", func() {
+			Expect(c.RemoveResource(res.GVK)).NotTo(Succeed())
+		})
+
+		It("RemoveResource should remove only the specified resource", func() {
+			res2 := resource.Resource{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v1",
+					Kind:    "OtherKind",
+				},
+			}
+			c.Resources = append(c.Resources, res, res2)
+			Expect(c.Resources).To(HaveLen(2))
+
+			Expect(c.RemoveResource(res.GVK)).To(Succeed())
+			Expect(c.Resources).To(HaveLen(1))
+			Expect(c.HasResource(res.GVK)).To(BeFalse())
+			Expect(c.HasResource(res2.GVK)).To(BeTrue())
+		})
+
+		It("SetResourceWebhooks should update webhook configuration", func() {
+			resWithWebhooks := resource.Resource{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v1",
+					Kind:    "Kind",
+				},
+				Webhooks: &resource.Webhooks{
+					WebhookVersion: "v1",
+					Defaulting:     true,
+					Validation:     true,
+				},
+			}
+			c.Resources = append(c.Resources, resWithWebhooks)
+
+			// Update to remove defaulting webhook
+			newWebhooks := &resource.Webhooks{
+				WebhookVersion: "v1",
+				Defaulting:     false,
+				Validation:     true,
+			}
+			Expect(c.SetResourceWebhooks(resWithWebhooks.GVK, newWebhooks)).To(Succeed())
+
+			updated, err := c.GetResource(resWithWebhooks.GVK)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updated.Webhooks.Defaulting).To(BeFalse())
+			Expect(updated.Webhooks.Validation).To(BeTrue())
+		})
+
+		It("SetResourceWebhooks should clear webhooks when nil provided", func() {
+			resWithWebhooks := resource.Resource{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v1",
+					Kind:    "Kind",
+				},
+				Webhooks: &resource.Webhooks{
+					WebhookVersion: "v1",
+					Defaulting:     true,
+				},
+			}
+			c.Resources = append(c.Resources, resWithWebhooks)
+
+			Expect(c.SetResourceWebhooks(resWithWebhooks.GVK, nil)).To(Succeed())
+
+			updated, err := c.GetResource(resWithWebhooks.GVK)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updated.Webhooks).To(BeNil())
+		})
+
+		It("SetResourceWebhooks should fail if resource not found", func() {
+			Expect(c.SetResourceWebhooks(res.GVK, nil)).NotTo(Succeed())
+		})
+
 		It("HasGroup should return false with no tracked resources", func() {
 			Expect(c.HasGroup(res.Group)).To(BeFalse())
 		})

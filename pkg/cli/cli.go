@@ -21,6 +21,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -373,6 +374,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	}
 
 	// If any plugin key was provided, replace those from the project configuration file
+	// Exception: for delete commands, APPEND to layout plugins instead of replacing
 	if pluginKeys, err := fs.GetStringSlice(pluginsFlag); err != nil {
 		return fmt.Errorf("invalid flag %q: %w", pluginsFlag, err)
 	} else if len(pluginKeys) != 0 {
@@ -407,7 +409,24 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 			}
 		}
 
-		c.pluginKeys = validPluginKeys
+		// For delete commands, if we have layout plugins from PROJECT, keep them
+		// and append the user-specified plugins (avoiding duplicates).
+		// Extract the command name from positional args (after flags are parsed).
+		isDeleteCommand := c.isDeleteCommand(fs.Args())
+
+		if isDeleteCommand && len(c.pluginKeys) > 0 {
+			// Append user plugins to layout plugins (deduplicate)
+			combined := append([]string{}, c.pluginKeys...)
+			for _, userPlugin := range validPluginKeys {
+				found := slices.Contains(combined, userPlugin)
+				if !found {
+					combined = append(combined, userPlugin)
+				}
+			}
+			c.pluginKeys = combined
+		} else {
+			c.pluginKeys = validPluginKeys
+		}
 	}
 
 	// If the project version flag was accepted but not provided keep the empty version and try to resolve it later,
@@ -419,6 +438,33 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	}
 
 	return nil
+}
+
+// isDeleteCommand checks if the command being executed is a delete command
+// by examining the positional arguments (excluding flags).
+func (c *CLI) isDeleteCommand(args []string) bool {
+	// Args contains positional arguments after pflag parsing (flags are removed).
+	// Check if the first positional argument is "delete".
+	if len(args) > 0 && args[0] == "delete" {
+		return true
+	}
+
+	// Prefer parsed positional args, but fall back to the original process args
+	// because subcommand names like "delete" may not be present in fs.Args()
+	// after Cobra/pflag parsing.
+	if len(os.Args) > 1 {
+		// Skip program name and look for "delete" in remaining args
+		for _, arg := range os.Args[1:] {
+			// Skip flags
+			if strings.HasPrefix(arg, "-") {
+				continue
+			}
+			// First non-flag argument found
+			return arg == "delete"
+		}
+	}
+
+	return false
 }
 
 // getInfoFromDefaults obtains the plugin keys, and maybe the project version from the default values
@@ -552,6 +598,15 @@ func (c *CLI) addSubcommands() {
 	createCmd.AddCommand(c.newCreateWebhookCmd())
 	if createCmd.HasSubCommands() {
 		c.cmd.AddCommand(createCmd)
+	}
+
+	// kubebuilder delete
+	deleteCmd := c.newDeleteCmd()
+	// kubebuilder delete api
+	deleteCmd.AddCommand(c.newDeleteAPICmd())
+	deleteCmd.AddCommand(c.newDeleteWebhookCmd())
+	if deleteCmd.HasSubCommands() {
+		c.cmd.AddCommand(deleteCmd)
 	}
 
 	// kubebuilder edit
