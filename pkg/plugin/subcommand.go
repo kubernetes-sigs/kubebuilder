@@ -88,6 +88,18 @@ type CreateWebhookSubcommand interface {
 	RequiresResource
 }
 
+// DeleteAPISubcommand is an interface that represents a `delete api` subcommand.
+type DeleteAPISubcommand interface {
+	Subcommand
+	RequiresResource
+}
+
+// DeleteWebhookSubcommand is an interface that represents a `delete webhook` subcommand.
+type DeleteWebhookSubcommand interface {
+	Subcommand
+	RequiresResource
+}
+
 // EditSubcommand is an interface that represents an `edit` subcommand.
 type EditSubcommand interface {
 	Subcommand
