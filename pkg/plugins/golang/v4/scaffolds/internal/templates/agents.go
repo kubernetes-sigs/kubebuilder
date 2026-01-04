@@ -266,8 +266,7 @@ kubectl logs -n <project>-system deployment/<project>-controller-manager -c mana
 
 ### Webhooks
 - **Create all types together**: ` + "`--defaulting --programmatic-validation --conversion`" + `
-- **Avoid re-scaffolding**: Adding types later requires ` + "`--force`" + ` (overwrites file)
-- **If using** ` + "`--force`" + `: Backup custom logic first, then restore after scaffolding
+- **When` + "`--force`" + `is used**: Backup custom logic first, then restore after scaffolding
 - **For multi-version APIs**: Use hub-and-spoke pattern (` + "`--conversion --spoke v2`" + `)
   - Hub version: Usually oldest stable version (v1)
   - Spoke versions: Newer versions that convert to/from hub (v2, v3)

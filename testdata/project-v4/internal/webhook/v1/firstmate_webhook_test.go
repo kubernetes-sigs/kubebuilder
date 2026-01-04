@@ -35,7 +35,6 @@ var _ = Describe("FirstMate Webhook", func() {
 		oldObj = &crewv1.FirstMate{}
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
 	})
 
 	AfterEach(func() {

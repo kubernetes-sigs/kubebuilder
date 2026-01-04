@@ -36,9 +36,9 @@ var admirallog = logf.Log.WithName("admiral-resource")
 // SetupAdmiralWebhookWithManager registers the webhook for Admiral in the manager.
 func SetupAdmiralWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Admiral{}).
+		WithDefaulter(&AdmiralCustomDefaulter{}).
 		WithValidator(&AdmiralCustomValidator{}).
 		WithValidatorCustomPath("/custom-validate-admiral").
-		WithDefaulter(&AdmiralCustomDefaulter{}).
 		Complete()
 }
 

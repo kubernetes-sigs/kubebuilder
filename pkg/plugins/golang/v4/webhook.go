@@ -182,10 +182,21 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		}
 	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
-		// FIXME: This is a temporary fix to allow we move forward
-		// However, users should be able to call the command to create an webhook
-		// even if the resource already has one when the webhook is not of the same type.
-		return fmt.Errorf("webhook resource already exists")
+		// Check if user is trying to add a webhook type that already exists
+		if p.resource.HasDefaultingWebhook() && res.Webhooks.Defaulting {
+			return fmt.Errorf("defaulting webhook already exists for this resource")
+		}
+		if p.resource.HasValidationWebhook() && res.Webhooks.Validation {
+			return fmt.Errorf("validation webhook already exists for this resource")
+		}
+		if p.resource.HasConversionWebhook() && res.Webhooks.Conversion {
+			return fmt.Errorf("conversion webhook already exists for this resource")
+		}
+		// If we're here, user is adding a new webhook type to existing resource
+		// Merge the webhook configurations
+		if err := p.resource.Webhooks.Update(res.Webhooks); err != nil {
+			return fmt.Errorf("error merging webhook configurations: %w", err)
+		}
 	}
 
 	return nil

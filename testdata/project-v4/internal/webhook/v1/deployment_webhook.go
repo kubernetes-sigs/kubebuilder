@@ -35,8 +35,8 @@ var deploymentlog = logf.Log.WithName("deployment-resource")
 // SetupDeploymentWebhookWithManager registers the webhook for Deployment in the manager.
 func SetupDeploymentWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&appsv1.Deployment{}).
-		WithValidator(&DeploymentCustomValidator{}).
 		WithDefaulter(&DeploymentCustomDefaulter{}).
+		WithValidator(&DeploymentCustomValidator{}).
 		Complete()
 }
 

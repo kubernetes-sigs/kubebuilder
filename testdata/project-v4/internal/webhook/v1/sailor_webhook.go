@@ -36,10 +36,10 @@ var sailorlog = logf.Log.WithName("sailor-resource")
 // SetupSailorWebhookWithManager registers the webhook for Sailor in the manager.
 func SetupSailorWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Sailor{}).
-		WithValidator(&SailorCustomValidator{}).
-		WithValidatorCustomPath("/custom-validate-sailor").
 		WithDefaulter(&SailorCustomDefaulter{}).
 		WithDefaulterCustomPath("/custom-mutate-sailor").
+		WithValidator(&SailorCustomValidator{}).
+		WithValidatorCustomPath("/custom-validate-sailor").
 		Complete()
 }
 

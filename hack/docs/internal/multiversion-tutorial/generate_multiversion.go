@@ -68,19 +68,8 @@ func (sp *Sample) GenerateSampleProject() {
 		"--kind", "CronJob",
 		"--conversion",
 		"--spoke", "v2",
-		"--force",
 	)
 	hackutils.CheckError("Creating conversion webhook for v1", err)
-
-	log.Info("Workaround to fix the issue with the conversion webhook")
-	// FIXME: This is a workaround to fix the issue with the conversion webhook
-	// We should be able to inject the code when we create webhooks with different
-	// types of webhooks. However, currently, we are not able to do that and we need to
-	// force. So, we are copying the code from cronjob tutorial to have the code
-	// implemented.
-	cmd := exec.Command("cp", "./../../../cronjob-tutorial/testdata/project/internal/webhook/v1/cronjob_webhook.go", "./internal/webhook/v1/cronjob_webhook.go")
-	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Copying the code from cronjob tutorial", err)
 
 	log.Info("Creating defaulting and validation webhook for v2")
 	err = sp.ctx.CreateWebhook(
@@ -106,7 +95,7 @@ func (sp *Sample) UpdateTutorial() {
 	log.Info("Update tutorial with multiversion code")
 
 	// Update files according to the multiversion
-	sp.updateCronjobV1DueForce()
+	sp.updateCronjobV1ForConversion()
 	sp.updateAPIV1()
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
@@ -133,8 +122,7 @@ func (sp *Sample) updateControllerTest() {
 	hackutils.CheckError("replacing controller test for multiversion", err)
 }
 
-func (sp *Sample) updateCronjobV1DueForce() {
-	// FIXME : This is a workaround to fix the issue with the conversion webhook
+func (sp *Sample) updateCronjobV1ForConversion() {
 	path := "internal/webhook/v1/cronjob_webhook.go"
 	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path),
 		"Then, we set up the webhook with the manager.",
@@ -145,167 +133,6 @@ types implement the
 interfaces, a conversion webhook will be registered.
 `)
 	hackutils.CheckError("manager fix doc comment", err)
-
-	path = "internal/webhook/v1/cronjob_webhook_test.go"
-	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path),
-		`var (
-		obj    *batchv1.CronJob
-		oldObj *batchv1.CronJob
-	)
-
-	BeforeEach(func() {
-		obj = &batchv1.CronJob{}
-		oldObj = &batchv1.CronJob{}
-		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
-		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
-	})`,
-		`var (
-		obj       *batchv1.CronJob
-		oldObj    *batchv1.CronJob
-		validator CronJobCustomValidator
-		defaulter CronJobCustomDefaulter
-	)
-	const validCronJobName = "valid-cronjob-name"
-	const schedule =  "*/5 * * * *"
-
-	BeforeEach(func() {
-		obj = &batchv1.CronJob{
-			Spec: batchv1.CronJobSpec{
-				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
-			},
-		}
-		*obj.Spec.SuccessfulJobsHistoryLimit = 3
-		*obj.Spec.FailedJobsHistoryLimit = 1
-
-		oldObj = &batchv1.CronJob{
-			Spec: batchv1.CronJobSpec{
-				Schedule:                   schedule,
-				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
-			},
-		}
-		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
-		*oldObj.Spec.FailedJobsHistoryLimit = 1
-
-		validator = CronJobCustomValidator{}
-		defaulter = CronJobCustomDefaulter{
-			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
-			DefaultSuspend:                    false,
-			DefaultSuccessfulJobsHistoryLimit: 3,
-			DefaultFailedJobsHistoryLimit:     1,
-		}
-
-		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
-	})`)
-	hackutils.CheckError("fix cronjob v1 tests", err)
-
-	err = pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
-		`AfterEach(func() {
-		// TODO (user): Add any teardown logic common to all tests
-	})
-
-	`,
-		`Context("When creating CronJob under Defaulting Webhook", func() {
-		It("Should apply defaults when a required field is empty", func() {
-			By("simulating a scenario where defaults should be applied")
-			obj.Spec.ConcurrencyPolicy = ""           // This should default to AllowConcurrent
-			obj.Spec.Suspend = nil                    // This should default to false
-			obj.Spec.SuccessfulJobsHistoryLimit = nil // This should default to 3
-			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
-
-			By("calling the Default method to apply defaults")
-			_ = defaulter.Default(ctx, obj)
-
-			By("checking that the default values are set")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
-			Expect(*obj.Spec.Suspend).To(BeFalse(), "Expected Suspend to default to false")
-			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)), "Expected SuccessfulJobsHistoryLimit to default to 3")
-			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)), "Expected FailedJobsHistoryLimit to default to 1")
-		})
-
-		It("Should not overwrite fields that are already set", func() {
-			By("setting fields that would normally get a default")
-			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			obj.Spec.Suspend = new(bool)
-			*obj.Spec.Suspend = true
-			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
-			*obj.Spec.SuccessfulJobsHistoryLimit = 5
-			obj.Spec.FailedJobsHistoryLimit = new(int32)
-			*obj.Spec.FailedJobsHistoryLimit = 2
-
-			By("calling the Default method to apply defaults")
-			_ = defaulter.Default(ctx, obj)
-
-			By("checking that the fields were not overwritten")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
-			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
-			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
-			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
-		})
-	})
-
-	Context("When creating or updating CronJob under Validating Webhook", func() {
-		It("Should deny creation if the name is too long", func() {
-			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
-			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
-				MatchError(ContainSubstring("must be no more than 52 characters")),
-				"Expected name validation to fail for a too-long name")
-		})
-
-		It("Should admit creation if the name is valid", func() {
-			obj.Name = validCronJobName
-			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
-				"Expected name validation to pass for a valid name")
-		})
-
-		It("Should deny creation if the schedule is invalid", func() {
-			obj.Spec.Schedule = "invalid-cron-schedule"
-			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
-				MatchError(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule")),
-				"Expected spec validation to fail for an invalid schedule")
-		})
-
-		It("Should admit creation if the schedule is valid", func() {
-			obj.Spec.Schedule = schedule
-			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
-				"Expected spec validation to pass for a valid schedule")
-		})
-
-		It("Should deny update if both name and spec are invalid", func() {
-			oldObj.Name = validCronJobName
-			oldObj.Spec.Schedule = schedule
-
-			By("simulating an update")
-			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
-			obj.Spec.Schedule = "invalid-cron-schedule"
-
-			By("validating an update")
-			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).Error().To(HaveOccurred(),
-				"Expected validation to fail for both name and spec")
-		})
-
-		It("Should admit update if both name and spec are valid", func() {
-			oldObj.Name = validCronJobName
-			oldObj.Spec.Schedule = schedule
-
-			By("simulating an update")
-			obj.Name = "valid-cronjob-name-updated"
-			obj.Spec.Schedule = "0 0 * * *"
-
-			By("validating an update")
-			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil(),
-				"Expected validation to pass for a valid update")
-		})
-	})
-
-	`)
-	hackutils.CheckError("fix cronjob v1 tests after each", err)
 
 	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		"// +kubebuilder:docs-gen:collapse=validateCronJobName() Code Implementation",
