@@ -7,7 +7,7 @@ metadata:
         app.kubernetes.io/name: project
         control-plane: controller-manager
     name: project-controller-manager-metrics-monitor
-    namespace: {{ .Release.Namespace }}
+    namespace: system
 spec:
     endpoints:
         - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -27,7 +27,7 @@ spec:
             keySecret:
                 key: tls.key
                 name: metrics-server-cert
-            serverName: project-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+            serverName: project-controller-manager-metrics-service.system.svc
     selector:
         matchLabels:
             app.kubernetes.io/name: project

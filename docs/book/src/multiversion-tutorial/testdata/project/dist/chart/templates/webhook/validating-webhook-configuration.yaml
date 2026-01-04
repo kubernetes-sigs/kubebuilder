@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-serving-cert
+        cert-manager.io/inject-ca-from: system/project-serving-cert
         {{- end }}
     name: project-validating-webhook-configuration
 webhooks:
@@ -12,7 +12,7 @@ webhooks:
       clientConfig:
         service:
             name: project-webhook-service
-            namespace: {{ .Release.Namespace }}
+            namespace: system
             path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
       failurePolicy: Fail
       name: vcronjob-v1.kb.io
@@ -32,7 +32,7 @@ webhooks:
       clientConfig:
         service:
             name: project-webhook-service
-            namespace: {{ .Release.Namespace }}
+            namespace: system
             path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
       failurePolicy: Fail
       name: vcronjob-v2.kb.io

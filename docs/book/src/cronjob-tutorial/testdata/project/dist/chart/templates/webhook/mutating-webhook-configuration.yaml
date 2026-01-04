@@ -3,7 +3,7 @@ kind: MutatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-serving-cert
+        cert-manager.io/inject-ca-from: system/project-serving-cert
         {{- end }}
     name: project-mutating-webhook-configuration
 webhooks:
@@ -12,7 +12,7 @@ webhooks:
       clientConfig:
         service:
             name: project-webhook-service
-            namespace: {{ .Release.Namespace }}
+            namespace: system
             path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
       failurePolicy: Fail
       name: mcronjob-v1.kb.io

@@ -6,11 +6,11 @@ metadata:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/name: project
     name: project-metrics-certs
-    namespace: {{ .Release.Namespace }}
+    namespace: system
 spec:
     dnsNames:
-        - {{ include "chart.serviceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.{{ .Release.Namespace }}.svc
-        - {{ include "chart.serviceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.{{ .Release.Namespace }}.svc.cluster.local
+        - {{ include "chart.serviceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.system.svc
+        - {{ include "chart.serviceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.system.svc.cluster.local
     issuerRef:
         kind: Issuer
         name: {{ include "chart.name" . }}-selfsigned-issuer

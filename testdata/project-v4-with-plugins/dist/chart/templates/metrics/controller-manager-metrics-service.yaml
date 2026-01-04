@@ -7,7 +7,7 @@ metadata:
         app.kubernetes.io/name: project-v4-with-plugins
         control-plane: controller-manager
     name: project-v4-with-plugins-controller-manager-metrics-service
-    namespace: {{ .Release.Namespace }}
+    namespace: system
 spec:
     ports:
         - name: https

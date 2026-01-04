@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
     control-plane: controller-manager
-  name: project-v4-with-plugins-system
+  name: system
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -274,7 +274,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-v4-with-plugins-system/project-v4-with-plugins-serving-cert
+    cert-manager.io/inject-ca-from: system/project-v4-with-plugins-serving-cert
     controller-gen.kubebuilder.io/version: v0.20.0
   name: wordpresses.example.com.testproject.org
 spec:
@@ -284,7 +284,7 @@ spec:
       clientConfig:
         service:
           name: project-v4-with-plugins-webhook-service
-          namespace: project-v4-with-plugins-system
+          namespace: system
           path: /convert
       conversionReviewVersions:
       - v1
@@ -524,7 +524,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-controller-manager
-  namespace: project-v4-with-plugins-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -888,7 +888,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-with-plugins-controller-manager
-  namespace: project-v4-with-plugins-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -904,7 +904,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-with-plugins-controller-manager
-  namespace: project-v4-with-plugins-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -917,7 +917,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-v4-with-plugins-controller-manager
-  namespace: project-v4-with-plugins-system
+  namespace: system
 ---
 apiVersion: v1
 kind: Service
@@ -927,7 +927,7 @@ metadata:
     app.kubernetes.io/name: project-v4-with-plugins
     control-plane: controller-manager
   name: project-v4-with-plugins-controller-manager-metrics-service
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   ports:
   - name: https
@@ -945,7 +945,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-webhook-service
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   ports:
   - port: 443
@@ -963,7 +963,7 @@ metadata:
     app.kubernetes.io/name: project-v4-with-plugins
     control-plane: controller-manager
   name: project-v4-with-plugins-controller-manager
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   replicas: 1
   selector:
@@ -1044,7 +1044,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-metrics-certs
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   dnsNames:
   - SERVICE_NAME.SERVICE_NAMESPACE.svc
@@ -1061,11 +1061,11 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-serving-cert
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   dnsNames:
-  - project-v4-with-plugins-webhook-service.project-v4-with-plugins-system.svc
-  - project-v4-with-plugins-webhook-service.project-v4-with-plugins-system.svc.cluster.local
+  - project-v4-with-plugins-webhook-service.system.svc
+  - project-v4-with-plugins-webhook-service.system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: project-v4-with-plugins-selfsigned-issuer
@@ -1078,7 +1078,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-selfsigned-issuer
-  namespace: project-v4-with-plugins-system
+  namespace: system
 spec:
   selfSigned: {}
 ---
@@ -1086,7 +1086,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-v4-with-plugins-system/project-v4-with-plugins-serving-cert
+    cert-manager.io/inject-ca-from: system/project-v4-with-plugins-serving-cert
   name: project-v4-with-plugins-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -1094,7 +1094,7 @@ webhooks:
   clientConfig:
     service:
       name: project-v4-with-plugins-webhook-service
-      namespace: project-v4-with-plugins-system
+      namespace: system
       path: /validate-example-com-testproject-org-v1alpha1-memcached
   failurePolicy: Fail
   name: vmemcached-v1alpha1.kb.io
