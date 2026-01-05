@@ -6,7 +6,7 @@ metadata:
         app.kubernetes.io/name: project-v4-with-plugins
         control-plane: controller-manager
     name: project-v4-with-plugins-controller-manager
-    namespace: {{ .Release.Namespace }}
+    namespace: system
 spec:
     replicas: 1
     selector:

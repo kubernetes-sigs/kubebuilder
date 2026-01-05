@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
     control-plane: controller-manager
-  name: project-system
+  name: system
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -4047,7 +4047,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
   name: project-controller-manager
-  namespace: project-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -4254,7 +4254,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-controller-manager
-  namespace: project-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -4270,7 +4270,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-controller-manager
-  namespace: project-system
+  namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -4283,7 +4283,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: project-controller-manager
-  namespace: project-system
+  namespace: system
 ---
 apiVersion: v1
 kind: Service
@@ -4293,7 +4293,7 @@ metadata:
     app.kubernetes.io/name: project
     control-plane: controller-manager
   name: project-controller-manager-metrics-service
-  namespace: project-system
+  namespace: system
 spec:
   ports:
   - name: https
@@ -4311,7 +4311,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
   name: project-webhook-service
-  namespace: project-system
+  namespace: system
 spec:
   ports:
   - port: 443
@@ -4329,7 +4329,7 @@ metadata:
     app.kubernetes.io/name: project
     control-plane: controller-manager
   name: project-controller-manager
-  namespace: project-system
+  namespace: system
 spec:
   replicas: 1
   selector:
@@ -4420,11 +4420,11 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
   name: project-metrics-certs
-  namespace: project-system
+  namespace: system
 spec:
   dnsNames:
-  - project-controller-manager-metrics-service.project-system.svc
-  - project-controller-manager-metrics-service.project-system.svc.cluster.local
+  - project-controller-manager-metrics-service.system.svc
+  - project-controller-manager-metrics-service.system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: project-selfsigned-issuer
@@ -4437,11 +4437,11 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
   name: project-serving-cert
-  namespace: project-system
+  namespace: system
 spec:
   dnsNames:
-  - project-webhook-service.project-system.svc
-  - project-webhook-service.project-system.svc.cluster.local
+  - project-webhook-service.system.svc
+  - project-webhook-service.system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: project-selfsigned-issuer
@@ -4454,7 +4454,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
   name: project-selfsigned-issuer
-  namespace: project-system
+  namespace: system
 spec:
   selfSigned: {}
 ---
@@ -4466,7 +4466,7 @@ metadata:
     app.kubernetes.io/name: project
     control-plane: controller-manager
   name: project-controller-manager-metrics-monitor
-  namespace: project-system
+  namespace: system
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -4486,7 +4486,7 @@ spec:
       keySecret:
         key: tls.key
         name: metrics-server-cert
-      serverName: project-controller-manager-metrics-service.project-system.svc
+      serverName: project-controller-manager-metrics-service.system.svc
   selector:
     matchLabels:
       app.kubernetes.io/name: project
@@ -4496,7 +4496,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-system/project-serving-cert
+    cert-manager.io/inject-ca-from: system/project-serving-cert
   name: project-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -4504,7 +4504,7 @@ webhooks:
   clientConfig:
     service:
       name: project-webhook-service
-      namespace: project-system
+      namespace: system
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: mcronjob-v1.kb.io
@@ -4524,7 +4524,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: project-system/project-serving-cert
+    cert-manager.io/inject-ca-from: system/project-serving-cert
   name: project-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -4532,7 +4532,7 @@ webhooks:
   clientConfig:
     service:
       name: project-webhook-service
-      namespace: project-system
+      namespace: system
       path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: vcronjob-v1.kb.io
