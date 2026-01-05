@@ -103,32 +103,53 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
+	// Check if webhook files exist
+	webhookFilePath := s.getWebhookFilePath()
+	webhookFileExists := false
+	if _, statErr := s.fs.FS.Stat(webhookFilePath); statErr == nil {
+		webhookFileExists = true
+	}
+
+	webhookTestFilePath := s.getWebhookTestFilePath()
+	webhookTestFileExists := false
+	if _, statErr := s.fs.FS.Stat(webhookTestFilePath); statErr == nil {
+		webhookTestFileExists = true
+	}
+
+	// Scaffold or update webhook file (for all webhook types)
+	// Note: Conversion webhooks also need a webhook.go file with minimal setup (.For(&Type{}).Complete())
+	// This is how controller-runtime discovers Hub/Convertible interfaces
+	if doDefaulting || doValidation || doConversion {
+		if err = s.scaffoldWebhookFile(scaffold, webhookFileExists); err != nil {
+			return err
+		}
+
+		// Update main.go to wire webhook setup function (for all webhook types)
+		if err = scaffold.Execute(
+			&cmd.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
+		); err != nil {
+			return fmt.Errorf("error updating main.go: %w", err)
+		}
+	}
+
+	// Scaffold or update webhook test file (for all webhook types)
+	if err = s.scaffoldWebhookTestFile(scaffold, webhookTestFileExists); err != nil {
+		return err
+	}
+
+	// Update e2e tests
+	// WireWebhook controls webhook service readiness checks (for defaulting/validation)
+	// But conversion webhooks still need CA injection tests (handled inside updater)
 	if err = scaffold.Execute(
-		&webhooks.Webhook{Force: s.force, IsLegacyPath: s.isLegacy},
-		&e2e.WebhookTestUpdater{WireWebhook: true},
-		&cmd.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
-		&webhooks.WebhookTest{Force: s.force, IsLegacyPath: s.isLegacy},
+		&e2e.WebhookTestUpdater{WireWebhook: doDefaulting || doValidation},
 	); err != nil {
-		return fmt.Errorf("error updating webhook: %w", err)
+		return fmt.Errorf("error updating e2e tests: %w", err)
 	}
 
 	if doConversion {
-		resourceFilePath := fmt.Sprintf("api/%s/%s_types.go",
-			s.resource.Version, strings.ToLower(s.resource.Kind))
-		if s.config.IsMultiGroup() {
-			resourceFilePath = fmt.Sprintf("api/%s/%s/%s_types.go",
-				s.resource.Group, s.resource.Version,
-				strings.ToLower(s.resource.Kind))
-		}
-
-		err = pluginutil.InsertCodeIfNotExist(resourceFilePath,
-			"// +kubebuilder:object:root=true",
-			"\n// +kubebuilder:storageversion")
-		if err != nil {
-			log.Error("Unable to insert storage version marker in file",
-				"marker", "// +kubebuilder:storageversion",
-				"file_path", resourceFilePath,
-				"error", err)
+		// Update the types file to add storage version marker
+		if err = scaffold.Execute(&api.TypesUpdater{}); err != nil {
+			return fmt.Errorf("error updating types file with storage version marker: %w", err)
 		}
 
 		if err = scaffold.Execute(&api.Hub{Force: s.force}); err != nil {
@@ -146,8 +167,9 @@ func (s *webhookScaffolder) Scaffold() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
-	if doDefaulting || doValidation {
+	// Scaffold webhook suite test for all webhook types
+	// Note: Conversion webhooks also need the suite to register with envtest
+	if doDefaulting || doValidation || doConversion {
 		if err = scaffold.Execute(&webhooks.WebhookSuite{IsLegacyPath: s.isLegacy}); err != nil {
 			return fmt.Errorf("error scaffold webhook suite: %w", err)
 		}
@@ -164,6 +186,81 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 			if err = pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
 				log.Error("Unable to replace \"internal/controller\" with \"internal/\" in the Dockerfile", "error", err)
 			}
+		}
+	}
+	return nil
+}
+
+// getWebhookFilePath returns the path to the webhook file
+func (s *webhookScaffolder) getWebhookFilePath() string {
+	baseDir := "api"
+	if !s.isLegacy {
+		baseDir = "internal/webhook"
+	}
+
+	var path string
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		path = fmt.Sprintf("%s/%s/%s/%s_webhook.go",
+			baseDir, s.resource.Group, s.resource.Version, strings.ToLower(s.resource.Kind))
+	} else {
+		path = fmt.Sprintf("%s/%s/%s_webhook.go",
+			baseDir, s.resource.Version, strings.ToLower(s.resource.Kind))
+	}
+
+	return path
+}
+
+// getWebhookTestFilePath returns the path to the webhook test file
+func (s *webhookScaffolder) getWebhookTestFilePath() string {
+	baseDir := "api"
+	if !s.isLegacy {
+		baseDir = "internal/webhook"
+	}
+
+	var path string
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		path = fmt.Sprintf("%s/%s/%s/%s_webhook_test.go",
+			baseDir, s.resource.Group, s.resource.Version, strings.ToLower(s.resource.Kind))
+	} else {
+		path = fmt.Sprintf("%s/%s/%s_webhook_test.go",
+			baseDir, s.resource.Version, strings.ToLower(s.resource.Kind))
+	}
+
+	return path
+}
+
+// scaffoldWebhookFile creates or updates the webhook implementation file
+func (s *webhookScaffolder) scaffoldWebhookFile(scaffold *machinery.Scaffold, fileExists bool) error {
+	if !fileExists || s.force {
+		if err := scaffold.Execute(
+			&webhooks.Webhook{Force: s.force, IsLegacyPath: s.isLegacy},
+		); err != nil {
+			return fmt.Errorf("error creating webhook: %w", err)
+		}
+	} else if fileExists && !s.force && !s.isLegacy {
+		log.Info("Adding new webhook type to existing file")
+		if err := scaffold.Execute(
+			&webhooks.WebhookUpdater{},
+		); err != nil {
+			return fmt.Errorf("error updating webhook: %w", err)
+		}
+	}
+	return nil
+}
+
+// scaffoldWebhookTestFile creates or updates the webhook test file
+func (s *webhookScaffolder) scaffoldWebhookTestFile(scaffold *machinery.Scaffold, fileExists bool) error {
+	if !fileExists || s.force {
+		if err := scaffold.Execute(
+			&webhooks.WebhookTest{Force: s.force, IsLegacyPath: s.isLegacy},
+		); err != nil {
+			return fmt.Errorf("error creating webhook test: %w", err)
+		}
+	} else if fileExists && !s.force && !s.isLegacy {
+		if err := scaffold.Execute(
+			&webhooks.WebhookTestUpdater{},
+		); err != nil {
+			return fmt.Errorf("error updating webhook test: %w", err)
 		}
 	}
 	return nil

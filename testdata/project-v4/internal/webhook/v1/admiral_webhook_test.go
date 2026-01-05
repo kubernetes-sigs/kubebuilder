@@ -28,20 +28,19 @@ var _ = Describe("Admiral Webhook", func() {
 	var (
 		obj       *crewv1.Admiral
 		oldObj    *crewv1.Admiral
-		validator AdmiralCustomValidator
 		defaulter AdmiralCustomDefaulter
+		validator AdmiralCustomValidator
 	)
 
 	BeforeEach(func() {
 		obj = &crewv1.Admiral{}
 		oldObj = &crewv1.Admiral{}
-		validator = AdmiralCustomValidator{}
-		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		defaulter = AdmiralCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
+		validator = AdmiralCustomValidator{}
+		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 	})
 
 	AfterEach(func() {

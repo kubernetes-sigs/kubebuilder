@@ -333,8 +333,7 @@ const webhookTestsBeforeEachOriginal = `obj = &batchv1.CronJob{}
 		defaulter = CronJobCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
-		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests`
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")`
 
 const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{

@@ -36,8 +36,8 @@ var captainlog = logf.Log.WithName("captain-resource")
 // SetupCaptainWebhookWithManager registers the webhook for Captain in the manager.
 func SetupCaptainWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Captain{}).
-		WithValidator(&CaptainCustomValidator{}).
 		WithDefaulter(&CaptainCustomDefaulter{}).
+		WithValidator(&CaptainCustomValidator{}).
 		Complete()
 }
 
