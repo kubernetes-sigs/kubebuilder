@@ -348,4 +348,263 @@ var _ = Describe("ChartConverter", func() {
 			Expect(port).To(Equal(0))
 		})
 	})
+
+	Context("Extras Directory", func() {
+		It("should place ConfigMap in extras directory", func() {
+			// Create a ConfigMap that doesn't fit standard categories
+			configMap := &unstructured.Unstructured{}
+			configMap.SetAPIVersion("v1")
+			configMap.SetKind("ConfigMap")
+			configMap.SetName("custom-config")
+			configMap.SetNamespace("test-project-system")
+			configMap.Object["metadata"] = map[string]any{
+				"name":      "custom-config",
+				"namespace": "test-project-system",
+				"labels": map[string]any{
+					"app.kubernetes.io/name":       "test-project",
+					"app.kubernetes.io/managed-by": "kustomize",
+				},
+			}
+			configMap.Object["data"] = map[string]any{
+				"key": "value",
+			}
+
+			resources.Other = []*unstructured.Unstructured{configMap}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify extras directory was created
+			exists, err := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// Verify ConfigMap file was created
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+			Expect(files[0].Name()).To(ContainSubstring("custom-config"))
+
+			// Read the ConfigMap file and verify it has Helm templating
+			content, err := afero.ReadFile(fs.FS, filepath.Join("dist/chart/templates/extras", files[0].Name()))
+			Expect(err).NotTo(HaveOccurred())
+			contentStr := string(content)
+
+			// Verify Helm templates are applied
+			Expect(contentStr).To(ContainSubstring("{{ .Release.Namespace }}"))
+			Expect(contentStr).To(ContainSubstring("app.kubernetes.io/name:"))
+			Expect(contentStr).To(ContainSubstring("app.kubernetes.io/managed-by:"))
+		})
+
+		It("should place custom Service in extras directory", func() {
+			// Create a custom Service that is neither webhook nor metrics
+			customService := &unstructured.Unstructured{}
+			customService.SetAPIVersion("v1")
+			customService.SetKind("Service")
+			customService.SetName("custom-service")
+			customService.SetNamespace("test-project-system")
+			customService.Object["metadata"] = map[string]any{
+				"name":      "custom-service",
+				"namespace": "test-project-system",
+				"labels": map[string]any{
+					"app.kubernetes.io/name":       "test-project",
+					"app.kubernetes.io/managed-by": "kustomize",
+				},
+			}
+			customService.Object["spec"] = map[string]any{
+				"ports": []any{
+					map[string]any{
+						"port":       8080,
+						"targetPort": 8080,
+					},
+				},
+			}
+
+			resources.Services = []*unstructured.Unstructured{customService}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify extras directory was created
+			exists, err := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// Verify Service file was created in extras
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+			Expect(files[0].Name()).To(ContainSubstring("custom-service"))
+		})
+
+		It("should place Secret in extras directory", func() {
+			// Create a Secret
+			secret := &unstructured.Unstructured{}
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+			secret.SetName("custom-secret")
+			secret.SetNamespace("test-project-system")
+			secret.Object["metadata"] = map[string]any{
+				"name":      "custom-secret",
+				"namespace": "test-project-system",
+				"labels": map[string]any{
+					"app.kubernetes.io/name":       "test-project",
+					"app.kubernetes.io/managed-by": "kustomize",
+				},
+			}
+			secret.Object["data"] = map[string]any{
+				"password": "c2VjcmV0",
+			}
+
+			resources.Other = []*unstructured.Unstructured{secret}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify extras directory was created
+			exists, err := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// Verify Secret file was created
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+			Expect(files[0].Name()).To(ContainSubstring("custom-secret"))
+
+			// Read the Secret file and verify it has Helm templating
+			content, err := afero.ReadFile(fs.FS, filepath.Join("dist/chart/templates/extras", files[0].Name()))
+			Expect(err).NotTo(HaveOccurred())
+			contentStr := string(content)
+
+			// Verify Helm templates are applied
+			Expect(contentStr).To(ContainSubstring("{{ .Release.Namespace }}"))
+		})
+
+		It("should handle multiple extras resources", func() {
+			// Create multiple extras resources
+			configMap := &unstructured.Unstructured{}
+			configMap.SetAPIVersion("v1")
+			configMap.SetKind("ConfigMap")
+			configMap.SetName("config1")
+			configMap.SetNamespace("test-project-system")
+			configMap.Object["metadata"] = map[string]any{
+				"name":      "config1",
+				"namespace": "test-project-system",
+			}
+
+			secret := &unstructured.Unstructured{}
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+			secret.SetName("secret1")
+			secret.SetNamespace("test-project-system")
+			secret.Object["metadata"] = map[string]any{
+				"name":      "secret1",
+				"namespace": "test-project-system",
+			}
+
+			customService := &unstructured.Unstructured{}
+			customService.SetAPIVersion("v1")
+			customService.SetKind("Service")
+			customService.SetName("custom-svc")
+			customService.SetNamespace("test-project-system")
+			customService.Object["metadata"] = map[string]any{
+				"name":      "custom-svc",
+				"namespace": "test-project-system",
+			}
+
+			resources.Other = []*unstructured.Unstructured{configMap, secret}
+			resources.Services = []*unstructured.Unstructured{customService}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify all three files were created
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(3))
+		})
+
+		It("should apply standard Helm labels to extras resources", func() {
+			// Create a ConfigMap
+			configMap := &unstructured.Unstructured{}
+			configMap.SetAPIVersion("v1")
+			configMap.SetKind("ConfigMap")
+			configMap.SetName("test-config")
+			configMap.SetNamespace("test-system")
+			configMap.Object["metadata"] = map[string]any{
+				"name":      "test-config",
+				"namespace": "test-system",
+				"labels": map[string]any{
+					"app.kubernetes.io/name":       "test-project",
+					"app.kubernetes.io/managed-by": "kustomize",
+				},
+			}
+
+			resources.Other = []*unstructured.Unstructured{configMap}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Read the ConfigMap file
+			files, err := afero.ReadDir(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(HaveLen(1))
+
+			content, err := afero.ReadFile(fs.FS, filepath.Join("dist/chart/templates/extras", files[0].Name()))
+			Expect(err).NotTo(HaveOccurred())
+			contentStr := string(content)
+
+			// Verify all standard Helm labels are present
+			Expect(contentStr).To(ContainSubstring("app.kubernetes.io/name: {{ include \"test-project.name\" . }}"))
+			Expect(contentStr).To(ContainSubstring("app.kubernetes.io/instance: {{ .Release.Name }}"))
+			Expect(contentStr).To(ContainSubstring("app.kubernetes.io/managed-by: {{ .Release.Service }}"))
+			Expect(contentStr).To(ContainSubstring(
+				`helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}`))
+		})
+
+		It("should not place webhook or metrics services in extras", func() {
+			// Create webhook service
+			webhookService := &unstructured.Unstructured{}
+			webhookService.SetAPIVersion("v1")
+			webhookService.SetKind("Service")
+			webhookService.SetName("test-project-webhook-service")
+			webhookService.SetNamespace("test-project-system")
+			webhookService.Object["metadata"] = map[string]any{
+				"name":      "test-project-webhook-service",
+				"namespace": "test-project-system",
+			}
+
+			// Create metrics service
+			metricsService := &unstructured.Unstructured{}
+			metricsService.SetAPIVersion("v1")
+			metricsService.SetKind("Service")
+			metricsService.SetName("test-project-controller-manager-metrics-service")
+			metricsService.SetNamespace("test-project-system")
+			metricsService.Object["metadata"] = map[string]any{
+				"name":      "test-project-controller-manager-metrics-service",
+				"namespace": "test-project-system",
+			}
+
+			resources.Services = []*unstructured.Unstructured{webhookService, metricsService}
+
+			err := converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify extras directory was not created (webhook/metrics go to their own dirs)
+			exists, err := afero.Exists(fs.FS, "dist/chart/templates/extras")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+
+			// Verify webhook directory was created
+			exists, err = afero.Exists(fs.FS, "dist/chart/templates/webhook")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// Verify metrics directory was created
+			exists, err = afero.Exists(fs.FS, "dist/chart/templates/metrics")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+		})
+	})
 })
