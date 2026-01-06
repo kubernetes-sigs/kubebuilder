@@ -44,8 +44,6 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 		f.Path = filepath.Join(outputDir, "chart", "templates", "_helpers.tpl")
 	}
 
-	// Use project name as template prefix to avoid collisions when chart is used as dependency
-	// This follows the pattern used by Bitnami, cert-manager, and other production Helm charts
 	f.TemplateBody = f.generateHelpersTemplate()
 
 	f.IfExistsAction = machinery.SkipFile
@@ -60,7 +58,7 @@ func (f *HelmHelpers) generateHelpersTemplate() string {
 	// preventing collisions when chart is used as a Helm dependency
 	prefix := f.ProjectName
 
-	return fmt.Sprintf(helmHelpersTemplate, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
+	return fmt.Sprintf(helmHelpersTemplate, prefix, prefix, prefix, prefix, prefix)
 }
 
 const helmHelpersTemplate = `{{` + "`" + `{{/*
@@ -96,13 +94,10 @@ Always uses the Helm release namespace.
 {{` + "`" + `{{ .Release.Namespace }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 
-
-
 {{` + "`" + `{{/*
 Resource name with proper truncation for Kubernetes 63-character limit.
 Takes a dict with .suffix (resource name suffix) and .context (template context).
 Dynamically calculates safe truncation length based on suffix to ensure total <= 63 chars.
-Generic helper that works for any resource type (Service, Role, Certificate, etc.).
 */}}` + "`" + `}}
 {{` + "`" + `{{- define "%s.resourceName" -}}` + "`" + `}}
 {{` + "`" + `{{- $fullname := include "%s.fullname" .context -}}` + "`" + `}}
@@ -114,30 +109,5 @@ Generic helper that works for any resource type (Service, Role, Certificate, etc
 {{` + "`" + `{{- else -}}` + "`" + `}}
 {{` + "`" + `{{- printf "%%s-%%s" $fullname $suffix | trunc 63 | trimSuffix "-" -}}` + "`" + `}}
 {{` + "`" + `{{- end -}}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-
-{{` + "`" + `{{/*
-Common labels for Helm charts.
-Includes app version, chart version, app name, instance, and managed-by labels.
-*/}}` + "`" + `}}
-{{` + "`" + `{{- define "%s.labels" -}}` + "`" + `}}
-{{` + "`" + `{{- if .Chart.AppVersion -}}` + "`" + `}}
-app.kubernetes.io/version: {{` + "`" + `{{ .Chart.AppVersion | quote }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-{{` + "`" + `{{- if .Chart.Version }}` + "`" + `}}
-helm.sh/chart: {{` + "`" + `{{ .Chart.Version | quote }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-app.kubernetes.io/name: {{` + "`" + `{{ include "%s.name" . }}` + "`" + `}}
-app.kubernetes.io/instance: {{` + "`" + `{{ .Release.Name }}` + "`" + `}}
-app.kubernetes.io/managed-by: {{` + "`" + `{{ .Release.Service }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-
-{{` + "`" + `{{/*
-Selector labels for matching pods and services.
-Only includes name and instance for consistent selection.
-*/}}` + "`" + `}}
-{{` + "`" + `{{- define "%s.selectorLabels" -}}` + "`" + `}}
-app.kubernetes.io/name: {{` + "`" + `{{ include "%s.name" . }}` + "`" + `}}
-app.kubernetes.io/instance: {{` + "`" + `{{ .Release.Name }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 `

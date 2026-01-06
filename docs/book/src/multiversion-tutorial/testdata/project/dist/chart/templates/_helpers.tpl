@@ -31,13 +31,10 @@ Always uses the Helm release namespace.
 {{ .Release.Namespace }}
 {{- end }}
 
-
-
 {{/*
 Resource name with proper truncation for Kubernetes 63-character limit.
 Takes a dict with .suffix (resource name suffix) and .context (template context).
 Dynamically calculates safe truncation length based on suffix to ensure total <= 63 chars.
-Generic helper that works for any resource type (Service, Role, Certificate, etc.).
 */}}
 {{- define "project.resourceName" -}}
 {{- $fullname := include "project.fullname" .context -}}
@@ -48,29 +45,4 @@ Generic helper that works for any resource type (Service, Role, Certificate, etc
 {{- else -}}
 {{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
-{{- end }}
-
-{{/*
-Common labels for Helm charts.
-Includes app version, chart version, app name, instance, and managed-by labels.
-*/}}
-{{- define "project.labels" -}}
-{{- if .Chart.AppVersion -}}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-{{- if .Chart.Version }}
-helm.sh/chart: {{ .Chart.Version | quote }}
-{{- end }}
-app.kubernetes.io/name: {{ include "project.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Selector labels for matching pods and services.
-Only includes name and instance for consistent selection.
-*/}}
-{{- define "project.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "project.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
