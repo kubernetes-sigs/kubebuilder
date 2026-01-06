@@ -31,6 +31,7 @@ The **helm/v2-alpha** plugin converts the bundle (`dist/install.yaml`) into a He
 - **Structured Output**: Templates follow your `config/` directory layout.
 - **Smart Values**: `values.yaml` includes only actual configurable parameters.
 - **File Preservation**: Manual edits in `values.yaml`, `Chart.yaml`, `_helpers.tpl` are kept unless `--force` is used.
+- **Handles Custom Resources**: Resources not matching standard layout (custom Services, ConfigMaps, etc.) are placed in `templates/extras/` with proper templating.
 
 ## When to Use It
 
@@ -112,9 +113,15 @@ The plugin creates a chart layout that matches your `config/`:
     │   └── service.yaml
     ├── webhook/
     │   └── validating-webhook-configuration.yaml
-    └── prometheus/
-        └── servicemonitor.yaml
+    ├── prometheus/
+    │   └── servicemonitor.yaml
+    └── extras/                  # Custom resources (if any)
+        ├── my-service.yaml
+        └── my-config.yaml
 ```
+
+**Note:** Resources that don't match the standard scaffold layout (custom Services, ConfigMaps, Secrets, etc.)
+are automatically placed in `templates/extras/` with proper Helm templating applied (namePrefix, labels, etc.).
 
 <aside class="note">
 <H1> Why CRDs are added under templates? </H1>
