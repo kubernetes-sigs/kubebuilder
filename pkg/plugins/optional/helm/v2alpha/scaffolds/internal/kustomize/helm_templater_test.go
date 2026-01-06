@@ -34,8 +34,9 @@ var _ = Describe("HelmTemplater", func() {
 
 	BeforeEach(func() {
 		templater = &HelmTemplater{
-			detectedPrefix: "test-project",
-			chartName:      "test-project",
+			detectedPrefix:   "test-project",
+			chartName:        "test-project",
+			managerNamespace: "test-project-system",
 		}
 	})
 
@@ -751,6 +752,648 @@ metadata:
 		})
 	})
 
+	Context("namespace-scoped RBAC resources", func() {
+		It("should preserve explicit namespace in Role for cross-namespace permissions", func() {
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-manager-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-manager-role
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: test-project
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Namespace should be preserved (not templated) for cross-namespace permissions
+			Expect(result).To(ContainSubstring("namespace: infrastructure"),
+				"explicit namespace should be preserved for cross-namespace Role")
+			Expect(result).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"explicit namespace should NOT be templated to Release.Namespace")
+
+			// Labels should still be templated
+			Expect(result).To(ContainSubstring(`app.kubernetes.io/name: {{ include "test-project.name" . }}`))
+
+			// Name should be templated
+			Expect(result).To(ContainSubstring(`name: {{ include "test-project.resourceName"`))
+
+			// Rules should be preserved
+			Expect(result).To(ContainSubstring("- apps"))
+			Expect(result).To(ContainSubstring("- deployments"))
+		})
+
+		It("should preserve explicit namespace in Role for leader election", func() {
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: production
+  labels:
+    app.kubernetes.io/name: test-project
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Namespace should be preserved for cross-namespace leader election
+			Expect(result).To(ContainSubstring("namespace: production"),
+				"explicit namespace should be preserved for cross-namespace leader election Role")
+
+			// Verify leader election permissions
+			Expect(result).To(ContainSubstring("- coordination.k8s.io"))
+			Expect(result).To(ContainSubstring("- leases"))
+			Expect(result).To(ContainSubstring("- events"))
+		})
+
+		It("should preserve explicit namespace in RoleBinding metadata", func() {
+			roleBindingResource := &unstructured.Unstructured{}
+			roleBindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleBindingResource.SetKind("RoleBinding")
+			roleBindingResource.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: test-project
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, roleBindingResource)
+
+			// RoleBinding metadata namespace should be preserved
+			Expect(result).To(ContainSubstring("metadata:\n  name:"))
+			Expect(result).To(ContainSubstring("namespace: infrastructure"),
+				"RoleBinding metadata namespace should be preserved")
+
+			// Subject namespace should be templated (references the controller namespace)
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"subject namespace should be templated to Release.Namespace")
+
+			// Name references should be templated
+			Expect(result).To(ContainSubstring(`name: {{ include "test-project.resourceName"`))
+		})
+
+		It("should template Role namespace when it matches project namespace", func() {
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: test-project-system
+  labels:
+    app.kubernetes.io/name: test-project
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// When namespace matches project namespace, it should be templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"Role namespace should be templated when it matches project namespace")
+			Expect(result).NotTo(ContainSubstring("namespace: test-project-system"),
+				"project namespace should be templated, not preserved")
+		})
+
+		It("should handle RoleBinding with multiple subjects correctly", func() {
+			roleBindingResource := &unstructured.Unstructured{}
+			roleBindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleBindingResource.SetKind("RoleBinding")
+			roleBindingResource.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+  namespace: infrastructure
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+- kind: ServiceAccount
+  name: test-project-webhook
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, roleBindingResource)
+
+			// Both subject namespaces should be templated
+			subjectNamespaceCount := strings.Count(result, "namespace: {{ .Release.Namespace }}")
+			Expect(subjectNamespaceCount).To(BeNumerically(">=", 2),
+				"both subject namespaces should be templated")
+
+			// RoleBinding metadata namespace should be preserved
+			Expect(result).To(ContainSubstring("namespace: infrastructure"))
+		})
+
+		It("should preserve resource names when namespace appears as substring", func() {
+			// Critical: namespace "user" must NOT break resource name "users"
+			// This validates field-aware replacement prevents substring corruption
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("ClusterRole")
+			roleResource.SetName("manager-role")
+
+			// Scenario: manager namespace is "user", CRD resource is "users"
+			customTemplater := &HelmTemplater{
+				detectedPrefix:   "test-project",
+				chartName:        "test-project",
+				managerNamespace: "user", // Short namespace that appears as substring
+			}
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-manager-role
+rules:
+- apiGroups:
+  - identity.example.com
+  resources:
+  - users
+  - users/finalizers
+  - users/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete`
+
+			result := customTemplater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Critical: resource name "users" must NOT be replaced with "{{ .Release.Namespace }}s"
+			Expect(result).To(ContainSubstring("- users"),
+				"resource name 'users' should remain unchanged")
+			Expect(result).To(ContainSubstring("- users/finalizers"),
+				"resource name 'users/finalizers' should remain unchanged")
+			Expect(result).To(ContainSubstring("- users/status"),
+				"resource name 'users/status' should remain unchanged")
+
+			// Ensure we didn't create templated resource names
+			Expect(result).NotTo(ContainSubstring("- {{ .Release.Namespace }}s"),
+				"must NOT replace 'user' substring in resource names")
+			Expect(result).NotTo(MatchRegexp(`resources:\s*-\s*\{\{.*\}\}`),
+				"resource names must never be templated")
+		})
+
+		It("should handle edge case where namespace is substring of multiple fields", func() {
+			// Test more edge cases: namespace "app" appears in "applications", "apps", etc.
+			customTemplater := &HelmTemplater{
+				detectedPrefix:   "test-project",
+				chartName:        "test-project",
+				managerNamespace: "app",
+			}
+
+			roleBindingResource := &unstructured.Unstructured{}
+			roleBindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleBindingResource.SetKind("RoleBinding")
+			roleBindingResource.SetName("manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+  namespace: app
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: app`
+
+			result := customTemplater.ApplyHelmSubstitutions(content, roleBindingResource)
+
+			// Namespace fields should be templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"namespace fields should be templated")
+
+			// Verify we have exactly 2 namespace template substitutions (metadata + subject)
+			namespaceTemplateCount := strings.Count(result, "namespace: {{ .Release.Namespace }}")
+			Expect(namespaceTemplateCount).To(Equal(2),
+				"should have exactly 2 namespace field replacements")
+
+			// Verify apiGroup field is NOT affected (contains "app" in "rbac.authorization.k8s.io")
+			Expect(result).To(ContainSubstring("apiGroup: rbac.authorization.k8s.io"),
+				"apiGroup should not be affected by namespace replacement")
+		})
+
+		It("should handle ALL Kubernetes DNS patterns generically", func() {
+			// This test validates DNS replacement works for ANY K8s DNS pattern
+			configMapResource := &unstructured.Unstructured{}
+			configMapResource.SetAPIVersion("v1")
+			configMapResource.SetKind("ConfigMap")
+			configMapResource.SetName("dns-config")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-config
+  namespace: test-project-system
+data:
+  # Standard service DNS
+  service-short: api.test-project-system.svc
+  service-full: api.test-project-system.svc.cluster.local
+  service-port: api.test-project-system.svc:8080
+  service-path: https://api.test-project-system.svc.cluster.local:443/v1
+  
+  # Pod DNS
+  pod-dns: my-pod.test-project-system.pod.cluster.local
+  
+  # Endpoints DNS  
+  endpoints-dns: my-service.test-project-system.endpoints.cluster.local
+  
+  # Headless service (StatefulSet)
+  stateful-0: app-0.app-headless.test-project-system.svc.cluster.local
+  stateful-1: app-1.app-headless.test-project-system.svc.cluster.local
+  
+  # External namespace should be preserved
+  external-svc: monitoring.monitoring-system.svc.cluster.local`
+
+			result := templater.ApplyHelmSubstitutions(content, configMapResource)
+
+			// Verify ALL manager namespace DNS patterns are templated
+			Expect(result).To(ContainSubstring("api.{{ .Release.Namespace }}.svc"))
+			Expect(result).To(ContainSubstring("api.{{ .Release.Namespace }}.svc.cluster.local"))
+			Expect(result).To(ContainSubstring("api.{{ .Release.Namespace }}.svc:8080"))
+			Expect(result).To(ContainSubstring("api.{{ .Release.Namespace }}.svc.cluster.local:443"))
+			Expect(result).To(ContainSubstring("my-pod.{{ .Release.Namespace }}.pod.cluster.local"))
+			Expect(result).To(ContainSubstring("my-service.{{ .Release.Namespace }}.endpoints.cluster.local"))
+			Expect(result).To(ContainSubstring("app-0.app-headless.{{ .Release.Namespace }}.svc.cluster.local"))
+			Expect(result).To(ContainSubstring("app-1.app-headless.{{ .Release.Namespace }}.svc.cluster.local"))
+
+			// Verify NO hardcoded manager namespace remains
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.pod"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.endpoints"))
+
+			// Verify external namespace is preserved
+			Expect(result).To(ContainSubstring("monitoring.monitoring-system.svc.cluster.local"))
+		})
+
+		It("should NOT replace namespace-like strings in non-DNS contexts", func() {
+			// Edge case: ensure we don't break strings that happen to contain the namespace
+			configMapResource := &unstructured.Unstructured{}
+			configMapResource.SetAPIVersion("v1")
+			configMapResource.SetKind("ConfigMap")
+			configMapResource.SetName("edge-cases")
+
+			// Using "app" as namespace to test substring issues
+			customTemplater := &HelmTemplater{
+				detectedPrefix:   "test",
+				chartName:        "test",
+				managerNamespace: "app",
+			}
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edge-cases
+  namespace: app
+data:
+  # DNS patterns - should be templated
+  service-url: http://api.app.svc:8080
+  
+  # NOT DNS patterns - should be preserved
+  app-name: "my-application"
+  app-version: "v1.2.3"
+  mapping: "application-mapping"
+  labels: "app=frontend,app.kubernetes.io/name=myapp"
+  
+  # Tricky: "app" in various contexts
+  erapplication: "some-value"
+  wrapperapp: "another-value"`
+
+			result := customTemplater.ApplyHelmSubstitutions(content, configMapResource)
+
+			// DNS pattern should be templated
+			Expect(result).To(ContainSubstring("api.{{ .Release.Namespace }}.svc:8080"))
+
+			// Non-DNS occurrences should be preserved
+			Expect(result).To(ContainSubstring(`app-name: "my-application"`))
+			Expect(result).To(ContainSubstring("app-version"))
+			Expect(result).To(ContainSubstring("mapping: \"application-mapping\""))
+			Expect(result).To(ContainSubstring("app=frontend"))
+			Expect(result).To(ContainSubstring("app.kubernetes.io/name=myapp"))
+			Expect(result).To(ContainSubstring("erapplication"))
+			Expect(result).To(ContainSubstring("wrapperapp"))
+
+			// Namespace field should be templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should handle ANY resource type with namespace references (generic test)", func() {
+			// This test validates that namespace replacement is GENERIC and works
+			// for any resource type, including custom resources in extras/ directory
+
+			// Test with a custom ConfigMap (common in extras/)
+			configMapResource := &unstructured.Unstructured{}
+			configMapResource.SetAPIVersion("v1")
+			configMapResource.SetKind("ConfigMap")
+			configMapResource.SetName("custom-config")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-config
+  namespace: test-project-system
+data:
+  service-url: http://api-service.test-project-system.svc.cluster.local:8080
+  webhook-endpoint: https://webhook.test-project-system.svc:9443/validate
+  annotation-ref: "test-project-system/my-resource"`
+
+			result := templater.ApplyHelmSubstitutions(content, configMapResource)
+
+			// 1. Namespace field should be templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+			Expect(result).NotTo(ContainSubstring("namespace: test-project-system"))
+
+			// 2. DNS names in data values should be templated
+			Expect(result).To(ContainSubstring("http://api-service.{{ .Release.Namespace }}.svc.cluster.local:8080"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc.cluster.local"))
+
+			// 3. DNS names with ports should be templated
+			Expect(result).To(ContainSubstring("https://webhook.{{ .Release.Namespace }}.svc:9443"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc:9443"))
+
+			// 4. Annotation-style references should be templated
+			Expect(result).To(ContainSubstring("{{ .Release.Namespace }}/my-resource"))
+			Expect(result).NotTo(ContainSubstring("test-project-system/my-resource"))
+		})
+
+		It("should handle Secret with namespace references", func() {
+			secretResource := &unstructured.Unstructured{}
+			secretResource.SetAPIVersion("v1")
+			secretResource.SetKind("Secret")
+			secretResource.SetName("app-secret")
+
+			content := `apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: test-project-system
+  annotations:
+    source: test-project-system/config
+stringData:
+  database-url: postgresql://db.test-project-system.svc:5432/mydb
+  redis-url: redis://cache.test-project-system.svc.cluster.local:6379`
+
+			result := templater.ApplyHelmSubstitutions(content, secretResource)
+
+			// Namespace field templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+
+			// Annotation value templated
+			Expect(result).To(ContainSubstring("source: {{ .Release.Namespace }}/config"))
+
+			// DNS names in data templated
+			Expect(result).To(ContainSubstring("postgresql://db.{{ .Release.Namespace }}.svc:5432"))
+			Expect(result).To(ContainSubstring("redis://cache.{{ .Release.Namespace }}.svc.cluster.local:6379"))
+
+			// No hardcoded namespace remains
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+		})
+
+		It("should handle Ingress with namespace references", func() {
+			ingressResource := &unstructured.Unstructured{}
+			ingressResource.SetAPIVersion("networking.k8s.io/v1")
+			ingressResource.SetKind("Ingress")
+			ingressResource.SetName("app-ingress")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: test-project-system
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: http://auth.test-project-system.svc.cluster.local/verify
+    cert-manager.io/issuer: test-project-system/letsencrypt
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80`
+
+			result := templater.ApplyHelmSubstitutions(content, ingressResource)
+
+			// Namespace field templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+
+			// Annotation DNS templated
+			Expect(result).To(ContainSubstring("http://auth.{{ .Release.Namespace }}.svc.cluster.local/verify"))
+
+			// Annotation reference templated
+			Expect(result).To(ContainSubstring("cert-manager.io/issuer: {{ .Release.Namespace }}/letsencrypt"))
+
+			// No hardcoded namespace
+			Expect(result).NotTo(ContainSubstring("test-project-system/"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+		})
+
+		It("should handle PodMonitor with namespace references", func() {
+			podMonitorResource := &unstructured.Unstructured{}
+			podMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			podMonitorResource.SetKind("PodMonitor")
+			podMonitorResource.SetName("app-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: app-monitor
+  namespace: test-project-system
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  podMetricsEndpoints:
+  - port: metrics
+    scheme: https
+    tlsConfig:
+      serverName: metrics.test-project-system.svc
+      ca:
+        configMap:
+          name: prometheus-ca
+          namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, podMonitorResource)
+
+			// Namespace field templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+
+			// ServerName DNS templated
+			Expect(result).To(ContainSubstring("serverName: metrics.{{ .Release.Namespace }}.svc"))
+
+			// ConfigMap namespace reference templated
+			namespaceCount := strings.Count(result, "namespace: {{ .Release.Namespace }}")
+			Expect(namespaceCount).To(Equal(2), "both metadata and configMap namespace should be templated")
+
+			// No hardcoded namespace in DNS
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+		})
+
+		It("should handle custom CRD with multiple namespace contexts", func() {
+			customResource := &unstructured.Unstructured{}
+			customResource.SetAPIVersion("example.com/v1")
+			customResource.SetKind("Application")
+			customResource.SetName("my-app")
+
+			content := `apiVersion: example.com/v1
+kind: Application
+metadata:
+  name: my-app
+  namespace: test-project-system
+  annotations:
+    backup.velero.io/backup-volumes: test-project-system/pvc
+spec:
+  database:
+    host: postgres.test-project-system.svc.cluster.local
+    port: 5432
+  messaging:
+    brokerURL: amqp://rabbitmq.test-project-system.svc:5672
+  externalServices:
+    - name: external-api
+      url: https://api.external-namespace.svc/v1
+  references:
+    configMapRef: test-project-system/app-config
+    secretRef: test-project-system/app-secret`
+
+			result := templater.ApplyHelmSubstitutions(content, customResource)
+
+			// Namespace field templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+
+			// Annotation reference templated
+			Expect(result).To(ContainSubstring("{{ .Release.Namespace }}/pvc"))
+
+			// DNS names templated
+			Expect(result).To(ContainSubstring("postgres.{{ .Release.Namespace }}.svc.cluster.local"))
+			Expect(result).To(ContainSubstring("rabbitmq.{{ .Release.Namespace }}.svc:5672"))
+
+			// External namespace preserved (not manager namespace)
+			Expect(result).To(ContainSubstring("https://api.external-namespace.svc/v1"))
+
+			// ConfigMap/Secret refs templated
+			Expect(result).To(ContainSubstring("configMapRef: {{ .Release.Namespace }}/app-config"))
+			Expect(result).To(ContainSubstring("secretRef: {{ .Release.Namespace }}/app-secret"))
+
+			// No manager namespace remains
+			Expect(result).NotTo(ContainSubstring("test-project-system/"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+		})
+
+		It("should NOT replace namespace in non-manager context", func() {
+			// Critical: cross-namespace references must be preserved
+			customResource := &unstructured.Unstructured{}
+			customResource.SetAPIVersion("v1")
+			customResource.SetKind("ConfigMap")
+			customResource.SetName("federation-config")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: federation-config
+  namespace: test-project-system
+data:
+  clusters: |
+    - name: cluster-a
+      apiserver: https://api.cluster-a-system.svc:6443
+    - name: cluster-b
+      apiserver: https://api.cluster-b-system.svc:6443
+  external-service: https://monitoring.monitoring-system.svc.cluster.local:9090
+  internal-service: https://internal.test-project-system.svc:8080`
+
+			result := templater.ApplyHelmSubstitutions(content, customResource)
+
+			// Manager namespace field templated
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+			Expect(result).NotTo(ContainSubstring("namespace: test-project-system"))
+
+			// Manager namespace in DNS templated (appears once in internal-service)
+			Expect(result).To(ContainSubstring("internal.{{ .Release.Namespace }}.svc:8080"))
+			Expect(result).NotTo(ContainSubstring(".test-project-system.svc"))
+
+			// External namespaces preserved (these don't match manager namespace)
+			Expect(result).To(ContainSubstring("cluster-a-system.svc"))
+			Expect(result).To(ContainSubstring("cluster-b-system.svc"))
+			Expect(result).To(ContainSubstring("monitoring-system.svc"))
+		})
+	})
+
 	Context("templatePorts", func() {
 		It("should template webhook service ports", func() {
 			webhookService := &unstructured.Unstructured{}
@@ -1041,8 +1684,9 @@ spec:
 
 		It("should handle custom kustomize prefix", func() {
 			customPrefixTemplater := &HelmTemplater{
-				detectedPrefix: "ln",           // Custom short prefix from kustomize
-				chartName:      "test-project", // Chart/project name
+				detectedPrefix:   "ln",           // Custom short prefix from kustomize
+				chartName:        "test-project", // Chart/project name
+				managerNamespace: "ln-system",    // Manager namespace
 			}
 
 			issuer := &unstructured.Unstructured{}
