@@ -28,10 +28,8 @@ Namespace for generated references.
 Always uses the Helm release namespace.
 */}}
 {{- define "project.namespaceName" -}}
-{{ .Release.Namespace }}
+{{- .Release.Namespace }}
 {{- end }}
-
-
 
 {{/*
 Resource name with proper truncation for Kubernetes 63-character limit.
@@ -40,14 +38,14 @@ Dynamically calculates safe truncation length based on suffix to ensure total <=
 Generic helper that works for any resource type (Service, Role, Certificate, etc.).
 */}}
 {{- define "project.resourceName" -}}
-{{- $fullname := include "project.fullname" .context -}}
-{{- $suffix := .suffix -}}
-{{- $maxLen := sub 62 (len $suffix) | int -}}
-{{- if gt (len $fullname) $maxLen -}}
-{{- printf "%s-%s" (trunc $maxLen $fullname | trimSuffix "-") $suffix | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{- $fullname := include "project.fullname" .context }}
+{{- $suffix := .suffix }}
+{{- $maxLen := sub 62 (len $suffix) | int }}
+{{- if gt (len $fullname) $maxLen }}
+{{- printf "%s-%s" (trunc $maxLen $fullname | trimSuffix "-") $suffix | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{- end }}
 
 {{/*
