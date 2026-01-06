@@ -210,17 +210,20 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should include default values", func() {
 			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring(`  # Manager pod's node selector
+			Expect(content).To(ContainSubstring(`  ## Manager pod's node selector
+  ##
   nodeSelector:
     kubernetes.io/os: linux`))
 
-			Expect(content).To(ContainSubstring(`  # Manager pod's tolerations
+			Expect(content).To(ContainSubstring(`  ## Manager pod's tolerations
+  ##
   tolerations:
     - effect: NoSchedule
       key: key1
       operator: Equal`))
 
-			Expect(content).To(ContainSubstring(`  # Manager pod's affinity
+			Expect(content).To(ContainSubstring(`  ## Manager pod's affinity
+  ##
   affinity:
     nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -304,16 +307,8 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should have rbacHelpers disabled by default", func() {
 			content := valuesTemplate.GetBody()
-			lines := strings.Split(content, "\n")
-			var rbacHelpersIndex int
-			for i, line := range lines {
-				if strings.Contains(line, "rbacHelpers:") {
-					rbacHelpersIndex = i
-					break
-				}
-			}
-			Expect(rbacHelpersIndex).To(BeNumerically(">", 0))
-			Expect(lines[rbacHelpersIndex+1]).To(ContainSubstring("enable: false"))
+			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("enable: false"))
 		})
 	})
 

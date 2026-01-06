@@ -97,7 +97,8 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 ##
 # fullnameOverride: ""
 
-# Configure the controller manager deployment
+## Configure the controller manager deployment
+##
 manager:
   replicas: 1
   
@@ -112,23 +113,22 @@ manager:
 	f.addDeploymentConfig(&buf)
 
 	// RBAC configuration
-	buf.WriteString(`# Essential RBAC permissions (required for controller operation)
-# These include ServiceAccount, controller permissions, leader election, and metrics access
-# Note: Essential RBAC is always enabled as it's required for the controller to function
-
-# Helper RBAC roles for managing custom resources
-# These provide convenient admin/editor/viewer roles for each CRD type
-# Useful for giving users different levels of access to your custom resources
+	buf.WriteString(`## Helper RBAC roles for managing custom resources
+##
 rbacHelpers:
-  enable: false  # Install convenience admin/editor/viewer roles for CRDs
+  # Install convenience admin/editor/viewer roles for CRDs
+  enable: false
 
 `)
 
 	// CRD configuration
-	buf.WriteString(`# Custom Resource Definitions
+	buf.WriteString(`## Custom Resource Definitions
+##
 crd:
-  enable: true  # Install CRDs with the chart
-  keep: true    # Keep CRDs when uninstalling
+  # Install CRDs with the chart
+  enable: true
+  # Keep CRDs when uninstalling
+  keep: true
 
 `)
 
@@ -141,34 +141,40 @@ crd:
 	}
 
 	if f.HasMetrics {
-		buf.WriteString(fmt.Sprintf(`# Controller metrics endpoint.
-# Enable to expose /metrics endpoint with RBAC protection.
+		buf.WriteString(fmt.Sprintf(`## Controller metrics endpoint.
+## Enable to expose /metrics endpoint with RBAC protection.
+##
 metrics:
   enable: true
-  port: %d  # Metrics server port
+  # Metrics server port
+  port: %d
 
 `, metricsPort))
 	} else {
-		buf.WriteString(fmt.Sprintf(`# Controller metrics endpoint.
-# Enable to expose /metrics endpoint with RBAC protection.
+		buf.WriteString(fmt.Sprintf(`## Controller metrics endpoint.
+## Enable to expose /metrics endpoint with RBAC protection.
+##
 metrics:
   enable: false
-  port: %d  # Metrics server port
+  # Metrics server port
+  port: %d
 
 `, metricsPort))
 	}
 
 	// Cert-manager configuration (always present, enabled based on webhooks)
 	if f.HasWebhooks {
-		buf.WriteString(`# Cert-manager integration for TLS certificates.
-# Required for webhook certificates and metrics endpoint certificates.
+		buf.WriteString(`## Cert-manager integration for TLS certificates.
+## Required for webhook certificates and metrics endpoint certificates.
+##
 certManager:
   enable: true
 
 `)
 	} else {
-		buf.WriteString(`# Cert-manager integration for TLS certificates.
-# Required for webhook certificates and metrics endpoint certificates.
+		buf.WriteString(`## Cert-manager integration for TLS certificates.
+## Required for webhook certificates and metrics endpoint certificates.
+##
 certManager:
   enable: false
 
@@ -184,17 +190,20 @@ certManager:
 			}
 		}
 
-		buf.WriteString(fmt.Sprintf(`# Webhook server configuration
+		buf.WriteString(fmt.Sprintf(`## Webhook server configuration
+##
 webhook:
   enable: true
-  port: %d  # Webhook server port
+  # Webhook server port
+  port: %d
 
 `, webhookPort))
 	}
 
 	// Prometheus configuration
-	buf.WriteString(`# Prometheus ServiceMonitor for metrics scraping.
-# Requires prometheus-operator to be installed in the cluster.
+	buf.WriteString(`## Prometheus ServiceMonitor for metrics scraping.
+## Requires prometheus-operator to be installed in the cluster.
+##
 prometheus:
   enable: false
 `)
@@ -215,7 +224,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 
 	// Add environment variables if they exist
 	if env, exists := f.DeploymentConfig["env"]; exists && env != nil {
-		buf.WriteString("  # Environment variables\n")
+		buf.WriteString("  ## Environment variables\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  env:\n")
 		if envYaml, err := yaml.Marshal(env); err == nil {
 			f.IndentYamlProperly(buf, envYaml)
@@ -224,13 +234,15 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		}
 		buf.WriteString("\n")
 	} else {
-		buf.WriteString("  # Environment variables\n")
+		buf.WriteString("  ## Environment variables\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  env: []\n\n")
 	}
 
 	// Add image pull secrets
 	if imagePullSecrets, exists := f.DeploymentConfig["imagePullSecrets"]; exists && imagePullSecrets != nil {
-		buf.WriteString("  # Image pull secrets\n")
+		buf.WriteString("  ## Image pull secrets\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  imagePullSecrets:\n")
 		if imagePullSecretsYaml, err := yaml.Marshal(imagePullSecrets); err == nil {
 			lines := bytes.SplitSeq(imagePullSecretsYaml, []byte("\n"))
@@ -249,7 +261,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 
 	// Add podSecurityContext
 	if podSecCtx, exists := f.DeploymentConfig["podSecurityContext"]; exists && podSecCtx != nil {
-		buf.WriteString("  # Pod-level security settings\n")
+		buf.WriteString("  ## Pod-level security settings\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  podSecurityContext:\n")
 		if secYaml, err := yaml.Marshal(podSecCtx); err == nil {
 			f.IndentYamlProperly(buf, secYaml)
@@ -261,7 +274,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 
 	// Add securityContext
 	if secCtx, exists := f.DeploymentConfig["securityContext"]; exists && secCtx != nil {
-		buf.WriteString("  # Container-level security settings\n")
+		buf.WriteString("  ## Container-level security settings\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  securityContext:\n")
 		if secYaml, err := yaml.Marshal(secCtx); err == nil {
 			f.IndentYamlProperly(buf, secYaml)
@@ -273,7 +287,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 
 	// Add resources
 	if resources, exists := f.DeploymentConfig["resources"]; exists && resources != nil {
-		buf.WriteString("  # Resource limits and requests\n")
+		buf.WriteString("  ## Resource limits and requests\n")
+		buf.WriteString("  ##\n")
 		buf.WriteString("  resources:\n")
 		if resYaml, err := yaml.Marshal(resources); err == nil {
 			f.IndentYamlProperly(buf, resYaml)
@@ -283,7 +298,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		f.addDefaultResources(buf)
 	}
 
-	buf.WriteString("  # Manager pod's affinity\n")
+	buf.WriteString("  ## Manager pod's affinity\n")
+	buf.WriteString("  ##\n")
 	if affinity, exists := f.DeploymentConfig["podAffinity"]; exists && affinity != nil {
 		buf.WriteString("  affinity:\n")
 		if affYaml, err := yaml.Marshal(affinity); err == nil {
@@ -295,7 +311,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("\n")
 	}
 
-	buf.WriteString("  # Manager pod's node selector\n")
+	buf.WriteString("  ## Manager pod's node selector\n")
+	buf.WriteString("  ##\n")
 	if nodeSelector, exists := f.DeploymentConfig["podNodeSelector"]; exists && nodeSelector != nil {
 		buf.WriteString("  nodeSelector:\n")
 		if nodYaml, err := yaml.Marshal(nodeSelector); err == nil {
@@ -307,7 +324,8 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("\n")
 	}
 
-	buf.WriteString("  # Manager pod's tolerations\n")
+	buf.WriteString("  ## Manager pod's tolerations\n")
+	buf.WriteString("  ##\n")
 	if tolerations, exists := f.DeploymentConfig["podTolerations"]; exists && tolerations != nil {
 		buf.WriteString("  tolerations:\n")
 		if tolYaml, err := yaml.Marshal(tolerations); err == nil {
@@ -333,7 +351,8 @@ func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) 
 
 // addDefaultDeploymentSections adds default sections when no deployment config is available
 func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
-	buf.WriteString("  # Environment variables\n")
+	buf.WriteString("  ## Environment variables\n")
+	buf.WriteString("  ##\n")
 	buf.WriteString("  env: []\n\n")
 
 	f.addDefaultImagePullSecrets(buf)
@@ -344,7 +363,7 @@ func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
 
 // addArgsSection adds controller manager args section to the values file
 func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
-	buf.WriteString("  # Arguments\n")
+	buf.WriteString("  ## Arguments\n  ##\n")
 
 	if f.DeploymentConfig != nil {
 		if args, exists := f.DeploymentConfig["args"]; exists && args != nil {
@@ -371,20 +390,23 @@ func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
 
 // addDefaultImagePullSecrets adds default imagePullSecrets section
 func (f *HelmValuesBasic) addDefaultImagePullSecrets(buf *bytes.Buffer) {
-	buf.WriteString("  # Image pull secrets\n")
+	buf.WriteString("  ## Image pull secrets\n")
+	buf.WriteString("  ##\n")
 	buf.WriteString("  imagePullSecrets: []\n\n")
 }
 
 // addDefaultPodSecurityContext adds default podSecurityContext section
 func (f *HelmValuesBasic) addDefaultPodSecurityContext(buf *bytes.Buffer) {
-	buf.WriteString("  # Pod-level security settings\n")
+	buf.WriteString("  ## Pod-level security settings\n")
+	buf.WriteString("  ##\n")
 	buf.WriteString("  podSecurityContext: {}\n")
 	buf.WriteString("    # fsGroup: 2000\n\n")
 }
 
 // addDefaultSecurityContext adds default securityContext section
 func (f *HelmValuesBasic) addDefaultSecurityContext(buf *bytes.Buffer) {
-	buf.WriteString("  # Container-level security settings\n")
+	buf.WriteString("  ## Container-level security settings\n")
+	buf.WriteString("  ##\n")
 	buf.WriteString("  securityContext: {}\n")
 	buf.WriteString("    # capabilities:\n")
 	buf.WriteString("    #   drop:\n")
@@ -396,7 +418,8 @@ func (f *HelmValuesBasic) addDefaultSecurityContext(buf *bytes.Buffer) {
 
 // addDefaultResources adds default resources section
 func (f *HelmValuesBasic) addDefaultResources(buf *bytes.Buffer) {
-	buf.WriteString("  # Resource limits and requests\n")
+	buf.WriteString("  ## Resource limits and requests\n")
+	buf.WriteString("  ##\n")
 	buf.WriteString("  resources: {}\n")
 	buf.WriteString("    # limits:\n")
 	buf.WriteString("    #   cpu: 100m\n")
