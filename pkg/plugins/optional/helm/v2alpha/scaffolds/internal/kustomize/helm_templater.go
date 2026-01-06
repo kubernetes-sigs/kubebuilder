@@ -39,24 +39,32 @@ const (
 	kindValidatingWebhook  = "ValidatingWebhookConfiguration"
 	kindMutatingWebhook    = "MutatingWebhookConfiguration"
 	kindDeployment         = "Deployment"
+	kindCRD                = "CustomResourceDefinition"
 
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
 	apiVersionMonitoring  = "monitoring.coreos.com/v1"
-
-	chartNameTemplate = "chart.name"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
 type HelmTemplater struct {
-	projectName string
+	detectedPrefix string
+	chartName      string
 }
 
 // NewHelmTemplater creates a new Helm templater
-func NewHelmTemplater(projectName string) *HelmTemplater {
+func NewHelmTemplater(detectedPrefix, chartName string) *HelmTemplater {
 	return &HelmTemplater{
-		projectName: projectName,
+		detectedPrefix: detectedPrefix,
+		chartName:      chartName,
 	}
+}
+
+// resourceNameTemplate creates a Helm template for a resource name with 63-char safety.
+// Uses <chartname>.resourceName helper which intelligently truncates when base + suffix > 63 chars.
+// Template name is scoped to the chart to prevent collisions when used as a Helm dependency.
+func (t *HelmTemplater) resourceNameTemplate(suffix string) string {
+	return `{{ include "` + t.chartName + `.resourceName" (dict "suffix" "` + suffix + `" "context" $) }}`
 }
 
 // ApplyHelmSubstitutions converts YAML content to use Helm template syntax
@@ -72,6 +80,8 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 
 	// Apply cert-manager and webhook-specific templating AFTER other substitutions
 	yamlContent = t.substituteCertManagerReferences(yamlContent, resource)
+
+	yamlContent = t.substituteResourceNamesWithPrefix(yamlContent, resource)
 
 	// Apply labels and annotations from Helm chart
 	yamlContent = t.addHelmLabelsAndAnnotations(yamlContent, resource)
@@ -111,7 +121,7 @@ func (t *HelmTemplater) substituteProjectNames(yamlContent string, _ *unstructur
 
 // substituteNamespace replaces hardcoded namespace references with Release.Namespace
 func (t *HelmTemplater) substituteNamespace(yamlContent string, resource *unstructured.Unstructured) string {
-	hardcodedNamespace := t.projectName + "-system"
+	hardcodedNamespace := t.detectedPrefix + "-system"
 	namespaceTemplate := "{{ .Release.Namespace }}"
 
 	// Replace hardcoded namespace references everywhere, including in the Namespace resource
@@ -133,12 +143,12 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 	// Replace service names with templated ones based on certificate type
 	if strings.Contains(name, "metrics-cert") || strings.Contains(name, "metrics") {
 		// Metrics certificates should point to metrics service
-		// Use chart.name based service naming for consistency
-		metricsServiceTemplate := "{{ include \"chart.serviceName\" " +
+		// Use chart-specific resourceName helper for consistent naming with 63-char safety
+		metricsServiceTemplate := "{{ include \"" + t.chartName + ".resourceName\" " +
 			"(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" .) }}"
-		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"chart.namespaceName\" . }}.svc"
+		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc"
 		metricsServiceFQDNCluster := metricsServiceTemplate +
-			".{{ include \"chart.namespaceName\" . }}.svc.cluster.local"
+			".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc.cluster.local"
 
 		// Replace placeholders
 		yamlContent = strings.ReplaceAll(yamlContent, "SERVICE_NAME.SERVICE_NAMESPACE.svc", metricsServiceFQDN)
@@ -146,35 +156,90 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 			"SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local", metricsServiceFQDNCluster)
 
 		// Also replace hardcoded service names
-		hardcodedMetricsService := t.projectName + "-controller-manager-metrics-service"
+		hardcodedMetricsService := t.detectedPrefix + "-controller-manager-metrics-service"
 		yamlContent = strings.ReplaceAll(yamlContent, hardcodedMetricsService, metricsServiceTemplate)
+	} else if strings.Contains(name, "serving-cert") || strings.Contains(name, "webhook") {
+		hardcodedWebhookServiceShort := t.detectedPrefix + "-webhook-service"
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedWebhookServiceShort, t.resourceNameTemplate("webhook-service"))
 	}
-
-	// Replace hardcoded issuer reference with templated one
-	hardcodedIssuer := t.projectName + "-selfsigned-issuer"
-	templatedIssuer := "{{ include \"" + chartNameTemplate + "\" . }}-selfsigned-issuer"
-	yamlContent = strings.ReplaceAll(yamlContent, hardcodedIssuer, templatedIssuer)
 
 	return yamlContent
 }
 
-// substituteCertManagerReferences applies cert-manager and webhook-specific template substitutions
-func (t *HelmTemplater) substituteCertManagerReferences(yamlContent string, _ *unstructured.Unstructured) string {
+// substituteCertManagerReferences applies cert-manager specific template substitutions
+func (t *HelmTemplater) substituteCertManagerReferences(
+	yamlContent string,
+	resource *unstructured.Unstructured,
+) string {
+	kind := resource.GetKind()
+
+	if kind == kindIssuer || kind == kindCertificate {
+		hardcodedIssuerRef := t.detectedPrefix + "-selfsigned-issuer"
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedIssuerRef, t.resourceNameTemplate("selfsigned-issuer"))
+	}
+
+	if kind == kindValidatingWebhook || kind == kindMutatingWebhook || kind == kindCRD {
+		hardcodedService := "name: " + t.detectedPrefix + "-webhook-service"
+		templatedService := "name: " + t.resourceNameTemplate("webhook-service")
+		yamlContent = strings.ReplaceAll(yamlContent, hardcodedService, templatedService)
+	}
+
+	yamlContent = t.substituteCertManagerAnnotations(yamlContent)
+	return yamlContent
+}
+
+// substituteResourceNamesWithPrefix templates ALL resource names using chart.serviceName helper.
+// Generic regex-based approach works for any resource type without hardcoding specific names.
+func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ *unstructured.Unstructured) string {
+	namePattern := regexp.MustCompile(
+		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(t.detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
+
+	yamlContent = namePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		parts := namePattern.FindStringSubmatch(match)
+		if len(parts) < 4 {
+			return match
+		}
+
+		indent := parts[1]
+		fieldName := parts[2]
+		suffix := parts[3][1:] // Remove leading dash
+
+		return indent + fieldName + ": " + t.resourceNameTemplate(suffix)
+	})
+
 	return yamlContent
 }
 
 // addHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents
-func (t *HelmTemplater) addHelmLabelsAndAnnotations(yamlContent string, _ *unstructured.Unstructured) string {
+func (t *HelmTemplater) addHelmLabelsAndAnnotations(
+	yamlContent string,
+	_ *unstructured.Unstructured,
+) string {
 	// Replace app.kubernetes.io/managed-by: kustomize with Helm template
 	// Use regex to handle different whitespace patterns
 	managedByRegex := regexp.MustCompile(`(\s*)app\.kubernetes\.io/managed-by:\s+kustomize`)
 	yamlContent = managedByRegex.ReplaceAllString(yamlContent, "${1}app.kubernetes.io/managed-by: {{ .Release.Service }}")
+
+	hardcodedNameLabel := "app.kubernetes.io/name: " + t.detectedPrefix
+	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + t.chartName + ".name\" . }}"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
 
 	return yamlContent
 }
 
 // substituteRBACValues applies RBAC-specific template substitutions
 func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
+	return yamlContent
+}
+
+// substituteCertManagerAnnotations replaces hardcoded certificate references in annotations
+func (t *HelmTemplater) substituteCertManagerAnnotations(yamlContent string) string {
+	hardcodedServingCert := t.detectedPrefix + "-serving-cert"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedServingCert, t.resourceNameTemplate("serving-cert"))
+
+	hardcodedMetricsCert := t.detectedPrefix + "-metrics-certs"
+	yamlContent = strings.ReplaceAll(yamlContent, hardcodedMetricsCert, t.resourceNameTemplate("metrics-certs"))
+
 	return yamlContent
 }
 

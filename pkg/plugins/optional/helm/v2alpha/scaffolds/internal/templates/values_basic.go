@@ -89,7 +89,15 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 		}
 	}
 
-	buf.WriteString(fmt.Sprintf(`# Configure the controller manager deployment
+	buf.WriteString(fmt.Sprintf(`## String to partially override chart.fullname template (will maintain the release name)
+##
+# nameOverride: ""
+
+## String to fully override chart.fullname template
+##
+# fullnameOverride: ""
+
+# Configure the controller manager deployment
 manager:
   replicas: 1
   

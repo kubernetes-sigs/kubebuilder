@@ -401,11 +401,11 @@ func (t *TestContext) InstallHelm() error {
 }
 
 // UninstallHelmRelease removes the specified Helm release from the cluster.
+// Uses the chart name (project name) as the release name, which is standard Helm practice.
 func (t *TestContext) UninstallHelmRelease() error {
 	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
-	cmd := exec.Command("helm", "uninstall",
-		fmt.Sprintf("release-%s", t.TestSuffix),
-		"--namespace", ns)
+	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
+	cmd := exec.Command("helm", "uninstall", releaseName, "--namespace", ns)
 
 	_, err := t.Run(cmd)
 	if err != nil {
@@ -422,8 +422,12 @@ func (t *TestContext) EditHelmPlugin() error {
 }
 
 // HelmInstallRelease is for running `helm install`
+// Uses the chart name (project name) as the release name, which is standard Helm practice.
+// When release name matches chart name, chart.fullname simplifies to just the chart name,
+// preserving kustomize resource naming.
 func (t *TestContext) HelmInstallRelease() error {
-	cmd := exec.Command("helm", "install", fmt.Sprintf("release-%s", t.TestSuffix), "dist/chart",
+	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
+	cmd := exec.Command("helm", "install", releaseName, "dist/chart",
 		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix))
 	_, err := t.Run(cmd)
 	return err

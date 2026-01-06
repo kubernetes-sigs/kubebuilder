@@ -3,22 +3,22 @@ kind: Deployment
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "project.name" . }}
         control-plane: controller-manager
-    name: project-controller-manager
+    name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     replicas: 1
     selector:
         matchLabels:
-            app.kubernetes.io/name: project
+            app.kubernetes.io/name: {{ include "project.name" . }}
             control-plane: controller-manager
     template:
         metadata:
             annotations:
                 kubectl.kubernetes.io/default-container: manager
             labels:
-                app.kubernetes.io/name: project
+                app.kubernetes.io/name: {{ include "project.name" . }}
                 control-plane: controller-manager
         spec:
             {{- with .Values.manager.tolerations }}
@@ -98,7 +98,7 @@ spec:
               {{- else }}
               {}
               {{- end }}
-            serviceAccountName: project-controller-manager
+            serviceAccountName: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
             terminationGracePeriodSeconds: 10
             volumes:
                 {{- if and .Values.certManager.enable .Values.metrics.enable }}

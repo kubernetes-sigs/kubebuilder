@@ -55,13 +55,13 @@ var _ = Describe("ChartConverter", func() {
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 
 		// Create converter
-		converter = NewChartConverter(resources, "test-project", "dist")
+		converter = NewChartConverter(resources, "test-project", "test-project", "dist")
 	})
 
 	Context("NewChartConverter", func() {
 		It("should create a converter with correct properties", func() {
 			Expect(converter.resources).To(Equal(resources))
-			Expect(converter.projectName).To(Equal("test-project"))
+			Expect(converter.detectedPrefix).To(Equal("test-project"))
 			Expect(converter.outputDir).To(Equal("dist"))
 		})
 	})

@@ -4,9 +4,9 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
+        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
         control-plane: controller-manager
-    name: project-v4-with-plugins-controller-manager-metrics-service
+    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     ports:
@@ -15,6 +15,6 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.metrics.port }}
     selector:
-        app.kubernetes.io/name: project-v4-with-plugins
+        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
         control-plane: controller-manager
 {{- end }}

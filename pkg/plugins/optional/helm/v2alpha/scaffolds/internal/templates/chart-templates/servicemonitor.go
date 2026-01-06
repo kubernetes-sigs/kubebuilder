@@ -30,9 +30,6 @@ var _ machinery.Template = &ServiceMonitor{}
 type ServiceMonitor struct {
 	machinery.TemplateMixin
 
-	// Prefix
-	NamePrefix string
-
 	// ServiceName is the full name of the metrics service, derived from Kustomize
 	ServiceName string
 
@@ -57,14 +54,18 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	return nil
 }
 
+// serviceMonitorTemplate uses {{ .Chart.Name }} placeholders that will be replaced
+// with the actual chart/project name during scaffolding
 const serviceMonitorTemplate = `{{` + "`" + `{{- if .Values.prometheus.enable }}` + "`" + `}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
+    {{ "{{- include \"{{ .Chart.Name }}.labels\" . | nindent 4 }}" }}
     control-plane: controller-manager
-  name: {{ .NamePrefix }}-controller-manager-metrics-monitor
+  name: ` +
+	`{{ "{{ include \"{{ .Chart.Name }}.resourceName\" " }}` +
+	`{{ "(dict \"suffix\" \"controller-manager-metrics-monitor\" \"context\" $) }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
   endpoints:
@@ -74,7 +75,10 @@ spec:
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         {{ "{{- if .Values.certManager.enable }}" }}
-        serverName: {{ .ServiceName }}.{{ "{{ .Release.Namespace }}" }}.svc
+        serverName: ` +
+	`{{ "{{ include \"{{ .Chart.Name }}.resourceName\" " }}` +
+	`{{ "(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}" }}.` +
+	`{{ "{{ .Release.Namespace }}" }}.svc
         # Apply secure TLS configuration with cert-manager
         insecureSkipVerify: false
         ca:
@@ -87,7 +91,7 @@ spec:
             key: tls.crt
         keySecret:
           name: metrics-server-cert
-          key: tls.key
+            key: tls.key
         {{ "{{- else }}" }}
         # Development/Test mode (insecure configuration)
         insecureSkipVerify: true

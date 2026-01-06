@@ -110,7 +110,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		}
 	}
 	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
-	chartConverter := kustomize.NewChartConverter(resources, s.config.GetProjectName(), s.outputDir)
+	chartName := s.config.GetProjectName()
+	chartConverter := kustomize.NewChartConverter(resources, namePrefix, chartName, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files
@@ -147,7 +148,6 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 
 		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{
 			OutputDir:   s.outputDir,
-			NamePrefix:  namePrefix,
 			ServiceName: metricsServiceName,
 		})
 	}

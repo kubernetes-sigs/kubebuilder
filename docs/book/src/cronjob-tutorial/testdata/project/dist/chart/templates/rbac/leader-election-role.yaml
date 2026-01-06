@@ -3,8 +3,8 @@ kind: Role
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-leader-election-role
+        app.kubernetes.io/name: {{ include "project.name" . }}
+    name: {{ include "project.resourceName" (dict "suffix" "leader-election-role" "context" $) }}
     namespace: {{ .Release.Namespace }}
 rules:
     - apiGroups:

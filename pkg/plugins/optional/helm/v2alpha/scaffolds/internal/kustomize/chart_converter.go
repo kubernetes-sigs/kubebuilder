@@ -28,9 +28,12 @@ import (
 
 // ChartConverter orchestrates the conversion of kustomize output to Helm chart templates
 type ChartConverter struct {
-	resources   *ParsedResources
-	projectName string
-	outputDir   string
+	resources *ParsedResources
+	// The actual namePrefix detected from kustomize resources
+	detectedPrefix string
+	// The chart name used for template namespacing
+	chartName string
+	outputDir string
 
 	// Components for conversion
 	organizer *ResourceOrganizer
@@ -39,18 +42,19 @@ type ChartConverter struct {
 }
 
 // NewChartConverter creates a new chart converter with all necessary components
-func NewChartConverter(resources *ParsedResources, projectName, outputDir string) *ChartConverter {
+func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, outputDir string) *ChartConverter {
 	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(projectName)
+	templater := NewHelmTemplater(detectedPrefix, chartName)
 	writer := NewChartWriter(templater, outputDir)
 
 	return &ChartConverter{
-		resources:   resources,
-		projectName: projectName,
-		outputDir:   outputDir,
-		organizer:   organizer,
-		templater:   templater,
-		writer:      writer,
+		resources:      resources,
+		detectedPrefix: detectedPrefix,
+		chartName:      chartName,
+		outputDir:      outputDir,
+		organizer:      organizer,
+		templater:      templater,
+		writer:         writer,
 	}
 }
 
