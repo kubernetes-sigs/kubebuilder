@@ -17,6 +17,7 @@ limitations under the License.
 package charttemplates
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -29,6 +30,7 @@ var _ machinery.Template = &ServiceMonitor{}
 // ServiceMonitor scaffolds a ServiceMonitor for Prometheus monitoring in the Helm chart
 type ServiceMonitor struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 
 	// ServiceName is the full name of the metrics service, derived from Kustomize
 	ServiceName string
@@ -47,24 +49,27 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 		f.Path = filepath.Join(outputDir, "chart", "templates", "monitoring", "servicemonitor.yaml")
 	}
 
-	f.TemplateBody = serviceMonitorTemplate
+	// Replace {{ .Chart.Name }} placeholders with actual project name
+	chartName := f.ProjectName
+	f.TemplateBody = fmt.Sprintf(serviceMonitorTemplate, chartName, chartName, chartName, chartName)
 
 	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }
 
-// serviceMonitorTemplate uses {{ .Chart.Name }} placeholders that will be replaced
-// with the actual chart/project name during scaffolding
 const serviceMonitorTemplate = `{{` + "`" + `{{- if .Values.prometheus.enable }}` + "`" + `}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    {{ "{{- include \"{{ .Chart.Name }}.labels\" . | nindent 4 }}" }}
+    app.kubernetes.io/managed-by: {{ "{{ .Release.Service }}" }}
+    app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
+    helm.sh/chart: {{ "{{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}" }}
+    app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
     control-plane: controller-manager
   name: ` +
-	`{{ "{{ include \"{{ .Chart.Name }}.resourceName\" " }}` +
+	`{{ "{{ include \"%s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-monitor\" \"context\" $) }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
@@ -76,7 +81,7 @@ spec:
       tlsConfig:
         {{ "{{- if .Values.certManager.enable }}" }}
         serverName: ` +
-	`{{ "{{ include \"{{ .Chart.Name }}.resourceName\" " }}` +
+	`{{ "{{ include \"%s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}" }}.` +
 	`{{ "{{ .Release.Namespace }}" }}.svc
         # Apply secure TLS configuration with cert-manager
@@ -98,6 +103,7 @@ spec:
         {{ "{{- end }}" }}
   selector:
     matchLabels:
+      app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
       control-plane: controller-manager
 {{` + "`" + `{{- end }}` + "`" + `}}
 `
