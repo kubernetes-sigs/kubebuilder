@@ -33,6 +33,8 @@ type HelmChart struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -47,6 +49,7 @@ func (f *HelmChart) SetTemplateDefaults() error {
 
 	f.TemplateBody = helmChartTemplate
 
+	// Chart.yaml is never overwritten as it contains user-managed version info
 	f.IfExistsAction = machinery.SkipFile
 
 	return nil

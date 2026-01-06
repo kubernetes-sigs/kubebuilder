@@ -30,6 +30,8 @@ type HelmIgnore struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -44,7 +46,11 @@ func (f *HelmIgnore) SetTemplateDefaults() error {
 
 	f.TemplateBody = helmIgnoreTemplate
 
-	f.IfExistsAction = machinery.SkipFile
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }

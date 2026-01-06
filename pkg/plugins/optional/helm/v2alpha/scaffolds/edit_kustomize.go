@@ -119,8 +119,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 
 	// Define the standard Helm chart files to generate
 	chartFiles := []machinery.Builder{
-		&github.HelmChartCI{},                        // GitHub Actions workflow for chart testing
-		&templates.HelmChart{OutputDir: s.outputDir}, // Chart.yaml metadata
+		&github.HelmChartCI{Force: s.force},                          // GitHub Actions workflow for chart testing
+		&templates.HelmChart{OutputDir: s.outputDir, Force: s.force}, // Chart.yaml metadata
 		&templates.HelmValuesBasic{
 			// values.yaml with dynamic config
 			HasWebhooks:      hasWebhooks,
@@ -129,8 +129,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			OutputDir:        s.outputDir,
 			Force:            s.force,
 		},
-		&templates.HelmIgnore{OutputDir: s.outputDir},       // .helmignore file
-		&charttemplates.HelmHelpers{OutputDir: s.outputDir}, // _helpers.tpl template functions
+		&templates.HelmIgnore{OutputDir: s.outputDir, Force: s.force},       // .helmignore file
+		&charttemplates.HelmHelpers{OutputDir: s.outputDir, Force: s.force}, // _helpers.tpl template functions
 	}
 
 	// Only scaffold the generic ServiceMonitor when the project does NOT already
@@ -149,6 +149,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		chartFiles = append(chartFiles, &charttemplates.ServiceMonitor{
 			OutputDir:   s.outputDir,
 			ServiceName: metricsServiceName,
+			Force:       s.force,
 		})
 	}
 

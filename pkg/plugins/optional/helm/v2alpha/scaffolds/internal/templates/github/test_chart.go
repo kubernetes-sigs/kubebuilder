@@ -28,6 +28,9 @@ var _ machinery.Template = &HelmChartCI{}
 type HelmChartCI struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -38,7 +41,11 @@ func (f *HelmChartCI) SetTemplateDefaults() error {
 
 	f.TemplateBody = testChartTemplate
 
-	f.IfExistsAction = machinery.SkipFile
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }
