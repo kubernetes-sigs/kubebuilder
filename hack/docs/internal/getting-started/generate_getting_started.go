@@ -241,6 +241,20 @@ func (sp *Sample) CodeGen() {
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make build-installer for getting started tutorial", err)
 
+	// Add samples to kustomization for Helm chart generation
+	kustomizationPath := filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml")
+	err = pluginutil.InsertCode(
+		kustomizationPath,
+		"- metrics_service.yaml",
+		"\n- ../samples")
+	hackutils.CheckError("Failed to add samples to kustomization", err)
+
+	// Rebuild installer with samples
+	cmd = exec.Command("make", "build-installer")
+	cmd.Dir = sp.ctx.Dir
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to rebuild installer with samples", err)
+
 	err = sp.ctx.EditHelmPlugin()
 	hackutils.CheckError("Failed to enable helm plugin", err)
 }

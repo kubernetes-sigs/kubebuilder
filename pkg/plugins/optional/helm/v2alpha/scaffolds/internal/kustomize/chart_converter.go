@@ -45,6 +45,7 @@ type ChartConverter struct {
 func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, outputDir string) *ChartConverter {
 	organizer := NewResourceOrganizer(resources)
 	templater := NewHelmTemplater(detectedPrefix, chartName)
+	templater.SetCRDTypes(resources.definedCRDTypes)
 	writer := NewChartWriter(templater, outputDir)
 
 	return &ChartConverter{

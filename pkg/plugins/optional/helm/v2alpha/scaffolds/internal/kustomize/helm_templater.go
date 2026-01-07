@@ -44,20 +44,30 @@ const (
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
 	apiVersionMonitoring  = "monitoring.coreos.com/v1"
+
+	// YAML field names
+	labelsField = "labels:"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
 type HelmTemplater struct {
-	detectedPrefix string
-	chartName      string
+	detectedPrefix  string
+	chartName       string
+	definedCRDTypes map[string]bool
 }
 
 // NewHelmTemplater creates a new Helm templater
 func NewHelmTemplater(detectedPrefix, chartName string) *HelmTemplater {
 	return &HelmTemplater{
-		detectedPrefix: detectedPrefix,
-		chartName:      chartName,
+		detectedPrefix:  detectedPrefix,
+		chartName:       chartName,
+		definedCRDTypes: make(map[string]bool),
 	}
+}
+
+// SetCRDTypes sets the registry of defined CRD types
+func (t *HelmTemplater) SetCRDTypes(crdTypes map[string]bool) {
+	t.definedCRDTypes = crdTypes
 }
 
 // resourceNameTemplate creates a Helm template for a resource name with 63-char safety.
@@ -240,7 +250,7 @@ func checkExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 		backIndent, _ := leadingWhitespace(backLine)
 
 		// Stop if we've moved out of the labels section
-		if backTrimmed == "labels:" {
+		if backTrimmed == labelsField {
 			break
 		}
 		if backTrimmed != "" && len(backIndent) < len(indent) {
@@ -317,7 +327,7 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 			// Check if we're in a labels section by looking backwards
 			isInLabelsSection := false
 			for j := i - 1; j >= 0 && j >= i-5; j-- {
-				if strings.TrimSpace(lines[j]) == "labels:" {
+				if strings.TrimSpace(lines[j]) == labelsField {
 					isInLabelsSection = true
 					break
 				}
@@ -1212,6 +1222,10 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		}
 		// Other services (webhook service, etc.) don't need conditionals - they're essential
 		return yamlContent
+	case t.isSampleCustomResource(resource):
+		// Sample CRs should be conditional on samples.create and use post-install hook
+		// Hook ensures CRDs are registered before CRs are created
+		return fmt.Sprintf("{{- if .Values.samples.create }}\n%s{{- end }}", t.addSampleHookAnnotations(yamlContent))
 	default:
 		// No conditional wrapper needed for other resources (Deployment, Namespace)
 		return yamlContent
@@ -1244,6 +1258,81 @@ func (t *HelmTemplater) collapseBlankLineAfterIf(yamlContent string) string {
 		out = append(out, line)
 	}
 	return strings.Join(out, "\n")
+}
+
+// isSampleCustomResource determines if a resource is a Custom Resource instance (sample)
+// Checks if the resource matches a CRD defined in the kustomize output
+func (t *HelmTemplater) isSampleCustomResource(obj *unstructured.Unstructured) bool {
+	kind := obj.GetKind()
+	apiVersion := obj.GetAPIVersion()
+
+	// Build GVK key same as parser
+	gvk := fmt.Sprintf("%s/%s", apiVersion, kind)
+
+	// Check if this resource matches a defined CRD
+	return t.definedCRDTypes[gvk]
+}
+
+// addSampleHookAnnotations adds Helm hook annotations to ensure samples are created after CRDs
+func (t *HelmTemplater) addSampleHookAnnotations(yamlContent string) string {
+	lines := strings.Split(yamlContent, "\n")
+
+	// Find metadata section and look for existing annotations or labels
+	for i, line := range lines {
+		if strings.TrimSpace(line) != "metadata:" {
+			continue
+		}
+
+		metadataIndent, _ := leadingWhitespace(line)
+		childIndent := metadataIndent + "    "
+		annotationIndent := childIndent + "    "
+
+		// Look for existing annotations or labels section
+		annotationsIdx := -1
+		labelsIdx := -1
+
+		for j := i + 1; j < len(lines) && j < i+15; j++ {
+			trimmed := strings.TrimSpace(lines[j])
+			if trimmed == "annotations:" {
+				annotationsIdx = j
+			}
+			if trimmed == labelsField {
+				labelsIdx = j
+				break
+			}
+		}
+
+		hookLines := []string{
+			childIndent + "annotations:",
+			annotationIndent + `"helm.sh/hook": post-install,post-upgrade`,
+			annotationIndent + `"helm.sh/hook-weight": "5"`,
+		}
+
+		if annotationsIdx >= 0 {
+			// Add hooks to existing annotations (after annotations: line)
+			hookLinesOnly := []string{
+				annotationIndent + `"helm.sh/hook": post-install,post-upgrade`,
+				annotationIndent + `"helm.sh/hook-weight": "5"`,
+			}
+			newLines := append([]string{}, lines[:annotationsIdx+1]...)
+			newLines = append(newLines, hookLinesOnly...)
+			newLines = append(newLines, lines[annotationsIdx+1:]...)
+			return strings.Join(newLines, "\n")
+		}
+
+		// No existing annotations, insert before labels (or after metadata if no labels)
+		insertIdx := i + 1
+		if labelsIdx > 0 {
+			insertIdx = labelsIdx
+		}
+
+		newLines := append([]string{}, lines[:insertIdx]...)
+		newLines = append(newLines, hookLines...)
+		newLines = append(newLines, lines[insertIdx:]...)
+		return strings.Join(newLines, "\n")
+	}
+
+	return yamlContent
 }
 
 // templatePorts replaces hardcoded port values with Helm template references

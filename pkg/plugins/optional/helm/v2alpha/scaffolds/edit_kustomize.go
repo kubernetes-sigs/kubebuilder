@@ -125,6 +125,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			// values.yaml with dynamic config
 			HasWebhooks:      hasWebhooks,
 			HasMetrics:       hasMetrics,
+			HasSamples:       len(resources.SampleResources) > 0,
 			DeploymentConfig: deploymentConfig,
 			OutputDir:        s.outputDir,
 			Force:            s.force,

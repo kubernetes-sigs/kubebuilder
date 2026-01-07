@@ -716,6 +716,7 @@ spec:
 	Context("edge cases", func() {
 		It("should handle empty content", func() {
 			testResource := &unstructured.Unstructured{}
+			testResource.SetAPIVersion("v1")
 			testResource.SetKind("ConfigMap")
 
 			result := templater.ApplyHelmSubstitutions("", testResource)
@@ -741,6 +742,7 @@ metadata:
 
 		It("should handle malformed YAML gracefully", func() {
 			testResource := &unstructured.Unstructured{}
+			testResource.SetAPIVersion("v1")
 			testResource.SetKind("ConfigMap")
 
 			malformedContent := "not: valid: yaml: content:"

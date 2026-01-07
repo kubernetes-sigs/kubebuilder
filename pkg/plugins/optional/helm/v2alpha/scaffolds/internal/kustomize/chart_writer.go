@@ -111,7 +111,7 @@ func (w *ChartWriter) convertToYAML(resource *unstructured.Unstructured) string 
 func (w *ChartWriter) shouldSplitFiles(groupName string) bool {
 	return groupName == "crd" || groupName == "cert-manager" || groupName == "webhook" ||
 		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics" ||
-		groupName == "extras"
+		groupName == "samples" || groupName == "extras"
 }
 
 // writeSplitFiles writes each resource in the group to its own file

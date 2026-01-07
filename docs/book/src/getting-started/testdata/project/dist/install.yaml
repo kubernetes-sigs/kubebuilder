@@ -477,3 +477,14 @@ spec:
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
       volumes: []
+---
+apiVersion: cache.example.com/v1alpha1
+kind: Memcached
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project
+  name: project-memcached-sample
+  namespace: project-system
+spec:
+  size: 1

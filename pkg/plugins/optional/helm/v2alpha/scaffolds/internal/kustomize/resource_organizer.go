@@ -78,6 +78,12 @@ func (o *ResourceOrganizer) OrganizeByFunction() map[string][]*unstructured.Unst
 		groups["prometheus"] = prometheusResources
 	}
 
+	// Samples - Custom Resource instances (from config/samples)
+	// These are example CRs for demonstration and testing purposes
+	if len(o.resources.SampleResources) > 0 {
+		groups["samples"] = o.resources.SampleResources
+	}
+
 	// Extras - Uncategorized resources (services, configmaps, secrets, etc. not fitting above categories)
 	// This includes both uncategorized services and all resources from the "Other" category
 	extrasResources := o.collectExtrasResources()

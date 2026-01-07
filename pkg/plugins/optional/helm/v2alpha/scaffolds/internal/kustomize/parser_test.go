@@ -286,6 +286,244 @@ spec:
 		})
 	})
 
+	Context("with sample Custom Resources", func() {
+		BeforeEach(func() {
+			yamlContent := `---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: captains.crew.testproject.org
+spec:
+  group: crew.testproject.org
+  names:
+    kind: Captain
+    plural: captains
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: sailors.crew.testproject.org
+spec:
+  group: crew.testproject.org
+  names:
+    kind: Sailor
+    plural: sailors
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: myapps.example.com
+spec:
+  group: example.com
+  names:
+    kind: MyApp
+    plural: myapps
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+---
+apiVersion: crew.testproject.org/v1
+kind: Captain
+metadata:
+  name: captain-sample
+  namespace: test-system
+spec:
+  rank: "Admiral"
+---
+apiVersion: crew.testproject.org/v1
+kind: Sailor
+metadata:
+  name: sailor-sample
+  namespace: test-system
+spec:
+  rank: "Seaman"
+---
+apiVersion: example.com/v1alpha1
+kind: MyApp
+metadata:
+  name: myapp-sample
+  namespace: test-system
+spec:
+  replicas: 1
+`
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser = NewParser(tempFile)
+		})
+
+		It("should parse sample CRs correctly", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that custom resources are identified as samples
+			Expect(resources.SampleResources).To(HaveLen(3))
+
+			// Check kinds of sample resources
+			kinds := make([]string, 0, len(resources.SampleResources))
+			for _, sample := range resources.SampleResources {
+				kinds = append(kinds, sample.GetKind())
+			}
+			Expect(kinds).To(ContainElements("Captain", "Sailor", "MyApp"))
+		})
+
+		It("should not categorize infrastructure as samples", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify infrastructure resources are NOT in samples
+			for _, sample := range resources.SampleResources {
+				Expect(sample.GetKind()).NotTo(BeElementOf(
+					"Deployment", "Service", "ServiceAccount",
+					"Role", "ClusterRole", "Namespace",
+				))
+			}
+		})
+
+		It("should only categorize CRs with defined CRDs as samples", func() {
+			yamlContent := `---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: captains.crew.testproject.org
+spec:
+  group: crew.testproject.org
+  names:
+    kind: Captain
+    plural: captains
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+---
+apiVersion: crew.testproject.org/v1
+kind: Captain
+metadata:
+  name: captain-sample
+spec:
+  rank: Admiral
+---
+apiVersion: other.example.com/v1
+kind: Orphan
+metadata:
+  name: orphan-sample
+spec:
+  value: test
+`
+			tempDir := GinkgoT().TempDir()
+			tempFile := filepath.Join(tempDir, "test.yaml")
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser := NewParser(tempFile)
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Captain has a CRD defined, should be in samples
+			Expect(resources.SampleResources).To(HaveLen(1))
+			Expect(resources.SampleResources[0].GetKind()).To(Equal("Captain"))
+
+			// Orphan has NO CRD defined, should be in Other
+			Expect(resources.Other).To(HaveLen(1))
+			Expect(resources.Other[0].GetKind()).To(Equal("Orphan"))
+		})
+	})
+
+	Context("with mixed infrastructure and sample CRs", func() {
+		BeforeEach(func() {
+			yamlContent := `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: captains.crew.testproject.org
+spec:
+  group: crew.testproject.org
+  names:
+    kind: Captain
+    plural: captains
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: test-system
+spec:
+  replicas: 1
+---
+apiVersion: crew.testproject.org/v1
+kind: Captain
+metadata:
+  name: captain-sample
+  namespace: test-system
+spec:
+  rank: "Admiral"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+  namespace: test-system
+spec:
+  ports:
+  - port: 8443
+`
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser = NewParser(tempFile)
+		})
+
+		It("should correctly separate infrastructure from samples", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Infrastructure should be in their respective categories
+			Expect(resources.Namespace).NotTo(BeNil())
+			Expect(resources.Deployment).NotTo(BeNil())
+			Expect(resources.Services).To(HaveLen(1))
+
+			// Custom Resource should be in samples
+			Expect(resources.SampleResources).To(HaveLen(1))
+			Expect(resources.SampleResources[0].GetKind()).To(Equal("Captain"))
+
+			// Samples should not be empty
+			Expect(resources.Other).To(BeEmpty())
+		})
+	})
+
 	Context("with custom prefix", func() {
 		BeforeEach(func() {
 			yamlContent := `---

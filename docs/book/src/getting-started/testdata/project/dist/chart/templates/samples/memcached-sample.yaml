@@ -1,0 +1,17 @@
+{{- if .Values.samples.create }}
+apiVersion: cache.example.com/v1alpha1
+kind: Memcached
+metadata:
+    annotations:
+        "helm.sh/hook": post-install,post-upgrade
+        "helm.sh/hook-weight": "5"
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ include "project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project.resourceName" (dict "suffix" "memcached-sample" "context" $) }}
+    namespace: {{ .Release.Namespace }}
+spec:
+    size: 1
+{{- end }}

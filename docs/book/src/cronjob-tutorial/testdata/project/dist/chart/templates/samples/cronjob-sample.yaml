@@ -1,0 +1,42 @@
+{{- if .Values.samples.create }}
+apiVersion: batch.tutorial.kubebuilder.io/v1
+kind: CronJob
+metadata:
+    annotations:
+        "helm.sh/hook": post-install,post-upgrade
+        "helm.sh/hook-weight": "5"
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ include "project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project.resourceName" (dict "suffix" "cronjob-sample" "context" $) }}
+    namespace: {{ .Release.Namespace }}
+spec:
+    concurrencyPolicy: Allow
+    jobTemplate:
+        spec:
+            template:
+                spec:
+                    containers:
+                        - args:
+                            - /bin/sh
+                            - -c
+                            - date; echo Hello from the Kubernetes cluster
+                          image: busybox
+                          name: hello
+                          securityContext:
+                            allowPrivilegeEscalation: false
+                            capabilities:
+                                drop:
+                                    - ALL
+                            readOnlyRootFilesystem: false
+                    restartPolicy: OnFailure
+                    securityContext:
+                        runAsNonRoot: true
+                        runAsUser: 1000
+                        seccompProfile:
+                            type: RuntimeDefault
+    schedule: '*/1 * * * *'
+    startingDeadlineSeconds: 60
+{{- end }}

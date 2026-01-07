@@ -102,6 +102,10 @@ webhook:
   # Webhook server port
   port: 9443
 
+## Deploy sample Custom Resources instances
+samples:
+  create: false
+
 ## Prometheus ServiceMonitor for metrics scraping.
 ## Requires prometheus-operator to be installed in the cluster.
 ##

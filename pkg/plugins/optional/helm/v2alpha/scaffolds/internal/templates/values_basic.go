@@ -44,6 +44,8 @@ type HelmValuesBasic struct {
 	HasWebhooks bool
 	// HasMetrics is true when metrics service/monitor were found in the config
 	HasMetrics bool
+	// HasSamples is true when sample CRs were found in the config
+	HasSamples bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -198,6 +200,15 @@ webhook:
   port: %d
 
 `, webhookPort))
+	}
+
+	// Samples configuration - only if samples exist
+	if f.HasSamples {
+		buf.WriteString(`## Deploy sample Custom Resources instances
+samples:
+  create: false
+
+`)
 	}
 
 	// Prometheus configuration

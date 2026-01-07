@@ -115,13 +115,18 @@ The plugin creates a chart layout that matches your `config/`:
     │   └── validating-webhook-configuration.yaml
     ├── prometheus/
     │   └── servicemonitor.yaml
+    ├── samples/                 # Sample Custom Resources (from config/samples)
+    │   ├── captain-sample.yaml
+    │   ├── sailor-sample.yaml
+    │   └── ...
     └── extras/                  # Custom resources (if any)
         ├── my-service.yaml
         └── my-config.yaml
 ```
 
-**Note:** Resources that don't match the standard scaffold layout (custom Services, ConfigMaps, Secrets, etc.)
-are automatically placed in `templates/extras/` with proper Helm templating applied (namePrefix, labels, etc.).
+**Note:**
+- Resources that don't match the standard scaffold layout (custom Services, ConfigMaps, Secrets, etc.) are automatically placed in `templates/extras/` with proper Helm templating applied (namePrefix, labels, etc.).
+- Sample Custom Resources (instances of CRDs defined in your project) are automatically detected and placed in `templates/samples/` with conditional rendering (`.Values.samples.create`).
 
 <aside class="note">
 <H1> Why CRDs are added under templates? </H1>
@@ -146,6 +151,10 @@ In short:
 
 This design choice prioritizes correctness and maintainability over Helm's default convention,
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
+
+**Sample CRs:** To work around Helm's limitation of not being able to deploy CRs in the same install as CRDs,
+sample CRs are disabled by default (`samples.create: false`). Enable them with `helm upgrade --set samples.create=true`
+after the initial install, or use a two-step installation process.
 </aside>
 
 ## Values Configuration
@@ -228,32 +237,28 @@ controllerManager:
 # These include ServiceAccount, controller permissions, leader election, and metrics access
 # Note: Essential RBAC is always enabled as it's required for the controller to function
 
-# Extra labels applied to all rendered manifests
-commonLabels: {}
-
 # Helper RBAC roles for managing custom resources
-# These provide convenient admin/editor/viewer roles for each CRD type
-# Useful for giving users different levels of access to your custom resources
 rbacHelpers:
-  enable: false  # Install convenience admin/editor/viewer roles for CRDs
+  enable: false
 
 # Custom Resource Definitions
 crd:
-  enable: true  # Install CRDs with the chart
-  keep: true    # Keep CRDs when uninstalling
+  enable: true
+  keep: true
 
-# Controller metrics endpoint.
-# Enable to expose /metrics endpoint with RBAC protection.
+# Controller metrics endpoint
 metrics:
   enable: true
 
-# Cert-manager integration for TLS certificates.
-# Required for webhook certificates and metrics endpoint certificates.
+# Cert-manager integration for TLS certificates
 certManager:
   enable: true
 
-# Prometheus ServiceMonitor for metrics scraping.
-# Requires prometheus-operator to be installed in the cluster.
+# Deploy sample Custom Resources instances
+samples:
+  create: false
+
+# Prometheus ServiceMonitor for metrics scraping
 prometheus:
   enable: false
 ```
@@ -267,6 +272,58 @@ helm install my-release ./dist/chart \
   --namespace my-project-system \
   --create-namespace
 ```
+
+### Installing with Sample Custom Resources
+
+Sample CRs use Helm post-install hooks to ensure they're created after CRDs are registered.
+
+**Step 1: Add samples to kustomize build**
+
+Edit `config/default/kustomization.yaml` and add samples to resources:
+
+```yaml
+resources:
+- ../crd
+- ../rbac
+- ../manager
+- ../webhook
+- ../certmanager
+- metrics_service.yaml
+- ../samples  # Add this line
+```
+
+**Step 2: Generate installer and Helm chart**
+
+```shell
+make build-installer
+kubebuilder edit --plugins=helm/v2-alpha
+```
+
+**Step 3: Install with samples enabled**
+
+```shell
+# Install with samples (hooks ensure CRDs are ready first)
+helm install my-operator ./dist/chart \
+  --namespace my-system \
+  --create-namespace \
+  --set samples.create=true
+
+# Verify samples are created
+kubectl get memcacheds,busyboxes,wordpresses -n my-system
+```
+
+**How it works:**
+
+Sample resources include Helm hook annotations:
+```yaml
+annotations:
+  "helm.sh/hook": post-install,post-upgrade
+  "helm.sh/hook-weight": "5"
+```
+
+This ensures samples are created AFTER the main resources (CRDs, controller) are deployed and ready.
+
+**Note:** Samples are disabled by default (`samples.create: false`) and provided for demonstration/testing purposes only.
 
 ## Flags
 

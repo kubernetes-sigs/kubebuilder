@@ -51,8 +51,15 @@ type ParsedResources struct {
 	// Monitoring resources
 	ServiceMonitors []*unstructured.Unstructured
 
+	// Sample Custom Resources (CR instances from config/samples)
+	SampleResources []*unstructured.Unstructured
+
 	// Other resources not fitting above categories
 	Other []*unstructured.Unstructured
+
+	// definedCRDTypes tracks GVK (Group/Version/Kind) of CRDs defined in this kustomize output
+	// Used to identify which resources are instances of these CRDs (samples)
+	definedCRDTypes map[string]bool
 }
 
 // Parser parses kustomize output and extracts resources by type
@@ -91,8 +98,13 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		Certificates:              make([]*unstructured.Unstructured, 0),
 		WebhookConfigurations:     make([]*unstructured.Unstructured, 0),
 		ServiceMonitors:           make([]*unstructured.Unstructured, 0),
+		SampleResources:           make([]*unstructured.Unstructured, 0),
 		Other:                     make([]*unstructured.Unstructured, 0),
+		definedCRDTypes:           make(map[string]bool),
 	}
+
+	// First pass: collect all resources
+	var allResources []*unstructured.Unstructured
 
 	for {
 		var doc map[string]any
@@ -110,10 +122,65 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		}
 
 		obj := &unstructured.Unstructured{Object: doc}
+		allResources = append(allResources, obj)
+	}
+
+	// Second pass: build CRD type map (extract GVK from all CRDs)
+	const kindCRD = "CustomResourceDefinition"
+	for _, obj := range allResources {
+		if obj.GetKind() == kindCRD {
+			p.extractCRDType(obj, resources)
+		}
+	}
+
+	// Third pass: categorize all resources (now we know which CRDs are defined)
+	for _, obj := range allResources {
 		p.categorizeResource(obj, resources)
 	}
 
 	return resources, nil
+}
+
+// extractCRDType extracts the group/version/kind from a CRD and stores it in the definedCRDTypes map
+func (p *Parser) extractCRDType(crd *unstructured.Unstructured, resources *ParsedResources) {
+	// Extract group from spec.group
+	group, found, err := unstructured.NestedString(crd.Object, "spec", "group")
+	if !found || err != nil {
+		return
+	}
+
+	// Extract versions from spec.versions (use NestedFieldNoCopy to avoid deep copy issues)
+	versionsField, found, err := unstructured.NestedFieldNoCopy(crd.Object, "spec", "versions")
+	if !found || err != nil {
+		return
+	}
+
+	versions, ok := versionsField.([]any)
+	if !ok {
+		return
+	}
+
+	// Extract kind from spec.names.kind
+	kind, found, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
+	if !found || err != nil {
+		return
+	}
+
+	// Register all versions of this CRD
+	for _, v := range versions {
+		versionMap, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		versionName, ok := versionMap["name"].(string)
+		if !ok {
+			continue
+		}
+
+		// Create GVK key: group/version/Kind
+		gvk := fmt.Sprintf("%s/%s/%s", group, versionName, kind)
+		resources.definedCRDTypes[gvk] = true
+	}
 }
 
 // categorizeResource sorts a Kubernetes resource into the appropriate category based on kind and API version
@@ -148,9 +215,27 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.WebhookConfigurations = append(resources.WebhookConfigurations, obj)
 	case kind == "ServiceMonitor" && apiVersion == "monitoring.coreos.com/v1":
 		resources.ServiceMonitors = append(resources.ServiceMonitors, obj)
+	case p.isSampleCustomResource(obj, resources):
+		// Custom Resource instances (from config/samples) should go to samples group
+		// These are resources that match CRDs defined in this kustomize output
+		resources.SampleResources = append(resources.SampleResources, obj)
 	default:
 		resources.Other = append(resources.Other, obj)
 	}
+}
+
+// isSampleCustomResource determines if a resource is a Custom Resource instance (sample)
+// It checks if the resource is an instance of a CRD defined in the kustomize output
+func (p *Parser) isSampleCustomResource(obj *unstructured.Unstructured, resources *ParsedResources) bool {
+	kind := obj.GetKind()
+	apiVersion := obj.GetAPIVersion()
+
+	// Build GVK key: group/version/Kind
+	// apiVersion format is either "group/version" or just "version" for core types
+	gvk := fmt.Sprintf("%s/%s", apiVersion, kind)
+
+	// Check if this resource type matches any defined CRD
+	return resources.definedCRDTypes[gvk]
 }
 
 func (pr *ParsedResources) EstimatePrefix(projectName string) string {
