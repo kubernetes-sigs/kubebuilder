@@ -30,7 +30,7 @@ The **helm/v2-alpha** plugin converts the bundle (`dist/install.yaml`) into a He
 - **Preserves Customizations**: Keeps env vars, labels, annotations, and patches.
 - **Structured Output**: Templates follow your `config/` directory layout.
 - **Smart Values**: `values.yaml` includes only actual configurable parameters.
-- **File Preservation**: Manual edits in `values.yaml`, `Chart.yaml`, `_helpers.tpl` are kept unless `--force` is used.
+- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `_helpers.tpl`, `.helmignore`, and `.github/workflows/test-chart.yml` are preserved.
 - **Handles Custom Resources**: Resources not matching standard layout (custom Services, ConfigMaps, etc.) are placed in `templates/extras/` with proper templating.
 
 ## When to Use It
@@ -55,7 +55,7 @@ make build-installer IMG=<registry>/<project:tag>
 # Create Helm chart from kustomize output
 kubebuilder edit --plugins=helm/v2-alpha
 
-# Overwrite preserved files if needed
+# Regenerate preserved files (Chart.yaml never overwritten)
 kubebuilder edit --plugins=helm/v2-alpha --force
 ```
 
@@ -311,7 +311,7 @@ helm install my-release ./dist/chart \
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Overwrites preserved files (`values.yaml`, `Chart.yaml`, `_helpers.tpl`)    |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (values.yaml, _helpers.tpl, .helmignore, test-chart.yml) |
 
 <aside class="note">
 <H1> Examples </H1>

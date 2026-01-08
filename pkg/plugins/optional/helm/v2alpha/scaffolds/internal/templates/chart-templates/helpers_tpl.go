@@ -32,6 +32,8 @@ type HelmHelpers struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults sets the default template configuration
@@ -46,7 +48,11 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 
 	f.TemplateBody = f.generateHelpersTemplate()
 
-	f.IfExistsAction = machinery.SkipFile
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }

@@ -37,6 +37,8 @@ type ServiceMonitor struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -49,7 +51,6 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 		f.Path = filepath.Join(outputDir, "chart", "templates", "monitoring", "servicemonitor.yaml")
 	}
 
-	// Replace {{ .Chart.Name }} placeholders with actual project name
 	chartName := f.ProjectName
 	f.TemplateBody = fmt.Sprintf(serviceMonitorTemplate, chartName, chartName, chartName, chartName)
 
