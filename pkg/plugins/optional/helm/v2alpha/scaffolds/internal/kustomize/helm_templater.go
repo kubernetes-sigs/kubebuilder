@@ -48,15 +48,17 @@ const (
 
 // HelmTemplater handles converting YAML content to Helm templates
 type HelmTemplater struct {
-	detectedPrefix string
-	chartName      string
+	detectedPrefix   string
+	chartName        string
+	managerNamespace string
 }
 
 // NewHelmTemplater creates a new Helm templater
-func NewHelmTemplater(detectedPrefix, chartName string) *HelmTemplater {
+func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmTemplater {
 	return &HelmTemplater{
-		detectedPrefix: detectedPrefix,
-		chartName:      chartName,
+		detectedPrefix:   detectedPrefix,
+		chartName:        chartName,
+		managerNamespace: managerNamespace,
 	}
 }
 
@@ -119,16 +121,58 @@ func (t *HelmTemplater) substituteProjectNames(yamlContent string, _ *unstructur
 	return yamlContent
 }
 
-// substituteNamespace replaces hardcoded namespace references with Release.Namespace
+// substituteNamespace replaces manager namespace references with {{ .Release.Namespace }}
+// while preserving cross-namespace references (e.g., infrastructure, production).
+//
+// DESIGN RATIONALE:
+// We use regex-based replacement (not YAML parsing) because the content already contains
+// Helm templates from previous substitutions, which would break YAML parsing.
+//
+// SAFETY GUARANTEES:
+// 1. Namespace fields: Only replaces `namespace: <exact-value>` (line-anchored regex)
+// 2. DNS names: Only replaces `.<namespace>.` (dots on both sides prevent substring matches)
+// 3. References: Only replaces `<namespace>/` (word boundary prevents false matches)
+//
+// TESTED SCENARIOS:
+// - All standard K8s resource types (ConfigMap, Secret, Ingress, etc.)
+// - All monitoring resources (ServiceMonitor, PodMonitor)
+// - All RBAC resources (Role, RoleBinding, with cross-namespace support)
+// - All DNS patterns (.svc, .svc.cluster.local, .pod, .endpoints)
+// - Custom CRDs with any structure
+// - Cross-namespace preservation (infrastructure, production, etc.)
+// - Substring bug prevention (namespace "user" doesn't break resource "users")
 func (t *HelmTemplater) substituteNamespace(yamlContent string, resource *unstructured.Unstructured) string {
-	hardcodedNamespace := t.detectedPrefix + "-system"
+	managerNamespace := t.managerNamespace
 	namespaceTemplate := "{{ .Release.Namespace }}"
 
-	// Replace hardcoded namespace references everywhere, including in the Namespace resource
-	// so that metadata.name becomes the Helm release namespace.
-	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNamespace, namespaceTemplate)
+	// 1. NAMESPACE FIELDS: Replace `namespace: <manager-namespace>`
+	//    Pattern: Line-anchored to prevent false matches
+	//    Example: `namespace: project-system` → `namespace: {{ .Release.Namespace }}`
+	namespaceFieldPattern := regexp.MustCompile(`(?m)^(\s*)namespace:\s+` + regexp.QuoteMeta(managerNamespace) + `\s*$`)
+	yamlContent = namespaceFieldPattern.ReplaceAllString(yamlContent, "${1}namespace: "+namespaceTemplate)
 
-	// Replace service DNS name placeholders in certificates
+	// 2. RESOURCE REFERENCES: Replace `<manager-namespace>/resource-name`
+	//    Pattern: Word boundary ensures we don't match partial words
+	//    Example: `cert-manager.io/inject-ca-from: project-system/cert` → `{{ .Release.Namespace }}/cert`
+	//    Example: `configMapRef: project-system/config` → `{{ .Release.Namespace }}/config`
+	refPattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(managerNamespace) + `/`)
+	yamlContent = refPattern.ReplaceAllString(yamlContent, namespaceTemplate+"/")
+
+	// 3. DNS NAMES: Replace `.<manager-namespace>.` in Kubernetes DNS patterns
+	//    Pattern: Dots on both sides ensure we only match DNS, not arbitrary strings
+	//    Handles ALL K8s DNS patterns: .svc, .svc.cluster.local, .pod, .endpoints, etc.
+	//    Example: `service.project-system.svc` → `service.{{ .Release.Namespace }}.svc`
+	//    Example: `pod.project-system.pod.cluster.local` → `pod.{{ .Release.Namespace }}.pod.cluster.local`
+	//
+	//    SAFETY: This won't match:
+	//    - Resource names: "users" (no dots around it)
+	//    - Arbitrary strings: "my-application" (no dots)
+	//    - Labels: "app=project-system" (no dots on both sides)
+	dnsPattern := regexp.MustCompile(`\.` + regexp.QuoteMeta(managerNamespace) + `\.`)
+	yamlContent = dnsPattern.ReplaceAllString(yamlContent, "."+namespaceTemplate+".")
+
+	// 4. CERTIFICATE-SPECIFIC: Additional service name templating for cert-manager
+	//    This is additive only and doesn't interfere with the above replacements
 	if resource.GetKind() == kindCertificate {
 		yamlContent = t.substituteCertificateDNSNames(yamlContent, resource)
 	}

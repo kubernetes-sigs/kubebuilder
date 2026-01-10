@@ -356,10 +356,10 @@ var _ = Describe("ChartConverter", func() {
 			configMap.SetAPIVersion("v1")
 			configMap.SetKind("ConfigMap")
 			configMap.SetName("custom-config")
-			configMap.SetNamespace("test-project-system")
+			configMap.SetNamespace("test-system")
 			configMap.Object["metadata"] = map[string]any{
 				"name":      "custom-config",
-				"namespace": "test-project-system",
+				"namespace": "test-system",
 				"labels": map[string]any{
 					"app.kubernetes.io/name":       "test-project",
 					"app.kubernetes.io/managed-by": "kustomize",
@@ -443,10 +443,10 @@ var _ = Describe("ChartConverter", func() {
 			secret.SetAPIVersion("v1")
 			secret.SetKind("Secret")
 			secret.SetName("custom-secret")
-			secret.SetNamespace("test-project-system")
+			secret.SetNamespace("test-system")
 			secret.Object["metadata"] = map[string]any{
 				"name":      "custom-secret",
-				"namespace": "test-project-system",
+				"namespace": "test-system",
 				"labels": map[string]any{
 					"app.kubernetes.io/name":       "test-project",
 					"app.kubernetes.io/managed-by": "kustomize",
