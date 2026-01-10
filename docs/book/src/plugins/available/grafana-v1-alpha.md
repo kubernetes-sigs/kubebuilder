@@ -50,9 +50,22 @@ kubebuilder init --plugins grafana.kubebuilder.io/v1-alpha
 
 # Enable grafana plugin to an existing project
 kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
+
+# Remove grafana dashboards from project
+kubebuilder delete --plugins grafana.kubebuilder.io/v1-alpha
 ```
 
 The plugin will create a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
+
+### Removing Grafana Dashboards
+
+To remove Grafana manifests from your project:
+
+```sh
+kubebuilder delete --plugins=grafana.kubebuilder.io/v1-alpha
+```
+
+This removes the `grafana/` directory and all dashboard files.
 
 #### Show case:
 

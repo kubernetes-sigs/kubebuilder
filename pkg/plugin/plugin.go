@@ -69,6 +69,20 @@ type Edit interface {
 	GetEditSubcommand() EditSubcommand
 }
 
+// DeleteAPI is an interface for plugins that provide a `delete api` subcommand.
+type DeleteAPI interface {
+	Plugin
+	// GetDeleteAPISubcommand returns the underlying DeleteAPISubcommand interface.
+	GetDeleteAPISubcommand() DeleteAPISubcommand
+}
+
+// DeleteWebhook is an interface for plugins that provide a `delete webhook` subcommand.
+type DeleteWebhook interface {
+	Plugin
+	// GetDeleteWebhookSubcommand returns the underlying DeleteWebhookSubcommand interface.
+	GetDeleteWebhookSubcommand() DeleteWebhookSubcommand
+}
+
 // Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands.
 type Full interface {
 	Init
