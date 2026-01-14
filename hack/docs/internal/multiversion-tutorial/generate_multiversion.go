@@ -354,6 +354,16 @@ func (sp *Sample) updateWebhookV2() {
 	)
 	hackutils.CheckError("replacing imports in v2", err)
 
+	// Add collapse marker after the import block to hide imports
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, path),
+		`batchv2 "tutorial.kubebuilder.io/project/api/v2"
+)`,
+		`
+
+// +kubebuilder:docs-gen:collapse=Imports`)
+	hackutils.CheckError("adding imports collapse marker to webhook v2", err)
+
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
 		`// TODO(user): Add more fields as needed for defaulting`,
@@ -493,17 +503,14 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
-		`if err := (&controller.CronJobReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CronJob")
-		os.Exit(1)
+		`if !enableHTTP2 {
+		tlsOpts = append(tlsOpts, disableHTTP2)
 	}`,
 		`
- `,
+
+	// +kubebuilder:docs-gen:collapse=Manager Setup`,
 	)
-	hackutils.CheckError("insert doc marker existing setup main.go", err)
+	hackutils.CheckError("adding manager setup collapse marker main.go", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
