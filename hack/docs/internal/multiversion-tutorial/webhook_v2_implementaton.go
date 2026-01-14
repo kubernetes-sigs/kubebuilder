@@ -44,12 +44,14 @@ func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 	}
 	if cronJob.Spec.FailedJobsHistoryLimit == nil {
 		cronJob.Spec.FailedJobsHistoryLimit = new(int32)
-		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
+		*cronJob.Spec	.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
 }
 `
 
 const cronJobValidationFunction = `
+// +kubebuilder:docs-gen:collapse=Webhook Setup and Defaulting
+
 // validateCronJob validates the fields of a CronJob object.
 func validateCronJob(cronjob *batchv2.CronJob) error {
 	var allErrs field.ErrorList

@@ -37,6 +37,8 @@ import (
 	batchv2 "tutorial.kubebuilder.io/project/api/v2"
 )
 
+// +kubebuilder:docs-gen:collapse=Imports
+
 // nolint:unused
 // log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
@@ -156,6 +158,8 @@ func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
 }
+
+// +kubebuilder:docs-gen:collapse=Webhook Setup and Defaulting
 
 // validateCronJob validates the fields of a CronJob object.
 func validateCronJob(cronjob *batchv2.CronJob) error {
