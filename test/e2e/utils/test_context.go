@@ -76,6 +76,8 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		Namespace:      fmt.Sprintf("e2e-%s-system", testSuffix),
 		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
 		CmdContext:     cc,
+		// Optional context lock from env var
+		KubeContext: os.Getenv("KUBE_CONTEXT"),
 	}
 
 	// For test outside of cluster we do not need to have kubectl
