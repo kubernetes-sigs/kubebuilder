@@ -259,6 +259,48 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	return nil
 }
 
+// RemoveResource implements config.Config
+func (c *Cfg) RemoveResource(gvk resource.GVK) error {
+	indexToRemove := -1
+	for i, r := range c.Resources {
+		// Match by Group, Version, Kind (not domain, as core types may not have domain set)
+		if r.Group == gvk.Group && r.Version == gvk.Version && r.Kind == gvk.Kind {
+			indexToRemove = i
+			break
+		}
+	}
+
+	if indexToRemove == -1 {
+		return fmt.Errorf("failed to remove resource: resource with GVK {%q %q %q} not found",
+			gvk.Group, gvk.Version, gvk.Kind)
+	}
+
+	// Remove the resource by slicing around it
+	c.Resources = append(c.Resources[:indexToRemove], c.Resources[indexToRemove+1:]...)
+	return nil
+}
+
+// SetResourceWebhooks implements config.Config
+func (c *Cfg) SetResourceWebhooks(gvk resource.GVK, webhooks *resource.Webhooks) error {
+	for i, r := range c.Resources {
+		// Match by Group, Version, Kind (not domain)
+		if r.Group == gvk.Group && r.Version == gvk.Version && r.Kind == gvk.Kind {
+			if webhooks == nil {
+				c.Resources[i].Webhooks = nil
+			} else {
+				if c.Resources[i].Webhooks == nil {
+					c.Resources[i].Webhooks = &resource.Webhooks{}
+				}
+				c.Resources[i].Webhooks.Set(webhooks)
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("failed to set webhooks: resource with GVK {%q %q %q} not found",
+		gvk.Group, gvk.Version, gvk.Kind)
+}
+
 // HasGroup implements config.Config
 func (c Cfg) HasGroup(group string) bool {
 	// Return true if the target group is found in the tracked resources
