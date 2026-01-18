@@ -43,6 +43,9 @@ For further information on the project layout, see [What's in a basic project?][
 
 ### Automated Updates via GitHub Actions
 
+>[!Tip]
+>**Strongly recommended** migration option which is easy and helps avoid conflicts.
+
 The [AutoUpdate Plugin][autoupdate-v1-alpha] scaffolds an action that automatically monitors for new Kubebuilder releases and
 opens a GitHub Issue with a Pull Request compare link when updates are available. This is ideal for
 keeping your project up to date with minimal manual work.
@@ -66,6 +69,9 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 See the [AutoUpdate Plugin documentation][autoupdate-v1-alpha] for complete details.
 
 ### Using Alpha Update Locally
+
+>[!Tip]
+>Recommended migration option for local workflow.
 
 If you prefer to run updates locally instead of relying on GitHub Actions, you can use the same logic
 as the [AutoUpdate Plugin][autoupdate-v1-alpha] directly from your command line.
