@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	log "log/slog"
@@ -24,6 +25,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
@@ -35,12 +37,18 @@ const (
 	certmanagerVersion = "v1.19.1"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 
-	defaultKindCluster = "kind"
-	defaultKindBinary  = "kind"
+	defaultKind = "kind" // Used for both cluster name and binary name
 
 	prometheusOperatorVersion = "v0.85.0"
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
 		"releases/download/%s/bundle.yaml"
+
+	// Timeout for kind load operations (can fail due to Docker daemon issues)
+	kindLoadTimeout = 5 * time.Minute
+	// Maximum retries for transient failures
+	maxRetries = 3
+	// Delay between retries
+	retryDelay = 5 * time.Second
 )
 
 // TestContext specified to run e2e tests
@@ -128,6 +136,17 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 
 func warnError(err error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
+// CheckDockerHealth verifies the Docker daemon is responsive
+// Retries up to 3 times in case Docker is temporarily unavailable
+func (t *TestContext) CheckDockerHealth() error {
+	cmd := exec.Command("docker", "info")
+	_, err := t.RunWithRetry(cmd, 3*time.Minute, maxRetries)
+	if err != nil {
+		return fmt.Errorf("docker daemon is not responsive after %d attempts: %w", maxRetries, err)
+	}
+	return nil
 }
 
 // Prepare prepares the test environment.
@@ -301,33 +320,35 @@ func (t *TestContext) RemoveNamespaceLabelToEnforceRestricted() error {
 
 // LoadImageToKindCluster loads a local docker image to the kind cluster
 func (t *TestContext) LoadImageToKindCluster() error {
-	cluster := defaultKindCluster
+	cluster := defaultKind
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
 	}
 	kindOptions := []string{"load", "docker-image", t.ImageName, "--name", cluster}
-	kindBinary := defaultKindBinary
+	kindBinary := defaultKind
 	if v, ok := os.LookupEnv("KIND"); ok {
 		kindBinary = v
 	}
 	cmd := exec.Command(kindBinary, kindOptions...)
-	_, err := t.Run(cmd)
+	// kind load can fail due to transient Docker daemon issues - use retry logic
+	_, err := t.RunWithRetry(cmd, kindLoadTimeout, maxRetries)
 	return err
 }
 
 // LoadImageToKindClusterWithName loads a local docker image with the name informed to the kind cluster
 func (t TestContext) LoadImageToKindClusterWithName(image string) error {
-	cluster := defaultKindCluster
+	cluster := defaultKind
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
 	}
 	kindOptions := []string{"load", "docker-image", "--name", cluster, image}
-	kindBinary := defaultKindCluster
+	kindBinary := defaultKind
 	if v, ok := os.LookupEnv("KIND"); ok {
 		kindBinary = v
 	}
 	cmd := exec.Command(kindBinary, kindOptions...)
-	_, err := t.Run(cmd)
+	// kind load can fail due to transient Docker daemon issues - use retry logic
+	_, err := t.RunWithRetry(cmd, kindLoadTimeout, maxRetries)
 	return err
 }
 
@@ -352,6 +373,69 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	}
 
 	return output, nil
+}
+
+// RunWithTimeout executes the provided command within this context with a specific timeout
+func (cc *CmdContext) RunWithTimeout(cmd *exec.Cmd, timeout time.Duration) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd.Dir = cc.Dir
+	cmd.Env = append(os.Environ(), cc.Env...)
+	cmd.Stdin = cc.Stdin
+	command := strings.Join(cmd.Args, " ")
+	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s (timeout: %v)\n", command, timeout)
+
+	// Create a command with context
+	cmdWithContext := exec.CommandContext(ctx, cmd.Args[0], cmd.Args[1:]...)
+	cmdWithContext.Dir = cmd.Dir
+	cmdWithContext.Env = cmd.Env
+	cmdWithContext.Stdin = cmd.Stdin
+
+	output, err := cmdWithContext.CombinedOutput()
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return output, fmt.Errorf("%q timed out after %v: %w", command, timeout, err)
+		}
+		return output, fmt.Errorf("%q failed with error %q: %w", command, string(output), err)
+	}
+
+	return output, nil
+}
+
+// RunWithRetry executes a command with retry logic
+// Used for kind load and Docker health check which can have transient failures
+func (cc *CmdContext) RunWithRetry(cmd *exec.Cmd, timeout time.Duration, maxRetries int) ([]byte, error) {
+	var output []byte
+	var err error
+
+	command := strings.Join(cmd.Args, " ")
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			_, _ = fmt.Fprintf(GinkgoWriter, "retrying command (attempt %d/%d): %s\n", attempt, maxRetries, command)
+			time.Sleep(retryDelay * time.Duration(attempt-1)) // Exponential backoff
+		}
+
+		// Create a fresh command for each retry
+		freshCmd := exec.Command(cmd.Args[0], cmd.Args[1:]...)
+		freshCmd.Dir = cc.Dir
+		freshCmd.Env = append(os.Environ(), cc.Env...)
+		freshCmd.Stdin = cc.Stdin
+
+		output, err = cc.RunWithTimeout(freshCmd, timeout)
+		if err == nil {
+			if attempt > 1 {
+				_, _ = fmt.Fprintf(GinkgoWriter, "command succeeded on attempt %d\n", attempt)
+			}
+			return output, nil
+		}
+
+		if attempt < maxRetries {
+			_, _ = fmt.Fprintf(GinkgoWriter, "command failed, will retry: %v\n", err)
+		}
+	}
+
+	return output, fmt.Errorf("command failed after %d attempts: %w", maxRetries, err)
 }
 
 // AllowProjectBeMultiGroup will update the PROJECT file with the information to allow we scaffold

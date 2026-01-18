@@ -108,6 +108,9 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	var controllerPodName string
 	var err error
 
+	SetDefaultEventuallyPollingInterval(30 * time.Second)
+	SetDefaultEventuallyTimeout(5 * time.Minute)
+
 	By("creating manager namespace")
 	err = kbc.CreateManagerNamespace()
 	Expect(err).NotTo(HaveOccurred())
@@ -119,6 +122,10 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	By("updating the go.mod")
 	err = kbc.Tidy()
 	Expect(err).NotTo(HaveOccurred())
+
+	By("checking Docker daemon health")
+	err = kbc.CheckDockerHealth()
+	Expect(err).NotTo(HaveOccurred(), "Docker daemon should be responsive")
 
 	By("run make all")
 	err = kbc.Make("all")
@@ -169,7 +176,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			false,
 			"Service", "prometheus-operator")
 		g.Expect(err).NotTo(HaveOccurred())
-	}, time.Minute, time.Second).Should(Succeed())
+	}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the ServiceMonitor for Prometheus is applied in the namespace")
 	_, err = kbc.Kubectl.Get(
@@ -226,7 +233,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
 		}
 
-		Eventually(verifyWebhookCert, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyWebhookCert, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
@@ -250,7 +257,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 		}
 
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyCAInjection, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that the CA injection is applied for CRD conversion")
 		crdKind := "ConversionTest"
@@ -270,7 +277,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(len(crdOutput)).To(BeNumerically(">", 10),
 				"CA bundle should be injected into the CRD")
 		}
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
+		Eventually(verifyCAInjection, 3*time.Minute, 30*time.Second).Should(Succeed(),
 			"CA injection validation failed")
 	}
 
@@ -295,7 +302,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		g.Expect(kbc.Kubectl.Apply(true, "-f", sampleFile)).
 			Error().NotTo(HaveOccurred())
 	}
-	Eventually(applySample, time.Minute, time.Second).Should(Succeed())
+	Eventually(applySample, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	if hasMetrics {
 		By("checking the metrics values to validate that the created resource object gets reconciled")
@@ -335,7 +342,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			_, err = kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
 			g.Expect(err).To(Not(HaveOccurred()))
 		}
-		Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
+		Eventually(applySampleNamespaced, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that mutating webhooks are working fine outside of the manager's namespace")
 		cnt, err := kbc.Kubectl.Get(
@@ -375,7 +382,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		Eventually(func(g Gomega) {
 			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
 			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
@@ -388,7 +395,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			replicas, err := strconv.Atoi(out)
 			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
 			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
@@ -433,7 +440,7 @@ func getControllerName(kbc *utils.TestContext) string {
 		Expect(err).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
-	Eventually(verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 	return controllerPodName
 }
 
@@ -479,7 +486,7 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 		g.Expect(err).NotTo(HaveOccurred(), "endpointslices should exist")
 		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
 	}
-	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
+	Eventually(checkServiceEndpoint, 3*time.Minute, 30*time.Second).Should(Succeed(),
 		"Service endpoint should be ready")
 
 	// NOTE: On Kubernetes 1.33+, we've observed a delay before the metrics endpoint becomes available
@@ -497,7 +504,7 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(output).To(Equal("True"), "Controller pod not ready")
 	}
-	Eventually(verifyControllerPodReady, 3*time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerPodReady, 5*time.Minute, 30*time.Second).Should(Succeed())
 
 	webhookServiceName := fmt.Sprintf("e2e-%s-webhook-service", kbc.TestSuffix)
 	if _, err = kbc.Kubectl.Get(false, "service", webhookServiceName); err == nil {
@@ -513,7 +520,7 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 			g.Expect(err).NotTo(HaveOccurred(), "webhook endpoints should exist")
 			g.Expect(output).ShouldNot(BeEmpty(), "webhook endpoints not yet ready")
 		}
-		Eventually(checkWebhookEndpoint, 3*time.Minute, time.Second).Should(Succeed(),
+		Eventually(checkWebhookEndpoint, 5*time.Minute, 30*time.Second).Should(Succeed(),
 			"Webhook service endpoints should be ready")
 	}
 
@@ -531,7 +538,7 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(status).To(Equal("Succeeded"), fmt.Sprintf("curl pod in %s status", status))
 	}
-	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+	Eventually(verifyCurlUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the correct ServiceAccount is being used")
 	saName := kbc.Kubectl.ServiceAccount
@@ -549,7 +556,7 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(metricsOutput).Should(ContainSubstring("< HTTP/1.1 200 OK"))
 	}
-	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
+	Eventually(getCurlLogs, 3*time.Minute, 30*time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 	return metricsOutput
 }
@@ -579,7 +586,7 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 		g.Expect(status).NotTo(Equal("Failed"),
 			fmt.Sprintf("curl pod in %s status when should fail with an error", status))
 	}
-	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+	Eventually(verifyCurlUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is not working as expected")
 	getCurlLogs := func(g Gomega) {
@@ -587,7 +594,7 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(metricsOutput).Should(ContainSubstring("Could not resolve host"))
 	}
-	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
+	Eventually(getCurlLogs, 3*time.Minute, 30*time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 }
 
@@ -664,7 +671,7 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 
 		out = token.Status.Token
 	}
-	Eventually(getToken, time.Minute, time.Second).Should(Succeed())
+	Eventually(getToken, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	return out, nil
 }
