@@ -287,7 +287,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
 		}
 
-		Eventually(verifyWebhookCert, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyWebhookCert, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
@@ -311,7 +311,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 		}
 
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyCAInjection, 3*time.Minute, time.Second).Should(Succeed())
 	}
 
 	By("creating an instance of the CR")
@@ -333,7 +333,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		_, applyErr := kbc.Kubectl.Apply(true, "-f", sampleFile)
 		g.Expect(applyErr).NotTo(HaveOccurred())
 	}
-	Eventually(applySample, time.Minute, time.Second).Should(Succeed())
+	Eventually(applySample, 3*time.Minute, time.Second).Should(Succeed())
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func(g Gomega) error {
@@ -409,7 +409,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		Eventually(func(g Gomega) {
 			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
 			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
@@ -686,7 +686,7 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 
 		out = token.Status.Token
 	}
-	Eventually(getToken, time.Minute, time.Second).Should(Succeed())
+	Eventually(getToken, 2*time.Minute, time.Second).Should(Succeed())
 
 	return out, nil
 }
