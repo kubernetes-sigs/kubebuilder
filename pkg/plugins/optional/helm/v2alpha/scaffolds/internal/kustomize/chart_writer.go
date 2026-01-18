@@ -31,15 +31,17 @@ import (
 
 // ChartWriter handles writing Helm chart template files
 type ChartWriter struct {
-	templater *HelmTemplater
-	outputDir string
+	templater        *HelmTemplater
+	outputDir        string
+	managerNamespace string
 }
 
 // NewChartWriter creates a new chart writer
-func NewChartWriter(templater *HelmTemplater, outputDir string) *ChartWriter {
+func NewChartWriter(templater *HelmTemplater, outputDir string, managerNamespace string) *ChartWriter {
 	return &ChartWriter{
-		templater: templater,
-		outputDir: outputDir,
+		templater:        templater,
+		outputDir:        outputDir,
+		managerNamespace: managerNamespace,
 	}
 }
 
@@ -157,6 +159,17 @@ func (w *ChartWriter) generateFileName(resource *unstructured.Unstructured, inde
 			fileName = resource.GetKind()
 			if fileName == "" {
 				fileName = "resource"
+			}
+		}
+
+		// For namespace-scoped RBAC (Role, RoleBinding), append namespace suffix
+		// only for cross-namespace resources to prevent filename collisions.
+		// Resources in the manager namespace don't need a suffix since they're unique.
+		kind := resource.GetKind()
+		namespace := resource.GetNamespace()
+		if namespace != "" && (kind == "Role" || kind == "RoleBinding") {
+			if namespace != w.managerNamespace {
+				fileName = fmt.Sprintf("%s-%s", fileName, namespace)
 			}
 		}
 
