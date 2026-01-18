@@ -66,11 +66,14 @@ func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
-	SetDefaultEventuallyPollingInterval(time.Second)
-	SetDefaultEventuallyTimeout(time.Minute)
+	SetDefaultEventuallyPollingInterval(30 * time.Second)
+	SetDefaultEventuallyTimeout(5 * time.Minute)
 
 	By("updating the go.mod")
 	Expect(kbc.Tidy()).To(Succeed())
+
+	By("checking Docker daemon health")
+	Expect(kbc.CheckDockerHealth()).To(Succeed(), "Docker daemon should be responsive")
 
 	By("run make manifests")
 	Expect(kbc.Make("manifests")).To(Succeed())

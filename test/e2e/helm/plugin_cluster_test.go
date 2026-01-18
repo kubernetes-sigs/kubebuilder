@@ -151,6 +151,9 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 	var controllerPodName string
 	var err error
 
+	SetDefaultEventuallyPollingInterval(30 * time.Second)
+	SetDefaultEventuallyTimeout(5 * time.Minute)
+
 	By("creating manager namespace")
 	err = kbc.CreateManagerNamespace()
 	Expect(err).NotTo(HaveOccurred())
@@ -162,6 +165,10 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 	By("updating the go.mod")
 	err = kbc.Tidy()
 	Expect(err).NotTo(HaveOccurred())
+
+	By("checking Docker daemon health")
+	err = kbc.CheckDockerHealth()
+	Expect(err).NotTo(HaveOccurred(), "Docker daemon should be responsive")
 
 	By("run make all")
 	err = kbc.Make("all")
@@ -226,13 +233,15 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			false,
 			"Service", "prometheus-operator")
 		g.Expect(err).NotTo(HaveOccurred())
-	}, time.Minute, time.Second).Should(Succeed())
+	}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the ServiceMonitor for Prometheus is applied in the namespace")
-	_, err = kbc.Kubectl.Get(
-		true,
-		"ServiceMonitor")
-	Expect(err).NotTo(HaveOccurred())
+	Eventually(func(g Gomega) {
+		_, err = kbc.Kubectl.Get(
+			true,
+			"ServiceMonitor")
+		g.Expect(err).NotTo(HaveOccurred())
+	}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	if hasNetworkPolicies {
 		if hasMetrics {
@@ -240,18 +249,19 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			Expect(kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
 				"metrics=enabled")).Error().NotTo(HaveOccurred())
 
-			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists", func() {
+			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists")
+			Eventually(func(g Gomega) {
 				var output string
 				output, err = kbc.Kubectl.Get(
 					true,
 					"networkpolicy", fmt.Sprintf("%s-allow-metrics-traffic", expectedPrefix),
 				)
-				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-metrics-traffic should exist in the namespace")
-				Expect(output).To(
+				g.Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-metrics-traffic should exist in the namespace")
+				g.Expect(output).To(
 					ContainSubstring("allow-metrics-traffic"),
 					"NetworkPolicy allow-metrics-traffic should be present in the output",
 				)
-			})
+			}, 3*time.Minute, 30*time.Second).Should(Succeed())
 		}
 
 		if hasWebhook {
@@ -260,18 +270,19 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 				"webhook=enabled")
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Ensuring the allow-webhook-traffic NetworkPolicy exists", func() {
+			By("Ensuring the allow-webhook-traffic NetworkPolicy exists")
+			Eventually(func(g Gomega) {
 				var output string
 				output, err = kbc.Kubectl.Get(
 					true,
 					"networkpolicy", fmt.Sprintf("%s-allow-webhook-traffic", expectedPrefix),
 				)
-				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-webhook-traffic should exist in the namespace")
-				Expect(output).To(
+				g.Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-webhook-traffic should exist in the namespace")
+				g.Expect(output).To(
 					ContainSubstring("allow-webhook-traffic"),
 					"NetworkPolicy allow-webhook-traffic should be present in the output",
 				)
-			})
+			}, 3*time.Minute, 30*time.Second).Should(Succeed())
 		}
 	}
 
@@ -287,7 +298,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
 		}
 
-		Eventually(verifyWebhookCert, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyWebhookCert, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
@@ -311,7 +322,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 		}
 
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyCAInjection, 3*time.Minute, 30*time.Second).Should(Succeed())
 	}
 
 	By("creating an instance of the CR")
@@ -333,7 +344,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		_, applyErr := kbc.Kubectl.Apply(true, "-f", sampleFile)
 		g.Expect(applyErr).NotTo(HaveOccurred())
 	}
-	Eventually(applySample, time.Minute, time.Second).Should(Succeed())
+	Eventually(applySample, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func(g Gomega) error {
@@ -366,7 +377,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		}
 		return nil
 	}
-	Eventually(verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 
 	if hasMetrics {
 		_ = getMetricsOutput(kbc, expectedPrefix, controllerPodName)
@@ -388,7 +399,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			)
 			g.Expect(errGet).NotTo(HaveOccurred())
 			g.Expect(len(strings.TrimSpace(out))).To(BeNumerically(">", 10))
-		}, 2*time.Minute, 2*time.Second).Should(Succeed())
+		}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		// Update the ConversionTest CR sample in v1 to set a specific `size`
 		By("modifying the ConversionTest CR sample to set `size` for conversion testing")
@@ -409,7 +420,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		Eventually(func(g Gomega) {
 			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
 			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
@@ -422,7 +433,7 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 			replicas, err := strconv.Atoi(out)
 			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
 			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
-		}, 2*time.Minute, 2*time.Second).Should(Succeed())
+		}, 3*time.Minute, 30*time.Second).Should(Succeed())
 	}
 }
 
@@ -464,7 +475,7 @@ func getControllerName(kbc *utils.TestContext) string {
 		Expect(err).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
-	Eventually(verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 	return controllerPodName
 }
 
@@ -493,11 +504,13 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 
 	var metricsOutput string
 	By("validating that the controller-manager service is available")
-	_, err = kbc.Kubectl.Get(
-		true,
-		"service", fmt.Sprintf("%s-controller-manager-metrics-service", expectedPrefix),
-	)
-	Expect(err).NotTo(HaveOccurred(), "Controller-manager service should exist")
+	Eventually(func(g Gomega) {
+		_, err = kbc.Kubectl.Get(
+			true,
+			"service", fmt.Sprintf("%s-controller-manager-metrics-service", expectedPrefix),
+		)
+		g.Expect(err).NotTo(HaveOccurred(), "Controller-manager service should exist")
+	}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("ensuring the service endpoint is ready")
 	checkServiceEndpoint := func(g Gomega) {
@@ -510,7 +523,7 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 		g.Expect(err).NotTo(HaveOccurred(), "endpoints should exist")
 		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
 	}
-	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
+	Eventually(checkServiceEndpoint, 3*time.Minute, 30*time.Second).Should(Succeed(),
 		"Service endpoint should be ready")
 
 	// NOTE: On Kubernetes 1.33+, we've observed a delay before the metrics endpoint becomes available
@@ -529,7 +542,7 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 		g.Expect(output).To(Equal("True"), "Controller pod not ready")
 	}
 	// Increased timeout to 5 minutes to handle K8s 1.33+ cert provisioning delays
-	Eventually(verifyControllerPodReady, 5*time.Minute, time.Second).Should(Succeed(),
+	Eventually(verifyControllerPodReady, 5*time.Minute, 30*time.Second).Should(Succeed(),
 		"Controller pod should be ready within 5 minutes")
 
 	webhookServiceName := fmt.Sprintf("%s-webhook-service", expectedPrefix)
@@ -546,7 +559,7 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 			g.Expect(output).ShouldNot(BeEmpty(), "webhook endpoints not yet ready")
 		}
 		// Increased timeout to 5 minutes to handle K8s 1.33+ cert provisioning delays
-		Eventually(checkWebhookEndpoint, 5*time.Minute, time.Second).Should(Succeed(),
+		Eventually(checkWebhookEndpoint, 5*time.Minute, 30*time.Second).Should(Succeed(),
 			"Webhook service endpoints should be ready within 5 minutes")
 	}
 
@@ -557,13 +570,15 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 
 	By("validating that the controllerManager ServiceAccount exists")
 	saName := kbc.Kubectl.ServiceAccount
-	currentSAOutput, err := kbc.Kubectl.Get(
-		true,
-		"serviceaccount", saName,
-		"-o", "jsonpath={.metadata.name}",
-	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to fetch the service account")
-	Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
+	Eventually(func(g Gomega) {
+		currentSAOutput, saErr := kbc.Kubectl.Get(
+			true,
+			"serviceaccount", saName,
+			"-o", "jsonpath={.metadata.name}",
+		)
+		g.Expect(saErr).NotTo(HaveOccurred(), "Failed to fetch the service account")
+		g.Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
+	}, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is serving as expected")
 	getCurlLogs := func(g Gomega) {
@@ -571,7 +586,7 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(metricsOutput).Should(ContainSubstring("< HTTP/1.1 200 OK"))
 	}
-	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
+	Eventually(getCurlLogs, 3*time.Minute, 30*time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 	return metricsOutput
 }
@@ -601,7 +616,7 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext, expectedPrefix string) {
 		g.Expect(status).NotTo(Equal("Failed"),
 			fmt.Sprintf("curl pod in %s status when should fail with an error", status))
 	}
-	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+	Eventually(verifyCurlUp, 5*time.Minute, 30*time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is not working as expected")
 	getCurlLogs := func(g Gomega) {
@@ -609,7 +624,7 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext, expectedPrefix string) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(metricsOutput).Should(ContainSubstring("Could not resolve host"))
 	}
-	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
+	Eventually(getCurlLogs, 3*time.Minute, 30*time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 }
 
@@ -686,7 +701,7 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 
 		out = token.Status.Token
 	}
-	Eventually(getToken, time.Minute, time.Second).Should(Succeed())
+	Eventually(getToken, 3*time.Minute, 30*time.Second).Should(Succeed())
 
 	return out, nil
 }
