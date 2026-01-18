@@ -48,28 +48,22 @@ var (
 	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 )
 
-// version contains all the information related to the CLI version
-type version struct {
-	KubeBuilderVersion string `json:"kubeBuilderVersion"`
-	KubernetesVendor   string `json:"kubernetesVendor"`
-	GitCommit          string `json:"gitCommit"`
-	BuildDate          string `json:"buildDate"`
-	GoOs               string `json:"goOs"`
-	GoArch             string `json:"goArch"`
-}
-
 // versionString returns the Full CLI version
 func versionString() string {
 	kubeBuilderVersion = getKubebuilderVersion()
 
-	return fmt.Sprintf("Version: %#v", version{
+	return fmt.Sprintf(`KubeBuilder:          %s
+Kubernetes Vendor:    %s
+Git Commit:           %s
+Build Date:           %s
+Go OS/Arch:           %s/%s`,
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
 		gitCommit,
 		buildDate,
 		goos,
 		goarch,
-	})
+	)
 }
 
 // getKubebuilderVersion returns only the CLI version string
