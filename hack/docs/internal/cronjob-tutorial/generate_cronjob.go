@@ -633,6 +633,70 @@ func (sp *Sample) updateKustomization() {
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		certManagerForMetrics, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
+
+	// Add ANCHOR markers for webhook documentation sections
+	// This allows the docs to include only webhook-related parts of the kustomization.yaml
+
+	// Add anchor for webhook resources section
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- ../webhook
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
+- ../certmanager`,
+		`# ANCHOR: webhook-resources
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- ../webhook
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
+- ../certmanager
+# ANCHOR_END: webhook-resources`)
+	hackutils.CheckError("adding webhook-resources anchors", err)
+
+	// Add anchor for webhook patch section
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- path: manager_webhook_patch.yaml
+  target:
+    kind: Deployment`,
+		`# ANCHOR: webhook-patch
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- path: manager_webhook_patch.yaml
+  target:
+    kind: Deployment
+# ANCHOR_END: webhook-patch`)
+	hackutils.CheckError("adding webhook-patch anchors", err)
+
+	// Add anchor for webhook replacements section (from webhook service to MutatingWebhookConfiguration)
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		` - source: # Uncomment the following block if you have any webhook
+     kind: Service
+     version: v1
+     name: webhook-service
+     fieldPath: .metadata.name # Name of the service`,
+		` # ANCHOR: webhook-replacements
+ - source: # Uncomment the following block if you have any webhook
+     kind: Service
+     version: v1
+     name: webhook-service
+     fieldPath: .metadata.name # Name of the service`)
+	hackutils.CheckError("adding webhook-replacements anchor start", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`        create: true
+
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)`,
+		`        create: true
+# ANCHOR_END: webhook-replacements
+
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)`)
+	hackutils.CheckError("adding webhook-replacements anchor end", err)
 }
 
 func (sp *Sample) updateExample() {
