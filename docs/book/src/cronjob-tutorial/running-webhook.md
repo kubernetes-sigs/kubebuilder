@@ -31,10 +31,21 @@ To know more, see: [Using Kind For Development Purposes and CI](./../reference/k
 ## Deploy Webhooks
 
 You need to enable the webhook and cert manager configuration through kustomize.
-`config/default/kustomization.yaml` should now look like the following:
+`config/default/kustomization.yaml` should have the following webhook-related sections uncommented:
 
+**Resources** - Add the webhook and cert-manager resources:
 ```yaml
-{{#include ./testdata/project/config/default/kustomization.yaml}}
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-resources}}
+```
+
+**Patches** - Add the webhook manager patch:
+```yaml
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-patch}}
+```
+
+**Replacements** - Add the webhook certificate replacements:
+```yaml
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-replacements}}
 ```
 
 And `config/crd/kustomization.yaml` should now look like the following:

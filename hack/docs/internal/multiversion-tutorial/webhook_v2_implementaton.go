@@ -44,7 +44,7 @@ func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 	}
 	if cronJob.Spec.FailedJobsHistoryLimit == nil {
 		cronJob.Spec.FailedJobsHistoryLimit = new(int32)
-		*cronJob.Spec	.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
+		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
 }
 `
