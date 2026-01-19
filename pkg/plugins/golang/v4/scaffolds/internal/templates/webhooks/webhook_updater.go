@@ -291,36 +291,27 @@ type %sCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &%sCustomDefaulter{}
-
 `,
 		defaultingPath, f.getGroupValue(), f.Resource.Plural, f.Resource.Version,
 		strings.ToLower(f.Resource.Kind), f.Resource.Version,
 		f.AdmissionReviewVersions,
-		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 
 	// Default method
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
 	code.WriteString(fmt.Sprintf(
 		`// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind %s.
-func (d *%sCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	%s, ok := obj.(*%s)
-
-	if !ok {
-		return fmt.Errorf("expected an %s object but got %%T", obj)
-	}
-	%slog.Info("Defaulting for %s", "name", %s.GetName())
+func (d *%sCustomDefaulter) Default(_ context.Context, obj *%s) error {
+	%slog.Info("Defaulting for %s", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
 	return nil
 }
 `,
-		f.Resource.Kind, f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), objType,
-		f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind, strings.ToLower(f.Resource.Kind)))
+		f.Resource.Kind, f.Resource.Kind, objType,
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind))
 
 	return code.String()
 }
@@ -358,25 +349,18 @@ type %sCustomValidator struct{
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &%sCustomValidator{}
-
 `,
 		validationPath, f.getGroupValue(), f.Resource.Plural, f.Resource.Version,
 		strings.ToLower(f.Resource.Kind), f.Resource.Version, f.AdmissionReviewVersions,
-		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 
 	// Validation methods
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
-	//nolint:lll
 	code.WriteString(fmt.Sprintf(
 		`// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	%s, ok := obj.(*%s)
-	if !ok {
-		return nil, fmt.Errorf("expected a %s object but got %%T", obj)
-	}
-	%slog.Info("Validation for %s upon creation", "name", %s.GetName())
+func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj *%s) (admission.Warnings, error) {
+	%slog.Info("Validation for %s upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -384,12 +368,8 @@ func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	%s, ok := newObj.(*%s)
-	if !ok {
-		return nil, fmt.Errorf("expected a %s object for the newObj but got %%T", newObj)
-	}
-	%slog.Info("Validation for %s upon update", "name", %s.GetName())
+func (v *%sCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *%s) (admission.Warnings, error) {
+	%slog.Info("Validation for %s upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -397,30 +377,20 @@ func (v *%sCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj run
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	%s, ok := obj.(*%s)
-	if !ok {
-		return nil, fmt.Errorf("expected a %s object but got %%T", obj)
-	}
-	%slog.Info("Validation for %s upon deletion", "name", %s.GetName())
+func (v *%sCustomValidator) ValidateDelete(_ context.Context, obj *%s) (admission.Warnings, error) {
+	%slog.Info("Validation for %s upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 
 	return nil, nil
 }
 `,
-		f.Resource.Kind, f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), objType,
-		f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind, strings.ToLower(f.Resource.Kind),
-		f.Resource.Kind, f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), objType,
-		f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind, strings.ToLower(f.Resource.Kind),
-		f.Resource.Kind, f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), objType,
-		f.Resource.Kind,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind, strings.ToLower(f.Resource.Kind)))
+		f.Resource.Kind, f.Resource.Kind, objType,
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind,
+		f.Resource.Kind, f.Resource.Kind, objType,
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind,
+		f.Resource.Kind, f.Resource.Kind, objType,
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind))
 
 	return code.String()
 }

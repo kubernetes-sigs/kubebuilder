@@ -331,7 +331,7 @@ const portTemplate = `
 						}},`
 
 const recorderTemplate = `
-		Recorder: mgr.GetEventRecorderFor("%s-controller"),`
+		Recorder: mgr.GetEventRecorder("%s-controller"),`
 
 const envVarTemplate = `
         - name: %s_IMAGE

@@ -62,7 +62,7 @@ Controller files (typically *_controller.go):
 
 Webhook files (typically *_webhook.go):
 - OLD pattern: func (r *<Name>) Default(), func (r *<Name>) ValidateCreate() error
-- NEW pattern: type <Name>CustomDefaulter struct, func (d *<Name>CustomDefaulter) Default(ctx context.Context, obj runtime.Object) error
+- NEW pattern: type <Name>CustomDefaulter struct, func (d *<Name>CustomDefaulter) Default(ctx context.Context, obj *<Name>) error
 - Conversion: func (*<Name>) Hub(), func (r *<Name>) ConvertTo(...), func (r *<Name>) ConvertFrom(...)
 
 Main file:
@@ -368,12 +368,10 @@ func (r *Captain) Default() {
 
 **To go/v4 new project**:
 ```go
-func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-    captain := obj.(*crewv1.Captain)
-
-    // Ported logic adapted:
-    if captain.Spec.Replicas == 0 {
-        captain.Spec.Replicas = 1
+func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj *crewv1.Captain) error {
+    // Ported logic adapted (obj is type-safe, no assertion needed):
+    if obj.Spec.Replicas == 0 {
+        obj.Spec.Replicas = 1
     }
 
     return nil

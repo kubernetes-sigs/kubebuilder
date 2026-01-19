@@ -18,13 +18,11 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -34,7 +32,7 @@ var deploymentlog = logf.Log.WithName("deployment-resource")
 
 // SetupDeploymentWebhookWithManager registers the webhook for Deployment in the manager.
 func SetupDeploymentWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&appsv1.Deployment{}).
+	return ctrl.NewWebhookManagedBy(mgr, &appsv1.Deployment{}).
 		WithDefaulter(&DeploymentCustomDefaulter{}).
 		WithValidator(&DeploymentCustomValidator{}).
 		Complete()
@@ -53,16 +51,9 @@ type DeploymentCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &DeploymentCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Deployment.
-func (d *DeploymentCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	deployment, ok := obj.(*appsv1.Deployment)
-
-	if !ok {
-		return fmt.Errorf("expected an Deployment object but got %T", obj)
-	}
-	deploymentlog.Info("Defaulting for Deployment", "name", deployment.GetName())
+func (d *DeploymentCustomDefaulter) Default(_ context.Context, obj *appsv1.Deployment) error {
+	deploymentlog.Info("Defaulting for Deployment", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -82,15 +73,9 @@ type DeploymentCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &DeploymentCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	deployment, ok := obj.(*appsv1.Deployment)
-	if !ok {
-		return nil, fmt.Errorf("expected a Deployment object but got %T", obj)
-	}
-	deploymentlog.Info("Validation for Deployment upon creation", "name", deployment.GetName())
+func (v *DeploymentCustomValidator) ValidateCreate(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
+	deploymentlog.Info("Validation for Deployment upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -98,12 +83,8 @@ func (v *DeploymentCustomValidator) ValidateCreate(_ context.Context, obj runtim
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	deployment, ok := newObj.(*appsv1.Deployment)
-	if !ok {
-		return nil, fmt.Errorf("expected a Deployment object for the newObj but got %T", newObj)
-	}
-	deploymentlog.Info("Validation for Deployment upon update", "name", deployment.GetName())
+func (v *DeploymentCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *appsv1.Deployment) (admission.Warnings, error) {
+	deploymentlog.Info("Validation for Deployment upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -111,12 +92,8 @@ func (v *DeploymentCustomValidator) ValidateUpdate(_ context.Context, oldObj, ne
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	deployment, ok := obj.(*appsv1.Deployment)
-	if !ok {
-		return nil, fmt.Errorf("expected a Deployment object but got %T", obj)
-	}
-	deploymentlog.Info("Validation for Deployment upon deletion", "name", deployment.GetName())
+func (v *DeploymentCustomValidator) ValidateDelete(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
+	deploymentlog.Info("Validation for Deployment upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

@@ -28,7 +28,7 @@ Next, we'll setup a logger for the webhooks.
 `
 
 const webhookDefaultingSettings = `// Set default values
-	d.applyDefaults(cronjob)
+	d.applyDefaults(obj)
 	return nil
 }
 

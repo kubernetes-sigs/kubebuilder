@@ -341,8 +341,7 @@ func (sp *Sample) updateWebhookV2() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
 		`import (
-	"context"
-	"fmt"`,
+	"context"`,
 		`
 	"strings"
 
@@ -385,7 +384,7 @@ func (sp *Sample) updateWebhookV2() {
 		`// TODO(user): fill in your validation logic upon object creation.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`,
+		`return nil, validateCronJob(obj)`,
 	)
 	hackutils.CheckError("replacing validation logic for creation in v2", err)
 
@@ -394,7 +393,7 @@ func (sp *Sample) updateWebhookV2() {
 		`// TODO(user): fill in your validation logic upon object update.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`,
+		`return nil, validateCronJob(newObj)`,
 	)
 	hackutils.CheckError("replacing validation logic for update in v2", err)
 
