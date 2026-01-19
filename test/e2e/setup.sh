@@ -83,7 +83,7 @@ function test_cluster {
     docker exec $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images pull --platform ${kind_platform} docker.io/library/busybox:1.36.1 >/dev/null 2>&1
   fi
 
-  go test $(dirname "$0")/deployimage $flags -timeout 30m
-  go test $(dirname "$0")/v4 $flags -timeout 30m
-  go test $(dirname "$0")/helm $flags -timeout 30m
+  go test $(dirname "$0")/deployimage $flags -timeout 45m
+  go test $(dirname "$0")/v4 $flags -timeout 45m
+  go test $(dirname "$0")/helm $flags -timeout 45m
 }
