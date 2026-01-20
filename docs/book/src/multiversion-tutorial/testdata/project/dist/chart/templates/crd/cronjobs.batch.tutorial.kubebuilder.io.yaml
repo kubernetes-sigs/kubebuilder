@@ -109,7 +109,6 @@ spec:
                                                                             type:
                                                                                 type: string
                                                                         required:
-                                                                            - status
                                                                             - type
                                                                         type: object
                                                                     type: array
@@ -3745,6 +3744,10 @@ spec:
                                                                                                         type: integer
                                                                                                     signerName:
                                                                                                         type: string
+                                                                                                    userAnnotations:
+                                                                                                        additionalProperties:
+                                                                                                            type: string
+                                                                                                        type: object
                                                                                                 required:
                                                                                                     - keyType
                                                                                                     - signerName
@@ -3939,6 +3942,18 @@ spec:
                                                                 x-kubernetes-list-map-keys:
                                                                     - name
                                                                 x-kubernetes-list-type: map
+                                                            workloadRef:
+                                                                properties:
+                                                                    name:
+                                                                        type: string
+                                                                    podGroup:
+                                                                        type: string
+                                                                    podGroupReplicaKey:
+                                                                        type: string
+                                                                required:
+                                                                    - name
+                                                                    - podGroup
+                                                                type: object
                                                         required:
                                                             - containers
                                                         type: object
@@ -4126,7 +4141,6 @@ spec:
                                                                             type:
                                                                                 type: string
                                                                         required:
-                                                                            - status
                                                                             - type
                                                                         type: object
                                                                     type: array
@@ -7762,6 +7776,10 @@ spec:
                                                                                                         type: integer
                                                                                                     signerName:
                                                                                                         type: string
+                                                                                                    userAnnotations:
+                                                                                                        additionalProperties:
+                                                                                                            type: string
+                                                                                                        type: object
                                                                                                 required:
                                                                                                     - keyType
                                                                                                     - signerName
@@ -7956,6 +7974,18 @@ spec:
                                                                 x-kubernetes-list-map-keys:
                                                                     - name
                                                                 x-kubernetes-list-type: map
+                                                            workloadRef:
+                                                                properties:
+                                                                    name:
+                                                                        type: string
+                                                                    podGroup:
+                                                                        type: string
+                                                                    podGroupReplicaKey:
+                                                                        type: string
+                                                                required:
+                                                                    - name
+                                                                    - podGroup
+                                                                type: object
                                                         required:
                                                             - containers
                                                         type: object

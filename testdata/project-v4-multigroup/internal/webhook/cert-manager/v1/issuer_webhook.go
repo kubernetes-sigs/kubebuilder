@@ -18,13 +18,10 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // nolint:unused
@@ -33,7 +30,7 @@ var issuerlog = logf.Log.WithName("issuer-resource")
 
 // SetupIssuerWebhookWithManager registers the webhook for Issuer in the manager.
 func SetupIssuerWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&certmanagerv1.Issuer{}).
+	return ctrl.NewWebhookManagedBy(mgr, &certmanagerv1.Issuer{}).
 		WithDefaulter(&IssuerCustomDefaulter{}).
 		Complete()
 }
@@ -51,16 +48,9 @@ type IssuerCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &IssuerCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Issuer.
-func (d *IssuerCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	issuer, ok := obj.(*certmanagerv1.Issuer)
-
-	if !ok {
-		return fmt.Errorf("expected an Issuer object but got %T", obj)
-	}
-	issuerlog.Info("Defaulting for Issuer", "name", issuer.GetName())
+func (d *IssuerCustomDefaulter) Default(_ context.Context, obj *certmanagerv1.Issuer) error {
+	issuerlog.Info("Defaulting for Issuer", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 

@@ -429,8 +429,7 @@ func (sp *Sample) updateWebhook() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`import (
-	"context"
-	"fmt"`,
+	"context"`,
 		`
 	
 	"github.com/robfig/cron"
@@ -504,7 +503,7 @@ Then, we set up the webhook with the manager.
 		`// TODO(user): fill in your validation logic upon object creation.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`)
+		`return nil, validateCronJob(obj)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by fill in your validation", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -512,7 +511,7 @@ Then, we set up the webhook with the manager.
 		`// TODO(user): fill in your validation logic upon object update.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`)
+		`return nil, validateCronJob(newObj)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -538,8 +537,9 @@ func (sp *Sample) updateSuiteTest() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-	"testing"
+	"time"
 `, `
+
 	ctrl "sigs.k8s.io/controller-runtime"
 `)
 	hackutils.CheckError("updating suite_test.go to add ctrl import", err)
@@ -600,8 +600,9 @@ var (
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	Eventually(func() error {
+		return testEnv.Stop()
+	}, time.Minute, time.Second).Should(Succeed())
 })
 `, suiteTestCleanup)
 	hackutils.CheckError("updating suite_test.go to cleanup tests", err)

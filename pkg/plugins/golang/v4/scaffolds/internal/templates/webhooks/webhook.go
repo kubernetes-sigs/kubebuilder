@@ -96,15 +96,10 @@ package {{ .Resource.Version }}
 import (
 	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
 	"context"
-	"fmt"
 	{{- end }}
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	{{- end }}
 	{{- if .Resource.HasValidationWebhook }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	{{- end }}
@@ -122,8 +117,7 @@ var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }
 {{- if .IsLegacyPath -}}
 // SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return ctrl.NewWebhookManagedBy(mgr, r).
 		{{- if .Resource.HasValidationWebhook }}
 		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
 		{{- if ne .Resource.Webhooks.ValidationPath "" }}
@@ -141,12 +135,11 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 {{- else }}
 // Setup{{ .Resource.Kind }}WebhookWithManager registers the webhook for {{ .Resource.Kind }} in the manager.
 func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		{{- if not (isEmptyStr .Resource.ImportAlias) -}}
-		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
-		{{- else -}}
-		For(&{{ .Resource.Kind }}{}).
-		{{- end }}
+	{{- if not (isEmptyStr .Resource.ImportAlias) }}
+	return ctrl.NewWebhookManagedBy(mgr, &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
+	{{- else }}
+	return ctrl.NewWebhookManagedBy(mgr, &{{ .Resource.Kind }}{}).
+	{{- end }}
 		{{- if .Resource.HasValidationWebhook }}
 		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
 		{{- if ne .Resource.Webhooks.ValidationPath "" }}
@@ -182,20 +175,14 @@ type {{ .Resource.Kind }}CustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}CustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}.
-func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	{{- if .IsLegacyPath -}}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
-	{{- else }}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
-	{{- end }}
-
-	if !ok {
-		return fmt.Errorf("expected an {{ .Resource.Kind }} object but got %T", obj)
-	}
-	{{ lower .Resource.Kind }}log.Info("Defaulting for {{ .Resource.Kind }}", "name", {{ lower .Resource.Kind }}.GetName())
+{{- if .IsLegacyPath }}
+func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{ .Resource.Kind }}) error {
+	{{ lower .Resource.Kind }}log.Info("Defaulting for {{ .Resource.Kind }}", "name", obj.GetName())
+{{- else }}
+func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) error {
+	{{ lower .Resource.Kind }}log.Info("Defaulting for {{ .Resource.Kind }}", "name", obj.GetName())
+{{- end }}
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -221,19 +208,14 @@ type {{ .Resource.Kind }}CustomValidator struct{
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &{{ .Resource.Kind }}CustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	{{- if .IsLegacyPath -}}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
-	{{- else }}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
-	{{- end }}
-	if !ok {
-		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
-	}
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon creation", "name", {{ lower .Resource.Kind }}.GetName())
+{{- if .IsLegacyPath }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj *{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon creation", "name", obj.GetName())
+{{- else }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon creation", "name", obj.GetName())
+{{- end }}
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -241,16 +223,13 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, 
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	{{- if .IsLegacyPath -}}
-	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.Kind }})
-	{{- else }}
-	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
-	{{- end }}
-	if !ok {
-		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object for the newObj but got %T", newObj)
-	}
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon update", "name", {{ lower .Resource.Kind }}.GetName())
+{{- if .IsLegacyPath }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon update", "name", newObj.GetName())
+{{- else }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon update", "name", newObj.GetName())
+{{- end }}
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -258,16 +237,13 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, 
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	{{- if .IsLegacyPath -}}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
-	{{- else }}
-	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
-	{{- end }}
-	if !ok {
-		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
-	}
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon deletion", "name", {{ lower .Resource.Kind }}.GetName())
+{{- if .IsLegacyPath }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(_ context.Context, obj *{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon deletion", "name", obj.GetName())
+{{- else }}
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon deletion", "name", obj.GetName())
+{{- end }}
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

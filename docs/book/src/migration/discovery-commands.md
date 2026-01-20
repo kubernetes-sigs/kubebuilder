@@ -70,8 +70,8 @@ Controllers:
 Webhooks:
 - Location: api/v1/ or internal/webhook/v1/
 - Recognition: Look for webhook method signatures
-- Defaulting pattern: func Default() or func Default(ctx context.Context, obj runtime.Object) error
-- Validation pattern: func ValidateCreate() error or func ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error)
+- Defaulting pattern: func Default() or func Default(ctx context.Context, obj *<Type>) error
+- Validation pattern: func ValidateCreate() error or func ValidateCreate(ctx context.Context, obj *<Type>) (admission.Warnings, error)
 - Conversion pattern: func Hub() or func ConvertTo() or func ConvertFrom()
 
 CLI Command Formats:

@@ -154,7 +154,7 @@ func (sp *Sample) updateController() {
 		filepath.Join(sp.ctx.Dir, pathFile),
 		"// +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/finalizers,verbs=update",
 		`
-// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch`,
 	)

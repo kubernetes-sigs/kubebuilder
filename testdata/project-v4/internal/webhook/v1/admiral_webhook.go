@@ -18,15 +18,13 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // nolint:unused
@@ -35,7 +33,7 @@ var admirallog = logf.Log.WithName("admiral-resource")
 
 // SetupAdmiralWebhookWithManager registers the webhook for Admiral in the manager.
 func SetupAdmiralWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Admiral{}).
+	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Admiral{}).
 		WithDefaulter(&AdmiralCustomDefaulter{}).
 		WithValidator(&AdmiralCustomValidator{}).
 		WithValidatorCustomPath("/custom-validate-admiral").
@@ -55,16 +53,9 @@ type AdmiralCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &AdmiralCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral.
-func (d *AdmiralCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	admiral, ok := obj.(*crewv1.Admiral)
-
-	if !ok {
-		return fmt.Errorf("expected an Admiral object but got %T", obj)
-	}
-	admirallog.Info("Defaulting for Admiral", "name", admiral.GetName())
+func (d *AdmiralCustomDefaulter) Default(_ context.Context, obj *crewv1.Admiral) error {
+	admirallog.Info("Defaulting for Admiral", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -84,15 +75,9 @@ type AdmiralCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &AdmiralCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	admiral, ok := obj.(*crewv1.Admiral)
-	if !ok {
-		return nil, fmt.Errorf("expected a Admiral object but got %T", obj)
-	}
-	admirallog.Info("Validation for Admiral upon creation", "name", admiral.GetName())
+func (v *AdmiralCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
+	admirallog.Info("Validation for Admiral upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -100,12 +85,8 @@ func (v *AdmiralCustomValidator) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	admiral, ok := newObj.(*crewv1.Admiral)
-	if !ok {
-		return nil, fmt.Errorf("expected a Admiral object for the newObj but got %T", newObj)
-	}
-	admirallog.Info("Validation for Admiral upon update", "name", admiral.GetName())
+func (v *AdmiralCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Admiral) (admission.Warnings, error) {
+	admirallog.Info("Validation for Admiral upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -113,12 +94,8 @@ func (v *AdmiralCustomValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	admiral, ok := obj.(*crewv1.Admiral)
-	if !ok {
-		return nil, fmt.Errorf("expected a Admiral object but got %T", obj)
-	}
-	admirallog.Info("Validation for Admiral upon deletion", "name", admiral.GetName())
+func (v *AdmiralCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
+	admirallog.Info("Validation for Admiral upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

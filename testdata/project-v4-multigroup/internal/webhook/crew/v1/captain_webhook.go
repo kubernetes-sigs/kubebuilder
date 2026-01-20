@@ -18,15 +18,13 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // nolint:unused
@@ -35,7 +33,7 @@ var captainlog = logf.Log.WithName("captain-resource")
 
 // SetupCaptainWebhookWithManager registers the webhook for Captain in the manager.
 func SetupCaptainWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Captain{}).
+	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Captain{}).
 		WithDefaulter(&CaptainCustomDefaulter{}).
 		WithValidator(&CaptainCustomValidator{}).
 		Complete()
@@ -54,16 +52,9 @@ type CaptainCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &CaptainCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Captain.
-func (d *CaptainCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	captain, ok := obj.(*crewv1.Captain)
-
-	if !ok {
-		return fmt.Errorf("expected an Captain object but got %T", obj)
-	}
-	captainlog.Info("Defaulting for Captain", "name", captain.GetName())
+func (d *CaptainCustomDefaulter) Default(_ context.Context, obj *crewv1.Captain) error {
+	captainlog.Info("Defaulting for Captain", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -83,15 +74,9 @@ type CaptainCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &CaptainCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	captain, ok := obj.(*crewv1.Captain)
-	if !ok {
-		return nil, fmt.Errorf("expected a Captain object but got %T", obj)
-	}
-	captainlog.Info("Validation for Captain upon creation", "name", captain.GetName())
+func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
+	captainlog.Info("Validation for Captain upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -99,12 +84,8 @@ func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	captain, ok := newObj.(*crewv1.Captain)
-	if !ok {
-		return nil, fmt.Errorf("expected a Captain object for the newObj but got %T", newObj)
-	}
-	captainlog.Info("Validation for Captain upon update", "name", captain.GetName())
+func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Captain) (admission.Warnings, error) {
+	captainlog.Info("Validation for Captain upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -112,12 +93,8 @@ func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	captain, ok := obj.(*crewv1.Captain)
-	if !ok {
-		return nil, fmt.Errorf("expected a Captain object but got %T", obj)
-	}
-	captainlog.Info("Validation for Captain upon deletion", "name", captain.GetName())
+func (v *CaptainCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
+	captainlog.Info("Validation for Captain upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 
