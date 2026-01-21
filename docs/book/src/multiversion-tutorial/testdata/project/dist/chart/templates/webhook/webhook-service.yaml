@@ -3,8 +3,10 @@ kind: Service
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-webhook-service
+        app.kubernetes.io/name: {{ include "project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     ports:
@@ -12,5 +14,5 @@ spec:
           protocol: TCP
           targetPort: {{ .Values.webhook.port }}
     selector:
-        app.kubernetes.io/name: project
+        app.kubernetes.io/name: {{ include "project.name" . }}
         control-plane: controller-manager

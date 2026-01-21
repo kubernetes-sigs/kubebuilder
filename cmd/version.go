@@ -40,7 +40,7 @@ const (
 // information in the release process
 var (
 	kubeBuilderVersion      = unknown
-	kubernetesVendorVersion = "1.34.1"
+	kubernetesVendorVersion = "1.35.0"
 	goos                    = unknown
 	goarch                  = unknown
 	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)

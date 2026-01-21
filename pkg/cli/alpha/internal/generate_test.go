@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -53,7 +54,7 @@ func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
 	return f.resources, nil
 }
 
-func (f *fakeConfig) DecodePluginConfig(key string, _ any) error {
+func (f *fakeConfig) DecodePluginConfig(key string, dst any) error {
 	if len(f.plugins) == 0 {
 		return config.PluginKeyNotFoundError{Key: key}
 	}
@@ -61,8 +62,23 @@ func (f *fakeConfig) DecodePluginConfig(key string, _ any) error {
 		return f.pluginErr
 	}
 	// Check if the specific key exists
-	if _, exists := f.plugins[key]; !exists {
+	val, exists := f.plugins[key]
+	if !exists {
 		return config.PluginKeyNotFoundError{Key: key}
+	}
+	// If the value is a struct, copy its fields to dst
+	if val != nil && dst != nil {
+		// Handle different plugin config types
+		switch d := dst.(type) {
+		case *autoupdatev1alpha.PluginConfig:
+			if v, ok := val.(autoupdatev1alpha.PluginConfig); ok {
+				*d = v
+			}
+		case *deployimagev1alpha1.PluginConfig:
+			if v, ok := val.(deployimagev1alpha1.PluginConfig); ok {
+				*d = v
+			}
+		}
 	}
 	return nil
 }
@@ -333,6 +349,21 @@ var _ = Describe("generate: get-args-helpers", func() {
 					args := getInitArgs(store)
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+
+			When("helm v1-alpha plugin is used", func() {
+				It("should replace with helm v2-alpha", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4", "helm.kubebuilder.io/v1-alpha"},
+						domain:      "foo.com",
+						repo:        "bar",
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
+						"--domain", "foo.com", "--repo", "bar"))
+					Expect(args).NotTo(ContainElement(ContainSubstring("helm.kubebuilder.io/v1-alpha")))
 				})
 			})
 		})
@@ -812,7 +843,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("skips migration as AutoUpdate plugin not found", func() {
 			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "autoupdate.kubebuilder.io/v1-alpha"}}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest")).To(Succeed())
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
 		})
 
 		It("returns error if failed to decode Auto Update plugin", func() {
@@ -824,8 +855,22 @@ var _ = Describe("generate: migrate-plugins", func() {
 			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
 		})
 
-		It("migrates Auto Update plugin successfully", func() {
-			cfg := &fakeConfig{plugins: map[string]any{"autoupdate.kubebuilder.io/v1-alpha": true}}
+		It("migrates Auto Update plugin successfully without UseGHModels", func() {
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{UseGHModels: false},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+
+		It("migrates Auto Update plugin successfully with UseGHModels enabled", func() {
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{UseGHModels: true},
+				},
+			}
 			store := &fakeStore{cfg: cfg}
 			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
 		})

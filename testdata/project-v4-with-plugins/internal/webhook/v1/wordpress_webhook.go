@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ var wordpresslog = logf.Log.WithName("wordpress-resource")
 
 // SetupWordpressWebhookWithManager registers the webhook for Wordpress in the manager.
 func SetupWordpressWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&examplecomv1.Wordpress{}).
+	return ctrl.NewWebhookManagedBy(mgr, &examplecomv1.Wordpress{}).
 		Complete()
 }
 

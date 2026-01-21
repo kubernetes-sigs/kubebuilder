@@ -4,15 +4,17 @@ kind: Certificate
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-serving-cert
+        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "serving-cert" "context" $) }}
     namespace: {{ .Release.Namespace }}
 spec:
     dnsNames:
-        - project-v4-with-plugins-webhook-service.{{ .Release.Namespace }}.svc
-        - project-v4-with-plugins-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc
+        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc.cluster.local
     issuerRef:
         kind: Issuer
-        name: {{ include "chart.name" . }}-selfsigned-issuer
+        name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
     secretName: webhook-server-cert
 {{- end }}

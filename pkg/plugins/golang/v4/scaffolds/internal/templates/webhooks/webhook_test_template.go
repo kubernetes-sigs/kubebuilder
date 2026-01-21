@@ -133,7 +133,6 @@ var _ = Describe("{{ .Resource.Kind }} Webhook", func() {
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		{{- end }}
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
 	})
 
 	AfterEach(func() {

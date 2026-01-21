@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 /*
 Copyright 2025 The Kubernetes Authors.
@@ -322,6 +321,193 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(resources.EstimatePrefix("long-name")).To(Equal("ln"))
+		})
+	})
+
+	Context("with multiple namespace-scoped Roles", func() {
+		BeforeEach(func() {
+			// This test validates the parser correctly handles multiple Roles
+			// with explicit namespaces (for cross-namespace permissions, leader election, etc.)
+			yamlContent := `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-project-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-manager-role
+rules:
+- apiGroups: ["example.com"]
+  resources: ["myresources"]
+  verbs: ["get", "list", "watch", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-manager-role
+  namespace: infrastructure
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "patch", "update", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: production
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: test-project-system
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+  namespace: infrastructure
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-leader-election-rolebinding
+  namespace: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-leader-election-rolebinding
+  namespace: test-project-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+`
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser = NewParser(tempFile)
+		})
+
+		It("should parse all Roles including those with explicit namespaces", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resources).NotTo(BeNil())
+
+			// Should parse all 3 namespace-scoped Roles
+			Expect(resources.Roles).To(HaveLen(3), "should have 3 namespace-scoped Roles")
+
+			// Should also parse the ClusterRole
+			Expect(resources.ClusterRoles).To(HaveLen(1), "should have 1 ClusterRole")
+
+			// Verify each Role has correct kind
+			for _, role := range resources.Roles {
+				Expect(role.GetKind()).To(Equal("Role"))
+			}
+
+			// Verify namespaces are preserved in the parsed objects
+			namespaces := make(map[string]bool)
+			for _, role := range resources.Roles {
+				ns := role.GetNamespace()
+				Expect(ns).NotTo(BeEmpty(), "Role should have namespace")
+				namespaces[ns] = true
+			}
+
+			// Should have Roles in 3 different namespaces
+			Expect(namespaces).To(HaveLen(3), "should have Roles in 3 different namespaces")
+			Expect(namespaces).To(HaveKey("infrastructure"))
+			Expect(namespaces).To(HaveKey("production"))
+			Expect(namespaces).To(HaveKey("test-project-system"))
+		})
+
+		It("should parse all RoleBindings including those with explicit namespaces", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Should parse all 3 namespace-scoped RoleBindings
+			Expect(resources.RoleBindings).To(HaveLen(3), "should have 3 RoleBindings")
+
+			// Should also parse the ClusterRoleBinding
+			Expect(resources.ClusterRoleBindings).To(HaveLen(1), "should have 1 ClusterRoleBinding")
+
+			// Verify namespaces are preserved
+			namespaces := make(map[string]bool)
+			for _, rb := range resources.RoleBindings {
+				ns := rb.GetNamespace()
+				Expect(ns).NotTo(BeEmpty(), "RoleBinding should have namespace")
+				namespaces[ns] = true
+			}
+
+			Expect(namespaces).To(HaveLen(3), "should have RoleBindings in 3 different namespaces")
+		})
+
+		It("should correctly categorize RBAC resources separately from other resources", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// RBAC resources should be in their specific fields
+			Expect(resources.ServiceAccount).NotTo(BeNil())
+			Expect(resources.ClusterRoles).To(HaveLen(1))
+			Expect(resources.Roles).To(HaveLen(3))
+			Expect(resources.ClusterRoleBindings).To(HaveLen(1))
+			Expect(resources.RoleBindings).To(HaveLen(3))
+
+			// RBAC resources should NOT be in "Other"
+			Expect(resources.Other).To(BeEmpty(), "RBAC resources should not be in Other category")
 		})
 	})
 })

@@ -31,10 +31,21 @@ To know more, see: [Using Kind For Development Purposes and CI](./../reference/k
 ## Deploy Webhooks
 
 You need to enable the webhook and cert manager configuration through kustomize.
-`config/default/kustomization.yaml` should now look like the following:
+`config/default/kustomization.yaml` should have the following webhook-related sections uncommented:
 
+**Resources** - Add the webhook and cert-manager resources:
 ```yaml
-{{#include ./testdata/project/config/default/kustomization.yaml}}
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-resources}}
+```
+
+**Patches** - Add the webhook manager patch:
+```yaml
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-patch}}
+```
+
+**Replacements** - Add the webhook certificate replacements:
+```yaml
+{{#include ./testdata/project/config/default/kustomization.yaml:webhook-replacements}}
 ```
 
 And `config/crd/kustomization.yaml` should now look like the following:
@@ -63,16 +74,17 @@ You can also try to create an invalid CronJob (e.g. use an ill-formatted
 schedule field). You should see a creation failure with a validation error.
 
 <aside class="warning">
-
 <h3>The Bootstrapping Problem</h3>
 
-If you are deploying a webhook for pods in the same cluster, be
-careful about the bootstrapping problem, since the creation request of the
-webhook pod would be sent to the webhook pod itself, which hasn't come up yet.
+When you deploy a webhook into the same cluster that it will validate, you can run into a *bootstrapping issue*:
+the webhook may try to validate the creation of its own Pod before it’s actually running.
+This can block the webhook from ever starting.
 
-To make it work, you can either use [namespaceSelector] if your kubernetes
-version is 1.9+ or use [objectSelector] if your kubernetes version is 1.15+ to
-skip itself.
+To avoid this, make sure the webhook **ignores its own resources**.
+You can do this in one of two ways:
+
+- **[namespaceSelector]** – label the namespace where the webhook runs and configure the webhook to skip it.
+- **[objectSelector]** – label the webhook’s own Pods or Deployments and exclude those objects directly.
 
 </aside>
 

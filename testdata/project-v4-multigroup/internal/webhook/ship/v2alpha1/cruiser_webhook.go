@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package v2alpha1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v2alpha1"
@@ -35,7 +32,7 @@ var cruiserlog = logf.Log.WithName("cruiser-resource")
 
 // SetupCruiserWebhookWithManager registers the webhook for Cruiser in the manager.
 func SetupCruiserWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&shipv2alpha1.Cruiser{}).
+	return ctrl.NewWebhookManagedBy(mgr, &shipv2alpha1.Cruiser{}).
 		WithValidator(&CruiserCustomValidator{}).
 		Complete()
 }
@@ -55,15 +52,9 @@ type CruiserCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &CruiserCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
-func (v *CruiserCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	cruiser, ok := obj.(*shipv2alpha1.Cruiser)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
-	}
-	cruiserlog.Info("Validation for Cruiser upon creation", "name", cruiser.GetName())
+func (v *CruiserCustomValidator) ValidateCreate(_ context.Context, obj *shipv2alpha1.Cruiser) (admission.Warnings, error) {
+	cruiserlog.Info("Validation for Cruiser upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -71,12 +62,8 @@ func (v *CruiserCustomValidator) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
-func (v *CruiserCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	cruiser, ok := newObj.(*shipv2alpha1.Cruiser)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cruiser object for the newObj but got %T", newObj)
-	}
-	cruiserlog.Info("Validation for Cruiser upon update", "name", cruiser.GetName())
+func (v *CruiserCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *shipv2alpha1.Cruiser) (admission.Warnings, error) {
+	cruiserlog.Info("Validation for Cruiser upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -84,12 +71,8 @@ func (v *CruiserCustomValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
-func (v *CruiserCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	cruiser, ok := obj.(*shipv2alpha1.Cruiser)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
-	}
-	cruiserlog.Info("Validation for Cruiser upon deletion", "name", cruiser.GetName())
+func (v *CruiserCustomValidator) ValidateDelete(_ context.Context, obj *shipv2alpha1.Cruiser) (admission.Warnings, error) {
+	cruiserlog.Info("Validation for Cruiser upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

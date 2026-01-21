@@ -214,7 +214,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 		// TODO: improve it to be an spec in the sample and api instead so that
 		// users can change the values
 		var res string
-		for _, value := range strings.Split(s.command, ",") {
+		for value := range strings.SplitSeq(s.command, ",") {
 			res += fmt.Sprintf(" \"%s\",", strings.TrimSpace(value))
 		}
 		// remove the latest ,
@@ -331,7 +331,7 @@ const portTemplate = `
 						}},`
 
 const recorderTemplate = `
-		Recorder: mgr.GetEventRecorderFor("%s-controller"),`
+		Recorder: mgr.GetEventRecorder("%s-controller"),`
 
 const envVarTemplate = `
         - name: %s_IMAGE

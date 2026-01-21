@@ -3,15 +3,15 @@ kind: ValidatingWebhookConfiguration
 metadata:
     annotations:
         {{- if .Values.certManager.enable }}
-        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/project-v4-with-plugins-serving-cert
+        cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "project-v4-with-plugins.resourceName" (dict "suffix" "serving-cert" "context" $) }}
         {{- end }}
-    name: project-v4-with-plugins-validating-webhook-configuration
+    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "validating-webhook-configuration" "context" $) }}
 webhooks:
     - admissionReviewVersions:
         - v1
       clientConfig:
         service:
-            name: project-v4-with-plugins-webhook-service
+            name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}
             namespace: {{ .Release.Namespace }}
             path: /validate-example-com-testproject-org-v1alpha1-memcached
       failurePolicy: Fail

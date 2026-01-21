@@ -24,7 +24,7 @@ const cronJobFieldsForDefaulting = `	// Default values for various CronJob field
 `
 
 const cronJobDefaultingLogic = `// Set default values
-	d.applyDefaults(cronjob)
+	d.applyDefaults(obj)
 	return nil
 `
 
@@ -50,6 +50,8 @@ func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 `
 
 const cronJobValidationFunction = `
+// +kubebuilder:docs-gen:collapse=Webhook Setup and Defaulting
+
 // validateCronJob validates the fields of a CronJob object.
 func validateCronJob(cronjob *batchv2.CronJob) error {
 	var allErrs field.ErrorList
@@ -110,7 +112,7 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 
 const originalSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&batchv2.CronJob{}).
+	return ctrl.NewWebhookManagedBy(mgr, &batchv2.CronJob{}).
 		WithValidator(&CronJobCustomValidator{}).
 		WithDefaulter(&CronJobCustomDefaulter{}).
 		Complete()
@@ -118,7 +120,7 @@ func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 
 const replaceSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&batchv2.CronJob{}).
+	return ctrl.NewWebhookManagedBy(mgr, &batchv2.CronJob{}).
 		WithValidator(&CronJobCustomValidator{}).
 		WithDefaulter(&CronJobCustomDefaulter{
 			DefaultConcurrencyPolicy:          batchv2.AllowConcurrent,

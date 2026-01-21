@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 /*
 Copyright 2025 The Kubernetes Authors.
@@ -71,7 +70,7 @@ var _ = Describe("Prepare for internal update", func() {
 		projectFile = filepath.Join(tmpDir, yaml.DefaultPath)
 
 		config.Register(config.Version{Number: 3}, func() config.Config {
-			return &v3.Cfg{Version: config.Version{Number: 3}, CliVersion: "1.0.0"}
+			return &v3.Cfg{Version: config.Version{Number: 3}, CliVersion: "v1.0.0"}
 		})
 
 		gock.New("https://api.github.com").

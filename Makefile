@@ -159,7 +159,24 @@ test-integration: install ## Run the integration tests (requires kubebuilder bin
 .PHONY: test-coverage
 test-coverage: ## Run unit and integration tests with coverage report
 	- rm -rf *.out  # Remove all coverage files if exists
-	go test -race -failfast -tags=integration -timeout 30m -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang/...,./pkg/plugins/external/...,./pkg/plugins/optional/grafana/...,./pkg/plugins/optional/helm/v2alpha/..." $(TEST_PKGS)
+	go test -race -failfast -tags=integration -timeout 30m \
+		-coverprofile=coverage-all.out \
+		-coverpkg="\
+./pkg/cli/...,\
+./pkg/config/...,\
+./pkg/internal/...,\
+./pkg/machinery/...,\
+./pkg/model/...,\
+./pkg/plugin/...,\
+./pkg/plugins/golang,\
+./pkg/plugins/golang/deploy-image/v1alpha1,\
+./pkg/plugins/golang/v4,\
+./pkg/plugins/external/...,\
+./pkg/plugins/common/kustomize/v2,\
+./pkg/plugins/optional/autoupdate/v1alpha,\
+./pkg/plugins/optional/grafana/...,\
+./pkg/plugins/optional/helm/v2alpha/..." \
+		$(TEST_PKGS)
 
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated
@@ -232,8 +249,8 @@ GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
-GO_APIDIFF_VERSION ?= v0.6.1
-GOLANGCI_LINT_VERSION ?= v2.5.0
+GO_APIDIFF_VERSION ?= v0.8.3
+GOLANGCI_LINT_VERSION ?= v2.7.2
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

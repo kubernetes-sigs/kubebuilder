@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,20 +28,19 @@ var _ = Describe("Captain Webhook", func() {
 	var (
 		obj       *crewv1.Captain
 		oldObj    *crewv1.Captain
-		validator CaptainCustomValidator
 		defaulter CaptainCustomDefaulter
+		validator CaptainCustomValidator
 	)
 
 	BeforeEach(func() {
 		obj = &crewv1.Captain{}
 		oldObj = &crewv1.Captain{}
-		validator = CaptainCustomValidator{}
-		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		defaulter = CaptainCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
+		validator = CaptainCustomValidator{}
+		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 	})
 
 	AfterEach(func() {

@@ -292,18 +292,19 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 }
 
 func migrateAutoUpdatePlugin(s store.Store) error {
-	var autoUpdatePlugin struct{}
 	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), autoupdatev1alpha.Plugin{})
 	canonicalKey := plugin.KeyFor(autoupdatev1alpha.Plugin{})
+	var autoUpdatePlugin autoupdatev1alpha.PluginConfig
 	found := true
-	var err error
 
-	if err = s.Config().DecodePluginConfig(key, autoUpdatePlugin); err != nil {
+	var err error
+	err = s.Config().DecodePluginConfig(key, &autoUpdatePlugin)
+	if err != nil {
 		switch {
 		case errors.As(err, &config.PluginKeyNotFoundError{}):
 			found = false
 			if key != canonicalKey {
-				if err = s.Config().DecodePluginConfig(canonicalKey, autoUpdatePlugin); err != nil {
+				if err = s.Config().DecodePluginConfig(canonicalKey, &autoUpdatePlugin); err != nil {
 					switch {
 					case errors.As(err, &config.PluginKeyNotFoundError{}):
 						// still not found
@@ -331,6 +332,9 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 	}
 
 	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
+	if autoUpdatePlugin.UseGHModels {
+		args = append(args, "--use-gh-models")
+	}
 	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
@@ -405,9 +409,10 @@ func getInitArgs(s store.Store) []string {
 
 	// Define outdated plugin versions that need replacement
 	outdatedPlugins := map[string]string{
-		"go.kubebuilder.io/v3":       "go.kubebuilder.io/v4",
-		"go.kubebuilder.io/v3-alpha": "go.kubebuilder.io/v4",
-		"go.kubebuilder.io/v2":       "go.kubebuilder.io/v4",
+		"go.kubebuilder.io/v3":         "go.kubebuilder.io/v4",
+		"go.kubebuilder.io/v3-alpha":   "go.kubebuilder.io/v4",
+		"go.kubebuilder.io/v2":         "go.kubebuilder.io/v4",
+		"helm.kubebuilder.io/v1-alpha": "helm.kubebuilder.io/v2-alpha",
 	}
 
 	// Replace outdated plugins and exit after the first replacement
@@ -661,7 +666,7 @@ func kubebuilderHelmEdit(isV2Alpha bool) error {
 // hasHelmPlugin checks if any Helm plugin (v1alpha or v2alpha) is present by inspecting
 // the plugin chain or configuration.
 func hasHelmPlugin(cfg store.Store) (bool, bool) {
-	var pluginConfig map[string]interface{}
+	var pluginConfig map[string]any
 
 	// Check for v2alpha first (preferred)
 	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &pluginConfig)

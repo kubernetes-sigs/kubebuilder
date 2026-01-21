@@ -2,7 +2,7 @@
 
 ## Ensure Webhook Implementation Stability and Enhance User Experience
 
-**Status:** WIP
+**Status:** Partially Complete
 
 ### Objective
 Enhance the webhooks implementation and user experience.
@@ -28,9 +28,9 @@ and losing their existing customizations on top.
 - **Comprehensive E2E Testing**: ✅ Complete ([Example](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.7.1/testdata/project-v4-with-plugins/test/e2e/e2e_test.go#L284-L296)) Expand end-to-end tests for conversion webhooks to validate not only CA injection but also the conversion process itself.
   - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4297)
 
-- **E2E Test Scaffolding**: Improve the E2E test scaffolds under `test/e2e` to validate conversion behavior beyond CA injection for conversion webhooks.
+- **E2E Test Scaffolding**: (✅ Complete) Improve the E2E test scaffolds under `test/e2e` to validate conversion behavior beyond CA injection for conversion webhooks.
 
-- **Enhanced Multiversion Tutorial**: Add E2E tests for conversion webhooks in the multiversion tutorial to support comprehensive user guidance.
+- **Enhanced Multiversion Tutorial**: (✅ Complete) Add E2E tests for conversion webhooks in the multiversion tutorial to support comprehensive user guidance.
   - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4255)
 
 ---
@@ -38,7 +38,7 @@ and losing their existing customizations on top.
 
 ## Enhance the Helm Chart Plugin
 
-**Status:** WIP
+**Status:** ✅ Complete (Released in Kubebuilder v4.10.0, introduced `helm/v2-alpha` plugin which supersedes the previous version and addressed the community feedback.)
 
 ### Context
 A new plugin to help users scaffold a Helm chart to distribute their solutions is implemented as an experimental
@@ -63,7 +63,7 @@ providing a seamless and intuitive experience.
 
 ## Align Tutorials and Samples with Best Practices Proposed by DeployImage Plugin
 
-**Status:** WIP
+**Status:** ✅ Complete
 
 ### Context
 The existing tutorials lack consistency with best practices and the layout proposed by the DeployImage plugin.

@@ -39,11 +39,11 @@ import (
 
 const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
-	GolangciLintVersion = "v2.5.0"
+	GolangciLintVersion = "v2.7.2"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.22.4"
+	ControllerRuntimeVersion = "v0.23.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.19.0"
+	ControllerToolsVersion = "v0.20.0"
 
 	imageName = "controller:latest"
 )
@@ -175,6 +175,7 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&templates.Readme{CommandName: s.commandName},
+		&templates.Agents{CommandName: s.commandName},
 		&templates.Golangci{},
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},

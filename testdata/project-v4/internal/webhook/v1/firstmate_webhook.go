@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ var firstmatelog = logf.Log.WithName("firstmate-resource")
 
 // SetupFirstMateWebhookWithManager registers the webhook for FirstMate in the manager.
 func SetupFirstMateWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.FirstMate{}).
+	return ctrl.NewWebhookManagedBy(mgr, &crewv1.FirstMate{}).
 		Complete()
 }
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,10 +26,8 @@ import (
 	validationutils "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
@@ -50,7 +47,7 @@ Then, we set up the webhook with the manager.
 
 // SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&batchv1.CronJob{}).
+	return ctrl.NewWebhookManagedBy(mgr, &batchv1.CronJob{}).
 		WithValidator(&CronJobCustomValidator{}).
 		WithDefaulter(&CronJobCustomDefaulter{
 			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
@@ -88,8 +85,6 @@ type CronJobCustomDefaulter struct {
 	DefaultFailedJobsHistoryLimit     int32
 }
 
-var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
-
 /*
 We use the `webhook.CustomDefaulter`interface to set defaults to our CRD.
 A webhook will automatically be served that calls this defaulting.
@@ -98,16 +93,11 @@ The `Default`method is expected to mutate the receiver, setting the defaults.
 */
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
-func (d *CronJobCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	cronjob, ok := obj.(*batchv1.CronJob)
-
-	if !ok {
-		return fmt.Errorf("expected an CronJob object but got %T", obj)
-	}
-	cronjoblog.Info("Defaulting for CronJob", "name", cronjob.GetName())
+func (d *CronJobCustomDefaulter) Default(_ context.Context, obj *batchv1.CronJob) error {
+	cronjoblog.Info("Defaulting for CronJob", "name", obj.GetName())
 
 	// Set default values
-	d.applyDefaults(cronjob)
+	d.applyDefaults(obj)
 	return nil
 }
 
@@ -168,37 +158,23 @@ type CronJobCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &CronJobCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	cronjob, ok := obj.(*batchv1.CronJob)
-	if !ok {
-		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
-	}
-	cronjoblog.Info("Validation for CronJob upon creation", "name", cronjob.GetName())
+func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
+	cronjoblog.Info("Validation for CronJob upon creation", "name", obj.GetName())
 
-	return nil, validateCronJob(cronjob)
+	return nil, validateCronJob(obj)
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	cronjob, ok := newObj.(*batchv1.CronJob)
-	if !ok {
-		return nil, fmt.Errorf("expected a CronJob object for the newObj but got %T", newObj)
-	}
-	cronjoblog.Info("Validation for CronJob upon update", "name", cronjob.GetName())
+func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *batchv1.CronJob) (admission.Warnings, error) {
+	cronjoblog.Info("Validation for CronJob upon update", "name", newObj.GetName())
 
-	return nil, validateCronJob(cronjob)
+	return nil, validateCronJob(newObj)
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	cronjob, ok := obj.(*batchv1.CronJob)
-	if !ok {
-		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
-	}
-	cronjoblog.Info("Validation for CronJob upon deletion", "name", cronjob.GetName())
+func (v *CronJobCustomValidator) ValidateDelete(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
+	cronjoblog.Info("Validation for CronJob upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

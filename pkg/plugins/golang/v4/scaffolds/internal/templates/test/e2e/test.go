@@ -85,7 +85,10 @@ func (f *WebhookTestUpdater) GetMarkers() []machinery.Marker {
 
 // GetCodeFragments implements file.Inserter
 func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
-	if !f.WireWebhook {
+	// Check if any webhook type exists (defaulting, validation, or conversion)
+	hasAnyWebhook := f.WireWebhook || (f.Resource != nil && f.Resource.HasConversionWebhook())
+
+	if !hasAnyWebhook {
 		return nil
 	}
 
@@ -140,9 +143,13 @@ func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 				codeFragments[marker] = fragments
 			}
 		case strings.Contains(markerStr, metricsWebhookReadinessMarker):
-			webhookServiceName := fmt.Sprintf("%s-webhook-service", f.ProjectName)
-			fragments := []string{fmt.Sprintf(metricsWebhookReadinessFragment, webhookServiceName)}
-			codeFragments[marker] = fragments
+			// Readiness checks only for defaulting/validation webhooks (they use webhook service)
+			// Conversion webhooks don't need separate webhook service readiness checks
+			if f.WireWebhook {
+				webhookServiceName := fmt.Sprintf("%s-webhook-service", f.ProjectName)
+				fragments := []string{fmt.Sprintf(metricsWebhookReadinessFragment, webhookServiceName)}
+				codeFragments[marker] = fragments
+			}
 		}
 	}
 
@@ -280,7 +287,7 @@ var _ = Describe("Manager", Ordered, func() {
 		Expect(err).NotTo(HaveOccurred(), "Failed to install CRDs")
 
 		By("deploying the controller-manager")
-		cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectImage))
+		cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", managerImage))
 		_, err = utils.Run(cmd)
 		Expect(err).NotTo(HaveOccurred(), "Failed to deploy the controller-manager")
 	})

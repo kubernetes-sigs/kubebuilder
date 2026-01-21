@@ -24,7 +24,7 @@ import (
 )
 
 // ImplementWebhooks will mock an webhook data
-func ImplementWebhooks(filename, lowerKind string) error {
+func ImplementWebhooks(filename, _ string) error {
 	//nolint:gosec // false positive
 	bs, err := os.ReadFile(filename)
 	if err != nil {
@@ -42,9 +42,9 @@ func ImplementWebhooks(filename, lowerKind string) error {
 	}
 
 	// implement defaulting webhook logic
-	replace := fmt.Sprintf(`if %s.Spec.Count == 0 {
-		%s.Spec.Count = 5
-	}`, lowerKind, lowerKind)
+	replace := `if obj.Spec.Count == 0 {
+		obj.Spec.Count = 5
+	}`
 	str, err = util.EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your defaulting logic.",
@@ -58,18 +58,18 @@ func ImplementWebhooks(filename, lowerKind string) error {
 	str, err = util.EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your validation logic upon object creation.",
-		fmt.Sprintf(`if %s.Spec.Count < 0 {
+		`if obj.Spec.Count < 0 {
 		return nil, errors.New(".spec.count must >= 0")
-	}`, lowerKind))
+	}`)
 	if err != nil {
 		return fmt.Errorf("error replacing validation logic in webhooks file %q: %w", filename, err)
 	}
 	str, err = util.EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your validation logic upon object update.",
-		fmt.Sprintf(`if %s.Spec.Count < 0 {
+		`if newObj.Spec.Count < 0 {
 		return nil, errors.New(".spec.count must >= 0")
-	}`, lowerKind))
+	}`)
 	if err != nil {
 		return fmt.Errorf("error replacing validation logic in webhooks file %q: %w", filename, err)
 	}

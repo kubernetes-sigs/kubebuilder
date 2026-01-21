@@ -31,15 +31,17 @@ import (
 
 // ChartWriter handles writing Helm chart template files
 type ChartWriter struct {
-	templater *HelmTemplater
-	outputDir string
+	templater        *HelmTemplater
+	outputDir        string
+	managerNamespace string
 }
 
 // NewChartWriter creates a new chart writer
-func NewChartWriter(templater *HelmTemplater, outputDir string) *ChartWriter {
+func NewChartWriter(templater *HelmTemplater, outputDir string, managerNamespace string) *ChartWriter {
 	return &ChartWriter{
-		templater: templater,
-		outputDir: outputDir,
+		templater:        templater,
+		outputDir:        outputDir,
+		managerNamespace: managerNamespace,
 	}
 }
 
@@ -110,7 +112,8 @@ func (w *ChartWriter) convertToYAML(resource *unstructured.Unstructured) string 
 // shouldSplitFiles determines if resources in a group should be written as individual files
 func (w *ChartWriter) shouldSplitFiles(groupName string) bool {
 	return groupName == "crd" || groupName == "cert-manager" || groupName == "webhook" ||
-		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics"
+		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics" ||
+		groupName == "extras"
 }
 
 // writeSplitFiles writes each resource in the group to its own file
@@ -145,10 +148,10 @@ func (w *ChartWriter) generateFileName(resource *unstructured.Unstructured, inde
 	// Try to use the resource name if available
 	if name := resource.GetName(); name != "" {
 		// Remove project prefix from the filename for cleaner file names
-		projectPrefix := w.templater.projectName + "-"
+		projectPrefix := w.templater.detectedPrefix + "-"
 		fileName := name
-		if strings.HasPrefix(name, projectPrefix) {
-			fileName = strings.TrimPrefix(name, projectPrefix)
+		if after, ok := strings.CutPrefix(name, projectPrefix); ok {
+			fileName = after
 		}
 
 		// Handle special cases where filename might be empty after prefix removal
@@ -156,6 +159,17 @@ func (w *ChartWriter) generateFileName(resource *unstructured.Unstructured, inde
 			fileName = resource.GetKind()
 			if fileName == "" {
 				fileName = "resource"
+			}
+		}
+
+		// For namespace-scoped RBAC (Role, RoleBinding), append namespace suffix
+		// only for cross-namespace resources to prevent filename collisions.
+		// Resources in the manager namespace don't need a suffix since they're unique.
+		kind := resource.GetKind()
+		namespace := resource.GetNamespace()
+		if namespace != "" && (kind == "Role" || kind == "RoleBinding") {
+			if namespace != w.managerNamespace {
+				fileName = fmt.Sprintf("%s-%s", fileName, namespace)
 			}
 		}
 

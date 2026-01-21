@@ -18,7 +18,7 @@ package golang
 
 import (
 	"errors"
-	"sort"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -150,8 +150,8 @@ var _ = Describe("GoVersion", func() {
 		})
 
 		It("sorts a valid list of versions correctly", func() {
-			sort.Slice(versions, func(i int, j int) bool {
-				return versions[i].Compare(versions[j]) == -1
+			slices.SortStableFunc(versions, func(a, b GoVersion) int {
+				return a.Compare(b)
 			})
 			Expect(versions).To(Equal(sortedVersions))
 		})
@@ -261,6 +261,7 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go.1.22", "go1.22"),
 		Entry("for go.1.23", "go1.23"),
 		Entry("for go.1.24", "go1.24"),
+		Entry("for go.1.25", "go1.25"),
 	)
 
 	DescribeTable("should return an error for non-supported go versions",

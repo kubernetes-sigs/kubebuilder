@@ -95,7 +95,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	}
 
 	for {
-		var doc map[string]interface{}
+		var doc map[string]any
 		err := decoder.Decode(&doc)
 		if err == io.EOF {
 			break

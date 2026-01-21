@@ -367,15 +367,6 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 		os.Exit(1)
 	}`, mainEnableWebhook)
 	hackutils.CheckError("fixing main.go", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
-}`, `
-// +kubebuilder:docs-gen:collapse=Remaining code from main.go`)
-	hackutils.CheckError("fixing main.go", err)
 }
 
 func (sp *Sample) updateMakefile() {
@@ -438,8 +429,7 @@ func (sp *Sample) updateWebhook() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`import (
-	"context"
-	"fmt"`,
+	"context"`,
 		`
 	
 	"github.com/robfig/cron"
@@ -513,7 +503,7 @@ Then, we set up the webhook with the manager.
 		`// TODO(user): fill in your validation logic upon object creation.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`)
+		`return nil, validateCronJob(obj)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by fill in your validation", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -521,7 +511,7 @@ Then, we set up the webhook with the manager.
 		`// TODO(user): fill in your validation logic upon object update.
 
 	return nil, nil`,
-		`return nil, validateCronJob(cronjob)`)
+		`return nil, validateCronJob(newObj)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -547,8 +537,9 @@ func (sp *Sample) updateSuiteTest() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-	"testing"
+	"time"
 `, `
+
 	ctrl "sigs.k8s.io/controller-runtime"
 `)
 	hackutils.CheckError("updating suite_test.go to add ctrl import", err)
@@ -609,8 +600,9 @@ var (
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	Eventually(func() error {
+		return testEnv.Stop()
+	}, time.Minute, time.Second).Should(Succeed())
 })
 `, suiteTestCleanup)
 	hackutils.CheckError("updating suite_test.go to cleanup tests", err)
@@ -642,6 +634,70 @@ func (sp *Sample) updateKustomization() {
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		certManagerForMetrics, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
+
+	// Add ANCHOR markers for webhook documentation sections
+	// This allows the docs to include only webhook-related parts of the kustomization.yaml
+
+	// Add anchor for webhook resources section
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- ../webhook
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
+- ../certmanager`,
+		`# ANCHOR: webhook-resources
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- ../webhook
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
+- ../certmanager
+# ANCHOR_END: webhook-resources`)
+	hackutils.CheckError("adding webhook-resources anchors", err)
+
+	// Add anchor for webhook patch section
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- path: manager_webhook_patch.yaml
+  target:
+    kind: Deployment`,
+		`# ANCHOR: webhook-patch
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# crd/kustomization.yaml
+- path: manager_webhook_patch.yaml
+  target:
+    kind: Deployment
+# ANCHOR_END: webhook-patch`)
+	hackutils.CheckError("adding webhook-patch anchors", err)
+
+	// Add anchor for webhook replacements section (from webhook service to MutatingWebhookConfiguration)
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		` - source: # Uncomment the following block if you have any webhook
+     kind: Service
+     version: v1
+     name: webhook-service
+     fieldPath: .metadata.name # Name of the service`,
+		` # ANCHOR: webhook-replacements
+ - source: # Uncomment the following block if you have any webhook
+     kind: Service
+     version: v1
+     name: webhook-service
+     fieldPath: .metadata.name # Name of the service`)
+	hackutils.CheckError("adding webhook-replacements anchor start", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`        create: true
+
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)`,
+		`        create: true
+# ANCHOR_END: webhook-replacements
+
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)`)
+	hackutils.CheckError("adding webhook-replacements anchor end", err)
 }
 
 func (sp *Sample) updateExample() {
@@ -671,14 +727,14 @@ func (sp *Sample) updateE2E() {
 	cronjobE2EUtils := filepath.Join(sp.ctx.Dir, "test", "utils", "utils.go")
 	var err error
 
-	err = pluginutil.InsertCode(cronjobE2ESuite, `isCertManagerAlreadyInstalled = false`, isPrometheusInstalledVar)
+	err = pluginutil.InsertCode(cronjobE2ESuite, `shouldCleanupCertManager = false`, isPrometheusInstalledVar)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding isPrometheusInstalledVar", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = BeforeSuite(func() {`, beforeSuitePrometheus)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding prometheus code in the before suite", err)
 
 	err = pluginutil.InsertCode(cronjobE2ESuite,
-		`// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.`,
+		`setupCertManager()`,
 		checkPrometheusInstalled)
 	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go by adding code check if has prometheus", err)
 

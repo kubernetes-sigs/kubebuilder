@@ -56,6 +56,7 @@ linters:
     - govet
     - ineffassign
     - lll
+    - modernize
     - misspell
     - nakedret
     - prealloc
@@ -69,6 +70,9 @@ linters:
       rules:
         - name: comment-spacings
         - name: import-shadowing
+    modernize:
+      disable:
+        - omitzero
   exclusions:
     generated: lax
     rules:

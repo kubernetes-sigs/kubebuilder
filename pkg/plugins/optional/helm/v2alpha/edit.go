@@ -77,8 +77,10 @@ The chart structure mirrors your config/ directory organization for easy mainten
   make build-installer  # Generate dist/install.yaml with latest changes
   %[1]s edit --plugins=%[2]s  # Generate/update Helm chart in dist/chart/
 
-**NOTE**: The plugin preserves customizations in values.yaml, Chart.yaml, _helpers.tpl, and .helmignore
-unless --force is used. All template files are regenerated to match your current kustomize output.
+**NOTE**: Chart.yaml is never overwritten (contains user-managed version info). 
+Without --force, the plugin also preserves values.yaml, _helpers.tpl, .helmignore, and 
+.github/workflows/test-chart.yml. All template files in templates/ are always regenerated 
+to match your current kustomize output. Use --force to regenerate all files except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
 <output>/chart/

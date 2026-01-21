@@ -17,7 +17,7 @@ limitations under the License.
 package stage
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2" // An alias is required because Context is defined elsewhere in this package.
@@ -115,8 +115,8 @@ var _ = Describe("Stage", func() {
 		})
 
 		It("sorts stages correctly", func() {
-			sort.Slice(stages, func(i int, j int) bool {
-				return stages[i].Compare(stages[j]) == -1
+			slices.SortStableFunc(stages, func(a, b Stage) int {
+				return a.Compare(b)
 			})
 			Expect(stages).To(Equal(sortedStages))
 		})

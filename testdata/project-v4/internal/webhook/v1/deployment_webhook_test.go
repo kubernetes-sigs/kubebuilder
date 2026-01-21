@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,20 +28,19 @@ var _ = Describe("Deployment Webhook", func() {
 	var (
 		obj       *appsv1.Deployment
 		oldObj    *appsv1.Deployment
-		validator DeploymentCustomValidator
 		defaulter DeploymentCustomDefaulter
+		validator DeploymentCustomValidator
 	)
 
 	BeforeEach(func() {
 		obj = &appsv1.Deployment{}
 		oldObj = &appsv1.Deployment{}
-		validator = DeploymentCustomValidator{}
-		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		defaulter = DeploymentCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
+		validator = DeploymentCustomValidator{}
+		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 	})
 
 	AfterEach(func() {

@@ -52,13 +52,6 @@ nameReference:
     group: apiextensions.k8s.io
     path: spec/conversion/webhook/clientConfig/service/name
 
-namespace:
-- kind: CustomResourceDefinition
-  version: v1
-  group: apiextensions.k8s.io
-  path: spec/conversion/webhook/clientConfig/service/namespace
-  create: false
-
 varReference:
 - path: metadata/annotations
 `

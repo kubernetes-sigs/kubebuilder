@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1"
 )
@@ -34,7 +31,7 @@ var destroyerlog = logf.Log.WithName("destroyer-resource")
 
 // SetupDestroyerWebhookWithManager registers the webhook for Destroyer in the manager.
 func SetupDestroyerWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&shipv1.Destroyer{}).
+	return ctrl.NewWebhookManagedBy(mgr, &shipv1.Destroyer{}).
 		WithDefaulter(&DestroyerCustomDefaulter{}).
 		Complete()
 }
@@ -52,16 +49,9 @@ type DestroyerCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &DestroyerCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer.
-func (d *DestroyerCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	destroyer, ok := obj.(*shipv1.Destroyer)
-
-	if !ok {
-		return fmt.Errorf("expected an Destroyer object but got %T", obj)
-	}
-	destroyerlog.Info("Defaulting for Destroyer", "name", destroyer.GetName())
+func (d *DestroyerCustomDefaulter) Default(_ context.Context, obj *shipv1.Destroyer) error {
+	destroyerlog.Info("Defaulting for Destroyer", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 

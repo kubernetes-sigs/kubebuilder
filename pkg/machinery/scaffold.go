@@ -19,10 +19,12 @@ package machinery
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	log "log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -237,7 +239,7 @@ func doTemplate(t Template) ([]byte, error) {
 func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			if withOptionalBehavior, ok := i.(HasIfNotExistsAction); ok {
 				switch withOptionalBehavior.GetIfNotExistsAction() {
 				case IgnoreFile:
@@ -359,13 +361,7 @@ func getValidCodeFragments(i Inserter) CodeFragmentsMap {
 	// Validate the code fragments
 	validMarkers := i.GetMarkers()
 	for marker := range codeFragments {
-		valid := false
-		for _, validMarker := range validMarkers {
-			if marker == validMarker {
-				valid = true
-				break
-			}
-		}
+		valid := slices.Contains(validMarkers, marker)
 		if !valid {
 			delete(codeFragments, marker)
 		}
@@ -403,7 +399,7 @@ func filterExistingValues(content string, codeFragmentsMap CodeFragmentsMap) err
 func codeFragmentExists(content, codeFragment string) (exists bool, err error) {
 	// Trim space on each line in order to match different levels of indentation.
 	var sb strings.Builder
-	for _, line := range strings.Split(codeFragment, "\n") {
+	for line := range strings.SplitSeq(codeFragment, "\n") {
 		_, _ = sb.WriteString(strings.TrimSpace(line))
 		_ = sb.WriteByte('\n')
 	}
@@ -461,7 +457,7 @@ func scanMultiline(content string, scanLines int, scanFunc func(contentGroup str
 		bufferedLinesIndex = (bufferedLinesIndex + 1) % scanLines
 
 		sb.Reset()
-		for i := 0; i < scanLines; i++ {
+		for i := range scanLines {
 			_, _ = sb.WriteString(bufferedLines[(bufferedLinesIndex+i)%scanLines])
 			_ = sb.WriteByte('\n')
 		}

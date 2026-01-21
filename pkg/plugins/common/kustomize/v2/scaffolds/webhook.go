@@ -87,7 +87,6 @@ func (s *webhookScaffolder) Scaffold() error {
 	buildScaffold := []machinery.Builder{
 		&kdefault.ManagerWebhookPatch{},
 		&webhook.Kustomization{Force: s.force},
-		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 		&certmanager.Certificate{},
 		&certmanager.Issuer{},
@@ -132,7 +131,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	const helmPluginKey = "helm.kubebuilder.io/v1-alpha"
-	var helmPlugin interface{}
+	var helmPlugin any
 	err := s.config.DecodePluginConfig(helmPluginKey, &helmPlugin)
 	if !errors.As(err, &config.PluginKeyNotFoundError{}) {
 		testChartPath := ".github/workflows/test-chart.yml"

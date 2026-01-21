@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ var _ = Describe("CronJob Webhook", func() {
 		validator CronJobCustomValidator
 		defaulter CronJobCustomDefaulter
 	)
+
 	const validCronJobName = "valid-cronjob-name"
 	const schedule = "*/5 * * * *"
 
@@ -95,20 +96,20 @@ var _ = Describe("CronJob Webhook", func() {
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
 			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			obj.Spec.Suspend = new(bool)
-			*obj.Spec.Suspend = true
-			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
-			*obj.Spec.SuccessfulJobsHistoryLimit = 5
-			obj.Spec.FailedJobsHistoryLimit = new(int32)
-			*obj.Spec.FailedJobsHistoryLimit = 2
+			obj.Spec.Suspend = ptr.To(true)
+			obj.Spec.SuccessfulJobsHistoryLimit = ptr.To(int32(5))
+			obj.Spec.FailedJobsHistoryLimit = ptr.To(int32(2))
 
 			By("calling the Default method to apply defaults")
 			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the fields were not overwritten")
 			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
+			Expect(obj.Spec.Suspend).NotTo(BeNil())
 			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
+			Expect(obj.Spec.SuccessfulJobsHistoryLimit).NotTo(BeNil())
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
+			Expect(obj.Spec.FailedJobsHistoryLimit).NotTo(BeNil())
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
 		})
 	})

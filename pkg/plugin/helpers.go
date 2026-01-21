@@ -19,7 +19,7 @@ package plugin
 import (
 	"fmt"
 	"path"
-	"sort"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -48,10 +48,8 @@ func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
 	pluginKey := KeyFor(p)
 
 	// Try exact match first
-	for _, key := range pluginChain {
-		if key == pluginKey {
-			return pluginKey
-		}
+	if slices.Contains(pluginChain, pluginKey) {
+		return pluginKey
 	}
 
 	// No exact match. Try matching by base name + version to find bundled plugins.
@@ -162,8 +160,8 @@ func CommonSupportedProjectVersions(plugins ...Plugin) []config.Version {
 	}
 
 	// Sort the output to guarantee consistency
-	sort.Slice(supportedProjectVersions, func(i int, j int) bool {
-		return supportedProjectVersions[i].Compare(supportedProjectVersions[j]) == -1
+	slices.SortStableFunc(supportedProjectVersions, func(a, b config.Version) int {
+		return a.Compare(b)
 	})
 
 	return supportedProjectVersions

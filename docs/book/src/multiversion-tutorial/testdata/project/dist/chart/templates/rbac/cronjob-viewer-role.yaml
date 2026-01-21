@@ -4,8 +4,10 @@ kind: ClusterRole
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project
-    name: project-cronjob-viewer-role
+        app.kubernetes.io/name: {{ include "project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project.resourceName" (dict "suffix" "cronjob-viewer-role" "context" $) }}
 rules:
     - apiGroups:
         - batch.tutorial.kubebuilder.io

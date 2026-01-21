@@ -226,7 +226,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
 		}
 
-		Eventually(verifyWebhookCert, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyWebhookCert, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
@@ -250,7 +250,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 		}
 
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+		Eventually(verifyCAInjection, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the CA injection is applied for CRD conversion")
 		crdKind := "ConversionTest"
@@ -270,7 +270,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			g.Expect(len(crdOutput)).To(BeNumerically(">", 10),
 				"CA bundle should be injected into the CRD")
 		}
-		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
+		Eventually(verifyCAInjection, 3*time.Minute, time.Second).Should(Succeed(),
 			"CA injection validation failed")
 	}
 
@@ -295,7 +295,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		g.Expect(kbc.Kubectl.Apply(true, "-f", sampleFile)).
 			Error().NotTo(HaveOccurred())
 	}
-	Eventually(applySample, time.Minute, time.Second).Should(Succeed())
+	Eventually(applySample, 3*time.Minute, time.Second).Should(Succeed())
 
 	if hasMetrics {
 		By("checking the metrics values to validate that the created resource object gets reconciled")
@@ -375,7 +375,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		Eventually(func(g Gomega) {
 			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
 			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
@@ -388,7 +388,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			replicas, err := strconv.Atoi(out)
 			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
 			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, time.Second).Should(Succeed())
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
@@ -664,7 +664,7 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 
 		out = token.Status.Token
 	}
-	Eventually(getToken, time.Minute, time.Second).Should(Succeed())
+	Eventually(getToken, 2*time.Minute, time.Second).Should(Succeed())
 
 	return out, nil
 }

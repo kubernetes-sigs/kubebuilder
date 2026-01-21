@@ -40,28 +40,32 @@ function scaffold_test_project {
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
-    $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --make=false
+    $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false
+    $kb create webhook --group crew --version v1 --kind Captain --programmatic-validation --make=false
 
     # Create API to test conversion from v1 to v2
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion --make=false --spoke v2
 
-    # Create API with custom webhook paths (both defaulting and validation with different paths)
+    # Create API with custom webhook paths - split to test incremental with custom paths
     $kb create api --group crew --version v1 --kind Sailor --controller=true --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind Sailor --defaulting --programmatic-validation --defaulting-path=/custom-mutate-sailor --validation-path=/custom-validate-sailor --make=false
+    $kb create webhook --group crew --version v1 --kind Sailor --defaulting --defaulting-path=/custom-mutate-sailor --make=false
+    $kb create webhook --group crew --version v1 --kind Sailor --programmatic-validation --validation-path=/custom-validate-sailor --make=false
 
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
-    # Test defaulting without custom path and validation with custom path
-    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --programmatic-validation --validation-path=/custom-validate-admiral
+    # Split to test incremental: defaulting first, then validation with custom path
+    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --make=false
+    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --programmatic-validation --validation-path=/custom-validate-admiral --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --defaulting
-    # Webhook for kubernetes Core type that is part of an api group
-    $kb create webhook --group apps --version v1 --kind Deployment --defaulting --programmatic-validation
+    # Webhook for kubernetes Core type that is part of an api group - test incremental
+    $kb create webhook --group apps --version v1 --kind Deployment --defaulting
+    $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation
   fi
 
   if [[ $project =~ multigroup ]]; then
@@ -70,7 +74,9 @@ function scaffold_test_project {
 
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --make=false
+    # Test incremental webhook additions
+    $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false
+    $kb create webhook --group crew --version v1 --kind Captain --programmatic-validation --make=false
 
     $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
     $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
@@ -86,13 +92,14 @@ function scaffold_test_project {
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --programmatic-validation --make=false
-    # Webhook for kubernetes Core type that is part of an api group
-    $kb create webhook --group apps --version v1 --kind Deployment --defaulting --programmatic-validation --make=false
+    # Webhook for kubernetes Core type that is part of an api group - test incremental
+    $kb create webhook --group apps --version v1 --kind Deployment --defaulting --make=false
+    $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
   fi
 
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
@@ -119,7 +126,7 @@ function scaffold_test_project {
     $kb edit --plugins=helm.kubebuilder.io/v2-alpha
 
     header_text 'Editing project with Auto Update plugin ...'
-    $kb edit --plugins=autoupdate.kubebuilder.io/v1-alpha
+    $kb edit --plugins=autoupdate.kubebuilder.io/v1-alpha --use-gh-models
   fi
 
   # To avoid conflicts

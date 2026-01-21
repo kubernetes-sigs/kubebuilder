@@ -17,6 +17,7 @@ limitations under the License.
 package charttemplates
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -31,6 +32,8 @@ type HelmHelpers struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults sets the default template configuration
@@ -43,40 +46,49 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 		f.Path = filepath.Join(outputDir, "chart", "templates", "_helpers.tpl")
 	}
 
-	f.TemplateBody = helmHelpersTemplate
+	f.TemplateBody = f.generateHelpersTemplate()
 
-	f.IfExistsAction = machinery.SkipFile
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }
 
+// generateHelpersTemplate creates the _helpers.tpl content with project-specific template names
+func (f *HelmHelpers) generateHelpersTemplate() string {
+	// Use project name as prefix (e.g., "project-v4-with-plugins")
+	// This creates templates like "project-v4-with-plugins.name" instead of generic "chart.name"
+	// preventing collisions when chart is used as a Helm dependency
+	prefix := f.ProjectName
+
+	return fmt.Sprintf(helmHelpersTemplate, prefix, prefix, prefix, prefix, prefix)
+}
+
 const helmHelpersTemplate = `{{` + "`" + `{{/*
-Chart name based on project name.
-Truncated to 63 characters for Kubernetes compatibility.
+Expand the name of the chart.
 */}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.name" -}}` + "`" + `}}
-{{` + "`" + `{{- if .Chart }}` + "`" + `}}
-  {{` + "`" + `{{- if .Chart.Name }}` + "`" + `}}
-    {{` + "`" + `{{- .Chart.Name | trunc 63 | trimSuffix "-" }}` + "`" + `}}
-  {{` + "`" + `{{- else }}` + "`" + `}}
-    {{ .ProjectName }}
-  {{` + "`" + `{{- end }}` + "`" + `}}
-{{` + "`" + `{{- else }}` + "`" + `}}
-  {{ .ProjectName }}
-{{` + "`" + `{{- end }}` + "`" + `}}
+{{` + "`" + `{{- define "%s.name" -}}` + "`" + `}}
+{{` + "`" + `{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 
 {{` + "`" + `{{/*
-Full name of the chart (with release name prefix).
-Combines release name with chart name.
-Truncated to 63 characters for Kubernetes compatibility.
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
 */}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.fullname" -}}` + "`" + `}}
-{{` + "`" + `{{- $name := include "chart.name" . }}` + "`" + `}}
+{{` + "`" + `{{- define "%s.fullname" -}}` + "`" + `}}
+{{` + "`" + `{{- if .Values.fullnameOverride }}` + "`" + `}}
+{{` + "`" + `{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}` + "`" + `}}
+{{` + "`" + `{{- else }}` + "`" + `}}
+{{` + "`" + `{{- $name := default .Chart.Name .Values.nameOverride }}` + "`" + `}}
 {{` + "`" + `{{- if contains $name .Release.Name }}` + "`" + `}}
 {{` + "`" + `{{- .Release.Name | trunc 63 | trimSuffix "-" }}` + "`" + `}}
 {{` + "`" + `{{- else }}` + "`" + `}}
-{{` + "`" + `{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}` + "`" + `}}
+{{` + "`" + `{{- printf "%%s-%%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}` + "`" + `}}
+{{` + "`" + `{{- end }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 
@@ -84,49 +96,26 @@ Truncated to 63 characters for Kubernetes compatibility.
 Namespace for generated references.
 Always uses the Helm release namespace.
 */}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.namespaceName" -}}` + "`" + `}}
-{{` + "`" + `{{ .Release.Namespace }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-
-
-
-{{` + "`" + `{{/*
-Service name with proper truncation for Kubernetes 63-character limit.
-Takes a context with .suffix for the service type (e.g., "webhook-service").
-If fullname + suffix exceeds 63 chars, truncates fullname to 45 chars.
-*/}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.serviceName" -}}` + "`" + `}}
-{{` + "`" + `{{- $fullname := include "chart.fullname" .context -}}` + "`" + `}}
-{{` + "`" + `{{- if gt (len $fullname) 45 -}}` + "`" + `}}
-{{` + "`" + `{{- printf "%s-%s" (trunc 45 $fullname | trimSuffix "-") .suffix ` +
-	`| trunc 63 | trimSuffix "-" -}}` + "`" + `}}
-{{` + "`" + `{{- else -}}` + "`" + `}}
-{{` + "`" + `{{- printf "%s-%s" $fullname .suffix | trunc 63 | trimSuffix "-" -}}` + "`" + `}}
-{{` + "`" + `{{- end -}}` + "`" + `}}
+{{` + "`" + `{{- define "%s.namespaceName" -}}` + "`" + `}}
+{{` + "`" + `{{- .Release.Namespace }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 
 {{` + "`" + `{{/*
-Common labels for Helm charts.
-Includes app version, chart version, app name, instance, and managed-by labels.
+Resource name with proper truncation for Kubernetes 63-character limit.
+Takes a dict with:
+  - .suffix: Resource name suffix (e.g., "metrics", "webhook")
+  - .context: Template context (root context with .Values, .Release, etc.)
+Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 */}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.labels" -}}` + "`" + `}}
-{{` + "`" + `{{- if .Chart.AppVersion -}}` + "`" + `}}
-app.kubernetes.io/version: {{` + "`" + `{{ .Chart.AppVersion | quote }}` + "`" + `}}
+{{` + "`" + `{{- define "%s.resourceName" -}}` + "`" + `}}
+{{` + "`" + `{{- $fullname := include "%s.fullname" .context }}` + "`" + `}}
+{{` + "`" + `{{- $suffix := .suffix }}` + "`" + `}}
+{{` + "`" + `{{- $maxLen := sub 62 (len $suffix) | int }}` + "`" + `}}
+{{` + "`" + `{{- if gt (len $fullname) $maxLen }}` + "`" + `}}
+{{` + "`" + `{{- printf "%%s-%%s" (trunc $maxLen $fullname | trimSuffix "-") $suffix ` +
+	`| trunc 63 | trimSuffix "-" }}` + "`" + `}}
+{{` + "`" + `{{- else }}` + "`" + `}}
+{{` + "`" + `{{- printf "%%s-%%s" $fullname $suffix | trunc 63 | trimSuffix "-" }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
-{{` + "`" + `{{- if .Chart.Version }}` + "`" + `}}
-helm.sh/chart: {{` + "`" + `{{ .Chart.Version | quote }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-app.kubernetes.io/name: {{` + "`" + `{{ include "chart.name" . }}` + "`" + `}}
-app.kubernetes.io/instance: {{` + "`" + `{{ .Release.Name }}` + "`" + `}}
-app.kubernetes.io/managed-by: {{` + "`" + `{{ .Release.Service }}` + "`" + `}}
-{{` + "`" + `{{- end }}` + "`" + `}}
-
-{{` + "`" + `{{/*
-Selector labels for matching pods and services.
-Only includes name and instance for consistent selection.
-*/}}` + "`" + `}}
-{{` + "`" + `{{- define "chart.selectorLabels" -}}` + "`" + `}}
-app.kubernetes.io/name: {{` + "`" + `{{ include "chart.name" . }}` + "`" + `}}
-app.kubernetes.io/instance: {{` + "`" + `{{ .Release.Name }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 `

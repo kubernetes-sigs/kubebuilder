@@ -28,9 +28,12 @@ import (
 
 // ChartConverter orchestrates the conversion of kustomize output to Helm chart templates
 type ChartConverter struct {
-	resources   *ParsedResources
-	projectName string
-	outputDir   string
+	resources *ParsedResources
+	// The actual namePrefix detected from kustomize resources
+	detectedPrefix string
+	// The chart name used for template namespacing
+	chartName string
+	outputDir string
 
 	// Components for conversion
 	organizer *ResourceOrganizer
@@ -39,18 +42,27 @@ type ChartConverter struct {
 }
 
 // NewChartConverter creates a new chart converter with all necessary components
-func NewChartConverter(resources *ParsedResources, projectName, outputDir string) *ChartConverter {
+func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, outputDir string) *ChartConverter {
+	// Extract manager namespace from Deployment, default to <prefix>-system
+	managerNamespace := detectedPrefix + "-system"
+	if resources.Deployment != nil {
+		if ns := resources.Deployment.GetNamespace(); ns != "" {
+			managerNamespace = ns
+		}
+	}
+
 	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(projectName)
-	writer := NewChartWriter(templater, outputDir)
+	templater := NewHelmTemplater(detectedPrefix, chartName, managerNamespace)
+	writer := NewChartWriter(templater, outputDir, managerNamespace)
 
 	return &ChartConverter{
-		resources:   resources,
-		projectName: projectName,
-		outputDir:   outputDir,
-		organizer:   organizer,
-		templater:   templater,
-		writer:      writer,
+		resources:      resources,
+		detectedPrefix: detectedPrefix,
+		chartName:      chartName,
+		outputDir:      outputDir,
+		organizer:      organizer,
+		templater:      templater,
+		writer:         writer,
 	}
 }
 
@@ -93,18 +105,22 @@ func dedupeResources(resources []*unstructured.Unstructured) []*unstructured.Uns
 }
 
 // ExtractDeploymentConfig extracts configuration values from the deployment for values.yaml
-func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
+func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 	if c.resources.Deployment == nil {
-		return make(map[string]interface{})
+		return make(map[string]any)
 	}
 
-	config := make(map[string]interface{})
+	config := make(map[string]any)
 	specMap := extractDeploymentSpec(c.resources.Deployment)
 	if specMap == nil {
 		return config
 	}
 
 	extractPodSecurityContext(specMap, config)
+	extractImagePullSecrets(specMap, config)
+	extractPodNodeSelector(specMap, config)
+	extractPodTolerations(specMap, config)
+	extractPodAffinity(specMap, config)
 
 	container := firstManagerContainer(specMap)
 	if container == nil {
@@ -121,13 +137,13 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]interface{} {
 	return config
 }
 
-func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]interface{} {
+func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]any {
 	spec, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec")
 	if !found || err != nil {
 		return nil
 	}
 
-	specMap, ok := spec.(map[string]interface{})
+	specMap, ok := spec.(map[string]any)
 	if !ok {
 		return nil
 	}
@@ -135,13 +151,27 @@ func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]int
 	return specMap
 }
 
-func extractPodSecurityContext(specMap map[string]interface{}, config map[string]interface{}) {
+func extractImagePullSecrets(specMap map[string]any, config map[string]any) {
+	imagePullSecrets, found, err := unstructured.NestedFieldNoCopy(specMap, "imagePullSecrets")
+	if !found || err != nil {
+		return
+	}
+
+	imagePullSecretsList, ok := imagePullSecrets.([]any)
+	if !ok || len(imagePullSecretsList) == 0 {
+		return
+	}
+
+	config["imagePullSecrets"] = imagePullSecretsList
+}
+
+func extractPodSecurityContext(specMap map[string]any, config map[string]any) {
 	podSecurityContext, found, err := unstructured.NestedFieldNoCopy(specMap, "securityContext")
 	if !found || err != nil {
 		return
 	}
 
-	podSecMap, ok := podSecurityContext.(map[string]interface{})
+	podSecMap, ok := podSecurityContext.(map[string]any)
 	if !ok || len(podSecMap) == 0 {
 		return
 	}
@@ -149,18 +179,60 @@ func extractPodSecurityContext(specMap map[string]interface{}, config map[string
 	config["podSecurityContext"] = podSecurityContext
 }
 
-func firstManagerContainer(specMap map[string]interface{}) map[string]interface{} {
+func extractPodNodeSelector(specMap map[string]any, config map[string]any) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "nodeSelector")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.(map[string]any)
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podNodeSelector"] = result
+}
+
+func extractPodTolerations(specMap map[string]any, config map[string]any) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "tolerations")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.([]any)
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podTolerations"] = result
+}
+
+func extractPodAffinity(specMap map[string]any, config map[string]any) {
+	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "affinity")
+	if !found || err != nil {
+		return
+	}
+
+	result, ok := raw.(map[string]any)
+	if !ok || len(result) == 0 {
+		return
+	}
+
+	config["podAffinity"] = result
+}
+
+func firstManagerContainer(specMap map[string]any) map[string]any {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
 		return nil
 	}
 
-	containersList, ok := containers.([]interface{})
+	containersList, ok := containers.([]any)
 	if !ok || len(containersList) == 0 {
 		return nil
 	}
 
-	firstContainer, ok := containersList[0].(map[string]interface{})
+	firstContainer, ok := containersList[0].(map[string]any)
 	if !ok {
 		return nil
 	}
@@ -168,13 +240,13 @@ func firstManagerContainer(specMap map[string]interface{}) map[string]interface{
 	return firstContainer
 }
 
-func extractContainerEnv(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerEnv(container map[string]any, config map[string]any) {
 	env, found, err := unstructured.NestedFieldNoCopy(container, "env")
 	if !found || err != nil {
 		return
 	}
 
-	envList, ok := env.([]interface{})
+	envList, ok := env.([]any)
 	if !ok || len(envList) == 0 {
 		return
 	}
@@ -182,7 +254,7 @@ func extractContainerEnv(container map[string]interface{}, config map[string]int
 	config["env"] = envList
 }
 
-func extractContainerImage(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerImage(container map[string]any, config map[string]any) {
 	imageValue, found, err := unstructured.NestedString(container, "image")
 	if !found || err != nil || imageValue == "" {
 		return
@@ -204,25 +276,25 @@ func extractContainerImage(container map[string]interface{}, config map[string]i
 		pullPolicy = "IfNotPresent"
 	}
 
-	config["image"] = map[string]interface{}{
+	config["image"] = map[string]any{
 		"repository": repository,
 		"tag":        tag,
 		"pullPolicy": pullPolicy,
 	}
 }
 
-func extractContainerArgs(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerArgs(container map[string]any, config map[string]any) {
 	args, found, err := unstructured.NestedFieldNoCopy(container, "args")
 	if !found || err != nil {
 		return
 	}
 
-	argsList, ok := args.([]interface{})
+	argsList, ok := args.([]any)
 	if !ok || len(argsList) == 0 {
 		return
 	}
 
-	filteredArgs := make([]interface{}, 0, len(argsList))
+	filteredArgs := make([]any, 0, len(argsList))
 	for _, rawArg := range argsList {
 		strArg, ok := rawArg.(string)
 		if !ok {
@@ -278,20 +350,20 @@ func extractPortFromArg(arg string) int {
 }
 
 // extractContainerPorts extracts port configurations from container ports
-func extractContainerPorts(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerPorts(container map[string]any, config map[string]any) {
 	// Use NestedFieldNoCopy to avoid deep copy issues with int values
 	portsField, found, err := unstructured.NestedFieldNoCopy(container, "ports")
 	if !found || err != nil {
 		return
 	}
 
-	ports, ok := portsField.([]interface{})
+	ports, ok := portsField.([]any)
 	if !ok {
 		return
 	}
 
 	for _, p := range ports {
-		portMap, ok := p.(map[string]interface{})
+		portMap, ok := p.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -317,13 +389,13 @@ func extractContainerPorts(container map[string]interface{}, config map[string]i
 	}
 }
 
-func extractContainerResources(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerResources(container map[string]any, config map[string]any) {
 	resources, found, err := unstructured.NestedFieldNoCopy(container, "resources")
 	if !found || err != nil {
 		return
 	}
 
-	resourcesMap, ok := resources.(map[string]interface{})
+	resourcesMap, ok := resources.(map[string]any)
 	if !ok || len(resourcesMap) == 0 {
 		return
 	}
@@ -331,13 +403,13 @@ func extractContainerResources(container map[string]interface{}, config map[stri
 	config["resources"] = resources
 }
 
-func extractContainerSecurityContext(container map[string]interface{}, config map[string]interface{}) {
+func extractContainerSecurityContext(container map[string]any, config map[string]any) {
 	securityContext, found, err := unstructured.NestedFieldNoCopy(container, "securityContext")
 	if !found || err != nil {
 		return
 	}
 
-	secMap, ok := securityContext.(map[string]interface{})
+	secMap, ok := securityContext.(map[string]any)
 	if !ok || len(secMap) == 0 {
 		return
 	}

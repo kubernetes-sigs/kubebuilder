@@ -21,6 +21,7 @@ import (
 	log "log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -206,10 +207,8 @@ func checkDir() error {
 			}
 			// Skip files that are expected or safely overwritten
 			ignoredFiles := []string{"go.mod", "go.sum"}
-			for _, ignored := range ignoredFiles {
-				if info.Name() == ignored {
-					return nil
-				}
+			if slices.Contains(ignoredFiles, info.Name()) {
+				return nil
 			}
 			// Track if any other files/directories exist
 			hasFiles = true

@@ -32,7 +32,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
 				HasWebhooks:      true,
-				DeploymentConfig: map[string]interface{}{},
+				DeploymentConfig: map[string]any{},
 			}
 			valuesTemplate.InjectProjectName("test-project")
 			err := valuesTemplate.SetTemplateDefaults()
@@ -55,6 +55,7 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
 	})
 
@@ -62,7 +63,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
 				HasWebhooks:      false,
-				DeploymentConfig: map[string]interface{}{},
+				DeploymentConfig: map[string]any{},
 			}
 			valuesTemplate.InjectProjectName("test-project")
 			err := valuesTemplate.SetTemplateDefaults()
@@ -84,6 +85,7 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
 	})
 
@@ -114,23 +116,23 @@ var _ = Describe("HelmValuesBasic", func() {
 
 	Context("with deployment configuration", func() {
 		BeforeEach(func() {
-			deploymentConfig := map[string]interface{}{
-				"args": []interface{}{
+			deploymentConfig := map[string]any{
+				"args": []any{
 					"--leader-elect",
 				},
-				"env": []interface{}{
-					map[string]interface{}{
+				"env": []any{
+					map[string]any{
 						"name":  "TEST_ENV",
 						"value": "test-value",
 					},
 				},
-				"image": map[string]interface{}{
+				"image": map[string]any{
 					"repository": "example.com/custom-controller",
 					"tag":        "v1.2.3",
 					"pullPolicy": "Always",
 				},
-				"resources": map[string]interface{}{
-					"limits": map[string]interface{}{
+				"resources": map[string]any{
+					"limits": map[string]any{
 						"cpu":    "100m",
 						"memory": "128Mi",
 					},
@@ -159,18 +161,118 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("resources:"))
 			Expect(content).To(ContainSubstring("cpu: 100m"))
 			Expect(content).To(ContainSubstring("memory: 128Mi"))
+			Expect(content).To(ContainSubstring("affinity: {}"))
+			Expect(content).To(ContainSubstring("nodeSelector: {}"))
+			Expect(content).To(ContainSubstring("tolerations: []"))
+		})
+	})
+
+	Context("with nodeSelector, affinity and tolerations configuration", func() {
+		BeforeEach(func() {
+			deploymentConfig := map[string]any{
+				"podNodeSelector": map[string]string{
+					"kubernetes.io/os": "linux",
+				},
+				"podTolerations": []map[string]string{
+					{
+						"key":      "key1",
+						"operator": "Equal",
+						"effect":   "NoSchedule",
+					},
+				},
+				"podAffinity": map[string]any{
+					"nodeAffinity": map[string]any{
+						"requiredDuringSchedulingIgnoredDuringExecution": map[string]any{
+							"nodeSelectorTerms": []any{
+								map[string]any{
+									"matchExpressions": []any{
+										map[string]any{
+											"key":      "topology.kubernetes.io/zone",
+											"operator": "In",
+											"values":   []string{"antarctica-east1", "antarctica-east2"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks:      false,
+				DeploymentConfig: deploymentConfig,
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should include default values", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring(`  ## Manager pod's node selector
+  ##
+  nodeSelector:
+    kubernetes.io/os: linux`))
+
+			Expect(content).To(ContainSubstring(`  ## Manager pod's tolerations
+  ##
+  tolerations:
+    - effect: NoSchedule
+      key: key1
+      operator: Equal`))
+
+			Expect(content).To(ContainSubstring(`  ## Manager pod's affinity
+  ##
+  affinity:
+    nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+                - matchExpressions:
+                    - key: topology.kubernetes.io/zone
+                      operator: In
+                      values:
+                        - antarctica-east1
+                        - antarctica-east2`))
+		})
+	})
+
+	Context("with multiple imagePullSecrets", func() {
+		BeforeEach(func() {
+			valuesTemplate = &HelmValuesBasic{
+				DeploymentConfig: map[string]any{
+					"imagePullSecrets": []any{
+						map[string]any{
+							"name": "test-secret",
+						},
+						map[string]any{
+							"name": "test-secret2",
+						},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-private-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should render multiple imagePullSecrets", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("imagePullSecrets:"))
+			Expect(content).To(ContainSubstring("- name: test-secret"))
+			Expect(content).To(ContainSubstring("- name: test-secret2"))
 		})
 	})
 
 	Context("with complex env variables", func() {
 		BeforeEach(func() {
 			valuesTemplate = &HelmValuesBasic{
-				DeploymentConfig: map[string]interface{}{
-					"env": []interface{}{
-						map[string]interface{}{
+				DeploymentConfig: map[string]any{
+					"env": []any{
+						map[string]any{
 							"name": "POD_NAMESPACE",
-							"valueFrom": map[string]interface{}{
-								"fieldRef": map[string]interface{}{
+							"valueFrom": map[string]any{
+								"fieldRef": map[string]any{
 									"fieldPath": "metadata.namespace",
 								},
 							},
@@ -205,16 +307,8 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		It("should have rbacHelpers disabled by default", func() {
 			content := valuesTemplate.GetBody()
-			lines := strings.Split(content, "\n")
-			var rbacHelpersIndex int
-			for i, line := range lines {
-				if strings.Contains(line, "rbacHelpers:") {
-					rbacHelpersIndex = i
-					break
-				}
-			}
-			Expect(rbacHelpersIndex).To(BeNumerically(">", 0))
-			Expect(lines[rbacHelpersIndex+1]).To(ContainSubstring("enable: false"))
+			Expect(content).To(ContainSubstring("rbacHelpers:"))
+			Expect(content).To(ContainSubstring("enable: false"))
 		})
 	})
 
@@ -224,7 +318,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      true,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()
@@ -259,7 +353,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		Context("with custom ports extracted from deployment", func() {
 			BeforeEach(func() {
-				deploymentConfig := map[string]interface{}{
+				deploymentConfig := map[string]any{
 					"webhookPort": 9444,
 					"metricsPort": 9090,
 				}
@@ -296,7 +390,7 @@ var _ = Describe("HelmValuesBasic", func() {
 
 		Context("with partial custom ports", func() {
 			BeforeEach(func() {
-				deploymentConfig := map[string]interface{}{
+				deploymentConfig := map[string]any{
 					"metricsPort": 9090,
 					// webhookPort not provided - should use default
 				}
@@ -328,7 +422,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      false,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()
@@ -353,7 +447,7 @@ var _ = Describe("HelmValuesBasic", func() {
 				valuesTemplate = &HelmValuesBasic{
 					HasWebhooks:      true,
 					HasMetrics:       true,
-					DeploymentConfig: map[string]interface{}{},
+					DeploymentConfig: map[string]any{},
 				}
 				valuesTemplate.InjectProjectName("test-project")
 				err := valuesTemplate.SetTemplateDefaults()

@@ -548,6 +548,16 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
+	Context("WithCliVersion", func() {
+		It("should use the provided CLI version string", func() {
+			cliVersion := "v4.0.0"
+			c, err = newCLI(WithCliVersion(cliVersion))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.cliVersion).To(Equal(cliVersion))
+		})
+	})
+
 	Context("WithDescription", func() {
 		It("should use the provided description string", func() {
 			description := "alternative description"

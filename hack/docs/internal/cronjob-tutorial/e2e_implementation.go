@@ -17,8 +17,8 @@ limitations under the License.
 package cronjob
 
 const isPrometheusInstalledVar = `
-	// isPrometheusOperatorAlreadyInstalled will be set true when prometheus CRDs be found on the cluster
-	isPrometheusOperatorAlreadyInstalled = false`
+	// shouldCleanupPrometheus tracks whether Prometheus was installed by this suite.
+	shouldCleanupPrometheus = false`
 
 const beforeSuitePrometheus = `
 	By("Ensure that Prometheus is enabled")
@@ -26,24 +26,21 @@ const beforeSuitePrometheus = `
 `
 
 const afterSuitePrometheus = `
-	// Teardown Prometheus after the suite if it was not already installed
-	if !isPrometheusOperatorAlreadyInstalled {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling Prometheus Operator...\n")
+	// Teardown Prometheus if it was installed by this suite
+	if shouldCleanupPrometheus {
+		By("uninstalling Prometheus Operator")
 		utils.UninstallPrometheusOperator()
 	}
 `
 
 const checkPrometheusInstalled = `
-	// To prevent errors when tests run in environments with Prometheus already installed,
-	// we check for its presence before execution.
-	// Setup Prometheus before the suite if not already installed
-	By("checking if prometheus is installed already")
-	isPrometheusOperatorAlreadyInstalled = utils.IsPrometheusCRDsInstalled()
-	if !isPrometheusOperatorAlreadyInstalled {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Installing Prometheus Operator...\n")
+	By("checking if Prometheus is already installed")
+	if !utils.IsPrometheusCRDsInstalled() {
+		// Mark for cleanup before installation to handle interruptions and partial installs.
+		shouldCleanupPrometheus = true
+
+		By("installing Prometheus Operator")
 		Expect(utils.InstallPrometheusOperator()).To(Succeed(), "Failed to install Prometheus Operator")
-	} else {
-		_, _ = fmt.Fprintf(GinkgoWriter, "WARNING: Prometheus Operator is already installed. Skipping installation...\n")
 	}
 `
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,15 +18,13 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // nolint:unused
@@ -35,11 +33,11 @@ var sailorlog = logf.Log.WithName("sailor-resource")
 
 // SetupSailorWebhookWithManager registers the webhook for Sailor in the manager.
 func SetupSailorWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&crewv1.Sailor{}).
-		WithValidator(&SailorCustomValidator{}).
-		WithValidatorCustomPath("/custom-validate-sailor").
+	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Sailor{}).
 		WithDefaulter(&SailorCustomDefaulter{}).
 		WithDefaulterCustomPath("/custom-mutate-sailor").
+		WithValidator(&SailorCustomValidator{}).
+		WithValidatorCustomPath("/custom-validate-sailor").
 		Complete()
 }
 
@@ -56,16 +54,9 @@ type SailorCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &SailorCustomDefaulter{}
-
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Sailor.
-func (d *SailorCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	sailor, ok := obj.(*crewv1.Sailor)
-
-	if !ok {
-		return fmt.Errorf("expected an Sailor object but got %T", obj)
-	}
-	sailorlog.Info("Defaulting for Sailor", "name", sailor.GetName())
+func (d *SailorCustomDefaulter) Default(_ context.Context, obj *crewv1.Sailor) error {
+	sailorlog.Info("Defaulting for Sailor", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -85,15 +76,9 @@ type SailorCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &SailorCustomValidator{}
-
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	sailor, ok := obj.(*crewv1.Sailor)
-	if !ok {
-		return nil, fmt.Errorf("expected a Sailor object but got %T", obj)
-	}
-	sailorlog.Info("Validation for Sailor upon creation", "name", sailor.GetName())
+func (v *SailorCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
+	sailorlog.Info("Validation for Sailor upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -101,12 +86,8 @@ func (v *SailorCustomValidator) ValidateCreate(_ context.Context, obj runtime.Ob
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	sailor, ok := newObj.(*crewv1.Sailor)
-	if !ok {
-		return nil, fmt.Errorf("expected a Sailor object for the newObj but got %T", newObj)
-	}
-	sailorlog.Info("Validation for Sailor upon update", "name", sailor.GetName())
+func (v *SailorCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Sailor) (admission.Warnings, error) {
+	sailorlog.Info("Validation for Sailor upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -114,12 +95,8 @@ func (v *SailorCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	sailor, ok := obj.(*crewv1.Sailor)
-	if !ok {
-		return nil, fmt.Errorf("expected a Sailor object but got %T", obj)
-	}
-	sailorlog.Info("Validation for Sailor upon deletion", "name", sailor.GetName())
+func (v *SailorCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
+	sailorlog.Info("Validation for Sailor upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

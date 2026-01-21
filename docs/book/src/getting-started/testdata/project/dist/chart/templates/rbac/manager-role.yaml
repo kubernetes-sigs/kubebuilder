@@ -1,15 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-    name: project-manager-role
+    name: {{ include "project.resourceName" (dict "suffix" "manager-role" "context" $) }}
 rules:
-    - apiGroups:
-        - ""
-      resources:
-        - events
-      verbs:
-        - create
-        - patch
     - apiGroups:
         - ""
       resources:
@@ -56,3 +49,10 @@ rules:
         - get
         - patch
         - update
+    - apiGroups:
+        - events.k8s.io
+      resources:
+        - events
+      verbs:
+        - create
+        - patch

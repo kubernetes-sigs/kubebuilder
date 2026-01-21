@@ -1,13 +1,9 @@
 name: Test GoReleaser and CLI Version
 
 on:
-  push:
-    paths:
-      - 'pkg/**'
-      - 'cmd/**'
-      - 'build/.goreleaser.yml'
-      - '.github/workflows/release-version-ci.yml'
   pull_request:
+    branches:
+      - master
     paths:
       - 'pkg/**'
       - 'cmd/**'
@@ -20,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
 

@@ -2,45 +2,57 @@ name: Test DevContainer Image
 
 on:
   push:
-    - 'testdata/**'
-    - '.github/workflows/test-devcontainer.yml'
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-devcontainer.yml'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/devcontainer.go'
   pull_request:
     paths:
       - 'testdata/**'
       - '.github/workflows/test-devcontainer.yml'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/devcontainer.go'
 
 jobs:
   test-devcontainer:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6.0.1
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
+      - name: Build and Run Dev Container Tests
+        uses: devcontainers/ci@v0.3
         with:
-          go-version-file: go.mod
+          subFolder: testdata/project-v4
+          runCmd: |
+            # Verify Tools Installation
+            echo "Verifying installed tools..."
+            docker --version
+            kind version
+            kubebuilder version
+            kubectl version --client
+            go version
+            echo "All required tools are installed"
 
-      - name: Setup NodeJS 20.x
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20.x"
+            # Test Docker-in-Docker
+            echo "Testing Docker-in-Docker functionality..."
+            docker ps
+            docker network ls
+            docker run --rm hello-world
+            echo "Docker is working inside devcontainer"
 
-      - name: Setup Devcontainer CLI
-        run: |
-          npm install -g @devcontainers/cli
+            # Test Kubebuilder Workflow
+            echo "Testing Kubebuilder development workflow..."
+            go mod tidy
+            make all
+            echo "make all passed"
+            make docker-build IMG=controller:ci
+            echo "make docker-build passed"
 
-      - name: Build and Validate DevContainer
-        run: |
-          cd testdata/project-v4
+            # Test Kind Cluster Creation
+            echo "Testing kind cluster creation..."
+            kind create cluster --name test-cluster
+            kubectl cluster-info --context kind-test-cluster
+            kubectl get nodes
+            kind delete cluster --name test-cluster
+            echo "Kind cluster creation and deletion successful"
 
-          OUTPUT=$(devcontainer up --workspace-folder=./)
-          STATUS=$(echo "$OUTPUT" | jq -r '.outcome')
-
-          if [[ "$STATUS" == "success" ]]; then
-            echo "Devcontainer setup was successful."
-            exit 0
-          else
-            echo "Devcontainer setup failed."
-            exit 1
-          fi

@@ -4,8 +4,10 @@ kind: ClusterRole
 metadata:
     labels:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: project-v4-with-plugins
-    name: project-v4-with-plugins-busybox-editor-role
+        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "busybox-editor-role" "context" $) }}
 rules:
     - apiGroups:
         - example.com.testproject.org

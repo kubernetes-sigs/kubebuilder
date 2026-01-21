@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-    name: project-metrics-auth-rolebinding
+    name: {{ include "project.resourceName" (dict "suffix" "metrics-auth-rolebinding" "context" $) }}
 roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: project-metrics-auth-role
+    name: {{ include "project.resourceName" (dict "suffix" "metrics-auth-role" "context" $) }}
 subjects:
     - kind: ServiceAccount
-      name: project-controller-manager
+      name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
       namespace: {{ .Release.Namespace }}
 {{- end }}

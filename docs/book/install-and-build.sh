@@ -39,7 +39,7 @@ if [[ ${arch} == "amd64" ]]; then
 elif [[ ${arch} == "x86" ]]; then
     arch="i686"
 elif [[ ${arch} == "arm64" ]]; then
-    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type. 
+    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type.
     # Once the mdbook is upgraded to latest, use 'aarch64'
     arch="x86_64"
 fi
@@ -58,7 +58,7 @@ case ${os} in
         ;;
     linux)
         # works for linux, too
-        target="unknown-${os}-gnu"
+        target="unknown-${os}-musl"
         ;;
     *)
         target="unknown-${os}"
@@ -67,7 +67,7 @@ esac
 
 # grab mdbook
 # we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-MDBOOK_VERSION="v0.4.40"
+MDBOOK_VERSION="v0.5.0"
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
 
@@ -77,7 +77,7 @@ curl -fL -o /tmp/mdbook.${ext} "${MDBOOK_URL}"
 ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
-CONTROLLER_GEN_VERSION="v0.19.0"
+CONTROLLER_GEN_VERSION="v0.20.0"
 
 echo "grabbing the controller-gen version: ${CONTROLLER_GEN_VERSION}"
 go version
@@ -85,7 +85,7 @@ go install sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERS
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
-gobin=${GOBIN:-$(go env GOPATH)/bin} # GOBIN won't always be set :-/
+gobin=${gobin:-$(go env GOPATH)/bin} # GOBIN won't always be set :-/
 
 export PATH=${gobin}:$PATH
 verb=${1:-build}
