@@ -16,7 +16,7 @@ jobs:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -31,13 +31,13 @@ jobs:
   yamllint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
       - name: Run yamllint make target
         run: make yamllint
 
   license:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
       - name: Run license check
         run: make test-license
