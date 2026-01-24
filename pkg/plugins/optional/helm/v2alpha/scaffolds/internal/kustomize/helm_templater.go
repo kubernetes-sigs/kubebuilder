@@ -71,6 +71,11 @@ func (t *HelmTemplater) resourceNameTemplate(suffix string) string {
 
 // ApplyHelmSubstitutions converts YAML content to use Helm template syntax
 func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *unstructured.Unstructured) string {
+	// Escape existing Go template syntax ({{ }}) FIRST before adding Helm templates.
+	// Resources from install.yaml may contain templates that should be preserved as literal text.
+	// For example: CRD default values, ConfigMap data, Secret URLs, annotations, etc.
+	yamlContent = t.escapeExistingTemplateSyntax(yamlContent)
+
 	// Apply conditional wrappers first
 	yamlContent = t.addConditionalWrappers(yamlContent, resource)
 
@@ -112,6 +117,70 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	// Some replacements may introduce an empty line between a `{{- if ... }}`
 	// and the following content; collapse that to ensure consistent formatting.
 	yamlContent = t.collapseBlankLineAfterIf(yamlContent)
+
+	return yamlContent
+}
+
+// escapeExistingTemplateSyntax escapes Go template syntax ({{ }}) in YAML to prevent
+// Helm from parsing them. Converts existing templates to literal strings that Helm outputs as-is.
+//
+// Why this is needed:
+// Resources from install.yaml may contain {{ }} in string fields that are NOT Helm templates.
+// Without escaping, Helm will try to evaluate them and fail. For example:
+//
+//	CRD default: "Branch: {{ .Spec.Branch }}"  ->  ERROR: .Spec undefined
+//
+// How it works:
+// Wraps non-Helm templates in string literals so Helm outputs them unchanged:
+//
+//	{{ .Field }}  ->  {{ "{{ .Field }}" }}
+//
+// When Helm renders this, it outputs the literal string: {{ .Field }}
+//
+// Smart detection:
+// Only escapes templates that DON'T start with Helm keywords:
+//   - .Release, .Values, .Chart (Helm built-ins)
+//   - include, if, with, range, toYaml (Helm functions)
+//
+// This means our Helm templates work normally while existing templates are preserved.
+func (t *HelmTemplater) escapeExistingTemplateSyntax(yamlContent string) string {
+	// Find all {{ ... }} patterns (non-greedy for multiple on same line)
+	templatePattern := regexp.MustCompile(`\{\{(.*?)\}\}`)
+
+	yamlContent = templatePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		// Extract content between {{ and }}
+		content := strings.TrimPrefix(match, "{{")
+		content = strings.TrimSuffix(content, "}}")
+		trimmedContent := strings.TrimSpace(content)
+
+		// Check if this is a Helm template (starts with Helm keyword)
+		helmPatterns := []string{
+			"include ", "- include ",
+			".Release.", "- .Release.",
+			".Values.", "- .Values.",
+			".Chart.", "- .Chart.",
+			"toYaml ", "- toYaml ",
+			"if ", "- if ",
+			"end ", "- end ",
+			"with ", "- with ",
+			"range ", "- range ",
+			"else", "- else",
+		}
+
+		// If it's a Helm template, keep it as-is
+		for _, pattern := range helmPatterns {
+			if strings.HasPrefix(trimmedContent, pattern) {
+				return match
+			}
+		}
+
+		// Otherwise, escape it to preserve as literal text
+		// Escape any quotes inside the template content
+		escapedContent := strings.ReplaceAll(content, `"`, `\"`)
+
+		// Wrap in Helm string literal: {{ "{{...}}" }}
+		return `{{ "{{` + escapedContent + `}}" }}`
+	})
 
 	return yamlContent
 }

@@ -714,6 +714,176 @@ spec:
 		})
 	})
 
+	Context("existing Go template syntax escaping", func() {
+		It("should escape existing Go template syntax in CRD samples", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("changetransferpolicies.promoter.argoproj.io")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: changetransferpolicies.promoter.argoproj.io
+spec:
+  names:
+    kind: ChangeTransferPolicy
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              pullRequest:
+                properties:
+                  template:
+                    properties:
+                      description:
+                        default: "Promoting {{ .ChangeTransferPolicy.Spec.ActiveBranch }}"
+                        type: string
+                      title:
+                        default: "Promote {{ trunc 5 .ChangeTransferPolicy.Status.Proposed.Dry.Sha }}"
+                        type: string`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Existing {{ }} should be escaped to {{ "{{ ... }}" }}
+			Expect(result).To(ContainSubstring(`{{ "{{ .ChangeTransferPolicy.Spec.ActiveBranch }}" }}`),
+				"existing template syntax should be escaped")
+			Expect(result).To(ContainSubstring(`{{ "{{ trunc 5 .ChangeTransferPolicy.Status.Proposed.Dry.Sha }}" }}`),
+				"function calls in templates should be escaped")
+
+			// Should NOT have unescaped Go template syntax (which would break Helm)
+			// We check that all ChangeTransferPolicy references are properly wrapped
+			// Pattern checks for: default: "...<text>{{ .ChangeTransferPolicy" (not escaped)
+			// The properly escaped version is: default: "...{{ "{{ .ChangeTransferPolicy..." }}"
+			Expect(result).NotTo(MatchRegexp(`default:\s+"[^{]*\{\{\s*\.ChangeTransferPolicy`),
+				"unescaped Go templates should not exist in default values")
+		})
+
+		It("should escape multiple template expressions on the same line", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("policies.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+spec:
+  versions:
+  - schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              message:
+                default: "From {{ .Source.Branch }} to {{ .Target.Branch }}"`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Both templates should be escaped (applies to all resources)
+			Expect(result).To(ContainSubstring(`{{ "{{ .Source.Branch }}" }}`))
+			Expect(result).To(ContainSubstring(`{{ "{{ .Target.Branch }}" }}`))
+		})
+
+		It("should escape templates with special characters", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("configs.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+spec:
+  versions:
+  - schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              value:
+                default: "Value: {{ .Config.Key-With-Dashes }}"`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			Expect(result).To(ContainSubstring(`{{ "{{ .Config.Key-With-Dashes }}" }}`))
+		})
+
+		It("should handle template syntax with quotes correctly", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("messages.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+spec:
+  versions:
+  - schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              template:
+                default: '{{ .Config.Message "default" }}'`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Quotes inside templates should be escaped
+			Expect(result).To(ContainSubstring(`{{ "{{ .Config.Message \"default\" }}" }}`))
+		})
+
+		It("should escape templates in ConfigMaps and other non-CRD resources", func() {
+			configMapResource := &unstructured.Unstructured{}
+			configMapResource.SetAPIVersion("v1")
+			configMapResource.SetKind("ConfigMap")
+			configMapResource.SetName("template-config")
+			configMapResource.SetNamespace("test-project-system")
+
+			// ANY resource can have Go template syntax that needs escaping
+			// Examples: ConfigMaps with notification templates, Secrets with webhook URLs,
+			// Deployment annotations with CI/CD metadata, etc.
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: template-config
+  namespace: test-project-system
+  labels:
+    app.kubernetes.io/name: test-project
+data:
+  notification: "Deployed from {{ .Source.Branch }} to {{ .Target.Branch }}"`
+
+			result := templater.ApplyHelmSubstitutions(content, configMapResource)
+
+			// Existing templates should be escaped (applies to ALL resources, not just CRDs)
+			Expect(result).To(ContainSubstring(`{{ "{{ .Source.Branch }}" }}`))
+			Expect(result).To(ContainSubstring(`{{ "{{ .Target.Branch }}" }}`))
+
+			// Helm templates should still be added normally
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+			Expect(result).To(ContainSubstring(`app.kubernetes.io/name: {{ include "test-project.name" . }}`))
+		})
+
+		It("should handle content without any templates", func() {
+			configMapResource := &unstructured.Unstructured{}
+			configMapResource.SetAPIVersion("v1")
+			configMapResource.SetKind("ConfigMap")
+			configMapResource.SetName("no-template")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+data:
+  message: "No templates here"`
+
+			result := templater.ApplyHelmSubstitutions(content, configMapResource)
+
+			// Should not add any escaping
+			Expect(result).To(ContainSubstring(`message: "No templates here"`))
+			Expect(result).NotTo(ContainSubstring(`{{ "{{`))
+		})
+	})
+
 	Context("edge cases", func() {
 		It("should handle empty content", func() {
 			testResource := &unstructured.Unstructured{}
