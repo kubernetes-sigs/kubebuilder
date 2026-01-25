@@ -148,6 +148,10 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		},
 		&templates.HelmIgnore{OutputDir: s.outputDir, Force: s.force},
 		&charttemplates.HelmHelpers{OutputDir: s.outputDir, Force: s.force},
+		&charttemplates.Notes{
+			OutputDir: s.outputDir,
+			Force:     s.force,
+		},
 	}
 
 	// Only scaffold the generic ServiceMonitor when the project does NOT already
