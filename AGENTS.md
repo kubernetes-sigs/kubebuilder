@@ -132,23 +132,53 @@ make test              # CI aggregate (all of above + license)
 
 ## PR Submission
 
-### Title Format (MANDATORY)
-```
-:emoji: (optional/scope): User-facing description
-```
+### PR Title Format (MANDATORY)
+
+PR titles use **emojis** (appear in release notes).
+
+Format: `:emoji: [(plugin/version)]: Description`
+
+The `(plugin/version)` scope is optional; omit it for repo-wide or documentation-only changes.
 
 **Emojis:**
-- ⚠️ - Breaking change
-- ✨ - New feature
-- 🐛 - Bug fix
-- 📖 - Documentation
-- 🌱 - Infrastructure/tests/non-user-facing/refactor
+- ⚠️ (`:warning:`) - Breaking change
+- ✨ (`:sparkles:`) - New feature
+- 🐛 (`:bug:`) - Bug fix
+- 📖 (`:book:`) - Documentation
+- 🌱 (`:seedling:`) - Infrastructure/tests/refactor
 
 **Examples:**
 ```
-✨ (helm/v2-alpha): Add chart generation for cluster-scoped resources
-🐛: Fix project creation failure when GOBIN is unset
-📖: Update migration guide for Go 1.25 compatibility
+🐛 Resolve nil pointer panic in scaffold generator
+✨ (helm/v2-alpha): Add cluster-scoped resource support
+📖 (go/v4): Update deployment documentation
+✨ Update dependencies to latest versions
+```
+
+### Commit Message Format
+
+Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
+
+Format: `<type>[optional scope]: <description>`
+
+The `[optional scope]` is typically the plugin/version (e.g., `helm/v2-alpha`, `go/v4`); omit it for repo-wide or non-plugin changes.
+
+**Types:**
+
+- **feat**: A new feature for the user or a plugin
+- **fix**: A bug fix for the user or a plugin
+- **docs**: Documentation changes only
+- **test**: Adding or updating tests
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **chore**: Changes to build process, dependencies, or maintenance tasks
+- **breaking**: A breaking change (can be combined with other types)
+
+**Examples:**
+```
+fix: Resolve nil pointer panic in scaffold generator
+feat(helm/v2-alpha): Add cluster-scoped resource support
+docs(go/v4): Update deployment documentation
+chore: Update dependencies to latest versions
 ```
 
 ### Pre-PR Checklist
