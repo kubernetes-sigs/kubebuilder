@@ -16,32 +16,44 @@ limitations under the License.
 package scaffolds
 
 import (
-	"errors"
 	"fmt"
-	"os"
 
-	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 
 	"v1/internal/test/plugins/prometheus"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
-	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3" // Register v3 config
-	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
-var EditFlags = []external.Flag{}
-
-var EditMeta = plugin.SubcommandMetadata{
-	Description: "The `edit` subcommand of the sampleexternalplugin adds Prometheus instance configuration for monitoring your operator",
-	Examples: `
-	Add Prometheus monitoring to your project:
-	$ kubebuilder edit --plugins sampleexternalplugin/v1
-	`,
+// EditFlags defines flags for the edit subcommand.
+var EditFlags = []external.Flag{
+	{
+		Name:    "prometheus-namespace",
+		Type:    "string",
+		Default: "monitoring-system",
+		Usage:   "Namespace where Prometheus instance will be deployed",
+	},
 }
 
-// EditCmd handles all the logic for the `edit` subcommand of this sample external plugin
+// EditMeta provides help text for the edit subcommand.
+var EditMeta = plugin.SubcommandMetadata{
+	Description: "Add Prometheus instance to an existing project",
+	Examples:    "kubebuilder edit --plugins sampleexternalplugin/v1 --prometheus-namespace monitoring",
+}
+
+// EditCmd handles the "edit" subcommand.
+//
+// EXTERNAL PLUGIN FLOW FOR EDIT:
+// 1. User runs: kubebuilder edit --plugins sampleexternalplugin/v1
+// 2. Kubebuilder reads existing PROJECT file into config map
+// 3. Kubebuilder calls this external plugin via JSON over stdin
+// 4. Plugin reads PluginRequest (with config from PROJECT), generates files
+// 5. Kubebuilder writes files from response.Universe to disk
+//
+// NOTE: For edit, the PROJECT file MUST exist since we're modifying an existing project.
+// The config map is populated from the PROJECT file, not from command-line flags.
 func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 	pluginResponse := external.PluginResponse{
 		APIVersion: "v1alpha1",
@@ -49,61 +61,57 @@ func EditCmd(pr *external.PluginRequest) external.PluginResponse {
 		Universe:   pr.Universe,
 	}
 
-	// Load PROJECT config to get domain and other metadata
-	projectConfig, err := loadProjectConfig()
-	if err != nil {
+	// Parse plugin-specific flags
+	// IMPORTANT: Use ParseErrorsWhitelist to ignore unknown flags from other plugins
+	flagSet := pflag.NewFlagSet("edit", pflag.ContinueOnError)
+	flagSet.ParseErrorsAllowlist.UnknownFlags = true // Ignore flags from other plugins
+	prometheusNamespace := flagSet.String("prometheus-namespace", "monitoring-system", "")
+
+	if err := flagSet.Parse(pr.Args); err != nil {
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
-			fmt.Sprintf("failed to load PROJECT config: %s", err.Error()),
+			fmt.Sprintf("failed to parse flags: %v", err),
 		}
 		return pluginResponse
 	}
 
-	// Create Prometheus instance manifest
+	// Validate flag values
+	if err := validateNamespace(*prometheusNamespace); err != nil {
+		pluginResponse.Error = true
+		pluginResponse.ErrorMsgs = []string{err.Error()}
+		return pluginResponse
+	}
+
+	// Read project name from PROJECT file (via config map)
+	// For edit, this MUST exist since we're in an existing project
+	var projectName string
+	if pr.Config != nil {
+		if name, ok := pr.Config["projectName"].(string); ok && name != "" {
+			projectName = name
+		}
+	}
+
+	// Fail if we can't read the project name - something is wrong with PROJECT file
+	if projectName == "" {
+		pluginResponse.Error = true
+		pluginResponse.ErrorMsgs = []string{
+			"failed to read project name from PROJECT file; ensure you're in a valid Kubebuilder project directory",
+		}
+		return pluginResponse
+	}
+
+	// Generate the same manifests as init (idempotent operation)
 	prometheusInstance := prometheus.NewPrometheusInstance(
-		prometheus.WithProjectName(projectConfig.ProjectName),
+		prometheus.WithProjectName(projectName),
+		prometheus.WithNamespace(*prometheusNamespace),
 	)
-
-	// Create Kustomization for Prometheus resources
-	prometheusKustomization := prometheus.NewPrometheusKustomization()
-
-	// Create instructions for adding Prometheus to default kustomization
+	prometheusKustomization := prometheus.NewPrometheusKustomization(*prometheusNamespace)
 	kustomizationPatch := prometheus.NewDefaultKustomizationPatch()
 
-	// Add files to universe
+	// Return files via Universe map
 	pluginResponse.Universe[prometheusInstance.Path] = prometheusInstance.Content
 	pluginResponse.Universe[prometheusKustomization.Path] = prometheusKustomization.Content
 	pluginResponse.Universe[kustomizationPatch.Path] = kustomizationPatch.Content
 
 	return pluginResponse
-}
-
-// ProjectConfig represents the minimal PROJECT file structure we need
-type ProjectConfig struct {
-	ProjectName string
-}
-
-// loadProjectConfig reads the PROJECT file using the kubebuilder config API.
-func loadProjectConfig() (*ProjectConfig, error) {
-	store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-	if err := store.Load(); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("PROJECT file does not exist; please run 'init' first")
-		}
-		return nil, fmt.Errorf("failed to load PROJECT file: %w", err)
-	}
-
-	cfg := store.Config()
-	if cfg == nil {
-		return nil, fmt.Errorf("PROJECT file is empty or invalid")
-	}
-
-	projectName := cfg.GetProjectName()
-	if projectName == "" {
-		projectName = "project"
-	}
-
-	return &ProjectConfig{
-		ProjectName: projectName,
-	}, nil
 }

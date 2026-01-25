@@ -22,13 +22,18 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
-// flagsCmd handles all the logic for the `flags` subcommand of the sample external plugin.
-// In Kubebuilder's Phase 2 Plugins the `flags` subcommand is an optional subcommand for
-// external plugins to support. The `flags` subcommand allows for an external plugin
-// to provide Kubebuilder with a list of flags that the `init`, `create api`, `create webhook`,
-// and `edit` subcommands allow. This allows Kubebuilder to give an external plugin the ability
-// to feel like a native Kubebuilder plugin to a Kubebuilder user by only binding the supported
-// flags and failing early if an unknown flag is provided.
+// flagsCmd handles the "flags" subcommand.
+//
+// PURPOSE: Inform Kubebuilder which flags this plugin accepts for each subcommand.
+// This enables Kubebuilder to:
+// 1. Validate flags early (before calling the plugin)
+// 2. Show plugin flags in --help output
+// 3. Prevent flag conflicts between plugins in a chain
+//
+// FLOW:
+// 1. Kubebuilder calls: echo '{"command":"flags","args":["--init"]}' | plugin
+// 2. Plugin returns: {"flags":[{name:"prometheus-namespace", type:"string", ...}]}
+// 3. Kubebuilder binds those flags for the init command
 func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 	pluginResponse := external.PluginResponse{
 		APIVersion: "v1alpha1",
@@ -37,7 +42,7 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 		Flags:      []external.Flag{},
 	}
 
-	// Parse args to determine which subcommand flags are being requested
+	// Determine which subcommand's flags are being requested
 	var subcommand string
 	for _, arg := range pr.Args {
 		if arg == "--init" {

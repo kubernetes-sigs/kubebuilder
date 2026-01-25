@@ -14,6 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package main implements a sample external plugin for Kubebuilder.
+// Adds Prometheus monitoring to Kubernetes operators.
+//
+// External plugins communicate via JSON over stdin/stdout:
+//  1. Kubebuilder writes PluginRequest to stdin
+//  2. Plugin reads request, executes logic
+//  3. Plugin writes PluginResponse to stdout
+//  4. Kubebuilder writes files from response.Universe to disk
+//
+// This plugin demonstrates:
+//   - Using Kubebuilder's pkg/config API (don't reimplement PROJECT parsing)
+//   - Using Kubebuilder's pkg/plugin/external types (PluginRequest/Response)
+//   - Implementing only needed subcommands (this shows all for reference)
+//   - Flag parsing using pflag (same library Kubebuilder uses)
+//
+// See https://book.kubebuilder.io/plugins/extending/external-plugins
 package main
 
 import (
