@@ -976,5 +976,133 @@ spec:
 			}
 			Expect(externalSAFound).To(BeTrue(), "external ServiceAccount file should exist")
 		})
+
+		It("should escape existing Go template syntax in CRD samples", func() {
+			// Test a CRD with Go template syntax in default values.
+			// Real-world example: gitops-promoter's ChangeTransferPolicy CRD has templates
+			// in pullRequest.template fields that should be preserved as literal text.
+			kustomizeYAML := `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+  name: test-project-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: changetransferpolicies.promoter.argoproj.io
+  namespace: test-project-system
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+spec:
+  group: promoter.argoproj.io
+  names:
+    kind: ChangeTransferPolicy
+    listKind: ChangeTransferPolicyList
+    plural: changetransferpolicies
+    singular: changetransferpolicy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        description: ChangeTransferPolicy is the Schema for the changetransferpolicies API
+        properties:
+          spec:
+            properties:
+              activeBranch:
+                type: string
+              pullRequest:
+                properties:
+                  template:
+                    properties:
+                      description:
+                        default: "Promoting {{ .ChangeTransferPolicy.Spec.ActiveBranch }}"
+                        type: string
+                      title:
+                        default: "Promote {{ trunc 5 .ChangeTransferPolicy.Status.Proposed.Dry.Sha }}"
+                        type: string
+                    type: object
+                type: object
+            type: object
+        type: object
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: test-project-controller-manager
+      containers:
+      - name: manager
+        image: controller:latest
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+`
+
+			kustomizeFile := filepath.Join(tmpDir, "install.yaml")
+			err := os.WriteFile(kustomizeFile, []byte(kustomizeYAML), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser := kustomize.NewParser(kustomizeFile)
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			err = converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying CRD file has escaped Go template syntax")
+			crdDir := filepath.Join("dist", "chart", "templates", "crd")
+			crdPath := filepath.Join(crdDir, "changetransferpolicies.promoter.argoproj.io.yaml")
+			exists, err := afero.Exists(fs.FS, crdPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "CRD file should exist")
+
+			crdContent, err := afero.ReadFile(fs.FS, crdPath)
+			Expect(err).NotTo(HaveOccurred())
+			crdStr := string(crdContent)
+
+			// Existing Go template syntax should be escaped to prevent Helm from parsing it
+			Expect(crdStr).To(ContainSubstring(`{{ "{{ .ChangeTransferPolicy.Spec.ActiveBranch }}" }}`),
+				"existing template syntax should be escaped")
+			Expect(crdStr).To(ContainSubstring(`{{ "{{ trunc 5 .ChangeTransferPolicy.Status.Proposed.Dry.Sha }}" }}`),
+				"template functions should be escaped")
+
+			// Verify we don't have unescaped template syntax that would break Helm rendering
+			// We check that all ChangeTransferPolicy references are properly wrapped in escaped strings
+			// Pattern checks for: default: "...<text>{{ .ChangeTransferPolicy" (not escaped)
+			// The properly escaped version is: default: "...{{ "{{ .ChangeTransferPolicy..." }}"
+			Expect(crdStr).NotTo(MatchRegexp(`default:\s+"[^{]*\{\{\s*\.ChangeTransferPolicy`),
+				"unescaped Go templates should not exist in default values")
+
+			// Helm templates we add should still work (not escaped)
+			Expect(crdStr).To(ContainSubstring("{{- if .Values.crd.enable }}"),
+				"Helm conditional should be present and NOT escaped")
+			Expect(crdStr).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"Helm namespace template should be present and NOT escaped")
+			Expect(crdStr).To(ContainSubstring(`app.kubernetes.io/name: {{ include "test-project.name" . }}`),
+				"Helm label template should be present and NOT escaped")
+		})
 	})
 })
