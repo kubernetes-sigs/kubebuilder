@@ -102,5 +102,16 @@ func (v *Version) applyVCSMetadata(settings []debug.BuildSetting) {
 }
 
 func (v Version) PrintVersion() string {
-	return fmt.Sprintf("Version: %#v", v)
+	return fmt.Sprintf(`KubeBuilder:          %s
+Kubernetes:           %s
+Git Commit:           %s
+Build Date:           %s
+Go OS/Arch:           %s/%s`,
+		v.KubeBuilderVersion,
+		v.KubernetesVendor,
+		v.GitCommit,
+		v.BuildDate,
+		v.GoOs,
+		v.GoArch,
+	)
 }

@@ -172,3 +172,27 @@ func TestApplyVCSMetadata(t *testing.T) {
 		})
 	}
 }
+
+func TestPrintVersion(t *testing.T) {
+	v := Version{
+		KubeBuilderVersion: "v9.99.9",
+		KubernetesVendor:   "9.99.9",
+		GitCommit:          "9990f08847dd1",
+		BuildDate:          "1970-01-12T12:12:12Z",
+		GoOs:               "linux",
+		GoArch:             "amd64",
+	}
+
+	expectedOutput := `KubeBuilder:          v9.99.9
+Kubernetes:           9.99.9
+Git Commit:           9990f08847dd1
+Build Date:           1970-01-12T12:12:12Z
+Go OS/Arch:           linux/amd64`
+
+	actualOutput := v.PrintVersion()
+
+	if actualOutput != expectedOutput {
+		t.Errorf("different output in version subcommand.\nexpected:\n%v\ngot:\n%v",
+			expectedOutput, actualOutput)
+	}
+}
