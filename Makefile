@@ -62,7 +62,7 @@ install: build ## Build and install the binary with the current source code. Use
 ##@ Development
 
 .PHONY: generate
-generate: generate-testdata generate-docs update-k8s-version ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
+generate: generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
 	make remove-spaces
 
@@ -222,15 +222,6 @@ install-helm: ## Install the latest version of Helm locally
 .PHONY: helm-lint
 helm-lint: install-helm ## Lint the Helm chart in testdata
 	helm lint testdata/project-v4-with-plugins/dist/chart
-
-.PHONY: update-k8s-version
-update-k8s-version: ## Update Kubernetes API version in version.go and .goreleaser.yml
-	@if [ -z "$(K8S_VERSION)" ]; then echo "Error: K8S_VERSION is empty"; exit 1; fi
-	@echo "Updating Kubernetes version to $(K8S_VERSION)"
-	@# Update version.go
-	@sed -i.bak 's/kubernetesVendorVersion = .*/kubernetesVendorVersion = "$(K8S_VERSION)"/' internal/version/version.go
-	@# Clean up backup files
-	@find . -name "*.bak" -type f -delete
 
 ## Tool Binaries
 GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
