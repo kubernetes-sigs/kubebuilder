@@ -65,8 +65,14 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Check linter configuration
+        run: make lint-config
+
       - name: Run linter
         uses: golangci/golangci-lint-action@v8
         with:
           version: {{ .GolangciLintVersion }}
+
+      - name: Run lint target
+        run: make lint
 `
