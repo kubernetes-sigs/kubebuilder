@@ -1105,4 +1105,156 @@ spec:
 				"Helm label template should be present and NOT escaped")
 		})
 	})
+
+	Context("Custom Resource instances", func() {
+		It("should ignore Custom Resource instances and not include them in the chart", func() {
+			// This test validates that Custom Resources (CR instances, not CRDs) are
+			// intentionally ignored and not included in the generated Helm chart.
+			// CRs are environment-specific and should not be installed automatically.
+			kustomizeYAML := `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+  name: test-project-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: cronjobs.batch.tutorial.kubebuilder.io
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+spec:
+  group: batch.tutorial.kubebuilder.io
+  names:
+    kind: CronJob
+    listKind: CronJobList
+    plural: cronjobs
+    singular: cronjob
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        description: CronJob is the Schema for the cronjobs API
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              schedule:
+                type: string
+---
+apiVersion: batch.tutorial.kubebuilder.io/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+    app.kubernetes.io/managed-by: kustomize
+  name: cronjob-sample
+spec:
+  schedule: "*/1 * * * *"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+  name: custom-config
+  namespace: test-project-system
+data:
+  key1: value1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: test-project-controller-manager
+      containers:
+      - name: manager
+        image: controller:latest
+`
+
+			kustomizeFile := filepath.Join(tmpDir, "install.yaml")
+			err := os.WriteFile(kustomizeFile, []byte(kustomizeYAML), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser := kustomize.NewParser(kustomizeFile)
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying CRD and CR are correctly parsed")
+			Expect(resources.CustomResourceDefinitions).To(HaveLen(1), "should have 1 CRD")
+			Expect(resources.CustomResources).To(HaveLen(1), "should have 1 CR instance")
+			Expect(resources.Other).To(HaveLen(1), "should have 1 other resource (ConfigMap)")
+
+			By("verifying CR is a CronJob")
+			cr := resources.CustomResources[0]
+			Expect(cr.GetKind()).To(Equal("CronJob"))
+			Expect(cr.GetAPIVersion()).To(Equal("batch.tutorial.kubebuilder.io/v1"))
+			Expect(cr.GetName()).To(Equal("cronjob-sample"))
+
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			err = converter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying CR is NOT included in the chart (no samples directory)")
+			samplesDir := filepath.Join("dist", "chart", "samples")
+			exists, err := afero.Exists(fs.FS, samplesDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse(), "samples directory should NOT exist - CRs are ignored")
+
+			By("verifying CR is NOT in extras directory")
+			extrasDir := filepath.Join("dist", "chart", "templates", "extras")
+			exists, err = afero.Exists(fs.FS, extrasDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "extras directory should exist for ConfigMap")
+
+			extrasFiles, err := afero.ReadDir(fs.FS, extrasDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(extrasFiles).To(HaveLen(1), "extras should only have ConfigMap, not CR")
+
+			var configMapFound, crFound bool
+			for _, f := range extrasFiles {
+				if strings.Contains(f.Name(), "custom-config") {
+					configMapFound = true
+				}
+				if strings.Contains(strings.ToLower(f.Name()), "cronjob") {
+					crFound = true
+				}
+			}
+			Expect(configMapFound).To(BeTrue(), "ConfigMap should be in extras")
+			Expect(crFound).To(BeFalse(), "CR should NOT be in extras")
+
+			By("verifying CRD is in crd directory")
+			crdDir := filepath.Join("dist", "chart", "templates", "crd")
+			exists, err = afero.Exists(fs.FS, crdDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "crd directory should exist")
+
+			crdFiles, err := afero.ReadDir(fs.FS, crdDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(crdFiles).To(HaveLen(1), "crd directory should have 1 CRD")
+		})
+	})
 })

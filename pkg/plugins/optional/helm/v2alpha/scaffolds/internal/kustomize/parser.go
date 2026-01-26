@@ -44,6 +44,10 @@ type ParsedResources struct {
 	CustomResourceDefinitions []*unstructured.Unstructured
 	WebhookConfigurations     []*unstructured.Unstructured
 
+	// Custom Resource instances (samples) - instances of the CRDs defined in this project
+	// These should go to samples/ directory for manual post-install, not be installed by Helm
+	CustomResources []*unstructured.Unstructured
+
 	// Cert-manager resources
 	Certificates []*unstructured.Unstructured
 	Issuer       *unstructured.Unstructured
@@ -91,6 +95,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		Certificates:              make([]*unstructured.Unstructured, 0),
 		WebhookConfigurations:     make([]*unstructured.Unstructured, 0),
 		ServiceMonitors:           make([]*unstructured.Unstructured, 0),
+		CustomResources:           make([]*unstructured.Unstructured, 0),
 		Other:                     make([]*unstructured.Unstructured, 0),
 	}
 
@@ -112,6 +117,9 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		obj := &unstructured.Unstructured{Object: doc}
 		p.categorizeResource(obj, resources)
 	}
+
+	// After parsing all resources, identify Custom Resources by matching against CRD API groups
+	p.identifyCustomResources(resources)
 
 	return resources, nil
 }
@@ -151,6 +159,63 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	default:
 		resources.Other = append(resources.Other, obj)
 	}
+}
+
+// identifyCustomResources moves resources from Other to CustomResources if they are instances of project CRDs
+func (p *Parser) identifyCustomResources(resources *ParsedResources) {
+	// Build a set of API groups from the CRDs defined in this project
+	crdAPIGroups := make(map[string]bool)
+	for _, crd := range resources.CustomResourceDefinitions {
+		// Extract the group from the CRD spec
+		group, found, err := unstructured.NestedString(crd.Object, "spec", "group")
+		if found && err == nil && group != "" {
+			crdAPIGroups[group] = true
+		}
+	}
+
+	// If no CRDs found, nothing to do
+	if len(crdAPIGroups) == 0 {
+		return
+	}
+
+	// Separate Custom Resources from Other resources
+	var remainingOther []*unstructured.Unstructured
+	for _, resource := range resources.Other {
+		if resource == nil {
+			continue
+		}
+
+		// Extract API group from the resource's apiVersion (format: group/version or just version)
+		apiVersion := resource.GetAPIVersion()
+		apiGroup := extractAPIGroup(apiVersion)
+
+		// If this resource's API group matches one of our CRDs, it's a Custom Resource
+		if crdAPIGroups[apiGroup] {
+			resources.CustomResources = append(resources.CustomResources, resource)
+		} else {
+			remainingOther = append(remainingOther, resource)
+		}
+	}
+
+	resources.Other = remainingOther
+}
+
+// GetIgnoredCustomResources returns the list of Custom Resource instances that will be ignored
+func (pr *ParsedResources) GetIgnoredCustomResources() []*unstructured.Unstructured {
+	return pr.CustomResources
+}
+
+// extractAPIGroup extracts the group from an apiVersion string
+// Examples: "batch.tutorial.kubebuilder.io/v1" -> "batch.tutorial.kubebuilder.io"
+//
+//	"apps/v1" -> "apps"
+//	"v1" -> "" (core API group)
+func extractAPIGroup(apiVersion string) string {
+	parts := strings.Split(apiVersion, "/")
+	if len(parts) == 2 {
+		return parts[0]
+	}
+	return "" // Core API group (v1)
 }
 
 func (pr *ParsedResources) EstimatePrefix(projectName string) string {

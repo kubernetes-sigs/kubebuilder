@@ -121,7 +121,18 @@ The plugin creates a chart layout that matches your `config/`:
         └── my-config.yaml
 ```
 
-**Note:** The chart structure reflects the actual resources in your project. Resources that don't match the standard scaffold layout (custom Services, ConfigMaps, Secrets, etc.) are automatically placed in `templates/extras/` with proper Helm templating applied (namePrefix, labels, etc.) when present.
+<aside class="note">
+<H1>Chart Structure</H1>
+
+The chart structure mirrors your project's resources:
+
+- Standard resources (RBAC, manager, webhooks, CRDs) go into dedicated template directories
+- Other resources (Services, ConfigMaps, Secrets) go into `templates/extras/` with Helm templating
+- **Custom Resource instances** from `config/samples/` are **not included in the chart**
+
+By default, `make build-installer` does not include samples in `dist/install.yaml`. If you manually add CR instances to your kustomize output, the Helm plugin will ignore them.
+
+</aside>
 
 <aside class="note">
 <H1> Why CRDs are added under templates? </H1>
@@ -295,7 +306,7 @@ prometheus:
   enable: false
 ```
 
-### Installation Tip
+### Installation
 
 Install the chart into a namespace using Helm flags (the chart does not create namespaces):
 
