@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Copyright 2021 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,5 +24,15 @@ cd testdata/testplugin
 rm -rf *
 
 # Run Kubebuilder commands inside the testplugin directory
-kubebuilder init --plugins sampleexternalplugin/v1 --domain sample.domain.com
-kubebuilder create api --plugins sampleexternalplugin/v1 --number 2 --group samplegroup --version v1 --kind SampleKind
+kubebuilder init --plugins go/v4 --domain sample.domain.com --repo sample.domain.com/test-operator
+kubebuilder edit --plugins sampleexternalplugin/v1
+
+# Ensure Prometheus assets were scaffolded
+test -f config/prometheus/prometheus.yaml
+test -f config/prometheus/kustomization.yaml
+test -f config/default/kustomization_prometheus_patch.yaml
+
+# Clean up test files only on success (set -e ensures we exit on failure)
+echo "All tests passed!"
+cd ../..
+rm -rf testdata/testplugin

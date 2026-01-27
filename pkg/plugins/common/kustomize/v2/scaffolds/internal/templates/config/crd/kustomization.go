@@ -76,7 +76,7 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 	fragments := make(machinery.CodeFragmentsMap, 2)
 
 	// Generate resource code fragments
-	res := make([]string, 0)
+	res := make([]string, 0, 1)
 	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.QualifiedGroup(), f.Resource.Plural))
 
 	suffix := f.Resource.Plural

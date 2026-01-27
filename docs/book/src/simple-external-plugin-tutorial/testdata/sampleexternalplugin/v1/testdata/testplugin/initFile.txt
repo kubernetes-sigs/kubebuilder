@@ -1,2 +1,0 @@
-A simple text file created with the `init` subcommand
-DOMAIN: sample.domain.com

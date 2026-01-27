@@ -22,6 +22,7 @@ import (
 
 	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/version"
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
@@ -62,10 +63,11 @@ func Run() {
 		slog.Error("error discovering external plugins", "error", err)
 	}
 
+	v := version.New()
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
-		cli.WithVersion(versionString()),
-		cli.WithCliVersion(getKubebuilderVersion()),
+		cli.WithVersion(v.PrintVersion()),
+		cli.WithCliVersion(v.GetKubeBuilderVersion()),
 		cli.WithPlugins(
 			golangv4.Plugin{},
 			gov4Bundle,

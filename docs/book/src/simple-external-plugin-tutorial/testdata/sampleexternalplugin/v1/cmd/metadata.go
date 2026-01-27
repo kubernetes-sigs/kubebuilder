@@ -40,8 +40,7 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Here is an example of parsing multiple flags from a Kubebuilder external plugin request
 	flagsToParse := pflag.NewFlagSet("flagsFlags", pflag.ContinueOnError)
 	flagsToParse.Bool("init", false, "sets the init flag to true")
-	flagsToParse.Bool("api", false, "sets the api flag to true")
-	flagsToParse.Bool("webhook", false, "sets the webhook flag to true")
+	flagsToParse.Bool("edit", false, "sets the edit flag to true")
 
 	if err := flagsToParse.Parse(pr.Args); err != nil {
 		pluginResponse.Error = true
@@ -52,25 +51,22 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 	}
 
 	initFlag, _ := flagsToParse.GetBool("init")
-	apiFlag, _ := flagsToParse.GetBool("api")
-	webhookFlag, _ := flagsToParse.GetBool("webhook")
+	editFlag, _ := flagsToParse.GetBool("edit")
 
 	// The Phase 2 Plugins implementation will only ever pass a single boolean flag
-	// argument in the JSON request `args` field. The flag will be `--init` if it is
-	// attempting to get the flags for the `init` subcommand, `--api` for `create api`,
-	// `--webhook` for `create webhook`, and `--edit` for `edit`
+	// argument in the JSON request `args` field.
 	if initFlag {
 		// Populate the JSON response `metadata` field with a description
 		// and examples for the `init` subcommand
 		pluginResponse.Metadata = scaffolds.InitMeta
-	} else if apiFlag {
-		pluginResponse.Metadata = scaffolds.ApiMeta
-	} else if webhookFlag {
-		pluginResponse.Metadata = scaffolds.WebhookMeta
+	} else if editFlag {
+		// Populate the JSON response `metadata` field with a description
+		// and examples for the `edit` subcommand
+		pluginResponse.Metadata = scaffolds.EditMeta
 	} else {
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
-			"unrecognized flag",
+			"no subcommand flag provided; expected --init or --edit",
 		}
 	}
 
