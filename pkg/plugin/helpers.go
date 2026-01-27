@@ -58,8 +58,8 @@ func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
 
 	// Get base name (part before first dot): "deploy-image.go.kubebuilder.io" -> "deploy-image"
 	baseName := pluginName
-	if idx := strings.Index(pluginName, "."); idx != -1 {
-		baseName = pluginName[:idx]
+	if before, _, ok := strings.Cut(pluginName, "."); ok {
+		baseName = before
 	}
 
 	for _, key := range pluginChain {
@@ -70,8 +70,8 @@ func GetPluginKeyForConfig(pluginChain []string, p Plugin) string {
 
 		// Check if this key matches the base name
 		keyBaseName := name
-		if idx := strings.Index(name, "."); idx != -1 {
-			keyBaseName = name[:idx]
+		if before, _, ok := strings.Cut(name, "."); ok {
+			keyBaseName = before
 		}
 
 		if keyBaseName == baseName {
