@@ -154,7 +154,7 @@ func (o *ResourceOrganizer) collectMetricsResources() []*unstructured.Unstructur
 
 // collectPrometheusResources gathers prometheus related resources
 func (o *ResourceOrganizer) collectPrometheusResources() []*unstructured.Unstructured {
-	var prometheusResources []*unstructured.Unstructured
+	prometheusResources := make([]*unstructured.Unstructured, 0, len(o.resources.ServiceMonitors))
 
 	// ServiceMonitors
 	prometheusResources = append(prometheusResources, o.resources.ServiceMonitors...)

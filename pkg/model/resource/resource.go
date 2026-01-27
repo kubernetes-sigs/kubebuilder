@@ -205,7 +205,7 @@ func wrapKey(key string) string {
 
 // Replacer returns a strings.Replacer that replaces resource keywords with values.
 func (r Resource) Replacer() *strings.Replacer {
-	var replacements []string
+	replacements := make([]string, 0, 10)
 
 	replacements = append(replacements, wrapKey("group"), r.Group)
 	replacements = append(replacements, wrapKey("version"), r.Version)
