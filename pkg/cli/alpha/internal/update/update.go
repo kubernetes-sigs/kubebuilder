@@ -312,7 +312,11 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 		if summary != "" {
 			num := helpers.IssueNumberFromURL(issueURL)
 			target := issueURL
-			args := []string{"issue", "comment", "--repo", repo}
+			args := make([]string, 4, 7)
+			args[0] = "issue"
+			args[1] = "comment"
+			args[2] = "--repo"
+			args[3] = repo
 			if num != "" {
 				target = num
 			}

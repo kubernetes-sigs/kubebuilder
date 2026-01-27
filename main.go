@@ -16,7 +16,7 @@ limitations under the License.
 
 package main
 
-import "sigs.k8s.io/kubebuilder/v4/cmd"
+import "sigs.k8s.io/kubebuilder/v4/internal/cmd"
 
 func main() {
 	cmd.Run()

@@ -29,7 +29,7 @@ jobs:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -43,7 +43,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.7.2
+          version: v2.8.0
           working-directory: ${{ matrix.folder }}
       - name: Run linter via makefile target
         working-directory: ${{ matrix.folder }}

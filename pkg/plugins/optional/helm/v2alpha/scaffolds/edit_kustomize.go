@@ -85,6 +85,23 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		return fmt.Errorf("failed to parse kustomize output from %s: %w", s.manifestsFile, err)
 	}
 
+	// Warn if Custom Resource instances were found and will be ignored
+	if len(resources.CustomResources) > 0 {
+		slog.Warn(
+			"Custom Resource instances found. They will be ignored and not included in the Helm chart",
+			"count", len(resources.CustomResources),
+			"note", "CRs are environment-specific and should be created manually after chart installation",
+		)
+		for _, cr := range resources.CustomResources {
+			slog.Warn(
+				"Ignoring Custom Resource instance",
+				"kind", cr.GetKind(),
+				"apiVersion", cr.GetAPIVersion(),
+				"name", cr.GetName(),
+			)
+		}
+	}
+
 	// Analyze resources to determine chart features
 	hasWebhooks := len(resources.WebhookConfigurations) > 0 || len(resources.Certificates) > 0
 	// Prometheus is enabled when ServiceMonitor resources exist (../prometheus enabled)
@@ -119,8 +136,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 
 	// Define the standard Helm chart files to generate
 	chartFiles := []machinery.Builder{
-		&github.HelmChartCI{Force: s.force},                          // GitHub Actions workflow for chart testing
-		&templates.HelmChart{OutputDir: s.outputDir, Force: s.force}, // Chart.yaml metadata
+		&github.HelmChartCI{Force: s.force},
+		&templates.HelmChart{OutputDir: s.outputDir, Force: s.force},
 		&templates.HelmValuesBasic{
 			// values.yaml with dynamic config
 			HasWebhooks:      hasWebhooks,
@@ -129,8 +146,8 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			OutputDir:        s.outputDir,
 			Force:            s.force,
 		},
-		&templates.HelmIgnore{OutputDir: s.outputDir, Force: s.force},       // .helmignore file
-		&charttemplates.HelmHelpers{OutputDir: s.outputDir, Force: s.force}, // _helpers.tpl template functions
+		&templates.HelmIgnore{OutputDir: s.outputDir, Force: s.force},
+		&charttemplates.HelmHelpers{OutputDir: s.outputDir, Force: s.force},
 	}
 
 	// Only scaffold the generic ServiceMonitor when the project does NOT already
