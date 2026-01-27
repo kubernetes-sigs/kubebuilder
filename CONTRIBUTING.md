@@ -149,33 +149,52 @@ See:
 
 See [VERSIONING.md](VERSIONING.md) for a full description. TL;DR:
 
-Every PR should be annotated with an icon indicating whether it's
-a:
+### PR Title Format
 
-- Breaking change: :warning: (`:warning:`)
-- Non-breaking feature: :sparkles: (`:sparkles:`)
-- Patch fix: :bug: (`:bug:`)
-- Docs: :book: (`:book:`)
-- Infra/Tests/Other: :seedling: (`:seedling:`)
+PR titles use **emojis** (appear in release notes). Format: `:emoji: (plugin/version): Description`
 
-Use :ghost: (no release note) only for the PRs that change or revert unreleased
-changes, which don't deserve a release note. Please don't abuse it.
+**Emojis:**
+- ⚠️ (`:warning:`) - Breaking change
+- ✨ (`:sparkles:`) - New feature
+- 🐛 (`:bug:`) - Bug fix
+- 📖 (`:book:`) - Documentation
+- 🌱 (`:seedling:`) - Infrastructure/tests/refactor
+- 👻 (`:ghost:`) - No release note (unreleased changes only)
 
-You can also use the equivalent emoji directly, since GitHub doesn't
-render the `:xyz:` aliases in PR titles.
-
-If the PR is "plugin" scoped, you may also append the responding plugin names in the prefix.
-[For instance](https://github.com/kubernetes-sigs/kubebuilder/commit/0b36d0c4021bbf52f29d5a990157466761ec180c):
-
+**Examples:**
 ```
-🐛 (kustomize/v2-alpha): Fix typo issue in the labels added to the manifests
+🐛 Resolve nil pointer panic in scaffold generator
+✨ (helm/v2-alpha): Add cluster-scoped resource support
+📖 (go/v4): Update deployment documentation
+✨ Update dependencies to latest versions
+🌱 Add new GitHub action to test out doc samples
 ```
 
-Individual commits should not be tagged separately, but will generally be
-assumed to match the PR. For instance, if you have a bugfix in with
-a breaking change, it's generally encouraged to submit the bugfix
-separately, but if you must put them in one PR, mark the commit
-separately.
+### Commit Message Format
+
+Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
+
+Format: `<type>[optional scope]: <description>`
+
+The `[optional scope]` is typically the plugin/version (e.g., `helm/v2-alpha`, `go/v4`); omit it for repo-wide or non-plugin changes.
+
+**Types:**
+
+- **feat**: A new feature for the user or a plugin
+- **fix**: A bug fix for the user or a plugin
+- **docs**: Documentation changes only
+- **test**: Adding or updating tests
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **chore**: Changes to build process, dependencies, or maintenance tasks
+- **breaking**: A breaking change (can be combined with other types)
+
+**Examples:**
+```
+fix: Resolve nil pointer panic in scaffold generator
+feat(helm/v2-alpha): Add cluster-scoped resource support
+docs(go/v4): Update deployment documentation
+chore: Update dependencies to latest versions
+```
 
 ## Where the CI Tests are configured
 
