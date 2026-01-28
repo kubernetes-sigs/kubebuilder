@@ -6,7 +6,10 @@
       "moby": false,
       "dockerDefaultAddressPool": "base=172.30.0.0/16,size=24"
     },
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "upgradePackages": true
+    }
   },
 
   "runArgs": ["--privileged", "--init"],

@@ -24,6 +24,9 @@ jobs:
         with:
           subFolder: testdata/project-v4
           runCmd: |
+            # Source bash-completion for all tests
+            source /usr/share/bash-completion/bash_completion
+            
             # Verify Tools Installation
             echo "Verifying installed tools..."
             docker --version
@@ -32,6 +35,43 @@ jobs:
             kubectl version --client
             go version
             echo "All required tools are installed"
+            
+            # Verify common-utils feature is installed
+            echo "Verifying common-utils feature..."
+            if ! command -v zsh &> /dev/null; then
+              echo "ERROR: common-utils feature not installed (zsh missing)"
+              exit 1
+            fi
+            echo "common-utils feature is installed"
+            
+            # Verify bash-completion setup
+            echo "Verifying bash-completion configuration..."
+            if ! grep -q "source /usr/share/bash-completion/bash_completion" ~/.bashrc; then
+              echo "ERROR: bash-completion not configured in .bashrc"
+              exit 1
+            fi
+            echo "bash-completion is configured in .bashrc"
+            
+            # Verify completion files exist
+            echo "Verifying completion files..."
+            for cmd in kubectl kind kubebuilder docker; do
+              if [ ! -f "/usr/share/bash-completion/completions/${cmd}" ]; then
+                echo "ERROR: Completion file for ${cmd} not found"
+                exit 1
+              fi
+              echo "${cmd} completion file exists"
+            done
+            echo "All completion files are present"
+            
+            # Test bash-completion works
+            echo "Testing bash-completion functionality..."
+            # Bash-completion uses lazy-loading, so manually source completion to test
+            source /usr/share/bash-completion/completions/kubectl
+            if ! complete -p kubectl &> /dev/null; then
+              echo "ERROR: kubectl completions not loaded"
+              exit 1
+            fi
+            echo "Bash completions are working"
 
             # Test Docker-in-Docker
             echo "Testing Docker-in-Docker functionality..."
