@@ -15,6 +15,8 @@ limitations under the License.
 */
 package prometheus
 
+import "fmt"
+
 // PrometheusKustomization represents the kustomization.yaml for Prometheus resources
 type PrometheusKustomization struct {
 	Path    string
@@ -22,15 +24,21 @@ type PrometheusKustomization struct {
 }
 
 // NewPrometheusKustomization creates a new kustomization.yaml for Prometheus resources
-func NewPrometheusKustomization() *PrometheusKustomization {
+func NewPrometheusKustomization(namespace string) *PrometheusKustomization {
+	content := fmt.Sprintf(prometheusKustomizationTemplate, namespace)
 	return &PrometheusKustomization{
 		Path:    "config/prometheus/kustomization.yaml",
-		Content: prometheusKustomizationTemplate,
+		Content: content,
 	}
 }
 
-const prometheusKustomizationTemplate = `resources:
+const prometheusKustomizationTemplate = `# Kustomization for Prometheus instance
+# This kustomization includes the Prometheus instance that works with
+# the ServiceMonitor already created by Kubebuilder in monitor.yaml
+resources:
   - prometheus.yaml
+
+namespace: %s
 `
 
 // DefaultKustomizationPatch represents instructions for adding Prometheus to the default kustomization.yaml
@@ -47,13 +55,21 @@ func NewDefaultKustomizationPatch() *DefaultKustomizationPatch {
 	}
 }
 
-const defaultKustomizationPatchTemplate = `# [PROMETHEUS] To enable Prometheus monitoring, add the following to config/default/kustomization.yaml:
-#
-# In the resources section, add:
-# - ../prometheus
-#
-# This will include the Prometheus instance in your deployment.
-# Make sure you have the Prometheus Operator installed in your cluster.
-#
-# For more information, see: https://github.com/prometheus-operator/prometheus-operator
+const defaultKustomizationPatchTemplate = `# Prometheus Setup Instructions
+# ==============================
+# 
+# This plugin added a Prometheus instance to config/prometheus/prometheus.yaml
+# 
+# To enable Prometheus monitoring:
+# 
+# 1. Install Prometheus Operator:
+#    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml
+# 
+# 2. Uncomment the prometheus patch in config/default/kustomization.yaml
+#    to include the Prometheus instance resources
+# 
+# 3. Deploy: make deploy
+# 
+# The Prometheus instance will automatically discover the ServiceMonitor
+# that Kubebuilder scaffolded in config/prometheus/monitor.yaml
 `

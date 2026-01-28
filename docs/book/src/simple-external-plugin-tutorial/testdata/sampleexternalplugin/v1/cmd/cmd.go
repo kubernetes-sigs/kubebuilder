@@ -27,27 +27,33 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
-// Run will run the actual steps of the plugin
+// Run executes the external plugin logic.
+//
+// EXTERNAL PLUGIN ARCHITECTURE:
+// External plugins are standalone executables that communicate with Kubebuilder via JSON over stdin/stdout.
+// This allows plugins to be written in any language, though this sample uses Go for consistency.
+//
+// PROTOCOL:
+// 1. INPUT:  Kubebuilder writes PluginRequest (JSON) to plugin's stdin
+// 2. PROCESS: Plugin executes the requested subcommand
+// 3. OUTPUT: Plugin writes PluginResponse (JSON) to stdout
+//
+// IMPORTANT: stdout is RESERVED for JSON responses. Debug output must go to stderr or log files.
 func Run() {
-	// Phase 2 Plugins makes requests to an external plugin by
-	// writing to the STDIN buffer. This means that an external plugin
-	// call will NOT include any arguments other than the program name
-	// itself. In order to get the request JSON from Kubebuilder
-	// we will need to read the input from STDIN
+	// Read PluginRequest JSON from stdin
+	// Kubebuilder writes a single JSON object containing:
+	// - command: which subcommand to execute (init, edit, flags, metadata)
+	// - args: command-line arguments for the plugin
+	// - config: PROJECT file contents as map (if file exists)
+	// - universe: existing files that may need modification
 	reader := bufio.NewReader(os.Stdin)
-
 	input, err := io.ReadAll(reader)
 	if err != nil {
 		returnError(fmt.Errorf("encountered error reading STDIN: %w", err))
 	}
 
-	// Parse the JSON input from STDIN to a PluginRequest object.
-	// Since the Phase 2 Plugin implementation was written in Go
-	// there is already a Go API in place to represent these values.
-	// Phase 2 Plugins can be written in any language, but you may
-	// need to create some classes/interfaces to parse the JSON used
-	// in the Phase 2 Plugins communication. More information on the
-	// Phase 2 Plugin JSON schema can be found in the Phase 2 Plugins docs
+	// Parse request using Kubebuilder's external.PluginRequest type
+	// This type is defined in pkg/plugin/external and ensures compatibility
 	pluginRequest := &external.PluginRequest{}
 
 	err = json.Unmarshal(input, pluginRequest)
@@ -57,42 +63,46 @@ func Run() {
 
 	var response external.PluginResponse
 
-	// Run logic depending on the command that is requested by Kubebuilder
+	// Route to appropriate handler based on subcommand
+	// External plugins can implement any subset of these subcommands
 	switch pluginRequest.Command {
-	// the `init` subcommand is used to add features during project initialization
 	case "init":
+		// Called during: kubebuilder init --plugins sampleexternalplugin/v1
+		// Purpose: Add files/features during project initialization
+		// Runs AFTER base plugin (go/v4) sets up project structure
 		response = scaffolds.InitCmd(pluginRequest)
-	// the `edit` subcommand is used to add optional features to an existing project
-	// This is a realistic use case for external plugins - adding optional monitoring
+
 	case "edit":
+		// Called during: kubebuilder edit --plugins sampleexternalplugin/v1
+		// Purpose: Add files/features to existing project
+		// Most common use case for external plugins (optional enhancements)
 		response = scaffolds.EditCmd(pluginRequest)
-	// the `flags` subcommand is used to customize the flags that
-	// the Kubebuilder cli will bind for use with this plugin
+
 	case "flags":
+		// Called by: kubebuilder internally before running subcommands
+		// Purpose: Inform Kubebuilder which flags this plugin accepts
+		// Enables early validation and better --help output
 		response = flagsCmd(pluginRequest)
-	// the `metadata` subcommand is used to customize the
-	// plugin metadata (help message and examples) that are
-	// shown to Kubebuilder CLI users.
+
 	case "metadata":
+		// Called by: kubebuilder internally for --help output
+		// Purpose: Provide description and examples for each subcommand
+		// Makes external plugins feel native to Kubebuilder
 		response = metadataCmd(pluginRequest)
-	// Any errors should still be returned as part of the plugin's
-	// JSON response. There is an `error` boolean field to signal to
-	// Kubebuilder that the external plugin encountered an error.
-	// There is also an `errorMsgs` string array field to provide all
-	// error messages to Kubebuilder.
+
 	default:
+		// Unknown subcommand - return error response
+		// Errors must be returned as JSON, not exit codes
 		response = external.PluginResponse{
 			Error: true,
 			ErrorMsgs: []string{
-				"unknown subcommand:" + pluginRequest.Command,
+				"unknown subcommand: " + pluginRequest.Command,
 			},
 		}
 	}
 
-	// The Phase 2 Plugins implementation will read the response
-	// from a Phase 2 Plugin via STDOUT. For Kubebuilder to properly
-	// read our response we need to create a valid JSON string and
-	// write it to the STDOUT buffer.
+	// Write PluginResponse JSON to stdout
+	// IMPORTANT: This must be the only stdout output (no debug prints!)
 	output, err := json.Marshal(response)
 	if err != nil {
 		returnError(fmt.Errorf("encountered error marshaling output: %w | OUTPUT: %s", err, output))
