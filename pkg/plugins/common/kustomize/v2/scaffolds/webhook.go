@@ -110,6 +110,14 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %w", err)
 	}
 
+	// Warn users about potential bootstrap problem for core type webhooks
+	if s.resource.Core {
+		log.Warn("================================================================================")
+		log.Warn("Webhooks for core types may cause circular dependencies during deployment.")
+		log.Warn("See: https://book.kubebuilder.io/reference/webhook-bootstrap-problem.html")
+		log.Warn("================================================================================")
+	}
+
 	// Apply project-specific customizations:
 	// - Add reference to allow-webhook-traffic.yaml in network policy configuration.
 	// - Enable all webhook-related sections in config/default/kustomization.yaml.

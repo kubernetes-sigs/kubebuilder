@@ -86,6 +86,8 @@ You can do this in one of two ways:
 - **[namespaceSelector]** – label the namespace where the webhook runs and configure the webhook to skip it.
 - **[objectSelector]** – label the webhook’s own Pods or Deployments and exclude those objects directly.
 
+See the complete step-by-step guide: **[Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.md)**
+
 </aside>
 
 [namespaceSelector]: https://github.com/kubernetes/api/blob/kubernetes-1.14.5/admissionregistration/v1beta1/types.go#L189-L233
