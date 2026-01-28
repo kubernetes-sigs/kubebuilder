@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
+	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
