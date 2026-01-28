@@ -37,7 +37,7 @@ MacOS:
   $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
 `, c.commandName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Root().GenBashCompletion(os.Stdout)
+			return cmd.Root().GenBashCompletionV2(os.Stdout, true)
 		},
 	}
 }
