@@ -262,11 +262,11 @@ func (factory *executionHooksFactory) withPluginChain(tuple keySubcommandTuple, 
 	changed := !equalStringSlices(original, newChain)
 	if changed {
 		if setErr := cfg.SetPluginChain(newChain); setErr != nil {
-			return fmt.Errorf("unable to set plugin chain for %q: %w", tuple.configKey, setErr)
+			return fmt.Errorf("failed to set plugin chain for %q: %w", tuple.configKey, setErr)
 		}
 		defer func() {
 			if resetErr := cfg.SetPluginChain(original); resetErr != nil && err == nil {
-				err = fmt.Errorf("unable to reset plugin chain: %w", resetErr)
+				err = fmt.Errorf("failed to reset plugin chain: %w", resetErr)
 			}
 		}()
 	}
@@ -326,10 +326,10 @@ func (factory *executionHooksFactory) preRunEFunc(
 		} else {
 			// Load the project configuration.
 			if err := factory.store.Load(); os.IsNotExist(err) {
-				return fmt.Errorf("%s: unable to find configuration file, project must be initialized",
+				return fmt.Errorf("%s: failed to find configuration file, project must be initialized",
 					factory.errorMessage)
 			} else if err != nil {
-				return fmt.Errorf("%s: unable to load configuration file: %w", factory.errorMessage, err)
+				return fmt.Errorf("%s: failed to load configuration file: %w", factory.errorMessage, err)
 			}
 		}
 		cfg := factory.store.Config()
@@ -350,7 +350,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 			// TODO: offer a flag instead of hard-coding project-wide domain
 			options.Domain = cfg.GetDomain()
 			if err := options.validate(); err != nil {
-				return fmt.Errorf("%s: unable to create resource: %w", factory.errorMessage, err)
+				return fmt.Errorf("%s: failed to create resource: %w", factory.errorMessage, err)
 			}
 			res = options.newResource()
 		}
@@ -416,7 +416,7 @@ func (factory *executionHooksFactory) runEFunc() func(*cobra.Command, []string) 
 func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		if err := factory.store.Save(); err != nil {
-			return fmt.Errorf("%s: unable to save configuration file: %w", factory.errorMessage, err)
+			return fmt.Errorf("%s: failed to save configuration file: %w", factory.errorMessage, err)
 		}
 
 		// Post-scaffold hook.

@@ -30,7 +30,7 @@ func validateAPIVersion(version string) error {
 	case "v1":
 		return nil
 	default:
-		return fmt.Errorf("API version must be one of: v1beta1, v1")
+		return fmt.Errorf("api version must be one of: v1beta1, v1")
 	}
 }
 

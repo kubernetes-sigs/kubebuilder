@@ -44,10 +44,10 @@ func (opts *Update) Validate() error {
 		return fmt.Errorf("failed to validate the versions: %w", err)
 	}
 	if err := validateReleaseAvailability(opts.FromVersion); err != nil {
-		return fmt.Errorf("unable to find release %s: %w", opts.FromVersion, err)
+		return fmt.Errorf("failed to find release %s: %w", opts.FromVersion, err)
 	}
 	if err := validateReleaseAvailability(opts.ToVersion); err != nil {
-		return fmt.Errorf("unable to find release %s: %w", opts.ToVersion, err)
+		return fmt.Errorf("failed to find release %s: %w", opts.ToVersion, err)
 	}
 
 	if opts.OpenGhIssue {

@@ -92,7 +92,7 @@ layout: ""
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to read %q file: %w", DefaultPath, &os.PathError{
+				Err: fmt.Errorf("failed to read %q file: %w", DefaultPath, &os.PathError{
 					Err:  os.ErrNotExist,
 					Path: DefaultPath,
 					Op:   "open",
@@ -106,7 +106,7 @@ layout: ""
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to determine config version: %w",
+				Err: fmt.Errorf("failed to determine config version: %w",
 					fmt.Errorf("error unmarshaling JSON: %w",
 						fmt.Errorf("while decoding JSON: %w",
 							errors.New("project version is empty"),
@@ -122,7 +122,7 @@ layout: ""
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to create config for version %q: %w", "1-alpha", config.UnsupportedVersionError{
+				Err: fmt.Errorf("failed to create config for version %q: %w", "1-alpha", config.UnsupportedVersionError{
 					Version: config.Version{Number: 1, Stage: 2},
 				}),
 			}))
@@ -134,7 +134,7 @@ layout: ""
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to create config for version %q: %w", "2", config.UnsupportedVersionError{
+				Err: fmt.Errorf("failed to create config for version %q: %w", "2", config.UnsupportedVersionError{
 					Version: config.Version{
 						Number: 2,
 						Stage:  0,
@@ -159,7 +159,7 @@ layout: ""
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to read %q file: %w", path, &os.PathError{
+				Err: fmt.Errorf("failed to read %q file: %w", path, &os.PathError{
 					Err:  os.ErrNotExist,
 					Path: path,
 					Op:   "open",
@@ -173,7 +173,7 @@ layout: ""
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to determine config version: %w",
+				Err: fmt.Errorf("failed to determine config version: %w",
 					fmt.Errorf("error unmarshaling JSON: %w",
 						fmt.Errorf("while decoding JSON: %w",
 							errors.New("project version is empty"),
@@ -189,7 +189,7 @@ layout: ""
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to create config for version %q: %w", "1-alpha", config.UnsupportedVersionError{
+				Err: fmt.Errorf("failed to create config for version %q: %w", "1-alpha", config.UnsupportedVersionError{
 					Version: config.Version{Number: 1, Stage: 2},
 				}),
 			}))
@@ -201,7 +201,7 @@ layout: ""
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(store.LoadError{
-				Err: fmt.Errorf("unable to create config for version %q: %w", "2", config.UnsupportedVersionError{
+				Err: fmt.Errorf("failed to create config for version %q: %w", "2", config.UnsupportedVersionError{
 					Version: config.Version{
 						Number: 2,
 					},

@@ -58,7 +58,7 @@ func (api *API) Update(other *API) error {
 		if api.CRDVersion == "" {
 			api.CRDVersion = other.CRDVersion
 		} else if api.CRDVersion != other.CRDVersion {
-			return fmt.Errorf("CRD versions do not match")
+			return fmt.Errorf("crd versions do not match")
 		}
 	}
 

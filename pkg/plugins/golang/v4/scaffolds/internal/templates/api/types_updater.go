@@ -64,7 +64,7 @@ func (f *TypesUpdater) SetTemplateDefaults() error {
 	// Read the existing file
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error("Unable to read types file", "file", filePath, "error", err)
+		log.Error("failed to read types file", "file", filePath, "error", err)
 		return fmt.Errorf("failed to read types file: %w", err)
 	}
 

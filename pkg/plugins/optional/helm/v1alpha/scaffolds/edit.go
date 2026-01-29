@@ -215,7 +215,7 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 		}
 
 		if err := yaml.Unmarshal([]byte(doc), &webhookConfig); err != nil {
-			log.Error("fail to unmarshalling webhook YAML", "error", err)
+			log.Error("failed to unmarshal webhook YAML", "error", err)
 			continue
 		}
 
