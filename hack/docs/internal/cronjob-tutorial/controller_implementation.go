@@ -403,7 +403,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete old failed job", "job", job)
 			} else {
-				log.V(0).Info("deleted old failed job", "job", job)
+				log.V(1).Info("deleted old failed job", "job", job)
 			}
 		}
 	}
@@ -430,7 +430,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
 				log.Error(err, "unable to delete old successful job", "job", job)
 			} else {
-				log.V(0).Info("deleted old successful job", "job", job)
+				log.V(1).Info("deleted old successful job", "job", job)
 			}
 		}
 	}
