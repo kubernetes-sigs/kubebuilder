@@ -53,7 +53,7 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 	f.PackageName = "controller"
 	f.IfExistsAction = machinery.OverwriteFile
 
-	log.Info("creating import", "resource", f.Resource.Path)
+	log.Info("creating import for resource", "resource", f.Resource.Path)
 	f.TemplateBody = controllerTestTemplate
 
 	return nil

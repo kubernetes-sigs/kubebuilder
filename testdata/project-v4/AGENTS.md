@@ -210,6 +210,25 @@ kubectl logs -n <project>-system deployment/<project>-controller-manager -c mana
 - **Watch secondary resources**: Use `.Owns()` or `.Watches()`, not just `RequeueAfter`
 - **Finalizers**: Clean up external resources (buckets, VMs, DNS entries)
 
+### Logging
+
+**Follow Kubernetes logging message style guidelines:**
+
+- Start from a capital letter
+- Do not end the message with a period
+- Active voice: subject present (`"Deployment could not create Pod"`) or omitted (`"Could not create Pod"`)
+- Past tense: `"Could not delete Pod"` not `"Cannot delete Pod"`
+- Specify object type: `"Deleted Pod"` not `"Deleted"`
+- Balanced key-value pairs
+
+```go
+log.Info("Starting reconciliation")
+log.Info("Created Deployment", "name", deploy.Name)
+log.Error(err, "Failed to create Pod", "name", name)
+```
+
+**Reference:** https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines
+
 ### Webhooks
 - **Create all types together**: `--defaulting --programmatic-validation --conversion`
 - **When`--force`is used**: Backup custom logic first, then restore after scaffolding
@@ -273,6 +292,7 @@ make docker-build docker-push IMG=$IMG
 - **Kubebuilder Book**: https://book.kubebuilder.io (comprehensive guide)
 - **controller-runtime FAQ**: https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md (common patterns and questions)
 - **Good Practices**: https://book.kubebuilder.io/reference/good-practices.html (why reconciliation is idempotent, status conditions, etc.)
+- **Logging Conventions**: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines (message style, verbosity levels)
 
 ### API Design & Implementation
 - **API Conventions**: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md

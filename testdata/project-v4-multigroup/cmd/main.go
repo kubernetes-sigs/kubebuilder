@@ -135,7 +135,7 @@ func main() {
 	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
 	// - https://github.com/advisories/GHSA-4374-p667-p6c8
 	disableHTTP2 := func(c *tls.Config) {
-		setupLog.Info("disabling http/2")
+		setupLog.Info("Disabling HTTP/2")
 		c.NextProtos = []string{"http/1.1"}
 	}
 
@@ -215,7 +215,7 @@ func main() {
 		// LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
 
@@ -223,13 +223,13 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Captain")
+		setupLog.Error(err, "Failed to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
 	}
@@ -237,20 +237,20 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
+		setupLog.Error(err, "Failed to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
 	if err := (&shipcontroller.DestroyerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
+		setupLog.Error(err, "Failed to create controller", "controller", "Destroyer")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Destroyer")
 			os.Exit(1)
 		}
 	}
@@ -258,13 +258,13 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
+		setupLog.Error(err, "Failed to create controller", "controller", "Cruiser")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Cruiser")
 			os.Exit(1)
 		}
 	}
@@ -272,69 +272,69 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Kraken")
+		setupLog.Error(err, "Failed to create controller", "controller", "Kraken")
 		os.Exit(1)
 	}
 	if err := (&seacreaturescontroller.LeviathanReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Leviathan")
+		setupLog.Error(err, "Failed to create controller", "controller", "Leviathan")
 		os.Exit(1)
 	}
 	if err := (&foopolicycontroller.HealthCheckPolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
+		setupLog.Error(err, "Failed to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
 	if err := (&appscontroller.DeploymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
+		setupLog.Error(err, "Failed to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
 	if err := (&foocontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Bar")
+		setupLog.Error(err, "Failed to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
 	if err := (&fizcontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Bar")
+		setupLog.Error(err, "Failed to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
 	if err := (&certmanagercontroller.CertificateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
+		setupLog.Error(err, "Failed to create controller", "controller", "Certificate")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Issuer")
 			os.Exit(1)
 		}
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Pod")
 			os.Exit(1)
 		}
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Deployment")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
 			os.Exit(1)
 		}
 	}
@@ -343,7 +343,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("memcached-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
+		setupLog.Error(err, "Failed to create controller", "controller", "Memcached")
 		os.Exit(1)
 	}
 	if err := (&examplecomcontroller.BusyboxReconciler{
@@ -351,13 +351,13 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("busybox-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
+		setupLog.Error(err, "Failed to create controller", "controller", "Busybox")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}
@@ -365,30 +365,30 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Wordpress")
+		setupLog.Error(err, "Failed to create controller", "controller", "Wordpress")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}
 	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "Failed to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "Failed to set up ready check")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
 }

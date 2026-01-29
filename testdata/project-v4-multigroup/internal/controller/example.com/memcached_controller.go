@@ -91,7 +91,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if apierrors.IsNotFound(err) {
 			// If the custom resource is not found then it usually means that it was deleted or not created
 			// In this way, we will stop the reconciliation
-			log.Info("memcached resource not found. Ignoring since object must be deleted")
+			log.Info("Memcached resource not found, ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -121,7 +121,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-		log.Info("Adding Finalizer for Memcached")
+		log.Info("Adding finalizer for Memcached")
 		controllerutil.AddFinalizer(memcached, memcachedFinalizer)
 		if err = r.Update(ctx, memcached); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
@@ -134,7 +134,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	isMemcachedMarkedToBeDeleted := memcached.GetDeletionTimestamp() != nil
 	if isMemcachedMarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-			log.Info("Performing Finalizer Operations for Memcached before delete CR")
+			log.Info("Performing finalizer operations for Memcached before deleting CR")
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
@@ -172,7 +172,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 
-			log.Info("Removing Finalizer for Memcached after successfully perform the operations")
+			log.Info("Removing finalizer for Memcached after successfully performing the operations")
 			if ok := controllerutil.RemoveFinalizer(memcached, memcachedFinalizer); !ok {
 				err = fmt.Errorf("finalizer for Memcached was not removed")
 				log.Error(err, "Failed to remove finalizer for Memcached")

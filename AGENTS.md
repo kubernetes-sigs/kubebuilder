@@ -279,6 +279,36 @@ kubebuilder alpha update      # Experimental: update to latest plugin versions
 - Descriptive names: `projectConfig` not `pc`
 - Single/double-letter receivers OK: `(c CLI)` or `(p Plugin)`
 
+### Logging Conventions
+
+**Templates** (`pkg/plugins/*/scaffolds/internal/templates/`) → Kubernetes conventions:
+- Start from capital letter
+- No period at end
+- Active voice: subject present (`"Deployment could not create Pod"`) or omitted (`"Could not create Pod"`)
+- Past tense: `"Could not delete Pod"` not `"Cannot delete Pod"`
+- Specify object type: `"Deleted Pod"` not `"Deleted"`
+- Balanced key-value pairs
+
+```go
+log.Info("Starting reconciliation")
+log.Info("Created Deployment", "name", deploy.Name)
+log.Error(err, "Failed to create Pod", "name", name)
+```
+
+**Reference:** https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines
+
+**CLI/scaffolding** (`pkg/cli/*`, `pkg/plugins/*/api.go`, helper methods) → Go conventions:
+- Use lowercase: `"creating import"` not `"Creating import"`
+- No period at end
+- Error strings not capitalized: `fmt.Errorf("something bad")`
+
+```go
+log.Info("updating scaffold with plugin...")
+log.Error("unable to read file", "file", path)
+```
+
+**Reference:** https://go.dev/wiki/CodeReviewComments#error-strings
+
 ### Testing Philosophy
 - Test behaviors, not implementations
 - Use real components over mocks

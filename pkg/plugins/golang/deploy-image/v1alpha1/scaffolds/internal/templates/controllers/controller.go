@@ -54,7 +54,7 @@ func (f *Controller) SetTemplateDefaults() error {
 
 	f.PackageName = "controller"
 
-	log.Info("creating import for", "resource_path", f.Resource.Path)
+	log.Info("creating import for resource", "resource_path", f.Resource.Path)
 	f.TemplateBody = controllerTemplate
 
 	// This one is to overwrite the controller if it exist
@@ -145,7 +145,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		if apierrors.IsNotFound(err) {
 			// If the custom resource is not found then it usually means that it was deleted or not created
 			// In this way, we will stop the reconciliation
-			log.Info("{{ lower .Resource.Kind }} resource not found. Ignoring since object must be deleted")
+			log.Info("{{ .Resource.Kind }} resource not found, ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -175,7 +175,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
-		log.Info("Adding Finalizer for {{ .Resource.Kind }}")
+		log.Info("Adding finalizer for {{ .Resource.Kind }}")
 		controllerutil.AddFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer)
 		if err = r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
@@ -188,7 +188,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	is{{ .Resource.Kind }}MarkedToBeDeleted := {{ lower .Resource.Kind }}.GetDeletionTimestamp() != nil
 	if is{{ .Resource.Kind }}MarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
-			log.Info("Performing Finalizer Operations for {{ .Resource.Kind }} before delete CR")
+			log.Info("Performing finalizer operations for {{ .Resource.Kind }} before deleting CR")
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
@@ -226,7 +226,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 				return ctrl.Result{}, err
 			}
 
-			log.Info("Removing Finalizer for {{ .Resource.Kind }} after successfully perform the operations")
+			log.Info("Removing finalizer for {{ .Resource.Kind }} after successfully performing the operations")
 			if ok:= controllerutil.RemoveFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer); !ok{
 				err = fmt.Errorf("finalizer for {{ .Resource.Kind }} was not removed")
 				log.Error(err, "Failed to remove finalizer for {{ .Resource.Kind }}")

@@ -65,6 +65,56 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 
 </aside>
 
+## You Should Adopt K8s Conventions for Instrumentation and Observability
+
+Proper logging is essential for observability in Kubernetes-native applications. However, it's important to understand which logging conventions to apply based on the context of your code.
+
+### Understanding Go vs. Kubernetes Logging Conventions
+
+When developing with Go, you may be familiar with the [Go Code Review Comments][go-code-review] guidelines, which state that error strings should not be capitalized and should not end with punctuation. These conventions are designed for error messages that are often composed into larger contexts:
+
+```go
+// Go conventions (for general Go code, libraries, CLI tools)
+return fmt.Errorf("something bad happened")  // lowercase, no period
+log.Printf("failed to connect: %v", err)     // lowercase
+```
+
+**However**, when developing Kubernetes-native solutions (controllers, operators, webhooks) that run on the cluster, you should follow the [Kubernetes Logging Conventions][k8s-logging] for better observability and consistency with the Kubernetes ecosystem.
+
+### Kubernetes Logging Conventions
+
+For controllers, operators, and webhooks, follow these guidelines:
+
+- Start from a capital letter.
+- Do not end the message with a period.
+- Use active voice. Use complete sentences when there is an acting subject ("A could not do B") or omit the subject if the subject would be the program itself ("Could not do B").
+- Use past tense ("Could not delete B" instead of "Cannot delete B")
+- When referring to an object, state what type of object it is. ("Deleted Pod" instead of "Deleted")
+- Use structured logging with balanced key-value pairs.
+
+**Examples:**
+
+```go
+// Kubernetes conventions (for controllers, operators, webhooks)
+log.Info("Starting reconciliation")                              // Capital letter, no period
+log.Info("Creating Deployment", "name", name, "namespace", ns)   // Specify object type, structured logging
+log.Info("Created Deployment", "name", deploy.Name)              // Past tense, specify type
+log.Error(err, "Failed to create Pod", "name", name)             // Past tense, specify type
+log.Info("Deployment could not create Pod", "deployment", name)  // Acting subject
+log.Info("Could not delete Pod", "name", name)                   // Subject is the program itself
+```
+
+### Why Different Conventions?
+
+- **Go conventions** are optimized for error messages that get composed into larger contexts and displayed inline with other text
+- **Kubernetes conventions** are optimized for structured logging in distributed systems where logs are:
+  - Aggregated from multiple components across the cluster
+  - Parsed by log collectors (Fluentd, Fluentbit, Loki, etc.)
+  - Displayed in monitoring dashboards and UIs
+  - Used for alerting and troubleshooting in production
+
+Following these conventions ensures your logs integrate seamlessly with Kubernetes observability tools and provide clear, actionable information for cluster operators and SREs.
+
 [docs]: /cronjob-tutorial/gvks.html
 [operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controllers]: https://kubernetes.io/docs/concepts/architecture/controller/
@@ -75,3 +125,5 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 [k8s-api-conventions]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md
 [k8s-control-loop]: https://kubernetes.io/docs/concepts/architecture/controller/
 [k8s-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
+[go-code-review]: https://go.dev/wiki/CodeReviewComments#error-strings
+[k8s-logging]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines
