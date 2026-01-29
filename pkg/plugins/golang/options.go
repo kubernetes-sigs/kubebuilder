@@ -68,6 +68,9 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
+	// GenerateApplyConfiguration indicates whether to generate applyconfiguration code for the resource.
+	GenerateApplyConfiguration bool
+
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
 	DoController bool
@@ -95,8 +98,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 
 		res.API = &resource.API{
-			CRDVersion: "v1",
-			Namespaced: opts.Namespaced,
+			CRDVersion:                 "v1",
+			Namespaced:                 opts.Namespaced,
+			GenerateApplyConfiguration: opts.GenerateApplyConfiguration,
 		}
 	}
 
