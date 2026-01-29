@@ -19,7 +19,9 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,6 +31,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -56,6 +59,32 @@ func init() {
 	utilruntime.Must(examplecomv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+}
+
+// getWatchNamespace returns the namespace(s) the manager should watch for changes.
+// It reads the value from the WATCH_NAMESPACE environment variable.
+// - If WATCH_NAMESPACE is not set, an error is returned
+// - If WATCH_NAMESPACE contains a single namespace, the manager watches that namespace
+// - If WATCH_NAMESPACE contains comma-separated namespaces, the manager watches those namespaces
+func getWatchNamespace() (string, error) {
+	watchNamespaceEnvVar := "WATCH_NAMESPACE"
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// setupCacheNamespaces configures the cache to watch specific namespace(s).
+// It supports both single namespace ("ns1") and multi-namespace ("ns1,ns2,ns3") formats.
+func setupCacheNamespaces(namespaces string) cache.Options {
+	defaultNamespaces := make(map[string]cache.Config)
+	for ns := range strings.SplitSeq(namespaces, ",") {
+		defaultNamespaces[strings.TrimSpace(ns)] = cache.Config{}
+	}
+	return cache.Options{
+		DefaultNamespaces: defaultNamespaces,
+	}
 }
 
 // nolint:gocyclo
@@ -160,7 +189,17 @@ func main() {
 		metricsServerOptions.KeyName = metricsCertKey
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// Get the namespace(s) for namespace-scoped mode from WATCH_NAMESPACE environment variable.
+	// The manager will only watch and manage resources in the specified namespace(s).
+	watchNamespace, err := getWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "Unable to get WATCH_NAMESPACE, "+
+			"the manager will watch and manage resources in all namespaces")
+		os.Exit(1)
+	}
+
+	// Configure manager options for namespace-scoped mode
+	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
@@ -178,7 +217,13 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
-	})
+	}
+
+	// Configure cache to watch namespace(s) specified in WATCH_NAMESPACE
+	mgrOptions.Cache = setupCacheNamespaces(watchNamespace)
+	setupLog.Info("Watching namespace(s)", "namespaces", watchNamespace)
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)

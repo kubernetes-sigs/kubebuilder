@@ -33,6 +33,7 @@ type Main struct {
 	machinery.BoilerplateMixin
 	machinery.DomainMixin
 	machinery.RepositoryMixin
+	machinery.NamespacedMixin
 
 	ControllerRuntimeVersion string
 }
@@ -231,7 +232,13 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+{{- if .Namespaced }}
+	"fmt"
+{{- end }}
 	"os"
+{{- if .Namespaced }}
+	"strings"
+{{- end }}
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -241,6 +248,9 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+{{- if .Namespaced }}
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+{{- end }}
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -259,6 +269,34 @@ func init() {
 
 	%s
 }
+{{- if .Namespaced }}
+
+// getWatchNamespace returns the namespace(s) the manager should watch for changes.
+// It reads the value from the WATCH_NAMESPACE environment variable.
+// - If WATCH_NAMESPACE is not set, an error is returned
+// - If WATCH_NAMESPACE contains a single namespace, the manager watches that namespace
+// - If WATCH_NAMESPACE contains comma-separated namespaces, the manager watches those namespaces
+func getWatchNamespace() (string, error) {
+	watchNamespaceEnvVar := "WATCH_NAMESPACE"
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// setupCacheNamespaces configures the cache to watch specific namespace(s).
+// It supports both single namespace ("ns1") and multi-namespace ("ns1,ns2,ns3") formats.
+func setupCacheNamespaces(namespaces string) cache.Options {
+	defaultNamespaces := make(map[string]cache.Config)
+	for ns := range strings.SplitSeq(namespaces, ",") {
+		defaultNamespaces[strings.TrimSpace(ns)] = cache.Config{}
+	}
+	return cache.Options{
+		DefaultNamespaces: defaultNamespaces,
+	}
+}
+{{- end }}
 
 // nolint:gocyclo
 func main() {
@@ -361,6 +399,48 @@ func main() {
 		metricsServerOptions.CertName = metricsCertName
 		metricsServerOptions.KeyName = metricsCertKey
 	}
+{{- if .Namespaced }}
+
+	// Get the namespace(s) for namespace-scoped mode from WATCH_NAMESPACE environment variable.
+	// The manager will only watch and manage resources in the specified namespace(s).
+	watchNamespace, err := getWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "Unable to get WATCH_NAMESPACE, "+
+			"the manager will watch and manage resources in all namespaces")
+		os.Exit(1)
+	}
+
+	// Configure manager options for namespace-scoped mode
+	mgrOptions := ctrl.Options{
+		Scheme:                 scheme,
+		Metrics:                metricsServerOptions,
+		WebhookServer:          webhookServer,
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		{{- if not .Domain }}
+		LeaderElectionID:       "{{ hashFNV .Repo }}",
+		{{- else }}
+		LeaderElectionID:       "{{ hashFNV .Repo }}.{{ .Domain }}",
+		{{- end }}
+		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
+		// when the Manager ends. This requires the binary to immediately end when the
+		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
+		// speeds up voluntary leader transitions as the new leader don't have to wait
+		// LeaseDuration time first.
+		//
+		// In the default scaffold provided, the program ends immediately after
+		// the manager stops, so would be fine to enable this option. However,
+		// if you are doing or is intended to do any operation such as perform cleanups
+		// after the manager stops then its usage might be unsafe.
+		// LeaderElectionReleaseOnCancel: true,
+	}
+
+	// Configure cache to watch namespace(s) specified in WATCH_NAMESPACE
+	mgrOptions.Cache = setupCacheNamespaces(watchNamespace)
+	setupLog.Info("Watching namespace(s)", "namespaces", watchNamespace)
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
+{{- else }}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -385,6 +465,7 @@ func main() {
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
 	})
+{{- end }}
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)

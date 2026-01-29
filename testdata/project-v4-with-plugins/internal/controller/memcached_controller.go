@@ -61,12 +61,12 @@ type MemcachedReconciler struct {
 // when the command <make manifests> is executed.
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
-// +kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/finalizers,verbs=update
-// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups=example.com.testproject.org,namespace=project-v4-with-plugins-system,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=example.com.testproject.org,namespace=project-v4-with-plugins-system,resources=memcacheds/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=example.com.testproject.org,namespace=project-v4-with-plugins-system,resources=memcacheds/finalizers,verbs=update
+// +kubebuilder:rbac:groups=events.k8s.io,namespace=project-v4-with-plugins-system,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,namespace=project-v4-with-plugins-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,namespace=project-v4-with-plugins-system,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

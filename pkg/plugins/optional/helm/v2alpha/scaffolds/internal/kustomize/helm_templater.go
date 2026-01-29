@@ -468,6 +468,17 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 
 // substituteRBACValues applies RBAC-specific template substitutions
 func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
+	roleRefBlockPattern := regexp.MustCompile(
+		`(?s)(roleRef:\s*\n(?:\s+\w+:.*\n)*?)(\s+)name:\s+` +
+			regexp.QuoteMeta(t.detectedPrefix) + `-manager-role`)
+	yamlContent = roleRefBlockPattern.ReplaceAllString(
+		yamlContent, `${1}${2}name: `+t.resourceNameTemplate("manager-role"))
+
+	roleRefBlockPatternSimple := regexp.MustCompile(
+		`(?s)(roleRef:\s*\n(?:\s+\w+:.*\n)*?)(\s+)name:\s+manager-role`)
+	yamlContent = roleRefBlockPatternSimple.ReplaceAllString(
+		yamlContent, `${1}${2}name: `+t.resourceNameTemplate("manager-role"))
+
 	return yamlContent
 }
 

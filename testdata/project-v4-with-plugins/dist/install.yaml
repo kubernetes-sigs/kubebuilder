@@ -532,6 +532,80 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-busybox-admin-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - '*'
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-busybox-editor-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-busybox-viewer-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-leader-election-role
   namespace: project-v4-with-plugins-system
 rules:
@@ -568,80 +642,10 @@ rules:
   - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-busybox-admin-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes
-  verbs:
-  - '*'
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-busybox-editor-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-busybox-viewer-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - busyboxes/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: project-v4-with-plugins-manager-role
+  namespace: project-v4-with-plugins-system
 rules:
 - apiGroups:
   - ""
@@ -704,12 +708,13 @@ rules:
   - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-memcached-admin-role
+  namespace: project-v4-with-plugins-system
 rules:
 - apiGroups:
   - example.com.testproject.org
@@ -725,12 +730,13 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-memcached-editor-role
+  namespace: project-v4-with-plugins-system
 rules:
 - apiGroups:
   - example.com.testproject.org
@@ -752,12 +758,13 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-memcached-viewer-role
+  namespace: project-v4-with-plugins-system
 rules:
 - apiGroups:
   - example.com.testproject.org
@@ -771,6 +778,80 @@ rules:
   - example.com.testproject.org
   resources:
   - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-wordpress-admin-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - '*'
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-wordpress-editor-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-wordpress-viewer-role
+  namespace: project-v4-with-plugins-system
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
   verbs:
   - get
 ---
@@ -803,77 +884,6 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-wordpress-admin-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses
-  verbs:
-  - '*'
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-wordpress-editor-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-with-plugins
-  name: project-v4-with-plugins-wordpress-viewer-role
-rules:
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - example.com.testproject.org
-  resources:
-  - wordpresses/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
@@ -891,15 +901,16 @@ subjects:
   namespace: project-v4-with-plugins-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-manager-rolebinding
+  namespace: project-v4-with-plugins-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: project-v4-with-plugins-manager-role
 subjects:
 - kind: ServiceAccount
@@ -991,6 +1002,10 @@ spec:
           value: busybox:1.36.1
         - name: MEMCACHED_IMAGE
           value: memcached:1.6.26-alpine3.19
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: controller:latest
         livenessProbe:
           httpGet:

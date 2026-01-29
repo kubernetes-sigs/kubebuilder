@@ -6,6 +6,7 @@ cliVersion: (devel)
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
+namespaced: true
 plugins:
   autoupdate.kubebuilder.io/v1-alpha:
     useGHModels: true

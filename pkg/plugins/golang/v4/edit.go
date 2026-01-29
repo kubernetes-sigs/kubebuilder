@@ -33,23 +33,32 @@ type editSubcommand struct {
 	config config.Config
 
 	multigroup bool
+	namespaced bool
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = `This command will edit the project configuration.
 Features supported:
   - Toggle between single or multi group projects.
+  - Toggle between cluster-scoped or namespace-scoped deployment.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Enable the multigroup layout
   %[1]s edit --multigroup
 
   # Disable the multigroup layout
   %[1]s edit --multigroup=false
+
+  # Enable namespace-scoped deployment
+  %[1]s edit --namespaced
+
+  # Disable namespace-scoped deployment (cluster-scoped)
+  %[1]s edit --namespaced=false
 `, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
+	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespace-scoped deployment")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -59,7 +68,7 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup)
+	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to edit scaffold: %w", err)

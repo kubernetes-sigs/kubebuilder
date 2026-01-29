@@ -33,6 +33,7 @@ type CRDViewerRole struct {
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	RoleName string
 }
@@ -72,7 +73,7 @@ const crdRoleViewerTemplate = `# This rule is not used by the project {{ .Projec
 # without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ if .Namespaced }}Role{{ else }}ClusterRole{{ end }}
 metadata:
   labels:
     app.kubernetes.io/name: {{ .ProjectName }}

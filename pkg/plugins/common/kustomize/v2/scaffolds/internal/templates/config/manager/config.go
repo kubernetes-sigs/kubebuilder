@@ -28,6 +28,7 @@ var _ machinery.Template = &Config{}
 type Config struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	// Image is controller manager image name
 	Image string
@@ -111,6 +112,13 @@ spec:
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
         name: manager
+{{- if .Namespaced }}
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+{{- end }}
         ports: []
         securityContext:
           readOnlyRootFilesystem: true

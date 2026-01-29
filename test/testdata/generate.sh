@@ -139,4 +139,4 @@ build_kb
 
 scaffold_test_project project-v4 --plugins="go/v4"
 scaffold_test_project project-v4-multigroup --plugins="go/v4"
-scaffold_test_project project-v4-with-plugins --plugins="go/v4"
+scaffold_test_project project-v4-with-plugins --plugins="go/v4" --namespaced
