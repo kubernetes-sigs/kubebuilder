@@ -354,7 +354,7 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}`, `
 
@@ -363,7 +363,7 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`setupLog.Error(err, "unable to create controller", "controller", "CronJob")
+		`setupLog.Error(err, "Failed to create controller", "controller", "CronJob")
 		os.Exit(1)
 	}`, mainEnableWebhook)
 	hackutils.CheckError("fixing main.go", err)

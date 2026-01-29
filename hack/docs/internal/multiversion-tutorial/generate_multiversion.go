@@ -453,13 +453,13 @@ func (sp *Sample) updateMain() {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
 		`if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
 
 	// +kubebuilder:docs-gen:collapse=Remaining code from main.go`,
 		`if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}`,
 	)
