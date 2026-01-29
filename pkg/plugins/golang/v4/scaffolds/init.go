@@ -177,6 +177,7 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Readme{CommandName: s.commandName},
 		&templates.Agents{CommandName: s.commandName},
 		&templates.Golangci{},
+		&templates.CustomGcl{GolangciLintVersion: GolangciLintVersion},
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},
