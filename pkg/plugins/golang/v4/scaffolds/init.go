@@ -117,15 +117,15 @@ func (s *initScaffolder) Scaffold() error {
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 		if err != nil {
 			if errors.Is(err, afero.ErrFileNotFound) {
-				log.Warn("Unable to find boilerplate file. "+
-					"This file is used to generate the license header in the project. "+
-					"Note that controller-gen will also use this. Therefore, ensure that you "+
-					"add the license file or configure your project accordingly.",
+				log.Warn("unable to find boilerplate file. "+
+					"This file is used to generate the license header in the project.\n"+
+					"Note that controller-gen will also use this. Ensure that you "+
+					"add the license file or configure your project accordingly",
 					"file_path", s.boilerplatePath,
 					"error", err)
 				boilerplate = []byte("")
 			} else {
-				return fmt.Errorf("unable to load boilerplate: %w", err)
+				return fmt.Errorf("failed to load boilerplate: %w", err)
 			}
 		}
 		// Initialize the machinery.Scaffold that will write the files to disk

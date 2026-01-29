@@ -133,7 +133,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	if !p.fetchDeps {
-		log.Info("Skipping fetching dependencies.")
+		log.Info("skipping fetching dependencies")
 		return nil
 	}
 

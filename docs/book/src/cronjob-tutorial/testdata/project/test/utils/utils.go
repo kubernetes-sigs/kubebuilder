@@ -234,7 +234,7 @@ func UncommentCode(filename, target, prefix string) error {
 
 	idx := strings.Index(strContent, target)
 	if idx < 0 {
-		return fmt.Errorf("unable to find the code %q to be uncomment", target)
+		return fmt.Errorf("unable to find the code %q to be uncommented", target)
 	}
 
 	out := new(bytes.Buffer)
