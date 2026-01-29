@@ -51,6 +51,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -69,7 +70,12 @@ var (
 // TestE2E runs the e2e test suite to validate the solution in an isolated environment.
 // The default setup requires Kind and CertManager.
 //
-// To skip CertManager installation, set: CERT_MANAGER_INSTALL_SKIP=true
+// Environment variables (see Makefile target 'test-e2e' for examples):
+// - KIND_CLUSTER: Name of the Kind cluster (default: kind)
+// - KUBE_CONTEXT: Kubectl context to use (default: current-context)
+// - CERT_MANAGER_INSTALL_SKIP=true: Skip CertManager installation
+//
+// Note: When KIND_CLUSTER=my-cluster, the kubectl context will be "kind-my-cluster"
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting {{ .ProjectName }} e2e test suite\n")
@@ -77,6 +83,13 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	// Display kubectl context being used
+	if kubectx := os.Getenv("KUBE_CONTEXT"); kubectx != "" {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Using context: %s\n", kubectx)
+	} else if currentCtx, err := getCurrentContext(); err == nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Using context: %s\n", currentCtx)
+	}
+
 	By("building the manager image")
 	cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", managerImage))
 	_, err := utils.Run(cmd)
@@ -126,5 +139,15 @@ func teardownCertManager() {
 
 	By("uninstalling CertManager")
 	utils.UninstallCertManager()
+}
+
+// getCurrentContext returns the current kubectl context name
+func getCurrentContext() (string, error) {
+	cmd := exec.Command("kubectl", "config", "current-context")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
 }
 `
