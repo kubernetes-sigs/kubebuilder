@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,38 +22,36 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &RoleBinding{}
+var _ machinery.Template = &NamespacedRole{}
 
-// RoleBinding scaffolds a file that defines the role binding for the manager
-type RoleBinding struct {
+// NamespacedRole scaffolds a namespace-scoped Role for the manager
+type NamespacedRole struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements machinery.Template
-func (f *RoleBinding) SetTemplateDefaults() error {
+func (f *NamespacedRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
+		f.Path = filepath.Join("config", "rbac", "role.yaml")
 	}
 
-	f.TemplateBody = managerBindingTemplate
+	f.TemplateBody = namespacedRoleTemplate
+
+	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }
 
-const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+const namespacedRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   labels:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
-  name: manager-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
   name: manager-role
-subjects:
-- kind: ServiceAccount
-  name: controller-manager
-  namespace: system
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
 `

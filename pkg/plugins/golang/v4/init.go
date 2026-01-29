@@ -57,6 +57,7 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+	namespaced         bool
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -68,11 +69,20 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
   - a "Makefile" with several useful make targets for the project
   - several YAML files for project deployment under the "config" directory
   - a "cmd/main.go" file that creates the manager that will run the project controllers
+
+Namespaced layout (--namespaced):
+  Scaffolds the project for namespace-scoped deployment instead of cluster-scoped.
+  - Creates Role/RoleBinding instead of ClusterRole/ClusterRoleBinding
+  - Adds WATCH_NAMESPACE environment variable to manager deployment
+  - New controllers will include namespace= in RBAC markers automatically
 `
-	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project with your domain and name in copyright
+	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project
   %[1]s init --plugins go/v4 --domain example.org --owner "Your name"
 
-  # Initialize a new project defining a specific project version
+  # Initialize with namespaced layout (namespace-scoped)
+  %[1]s init --plugins go/v4 --domain example.org --namespaced
+
+  # Initialize with specific project version
   %[1]s init --plugins go/v4 --project-version 3
 `, cliMeta.CommandName)
 }
@@ -92,6 +102,8 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
+	fs.BoolVar(&p.namespaced, "namespaced", false,
+		"if specified, scaffold the project with namespaced layout (default: cluster-scoped)")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
@@ -108,6 +120,12 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 
 	if err := p.config.SetRepository(p.repo); err != nil {
 		return fmt.Errorf("error setting repository: %w", err)
+	}
+
+	if p.namespaced {
+		if err := p.config.SetNamespaced(); err != nil {
+			return fmt.Errorf("error setting namespaced: %w", err)
+		}
 	}
 
 	return nil

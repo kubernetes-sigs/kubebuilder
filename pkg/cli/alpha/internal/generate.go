@@ -203,11 +203,19 @@ func kubebuilderInit(s store.Store) error {
 	return nil
 }
 
-// Edits the project to enable or disable multigroup layout.
+// Edits the project to enable or disable multigroup layout and namespace-scoped deployment.
 func kubebuilderEdit(s store.Store) error {
+	var args []string
+	needsEdit := false
+
 	if s.Config().IsMultiGroup() {
-		args := []string{"edit", "--multigroup"}
-		if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+		args = append(args, "--multigroup")
+		needsEdit = true
+	}
+
+	if needsEdit {
+		editArgs := append([]string{"edit"}, args...)
+		if err := util.RunCmd("kubebuilder edit", "kubebuilder", editArgs...); err != nil {
 			return fmt.Errorf("failed to run kubebuilder edit command: %w", err)
 		}
 	}
@@ -438,6 +446,9 @@ func getInitArgs(s store.Store) []string {
 	}
 	if projectName := s.Config().GetProjectName(); projectName != "" {
 		args = append(args, "--project-name", projectName)
+	}
+	if s.Config().IsNamespaced() {
+		args = append(args, "--namespaced")
 	}
 	return args
 }

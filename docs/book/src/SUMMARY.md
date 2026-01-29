@@ -53,6 +53,7 @@
       - [Step 2: Discovery Commands](./migration/discovery-commands.md)
       - [Step 3: Port Code](./migration/port-code.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
+  - [Cluster-Scoped to Namespace-Scoped](./migration/namespace-scoped.md)
 
 - [Alpha Commands](./reference/alpha_commands.md)
 
@@ -92,6 +93,8 @@
   - [Monitoring with Pprof](./reference/pprof-tutorial.md)
 
   - [Manager and CRDs Scope](./reference/scopes.md)
+    - [Manager Scope](./reference/manager-scope.md)
+    - [CRD Scope](./reference/crd-scope.md)
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
   - [Using an external Resource / API](./reference/using_an_external_resource.md)

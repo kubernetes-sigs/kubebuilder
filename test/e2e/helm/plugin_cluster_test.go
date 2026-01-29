@@ -133,5 +133,17 @@ var _ = Describe("kubebuilder", func() {
 				SkipChartGeneration:  true, // Chart already generated and customized above
 			})
 		})
+
+		It("should generate a namespeced runnable project using webhooks and installed with the HelmChart", func() {
+			helpers.GenerateV4Namespaced(kbc)
+
+			helpers.Run(kbc, helpers.RunOptions{
+				HasWebhook:         true,
+				HasMetrics:         true,
+				HasNetworkPolicies: false,
+				IsNamespaced:       true,
+				InstallMethod:      helpers.InstallMethodHelm,
+			})
+		})
 	})
 })

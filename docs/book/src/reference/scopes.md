@@ -1,118 +1,32 @@
-# Understanding and Setting Scopes for Managers (Operators) and CRDs
+# Understanding Scopes in Kubebuilder
 
-This section covers the configuration of the operational and resource scopes
-within a Kubebuilder project. Managers("Operators") in Kubernetes can be scoped to either
-specific namespaces or the entire cluster, influencing how resources are watched and managed.
+In Kubernetes, **scope** defines the boundaries within which a resource or controller operates.
 
-Additionally, CustomResourceDefinitions (CRDs) can be defined to be either
-namespace-scoped or cluster-scoped, affecting their availability
-across the cluster.
+When building with Kubebuilder, you work with two independent scoping concepts:
 
-## Configuring Manager Scope
+1. **[Manager Scope](./manager-scope.md)** - Determines which namespace(s) your manager watches and operates in
+2. **[CRD Scope](./crd-scope.md)** - Determines whether your custom resources are namespace-specific or cluster-wide
 
-Managers can operate under different scopes depending on
-the resources they need to handle:
+## What is Scope?
 
-### (Default) Watching All Namespaces
+Scope defines the visibility and access boundaries in a Kubernetes cluster:
 
-By default, if no namespace is specified, the manager will observe all namespaces.
-This is configured as follows:
+- **Cluster-scoped**: Operates across the entire cluster with access to all namespaces
+- **Namespace-scoped**: Limited to specific namespace(s) for isolation and security
 
-```go
-mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-...
-})
-```
+## Manager Scope vs CRD Scope
 
-### Watching a Single Namespace
+These concepts are **independent** and configured separately:
 
-To constrain the manager to monitor resources within a specific namespace, set the Namespace option:
+- **Manager Scope**: Controls which namespace(s) the manager watches (configured via deployment RBAC and cache)
+- **CRD Scope**: Controls whether custom resources are namespace-specific or cluster-wide (configured in CRD manifest)
 
-```go
-mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-...
-   Cache: cache.Options{
-      DefaultNamespaces: map[string]cache.Config{"operator-namespace": cache.Config{}},
-   },
-})
-```
+You can combine them in different ways - for example, a cluster-scoped manager can manage namespace-scoped CRDs (the default pattern).
 
-### Watching Multiple Namespaces
+## Learn More
 
-A manager can also be configured to watch a specified set of namespaces using [Cache Config][CacheConfig]:
+For detailed information, configuration steps, and code examples:
 
-```go
-mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-...
-Cache: cache.Options{
-    DefaultNamespaces: map[string]cache.Config{
-        "operator-namespace1": cache.Config{},
-        "operator-namespace2": cache.Config{},
-        },
-    },
-})
-```
-
-## Configuring CRD Scope
-
-The scope of CRDs determines their visibility either within specific namespaces or across the entire cluster.
-
-### Namespace-scoped CRDs
-
-Namespace-scoped CRDs are suitable when resources need to be isolated to specific namespaces.
-This setting helps manage resources related to particular teams or applications.
-However, it is important to note that due to the unique definition of CRDs (Custom Resource Definitions) in Kubernetes, testing a new version of a CRD is not straightforward. Proper versioning and conversion strategies need to be implemented (example in our [kubebuilder tutorial][kubebuilder-multiversion-tutorial]), and coordination is required to manage which manager instance handles the conversion (see the official [kubernetes documentation][k8s-crd-conversion] about this).
-Additionally, the namespace scope must be taken into account for mutating and validating webhook configurations to ensure they are correctly applied within the intended scope. This facilitates a more controlled and phased rollout strategy.
-
-### Cluster-scoped CRDs
-
-For resources that need to be accessible and manageable across the entire cluster,
-such as shared configurations or global resources, cluster-scoped CRDs are used.
-
-#### Configuring CRDs Scopes
-
-**When the API is created**
-
-The scope of a CRD is defined when generating its manifest.
-Kubebuilder facilitates this through its API creation command.
-
-By default, APIs are created with CRD scope as namespaced. However,
-for cluster-wide you use `--namespaced=false`, i.e.:
-
-```shell
-kubebuilder create api --group cache --version v1alpha1 --kind Memcached --resource=true --controller=true --namespaced=false
-```
-
-This command generates the CRD with the Cluster scope,
-meaning it will be accessible and manageable across all
-namespaces in the cluster.
-
-**By updating existing APIs**
-
-After you create an API you are still able to change the scope.
-For example, to configure a CRD to be cluster-wide,
-add the `+kubebuilder:resource:scope=Cluster` marker
-above the API type definition in your Go file.
-Here is an example:
-
-```go
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster,shortName=mc
-
-...
-```
-
-After setting the desired scope with markers,
-run `make manifests` to generate the files.
-This command invokes [`controller-gen`][controller-tools] to generate the CRD manifests
-according to the markers specified in your Go files.
-
-The generated manifests will then correctly reflect
-the scope as either Cluster or Namespaced without
-needing manual adjustment in the YAML files.
-
-[controller-tools]: https://sigs.k8s.io/controller-tools
-[CacheConfig]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache#Config
-[kubebuilder-multiversion-tutorial]: https://book.kubebuilder.io/multiversion-tutorial/tutorial
-[k8s-crd-conversion]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion
+- **[Manager Scope](./manager-scope.md)** - Manager scope configuration, RBAC, cache setup, and namespace watching
+- **[CRD Scope](./crd-scope.md)** - CRD scope configuration, markers, and RBAC considerations
+- **[Migrating to Namespace-Scoped Manager](../migration/namespace-scoped.md)** - Step-by-step migration guide for existing projects

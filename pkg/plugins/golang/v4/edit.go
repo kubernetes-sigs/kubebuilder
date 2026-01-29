@@ -33,23 +33,49 @@ type editSubcommand struct {
 	config config.Config
 
 	multigroup bool
+	namespaced bool
+	force      bool
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `This command will edit the project configuration.
-Features supported:
-  - Toggle between single or multi group projects.
+	subcmdMeta.Description = `Edit the project configuration.
+
+Features:
+  - Toggle multigroup layout (organize APIs by group).
+  - Toggle namespaced layout (namespace-scoped vs cluster-scoped).
+
+Namespaced layout (--namespaced):
+  Changes namespace-scoped (watches specific namespaces) vs cluster-scoped (watches all namespaces).
+  What changes automatically:
+    - Updates PROJECT file (namespaced: true)
+    - Scaffolds Role/RoleBinding instead of ClusterRole/ClusterRoleBinding
+    - With --force: Regenerates config/manager/manager.yaml with WATCH_NAMESPACE env var
+  What you must update manually:
+    - Add namespace= to RBAC markers in existing controllers (new controllers get this automatically)
+    - Update cmd/main.go to use namespace-scoped cache
+    - Run: make manifests
 `
-	subcmdMeta.Examples = fmt.Sprintf(`  # Enable the multigroup layout
+	subcmdMeta.Examples = fmt.Sprintf(`  # Enable multigroup layout
   %[1]s edit --multigroup
 
-  # Disable the multigroup layout
+  # Disable multigroup layout
   %[1]s edit --multigroup=false
+
+  # Enable namespaced layout (--force regenerates config/manager/manager.yaml with WATCH_NAMESPACE)
+  %[1]s edit --namespaced --force
+
+  # Enable namespaced layout without force (manually update config/manager/manager.yaml)
+  %[1]s edit --namespaced
+
+  # Disable namespaced layout (--force regenerates config/manager/manager.yaml without WATCH_NAMESPACE)
+  %[1]s edit --namespaced=false --force
 `, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
+	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespaced layout")
+	fs.BoolVar(&p.force, "force", false, "overwrite existing files (regenerates manager.yaml with WATCH_NAMESPACE)")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -59,7 +85,7 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup)
+	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to edit scaffold: %w", err)

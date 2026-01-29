@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
 )
 
 var _ plugins.Scaffolder = &editScaffolder{}
@@ -31,16 +32,20 @@ var _ plugins.Scaffolder = &editScaffolder{}
 type editScaffolder struct {
 	config     config.Config
 	multigroup bool
+	namespaced bool
+	force      bool
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(cfg config.Config, multigroup bool) plugins.Scaffolder {
+func NewEditScaffolder(cfg config.Config, multigroup bool, namespaced bool, force bool) plugins.Scaffolder {
 	return &editScaffolder{
 		config:     cfg,
 		multigroup: multigroup,
+		namespaced: namespaced,
+		force:      force,
 	}
 }
 
@@ -58,10 +63,65 @@ func (s *editScaffolder) Scaffold() error {
 	}
 	str := string(bs)
 
+	// Track if we're toggling namespaced mode
+	wasNamespaced := s.config.IsNamespaced()
+
+	// Update config flags
 	if s.multigroup {
 		_ = s.config.SetMultiGroup()
 	} else {
 		_ = s.config.ClearMultiGroup()
+	}
+
+	if s.namespaced {
+		_ = s.config.SetNamespaced()
+	} else {
+		_ = s.config.ClearNamespaced()
+	}
+
+	// Scaffold appropriate RBAC and manager config based on namespaced flag
+	if s.namespaced && !wasNamespaced {
+		// Switching to namespaced layout: scaffold Role/RoleBinding and WATCH_NAMESPACE
+		if rbacErr := s.scaffoldNamespacedRBAC(s.force); rbacErr != nil {
+			return fmt.Errorf("failed to scaffold namespaced RBAC: %w", rbacErr)
+		}
+
+		if !s.force {
+			fmt.Println()
+			fmt.Println("Run with --force to update config/manager/manager.yaml with WATCH_NAMESPACE")
+		}
+
+		// Print next steps
+		fmt.Println()
+		fmt.Println("Next steps:")
+		fmt.Println("1. Update cmd/main.go to configure namespace-scoped cache")
+		fmt.Println("2. Add namespace= to RBAC markers in existing controllers:")
+		fmt.Printf("   // +kubebuilder:rbac:groups=mygroup,resources=myresources,verbs=get;list,"+
+			"namespace=%s-system\n", s.config.GetProjectName())
+		fmt.Println("3. Run: make manifests")
+		fmt.Println()
+		fmt.Println("See: https://book.kubebuilder.io/migration/namespace-scoped.html")
+	} else if !s.namespaced && wasNamespaced {
+		// Switching to cluster-scoped layout: scaffold ClusterRole/ClusterRoleBinding
+		if rbacErr := s.scaffoldClusterRBAC(s.force); rbacErr != nil {
+			return fmt.Errorf("failed to scaffold cluster-scoped RBAC: %w", rbacErr)
+		}
+
+		if !s.force {
+			fmt.Println()
+			fmt.Println("Run with --force to update config/manager/manager.yaml (remove WATCH_NAMESPACE)")
+		}
+
+		// Print next steps
+		fmt.Println()
+		fmt.Println("Next steps:")
+		fmt.Println("1. Update cmd/main.go:")
+		fmt.Println("   - Remove getWatchNamespace() and setupCacheNamespaces() functions")
+		fmt.Println("   - Remove watchNamespace retrieval and cache configuration")
+		fmt.Println("2. Remove namespace= from RBAC markers in existing controllers")
+		fmt.Println("3. Run: make manifests")
+		fmt.Println()
+		fmt.Println("See: https://book.kubebuilder.io/migration/namespace-scoped.html")
 	}
 
 	// Check if the str is not empty, because when the file is already in desired format it will return empty string
@@ -73,5 +133,25 @@ func (s *editScaffolder) Scaffold() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *editScaffolder) scaffoldNamespacedRBAC(force bool) error {
+	// Use the kustomize/v2 scaffolder to scaffold namespace-scoped RBAC and manager config
+	rbacScaffolder := kustomizecommonv2.NewEditScaffolder(s.config, true, force)
+	rbacScaffolder.InjectFS(s.fs)
+	if err := rbacScaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold RBAC: %w", err)
+	}
+	return nil
+}
+
+func (s *editScaffolder) scaffoldClusterRBAC(force bool) error {
+	// Use the kustomize/v2 scaffolder to scaffold cluster-scoped RBAC and manager config
+	rbacScaffolder := kustomizecommonv2.NewEditScaffolder(s.config, false, force)
+	rbacScaffolder.InjectFS(s.fs)
+	if err := rbacScaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold RBAC: %w", err)
+	}
 	return nil
 }

@@ -102,6 +102,13 @@ function scaffold_test_project {
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
   fi
 
+  if [[ $project =~ with-plugins ]] ; then
+    header_text 'Enabling namespace-scoped deployment ...'
+    # Use edit command to test toggling namespaced mode on existing projects
+    # This test is to ensure that we don't break and we still with both flags
+    $kb edit --namespaced --force
+  fi
+
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
     header_text 'With Optional Plugins ...'
     header_text 'Creating APIs with deploy-image plugin ...'
@@ -139,4 +146,4 @@ build_kb
 
 scaffold_test_project project-v4 --plugins="go/v4"
 scaffold_test_project project-v4-multigroup --plugins="go/v4"
-scaffold_test_project project-v4-with-plugins --plugins="go/v4"
+scaffold_test_project project-v4-with-plugins --plugins="go/v4" --namespaced

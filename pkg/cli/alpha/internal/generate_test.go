@@ -38,6 +38,7 @@ type fakeConfig struct {
 	repo        string
 	projectName string
 	multigroup  bool
+	namespaced  bool
 	resources   []resource.Resource
 	pluginErr   error
 	getResErr   error
@@ -49,6 +50,7 @@ func (f *fakeConfig) GetDomain() string        { return f.domain }
 func (f *fakeConfig) GetRepository() string    { return f.repo }
 func (f *fakeConfig) GetProjectName() string   { return f.projectName }
 func (f *fakeConfig) IsMultiGroup() bool       { return f.multigroup }
+func (f *fakeConfig) IsNamespaced() bool       { return f.namespaced }
 func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
 	if f.getResErr != nil {
 		return nil, f.getResErr
@@ -395,6 +397,38 @@ var _ = Describe("generate: get-args-helpers", func() {
 						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
 				})
 			})
+
+			When("namespaced flag is enabled", func() {
+				It("includes --namespaced in init args", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						namespaced:  true,
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
+				})
+			})
+
+			When("both multigroup and namespaced are enabled", func() {
+				It("includes both flags in init args", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						multigroup:  true,
+						namespaced:  true,
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
+					// Note: multigroup is handled by kubebuilderEdit, not init
+				})
+			})
 		})
 	})
 
@@ -739,6 +773,20 @@ var _ = Describe("generate: kubebuilder", func() {
 	Context("kubebuilderEdit", func() {
 		It("runs kubebuilder edit successfully for multigroup layout", func() {
 			cfg := &fakeConfig{multigroup: true}
+			store := &fakeStore{cfg: cfg}
+			// Run kubebuilderEdit and verify no errors
+			Expect(kubebuilderEdit(store)).To(Succeed())
+		})
+
+		It("runs kubebuilder edit successfully for namespaced layout", func() {
+			cfg := &fakeConfig{namespaced: true}
+			store := &fakeStore{cfg: cfg}
+			// Run kubebuilderEdit and verify no errors
+			Expect(kubebuilderEdit(store)).To(Succeed())
+		})
+
+		It("runs kubebuilder edit successfully for both multigroup and namespaced", func() {
+			cfg := &fakeConfig{multigroup: true, namespaced: true}
 			store := &fakeStore{cfg: cfg}
 			// Run kubebuilderEdit and verify no errors
 			Expect(kubebuilderEdit(store)).To(Succeed())

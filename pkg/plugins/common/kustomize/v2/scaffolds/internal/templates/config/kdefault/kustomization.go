@@ -28,6 +28,7 @@ var _ machinery.Template = &Kustomization{}
 type Kustomization struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 }
 
 // SetTemplateDefaults implements machinery.Template

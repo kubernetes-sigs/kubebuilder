@@ -1,7 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
     name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "manager-role" "context" $) }}
+    namespace: {{ .Release.Namespace }}
 rules:
     - apiGroups:
         - ""
