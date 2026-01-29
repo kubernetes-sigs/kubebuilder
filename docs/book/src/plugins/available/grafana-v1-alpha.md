@@ -49,10 +49,23 @@ The Grafana plugin is attached to the `init` subcommand and the `edit` subcomman
 kubebuilder init --plugins grafana.kubebuilder.io/v1-alpha
 
 # Enable grafana plugin to an existing project
-kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
+kubebuilder edit --plugins grafana/v1-alpha
+
+# Remove grafana dashboards from project
+kubebuilder delete --plugins grafana/v1-alpha
 ```
 
 The plugin will create a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
+
+### Removing Grafana Dashboards
+
+To remove Grafana manifests from your project:
+
+```sh
+kubebuilder delete --plugins grafana/v1-alpha
+```
+
+This removes the `grafana/` directory and all dashboard files.
 
 #### Show case:
 
@@ -203,7 +216,7 @@ customMetrics:
 
 #### Scaffold Manifest
 
-Once `config.yaml` is configured, you can run `kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha` again.
+Once `config.yaml` is configured, you can run `kubebuilder edit --plugins grafana/v1-alpha` again.
 This time, the plugin will generate `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
 
 #### Show case:

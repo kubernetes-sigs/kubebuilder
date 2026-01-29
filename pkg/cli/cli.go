@@ -21,6 +21,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -361,6 +362,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	}
 
 	// If any plugin key was provided, replace those from the project configuration file
+	// Exception: for delete commands, APPEND to layout plugins instead of replacing
 	if pluginKeys, err := fs.GetStringSlice(pluginsFlag); err != nil {
 		return fmt.Errorf("invalid flag %q: %w", pluginsFlag, err)
 	} else if len(pluginKeys) != 0 {
@@ -372,7 +374,23 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 			}
 		}
 
-		c.pluginKeys = pluginKeys
+		// For delete commands, if we have layout plugins from PROJECT, keep them
+		// and append the user-specified plugins (avoiding duplicates)
+		isDeleteCommand := len(os.Args) > 1 && os.Args[1] == "delete"
+
+		if isDeleteCommand && len(c.pluginKeys) > 0 {
+			// Append user plugins to layout plugins (deduplicate)
+			combined := append([]string{}, c.pluginKeys...)
+			for _, userPlugin := range pluginKeys {
+				found := slices.Contains(combined, userPlugin)
+				if !found {
+					combined = append(combined, userPlugin)
+				}
+			}
+			c.pluginKeys = combined
+		} else {
+			c.pluginKeys = pluginKeys
+		}
 	}
 
 	// If the project version flag was accepted but not provided keep the empty version and try to resolve it later,
@@ -517,6 +535,15 @@ func (c *CLI) addSubcommands() {
 	createCmd.AddCommand(c.newCreateWebhookCmd())
 	if createCmd.HasSubCommands() {
 		c.cmd.AddCommand(createCmd)
+	}
+
+	// kubebuilder delete
+	deleteCmd := c.newDeleteCmd()
+	// kubebuilder delete api
+	deleteCmd.AddCommand(c.newDeleteAPICmd())
+	deleteCmd.AddCommand(c.newDeleteWebhookCmd())
+	if deleteCmd.HasSubCommands() {
+		c.cmd.AddCommand(deleteCmd)
 	}
 
 	// kubebuilder edit
