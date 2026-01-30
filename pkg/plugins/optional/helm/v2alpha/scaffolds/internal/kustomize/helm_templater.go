@@ -1314,16 +1314,20 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		// These are required for the controller to function properly
 		return yamlContent
 	case kind == kindValidatingWebhook || kind == kindMutatingWebhook:
-		// Webhook configurations should always exist if project has webhooks
-		// Only the cert-manager annotations should be conditional
-		return t.makeWebhookAnnotationsConditional(yamlContent)
+		// Webhook configurations should be conditional on webhook.enable
+		yamlContent = t.makeWebhookAnnotationsConditional(yamlContent)
+		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindService:
 		// Services need conditional logic based on their purpose
 		if strings.Contains(name, "metrics") {
 			// Metrics services need metrics enabled
 			return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
 		}
-		// Other services (webhook service, etc.) don't need conditionals - they're essential
+		if strings.Contains(name, "webhook") {
+			// Webhook services need webhook enabled
+			return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
+		}
+		// Other services don't need conditionals
 		return yamlContent
 	default:
 		// No conditional wrapper needed for other resources (Deployment, Namespace)

@@ -383,8 +383,9 @@ metadata:
 
 			// Should NOT wrap essential RBAC with conditionals
 			Expect(result).NotTo(ContainSubstring("{{- if .Values"))
+		})
 
-			// Test webhook service (also essential)
+		It("should add webhook conditional for webhook services", func() {
 			serviceResource := &unstructured.Unstructured{}
 			serviceResource.SetAPIVersion("v1")
 			serviceResource.SetKind("Service")
@@ -397,11 +398,12 @@ metadata:
 
 			webhookResult := templater.ApplyHelmSubstitutions(webhookContent, serviceResource)
 
-			// Should NOT wrap webhook service with conditionals (it's essential)
-			Expect(webhookResult).NotTo(ContainSubstring("{{- if .Values"))
+			// Should wrap webhook service with webhook.enable conditional
+			Expect(webhookResult).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(webhookResult).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should NOT add cert-manager conditionals to webhook configurations", func() {
+		It("should add webhook conditional for webhook configurations", func() {
 			mutatingWebhookResource := &unstructured.Unstructured{}
 			mutatingWebhookResource.SetAPIVersion("admissionregistration.k8s.io/v1")
 			mutatingWebhookResource.SetKind("MutatingWebhookConfiguration")
@@ -414,9 +416,31 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, mutatingWebhookResource)
 
-			// Webhook configurations should NOT be conditional on cert-manager
-			// (they're essential and cert-manager is optional)
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			// Webhook configurations should be conditional on webhook.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should add webhook conditional for validating webhook configurations", func() {
+			validatingWebhookResource := &unstructured.Unstructured{}
+			validatingWebhookResource.SetAPIVersion("admissionregistration.k8s.io/v1")
+			validatingWebhookResource.SetKind("ValidatingWebhookConfiguration")
+			validatingWebhookResource.SetName("test-project-validating-webhook-configuration")
+
+			content := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: test-project-system/test-project-serving-cert
+  name: test-project-validating-webhook-configuration`
+
+			result := templater.ApplyHelmSubstitutions(content, validatingWebhookResource)
+
+			// Webhook configurations should be wrapped with webhook.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+			// Cert-manager annotation should still be conditional on certManager.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
 		})
 	})
 
