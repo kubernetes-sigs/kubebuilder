@@ -1,3 +1,4 @@
+{{- if .Values.webhook.enable }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,3 +17,4 @@ spec:
     selector:
         app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
         control-plane: controller-manager
+{{- end }}
