@@ -73,7 +73,7 @@ func (f *WebhookUpdater) SetTemplateDefaults() error {
 	// Read the existing file
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error("Unable to read webhook file", "file", filePath, "error", err)
+		log.Error("failed to read webhook file", "file", filePath, "error", err)
 		return fmt.Errorf("failed to read webhook file: %w", err)
 	}
 

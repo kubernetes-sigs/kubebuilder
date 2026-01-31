@@ -91,7 +91,7 @@ var _ = Describe("createAPISubcommand", func() {
 		err := subCmd.InjectResource(res)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("API resource already exists"))
+		Expect(err.Error()).To(ContainSubstring("api resource already exists"))
 	})
 
 	It("should allow duplicate API with force flag", func() {

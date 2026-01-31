@@ -164,7 +164,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	if p.options.DoAPI {
 		// Check that resource doesn't have the API scaffolded or flag force was set
 		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() && !p.force {
-			return errors.New("API resource already exists")
+			return errors.New("api resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
