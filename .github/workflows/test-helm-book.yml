@@ -55,8 +55,13 @@ jobs:
         run: |
           cd ${{ matrix.folder }}
           go mod tidy
-          make docker-build IMG=${{ steps.project.outputs.name}}:v0.1.0
-          kind load docker-image ${{ steps.project.outputs.name}}:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Pre-load kubectl image for Helm tests
+        run: |
+          docker pull bitnami/kubectl:latest
+          kind load docker-image bitnami/kubectl:latest
 
       - name: Install Helm
         run: |
@@ -93,9 +98,17 @@ jobs:
 
       - name: Install Helm chart
         run: |
-          helm install my-release ${{ matrix.folder }}/dist/chart --create-namespace --namespace ${{ steps.project.outputs.name}}-system
+          helm install my-release ${{ matrix.folder }}/dist/chart \
+            --create-namespace \
+            --namespace ${{ steps.project.outputs.name}}-system \
+            --wait \
+            --timeout 300s
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace ${{ steps.project.outputs.name}}-system
+
+      - name: Run Helm tests
+        run: |
+          helm test my-release --namespace ${{ steps.project.outputs.name}}-system
 
