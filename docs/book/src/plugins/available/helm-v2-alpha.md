@@ -30,8 +30,9 @@ The **helm/v2-alpha** plugin converts the bundle (`dist/install.yaml`) into a He
 - **Preserves Customizations**: Keeps env vars, labels, annotations, and patches.
 - **Structured Output**: Templates follow your `config/` directory layout.
 - **Smart Values**: `values.yaml` includes only actual configurable parameters.
-- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `_helpers.tpl`, `.helmignore`, and `.github/workflows/test-chart.yml` are preserved.
+- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `_helpers.tpl`, `.helmignore`, `templates/tests/test-connection.yaml`, and `.github/workflows/test-chart.yml` are preserved.
 - **Handles Custom Resources**: Resources not matching standard layout (custom Services, ConfigMaps, etc.) are placed in `templates/extras/` with proper templating.
+- **Built-in Tests**: Includes Helm test templates to validate deployment health.
 
 ## When to Use It
 
@@ -116,6 +117,8 @@ The plugin creates a chart layout that matches your `config/`:
     │   └── webhook-service.yaml
     ├── monitoring/
     │   └── servicemonitor.yaml
+    ├── tests/
+    │   └── test-connection.yaml
     └── extras/                  # Custom resources (if any)
         ├── my-service.yaml
         └── my-config.yaml
@@ -316,13 +319,27 @@ helm install my-release ./dist/chart \
   --create-namespace
 ```
 
+### Testing
+
+The generated chart includes Helm tests to verify deployment health:
+
+```shell
+# Run tests after installation
+helm test my-release --namespace my-project-system
+```
+
+Tests verify:
+- Manager pod exists and is ready
+- Metrics service is available (if enabled)
+- Webhook service is available (if enabled)
+
 ## Flags
 
 | Flag                | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (values.yaml, _helpers.tpl, .helmignore, test-chart.yml) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (values.yaml, _helpers.tpl, .helmignore, test-connection.yaml, test-chart.yml) |
 
 <aside class="note">
 <H1> Examples </H1>

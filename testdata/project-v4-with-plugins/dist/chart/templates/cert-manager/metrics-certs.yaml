@@ -11,8 +11,8 @@ metadata:
     namespace: {{ .Release.Namespace }}
 spec:
     dnsNames:
-        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.{{ include "project-v4-with-plugins.namespaceName" . }}.svc
-        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" .) }}.{{ include "project-v4-with-plugins.namespaceName" . }}.svc.cluster.local
+        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc
+        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc.cluster.local
     issuerRef:
         kind: Issuer
         name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}

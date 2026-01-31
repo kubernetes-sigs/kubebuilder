@@ -93,9 +93,19 @@ jobs:
 
       - name: Install Helm chart
         run: |
-          helm install my-release ${{ matrix.folder }}/dist/chart --create-namespace --namespace ${{ steps.project.outputs.name}}-system
+          helm install my-release ${{ matrix.folder }}/dist/chart \
+            --create-namespace \
+            --namespace ${{ steps.project.outputs.name}}-system \
+            --set manager.image.repository=${{ steps.project.outputs.name}} \
+            --set manager.image.tag=v0.1.0 \
+            --wait \
+            --timeout 300s
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace ${{ steps.project.outputs.name}}-system
+
+      - name: Run Helm tests
+        run: |
+          helm test my-release --namespace ${{ steps.project.outputs.name}}-system
 

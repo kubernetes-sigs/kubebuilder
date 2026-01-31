@@ -101,11 +101,19 @@ jobs:
             testdata/project-v4-with-plugins/dist/chart \
             --namespace project-v4-with-plugins-system \
             --create-namespace \
-            --set prometheus.enable=true
+            --set manager.image.repository=project-v4-with-plugins \
+            --set manager.image.tag=v0.1.0 \
+            --set prometheus.enable=true \
+            --wait \
+            --timeout 300s
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace project-v4-with-plugins-system
+
+      - name: Run Helm tests
+        run: |
+          helm test my-release --namespace project-v4-with-plugins-system
 
       - name: Delete kind cluster
         if: always()
@@ -176,12 +184,21 @@ jobs:
           helm install my-release \
             ./dist/chart \
             --create-namespace \
-            --namespace test-helm-no-webhooks-system
+            --namespace test-helm-no-webhooks-system \
+            --set manager.image.repository=test-helm-no-webhooks \
+            --set manager.image.tag=v0.1.0 \
+            --wait \
+            --timeout 300s
 
       - name: Verify deployment is working
         working-directory: test-helm-no-webhooks
         run: |
           helm status my-release --namespace test-helm-no-webhooks-system
+
+      - name: Run Helm tests
+        working-directory: test-helm-no-webhooks
+        run: |
+          helm test my-release --namespace test-helm-no-webhooks-system
 
       - name: Delete kind cluster
         if: always()
