@@ -199,8 +199,20 @@ Plugins implement interfaces from `pkg/plugin/`:
 - `Init` - project initialization (`kubebuilder init`)
 - `CreateAPI` - API creation (`kubebuilder create api`)
 - `CreateWebhook` - webhook creation (`kubebuilder create webhook`)
+- `DeleteAPI` - API deletion (`kubebuilder delete api`)
+- `DeleteWebhook` - webhook deletion (`kubebuilder delete webhook`)
 - `Edit` - post-init modifications (`kubebuilder edit`)
 - `Bundle` - groups multiple plugins
+
+**Delete = Undo of Create:**
+
+Each plugin's delete implementation MUST undo exactly what its create implementation did:
+- `go/v4`: Removes Go code (API types, controllers, main.go imports/setup, suite_test.go)
+- `kustomize/v2`: Removes manifests (samples, RBAC, CRD kustomization entries)
+- `deploy-image/v1-alpha`: Removes plugin metadata from PROJECT file
+- When plugins run in chain (e.g., `--plugins deploy-image/v1-alpha`), both layout and additional plugins execute
+
+**Integration tests MUST verify**: `state_before_create == state_after_delete`
 
 **Plugin Bundles:**
 
@@ -249,7 +261,8 @@ Controllers implement `Reconcile(ctx, req) (ctrl.Result, error)`:
 - **Requeue on pending work** - Return `ctrl.Result{Requeue: true}`
 
 ### Testing Pattern
-E2E tests use `utils.TestContext` from `test/e2e/utils/test_context.go`:
+
+**Integration Tests** use `utils.TestContext` from `test/e2e/utils/test_context.go`:
 
 ```go
 ctx := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
@@ -259,17 +272,68 @@ ctx.Make("build", "test")
 ctx.LoadImageToKindCluster()
 ```
 
+**Baseline Testing (Required for Delete):**
+
+Delete integration tests MUST verify exact state restoration:
+
+```go
+It("should restore exact state after delete", func() {
+    mainBefore, _ := os.ReadFile("cmd/main.go")
+    ctx.CreateAPI(...)
+    ctx.DeleteAPI(..., "-y")
+    mainAfter, _ := os.ReadFile("cmd/main.go")
+    Expect(mainAfter).To(Equal(mainBefore))  // Exact match required
+})
+```
+
 ## CLI Reference
 
 After `make install`:
 
 ```bash
+# Initialize project
 kubebuilder init --domain example.com --repo github.com/example/myproject
+
+# Create resources
 kubebuilder create api --group batch --version v1 --kind CronJob
 kubebuilder create webhook --group batch --version v1 --kind CronJob
-kubebuilder edit --plugins=helm/v2-alpha
+
+# Delete resources (complete undo of create)
+kubebuilder delete api --group batch --version v1 --kind CronJob
+kubebuilder delete webhook --group batch --version v1 --kind CronJob --defaulting
+
+# Delete with plugin chain
+kubebuilder delete api --group app --version v1 --kind Cache --plugins deploy-image/v1-alpha
+
+# Delete optional plugin features
+kubebuilder delete --plugins helm/v2-alpha
+kubebuilder delete --plugins grafana/v1-alpha
+
+# Edit project
+kubebuilder edit --plugins helm/v2-alpha
+
+# Alpha commands
 kubebuilder alpha generate    # Experimental: generate from PROJECT file
 kubebuilder alpha update      # Experimental: update to latest plugin versions
+```
+
+## Implementing Delete
+
+**Rule**: If you add a `create` command, you MUST add the corresponding `delete` command.
+
+**Key Principle**: Each plugin undoes ONLY what it created. When plugins run in chain (default: `go/v4` + `kustomize/v2`), each cleans its own artifacts:
+- `go/v4` → removes Go code (types, controllers, main.go, suite_test.go)
+- `kustomize/v2` → removes manifests (samples, RBAC, CRD entries)
+- Additional plugins → remove their metadata from PROJECT file
+
+**Shared Resources**: Imports/code used by multiple resources are preserved until the last one is deleted (e.g., `appv1` import kept while any app/v1 API exists).
+
+**Integration Test**: Add `delete_integration_test.go` with baseline verification:
+```go
+baseline := captureState()
+createResource()
+deleteResource("-y")
+Expect(currentState()).To(Equal(baseline))  // Exact match required
 ```
 
 ## Common Patterns
@@ -334,7 +398,7 @@ log.Error(err, "Failed to create Pod", "name", name)
 - **Integration tests** (`*_integration_test.go` in `pkg/`) - Test multiple components together without cluster
   - Must have `//go:build integration` tag at the top
   - May create temp dirs, download binaries, or scaffold files
-  - Examples: alpha update, grafana scaffolding, helm chart generation
+  - **Delete tests**: MUST use baseline pattern (verify before_create == after_delete)
 - **E2E tests** (`test/e2e/`) - **ONLY** for tests requiring a Kubernetes cluster (KIND)
   - `v4/plugin_cluster_test.go` - Test v4 plugin deployment
   - `helm/plugin_cluster_test.go` - Test Helm chart deployment

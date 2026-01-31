@@ -38,6 +38,12 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 kubebuilder init --plugins=go/v4,autoupdate/v1-alpha
 ```
 
+- To remove the auto-update workflow from your project:
+
+```shell
+kubebuilder delete --plugins autoupdate/v1-alpha
+```
+
 ### Optional: GitHub Models AI Summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.
