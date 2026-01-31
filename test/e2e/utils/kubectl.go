@@ -30,11 +30,20 @@ type Kubectl struct {
 	*CmdContext
 	Namespace      string
 	ServiceAccount string
+	KubeContext    string
+}
+
+// cmdOptionsWithContext prepends --context flag to kubectl commands if KubeContext is set
+func (k *Kubectl) cmdOptionsWithContext(cmdOptions ...string) []string {
+	if k.KubeContext != "" {
+		return append([]string{"--context", k.KubeContext}, cmdOptions...)
+	}
+	return cmdOptions
 }
 
 // Command is a general func to run kubectl commands
 func (k *Kubectl) Command(cmdOptions ...string) (string, error) {
-	cmd := exec.Command("kubectl", cmdOptions...)
+	cmd := exec.Command("kubectl", k.cmdOptionsWithContext(cmdOptions...)...)
 	output, err := k.Run(cmd)
 	return string(output), err
 }
