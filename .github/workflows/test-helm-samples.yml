@@ -71,8 +71,13 @@ jobs:
         run: |
           cd testdata/project-v4-with-plugins/
           go mod tidy
-          make docker-build IMG=project-v4-with-plugins:v0.1.0
-          kind load docker-image project-v4-with-plugins:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Pre-load kubectl image for Helm tests
+        run: |
+          docker pull bitnami/kubectl:latest
+          kind load docker-image bitnami/kubectl:latest
 
       - name: Install Prometheus Operator CRDs
         run: |
@@ -98,12 +103,16 @@ jobs:
       - name: Deploy manager via Helm
         working-directory: testdata/project-v4-with-plugins
         run: |
-          make helm-deploy IMG=project-v4-with-plugins:v0.1.0 HELM_EXTRA_ARGS="--set prometheus.enable=true"
+          make helm-deploy IMG=controller:latest HELM_EXTRA_ARGS="--set prometheus.enable=true"
 
       - name: Check Helm release status
         working-directory: testdata/project-v4-with-plugins
         run: |
           make helm-status
+
+      - name: Run Helm tests
+        run: |
+          helm test project-v4-with-plugins --namespace project-v4-with-plugins-system
 
       - name: Delete kind cluster
         if: always()
@@ -161,8 +170,13 @@ jobs:
       - name: Build and load Docker image
         working-directory: test-helm-no-webhooks
         run: |
-          make docker-build IMG=test-helm-no-webhooks:v0.1.0
-          kind load docker-image test-helm-no-webhooks:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Pre-load kubectl image for Helm tests
+        run: |
+          docker pull bitnami/kubectl:latest
+          kind load docker-image bitnami/kubectl:latest
 
       - name: Lint Helm chart
         working-directory: test-helm-no-webhooks
@@ -171,12 +185,17 @@ jobs:
       - name: Deploy manager via Helm
         working-directory: test-helm-no-webhooks
         run: |
-          make helm-deploy IMG=test-helm-no-webhooks:v0.1.0
+          make helm-deploy IMG=controller:latest
 
       - name: Verify deployment is working
         working-directory: test-helm-no-webhooks
         run: |
           make helm-status
+
+      - name: Run Helm tests
+        working-directory: test-helm-no-webhooks
+        run: |
+          helm test test-helm-no-webhooks --namespace test-helm-no-webhooks-system
 
       - name: Delete kind cluster
         if: always()
