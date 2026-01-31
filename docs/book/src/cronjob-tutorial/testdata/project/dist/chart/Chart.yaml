@@ -1,7 +1,14 @@
 apiVersion: v2
 name: project
-description: A Helm chart to distribute the project project
+description: A Helm chart to distribute project
 type: application
+
 version: 0.1.0
 appVersion: "0.1.0"
-icon: "https://example.com/icon.png"
+
+keywords:
+  - kubernetes
+  - operator
+
+annotations:
+  kubebuilder.io/generated-by: kubebuilder
