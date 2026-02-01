@@ -97,7 +97,7 @@ spec:
             key: tls.crt
         keySecret:
           name: metrics-server-cert
-            key: tls.key
+          key: tls.key
         {{ "{{- else }}" }}
         # Development/Test mode (insecure configuration)
         insecureSkipVerify: true

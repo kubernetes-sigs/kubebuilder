@@ -163,15 +163,20 @@ func (o *ResourceOrganizer) collectPrometheusResources() []*unstructured.Unstruc
 }
 
 // isWebhookService determines if a service is webhook-related
+// Checks if service name ends with "webhook-service" to avoid false matches
+// (e.g., chart name containing "webhook" shouldn't categorize all services as webhook services)
 func (o *ResourceOrganizer) isWebhookService(service *unstructured.Unstructured) bool {
 	serviceName := service.GetName()
-	return strings.Contains(serviceName, "webhook")
+	return strings.HasSuffix(serviceName, "webhook-service")
 }
 
 // isMetricsService determines if a service is metrics-related
+// Checks if service name ends with "metrics-service" to avoid false matches
+// (e.g., chart name containing "metrics" shouldn't categorize webhook services as metrics services)
 func (o *ResourceOrganizer) isMetricsService(service *unstructured.Unstructured) bool {
 	serviceName := service.GetName()
-	return strings.Contains(serviceName, "metrics")
+	return strings.HasSuffix(serviceName, "metrics-service") ||
+		strings.HasSuffix(serviceName, "controller-manager-metrics-service")
 }
 
 // collectExtrasResources gathers uncategorized resources that don't fit standard categories
