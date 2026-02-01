@@ -67,10 +67,6 @@ func (s *initScaffolder) Scaffold() error {
 	templates := []machinery.Builder{
 		&rbac.Kustomization{},
 		&kdefault.MetricsService{},
-		&rbac.RoleBinding{},
-		// We need to create a Role because if the project
-		// has not CRD define the controller-gen will not generate this file
-		&rbac.Role{},
 		&rbac.MetricsAuthRole{},
 		&rbac.MetricsAuthRoleBinding{},
 		&rbac.MetricsReaderRole{},
@@ -87,6 +83,21 @@ func (s *initScaffolder) Scaffold() error {
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&prometheus.ServiceMonitorPatch{},
+	}
+
+	// Scaffold appropriate RBAC based on scope
+	// We need to create a Role/ClusterRole because if the project
+	// has no CRDs defined, controller-gen will not generate this file
+	if s.config.IsNamespaced() {
+		templates = append(templates,
+			&rbac.NamespacedRoleBinding{},
+			&rbac.NamespacedRole{},
+		)
+	} else {
+		templates = append(templates,
+			&rbac.ClusterRoleBinding{},
+			&rbac.ClusterRole{},
+		)
 	}
 
 	if err := scaffold.Execute(templates...); err != nil {

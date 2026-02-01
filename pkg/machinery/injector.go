@@ -49,6 +49,9 @@ func (i injector) injectInto(builder Builder) {
 		if builderWithMultiGroup, hasMultiGroup := builder.(HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(i.config.IsMultiGroup())
 		}
+		if builderWithNamespaced, hasNamespaced := builder.(HasNamespaced); hasNamespaced {
+			builderWithNamespaced.InjectNamespaced(i.config.IsNamespaced())
+		}
 	}
 	// Inject boilerplate
 	if builderWithBoilerplate, hasBoilerplate := builder.(HasBoilerplate); hasBoilerplate {

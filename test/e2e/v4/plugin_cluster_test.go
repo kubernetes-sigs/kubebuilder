@@ -28,7 +28,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
@@ -98,6 +103,10 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4WithCustomWebhookPath(kbc)
 			Run(kbc, true, false, false, true, false)
 		})
+		It("should generate a runnable namespace-scoped project", func() {
+			GenerateV4Namespaced(kbc)
+			Run(kbc, true, false, false, true, false)
+		})
 	})
 })
 
@@ -105,6 +114,8 @@ var _ = Describe("kubebuilder", func() {
 func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart, hasMetrics bool,
 	hasNetworkPolicies bool,
 ) {
+	// Check if project is namespace-scoped by reading the PROJECT file
+	isNamespaced := isProjectNamespaced(kbc)
 	var controllerPodName string
 	var err error
 
@@ -313,12 +324,14 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	if hasWebhook {
 		By("validating that mutating and validating webhooks are working fine")
-		cnt, err := kbc.Kubectl.Get(
+		var cnt string
+		cnt, err = kbc.Kubectl.Get(
 			true,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
 		Expect(err).NotTo(HaveOccurred())
-		count, err := strconv.Atoi(cnt)
+		var count int
+		count, err = strconv.Atoi(cnt)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(count).To(BeNumerically("==", 5))
 	}
@@ -326,7 +339,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	if hasWebhook {
 		By("creating a namespace")
 		namespace := "test-webhooks"
-		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
+		_, err = kbc.Kubectl.Command("create", "namespace", namespace)
 		Expect(err).To(Not(HaveOccurred()), "namespace should be created successfully")
 
 		By("applying the CR in the created namespace")
@@ -337,17 +350,22 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		}
 		Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
 
+		// Note: Webhooks are cluster-scoped and validate/mutate CRs in ALL namespaces,
+		// even in namespace-scoped managers. The manager won't reconcile CRs outside
+		// its WATCH_NAMESPACE, but webhooks will still enforce validation/mutation rules.
 		By("validating that mutating webhooks are working fine outside of the manager's namespace")
-		cnt, err := kbc.Kubectl.Get(
+		var cnt2 string
+		cnt2, err = kbc.Kubectl.Get(
 			false,
 			"-n", namespace,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
 		Expect(err).NotTo(HaveOccurred())
 
-		count, err := strconv.Atoi(cnt)
+		var count2 int
+		count2, err = strconv.Atoi(cnt2)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(count).To(BeNumerically("==", 5),
+		Expect(count2).To(BeNumerically("==", 5),
 			"the mutating webhook should set the count to 5")
 
 		By("removing the namespace")
@@ -373,20 +391,20 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 		By("waiting for the ConversionTest CR to appear")
 		Eventually(func(g Gomega) {
-			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
-			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
+			_, getErr := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
+			g.Expect(getErr).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
 		}, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
-			out, err := kbc.Kubectl.Get(
+			out, getErr := kbc.Kubectl.Get(
 				true,
 				"conversiontest", "conversiontest-sample",
 				"-o", "jsonpath={.spec.replicas}",
 			)
-			g.Expect(err).NotTo(HaveOccurred(), "failed to get converted resource in v2")
-			replicas, err := strconv.Atoi(out)
-			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
+			g.Expect(getErr).NotTo(HaveOccurred(), "failed to get converted resource in v2")
+			replicas, convErr := strconv.Atoi(out)
+			g.Expect(convErr).NotTo(HaveOccurred(), "replicas field is not an integer")
 			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
 		}, 3*time.Minute, time.Second).Should(Succeed())
 
@@ -397,6 +415,59 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			Expect(metricsOutput).To(ContainSubstring(conversionMetric),
 				"Expected metric for successful ConversionTest reconciliation")
 		}
+	}
+
+	if isNamespaced && hasMetrics {
+		By("validating namespace isolation - manager should NOT reconcile resources in other namespaces")
+
+		By("verifying the controller reconciled the CR in its namespace")
+		Eventually(func(g Gomega) {
+			metricsOutput := getMetricsOutput(controllerPodName, kbc)
+			// The controller should have reconciled at least once for the sample CR in its namespace
+			g.Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
+				`controller_runtime_reconcile_total{controller="%s",result="success"}`,
+				strings.ToLower(kbc.Kind),
+			)), "Controller should have reconciled the CR in its namespace")
+		}, 2*time.Minute, time.Second).Should(Succeed())
+
+		By("creating a test namespace for isolation testing")
+		testNamespace := "test-namespace-isolation"
+		_, err = kbc.Kubectl.Command("create", "namespace", testNamespace)
+		Expect(err).NotTo(HaveOccurred())
+		defer func() {
+			By("cleaning up test namespace")
+			_, _ = kbc.Kubectl.Command("delete", "namespace", testNamespace)
+		}()
+
+		By("applying the CR to the test namespace (outside manager's namespace)")
+		_, err = kbc.Kubectl.Apply(false, "-n", testNamespace, "-f", sampleFile)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("verifying the CR exists in the test namespace")
+		_, err = kbc.Kubectl.Get(
+			false,
+			strings.ToLower(kbc.Kind), fmt.Sprintf("%s-sample", strings.ToLower(kbc.Kind)),
+			"-n", testNamespace,
+		)
+		Expect(err).NotTo(HaveOccurred(), "CR should exist in the test namespace")
+
+		By("waiting and verifying the reconcile count does not increase")
+		// Wait for potential reconciliation attempts
+		time.Sleep(10 * time.Second)
+
+		metricsOutput := getMetricsOutput(controllerPodName, kbc)
+		// The count should still be 1 - only the CR in the manager's namespace should be reconciled
+		Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
+			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
+			strings.ToLower(kbc.Kind),
+		)), "Controller should not have reconciled the CR in the other namespace")
+
+		By("verifying the CR in the manager's namespace is still accessible")
+		_, err = kbc.Kubectl.Get(
+			true,
+			strings.ToLower(kbc.Kind), fmt.Sprintf("%s-sample", strings.ToLower(kbc.Kind)),
+		)
+		Expect(err).NotTo(HaveOccurred(), "CR should still exist in manager's namespace")
 	}
 }
 
@@ -439,19 +510,17 @@ func getControllerName(kbc *utils.TestContext) string {
 
 // getMetricsOutput return the metrics output from curl pod
 func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
+	// Note: metrics-reader is always a ClusterRole (uses nonResourceURLs), so always use ClusterRoleBinding
 	_, err := kbc.Kubectl.Command(
 		"get", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 	)
 	if err != nil && strings.Contains(err.Error(), "NotFound") {
-		// Create the clusterrolebinding only if it doesn't exist
 		_, err = kbc.Kubectl.Command(
 			"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 			fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
 			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 		)
 		Expect(err).NotTo(HaveOccurred())
-	} else {
-		Expect(err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
 	}
 
 	token, err := serviceAccountToken(kbc)
@@ -555,6 +624,9 @@ func getMetricsOutput(controllerPodName string, kbc *utils.TestContext) string {
 }
 
 func metricsShouldBeUnavailable(kbc *utils.TestContext) {
+	// Note: metrics-reader is always a ClusterRole (uses nonResourceURLs), so we always
+	// create a ClusterRoleBinding regardless of namespace-scoped vs cluster-scoped manager.
+	// NonResourceURLs like /metrics require cluster-level permissions.
 	_, err := kbc.Kubectl.Command(
 		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
@@ -667,4 +739,20 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 	Eventually(getToken, 2*time.Minute, time.Second).Should(Succeed())
 
 	return out, nil
+}
+
+// getConfigFromProjectFile loads the project configuration from the PROJECT file
+func getConfigFromProjectFile(projectFilePath string) config.Config {
+	fs := afero.NewOsFs()
+	store := yaml.New(machinery.Filesystem{FS: fs})
+	err := store.LoadFrom(projectFilePath)
+	Expect(err).NotTo(HaveOccurred())
+	return store.Config()
+}
+
+// isProjectNamespaced checks if the project is configured for namespace-scoped deployment
+func isProjectNamespaced(kbc *utils.TestContext) bool {
+	projectFilePath := filepath.Join(kbc.Dir, "PROJECT")
+	projectConfig := getConfigFromProjectFile(projectFilePath)
+	return projectConfig.IsNamespaced()
 }

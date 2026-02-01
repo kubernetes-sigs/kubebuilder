@@ -68,6 +68,13 @@ type Config interface {
 	// ClearMultiGroup disables multi-group.
 	ClearMultiGroup() error
 
+	// IsNamespaced checks if the project is configured for namespace-scoped deployment.
+	IsNamespaced() bool
+	// SetNamespaced enables namespace-scoped deployment.
+	SetNamespaced() error
+	// ClearNamespaced disables namespace-scoped deployment (default: cluster-scoped).
+	ClearNamespaced() error
+
 	/* Resources */
 
 	// ResourcesLength returns the number of tracked resources.

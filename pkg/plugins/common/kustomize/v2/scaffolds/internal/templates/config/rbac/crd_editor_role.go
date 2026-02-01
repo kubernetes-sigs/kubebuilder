@@ -33,6 +33,7 @@ type CRDEditorRole struct {
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	RoleName string
 }
@@ -72,7 +73,7 @@ const crdRoleEditorTemplate = `# This rule is not used by the project {{ .Projec
 # but should not control RBAC or manage permissions for others.
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ if .Namespaced }}Role{{ else }}ClusterRole{{ end }}
 metadata:
   labels:
     app.kubernetes.io/name: {{ .ProjectName }}

@@ -33,6 +33,8 @@ type Controller struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	ControllerRuntimeVersion string
 
@@ -85,9 +87,15 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
+{{ if .Namespaced -}}
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},namespace={{ .ProjectName }}-system,resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},namespace={{ .ProjectName }}-system,resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},namespace={{ .ProjectName }}-system,resources={{ .Resource.Plural }}/finalizers,verbs=update
+{{- else -}}
 // +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/finalizers,verbs=update
+{{- end }}
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

@@ -129,6 +129,17 @@ func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
 	m.MultiGroup = flag
 }
 
+// NamespacedMixin provides templates with a injectable namespaced flag field
+type NamespacedMixin struct {
+	// Namespaced is the namespaced flag
+	Namespaced bool
+}
+
+// InjectNamespaced implements HasNamespaced
+func (m *NamespacedMixin) InjectNamespaced(flag bool) {
+	m.Namespaced = flag
+}
+
 // BoilerplateMixin provides templates with a injectable boilerplate field
 type BoilerplateMixin struct {
 	// Boilerplate is the contents of a Boilerplate go header file

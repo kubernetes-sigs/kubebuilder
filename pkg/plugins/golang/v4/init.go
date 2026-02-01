@@ -57,6 +57,7 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+	namespaced         bool
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -92,6 +93,8 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
+	fs.BoolVar(&p.namespaced, "namespaced", false,
+		"if specified, scaffold the project for namespace-scoped deployment (default: cluster-scoped)")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
@@ -108,6 +111,12 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 
 	if err := p.config.SetRepository(p.repo); err != nil {
 		return fmt.Errorf("error setting repository: %w", err)
+	}
+
+	if p.namespaced {
+		if err := p.config.SetNamespaced(); err != nil {
+			return fmt.Errorf("error setting namespaced: %w", err)
+		}
 	}
 
 	return nil

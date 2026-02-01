@@ -128,6 +128,14 @@ var _ = Describe("kubebuilder", func() {
 			By("deploying with fullnameOverride - all resources use the custom name")
 			runHelm(kbc, true, true, false, "custom-operator")
 		})
+
+		It("should generate a runnable namespace-scoped project with webhooks deployed via HelmChart", func() {
+			generateHelmProjectNamespaced(kbc)
+			By("installing Helm")
+			Expect(kbc.InstallHelm()).To(Succeed())
+
+			runHelm(kbc, true, true, false, "")
+		})
 	})
 })
 
@@ -374,6 +382,62 @@ func runHelm(kbc *utils.TestContext, hasWebhook, hasMetrics, hasNetworkPolicies 
 		metricsShouldBeUnavailable(kbc, expectedPrefix)
 	}
 
+	// Check if project is namespace-scoped for isolation testing
+	isNamespaced := isProjectNamespaced(kbc)
+
+	if isNamespaced && hasMetrics {
+		By("validating namespace isolation - manager should NOT reconcile resources in other namespaces")
+
+		By("verifying the controller reconciled the CR in its namespace")
+		Eventually(func(g Gomega) {
+			metricsOutput := getMetricsOutput(kbc, expectedPrefix, controllerPodName)
+			// The controller should have reconciled at least once for the sample CR in its namespace
+			g.Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
+				`controller_runtime_reconcile_total{controller="%s",result="success"}`,
+				strings.ToLower(kbc.Kind),
+			)), "Controller should have reconciled the CR in its namespace")
+		}, 2*time.Minute, time.Second).Should(Succeed())
+
+		By("creating a test namespace for isolation testing")
+		testNamespace := "test-namespace-isolation"
+		_, err = kbc.Kubectl.Command("create", "namespace", testNamespace)
+		Expect(err).NotTo(HaveOccurred())
+		defer func() {
+			By("cleaning up test namespace")
+			_, _ = kbc.Kubectl.Command("delete", "namespace", testNamespace)
+		}()
+
+		By("applying the CR to the test namespace (outside manager's namespace)")
+		_, err = kbc.Kubectl.Apply(false, "-n", testNamespace, "-f", sampleFile)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("verifying the CR exists in the test namespace")
+		_, err = kbc.Kubectl.Get(
+			false,
+			strings.ToLower(kbc.Kind), fmt.Sprintf("%s-sample", strings.ToLower(kbc.Kind)),
+			"-n", testNamespace,
+		)
+		Expect(err).NotTo(HaveOccurred(), "CR should exist in the test namespace")
+
+		By("waiting and verifying the reconcile count does not increase")
+		// Wait for potential reconciliation attempts
+		time.Sleep(10 * time.Second)
+
+		metricsOutput := getMetricsOutput(kbc, expectedPrefix, controllerPodName)
+		// The count should still be 1 - only the CR in the manager's namespace should be reconciled
+		Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
+			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
+			strings.ToLower(kbc.Kind),
+		)), "Controller should not have reconciled the CR in the other namespace")
+
+		By("verifying the CR in the manager's namespace is still accessible")
+		_, err = kbc.Kubectl.Get(
+			true,
+			strings.ToLower(kbc.Kind), fmt.Sprintf("%s-sample", strings.ToLower(kbc.Kind)),
+		)
+		Expect(err).NotTo(HaveOccurred(), "CR should still exist in manager's namespace")
+	}
+
 	if hasWebhook {
 		By("validating that the CRD conversion was properly configured and works as expected")
 
@@ -472,19 +536,40 @@ func getControllerName(kbc *utils.TestContext) string {
 // expectedPrefix is the prefix used for resource names (from chart.fullname or fullnameOverride)
 // controllerPodName is the name of the controller manager pod
 func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerPodName string) string {
-	_, err := kbc.Kubectl.Command(
-		"get", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-	)
-	if err != nil && strings.Contains(err.Error(), "NotFound") {
-		// Create the clusterrolebinding only if it doesn't exist
-		_, err = kbc.Kubectl.Command(
-			"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-			fmt.Sprintf("--clusterrole=%s-metrics-reader", expectedPrefix),
-			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
+	// Check if project is namespace-scoped
+	isNamespaced := isProjectNamespaced(kbc)
+
+	if isNamespaced {
+		// For namespace-scoped projects, create a RoleBinding
+		_, err := kbc.Kubectl.Get(
+			true,
+			"rolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 		)
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil && strings.Contains(err.Error(), "NotFound") {
+			_, err = kbc.Kubectl.Command(
+				"create", "rolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+				fmt.Sprintf("--role=%s-metrics-reader", expectedPrefix),
+				fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
+			)
+			Expect(err).NotTo(HaveOccurred())
+		} else {
+			Expect(err).NotTo(HaveOccurred(), "Failed to check rolebinding existence")
+		}
 	} else {
-		Expect(err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
+		// For cluster-scoped projects, create a ClusterRoleBinding
+		_, err := kbc.Kubectl.Command(
+			"get", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+		)
+		if err != nil && strings.Contains(err.Error(), "NotFound") {
+			_, err = kbc.Kubectl.Command(
+				"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+				fmt.Sprintf("--clusterrole=%s-metrics-reader", expectedPrefix),
+				fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
+			)
+			Expect(err).NotTo(HaveOccurred())
+		} else {
+			Expect(err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
+		}
 	}
 
 	token, err := serviceAccountToken(kbc)
@@ -577,10 +662,23 @@ func getMetricsOutput(kbc *utils.TestContext, expectedPrefix string, controllerP
 }
 
 func metricsShouldBeUnavailable(kbc *utils.TestContext, expectedPrefix string) {
-	_, err := kbc.Kubectl.Command(
-		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-		fmt.Sprintf("--clusterrole=%s-metrics-reader", expectedPrefix),
-		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
+	// Check if project is namespace-scoped
+	isNamespaced := isProjectNamespaced(kbc)
+
+	var err error
+	if isNamespaced {
+		// For namespace-scoped projects, create a RoleBinding
+		_, err = kbc.Kubectl.Command(
+			"create", "rolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+			fmt.Sprintf("--role=%s-metrics-reader", expectedPrefix),
+			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
+	} else {
+		// For cluster-scoped projects, create a ClusterRoleBinding
+		_, err = kbc.Kubectl.Command(
+			"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+			fmt.Sprintf("--clusterrole=%s-metrics-reader", expectedPrefix),
+			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
+	}
 	Expect(err).NotTo(HaveOccurred())
 
 	token, err := serviceAccountToken(kbc)
@@ -691,12 +789,8 @@ func serviceAccountToken(kbc *utils.TestContext) (string, error) {
 	return out, nil
 }
 
-// generateHelmProject sets up a go/v4 project with webhooks and conversion webhook enabled,
-// and prepares kustomize configs so the helm plugin can generate full charts.
-func generateHelmProject(kbc *utils.TestContext) {
-	initHelmProject(kbc)
-	createAPI(kbc)
-
+// scaffoldWebhooksAndMetrics is a helper to scaffold webhooks, conversion webhooks, and enable metrics
+func scaffoldWebhooksAndMetrics(kbc *utils.TestContext) {
 	By("scaffolding mutating and validating webhooks")
 	err := kbc.CreateWebhook(
 		"--group", kbc.Group,
@@ -717,18 +811,26 @@ func generateHelmProject(kbc *utils.TestContext) {
 
 	scaffoldConversionWebhook(kbc)
 
-	ExpectWithOffset(1, pluginutil.UncommentCode(
+	ExpectWithOffset(2, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
+	ExpectWithOffset(2, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
 		monitorTLSPatch, "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
+	ExpectWithOffset(2, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsCertPatch, "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
+	ExpectWithOffset(2, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsCertReplaces, "#")).To(Succeed())
+}
+
+// generateHelmProject sets up a go/v4 project with webhooks and conversion webhook enabled,
+// and prepares kustomize configs so the helm plugin can generate full charts.
+func generateHelmProject(kbc *utils.TestContext) {
+	initHelmProject(kbc)
+	createAPI(kbc)
+	scaffoldWebhooksAndMetrics(kbc)
 }
 
 func generateHelmProjectWithoutMetrics(kbc *utils.TestContext) {
@@ -835,6 +937,12 @@ func generateHelmProjectWithoutWebhooks(kbc *utils.TestContext) {
 		"#- ../prometheus", "#")).To(Succeed())
 }
 
+func generateHelmProjectNamespaced(kbc *utils.TestContext) {
+	initHelmProjectNamespaced(kbc)
+	createAPI(kbc)
+	scaffoldWebhooksAndMetrics(kbc)
+}
+
 func createAPI(kbc *utils.TestContext) {
 	By("creating API definition")
 	err := kbc.CreateAPI(
@@ -864,6 +972,17 @@ func initHelmProject(kbc *utils.TestContext) {
 		"--domain", kbc.Domain,
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
+}
+
+func initHelmProjectNamespaced(kbc *utils.TestContext) {
+	By("initializing a namespace-scoped project")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+		"--namespaced",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize namespace-scoped project")
 }
 
 const metricsTarget = `- path: manager_metrics_patch.yaml
@@ -1003,3 +1122,10 @@ const metricsCertReplaces = `# - source: # Uncomment the following block to enab
 #         delimiter: '.'
 #         index: 1
 #         create: true`
+
+// isProjectNamespaced checks if the project is configured for namespace-scoped deployment
+func isProjectNamespaced(kbc *utils.TestContext) bool {
+	projectFilePath := filepath.Join(kbc.Dir, "PROJECT")
+	projectConfig := getConfigFromProjectFile(projectFilePath)
+	return projectConfig.IsNamespaced()
+}
