@@ -16,7 +16,9 @@ docs/book/src/docs
 # skip bin dirs
 **/bin
 **/testbin
-**/dist
+
+# skip GoReleaser dist directory (root level only, not testdata)
+/dist
 
 # skip .out files (coverage tests)
 *.out

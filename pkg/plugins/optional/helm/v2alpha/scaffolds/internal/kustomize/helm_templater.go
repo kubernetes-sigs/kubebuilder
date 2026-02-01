@@ -258,10 +258,10 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 		// Metrics certificates should point to metrics service
 		// Use chart-specific resourceName helper for consistent naming with 63-char safety
 		metricsServiceTemplate := "{{ include \"" + t.chartName + ".resourceName\" " +
-			"(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" .) }}"
-		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc"
+			"(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}"
+		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"" + t.chartName + ".namespaceName\" $ }}.svc"
 		metricsServiceFQDNCluster := metricsServiceTemplate +
-			".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc.cluster.local"
+			".{{ include \"" + t.chartName + ".namespaceName\" $ }}.svc.cluster.local"
 
 		// Replace placeholders
 		yamlContent = strings.ReplaceAll(yamlContent, "SERVICE_NAME.SERVICE_NAMESPACE.svc", metricsServiceFQDN)

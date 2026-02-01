@@ -128,6 +128,52 @@ var _ = Describe("kubebuilder", func() {
 			By("deploying with fullnameOverride - all resources use the custom name")
 			runHelm(kbc, true, true, false, "custom-operator")
 		})
+
+		It("should work correctly when kustomize uses custom namePrefix", func() {
+			By("generating a full-featured project with webhooks and metrics")
+			generateHelmProject(kbc)
+
+			By("installing Helm")
+			Expect(kbc.InstallHelm()).To(Succeed())
+
+			By("adding custom namePrefix to config/default/kustomization.yaml")
+			kustomizationPath := filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml")
+			content, err := os.ReadFile(kustomizationPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Prepend custom namePrefix to the kustomization file
+			modifiedContent := "namePrefix: custom-prefix-\n" + string(content)
+			err = os.WriteFile(kustomizationPath, []byte(modifiedContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("building installer with custom namePrefix")
+			err = kbc.Make("build-installer")
+			Expect(err).NotTo(HaveOccurred())
+
+			By("generating helm chart with custom namePrefix in kustomize")
+			err = kbc.EditHelmPlugin()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying helm chart uses project name helpers, not kustomize prefix")
+			chartPath := filepath.Join(kbc.Dir, "dist", "chart")
+			projectName := "e2e-" + kbc.TestSuffix
+
+			// Check _helpers.tpl uses project name
+			helpersContent, err := os.ReadFile(filepath.Join(chartPath, "templates", "_helpers.tpl"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(helpersContent)).To(ContainSubstring(`define "` + projectName + `.name"`))
+			Expect(string(helpersContent)).To(ContainSubstring(`define "` + projectName + `.resourceName"`))
+
+			// Verify templates use project name helpers, not kustomize prefix
+			managerContent, err := os.ReadFile(filepath.Join(chartPath, "templates", "manager", "manager.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(managerContent)).To(ContainSubstring(`include "` + projectName))
+			Expect(string(managerContent)).NotTo(ContainSubstring(`custom-prefix`),
+				"Manager template should not contain kustomize prefix")
+
+			By("deploying with custom kustomize namePrefix - helm chart should still work")
+			runHelm(kbc, true, true, false, "")
+		})
 	})
 })
 
