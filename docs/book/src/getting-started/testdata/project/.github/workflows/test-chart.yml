@@ -67,8 +67,18 @@ jobs:
 
       - name: Install Helm chart for project
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace project-system
+          helm install my-release ./dist/chart \
+            --create-namespace \
+            --namespace project-system \
+            --set manager.image.repository=project \
+            --set manager.image.tag=v0.1.0 \
+            --wait \
+            --timeout 300s
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace project-system
+
+      - name: Run Helm tests
+        run: |
+          helm test my-release --namespace project-system

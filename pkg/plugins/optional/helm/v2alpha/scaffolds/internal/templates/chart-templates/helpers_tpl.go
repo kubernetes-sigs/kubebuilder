@@ -57,7 +57,7 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 	return nil
 }
 
-// generateHelpersTemplate creates the _helpers.tpl content with project-specific template names
+// generateHelpersTemplate creates the _helpers.tpl content with chart-name-scoped template names
 func (f *HelmHelpers) generateHelpersTemplate() string {
 	// Use project name as prefix (e.g., "project-v4-with-plugins")
 	// This creates templates like "project-v4-with-plugins.name" instead of generic "chart.name"

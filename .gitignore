@@ -16,7 +16,6 @@ docs/book/src/docs
 # skip bin dirs
 **/bin
 **/testbin
-**/dist
 
 # skip .out files (coverage tests)
 *.out
