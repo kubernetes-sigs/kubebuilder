@@ -158,7 +158,7 @@ jobs:
           go mod init test-helm-no-webhooks
           kubebuilder init
           kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
-          kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
+          kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha
 
       - name: Build and load Docker image
         working-directory: test-helm-no-webhooks
