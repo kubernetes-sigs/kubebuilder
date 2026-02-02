@@ -436,6 +436,9 @@ func getInitArgs(s store.Store) []string {
 	if repo := s.Config().GetRepository(); repo != "" {
 		args = append(args, "--repo", repo)
 	}
+	if projectName := s.Config().GetProjectName(); projectName != "" {
+		args = append(args, "--project-name", projectName)
+	}
 	return args
 }
 

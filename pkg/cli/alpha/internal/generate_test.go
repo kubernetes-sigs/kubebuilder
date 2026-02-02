@@ -36,6 +36,7 @@ type fakeConfig struct {
 	pluginChain []string
 	domain      string
 	repo        string
+	projectName string
 	multigroup  bool
 	resources   []resource.Resource
 	pluginErr   error
@@ -46,6 +47,7 @@ type fakeConfig struct {
 func (f *fakeConfig) GetPluginChain() []string { return f.pluginChain }
 func (f *fakeConfig) GetDomain() string        { return f.domain }
 func (f *fakeConfig) GetRepository() string    { return f.repo }
+func (f *fakeConfig) GetProjectName() string   { return f.projectName }
 func (f *fakeConfig) IsMultiGroup() bool       { return f.multigroup }
 func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
 	if f.getResErr != nil {
@@ -376,6 +378,21 @@ var _ = Describe("generate: get-args-helpers", func() {
 					args := getInitArgs(store)
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+
+			When("project name is set", func() {
+				It("returns correct args including project name", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						projectName: "my-project",
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
 				})
 			})
 		})
