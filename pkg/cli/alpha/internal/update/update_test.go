@@ -31,15 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
-// Helpers to keep lines short and consistent with production messages.
-func expNormalMsg(from, to string) string {
-	return fmt.Sprintf("(chore) scaffold update: %s -> %s", from, to)
-}
-
-func expConflictMsg(from, to string) string {
-	return fmt.Sprintf(":warning: (chore) [with conflicts] scaffold update: %s -> %s", from, to)
-}
-
 // Mock response for binary executables.
 func mockBinResponse(script, mockBin string) error {
 	err := os.WriteFile(mockBin, []byte(script), 0o755)
@@ -394,7 +385,7 @@ exit 1`
 				fmt.Sprintf("merge --no-edit --no-commit %s", opts.OriginalBranch),
 			))
 			Expect(s).To(ContainSubstring("add --all"))
-			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
+			Expect(s).To(ContainSubstring(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
 		})
 
 		It("fails when branch creation fails", func() {
@@ -439,7 +430,7 @@ exit 0`
 
 			s, _ := os.ReadFile(logFile)
 			Expect(string(s)).To(ContainSubstring(
-				expConflictMsg(opts.FromVersion, opts.ToVersion),
+				helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion),
 			))
 		})
 	})
@@ -478,7 +469,7 @@ exit 0`
 
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
 			Expect(s).To(ContainSubstring("add --all"))
-			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
+			Expect(s).To(ContainSubstring(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
 			Expect(s).To(ContainSubstring("commit --no-verify -m"))
 		})
 

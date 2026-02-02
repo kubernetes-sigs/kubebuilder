@@ -32,6 +32,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
@@ -216,8 +217,7 @@ var _ = Describe("kubebuilder", func() {
 			By("checking commit message of the squashed branch")
 			msg, err := git("log", "-1", "--pretty=%B", prBranch)
 			Expect(err).NotTo(HaveOccurred(), string(msg))
-			expected := fmt.Sprintf(
-				":warning: (chore) [with conflicts] scaffold update: %s -> %s", fromVersion, toVersionWithConflict)
+			expected := helpers.ConflictCommitMessage(fromVersion, toVersionWithConflict)
 			Expect(string(msg)).To(ContainSubstring(expected))
 		})
 
