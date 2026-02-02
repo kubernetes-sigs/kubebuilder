@@ -76,6 +76,12 @@ func resolveMainVersion(main debug.Module) string {
 	return develVersion
 }
 
+// isPseudoVersion reports whether a version is a pseudo-version
+// (e.g., v0.0.0-20191109021931-daa7c04131f5 or v1.2.4-0.20191109021931-daa7c04131f5)
+func isPseudoVersion(v string) bool {
+	return strings.Contains(v, "-0.")
+}
+
 func (v *Version) applyVCSMetadata(settings []debug.BuildSetting) {
 	var isDirty bool
 
@@ -91,9 +97,15 @@ func (v *Version) applyVCSMetadata(settings []debug.BuildSetting) {
 	}
 
 	if isDirty {
-		if !strings.Contains(v.KubeBuilderVersion, "dirty") {
-			v.KubeBuilderVersion += "-dirty"
+		// For development builds (not proper releases), use develVersion to avoid
+		// polluting PROJECT files with unstable -dirty version strings.
+		// For tagged releases, ignore the dirty flag to support GoReleaser builds
+		// that may create artifacts during the build process.
+		if v.KubeBuilderVersion == develVersion || isPseudoVersion(v.KubeBuilderVersion) {
+			v.KubeBuilderVersion = develVersion
 		}
+		// Note: We don't append -dirty to tagged release versions to support
+		// GoReleaser and similar build tools that may modify files during build.
 
 		if !strings.Contains(v.GitCommit, "dirty") {
 			v.GitCommit += "-dirty"
