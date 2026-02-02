@@ -713,9 +713,8 @@ func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 }
 
 func (opts *Update) getMergeMessage(hasConflicts bool) string {
-	base := fmt.Sprintf("scaffold update: %s -> %s", opts.FromVersion, opts.ToVersion)
 	if hasConflicts {
-		return fmt.Sprintf(":warning: (chore) [with conflicts] %s", base)
+		return helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)
 	}
-	return fmt.Sprintf("(chore) %s", base)
+	return helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)
 }
