@@ -78,14 +78,14 @@ resources:
   external: true
   group: cert-manager
   kind: Certificate
-  module: github.com/cert-manager/cert-manager@v1.19.2
+  module: github.com/cert-manager/cert-manager@v1.19.3
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
 - domain: io
   external: true
   group: cert-manager
   kind: Issuer
-  module: github.com/cert-manager/cert-manager@v1.19.2
+  module: github.com/cert-manager/cert-manager@v1.19.3
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
   webhooks:
