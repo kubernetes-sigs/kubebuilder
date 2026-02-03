@@ -65,5 +65,6 @@ func MergeCommitMessage(from, to string) string {
 
 // ConflictCommitMessage returns the commit message for a merge update with conflicts
 func ConflictCommitMessage(from, to string) string {
+	//nolint:lll
 	return fmt.Sprintf("chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold %s -> %s", from, to)
 }
