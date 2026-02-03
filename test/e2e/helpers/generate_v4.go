@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v4
+package helpers
 
 import (
 	"fmt"
@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
+	. "github.com/onsi/gomega"    //nolint:staticcheck
 
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"

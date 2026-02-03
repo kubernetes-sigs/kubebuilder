@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
@@ -167,12 +168,18 @@ func (t *TestContext) InstallCertManager() error {
 	}
 	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager
 	// was re-installed after uninstalling on a cluster.
-	_, err := t.Kubectl.Wait(false, "deployment.apps/cert-manager-webhook",
+	if _, err := t.Kubectl.Wait(false, "deployment.apps/cert-manager-webhook",
 		"--for", "condition=Available",
 		"--namespace", "cert-manager",
 		"--timeout", "5m",
-	)
-	return err
+	); err != nil {
+		return err
+	}
+
+	// Additional wait for webhook TLS to be fully initialized
+	// The webhook needs time after deployment is ready to generate and serve valid certificates
+	time.Sleep(10 * time.Second)
+	return nil
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.
@@ -186,7 +193,8 @@ func (t *TestContext) UninstallCertManager() {
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
 	url := t.makePrometheusOperatorURL()
-	_, err := t.Kubectl.Command("create", "-f", url)
+	// Use server-side apply to handle large CRD annotations
+	_, err := t.Kubectl.Command("apply", "--server-side", "-f", url)
 	return err
 }
 
@@ -427,8 +435,12 @@ func (t *TestContext) EditHelmPlugin() error {
 // preserving kustomize resource naming.
 func (t *TestContext) HelmInstallRelease() error {
 	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
+	// Set the image to match what was built (format: e2e-test/controller-manager:suffix)
+	// Helm chart uses manager.image.repository and manager.image.tag
 	cmd := exec.Command("helm", "install", releaseName, "dist/chart",
-		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix))
+		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix),
+		"--set", fmt.Sprintf("manager.image.repository=%s", "e2e-test/controller-manager"),
+		"--set", fmt.Sprintf("manager.image.tag=%s", t.TestSuffix))
 	_, err := t.Run(cmd)
 	return err
 }
