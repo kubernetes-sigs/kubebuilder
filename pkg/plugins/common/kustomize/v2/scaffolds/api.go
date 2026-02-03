@@ -94,7 +94,7 @@ func (s *apiScaffolder) Scaffold() error {
 		if err != nil {
 			hasCRUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
 			if !hasCRUncommented || errCheck != nil {
-				log.Error("Unable to find the target #- ../crd to uncomment in the file ",
+				log.Error("unable to find the target #- ../crd to uncomment in the file",
 					"file_path", kustomizeFilePath)
 			}
 		}
@@ -106,7 +106,7 @@ func (s *apiScaffolder) Scaffold() error {
 		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
 			comment)
 		if err != nil {
-			log.Error("Unable to append the admin/edit/view roles comment in the file ",
+			log.Error("failed to append the admin/edit/view roles comment in the file",
 				"file_path", rbacKustomizeFilePath)
 		}
 		crdName := strings.ToLower(s.resource.Kind)
@@ -116,7 +116,7 @@ func (s *apiScaffolder) Scaffold() error {
 		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath, comment,
 			fmt.Sprintf("\n- %[1]s_admin_role.yaml\n- %[1]s_editor_role.yaml\n- %[1]s_viewer_role.yaml", crdName))
 		if err != nil {
-			log.Error("Unable to add Admin, Editor and Viewer roles in the file ",
+			log.Error("failed to add admin, editor and viewer roles in the file",
 				"file_path", rbacKustomizeFilePath)
 		}
 		// Add an empty line at the end of the file
@@ -125,7 +125,7 @@ func (s *apiScaffolder) Scaffold() error {
 
 `)
 		if err != nil {
-			log.Error("Unable to append empty line at the end of the file",
+			log.Error("failed to append empty line at the end of the file",
 				"file_path", rbacKustomizeFilePath)
 		}
 	}

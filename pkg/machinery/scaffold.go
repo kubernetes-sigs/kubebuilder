@@ -243,8 +243,8 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 			if withOptionalBehavior, ok := i.(HasIfNotExistsAction); ok {
 				switch withOptionalBehavior.GetIfNotExistsAction() {
 				case IgnoreFile:
-					log.Warn("Skipping missing file", "file", i.GetPath())
-					log.Warn("The code fragments will not be inserted.")
+					log.Warn("skipping missing file", "file", i.GetPath())
+					log.Warn("the code fragments will not be inserted")
 					return nil
 				case ErrorIfNotExist:
 					return err
