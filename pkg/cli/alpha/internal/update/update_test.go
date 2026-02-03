@@ -541,4 +541,48 @@ exit 1`
 			Expect(os.Getenv("PATH")).To(Equal(orig))
 		})
 	})
+
+	Context("getMergeMessage", func() {
+		BeforeEach(func() {
+			opts.FromVersion = "v4.5.0"
+			opts.ToVersion = "v4.6.0"
+			opts.CommitMessage = ""
+			opts.CommitMessageConflict = ""
+		})
+
+		It("uses custom commit message when provided (no conflicts)", func() {
+			opts.CommitMessage = "chore: custom update message"
+			msg := opts.getMergeMessage(false)
+			Expect(msg).To(Equal("chore: custom update message"))
+		})
+
+		It("uses custom conflict message when provided (with conflicts)", func() {
+			opts.CommitMessageConflict = "chore: custom conflict message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal("chore: custom conflict message"))
+		})
+
+		It("uses default message when no custom message (no conflicts)", func() {
+			msg := opts.getMergeMessage(false)
+			Expect(msg).To(Equal(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
+		})
+
+		It("uses default conflict message when no custom message (with conflicts)", func() {
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal(helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)))
+		})
+
+		It("prefers conflict message over regular message when conflicts occur", func() {
+			opts.CommitMessage = "chore: regular message"
+			opts.CommitMessageConflict = "chore: conflict message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal("chore: conflict message"))
+		})
+
+		It("falls back to default conflict message when only regular message is set", func() {
+			opts.CommitMessage = "chore: regular message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal(helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)))
+		})
+	})
 })

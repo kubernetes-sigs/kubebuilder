@@ -64,6 +64,8 @@ The command creates three temporary branches:
     - `--show-commits`: keep the full history.
     - `--restore-path`: in squash mode, restore specific files (like CI configs) from your base branch.
     - `--output-branch`: pick a custom branch name.
+    - `--commit-message`: customize the commit message for clean merges.
+    - `--commit-message-conflict`: customize the commit message when conflicts occur.
     - `--push`: push the result to `origin` automatically.
     - `--git-config`: sets git configurations.
     - `--open-gh-issue`: create a GitHub issue with a checklist and compare link (requires `gh`).
@@ -119,6 +121,14 @@ Run update and push the result to origin:
 
 ```shell
 kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push
+```
+
+Customize commit messages:
+
+```shell
+kubebuilder alpha update --force \
+--commit-message "chore: upgrade kubebuilder scaffold" \
+--commit-message-conflict "chore: upgrade with conflicts - manual review needed"
 ```
 
 ## Handling Conflicts (`--force` vs default)
@@ -223,8 +233,10 @@ We use that value to pick the correct CLI for re-scaffolding.
 
 ## Flags
 
-| Flag               | Description                                                                                                                                                                                                                             |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Flag                         | Description                                                                                                                                                                                                                             |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--commit-message`           | Custom commit message for successful merges (no conflicts). Defaults to `chore(kubebuilder): update scaffold <from> -> <to>`.                                                                                                           |
+| `--commit-message-conflict`  | Custom commit message for merges with conflicts. Defaults to `:warning: chore(kubebuilder): update scaffold (manual conflict resolution) <from> -> <to>`.                                                                               |
 | `--force`          | Continue even if merge conflicts happen. Conflicted files are committed with conflict markers (CI/cron friendly).                                                                                                                       |
 | `--from-branch`    | Git branch that holds your current project code. Defaults to `main`.                                                                                                                                                                    |
 | `--from-version`   | Kubebuilder release to update **from** (e.g., `v4.6.0`). If unset, read from the `PROJECT` file when possible.                                                                                                                          |

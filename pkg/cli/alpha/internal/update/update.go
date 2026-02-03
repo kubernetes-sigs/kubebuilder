@@ -75,6 +75,15 @@ type Update struct {
 	// Push, when true, pushes the OutputBranch to the "origin" remote after the update completes.
 	Push bool
 
+	// CommitMessage is the custom commit message to use for successful merges (no conflicts).
+	// If empty, defaults to: "chore(kubebuilder): update scaffold <from> -> <to>".
+	CommitMessage string
+
+	// CommitMessageConflict is the custom commit message to use when conflicts occur.
+	// If empty, defaults to: "chore(kubebuilder): (:warning: manual conflict resolution required)
+	// update scaffold <from> -> <to>".
+	CommitMessageConflict string
+
 	// OpenGhIssue, when true, automatically creates a GitHub issue after the update
 	// completes. The issue includes a pre-filled checklist and a compare link from
 	// the base branch (--from-branch) to the output branch. This requires the GitHub
@@ -714,7 +723,17 @@ func (opts *Update) mergeOriginalToUpgrade() (bool, error) {
 
 func (opts *Update) getMergeMessage(hasConflicts bool) string {
 	if hasConflicts {
+		// Use custom conflict message if provided
+		if opts.CommitMessageConflict != "" {
+			return opts.CommitMessageConflict
+		}
+		// Otherwise use default conflict format
 		return helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)
+	}
+
+	// Use custom commit message if provided
+	if opts.CommitMessage != "" {
+		return opts.CommitMessage
 	}
 	return helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)
 }
