@@ -223,15 +223,6 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
-			// Determine the prefix for webhook configurations
-			// If fullnameOverride is set, use that; otherwise use e2e-{suffix}
-			var namePrefix string
-			if opts.HelmFullnameOverride != "" {
-				namePrefix = opts.HelmFullnameOverride
-			} else {
-				namePrefix = fmt.Sprintf("e2e-%s", kbc.TestSuffix)
-			}
-
 			var mwhOutput, vwhOutput string
 			mwhOutput, err = kbc.Kubectl.Get(
 				false,

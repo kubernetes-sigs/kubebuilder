@@ -92,7 +92,7 @@ func GetMetricsOutput(controllerPodName, namePrefix string, kbc *utils.TestConte
 	if err != nil && strings.Contains(err.Error(), "NotFound") {
 		_, err = kbc.Kubectl.Command(
 			"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-			fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
+			fmt.Sprintf("--clusterrole=%s-metrics-reader", namePrefix),
 			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 		)
 		Expect(err).NotTo(HaveOccurred())
