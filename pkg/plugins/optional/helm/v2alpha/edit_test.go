@@ -111,6 +111,107 @@ version: "3"
 		})
 	})
 
+	Context("removeV1AlphaPluginEntry", func() {
+		It("should remove v1-alpha plugin entry if it exists", func() {
+			// Add v1-alpha plugin entry to config
+			err := cfg.EncodePluginConfig(v1AlphaPluginKey, map[string]any{})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify it exists
+			var v1AlphaCfg map[string]any
+			err = cfg.DecodePluginConfig(v1AlphaPluginKey, &v1AlphaCfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Remove it
+			editCmd.removeV1AlphaPluginEntry()
+
+			// Verify it was removed from in-memory config
+			err = cfg.DecodePluginConfig(v1AlphaPluginKey, &v1AlphaCfg)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("plugin key"))
+		})
+
+		It("should not error when v1-alpha entry does not exist", func() {
+			// Should not panic or error
+			editCmd.removeV1AlphaPluginEntry()
+		})
+
+		It("should not error when plugins map is nil", func() {
+			// Create a fresh config without any plugins
+			memFs := afero.NewMemMapFs()
+			freshFs := machinery.Filesystem{FS: memFs}
+			store := yaml.New(freshFs)
+
+			projectContent := `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: test-project
+repo: example.com/test-project
+version: "3"
+`
+			err := afero.WriteFile(memFs, "PROJECT", []byte(projectContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = store.LoadFrom("PROJECT")
+			Expect(err).NotTo(HaveOccurred())
+
+			freshCfg := store.Config()
+			freshEditCmd := &editSubcommand{config: freshCfg}
+
+			// Should not panic or error
+			freshEditCmd.removeV1AlphaPluginEntry()
+		})
+
+		It("should persist v1-alpha removal when config is saved", func() {
+			// Create a store to test actual persistence
+			memFs := afero.NewMemMapFs()
+			testFs := machinery.Filesystem{FS: memFs}
+			store := yaml.New(testFs)
+
+			// Create PROJECT file with v1-alpha plugin entry
+			projectContent := `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+plugins:
+  helm.kubebuilder.io/v1-alpha: {}
+projectName: test-project
+repo: example.com/test-project
+version: "3"
+`
+			err := afero.WriteFile(memFs, "PROJECT", []byte(projectContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = store.LoadFrom("PROJECT")
+			Expect(err).NotTo(HaveOccurred())
+
+			testCfg := store.Config()
+			testEditCmd := &editSubcommand{config: testCfg}
+
+			// Verify v1-alpha entry exists before removal
+			var v1AlphaCfg map[string]any
+			err = testCfg.DecodePluginConfig(v1AlphaPluginKey, &v1AlphaCfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Remove v1-alpha entry
+			testEditCmd.removeV1AlphaPluginEntry()
+
+			// Save config to disk
+			err = store.Save()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Reload config from disk
+			err = store.LoadFrom("PROJECT")
+			Expect(err).NotTo(HaveOccurred())
+
+			reloadedCfg := store.Config()
+
+			// Verify v1-alpha entry is gone after reload
+			err = reloadedCfg.DecodePluginConfig(v1AlphaPluginKey, &v1AlphaCfg)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("plugin key"))
+		})
+	})
+
 	Context("PostScaffold", func() {
 		BeforeEach(func() {
 			// Create the directory structure
