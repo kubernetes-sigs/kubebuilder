@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -37,6 +38,8 @@ const (
 	DefaultManifestsFile = "dist/install.yaml"
 	// DefaultOutputDir is the default output directory for Helm charts
 	DefaultOutputDir = "dist"
+	// v1AlphaPluginKey is the deprecated v1-alpha plugin key
+	v1AlphaPluginKey = "helm.kubebuilder.io/v1-alpha"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -123,6 +126,10 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err != nil {
 		return fmt.Errorf("error scaffolding Helm chart: %w", err)
 	}
+
+	// Remove deprecated v1-alpha plugin entry from PROJECT file
+	// This must happen in Scaffold (before config is saved) to be persisted
+	p.removeV1AlphaPluginEntry()
 
 	// Save plugin config to PROJECT file
 	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
@@ -232,4 +239,24 @@ func hasWebhooksWith(c config.Config) bool {
 	}
 
 	return false
+}
+
+// removeV1AlphaPluginEntry removes the deprecated helm.kubebuilder.io/v1-alpha plugin entry.
+// This must be called from Scaffold (before config is saved) for changes to be persisted.
+func (p *editSubcommand) removeV1AlphaPluginEntry() {
+	// Only attempt to remove if using v3 config (which supports plugin configs)
+	cfg, ok := p.config.(*cfgv3.Cfg)
+	if !ok {
+		return
+	}
+
+	// Check if v1-alpha plugin entry exists
+	if cfg.Plugins == nil {
+		return
+	}
+
+	if _, exists := cfg.Plugins[v1AlphaPluginKey]; exists {
+		delete(cfg.Plugins, v1AlphaPluginKey)
+		slog.Info("removed deprecated v1-alpha plugin entry")
+	}
 }
