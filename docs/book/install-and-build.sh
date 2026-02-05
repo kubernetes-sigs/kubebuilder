@@ -66,7 +66,6 @@ case ${os} in
 esac
 
 # grab mdbook
-# we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
 MDBOOK_VERSION="v0.5.2"
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
