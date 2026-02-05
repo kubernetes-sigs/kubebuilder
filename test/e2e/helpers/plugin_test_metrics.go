@@ -241,7 +241,6 @@ func ValidateMetricsUnavailable(namePrefix string, kbc *utils.TestContext) {
 }
 
 func cmdOptsToCreateCurlPod(namePrefix string, kbc *utils.TestContext, token string) []string {
-	//nolint:lll
 	cmdOpts := []string{
 		"run", "curl",
 		"--restart=Never",
@@ -254,7 +253,12 @@ func cmdOptsToCreateCurlPod(namePrefix string, kbc *utils.TestContext, token str
 					"name": "curl",
 					"image": "curlimages/curl:latest",
 					"command": ["/bin/sh", "-c"],
-					"args": ["curl -v -k -H 'Authorization: Bearer %s' https://%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics"],
+					"args": [
+						"for i in $(seq 1 30); do `+
+			`curl -v -k -H 'Authorization: Bearer %s' `+
+			`https://%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics `+
+			`&& exit 0 || sleep 2; done; exit 1"
+					],
 					"securityContext": {
 						"readOnlyRootFilesystem": true,
 						"allowPrivilegeEscalation": false,
