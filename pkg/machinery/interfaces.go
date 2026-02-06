@@ -88,6 +88,12 @@ type HasMultiGroup interface {
 	InjectMultiGroup(bool)
 }
 
+// HasNamespaced allows the namespaced flag to be used on a template
+type HasNamespaced interface {
+	// InjectNamespaced sets the template namespaced flag
+	InjectNamespaced(bool)
+}
+
 // HasBoilerplate allows a boilerplate to be used on a template
 type HasBoilerplate interface {
 	// InjectBoilerplate sets the template boilerplate

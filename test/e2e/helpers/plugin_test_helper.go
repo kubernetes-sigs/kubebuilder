@@ -58,6 +58,8 @@ type RunOptions struct {
 	HasMetrics bool
 	// HasNetworkPolicies indicates if network policies are enabled
 	HasNetworkPolicies bool
+	// IsNamespaced indicates if project is namespace-scoped
+	IsNamespaced bool
 	// InstallMethod specifies how to install the project
 	InstallMethod InstallMethod
 	// HelmFullnameOverride sets fullnameOverride for Helm installations (only for InstallMethodHelm)
@@ -301,20 +303,21 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 
 	if opts.HasWebhook {
 		By("validating that mutating and validating webhooks are working fine")
-		cnt, err := kbc.Kubectl.Get(
+		var cnt string
+		cnt, err = kbc.Kubectl.Get(
 			true,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
 		Expect(err).NotTo(HaveOccurred())
-		count, err := strconv.Atoi(cnt)
-		Expect(err).NotTo(HaveOccurred())
+		count, err2 := strconv.Atoi(cnt)
+		Expect(err2).NotTo(HaveOccurred())
 		Expect(count).To(BeNumerically("==", 5))
 	}
 
 	if opts.HasWebhook {
 		By("creating a namespace")
 		namespace := "test-webhooks"
-		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
+		_, err = kbc.Kubectl.Command("create", "namespace", namespace)
 		Expect(err).To(Not(HaveOccurred()), "namespace should be created successfully")
 
 		By("applying the CR in the created namespace")
@@ -329,15 +332,16 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 		// even in namespace-scoped managers. The manager won't reconcile CRs outside
 		// its WATCH_NAMESPACE, but webhooks will still enforce validation/mutation rules.
 		By("validating that mutating webhooks are working fine outside of the manager's namespace")
-		cnt, err := kbc.Kubectl.Get(
+		var cnt string
+		cnt, err = kbc.Kubectl.Get(
 			false,
 			"-n", namespace,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
 		Expect(err).NotTo(HaveOccurred())
 
-		count, err := strconv.Atoi(cnt)
-		Expect(err).NotTo(HaveOccurred())
+		count, err2 := strconv.Atoi(cnt)
+		Expect(err2).NotTo(HaveOccurred())
 		Expect(count).To(BeNumerically("==", 5),
 			"the mutating webhook should set the count to 5")
 
@@ -364,20 +368,20 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 
 		By("waiting for the ConversionTest CR to appear")
 		Eventually(func(g Gomega) {
-			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
-			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
+			_, getErr := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
+			g.Expect(getErr).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
 		}, defaultTimeout, defaultPollingInterval).Should(Succeed())
 
 		By("validating that the converted resource in v2 has replicas == 3")
 		Eventually(func(g Gomega) {
-			out, err := kbc.Kubectl.Get(
+			out, getErr := kbc.Kubectl.Get(
 				true,
 				"conversiontest", "conversiontest-sample",
 				"-o", "jsonpath={.spec.replicas}",
 			)
-			g.Expect(err).NotTo(HaveOccurred(), "failed to get converted resource in v2")
-			replicas, err := strconv.Atoi(out)
-			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
+			g.Expect(getErr).NotTo(HaveOccurred(), "failed to get converted resource in v2")
+			replicas, atoiErr := strconv.Atoi(out)
+			g.Expect(atoiErr).NotTo(HaveOccurred(), "replicas field is not an integer")
 			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
 		}, defaultTimeout, defaultPollingInterval).Should(Succeed())
 
@@ -388,5 +392,42 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 			Expect(metricsOutput).To(ContainSubstring(conversionMetric),
 				"Expected metric for successful ConversionTest reconciliation")
 		}
+	}
+
+	// Validate namespace-scoped behavior: operator should NOT reconcile resources outside its namespace
+	if opts.IsNamespaced {
+		By("validating that namespace-scoped operator does not reconcile resources outside its namespace")
+
+		// Create a test namespace outside the operator's watch namespace
+		testNamespace := "test-out-of-scope"
+		_, err = kbc.Kubectl.Command("create", "namespace", testNamespace)
+		Expect(err).NotTo(HaveOccurred(), "test namespace should be created successfully")
+
+		By("creating a CR in the out-of-scope namespace")
+		// Apply the same sample CR but in the test namespace
+		_, err = kbc.Kubectl.Apply(false, "-n", testNamespace, "-f", sampleFile)
+		Expect(err).NotTo(HaveOccurred(), "CR should be created in test namespace")
+
+		// Wait a bit to ensure the controller would have time to reconcile if it was watching
+		time.Sleep(5 * time.Second)
+
+		By("verifying the CR was NOT reconciled (no status conditions set)")
+		// Get the CR and check if it has been reconciled by looking at its status
+		crName := strings.ToLower(kbc.Kind) + "-sample"
+		crOutput, err := kbc.Kubectl.Get(false, "-n", testNamespace,
+			strings.ToLower(kbc.Kind), crName,
+			"-o", "jsonpath={.status}")
+		Expect(err).NotTo(HaveOccurred(), "CR should exist in test namespace")
+
+		// The status should be empty or not contain conditions set by the controller
+		// because the namespace-scoped operator should not be watching this namespace
+		Expect(crOutput).To(Or(
+			BeEmpty(),
+			Not(ContainSubstring("conditions")),
+		), "CR in out-of-scope namespace should not have been reconciled by the controller")
+
+		By("cleaning up the test namespace")
+		_, err = kbc.Kubectl.Command("delete", "namespace", testNamespace, "--timeout=60s")
+		Expect(err).NotTo(HaveOccurred(), "test namespace should be deleted successfully")
 	}
 }

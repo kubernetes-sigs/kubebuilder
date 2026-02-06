@@ -29,4 +29,3 @@ func TestScaffolds(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Scaffolds Integration Suite")
 }
-

@@ -186,4 +186,3 @@ version: 99.99.99
 		Expect(string(content)).To(ContainSubstring("99.99.99"))
 	})
 })
-

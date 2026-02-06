@@ -66,6 +66,7 @@ type Cfg struct {
 
 	// Boolean fields
 	MultiGroup bool `json:"multigroup,omitempty"`
+	Namespaced bool `json:"namespaced,omitempty"`
 
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
@@ -163,6 +164,23 @@ func (c *Cfg) SetMultiGroup() error {
 // ClearMultiGroup implements config.Config
 func (c *Cfg) ClearMultiGroup() error {
 	c.MultiGroup = false
+	return nil
+}
+
+// IsNamespaced implements config.Config
+func (c Cfg) IsNamespaced() bool {
+	return c.Namespaced
+}
+
+// SetNamespaced implements config.Config
+func (c *Cfg) SetNamespaced() error {
+	c.Namespaced = true
+	return nil
+}
+
+// ClearNamespaced implements config.Config
+func (c *Cfg) ClearNamespaced() error {
+	c.Namespaced = false
 	return nil
 }
 

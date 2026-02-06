@@ -28,9 +28,13 @@ var _ machinery.Template = &Config{}
 type Config struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	// Image is controller manager image name
 	Image string
+
+	// Force if true allows overwriting the scaffolded file
+	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -40,6 +44,12 @@ func (f *Config) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = configTemplate
+
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }
@@ -111,6 +121,13 @@ spec:
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
         name: manager
+{{- if .Namespaced }}
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+{{- end }}
         ports: []
         securityContext:
           readOnlyRootFilesystem: true

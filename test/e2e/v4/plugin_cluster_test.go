@@ -113,5 +113,15 @@ var _ = Describe("kubebuilder", func() {
 				InstallMethod:      helpers.InstallMethodKustomize,
 			})
 		})
+		It("should generate a runnable project", func() {
+			helpers.GenerateV4Namespaced(kbc)
+			helpers.Run(kbc, helpers.RunOptions{
+				HasWebhook:         true,
+				HasMetrics:         true,
+				HasNetworkPolicies: false,
+				IsNamespaced:       true,
+				InstallMethod:      helpers.InstallMethodKustomize,
+			})
+		})
 	})
 })
