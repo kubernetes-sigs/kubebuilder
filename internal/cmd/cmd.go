@@ -53,6 +53,7 @@ func Run() {
 	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 4}),
 		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv4.Plugin{}),
+		plugin.WithDescription("Default scaffold (go/v4 + kustomize/v2)"),
 	)
 
 	fs := machinery.Filesystem{

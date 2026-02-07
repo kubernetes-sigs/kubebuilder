@@ -56,6 +56,11 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 // GetEditSubcommand will return the subcommand which is responsible for adding and/or edit a helm chart
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
 
+// Description returns a short description of the plugin
+func (Plugin) Description() string {
+	return "Generates a Helm chart for project distribution"
+}
+
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
 func (p Plugin) DeprecationWarning() string {
 	return ""

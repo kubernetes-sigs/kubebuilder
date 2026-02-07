@@ -159,6 +159,13 @@ func (c *CLI) applySubcommandHooks(
 	cmd.PostRunE = factory.postRunEFunc()
 }
 
+// appendPluginTable appends a filtered plugin table to the command's Long description.
+// For subcommands, it excludes the default scaffold and its component plugins.
+func (c *CLI) appendPluginTable(cmd *cobra.Command, filter func(plugin.Plugin) bool, title string) {
+	pluginTable := c.getPluginTableFilteredForSubcommand(filter)
+	cmd.Long = fmt.Sprintf("%s\n%s:\n\n%s\n", cmd.Long, title, pluginTable)
+}
+
 // initializationHooks executes update metadata and bind flags plugin hooks.
 func initializationHooks(
 	cmd *cobra.Command,

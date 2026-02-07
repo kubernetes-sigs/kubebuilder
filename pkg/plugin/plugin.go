@@ -41,6 +41,13 @@ type Deprecated interface {
 	DeprecationWarning() string
 }
 
+// Describable is an optional interface for plugins that provide a short description.
+// This description is shown in help output to explain what the plugin does.
+type Describable interface {
+	// Description returns a short description of the plugin (ideally one line).
+	Description() string
+}
+
 // Init is an interface for plugins that provide an `init` subcommand.
 type Init interface {
 	Plugin

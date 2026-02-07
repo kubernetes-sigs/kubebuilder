@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:dupl
 package cli
 
 import (
@@ -30,8 +31,7 @@ func (c CLI) newCreateAPICmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
 		Short: "Scaffold a Kubernetes API",
-		Long: `Scaffold a Kubernetes API.
-`,
+		Long:  `Scaffold a Kubernetes API.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),
@@ -62,6 +62,12 @@ func (c CLI) newCreateAPICmd() *cobra.Command {
 	}
 
 	c.applySubcommandHooks(cmd, subcommands, apiErrorMsg, false)
+
+	// Append plugin table after metadata updates
+	c.appendPluginTable(cmd, func(p plugin.Plugin) bool {
+		_, isValid := p.(plugin.CreateAPI)
+		return isValid
+	}, "Available plugins that support 'create api'")
 
 	return cmd
 }

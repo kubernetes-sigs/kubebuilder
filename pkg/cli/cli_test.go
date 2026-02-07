@@ -435,6 +435,23 @@ plugins:
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
 			})
+
+			// When --plugins is followed by --help, --help is consumed as plugin value
+			// This should not trigger plugin validation errors
+			It("should not fail when `--plugins --help` is used together", func() {
+				os.Args = append(os.Args, "edit", "--plugins", "--help")
+
+				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(c.pluginKeys).To(BeEmpty())
+			})
+
+			// Same test for short help flag
+			It("should not fail when `--plugins -h` is used together", func() {
+				os.Args = append(os.Args, "edit", "--plugins", "-h")
+
+				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(c.pluginKeys).To(BeEmpty())
+			})
 		})
 	})
 
