@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	certmanagerVersion = "v1.19.1"
+	certmanagerVersion = "v1.19.3"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 
 	defaultKindCluster = "kind"
 	defaultKindBinary  = "kind"
 
-	prometheusOperatorVersion = "v0.85.0"
+	prometheusOperatorVersion = "v0.89.0"
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
 		"releases/download/%s/bundle.yaml"
 )
