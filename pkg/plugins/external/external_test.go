@@ -276,6 +276,26 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			err = c.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
 		})
+
+		It("should successfully run delete api subcommand on the external plugin", func() {
+			d := deleteAPISubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			err = d.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should successfully run delete webhook subcommand on the external plugin", func() {
+			d := deleteWebhookSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			err = d.Scaffold(fs)
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 
 	Context("with invalid mock values of GetExecOutput() and GetCurrentDir()", func() {

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
-var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
+var _ plugin.DeleteAPISubcommand = &deleteAPISubcommand{}
 
-type createWebhookSubcommand struct {
+type deleteAPISubcommand struct {
 	Path        string
 	Args        []string
 	pluginChain []string
@@ -37,7 +37,7 @@ type createWebhookSubcommand struct {
 }
 
 // InjectConfig injects the project configuration so external plugins can read the PROJECT file.
-func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
+func (p *deleteAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
 	if c == nil {
@@ -51,7 +51,7 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	return nil
 }
 
-func (p *createWebhookSubcommand) SetPluginChain(chain []string) {
+func (p *deleteAPISubcommand) SetPluginChain(chain []string) {
 	if len(chain) == 0 {
 		p.pluginChain = nil
 		return
@@ -60,23 +60,23 @@ func (p *createWebhookSubcommand) SetPluginChain(chain []string) {
 	p.pluginChain = append([]string(nil), chain...)
 }
 
-func (p *createWebhookSubcommand) InjectResource(*resource.Resource) error {
+func (p *deleteAPISubcommand) InjectResource(*resource.Resource) error {
 	// Do nothing since resource flags are passed to the external plugin directly.
 	return nil
 }
 
-func (p *createWebhookSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	setExternalPluginMetadata("webhook", p.Path, subcmdMeta)
+func (p *deleteAPISubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	setExternalPluginMetadata("delete api", p.Path, subcmdMeta)
 }
 
-func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
-	bindExternalPluginFlags(fs, "webhook", p.Path, p.Args)
+func (p *deleteAPISubcommand) BindFlags(fs *pflag.FlagSet) {
+	bindExternalPluginFlags(fs, "delete api", p.Path, p.Args)
 }
 
-func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+func (p *deleteAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	req := external.PluginRequest{
 		APIVersion:  defaultAPIVersion,
-		Command:     "create webhook",
+		Command:     "delete api",
 		Args:        p.Args,
 		PluginChain: p.pluginChain,
 	}

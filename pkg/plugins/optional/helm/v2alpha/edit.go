@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -49,6 +50,7 @@ type editSubcommand struct {
 	force         bool
 	manifestsFile string
 	outputDir     string
+	delete        bool // Delete flag to remove Helm chart generation
 }
 
 //nolint:lll
@@ -105,6 +107,7 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
 		"path to the YAML file containing Kubernetes manifests from kustomize output")
 	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
+	fs.BoolVar(&p.delete, "delete", false, "delete Helm chart generation from the project")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -113,6 +116,12 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
+	// Handle delete mode
+	if p.delete {
+		return p.deleteHelmChart(fs)
+	}
+
+	// Normal scaffold mode
 	// If using default manifests file, ensure it exists by running make build-installer
 	if p.manifestsFile == DefaultManifestsFile {
 		if err := p.ensureManifestsExist(); err != nil {
@@ -259,4 +268,88 @@ func (p *editSubcommand) removeV1AlphaPluginEntry() {
 		delete(cfg.Plugins, v1AlphaPluginKey)
 		slog.Info("removed deprecated v1-alpha plugin entry")
 	}
+}
+
+// deleteHelmChart removes Helm chart files and configuration (best effort)
+func (p *editSubcommand) deleteHelmChart(fs machinery.Filesystem) error {
+	slog.Info("Deleting Helm chart files...")
+
+	// Get plugin config to find output directory
+	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
+	canonicalKey := plugin.KeyFor(Plugin{})
+	cfg := pluginConfig{}
+
+	err := p.config.DecodePluginConfig(key, &cfg)
+	if err != nil {
+		if errors.As(err, &config.PluginKeyNotFoundError{}) && key != canonicalKey {
+			_ = p.config.DecodePluginConfig(canonicalKey, &cfg)
+		}
+	}
+
+	// Use configured output dir or default
+	outputDir := p.outputDir
+	if outputDir == "" {
+		outputDir = cfg.OutputDir
+	}
+	if outputDir == "" {
+		outputDir = DefaultOutputDir
+	}
+
+	deletedCount := 0
+	warnCount := 0
+
+	// Delete chart directory (best effort)
+	chartDir := filepath.Join(outputDir, "chart")
+	if exists, _ := afero.DirExists(fs.FS, chartDir); exists {
+		if err := fs.FS.RemoveAll(chartDir); err != nil {
+			slog.Warn("Failed to delete Helm chart directory", "path", chartDir, "error", err)
+			warnCount++
+		} else {
+			slog.Info("Deleted Helm chart directory", "path", chartDir)
+			deletedCount++
+		}
+	} else {
+		slog.Warn("Helm chart directory not found", "path", chartDir)
+		warnCount++
+	}
+
+	// Delete test workflow (best effort)
+	testChartPath := filepath.Join(".github", "workflows", "test-chart.yml")
+	if exists, _ := afero.Exists(fs.FS, testChartPath); exists {
+		if err := fs.FS.Remove(testChartPath); err != nil {
+			slog.Warn("Failed to delete test-chart.yml", "path", testChartPath, "error", err)
+			warnCount++
+		} else {
+			slog.Info("Deleted test-chart workflow", "path", testChartPath)
+			deletedCount++
+		}
+	} else {
+		slog.Warn("Test chart workflow not found", "path", testChartPath)
+		warnCount++
+	}
+
+	// Remove plugin config from PROJECT by encoding empty struct
+	if encErr := p.config.EncodePluginConfig(key, struct{}{}); encErr != nil {
+		// Try canonical key if different
+		if key != canonicalKey {
+			if encErr2 := p.config.EncodePluginConfig(canonicalKey, struct{}{}); encErr2 != nil {
+				slog.Warn("Failed to remove plugin configuration from PROJECT file",
+					"provided_key_error", encErr, "canonical_key_error", encErr2)
+				warnCount++
+			}
+		} else {
+			slog.Warn("Failed to remove plugin configuration from PROJECT file", "error", encErr)
+			warnCount++
+		}
+	}
+
+	fmt.Printf("\nSuccessfully completed Helm plugin deletion\n")
+	if deletedCount > 0 {
+		fmt.Printf("Deleted: %d item(s)\n", deletedCount)
+	}
+	if warnCount > 0 {
+		fmt.Printf("Warnings: %d item(s) - some files may not exist or couldn't be deleted (see logs)\n", warnCount)
+	}
+
+	return nil
 }

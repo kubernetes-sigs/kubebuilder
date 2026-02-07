@@ -36,7 +36,10 @@ type Plugin struct {
 	editSubcommand
 }
 
-var _ plugin.Edit = Plugin{}
+var (
+	_ plugin.Edit             = Plugin{}
+	_ plugin.HasDeleteSupport = Plugin{}
+)
 
 // PluginConfig defines the structure that will be used to track the data
 type pluginConfig struct {
@@ -55,6 +58,9 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 
 // GetEditSubcommand will return the subcommand which is responsible for adding and/or edit a helm chart
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+// SupportsDelete returns true indicating this plugin supports deletion via Edit --delete
+func (Plugin) SupportsDelete() bool { return true }
 
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
 func (p Plugin) DeprecationWarning() string {

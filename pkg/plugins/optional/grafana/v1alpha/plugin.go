@@ -37,7 +37,10 @@ type Plugin struct {
 	editSubcommand
 }
 
-var _ plugin.Init = Plugin{}
+var (
+	_ plugin.Init             = Plugin{}
+	_ plugin.HasDeleteSupport = Plugin{}
+)
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
@@ -53,6 +56,9 @@ func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcom
 
 // GetEditSubcommand will return the subcommand which is responsible for adding grafana manifests
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+// SupportsDelete returns true indicating this plugin supports deletion via Edit --delete
+func (Plugin) SupportsDelete() bool { return true }
 
 type pluginConfig struct{}
 
