@@ -27,6 +27,8 @@ import (
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 )
 
+const testRepo = "github.com/example/test"
+
 var _ = Describe("initSubcommand", func() {
 	var (
 		subCmd *initSubcommand
@@ -40,11 +42,11 @@ var _ = Describe("initSubcommand", func() {
 
 	Context("InjectConfig", func() {
 		It("should set repository when provided", func() {
-			subCmd.repo = "github.com/example/test"
+			subCmd.repo = testRepo
 			err := subCmd.InjectConfig(cfg)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg.GetRepository()).To(Equal("github.com/example/test"))
+			Expect(cfg.GetRepository()).To(Equal(testRepo))
 		})
 
 		It("should fail when repository cannot be detected", func() {
@@ -63,6 +65,44 @@ var _ = Describe("initSubcommand", func() {
 			err = subCmd.InjectConfig(cfg)
 
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should set multigroup when flag is enabled", func() {
+			subCmd.repo = testRepo
+			subCmd.multigroup = true
+			err := subCmd.InjectConfig(cfg)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.IsMultiGroup()).To(BeTrue())
+		})
+
+		It("should not set multigroup when flag is disabled", func() {
+			subCmd.repo = testRepo
+			subCmd.multigroup = false
+			err := subCmd.InjectConfig(cfg)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.IsMultiGroup()).To(BeFalse())
+		})
+
+		It("should set namespaced when flag is enabled", func() {
+			subCmd.repo = testRepo
+			subCmd.namespaced = true
+			err := subCmd.InjectConfig(cfg)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.IsNamespaced()).To(BeTrue())
+		})
+
+		It("should set both multigroup and namespaced when both flags are enabled", func() {
+			subCmd.repo = testRepo
+			subCmd.multigroup = true
+			subCmd.namespaced = true
+			err := subCmd.InjectConfig(cfg)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.IsMultiGroup()).To(BeTrue())
+			Expect(cfg.IsNamespaced()).To(BeTrue())
 		})
 	})
 
