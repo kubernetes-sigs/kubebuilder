@@ -95,17 +95,15 @@ jobs:
         run: |
           helm template testdata/project-v4-with-plugins/dist/chart --namespace=project-v4-with-plugins-system
 
-      - name: Install Helm chart for project-v4-with-plugins
+      - name: Deploy manager via Helm
+        working-directory: testdata/project-v4-with-plugins
         run: |
-          helm install my-release \
-            testdata/project-v4-with-plugins/dist/chart \
-            --namespace project-v4-with-plugins-system \
-            --create-namespace \
-            --set prometheus.enable=true
+          make helm-deploy IMG=project-v4-with-plugins:v0.1.0 HELM_EXTRA_ARGS="--set prometheus.enable=true"
 
       - name: Check Helm release status
+        working-directory: testdata/project-v4-with-plugins
         run: |
-          helm status my-release --namespace project-v4-with-plugins-system
+          make helm-status
 
       - name: Delete kind cluster
         if: always()
@@ -170,18 +168,15 @@ jobs:
         working-directory: test-helm-no-webhooks
         run: helm lint ./dist/chart
 
-      - name: Deploy Helm chart without cert-manager
+      - name: Deploy manager via Helm
         working-directory: test-helm-no-webhooks
         run: |
-          helm install my-release \
-            ./dist/chart \
-            --create-namespace \
-            --namespace test-helm-no-webhooks-system
+          make helm-deploy IMG=test-helm-no-webhooks:v0.1.0
 
       - name: Verify deployment is working
         working-directory: test-helm-no-webhooks
         run: |
-          helm status my-release --namespace test-helm-no-webhooks-system
+          make helm-status
 
       - name: Delete kind cluster
         if: always()
