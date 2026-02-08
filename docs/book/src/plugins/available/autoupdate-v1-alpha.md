@@ -48,7 +48,7 @@ kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
 ```
 
 <aside class="note">
-<h1>Permissions required to use GitHub Models in GitHub Actions</h1>
+<h4>Permissions required to use GitHub Models in GitHub Actions</h4>
 
 To use GitHub Models in your workflows, organization and repository administrators must grant this permission.
 

@@ -18,7 +18,7 @@ make install
 
 <aside class="note">
 
-<h1>Too long annotations error</h1>
+<h4>Too long annotations error</h4>
 
 If you encounter errors when applying the CRDs, due to `metadata.annotations` exceeding the
 262144 bytes limit, please refer to the specific entry in the [FAQ section](/faq#the-error-too-long-must-have-at-most-262144-bytes-is-faced-when-i-run-make-install-to-apply-the-crd-manifests-how-to-solve-it-why-this-error-is-faced).
@@ -31,7 +31,7 @@ cluster with, so we don't need to worry about RBAC just yet.
 
 <aside class="note">
 
-<h1>Running webhooks locally</h1>
+<h4>Running webhooks locally</h4>
 
 If you want to run the webhooks locally, you'll have to generate
 certificates for serving the webhooks, and place them in the right
@@ -83,7 +83,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>Registry Permission</h1>
+<h4>Registry Permission</h4>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
@@ -98,7 +98,7 @@ kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 
 To know more, see: [Using Kind For Development Purposes and CI](./../reference/kind.md)
 
-<h1>RBAC errors</h1>
+<h4>RBAC errors</h4>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.

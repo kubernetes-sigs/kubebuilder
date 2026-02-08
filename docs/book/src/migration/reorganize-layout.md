@@ -13,7 +13,7 @@ Reorganize files to match the new directory layout.
 
 <aside class="warning">
 
-<h1>Important: Best Effort Only</h1>
+<h4>Important: Best Effort Only</h4>
 
 These AI instructions work for projects using **standard Kubebuilder directory layout**. Projects with heavily customized structures may require manual reorganization.
 

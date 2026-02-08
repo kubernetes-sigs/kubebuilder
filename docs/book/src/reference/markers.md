@@ -16,7 +16,7 @@ a marker name, optionally followed by some marker specific configuration:
 ```
 
 <aside class="note">
-<h1>difference between <code>// +optional</code> and <code>// +kubebuilder:validation:Optional</code></h1>
+<h4>difference between <code>// +optional</code> and <code>// +kubebuilder:validation:Optional</code></h4>
 
 Controller-gen supports both (see the output of `controller-gen crd -www`). `+kubebuilder:validation:Optional` and `+optional` can be applied to fields.
 

@@ -39,7 +39,7 @@ plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
 <aside class="note">
 
-<h1>Default Rules</h1>
+<h4>Default Rules</h4>
 
 When no fallback rule is specified manually, a set of default
 per-generator rules are used which result in YAML going to

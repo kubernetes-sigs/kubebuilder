@@ -6,7 +6,7 @@ See the [design doc][multigroup-design] for the rationale behind this design dec
 
 <aside class="note">
 
-<h1>What's a Multi-Group Project?</h1>
+<h4>What's a Multi-Group Project?</h4>
 
 Multi-group layout is useful when you're building APIs for different purposes or domains. For example, you might have:
 - A `batch` group for job-related resources (CronJob, Job)
@@ -21,7 +21,7 @@ See [Groups and Versions and Kinds, oh my!][gvks] to better understand API group
 
 <aside class="note">
 
-<h1>AI-Assisted Migration</h1>
+<h4>AI-Assisted Migration</h4>
 
 This migration involves repetitive file moving and import path updates. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
@@ -64,7 +64,7 @@ This command updates your `PROJECT` file by adding `multigroup: true`. After thi
 - **Existing APIs** remain in their current location and must be migrated manually (steps 3-9 below)
 
 <aside class="note">
-<h1>What this command changes</h1>
+<h4>What this command changes</h4>
 
 The command adds or updates this line in your PROJECT file:
 
@@ -260,7 +260,7 @@ If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can a
 
 <aside class="note">
 
-<h1>AI Migration Instructions</h1>
+<h4>AI Migration Instructions</h4>
 
 **Prerequisites:**
 1. First, identify the API group name from `api/v1/groupversion_info.go` (look for `+groupName=<group>.<domain>`)
