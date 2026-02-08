@@ -17,6 +17,7 @@ limitations under the License.
 package v2alpha
 
 import (
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -264,6 +265,152 @@ jobs:
 			editCmd.config = cfg
 			err := editCmd.PostScaffold()
 			Expect(err).NotTo(HaveOccurred()) // Should not error even if file doesn't exist
+		})
+	})
+
+	Context("addHelmMakefileTargets", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "helm-makefile-test-*")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Change to temp directory
+			err = os.Chdir(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			editCmd.outputDir = DefaultOutputDir
+		})
+
+		AfterEach(func() {
+			// Clean up temp directory
+			if tmpDir != "" {
+				_ = os.RemoveAll(tmpDir)
+			}
+		})
+
+		It("should add Helm targets to Makefile when it exists", func() {
+			// Create a basic Makefile
+			makefileContent := `IMG ?= controller:latest
+
+##@ Development
+
+.PHONY: build
+build: ## Build manager binary.
+	go build -o bin/manager cmd/main.go
+`
+			err := os.WriteFile("Makefile", []byte(makefileContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = editCmd.addHelmMakefileTargets("test-project-system")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify Helm targets were added
+			content, err := os.ReadFile("Makefile")
+			Expect(err).NotTo(HaveOccurred())
+
+			contentStr := string(content)
+			Expect(contentStr).To(ContainSubstring("##@ Helm Deployment"))
+			Expect(contentStr).To(ContainSubstring("## Helm binary to use for deploying the chart"))
+			Expect(contentStr).To(ContainSubstring("HELM ?= helm"))
+			Expect(contentStr).To(ContainSubstring("## Namespace to deploy the Helm release"))
+			Expect(contentStr).To(ContainSubstring("HELM_NAMESPACE ?= test-project-system"))
+			Expect(contentStr).To(ContainSubstring("## Name of the Helm release"))
+			Expect(contentStr).To(ContainSubstring("HELM_RELEASE ?= test-project"))
+			Expect(contentStr).To(ContainSubstring("## Path to the Helm chart directory"))
+			Expect(contentStr).To(ContainSubstring("HELM_CHART_DIR ?= dist/chart"))
+			Expect(contentStr).To(ContainSubstring("## Additional arguments to pass to helm commands"))
+			Expect(contentStr).To(ContainSubstring("HELM_EXTRA_ARGS ?="))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm-deploy"))
+			Expect(contentStr).To(ContainSubstring(
+				"helm-deploy: ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG."))
+			Expect(contentStr).To(ContainSubstring("--set manager.image.repository=$${IMG%:*}"))
+			Expect(contentStr).To(ContainSubstring("--set manager.image.tag=$${IMG##*:}"))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm-uninstall"))
+			Expect(contentStr).To(ContainSubstring(
+				"helm-uninstall: ## Uninstall the Helm release from the K8s cluster."))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm-status"))
+			Expect(contentStr).To(ContainSubstring("helm-status: ## Show Helm release status."))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm-history"))
+			Expect(contentStr).To(ContainSubstring("helm-history: ## Show Helm release history."))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm-rollback"))
+			Expect(contentStr).To(ContainSubstring("helm-rollback: ## Rollback to previous Helm release."))
+		})
+
+		It("should not duplicate Helm targets if already present", func() {
+			// Create a Makefile that already has Helm targets (exact match to template)
+			makefileContent := `IMG ?= controller:latest
+
+.PHONY: build
+build: ## Build manager binary.
+	go build -o bin/manager cmd/main.go
+
+##@ Helm Deployment
+
+## Helm binary to use for deploying the chart
+HELM ?= helm
+## Namespace to deploy the Helm release
+HELM_NAMESPACE ?= test-project-system
+## Name of the Helm release
+HELM_RELEASE ?= test-project
+## Path to the Helm chart directory
+HELM_CHART_DIR ?= dist/chart
+## Additional arguments to pass to helm commands
+HELM_EXTRA_ARGS ?=
+
+.PHONY: helm-deploy
+helm-deploy: ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+	$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
+		--namespace $(HELM_NAMESPACE) \
+		--create-namespace \
+		--set manager.image.repository=$${IMG%:*} \
+		--set manager.image.tag=$${IMG##*:} \
+		--wait \
+		--timeout 5m \
+		$(HELM_EXTRA_ARGS)
+
+.PHONY: helm-uninstall
+helm-uninstall: ## Uninstall the Helm release from the K8s cluster.
+	$(HELM) uninstall $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-status
+helm-status: ## Show Helm release status.
+	$(HELM) status $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-history
+helm-history: ## Show Helm release history.
+	$(HELM) history $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-rollback
+helm-rollback: ## Rollback to previous Helm release.
+	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+`
+			err := os.WriteFile("Makefile", []byte(makefileContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = editCmd.addHelmMakefileTargets("test-project-system")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify targets were not duplicated
+			content, err := os.ReadFile("Makefile")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Count occurrences of helm-deploy target
+			contentStr := string(content)
+			helmDeployCount := 0
+			for i := 0; i < len(contentStr)-len("helm-deploy:"); i++ {
+				if contentStr[i:i+len("helm-deploy:")] == "helm-deploy:" {
+					helmDeployCount++
+				}
+			}
+			Expect(helmDeployCount).To(Equal(1)) // Should only appear once
+		})
+
+		It("should return error when Makefile does not exist", func() {
+			err := editCmd.addHelmMakefileTargets("test-project-system")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("makefile not found"))
 		})
 	})
 })

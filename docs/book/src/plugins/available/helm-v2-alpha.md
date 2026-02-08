@@ -320,13 +320,25 @@ prometheus:
 
 ### Installation
 
-Install the chart into a namespace using Helm flags (the chart does not create namespaces):
+The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
+
+```shell
+make helm-deploy IMG=<registry>/<project:tag>  # Deploy/upgrade the chart
+make helm-status                                # Check release status
+make helm-history                               # View release history
+make helm-rollback                              # Rollback to previous version
+make helm-uninstall                             # Remove the release
+```
+
+You can also install manually using Helm commands:
 
 ```shell
 helm install my-release ./dist/chart \
   --namespace my-project-system \
   --create-namespace
 ```
+
+The Makefile targets use sensible defaults extracted from your project configuration (namespace from manifests, release name from project name, chart directory from `--output-dir` flag).
 
 ## Flags
 

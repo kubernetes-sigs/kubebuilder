@@ -117,11 +117,11 @@ jobs:
 #          helm repo update
 #          helm install prometheus-crds prometheus-community/prometheus-operator-crds
 
-      - name: Install Helm chart for project
+      - name: Deploy manager via Helm
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace {{ .ProjectName }}-system
+          make helm-deploy IMG={{ .ProjectName }}:v0.1.0
 
       - name: Check Helm release status
         run: |
-          helm status my-release --namespace {{ .ProjectName }}-system
+          make helm-status
 `
