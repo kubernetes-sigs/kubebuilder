@@ -22,9 +22,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
 var _ = Describe("initSubcommand", func() {
@@ -124,6 +127,158 @@ var _ = Describe("initSubcommand", func() {
 			err = checkDir()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("already initialized"))
+		})
+	})
+
+	Context("Boilerplate customization", func() {
+		var (
+			fs     machinery.Filesystem
+			tmpDir string
+		)
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "test-boilerplate")
+			Expect(err).NotTo(HaveOccurred())
+
+			fs = machinery.Filesystem{
+				FS: afero.NewBasePathFs(afero.NewOsFs(), tmpDir),
+			}
+
+			DeferCleanup(func() {
+				_ = os.RemoveAll(tmpDir)
+			})
+		})
+
+		It("should use custom license file when provided", func() {
+			// Create a custom license header file
+			customLicensePath := filepath.Join(tmpDir, "custom-header.txt")
+			customContent := `/*
+Copyright 2026 Test Company.
+
+Custom License Header.
+*/`
+			err := os.WriteFile(customLicensePath, []byte(customContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create scaffolder with custom license file
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "apache2", "Test Owner", customLicensePath, "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err = scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify boilerplate file was created with custom content
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			content, err := os.ReadFile(boilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(customContent))
+		})
+
+		It("should use default license when no custom license file is provided", func() {
+			// Create scaffolder without custom license file
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "apache2", "Test Owner", "", "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify boilerplate file was created with Apache 2.0 license
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			content, err := os.ReadFile(boilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring("Apache License"))
+			Expect(string(content)).To(ContainSubstring("Test Owner"))
+		})
+
+		It("should handle none license option", func() {
+			// Create scaffolder with none license
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "none", "", "", "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify boilerplate file was not created
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			_, err = os.Stat(boilerplatePath)
+			Expect(os.IsNotExist(err)).To(BeTrue())
+		})
+
+		It("should fail when custom license file does not exist", func() {
+			// Create scaffolder with non-existent license file
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "apache2", "Test Owner", "/nonexistent/file.txt", "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to read license file"))
+		})
+
+		It("should preserve exact content from license file with no modifications", func() {
+			// Create a custom license file with specific formatting
+			customLicensePath := filepath.Join(tmpDir, "exact-header.txt")
+			// Include various formatting: multiple spaces, newlines, special characters
+			exactContent := `/*
+Copyright 2026 Test Company.
+  Indented line here.
+
+Double newline above.
+Special chars: @#$%
+*/`
+			err := os.WriteFile(customLicensePath, []byte(exactContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create scaffolder with custom license file
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "apache2", "Test Owner", customLicensePath, "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err = scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify content is EXACTLY the same (byte-for-byte)
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			actualContent, err := os.ReadFile(boilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(actualContent)).To(Equal(exactContent), "Content should be preserved exactly with no modifications")
+		})
+
+		It("should handle license file with no trailing newline", func() {
+			// Create a license file without trailing newline
+			customLicensePath := filepath.Join(tmpDir, "no-newline.txt")
+			contentNoNewline := "/*\nCopyright 2026.\n*/"
+			err := os.WriteFile(customLicensePath, []byte(contentNoNewline), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg := cfgv3.New()
+			_ = cfg.SetRepository("github.com/test/repo")
+			_ = cfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(cfg, "apache2", "", customLicensePath, "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err = scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify exact content preservation
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			actualContent, err := os.ReadFile(boilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(actualContent)).To(Equal(contentNoNewline))
 		})
 	})
 })

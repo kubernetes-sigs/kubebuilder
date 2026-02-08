@@ -45,6 +45,9 @@ type Boilerplate struct {
 
 	// Year is the copyright year
 	Year string
+
+	// CustomBoilerplateContent is the content from a custom boilerplate file
+	CustomBoilerplateContent string
 }
 
 // Validate implements file.RequiresValidation
@@ -81,6 +84,12 @@ func (f *Boilerplate) SetTemplateDefaults() error {
 
 	if f.Year == "" {
 		f.Year = fmt.Sprintf("%v", time.Now().Year())
+	}
+
+	// Custom boilerplate file content takes precedence
+	if f.CustomBoilerplateContent != "" {
+		f.TemplateBody = f.CustomBoilerplateContent
+		return nil
 	}
 
 	// Boilerplate given
