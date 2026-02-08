@@ -38,44 +38,51 @@ type editSubcommand struct {
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `Edit the project configuration.
+	subcmdMeta.Description = `Edit project configuration to enable or disable layout settings.
 
-Features:
-  - Toggle multigroup layout (organize APIs by group).
-  - Toggle namespaced layout (namespace-scoped vs cluster-scoped).
+Multigroup (--multigroup):
+  Enable or disable multi-group layout.
+  Changes API structure: api/<version>/ becomes api/<group>/<version>/
+  Automatic: Updates PROJECT file, future APIs use new structure
+  Manual: Move existing API files, update import paths in controllers
+  Migration guide: https://book.kubebuilder.io/migration/multi-group.html
 
-Namespaced layout (--namespaced):
-  Changes namespace-scoped (watches specific namespaces) vs cluster-scoped (watches all namespaces).
-  What changes automatically:
-    - Updates PROJECT file (namespaced: true)
-    - Scaffolds Role/RoleBinding instead of ClusterRole/ClusterRoleBinding
-    - With --force: Regenerates config/manager/manager.yaml with WATCH_NAMESPACE env var
-  What you must update manually:
-    - Add namespace= to RBAC markers in existing controllers (new controllers get this automatically)
-    - Update cmd/main.go to use namespace-scoped cache
-    - Run: make manifests
+Namespaced (--namespaced):
+  Enable or disable namespace-scoped deployment.
+  Manager watches one or more specific namespaces vs all namespaces.
+  Namespaces to watch are configured via WATCH_NAMESPACE environment variable.
+  Automatic: Updates PROJECT file, scaffolds Role/RoleBinding, uses --force to regenerate manager.yaml
+  Manual: Add namespace= to RBAC markers in existing controllers, update cmd/main.go, run 'make manifests'
+
+Force (--force):
+  Overwrite existing scaffolded files to apply configuration changes.
+  Example: With --namespaced, regenerates config/manager/manager.yaml to add WATCH_NAMESPACE env var.
+  Warning: This overwrites default scaffold files; manual changes in those files may be lost.
+
+Note: To add optional plugins after initialization, use 'kubebuilder edit --plugins <plugin-name>'.
+      Run 'kubebuilder edit --plugins --help' to see available plugins.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Enable multigroup layout
   %[1]s edit --multigroup
 
+  # Enable namespace-scoped permissions
+  %[1]s edit --namespaced
+
+  # Enable with automatic file regeneration
+  %[1]s edit --namespaced --force
+
   # Disable multigroup layout
   %[1]s edit --multigroup=false
 
-  # Enable namespaced layout (--force regenerates config/manager/manager.yaml with WATCH_NAMESPACE)
-  %[1]s edit --namespaced --force
-
-  # Enable namespaced layout without force (manually update config/manager/manager.yaml)
-  %[1]s edit --namespaced
-
-  # Disable namespaced layout (--force regenerates config/manager/manager.yaml without WATCH_NAMESPACE)
-  %[1]s edit --namespaced=false --force
+  # Enable/disable multiple settings
+  %[1]s edit --multigroup --namespaced --force
 `, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
-	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespaced layout")
-	fs.BoolVar(&p.force, "force", false, "overwrite existing files (regenerates manager.yaml with WATCH_NAMESPACE)")
+	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespace-scoped deployment")
+	fs.BoolVar(&p.force, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

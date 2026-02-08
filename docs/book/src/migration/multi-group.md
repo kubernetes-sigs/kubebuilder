@@ -51,6 +51,19 @@ You can tell which layout you're using by checking your `PROJECT` file for `mult
 
 The following steps migrate the [CronJob example][cronjob-tutorial] from single-group to multi-group layout.
 
+<aside class="note">
+<h1>Starting new projects with multigroup</h1>
+
+If you're starting a **new project** and already know you want multigroup layout, you can use the `--multigroup` flag during initialization:
+
+```bash
+kubebuilder init --domain example.org --multigroup
+```
+
+This guide is for **existing projects** that need to be migrated from single-group to multi-group layout.
+
+</aside>
+
 ### Step 1: Enable multi-group mode
 
 First, tell Kubebuilder you want to use multi-group layout:
