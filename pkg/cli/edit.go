@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:dupl
 package cli
 
 import (
@@ -30,8 +31,7 @@ func (c CLI) newEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Update the project configuration",
-		Long: `Edit the project configuration.
-`,
+		Long:  `Edit the project configuration.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("project must be initialized"),
 		),
@@ -62,6 +62,12 @@ func (c CLI) newEditCmd() *cobra.Command {
 	}
 
 	c.applySubcommandHooks(cmd, subcommands, editErrorMsg, false)
+
+	// Append plugin table after metadata updates
+	c.appendPluginTable(cmd, func(p plugin.Plugin) bool {
+		_, isValid := p.(plugin.Edit)
+		return isValid
+	}, "Available plugins that support 'edit'")
 
 	return cmd
 }

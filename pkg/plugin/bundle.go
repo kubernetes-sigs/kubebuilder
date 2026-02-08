@@ -23,9 +23,10 @@ import (
 )
 
 type bundle struct {
-	name    string
-	version Version
-	plugins []Plugin
+	name        string
+	version     Version
+	plugins     []Plugin
+	description string
 
 	supportedProjectVersions []config.Version
 	deprecateWarning         string
@@ -62,6 +63,13 @@ func WithDeprecationMessage(msg string) BundleOption {
 	}
 }
 
+// WithDescription allows setting a description for the bundle
+func WithDescription(desc string) BundleOption {
+	return func(opts *bundle) {
+		opts.description = desc
+	}
+}
+
 // NewBundleWithOptions creates a new Bundle with the provided BundleOptions.
 // The list of supported project versions is computed from the provided plugins in options.
 func NewBundleWithOptions(opts ...BundleOption) (Bundle, error) {
@@ -92,6 +100,7 @@ func NewBundleWithOptions(opts ...BundleOption) (Bundle, error) {
 		name:                     bundleOpts.name,
 		version:                  bundleOpts.version,
 		plugins:                  allPlugins,
+		description:              bundleOpts.description,
 		supportedProjectVersions: supportedProjectVersions,
 		deprecateWarning:         bundleOpts.deprecateWarning,
 	}, nil
@@ -115,6 +124,11 @@ func (b bundle) SupportedProjectVersions() []config.Version {
 // Plugins implements Bundle
 func (b bundle) Plugins() []Plugin {
 	return b.plugins
+}
+
+// Description implements Describable
+func (b bundle) Description() string {
+	return b.description
 }
 
 // DeprecationWarning return the warning message

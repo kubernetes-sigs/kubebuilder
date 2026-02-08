@@ -56,6 +56,11 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcom
 
 type pluginConfig struct{}
 
+// Description returns a short description of the plugin
+func (Plugin) Description() string {
+	return "Generates Grafana Dashboards for metrics"
+}
+
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
 func (p Plugin) DeprecationWarning() string {
 	return ""
