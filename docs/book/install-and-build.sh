@@ -36,12 +36,8 @@ arch=$(go env GOARCH)
 # translate arch to rust's conventions (if we can)
 if [[ ${arch} == "amd64" ]]; then
     arch="x86_64"
-elif [[ ${arch} == "x86" ]]; then
-    arch="i686"
 elif [[ ${arch} == "arm64" ]]; then
-    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type.
-    # Once the mdbook is upgraded to latest, use 'aarch64'
-    arch="x86_64"
+    arch="aarch64"
 fi
 
 # translate os to rust's conventions (if we can)
