@@ -1,7 +1,7 @@
 # Helm Plugin (`helm/v1-alpha`) - **DEPRECATED**
 
 <aside class="warning">
-<h1> Deprecated Plugin</h1>
+<h4> Deprecated Plugin</h4>
 
 The `helm/v1-alpha` plugin is **deprecated**. Please use [`helm/v2-alpha`](./helm-v2-alpha.md) instead.
 
@@ -31,7 +31,7 @@ However, in many scenarios, you might prefer to provide a Helm chart to package 
 If so, you can use this plugin to generate the Helm chart under the `dist` directory.
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 You can check the plugin usage by looking at `project-v4-with-plugins` samples
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
@@ -93,7 +93,7 @@ make manifests
 kubebuilder edit --plugins=helm/v1-alpha
 ```
 <aside class="note">
-  <h1>Use the edit command to update the Helm Chart with the latest changes</h1>
+  <h4>Use the edit command to update the Helm Chart with the latest changes</h4>
 
   After making changes to your project, ensure that you run `make manifests` and then
   use the command `kubebuilder edit --plugins=helm/v1-alpha` to update the Helm Chart.

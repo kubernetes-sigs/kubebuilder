@@ -14,7 +14,7 @@ The above command will generate the `cronjob_conversion.go` next to our
 cluttering up our main types file with extra functions.
 
 <aside class="note">
-<h1>Conversion Webhooks and Custom Paths</h1>
+<h4>Conversion Webhooks and Custom Paths</h4>
 
 Unlike defaulting and validation webhooks, conversion webhooks do not support custom paths
 via command-line flags. Conversion webhooks use CRD conversion configuration

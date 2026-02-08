@@ -255,7 +255,7 @@ We use that value to pick the correct CLI for re-scaffolding.
 <iframe width="560" height="315" src="https://www.youtube.com/embed/J8zonID__8k?si=WC-FXOHX0mCjph71" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 <aside class="note">
-<h1>About this demo</h1>
+<h4>About this demo</h4>
 
 This video was recorded with Kubebuilder release `v7.0.1`.
 Since then, the command has been improved,

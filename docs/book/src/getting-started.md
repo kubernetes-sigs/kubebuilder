@@ -8,7 +8,7 @@ We will create a sample project to let you know how it works. This sample will:
 - Update the Memcached CR status
 
 <aside class="note">
-<h1>Why Operators?</h1>
+<h4>Why Operators?</h4>
 
 By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources
 but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if
@@ -18,7 +18,7 @@ without any human intervention.
 </aside>
 
 <aside class="note">
-<h1>Following Along vs Jumping Ahead</h1>
+<h4>Following Along vs Jumping Ahead</h4>
 
 Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
@@ -39,7 +39,7 @@ kubebuilder init --domain=example.com
 ```
 
 <aside class="note">
-<h1>Developing in $GOPATH</h1>
+<h4>Developing in $GOPATH</h4>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
@@ -67,7 +67,7 @@ While we've added only one Kind of resource in this example, we can have as many
 To make it easier to understand, think of CRDs as the definition of our custom Objects, while CRs are instances of them.
 
 <aside class="note">
-<h1> Please ensure that you check </h1>
+<h4> Please ensure that you check </h4>
 
 [Groups and Versions and Kinds, oh my!][group-kind-oh-my].
 
@@ -107,7 +107,7 @@ type MemcachedStatus struct {
 ```
 
 <aside class="note">
-<h1> Status Conditions </h1>
+<h4> Status Conditions </h4>
 
 Kubernetes has established conventions, and because of this, we use
 Status Conditions here. We want our custom APIs and controllers to behave
@@ -198,7 +198,7 @@ reconcile App {
 ```
 
 <aside class="note">
-<h1> Return Options </h1>
+<h4> Return Options </h4>
 
 The following are a few possible return options to restart the Reconcile:
 
@@ -358,7 +358,7 @@ if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
 
 <aside class="note">
 
-<h1><code>ownerRef</code> and Cascading Events</h1>
+<h4><code>ownerRef</code> and Cascading Events</h4>
 
 The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
 if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
@@ -436,7 +436,7 @@ see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
 
 <aside class="note">
-<h1> Using Deploy Image plugin to generate APIs and source code </h1>
+<h4> Using Deploy Image plugin to generate APIs and source code </h4>
 
 Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
 This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.

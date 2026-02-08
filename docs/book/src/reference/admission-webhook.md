@@ -54,7 +54,7 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob \
 ```
 
 <aside class="note">
-<h1>Version Requirements</h1>
+<h4>Version Requirements</h4>
 
 Custom webhook paths require **controller-runtime v0.21+**. In earlier versions (< `v0.21`), the webhook path follows a
 fixed pattern based on the resource's group, version, and kind, and cannot be customized.

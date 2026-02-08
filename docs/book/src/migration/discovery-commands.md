@@ -4,7 +4,7 @@ Use AI to analyze your (now reorganized) Kubebuilder project and generate all CL
 
 <aside class="note">
 
-<h1>You May Not Need This</h1>
+<h4>You May Not Need This</h4>
 
 **If you have a PROJECT file** and used Kubebuilder CLI to scaffold **all** resources (APIs, controllers, webhooks), you can use `kubebuilder alpha generate` instead.
 
@@ -19,7 +19,7 @@ The `alpha generate` command re-scaffolds everything tracked in your PROJECT fil
 
 <aside class="note">
 
-<h1>When to Use This</h1>
+<h4>When to Use This</h4>
 
 Use AI discovery if your project has:
 - APIs not tracked in the PROJECT file (manually created)
@@ -35,7 +35,7 @@ AI scans your entire codebase to discover everything, ensuring nothing is missed
 
 <aside class="warning">
 
-<h1>Standard Kubebuilder Layout Only</h1>
+<h4>Standard Kubebuilder Layout Only</h4>
 
 These instructions work for projects using **standard Kubebuilder directory layout**:
 - API types in `api/` directory (some projects use `apis/`)

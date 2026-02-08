@@ -32,7 +32,7 @@ kubebuilder create api --group certmanager --version v1 --kind Certificate --con
 ```
 
 <aside class="note">
-<h1>Pinning External API Versions</h1>
+<h4>Pinning External API Versions</h4>
 
 You can pin a specific version of the external API dependency using the `--external-api-module` flag:
 

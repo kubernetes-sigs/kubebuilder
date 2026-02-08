@@ -11,7 +11,7 @@ By following the [quickstart][quickstart] and creating any project,
 you will be using this plugin by default.
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 You can check samples using this plugin by looking at the `project-v4-<options>` projects under the [testdata][testdata]
 directory on the root directory of the Kubebuilder project.

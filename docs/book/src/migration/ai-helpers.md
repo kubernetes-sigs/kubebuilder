@@ -4,7 +4,7 @@ AI can assist manual migrations by reducing repetitive work and helping resolve 
 
 <aside class="warning">
 
-<h1>Important</h1>
+<h4>Important</h4>
 
 These AI instructions are provided as examples to help guide your migration. Always validate AI output carefully - you remain responsible for ensuring correctness.
 

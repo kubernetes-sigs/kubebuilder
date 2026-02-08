@@ -11,7 +11,7 @@ which uses the same and we are also
 able to create "helper" plugins which can work with many projects and languages.
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 You can check the kustomize content by looking at the `config/` directory provide on the sample `project-v4-*` under the [testdata][testdata]
 directory of the Kubebuilder project.
@@ -81,7 +81,7 @@ The kustomize plugin implements the following subcommands:
 * create webhook (`$ kubebuilder create api [OPTIONS]`)
 
 <aside class="note">
-<h1>Create API and Webhook</h1>
+<h4>Create API and Webhook</h4>
 
 Its implementation for the subcommand create api will scaffold the kustomize manifests
 which are specific for each API, see [here][kustomize-create-api]. The same applies

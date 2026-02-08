@@ -338,7 +338,7 @@ aside.note > * {
 }
 
 /* note title */
-aside.note > h1 {
+aside.note > h4 {
     border-bottom: 1px solid var(--searchbar-border-color);
     margin: 0;
     padding: 0.5em 1em;
@@ -348,10 +348,10 @@ aside.note > h1 {
 }
 
 /* warning notes */
-aside.note.warning > h1 {
+aside.note.warning > h4 {
     background: var(--warning-note-background-color, #fcf8f2);
 }
-aside.note.warning > h1::before {
+aside.note.warning > h4 {
     /* TODO(directxman12): fill in these colors in theme.
      * If you're good with colors, feel free to play around with this
      * in dark mode. */

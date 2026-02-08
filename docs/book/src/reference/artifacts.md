@@ -17,7 +17,7 @@ When you run `make envtest` or `make test`, the necessary tarballs are downloade
 configured for your project.
 
 <aside class="note">
-<h1>Setup ENV TEST tool</h1>
+<h4>Setup ENV TEST tool</h4>
 
 To learn more about the tooling used to configure ENVTEST, which is utilized in the `setup-envtest`
 target in the Makefile of projects built with Kubebuilder, see the [README](https://github.com/kubernetes-sigs/controller-runtime/blob/main/tools/setup-envtest/README.md)

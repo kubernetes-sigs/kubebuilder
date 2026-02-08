@@ -4,7 +4,7 @@ After reorganizing your project (Step 1) and executing scaffolding commands from
 
 <aside class="warning">
 
-<h1>Important: Best Effort Only</h1>
+<h4>Important: Best Effort Only</h4>
 
 The AI instructions below are provided as an **example** to help you get started. Due to the complexity and variety of Kubebuilder projects, we **cannot guarantee** it will work perfectly for all projects or be 100% accurate.
 
@@ -20,7 +20,7 @@ The instructions may help you understand how to approach certain migration scena
 
 <aside class="warning">
 
-<h1>Prerequisites</h1>
+<h4>Prerequisites</h4>
 
 Before using these AI instructions:
 1. You've reorganized your project using Step 1 (`make build` succeeds)
@@ -277,7 +277,7 @@ The AI will:
 
 <aside class="warning">
 
-<h1>Manual Review Required</h1>
+<h4>Manual Review Required</h4>
 
 After AI ports the code:
 
@@ -387,7 +387,7 @@ After AI ports your code:
 
 <aside class="note">
 
-<h1>If You Have a Helm Chart</h1>
+<h4>If You Have a Helm Chart</h4>
 
 If you had a Helm chart to distribute your project, you may want to consider regenerate with the [helm/v2-alpha plugin](../plugins/available/helm-v2-alpha.md)
 and then applying your customizations on top.
