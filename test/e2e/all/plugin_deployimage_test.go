@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deployimage
+package all
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
+// Test specs for deploy-image plugin
 var _ = Describe("kubebuilder", func() {
 	Context("deploy image plugin", func() {
 		var kbc *utils.TestContext
@@ -50,19 +51,67 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
-			GenerateDeployImageWithOptions(kbc)
-			Run(kbc)
+			generateDeployImageWithOptions(kbc)
+			runDeployImageTests(kbc)
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
-			GenerateDeployImage(kbc)
-			Run(kbc)
+			generateDeployImage(kbc)
+			runDeployImageTests(kbc)
 		})
 	})
 })
 
-// Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext) {
+// generateDeployImageWithOptions implements a go/v4 plugin project and scaffold an API using the image options
+func generateDeployImageWithOptions(kbc *utils.TestContext) {
+	initDeployImageProject(kbc)
+
+	By("creating API definition with deploy-image/v1-alpha plugin with options")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--plugins", "deploy-image/v1-alpha",
+		"--image", "memcached:1.6.26-alpine3.19",
+		"--image-container-port", "11211",
+		"--image-container-command", "memcached,--memory-limit=64,-o,modern,-v",
+		"--run-as-user", "1001",
+		"--make=false",
+		"--manifests=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API definition with deploy-image/v1-alpha")
+}
+
+// generateDeployImage implements a go/v4 plugin project and scaffold an API using the deploy image plugin
+func generateDeployImage(kbc *utils.TestContext) {
+	initDeployImageProject(kbc)
+
+	By("creating API definition with deploy-image/v1-alpha plugin")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--plugins", "deploy-image/v1-alpha",
+		"--image", "busybox:1.36.1",
+		"--run-as-user", "1001",
+		"--make=false",
+		"--manifests=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API definition")
+}
+
+func initDeployImageProject(kbc *utils.TestContext) {
+	By("initializing a project")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
+}
+
+// runDeployImageTests runs a set of e2e tests for a scaffolded deploy-image project.
+func runDeployImageTests(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
@@ -121,6 +170,7 @@ func Run(kbc *utils.TestContext) {
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
 	Eventually(verifyControllerUp).Should(Succeed())
+
 	By("creating an instance of the CR")
 	sampleFile := filepath.Join("config", "samples",
 		fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))

@@ -84,7 +84,7 @@ make install
 kind create cluster --config ./test/e2e/kind-config.yaml
 ```
 
-Now, you can for example, run in debug mode the `test/e2e/v4/e2e_suite_test.go`:
+Now, you can for example, run in debug mode the `test/e2e/all/e2e_suite_test.go`:
 
 ![example](https://github.com/kubernetes-sigs/kubebuilder/assets/7708031/277d26d5-c94d-41f0-8f02-1381458ef750)
 
@@ -103,13 +103,13 @@ Current Kubebuilder provides the testing framework that includes testing code ba
 
 To fully test the proposed plugin:
 
-1. Create a new package(folder) under `test/e2e/<your-plugin>`.
-2. Create [e2e_suite_test.go](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/e2e_suite_test.go), which imports the necessary testing framework.
-3. Create `generate_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/generate_test.go)). That should:
-   - Introduce/Receive a `TextContext` instance
+1. Add test specs to `test/e2e/plugin_<your-plugin>_test.go` in the unified test suite.
+2. Tests should use the shared `e2e_suite_test.go` BeforeSuite/AfterSuite hooks (cert-manager and Prometheus are already installed).
+3. Each test should:
+   - Initialize a `TestContext` using `utils.NewTestContext`
    - Trigger the plugin's bound subcommands. See [Init](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L213), [CreateAPI](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L222)
-   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommentCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
-4. Create `plugin_cluster_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/plugin_cluster_test.go)). That should:
+   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util) to verify the scaffolded outputs
+4. Test validation should:
 
    - 4.1. Setup testing environment, e.g:
 

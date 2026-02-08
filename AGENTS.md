@@ -77,7 +77,7 @@ main.go             Application entry point
 - Add new template → `pkg/plugins/<plugin>/scaffolds/internal/templates/`
 - Modify CLI commands → `pkg/cli/`
 - Add scaffolding machinery → `pkg/machinery/`
-- Add tests → `test/e2e/<plugin>/` or `pkg/<package>/*_test.go`
+- Add tests → `test/e2e/all/plugin_<name>_test.go` or `pkg/<package>/*_test.go`
 
 ## Critical Rules
 
