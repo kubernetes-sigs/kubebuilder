@@ -1,0 +1,10 @@
+apiVersion: cache.example.com/v1alpha1
+kind: Memcached
+metadata:
+  labels:
+    app.kubernetes.io/name: project
+    app.kubernetes.io/managed-by: kustomize
+  name: memcached-sample
+spec:
+  size: 3
+  containerPort: 11211

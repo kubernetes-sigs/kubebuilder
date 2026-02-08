@@ -22,6 +22,7 @@ import (
 
 	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
 	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
+	gettingstartedssa "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started-ssa"
 	multiversion "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/multiversion-tutorial"
 	"sigs.k8s.io/kubebuilder/v4/internal/logging"
 )
@@ -40,9 +41,10 @@ func main() {
 	type generator func()
 
 	tutorials := map[string]generator{
-		"cronjob":         updateCronjobTutorial,
-		"getting-started": updateGettingStarted,
-		"multiversion":    updateMultiversionTutorial,
+		"cronjob":             updateCronjobTutorial,
+		"getting-started":     updateGettingStarted,
+		"getting-started-ssa": updateGettingStartedSSA,
+		"multiversion":        updateMultiversionTutorial,
 	}
 
 	opts := logging.HandlerOptions{
@@ -77,6 +79,12 @@ func updateCronjobTutorial() {
 func updateGettingStarted() {
 	samplePath := "docs/book/src/getting-started/testdata/project"
 	sp := gettingstarted.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&sp)
+}
+
+func updateGettingStartedSSA() {
+	samplePath := "docs/book/src/getting-started-ssa/testdata/project"
+	sp := gettingstartedssa.NewSample(KubebuilderBinName, samplePath)
 	updateTutorial(&sp)
 }
 

@@ -31,6 +31,12 @@ plugins:
   helm.kubebuilder.io/v2-alpha:
     manifests: dist/install.yaml
     output: dist
+  ssa.go.kubebuilder.io/v1-alpha:
+    resources:
+    - domain: testproject.org
+      group: example.com
+      kind: Application
+      version: v1
 projectName: project-v4-with-plugins
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins
 resources:
@@ -77,4 +83,13 @@ resources:
   kind: Wordpress
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v2
   version: v2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Application
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1
+  version: v1
 version: "3"

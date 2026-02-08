@@ -143,6 +143,18 @@ Generate a controller that deploys and manages a container image (nginx, redis, 
 ` + "```" + `
 
 Scaffolds good-practice code: reconciliation logic, status conditions, finalizers, RBAC. Use as a reference implementation.
+
+### Server-Side Apply Plugin (scaffold controllers using Server-Side Apply)
+
+Generate a controller that uses Server-Side Apply for declarative field management:
+
+` + "```bash" + `
+# Example: API with Server-Side Apply
+{{ .CommandName }} create api --group <group> --version <version> --kind <Kind> \
+  --plugins=ssa/v1-alpha
+` + "```" + `
+
+Scaffolds a controller using Server-Side Apply patterns for conflict-free multi-actor field management.
 {{ end }}
 
 ### Create Webhooks

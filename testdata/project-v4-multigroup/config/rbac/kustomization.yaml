@@ -22,6 +22,9 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the project-v4-multigroup itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- example.com_application_admin_role.yaml
+- example.com_application_editor_role.yaml
+- example.com_application_viewer_role.yaml
 - example.com_wordpress_admin_role.yaml
 - example.com_wordpress_editor_role.yaml
 - example.com_wordpress_viewer_role.yaml
@@ -31,6 +34,9 @@ resources:
 - example.com_memcached_admin_role.yaml
 - example.com_memcached_editor_role.yaml
 - example.com_memcached_viewer_role.yaml
+- sea-creatures_prawn_admin_role.yaml
+- sea-creatures_prawn_editor_role.yaml
+- sea-creatures_prawn_viewer_role.yaml
 - fiz_bar_admin_role.yaml
 - fiz_bar_editor_role.yaml
 - fiz_bar_viewer_role.yaml

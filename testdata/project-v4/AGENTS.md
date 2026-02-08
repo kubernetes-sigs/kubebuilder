@@ -90,6 +90,18 @@ kubebuilder create api --group example.com --version v1alpha1 --kind Memcached \
 
 Scaffolds good-practice code: reconciliation logic, status conditions, finalizers, RBAC. Use as a reference implementation.
 
+### Server-Side Apply Plugin (scaffold controllers using Server-Side Apply)
+
+Generate a controller that uses Server-Side Apply for declarative field management:
+
+```bash
+# Example: API with Server-Side Apply
+kubebuilder create api --group <group> --version <version> --kind <Kind> \
+  --plugins=ssa/v1-alpha
+```
+
+Scaffolds a controller using Server-Side Apply patterns for conflict-free multi-actor field management.
+
 
 ### Create Webhooks
 ```bash

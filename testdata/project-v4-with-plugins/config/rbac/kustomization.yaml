@@ -22,6 +22,9 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the project-v4-with-plugins itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- application_admin_role.yaml
+- application_editor_role.yaml
+- application_viewer_role.yaml
 - wordpress_admin_role.yaml
 - wordpress_editor_role.yaml
 - wordpress_viewer_role.yaml

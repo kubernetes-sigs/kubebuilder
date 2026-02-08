@@ -4,15 +4,17 @@ on:
   push:
     paths:
       - 'docs/book/src/getting-started/testdata/project/**'
+      - 'docs/book/src/getting-started-ssa/testdata/project/**'
       - 'docs/book/src/cronjob-tutorial/testdata/project/**'
       - 'docs/book/src/multiversion-tutorial/testdata/project/**'
-      - '.github/workflows/test-e2e-book.yml'
+      - '.github/workflows/test-book.yml'
   pull_request:
     paths:
       - 'docs/book/src/getting-started/testdata/project/**'
+      - 'docs/book/src/getting-started-ssa/testdata/project/**'
       - 'docs/book/src/cronjob-tutorial/testdata/project/**'
       - 'docs/book/src/multiversion-tutorial/testdata/project/**'
-      - '.github/workflows/test-e2e-book.yml'
+      - '.github/workflows/test-book.yml'
 
 permissions: {}
       
@@ -26,6 +28,7 @@ jobs:
       matrix:
         folder: [
           "docs/book/src/getting-started/testdata/project",
+          "docs/book/src/getting-started-ssa/testdata/project",
           "docs/book/src/cronjob-tutorial/testdata/project",
           "docs/book/src/multiversion-tutorial/testdata/project"
         ]

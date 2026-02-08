@@ -5,12 +5,14 @@ on:
     paths:
       - "docs/book/src/cronjob-tutorial/testdata/project/**"
       - "docs/book/src/getting-started/testdata/project/**"
+      - "docs/book/src/getting-started-ssa/testdata/project/**"
       - "docs/book/src/multiversion-tutorial/testdata/project/**"
       - ".github/workflows/test-helm-book.yml"
   pull_request:
     paths:
-      - "docs/book/src/cronjob-tutorial/testdata/project/** "
+      - "docs/book/src/cronjob-tutorial/testdata/project/**"
       - "docs/book/src/getting-started/testdata/project/**"
+      - "docs/book/src/getting-started-ssa/testdata/project/**"
       - "docs/book/src/multiversion-tutorial/testdata/project/**"
       - ".github/workflows/test-helm-book.yml"
 
@@ -26,6 +28,7 @@ jobs:
       matrix:
         folder: [
           "docs/book/src/getting-started/testdata/project",
+          "docs/book/src/getting-started-ssa/testdata/project",
           "docs/book/src/cronjob-tutorial/testdata/project",
           "docs/book/src/multiversion-tutorial/testdata/project"
         ]

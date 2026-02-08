@@ -1,0 +1,11 @@
+{{- if .Values.metrics.enable }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "project.resourceName" (dict "suffix" "metrics-reader" "context" $) }}
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+{{- end }}

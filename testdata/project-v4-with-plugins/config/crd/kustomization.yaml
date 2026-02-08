@@ -5,6 +5,7 @@ resources:
 - bases/example.com.testproject.org_memcacheds.yaml
 - bases/example.com.testproject.org_busyboxes.yaml
 - bases/example.com.testproject.org_wordpresses.yaml
+- bases/example.com.testproject.org_applications.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
