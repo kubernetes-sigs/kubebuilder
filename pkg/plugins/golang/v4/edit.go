@@ -32,9 +32,12 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	config config.Config
 
-	multigroup bool
-	namespaced bool
-	force      bool
+	multigroup  bool
+	namespaced  bool
+	force       bool
+	licenseFile string
+	license     string
+	owner       string
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -69,13 +72,26 @@ Namespaced layout (--namespaced):
 
   # Disable namespaced layout (--force regenerates config/manager/manager.yaml without WATCH_NAMESPACE)
   %[1]s edit --namespaced=false --force
+
+  # Update license header from custom file
+  %[1]s edit --license-file ./my-header.txt
+
+  # Update license header to built-in apache2
+  %[1]s edit --license apache2 --owner "Your Company"
 `, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
 	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespaced layout")
-	fs.BoolVar(&p.force, "force", false, "overwrite existing files (regenerates manager.yaml with WATCH_NAMESPACE)")
+	fs.BoolVar(&p.force, "force", false,
+		"overwrite existing files (regenerates manager.yaml with WATCH_NAMESPACE)")
+	fs.StringVar(&p.licenseFile, "license-file", "",
+		"path to file containing custom license header")
+	fs.StringVar(&p.license, "license", "",
+		"license to use to boilerplate, may be one of 'apache2', 'none'"+
+			" (see: https://book.kubebuilder.io/reference/license-header)")
+	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -85,7 +101,8 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced, p.force)
+	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced, p.force,
+		p.license, p.owner, p.licenseFile)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to edit scaffold: %w", err)

@@ -340,7 +340,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
@@ -350,7 +350,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3-alpha"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
@@ -364,7 +364,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 						repo:        "bar",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
 						"--domain", "foo.com", "--repo", "bar"))
 					Expect(args).NotTo(ContainElement(ContainSubstring("helm.kubebuilder.io/v1-alpha")))
@@ -377,7 +377,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("returns correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
@@ -392,7 +392,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 						projectName: "my-project",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
 				})
@@ -407,7 +407,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
 				})
@@ -423,7 +423,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
+					args := getInitArgs(store, true, "")
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
 					// Note: multigroup is handled by kubebuilderEdit, not init
@@ -752,7 +752,7 @@ var _ = Describe("generate: kubebuilder", func() {
 				repo:        "github.com/example/repo",
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(kubebuilderInit(store)).To(Succeed())
+			Expect(kubebuilderInit(store, true, "")).To(Succeed())
 		})
 	})
 
@@ -831,6 +831,65 @@ var _ = Describe("generate: hasHelmPlugin", func() {
 		hasPlugin, isV2Alpha := hasHelmPlugin(store)
 		Expect(hasPlugin).To(BeFalse())
 		Expect(isV2Alpha).To(BeFalse())
+	})
+})
+
+var _ = Describe("generate: boilerplate preservation", func() {
+	Describe("getInitArgs with boilerplate handling", func() {
+		It("should include --license none when no boilerplate exists", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			args := getInitArgs(store, false, "") // hadBoilerplate = false
+
+			Expect(args).To(ContainElement("--license"))
+			// Find --license and verify next element is "none"
+			foundLicenseNone := false
+			for i, arg := range args {
+				if arg == "--license" && i+1 < len(args) && args[i+1] == "none" {
+					foundLicenseNone = true
+					break
+				}
+			}
+			Expect(foundLicenseNone).To(BeTrue(), "Expected --license none when no boilerplate exists")
+		})
+
+		It("should not include --license none when boilerplate exists", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			args := getInitArgs(store, true, "") // hadBoilerplate = true, no temp file
+
+			// Should not add --license none flag when boilerplate exists
+			foundLicenseNone := false
+			for i, arg := range args {
+				if arg == "--license" && i+1 < len(args) && args[i+1] == "none" {
+					foundLicenseNone = true
+					break
+				}
+			}
+			Expect(foundLicenseNone).To(BeFalse(), "Should not use --license none when boilerplate exists")
+		})
+
+		It("should use --license-file when temp file is provided", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			args := getInitArgs(store, true, "/tmp/custom-license.txt")
+
+			// Should have --license-file flag
+			Expect(args).To(ContainElement("--license-file"))
+			Expect(args).To(ContainElement("/tmp/custom-license.txt"))
+		})
 	})
 })
 

@@ -48,8 +48,9 @@ type initSubcommand struct {
 	commandName string
 
 	// boilerplate options
-	license string
-	owner   string
+	license     string
+	owner       string
+	licenseFile string
 
 	// go config options
 	repo string
@@ -84,6 +85,12 @@ Namespaced layout (--namespaced):
 
   # Initialize with specific project version
   %[1]s init --plugins go/v4 --project-version 3
+
+  # Initialize with custom license header from file
+  %[1]s init --plugins go/v4 --domain example.org --license-file ./my-header.txt
+
+  # Initialize with built-in license (apache2, none)
+  %[1]s init --plugins go/v4 --domain example.org --license apache2
 `, cliMeta.CommandName)
 }
 
@@ -96,8 +103,11 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
-		"license to use to boilerplate, may be one of 'apache2', 'none'")
+		"license to use to boilerplate, may be one of 'apache2', 'none'"+
+			" (see: https://book.kubebuilder.io/reference/license-header)")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.StringVar(&p.licenseFile, "license-file", "",
+		"path to file containing custom license header (overrides --license)")
 
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
@@ -144,7 +154,7 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.commandName)
+	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.licenseFile, p.commandName)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding init plugin: %w", err)
