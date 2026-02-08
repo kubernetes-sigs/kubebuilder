@@ -41,10 +41,21 @@ type Boilerplate struct {
 
 	// Owner is the copyright owner - e.g. "The Kubernetes Authors"
 	Owner string
+
+	// CustomBoilerplateContent is the content from a custom boilerplate file
+	CustomBoilerplateContent string
+
+	// HasCustomBoilerplate indicates whether a custom boilerplate file was explicitly provided
+	HasCustomBoilerplate bool
 }
 
 // Validate implements file.RequiresValidation
 func (f *Boilerplate) Validate() error {
+	// Skip validation if using custom boilerplate content (--license-file overrides --license)
+	if f.HasCustomBoilerplate {
+		return nil
+	}
+
 	if f.License != "" {
 		if _, foundKnown := knownLicenses[f.License]; !foundKnown {
 			if _, found := f.Licenses[f.License]; !found {
@@ -73,6 +84,13 @@ func (f *Boilerplate) SetTemplateDefaults() error {
 		if _, hasLicense := f.Licenses[key]; !hasLicense {
 			f.Licenses[key] = value
 		}
+	}
+
+	// Custom boilerplate file content takes precedence (even if empty)
+	// HasCustomBoilerplate is set when --license-file is explicitly provided
+	if f.HasCustomBoilerplate {
+		f.TemplateBody = f.CustomBoilerplateContent
+		return nil
 	}
 
 	// Boilerplate given

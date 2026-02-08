@@ -54,6 +54,31 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error loading project config: %v", err)
 	}
 
+	// Save existing boilerplate before cleanup so we can restore it
+	var preservedBoilerplate []byte
+	var boilerplateFileExists bool
+	boilerplatePath := filepath.Join(opts.InputDir, "hack", "boilerplate.go.txt")
+	if _, statErr := os.Stat(boilerplatePath); statErr == nil {
+		boilerplateFileExists = true
+		preservedBoilerplate, err = os.ReadFile(boilerplatePath)
+		if err != nil {
+			return fmt.Errorf("failed to read existing boilerplate file %q: %w", boilerplatePath, err)
+		}
+
+		// Warn if boilerplate isn't a valid Go comment block, but don't fail
+		if len(preservedBoilerplate) > 0 {
+			content := strings.TrimSpace(string(preservedBoilerplate))
+			if !strings.HasPrefix(content, "/*") || !strings.HasSuffix(content, "*/") {
+				slog.Warn(
+					"Existing boilerplate file is not a valid Go comment block; preserving it as-is for regeneration",
+					"path", boilerplatePath,
+				)
+			}
+		}
+
+		slog.Info("Preserving existing license header file for regeneration")
+	}
+
 	if opts.OutputDir == "" {
 		cwd, getWdErr := os.Getwd()
 		if getWdErr != nil {
@@ -96,7 +121,29 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error changing working directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err = kubebuilderInit(projectConfig, opts); err != nil {
+	// Create temp file with preserved boilerplate to pass to init
+	var tempLicenseFile string
+	if boilerplateFileExists {
+		tempFile, createErr := os.CreateTemp("", "kubebuilder-license-*.txt")
+		if createErr != nil {
+			return fmt.Errorf("failed to create temporary license file: %w", createErr)
+		}
+		defer func() {
+			_ = os.Remove(tempFile.Name())
+		}()
+
+		if len(preservedBoilerplate) > 0 {
+			if _, writeErr := tempFile.Write(preservedBoilerplate); writeErr != nil {
+				return fmt.Errorf("failed to write temporary license file: %w", writeErr)
+			}
+		}
+		_ = tempFile.Close()
+
+		tempLicenseFile = tempFile.Name()
+		slog.Info("Created temporary license file for init", "path", tempLicenseFile)
+	}
+
+	if err = kubebuilderInit(projectConfig, opts, tempLicenseFile); err != nil {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
@@ -187,8 +234,8 @@ func changeWorkingDirectory(outputDir string) error {
 }
 
 // Initializes the project with Kubebuilder.
-func kubebuilderInit(s store.Store, opts *Generate) error {
-	args := append([]string{"init"}, getInitArgs(s, opts)...)
+func kubebuilderInit(s store.Store, opts *Generate, tempLicenseFile string) error {
+	args := append([]string{"init"}, getInitArgs(s, opts, tempLicenseFile)...)
 	execPath, err := getExecutablePathFunc()
 	if err != nil {
 		return err
@@ -396,7 +443,7 @@ func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) err
 }
 
 // Helper function to get Init arguments for Kubebuilder.
-func getInitArgs(s store.Store, opts *Generate) []string {
+func getInitArgs(s store.Store, opts *Generate, tempLicenseFile string) []string {
 	var args []string
 
 	if opts.SkipGoVersionCheck {
@@ -442,6 +489,13 @@ func getInitArgs(s store.Store, opts *Generate) []string {
 	}
 	if s.Config().IsNamespaced() {
 		args = append(args, "--namespaced")
+	}
+
+	// Use preserved boilerplate if it existed, otherwise --license none
+	if tempLicenseFile != "" {
+		args = append(args, "--license-file", tempLicenseFile)
+	} else {
+		args = append(args, "--license", "none")
 	}
 	return args
 }
