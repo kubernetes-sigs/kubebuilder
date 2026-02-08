@@ -62,6 +62,20 @@ func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmT
 	}
 }
 
+// getDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
+// This allows the Helm plugin to work with any container name, not just "manager".
+// If the annotation is not found, it falls back to "manager" for backward compatibility.
+func (t *HelmTemplater) getDefaultContainerName(yamlContent string) string {
+	// Look for kubectl.kubernetes.io/default-container annotation
+	pattern := regexp.MustCompile(`kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
+	matches := pattern.FindStringSubmatch(yamlContent)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	// Fallback to "manager" for backward compatibility with older scaffolds
+	return "manager"
+}
+
 // resourceNameTemplate creates a Helm template for a resource name with 63-char safety.
 // Uses <chartname>.resourceName helper which intelligently truncates when base + suffix > 63 chars.
 // Template name is scoped to the chart to prevent collisions when used as a Helm dependency.
@@ -530,7 +544,8 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 
 // templateEnvironmentVariables exposes environment variables via values.yaml
 func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	if !strings.Contains(yamlContent, "name: "+containerName) {
 		return yamlContent
 	}
 
@@ -583,7 +598,8 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 
 // templateResources converts resource sections to Helm templates
 func (t *HelmTemplater) templateResources(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") || !strings.Contains(yamlContent, "resources:") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	if !strings.Contains(yamlContent, "name: "+containerName) || !strings.Contains(yamlContent, "resources:") {
 		return yamlContent
 	}
 
@@ -770,7 +786,8 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 
 // templateContainerSecurityContext exposes container securityContext via values.yaml
 func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") || !strings.Contains(yamlContent, "securityContext:") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	if !strings.Contains(yamlContent, "name: "+containerName) || !strings.Contains(yamlContent, "securityContext:") {
 		return yamlContent
 	}
 
@@ -836,7 +853,8 @@ func leadingWhitespace(line string) (string, int) {
 
 // templateControllerManagerArgs exposes controller manager args via values.yaml while keeping core defaults
 func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	if !strings.Contains(yamlContent, "name: "+containerName) {
 		return yamlContent
 	}
 
@@ -937,7 +955,8 @@ func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string
 
 // templateImageReference converts hardcoded image references to Helm templates
 func (t *HelmTemplater) templateImageReference(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	if !strings.Contains(yamlContent, "name: "+containerName) {
 		return yamlContent
 	}
 
