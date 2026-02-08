@@ -77,4 +77,13 @@ resources:
   kind: Wordpress
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v2
   version: v2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Application
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1
+  version: v1
 version: "3"

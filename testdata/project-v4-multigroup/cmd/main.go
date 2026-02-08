@@ -44,6 +44,7 @@ import (
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1"
 	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo/v1"
+	seacreaturesv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1"
 	seacreaturesv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1beta1"
 	seacreaturesv1beta2 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1beta2"
 	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1"
@@ -87,6 +88,7 @@ func init() {
 	utilruntime.Must(foov1.AddToScheme(scheme))
 	utilruntime.Must(fizv1.AddToScheme(scheme))
 	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
+	utilruntime.Must(seacreaturesv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv2.AddToScheme(scheme))
@@ -338,6 +340,13 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	if err := (&seacreaturescontroller.PrawnReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "Prawn")
+		os.Exit(1)
+	}
 	if err := (&examplecomcontroller.MemcachedReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -374,6 +383,13 @@ func main() {
 			setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}
+	}
+	if err := (&examplecomcontroller.ApplicationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "Application")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 

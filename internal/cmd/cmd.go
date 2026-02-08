@@ -31,6 +31,7 @@ import (
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	serversideapplyv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/server-side-apply/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
@@ -74,6 +75,7 @@ func Run() {
 			gov4Bundle,
 			&kustomizecommonv2.Plugin{},
 			&deployimagev1alpha1.Plugin{},
+			&serversideapplyv1alpha1.Plugin{},
 			&grafanav1alpha.Plugin{},
 			&helmv1alpha.Plugin{},
 			&helmv2alpha.Plugin{},

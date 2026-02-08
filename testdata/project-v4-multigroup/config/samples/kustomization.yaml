@@ -9,8 +9,10 @@ resources:
 - foo.policy_v1_healthcheckpolicy.yaml
 - foo_v1_bar.yaml
 - fiz_v1_bar.yaml
+- sea-creatures_v1_prawn.yaml
 - example.com_v1alpha1_memcached.yaml
 - example.com_v1alpha1_busybox.yaml
 - example.com_v1_wordpress.yaml
 - example.com_v2_wordpress.yaml
+- example.com_v1_application.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

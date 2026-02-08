@@ -120,6 +120,7 @@
     - [helm/v1-alpha](./plugins/available/helm-v1-alpha.md)
     - [helm/v2-alpha](./plugins/available/helm-v2-alpha.md)
     - [kustomize/v2](./plugins/available/kustomize-v2.md)
+    - [server-side-apply/v1-alpha](./plugins/available/server-side-apply-v1-alpha.md)
   - [Extending](./plugins/extending.md)
     - [CLI and Plugins](./plugins/extending/extending_cli_features_and_plugins.md)
     - [External Plugins](./plugins/extending/external-plugins.md)
