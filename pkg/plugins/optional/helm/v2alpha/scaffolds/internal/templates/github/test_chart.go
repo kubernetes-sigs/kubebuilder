@@ -84,8 +84,13 @@ jobs:
       - name: Prepare {{ .ProjectName }}
         run: |
           go mod tidy
-          make docker-build IMG={{ .ProjectName }}:v0.1.0
-          kind load docker-image {{ .ProjectName }}:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Pre-load kubectl image for Helm tests
+        run: |
+          docker pull bitnami/kubectl:latest
+          kind load docker-image bitnami/kubectl:latest
 
       - name: Install Helm
         run: |
@@ -119,9 +124,17 @@ jobs:
 
       - name: Install Helm chart for project
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace {{ .ProjectName }}-system
+          helm install my-release ./dist/chart \
+            --create-namespace \
+            --namespace {{ .ProjectName }}-system \
+            --wait \
+            --timeout 300s
 
       - name: Check Helm release status
         run: |
           helm status my-release --namespace {{ .ProjectName }}-system
+
+      - name: Run Helm tests
+        run: |
+          helm test my-release --namespace {{ .ProjectName }}-system
 `

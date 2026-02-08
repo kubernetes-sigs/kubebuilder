@@ -23,8 +23,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-const defaultOutputDir = "dist"
-
 var _ machinery.Template = &ServiceMonitor{}
 
 // ServiceMonitor scaffolds a ServiceMonitor for Prometheus monitoring in the Helm chart
