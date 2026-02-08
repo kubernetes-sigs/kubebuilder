@@ -17,5 +17,17 @@ The grouping ensures clarity by showing how the same marker can be reused for di
 
 </aside>
 
+<aside class="note">
+<h1>Schema & Validation</h1>
+
+Custom resources are validated using the generated OpenAPI v3 schema and must comply with Kubernetes structural schema rules.
+Only field types and constraints that can be represented in the CRD schema are enforced by the API server.
+
+Numeric types are constrained by [Kubernetes CRD OpenAPI v3 schema compatibility](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation).
+In practice, prefer Go types that map cleanly to the supported OpenAPI formats (for example, `int32` and `int64` for integers).
+For values that require decimal-like representation, use `resource.Quantity`.
+
+Use Kubebuilder validation markers to declare additional constraints — such as minimum and maximum values, length limits, patterns, enums, and list or map rules — so they are reflected in the generated CRD and validated at runtime.
+</aside>
 
 {{#markerdocs CRD validation}}
