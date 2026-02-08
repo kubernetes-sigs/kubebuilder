@@ -267,6 +267,22 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 		}
 		Eventually(verifyCAInjection, defaultTimeout, defaultPollingInterval).Should(Succeed(),
 			"CA injection validation failed")
+
+		By("waiting for the webhook service endpoints to be ready")
+		verifyWebhookEndpointsReady := func(g Gomega) {
+			var output string
+			output, err = kbc.Kubectl.Get(
+				true,
+				"endpointslices.discovery.k8s.io",
+				"-l", fmt.Sprintf("kubernetes.io/service-name=%s-webhook-service", namePrefix),
+				"-o", "jsonpath={range .items[*]}{range .endpoints[*]}{.addresses[*]}{end}{end}")
+			g.Expect(err).NotTo(HaveOccurred(), "Webhook endpoints should exist")
+			g.Expect(output).ShouldNot(BeEmpty(), "Webhook endpoints not yet ready")
+		}
+		Eventually(verifyWebhookEndpointsReady, defaultTimeout, defaultPollingInterval).Should(Succeed())
+
+		By("waiting additional time for webhook server to stabilize")
+		time.Sleep(5 * time.Second)
 	}
 
 	By("creating an instance of the CR")
