@@ -91,11 +91,13 @@ jobs:
         run: |
           helm template ${{ matrix.folder }}/dist/chart --namespace=${{ steps.project.outputs.name }}-system
 
-      - name: Install Helm chart
+      - name: Deploy manager via Helm
+        working-directory: ${{ matrix.folder }}
         run: |
-          helm install my-release ${{ matrix.folder }}/dist/chart --create-namespace --namespace ${{ steps.project.outputs.name}}-system
+          make helm-deploy IMG=${{ steps.project.outputs.name}}:v0.1.0
 
       - name: Check Helm release status
+        working-directory: ${{ matrix.folder }}
         run: |
-          helm status my-release --namespace ${{ steps.project.outputs.name}}-system
+          make helm-status
 
