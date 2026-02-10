@@ -1935,4 +1935,139 @@ subjects:
 			Expect(result).To(ContainSubstring(expectedSA))
 		})
 	})
+
+	Context("custom container name support", func() {
+		It("should template deployment fields when container name is not 'manager'", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with custom container name "controller-test" using default-container annotation
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: controller-test
+    spec:
+      containers:
+      - name: controller-test
+        image: controller:latest
+        imagePullPolicy: Always
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts: []
+      serviceAccountName: controller-manager
+      volumes: []`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should template image reference (not hardcoded)
+			Expect(result).To(ContainSubstring(
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
+
+			// Should template imagePullPolicy
+			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
+			Expect(result).NotTo(ContainSubstring("imagePullPolicy: Always"))
+
+			// Should template resources
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.resources | nindent"))
+
+			// Should template environment variables
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.env }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.env | nindent"))
+
+			// Should template args
+			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
+
+			// Container name should remain "controller-test"
+			Expect(result).To(ContainSubstring("name: controller-test"))
+		})
+
+		It("should fall back to 'manager' when default-container annotation is missing", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment without default-container annotation (backward compatibility test)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should still template fields for "manager" container
+			Expect(result).To(ContainSubstring(
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
+		})
+
+		It("should not template when container name doesn't match annotation", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with mismatched annotation and container name
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: main-container
+    spec:
+      containers:
+      - name: sidecar
+        image: sidecar:latest
+        resources:
+          limits:
+            cpu: 100m`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should NOT template sidecar container (doesn't match annotation)
+			Expect(result).To(ContainSubstring("image: sidecar:latest"))
+			Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"))
+		})
+	})
 })
