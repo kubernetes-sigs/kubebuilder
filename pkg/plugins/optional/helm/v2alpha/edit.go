@@ -81,9 +81,10 @@ distribution of your project. When enabled, adds Helm helpers targets to Makefil
   %[1]s edit --plugins=%[2]s  # Generate/update Helm chart in dist/chart/
 
 **NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
-Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore, and
-.github/workflows/test-chart.yml. All template files in templates/ are always regenerated
-to match your current kustomize output. Use --force to regenerate all files except Chart.yaml.
+Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
+templates/tests/test-manager-ready.yaml, and .github/workflows/test-chart.yml.
+All other template files in templates/ are always regenerated to match your current
+kustomize output. Use --force to regenerate all files except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
 <output>/chart/
@@ -96,6 +97,7 @@ The generated chart structure mirrors your config/ directory:
     ├── rbac/
     ├── manager/
     ├── webhook/
+    ├── tests/
     └── ...
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
