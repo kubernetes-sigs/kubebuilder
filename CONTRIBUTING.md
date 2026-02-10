@@ -215,6 +215,8 @@ The docs are published off of three branches:
 
 See [VERSIONING.md](VERSIONING.md#book-releases) for more information.
 
+The documentation is rendered using [mdBook with its advanced Markdown features](https://rust-lang.github.io/mdBook/format/markdown.html).
+
 There are certain writing style guidelines for Kubernetes documentation, checkout [style guide](https://kubernetes.io/docs/contribute/style/style-guide/) for more information.
 
 ### How to preview the changes performed in the docs
