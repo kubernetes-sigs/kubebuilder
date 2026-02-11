@@ -254,7 +254,7 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 	// Base issue body
 	var body string
 	if hasConflicts {
-		body = fmt.Sprintf(helpers.IssueBodyTmplWithConflicts, opts.ToVersion, createPRURL, opts.FromVersion, out)
+		body = fmt.Sprintf(helpers.IssueBodyTmplWithConflicts, opts.ToVersion, createPRURL, opts.FromVersion, out, repo)
 	} else {
 		body = fmt.Sprintf(helpers.IssueBodyTmpl, opts.ToVersion, createPRURL, opts.FromVersion, out)
 	}
