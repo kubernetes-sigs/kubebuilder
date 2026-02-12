@@ -392,7 +392,7 @@ func (t *TestContext) InstallHelm() error {
 	}
 
 	// Install Helm if not found
-	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
+	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4"
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", helmInstallScript))
 	_, err = t.Run(cmd)
 	if err != nil {

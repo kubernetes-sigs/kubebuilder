@@ -57,11 +57,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Verify Helm installation
-        run: helm version
+        run: make install-helm
 
       - name: Lint Helm chart for project-v4-with-plugins
         run: |
@@ -150,8 +146,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        run: make install-helm
 
       - name: Install kubebuilder binary
         run: make install

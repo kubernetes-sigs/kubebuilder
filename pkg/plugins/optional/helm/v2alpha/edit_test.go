@@ -322,9 +322,11 @@ build: ## Build manager binary.
 			Expect(contentStr).To(ContainSubstring("HELM_CHART_DIR ?= dist/chart"))
 			Expect(contentStr).To(ContainSubstring("## Additional arguments to pass to helm commands"))
 			Expect(contentStr).To(ContainSubstring("HELM_EXTRA_ARGS ?="))
+			Expect(contentStr).To(ContainSubstring(".PHONY: install-helm"))
+			Expect(contentStr).To(ContainSubstring("install-helm: ## Install the latest version of Helm."))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-deploy"))
 			Expect(contentStr).To(ContainSubstring(
-				"helm-deploy: ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG."))
+				"helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG."))
 			Expect(contentStr).To(ContainSubstring("--set manager.image.repository=$${IMG%:*}"))
 			Expect(contentStr).To(ContainSubstring("--set manager.image.tag=$${IMG##*:}"))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-uninstall"))
@@ -359,8 +361,15 @@ HELM_CHART_DIR ?= dist/chart
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
+.PHONY: install-helm
+install-helm: ## Install the latest version of Helm.
+	@command -v $(HELM) >/dev/null 2>&1 || { \
+		echo "Installing Helm..." && \
+		curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash; \
+	}
+
 .PHONY: helm-deploy
-helm-deploy: ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
 	$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
 		--namespace $(HELM_NAMESPACE) \
 		--create-namespace \

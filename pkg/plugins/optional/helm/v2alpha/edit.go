@@ -342,8 +342,15 @@ HELM_CHART_DIR ?= %s/chart
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
+.PHONY: install-helm
+install-helm: ## Install the latest version of Helm.
+	@command -v $(HELM) >/dev/null 2>&1 || { \
+		echo "Installing Helm..." && \
+		curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash; \
+	}
+
 .PHONY: helm-deploy
-helm-deploy: ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
 	$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
 		--namespace $(HELM_NAMESPACE) \
 		--create-namespace \
