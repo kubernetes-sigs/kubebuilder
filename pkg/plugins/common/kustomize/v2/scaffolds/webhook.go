@@ -112,10 +112,8 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	// Warn users about potential bootstrap problem for core type webhooks
 	if s.resource.Core {
-		log.Warn("================================================================================")
-		log.Warn("Webhooks for core types may cause circular dependencies during deployment.")
-		log.Warn("See: https://book.kubebuilder.io/reference/webhook-bootstrap-problem.html")
-		log.Warn("================================================================================")
+		log.Warn("Webhooks for core types may cause circular dependencies during deployment. " +
+			"More info: https://book.kubebuilder.io/reference/webhook-bootstrap-problem")
 	}
 
 	// Apply project-specific customizations:
