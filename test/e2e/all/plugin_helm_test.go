@@ -17,7 +17,10 @@ limitations under the License.
 package all
 
 import (
+	"fmt"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -48,6 +51,18 @@ var _ = Describe("kubebuilder", func() {
 
 			By("uninstalling Helm Release (if installed)")
 			_ = kbc.UninstallHelmRelease()
+
+			By("cleaning up CRDs that were preserved by crd.keep=true")
+			domainSuffix := fmt.Sprintf(".example.com%s", kbc.TestSuffix)
+			listCmd := exec.Command("kubectl", "get", "crds", "-o", "name")
+			if output, err := kbc.Run(listCmd); err == nil {
+				for crdName := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+					if crdName != "" && strings.Contains(crdName, domainSuffix) {
+						deleteCmd := exec.Command("kubectl", "delete", crdName, "--ignore-not-found")
+						_, _ = kbc.Run(deleteCmd)
+					}
+				}
+			}
 
 			By("removing controller image and working dir")
 			kbc.Destroy()
@@ -145,6 +160,48 @@ var _ = Describe("kubebuilder", func() {
 				IsNamespaced:       true,
 				InstallMethod:      helpers.InstallMethodHelm,
 			})
+		})
+
+		It("should delete CRDs on helm uninstall when crd.keep=false", func() {
+			By("generating a project with webhooks")
+			helpers.GenerateV4(kbc)
+
+			By("building installer and generating helm chart")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+			err := kbc.EditHelmPlugin()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("installing helm chart with crd.keep=false")
+			Expect(kbc.HelmInstallReleaseWithOptions(false)).To(Succeed())
+
+			By("verifying CRDs exist after install")
+			domainSuffix := fmt.Sprintf(".example.com%s", kbc.TestSuffix)
+			verifyCRDsExist := func(g Gomega) {
+				listCmd := exec.Command("kubectl", "get", "crds", "-o", "name")
+				output, err := kbc.Run(listCmd)
+				g.Expect(err).NotTo(HaveOccurred(), "failed to list CRDs")
+				g.Expect(string(output)).To(ContainSubstring(domainSuffix),
+					"expected CRDs matching domain suffix %s to exist", domainSuffix)
+			}
+			verifyCRDsExist(Default)
+
+			By("uninstalling helm release")
+			Expect(kbc.UninstallHelmRelease()).To(Succeed())
+
+			By("verifying CRDs are deleted after uninstall (crd.keep=false)")
+			verifyCRDsDeleted := func(g Gomega) {
+				listCmd := exec.Command("kubectl", "get", "crds", "-o", "name")
+				output, err := kbc.Run(listCmd)
+				if err != nil {
+					// If we can't list CRDs, assume they're gone
+					return
+				}
+				for crdName := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+					g.Expect(crdName).NotTo(ContainSubstring(domainSuffix),
+						"CRD %s still exists but should have been deleted", crdName)
+				}
+			}
+			Eventually(verifyCRDsDeleted, "60s", "2s").Should(Succeed())
 		})
 	})
 })

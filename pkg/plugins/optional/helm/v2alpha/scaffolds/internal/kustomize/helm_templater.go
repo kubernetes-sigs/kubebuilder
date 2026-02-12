@@ -1354,6 +1354,69 @@ func (t *HelmTemplater) makeMetricsVolumeMountsConditional(yamlContent string) s
 	return yamlContent
 }
 
+// injectCRDResourcePolicyAnnotation adds the helm.sh/resource-policy: keep annotation
+// to CRDs conditionally based on .Values.crd.keep. This prevents CRDs from being deleted
+// on helm uninstall when crd.keep is true in values.yaml.
+func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) string {
+	// Check if metadata section exists
+	if !strings.Contains(yamlContent, "metadata:") {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+
+	// Check if annotations: already exists
+	if strings.Contains(yamlContent, "annotations:") {
+		// Find the annotations: line and determine its indentation
+		for i, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "annotations:" || strings.HasPrefix(trimmed, "annotations:") {
+				annotationsIndent, _ := leadingWhitespace(line)
+				// Annotation values need one more level of indentation (4 spaces for go-yaml)
+				valueIndent := annotationsIndent + "    "
+
+				// Build the conditional annotation block
+				resourcePolicyBlock := fmt.Sprintf(
+					"%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
+					valueIndent, valueIndent, valueIndent)
+
+				// Insert after the annotations: line
+				result := make([]string, 0, len(lines)+3)
+				result = append(result, lines[:i+1]...)
+				result = append(result, resourcePolicyBlock)
+				result = append(result, lines[i+1:]...)
+				return strings.Join(result, "\n")
+			}
+		}
+	} else {
+		// No annotations section exists, need to add it after metadata:
+		for i, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "metadata:" || strings.HasPrefix(trimmed, "metadata:") {
+				metadataIndent, _ := leadingWhitespace(line)
+				// Fields under metadata need one more level of indentation (4 spaces for go-yaml)
+				fieldIndent := metadataIndent + "    "
+				// Annotation values need two more levels (8 spaces total)
+				valueIndent := metadataIndent + "        "
+
+				// Build annotations section with conditional resource-policy
+				annotationsSection := fmt.Sprintf(
+					"%sannotations:\n%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
+					fieldIndent, valueIndent, valueIndent, valueIndent)
+
+				// Insert after the metadata: line
+				result := make([]string, 0, len(lines)+4)
+				result = append(result, lines[:i+1]...)
+				result = append(result, annotationsSection)
+				result = append(result, lines[i+1:]...)
+				return strings.Join(result, "\n")
+			}
+		}
+	}
+
+	return yamlContent
+}
+
 // addConditionalWrappers adds conditional Helm logic based on resource type
 func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *unstructured.Unstructured) string {
 	kind := resource.GetKind()
@@ -1364,6 +1427,8 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 	case kind == kindNamespace:
 		return ""
 	case kind == "CustomResourceDefinition":
+		// CRDs need resource-policy annotation for helm uninstall protection
+		yamlContent = t.injectCRDResourcePolicyAnnotation(yamlContent)
 		// CRDs need crd.enable condition
 		return fmt.Sprintf("{{- if .Values.crd.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindCertificate && apiVersion == apiVersionCertManager:
