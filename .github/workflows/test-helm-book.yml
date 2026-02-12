@@ -59,11 +59,7 @@ jobs:
           kind load docker-image ${{ steps.project.outputs.name}}:v0.1.0
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Verify Helm installation
-        run: helm version
+        run: make install-helm
 
       - name: Pre-load kubectl image for Helm tests
         run: |

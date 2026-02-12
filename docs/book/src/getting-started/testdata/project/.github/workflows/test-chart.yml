@@ -41,11 +41,7 @@ jobs:
           kind load docker-image bitnami/kubectl:latest
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Verify Helm installation
-        run: helm version
+        run: make install-helm
 
       - name: Lint Helm Chart
         run: |

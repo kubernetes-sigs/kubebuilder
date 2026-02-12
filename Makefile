@@ -217,7 +217,7 @@ test-legacy:  ## Run the tests to validate legacy path for webhooks
 
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm locally
-	@curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+	@curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
 
 .PHONY: helm-lint
 helm-lint: install-helm ## Lint the Helm chart in testdata
