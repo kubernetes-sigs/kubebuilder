@@ -48,8 +48,9 @@ type initSubcommand struct {
 	commandName string
 
 	// boilerplate options
-	license string
-	owner   string
+	license     string
+	owner       string
+	licenseFile string
 
 	// go config options
 	repo string
@@ -84,6 +85,12 @@ Namespaced layout (--namespaced):
 
   # Initialize with specific project version
   %[1]s init --plugins go/v4 --project-version 3
+
+  # Initialize with custom license header from file
+  %[1]s init --plugins go/v4 --domain example.org --license-file ./my-header.txt
+
+  # Initialize with built-in license (apache2, none)
+  %[1]s init --plugins go/v4 --domain example.org --license apache2
 `, cliMeta.CommandName)
 }
 
@@ -96,8 +103,11 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
-		"license to use to boilerplate, may be one of 'apache2', 'none'")
+		"license to use to boilerplate, may be one of 'apache2', 'none'"+
+			" (see: https://book.kubebuilder.io/reference/license-header)")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.StringVar(&p.licenseFile, "license-file", "",
+		"path to custom license file; content copied to hack/boilerplate.go.txt (overrides --license)")
 
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
@@ -139,12 +149,39 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 		}
 	}
 
+	// Trim whitespace from license file path and treat empty/whitespace-only as not provided
+	p.licenseFile = strings.TrimSpace(p.licenseFile)
+
+	// Validate license file exists and has proper format before scaffolding begins to prevent broken state
+	if p.licenseFile != "" {
+		if _, err := os.Stat(p.licenseFile); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("license file %q does not exist", p.licenseFile)
+			}
+			return fmt.Errorf("failed to access license file %q: %w", p.licenseFile, err)
+		}
+
+		// Validate that the license file is a valid Go comment block
+		content, err := os.ReadFile(p.licenseFile)
+		if err != nil {
+			return fmt.Errorf("failed to read license file %q: %w", p.licenseFile, err)
+		}
+
+		// Only validate format if file is not empty (empty files are allowed)
+		if len(content) > 0 {
+			contentStr := strings.TrimSpace(string(content))
+			if !strings.HasPrefix(contentStr, "/*") || !strings.HasSuffix(contentStr, "*/") {
+				return fmt.Errorf("license file %q must be a valid Go comment block (start with /* and end with */)", p.licenseFile)
+			}
+		}
+	}
+
 	// Check if the current directory has no files or directories which does not allow to init the project
 	return checkDir()
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.commandName)
+	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.licenseFile, p.commandName)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding init plugin: %w", err)

@@ -53,6 +53,38 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error loading project config: %v", err)
 	}
 
+	// Preserve the existing boilerplate file before cleanup to maintain custom license headers.
+	// This is read from InputDir BEFORE cleanup to ensure we don't lose the custom license.
+	var preservedBoilerplate []byte
+	boilerplatePath := filepath.Join(opts.InputDir, "hack", "boilerplate.go.txt")
+	if _, statErr := os.Stat(boilerplatePath); statErr == nil {
+		// File exists - we MUST be able to read it, otherwise fail
+		preservedBoilerplate, err = os.ReadFile(boilerplatePath)
+		if err != nil {
+			return fmt.Errorf("failed to read existing boilerplate file %q: %w", boilerplatePath, err)
+		}
+
+		// Validate boilerplate format early to provide helpful error message
+		// Only validate if file is not empty (empty files are allowed)
+		if len(preservedBoilerplate) > 0 {
+			content := strings.TrimSpace(string(preservedBoilerplate))
+			if !strings.HasPrefix(content, "/*") || !strings.HasSuffix(content, "*/") {
+				return fmt.Errorf("existing boilerplate file %q must be a valid Go comment block.\n"+
+					"It must start with /* and end with */\n"+
+					"Example:\n"+
+					"  /*\n"+
+					"  Copyright 2026 Your Company.\n"+
+					"  \n"+
+					"  Your license text here.\n"+
+					"  */",
+					boilerplatePath)
+			}
+		}
+
+		slog.Info("Preserving existing license header file for regeneration")
+	}
+	// If no boilerplate file exists, preservedBoilerplate will be empty and init will use --license none
+
 	if opts.OutputDir == "" {
 		cwd, getWdErr := os.Getwd()
 		if getWdErr != nil {
@@ -95,7 +127,31 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error changing working directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err = kubebuilderInit(projectConfig); err != nil {
+	// Restore the preserved boilerplate BEFORE init so that init uses the custom license.
+	// We create a temp file and pass it via --license-file to ensure all generated files
+	// use the custom license from the start.
+	// If no boilerplate was preserved (len == 0), tempLicenseFile remains empty and init will use --license none.
+	var tempLicenseFile string
+	if len(preservedBoilerplate) > 0 {
+		// Create a temporary file with the preserved boilerplate content
+		tempFile, createErr := os.CreateTemp("", "kubebuilder-license-*.txt")
+		if createErr != nil {
+			return fmt.Errorf("failed to create temporary license file: %w", createErr)
+		}
+		defer func() {
+			_ = os.Remove(tempFile.Name())
+		}()
+
+		if _, writeErr := tempFile.Write(preservedBoilerplate); writeErr != nil {
+			return fmt.Errorf("failed to write temporary license file: %w", writeErr)
+		}
+		_ = tempFile.Close()
+
+		tempLicenseFile = tempFile.Name()
+		slog.Info("Created temporary license file for init", "path", tempLicenseFile)
+	}
+
+	if err = kubebuilderInit(projectConfig, tempLicenseFile); err != nil {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
@@ -190,8 +246,8 @@ func changeWorkingDirectory(outputDir string) error {
 }
 
 // Initializes the project with Kubebuilder.
-func kubebuilderInit(s store.Store) error {
-	args := append([]string{"init"}, getInitArgs(s)...)
+func kubebuilderInit(s store.Store, tempLicenseFile string) error {
+	args := append([]string{"init"}, getInitArgs(s, tempLicenseFile)...)
 	execPath, err := getExecutablePathFunc()
 	if err != nil {
 		return err
@@ -411,7 +467,7 @@ func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) err
 }
 
 // Helper function to get Init arguments for Kubebuilder.
-func getInitArgs(s store.Store) []string {
+func getInitArgs(s store.Store, tempLicenseFile string) []string {
 	var args []string
 	plugins := s.Config().GetPluginChain()
 
@@ -449,6 +505,15 @@ func getInitArgs(s store.Store) []string {
 	}
 	if s.Config().IsNamespaced() {
 		args = append(args, "--namespaced")
+	}
+
+	// License handling is simplified:
+	// - If tempLicenseFile is provided → use --license-file (preserved custom boilerplate)
+	// - If tempLicenseFile is empty → use --license none (no boilerplate existed)
+	if tempLicenseFile != "" {
+		args = append(args, "--license-file", tempLicenseFile)
+	} else {
+		args = append(args, "--license", "none")
 	}
 	return args
 }

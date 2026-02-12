@@ -57,6 +57,7 @@ type initScaffolder struct {
 	boilerplatePath string
 	license         string
 	owner           string
+	licenseFile     string
 	commandName     string
 
 	// fs is the filesystem that will be used by the scaffolder
@@ -64,12 +65,13 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(cfg config.Config, license, owner, commandName string) plugins.Scaffolder {
+func NewInitScaffolder(cfg config.Config, license, owner, licenseFile, commandName string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          cfg,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
+		licenseFile:     licenseFile,
 		commandName:     commandName,
 	}
 }
@@ -104,11 +106,26 @@ func (s *initScaffolder) Scaffold() error {
 		machinery.WithConfig(s.config),
 	)
 
-	if s.license != "none" {
+	// Create boilerplate if:
+	// 1. A custom license file is provided (--license-file overrides --license), OR
+	// 2. A built-in license is specified (not "none")
+	if s.licenseFile != "" || s.license != "none" {
 		bpFile := &hack.Boilerplate{
 			License: s.license,
 			Owner:   s.owner,
 		}
+
+		// If a custom license file is provided, read its content
+		if s.licenseFile != "" {
+			content, err := afero.ReadFile(afero.NewOsFs(), s.licenseFile)
+			if err != nil {
+				return fmt.Errorf("failed to read license file %q: %w", s.licenseFile, err)
+			}
+			bpFile.CustomBoilerplateContent = string(content)
+			bpFile.HasCustomBoilerplate = true
+			log.Info("Using custom license header file", "file", s.licenseFile)
+		}
+
 		bpFile.Path = s.boilerplatePath
 		if err := scaffold.Execute(bpFile); err != nil {
 			return fmt.Errorf("failed to execute boilerplate: %w", err)

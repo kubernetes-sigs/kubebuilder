@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	log "log/slog"
 
 	"github.com/spf13/afero"
 
@@ -25,27 +26,36 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
 var _ plugins.Scaffolder = &editScaffolder{}
 
 type editScaffolder struct {
-	config     config.Config
-	multigroup bool
-	namespaced bool
-	force      bool
+	config      config.Config
+	multigroup  bool
+	namespaced  bool
+	force       bool
+	license     string
+	owner       string
+	licenseFile string
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(cfg config.Config, multigroup bool, namespaced bool, force bool) plugins.Scaffolder {
+func NewEditScaffolder(cfg config.Config, multigroup bool, namespaced bool, force bool,
+	license, owner, licenseFile string,
+) plugins.Scaffolder {
 	return &editScaffolder{
-		config:     cfg,
-		multigroup: multigroup,
-		namespaced: namespaced,
-		force:      force,
+		config:      cfg,
+		multigroup:  multigroup,
+		namespaced:  namespaced,
+		force:       force,
+		license:     license,
+		owner:       owner,
+		licenseFile: licenseFile,
 	}
 }
 
@@ -62,6 +72,14 @@ func (s *editScaffolder) Scaffold() error {
 		return fmt.Errorf("error reading %q: %w", filename, err)
 	}
 	str := string(bs)
+
+	// Update boilerplate if license flags are provided.
+	// This allows users to change the license header after project initialization.
+	if s.license != "" || s.licenseFile != "" {
+		if updateErr := s.updateBoilerplate(); updateErr != nil {
+			return fmt.Errorf("failed to update boilerplate: %w", updateErr)
+		}
+	}
 
 	// Track if we're toggling namespaced mode
 	wasNamespaced := s.config.IsNamespaced()
@@ -153,5 +171,37 @@ func (s *editScaffolder) scaffoldClusterRBAC(force bool) error {
 	if err := rbacScaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to scaffold RBAC: %w", err)
 	}
+	return nil
+}
+
+func (s *editScaffolder) updateBoilerplate() error {
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+	)
+
+	bpFile := &hack.Boilerplate{
+		License: s.license,
+		Owner:   s.owner,
+	}
+
+	// If a custom license file is provided, read its content
+	if s.licenseFile != "" {
+		content, err := afero.ReadFile(afero.NewOsFs(), s.licenseFile)
+		if err != nil {
+			return fmt.Errorf("failed to read license file %q: %w", s.licenseFile, err)
+		}
+		bpFile.CustomBoilerplateContent = string(content)
+		bpFile.HasCustomBoilerplate = true
+		log.Info("Updating boilerplate with custom license file", "file", s.licenseFile)
+	} else if s.license != "" {
+		log.Info("Updating boilerplate with license", "license", s.license)
+	}
+
+	bpFile.Path = hack.DefaultBoilerplatePath
+	if err := scaffold.Execute(bpFile); err != nil {
+		return fmt.Errorf("failed to update boilerplate: %w", err)
+	}
+
+	log.Info("License header updated successfully", "path", hack.DefaultBoilerplatePath)
 	return nil
 }
