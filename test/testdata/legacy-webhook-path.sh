@@ -54,9 +54,6 @@ function scaffold_test_project {
   fi
 
   if [[ $project =~ multigroup ]]; then
-    header_text 'Switching to multigroup layout ...'
-    $kb edit --multigroup=true
-
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --legacy=true
@@ -98,5 +95,5 @@ function scaffold_test_project {
 build_kb
 
 scaffold_test_project legacy-project-v4 --plugins="go/v4"
-scaffold_test_project legacy-project-v4-multigroup --plugins="go/v4"
+scaffold_test_project legacy-project-v4-multigroup --plugins="go/v4" --multigroup
 scaffold_test_project legacy-project-v4-with-plugins --plugins="go/v4"
