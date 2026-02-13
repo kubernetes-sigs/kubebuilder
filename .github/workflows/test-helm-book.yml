@@ -61,11 +61,6 @@ jobs:
       - name: Install Helm
         run: make install-helm
 
-      - name: Pre-load kubectl image for Helm tests
-        run: |
-          docker pull bitnami/kubectl:latest
-          kind load docker-image bitnami/kubectl:latest
-
       - name: Lint Helm chart
         run: |
           helm lint ${{ matrix.folder }}/dist/chart

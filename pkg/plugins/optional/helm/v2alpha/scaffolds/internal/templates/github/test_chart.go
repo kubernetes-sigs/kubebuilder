@@ -87,11 +87,6 @@ jobs:
           make docker-build IMG=controller:latest
           kind load docker-image controller:latest
 
-      - name: Pre-load kubectl image for Helm tests
-        run: |
-          docker pull bitnami/kubectl:latest
-          kind load docker-image bitnami/kubectl:latest
-
       - name: Install Helm
         run: make install-helm
 
