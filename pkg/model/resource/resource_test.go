@@ -303,6 +303,12 @@ var _ = Describe("Resource", func() {
 			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
 		})
 
+		It("should preserve ControllerName", func() {
+			res.ControllerName = "kind-backup"
+			other := res.Copy()
+			Expect(other.ControllerName).To(Equal("kind-backup"))
+		})
+
 		It("modifying the copy should not affect the original", func() {
 			other := res.Copy()
 			other.Group = "group2"
@@ -461,6 +467,55 @@ var _ = Describe("Resource", func() {
 			})
 		})
 
+		Context("ControllerName", func() {
+			It("should set the controller name if provided", func() {
+				r = Resource{GVK: gvk}
+				other = Resource{
+					GVK:            gvk,
+					Controller:     true,
+					ControllerName: "kind-backup",
+				}
+				Expect(r.Update(other)).To(Succeed())
+				Expect(r.ControllerName).To(Equal("kind-backup"))
+			})
+
+			It("should keep the controller name if previously set and not provided", func() {
+				r = Resource{
+					GVK:            gvk,
+					Controller:     true,
+					ControllerName: "kind-health",
+				}
+				other = Resource{
+					GVK:        gvk,
+					Controller: true,
+				}
+				Expect(r.Update(other)).To(Succeed())
+				Expect(r.ControllerName).To(Equal("kind-health"))
+			})
+
+			It("should override the controller name if provided", func() {
+				r = Resource{
+					GVK:            gvk,
+					Controller:     true,
+					ControllerName: "kind-health",
+				}
+				other = Resource{
+					GVK:            gvk,
+					Controller:     true,
+					ControllerName: "kind-status",
+				}
+				Expect(r.Update(other)).To(Succeed())
+				Expect(r.ControllerName).To(Equal("kind-status"))
+			})
+
+			It("should not set controller name if not provided and not previously set", func() {
+				r = Resource{GVK: gvk}
+				other = Resource{GVK: gvk}
+				Expect(r.Update(other)).To(Succeed())
+				Expect(r.ControllerName).To(BeEmpty())
+			})
+		})
+
 		Context("Webhooks", func() {
 			It("should work with nil Webhooks", func() {
 				r = Resource{GVK: gvk}
@@ -507,5 +562,52 @@ var _ = Describe("Resource", func() {
 			Entry("pattern `%[plural]`", "%[plural]", func() string { return res.Plural }),
 			Entry("pattern `%[package-name]`", "%[package-name]", func() string { return res.PackageName() }),
 		)
+
+		It("should replace %[controller-name] with default (lowercase kind) when no ControllerName is set", func() {
+			Expect(replacer.Replace("%[controller-name]")).To(Equal(strings.ToLower(res.Kind)))
+		})
+
+		It("should replace %[controller-name] with the custom controller name when set", func() {
+			resWithCN := res.Copy()
+			resWithCN.ControllerName = "kind-backup"
+			r := resWithCN.Replacer()
+			Expect(r.Replace("%[controller-name]")).To(Equal("kind-backup"))
+		})
+	})
+
+	Context("ToPascalCase", func() {
+		DescribeTable("should convert hyphenated names to PascalCase",
+			func(input, expected string) {
+				Expect(ToPascalCase(input)).To(Equal(expected))
+			},
+			Entry("single word", "captain", "Captain"),
+			Entry("two words", "captain-health", "CaptainHealth"),
+			Entry("three words", "memcached-backup-sync", "MemcachedBackupSync"),
+			Entry("already capitalized parts", "Captain-Health", "CaptainHealth"),
+			Entry("empty string", "", ""),
+			Entry("single letter segments", "a-b-c", "ABC"),
+		)
+	})
+
+	Context("GetControllerName", func() {
+		It("should return the lowercase kind when ControllerName is not set", func() {
+			Expect(res.GetControllerName()).To(Equal(strings.ToLower(res.Kind)))
+		})
+
+		It("should return the custom controller name when set", func() {
+			res.ControllerName = "kind-backup"
+			Expect(res.GetControllerName()).To(Equal("kind-backup"))
+		})
+	})
+
+	Context("ControllerClassName", func() {
+		It("should return the kind when ControllerName is not set", func() {
+			Expect(res.ControllerClassName()).To(Equal(res.Kind))
+		})
+
+		It("should return PascalCase of the custom controller name when set", func() {
+			res.ControllerName = "kind-backup"
+			Expect(res.ControllerClassName()).To(Equal("KindBackup"))
+		})
 	})
 })

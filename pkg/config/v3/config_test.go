@@ -276,6 +276,94 @@ var _ = Describe("Cfg", func() {
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
+		Context("ControllerName-aware operations", func() {
+			var resWithCN resource.Resource
+
+			BeforeEach(func() {
+				resWithCN = resource.Resource{
+					GVK: resource.GVK{
+						Group:   "group",
+						Version: "v1",
+						Kind:    "Kind",
+					},
+					Plural:         "kinds",
+					Path:           "api/v1",
+					Controller:     true,
+					ControllerName: "kind-backup",
+				}
+			})
+
+			It("AddResource should allow adding the same GVK with a different controller name", func() {
+				Expect(c.AddResource(res)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(2))
+			})
+
+			It("AddResource should not duplicate same GVK with same controller name", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+			})
+
+			It("AddResource should allow two different controller names for same GVK", func() {
+				resWithCN2 := resWithCN.Copy()
+				resWithCN2.ControllerName = "kind-status"
+
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+
+				Expect(c.AddResource(resWithCN2)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(2))
+
+				Expect(c.Resources[0].ControllerName).To(Equal("kind-backup"))
+				Expect(c.Resources[1].ControllerName).To(Equal("kind-status"))
+			})
+
+			It("UpdateResource should update matching GVK+ControllerName", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+				Expect(c.Resources[0].API).To(BeNil())
+
+				// Update with API info for the same GVK+ControllerName
+				updated := resWithCN.Copy()
+				updated.API = &resource.API{CRDVersion: "v1", Namespaced: true}
+
+				Expect(c.UpdateResource(updated)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+				Expect(c.Resources[0].API).NotTo(BeNil())
+				Expect(c.Resources[0].API.CRDVersion).To(Equal("v1"))
+			})
+
+			It("UpdateResource should not match different controller name for same GVK", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+
+				// Add a resource with same GVK but different controller name
+				resWithCN2 := resWithCN.Copy()
+				resWithCN2.ControllerName = "kind-status"
+
+				Expect(c.UpdateResource(resWithCN2)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(2))
+			})
+
+			It("HasResource should still find resource by GVK regardless of controller name", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.HasResource(resWithCN.GVK)).To(BeTrue())
+			})
+
+			It("GetResource should return the first matching GVK regardless of controller name", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				r, err := c.GetResource(resWithCN.GVK)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(r.Kind).To(Equal("Kind"))
+				Expect(r.ControllerName).To(Equal("kind-backup"))
+			})
+		})
+
 		It("HasGroup should return false with no tracked resources", func() {
 			Expect(c.HasGroup(res.Group)).To(BeFalse())
 		})
@@ -608,6 +696,102 @@ version: "3"
 			Entry("full", func() string { return s2 }, func() Cfg { return c2 }),
 			Entry("string layout", func() string { return s1bis }, func() Cfg { return c1 }),
 		)
+
+		Context("ControllerName serialization", func() {
+			var (
+				cfgWithCN Cfg
+				sCN       string
+			)
+
+			BeforeEach(func() {
+				cfgWithCN = Cfg{
+					Version:     Version,
+					Domain:      domain,
+					Repository:  repo,
+					Name:        name,
+					PluginChain: pluginChain,
+					Resources: []resource.Resource{
+						{
+							GVK: resource.GVK{
+								Group:   "cache",
+								Version: "v1alpha1",
+								Kind:    "Memcached",
+							},
+							Controller:     true,
+							ControllerName: "memcached-health",
+							API:            &resource.API{CRDVersion: "v1", Namespaced: true},
+						},
+						{
+							GVK: resource.GVK{
+								Group:   "cache",
+								Version: "v1alpha1",
+								Kind:    "Memcached",
+							},
+							Controller:     true,
+							ControllerName: "memcached-status",
+						},
+					},
+				}
+				sCN = `domain: my.domain
+layout:
+- go.kubebuilder.io/v2
+projectName: ProjectName
+repo: myrepo
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  controllerName: memcached-health
+  group: cache
+  kind: Memcached
+  version: v1alpha1
+- controller: true
+  controllerName: memcached-status
+  group: cache
+  kind: Memcached
+  version: v1alpha1
+version: "3"
+`
+			})
+
+			It("MarshalYAML should serialize controllerName field", func() {
+				b, err := cfgWithCN.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal(sCN))
+			})
+
+			It("UnmarshalYAML should deserialize controllerName field", func() {
+				var unmarshalled Cfg
+				Expect(unmarshalled.UnmarshalYAML([]byte(sCN))).To(Succeed())
+				Expect(unmarshalled.Resources).To(HaveLen(2))
+				Expect(unmarshalled.Resources[0].ControllerName).To(Equal("memcached-health"))
+				Expect(unmarshalled.Resources[0].Controller).To(BeTrue())
+				Expect(unmarshalled.Resources[0].Kind).To(Equal("Memcached"))
+				Expect(unmarshalled.Resources[1].ControllerName).To(Equal("memcached-status"))
+				Expect(unmarshalled.Resources[1].Controller).To(BeTrue())
+				Expect(unmarshalled.Resources[1].Kind).To(Equal("Memcached"))
+			})
+
+			It("UnmarshalYAML should handle resources without controllerName", func() {
+				yaml := `domain: my.domain
+layout:
+- go.kubebuilder.io/v2
+projectName: ProjectName
+repo: myrepo
+resources:
+- controller: true
+  group: cache
+  kind: Memcached
+  version: v1alpha1
+version: "3"
+`
+				var unmarshalled Cfg
+				Expect(unmarshalled.UnmarshalYAML([]byte(yaml))).To(Succeed())
+				Expect(unmarshalled.Resources).To(HaveLen(1))
+				Expect(unmarshalled.Resources[0].ControllerName).To(BeEmpty())
+			})
+		})
 
 		DescribeTable("UnmarshalYAML should fail",
 			func(content string) {
