@@ -206,6 +206,20 @@ webhook:
 ##
 prometheus:
   enable: false
+
+`)
+
+	// Test configuration
+	buf.WriteString(`## Helm test configuration.
+## Configure the image used for chart tests (helm test).
+##
+test:
+  image:
+    repository: busybox
+    tag: "1.37"
+    pullPolicy: IfNotPresent
+  # Kubectl version to download from dl.k8s.io if not available in image
+  kubectlVersion: v1.35.0
 `)
 
 	buf.WriteString("\n")

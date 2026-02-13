@@ -72,19 +72,13 @@ function test_cluster {
 
   # Pull images for the correct platform
   docker pull --platform ${kind_platform} memcached:1.6.26-alpine3.19
-  docker pull --platform ${kind_platform} busybox:1.36.1
-  docker pull --platform ${kind_platform} bitnami/kubectl:latest
+  # NOTE: busybox version must match the image in pkg/plugins/optional/helm/v2alpha/scaffolds/internal/templates/chart-templates/test_manager_ready.go
+  docker pull --platform ${kind_platform} busybox:1.37
 
   # Load images directly with ctr to avoid kind's --all-platforms issue
   # kind load docker-image uses --all-platforms internally which breaks with multi-platform manifests
   docker save memcached:1.6.26-alpine3.19 | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin
-  
-  # Busybox has Docker save issues on some platforms, pull directly as fallback
-  if ! docker save busybox:1.36.1 2>/dev/null | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin 2>/dev/null; then
-    docker exec $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images pull --platform ${kind_platform} docker.io/library/busybox:1.36.1 >/dev/null 2>&1
-  fi
+  docker save busybox:1.37 | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin
 
   go test $(dirname "$0")/all $flags -timeout 40m
-
-  docker save bitnami/kubectl:latest | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin
 }

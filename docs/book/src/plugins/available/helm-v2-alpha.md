@@ -319,6 +319,17 @@ webhook:
 ##
 prometheus:
   enable: false
+
+## Helm test configuration.
+## Configure the image used for chart tests (helm test).
+##
+test:
+  image:
+    repository: busybox
+    tag: "1.37"
+    pullPolicy: IfNotPresent
+  # Kubectl version to download from dl.k8s.io during tests
+  kubectlVersion: v1.35.0
 ```
 
 ### Installation
@@ -345,17 +356,37 @@ The Makefile targets use sensible defaults extracted from your project configura
 
 ### Testing
 
-The generated chart includes Helm tests to verify deployment health:
+The generated chart includes Helm tests to verify deployment health. Tests are **optional** and run only when explicitly invoked:
 
 ```shell
 # Run tests after installation
 helm test my-release --namespace my-project-system
 ```
 
-Tests verify:
-- Manager deployment is available
-- Manager pod is running
-- Cert-manager certificates are ready (if cert-manager is enabled)
+**What the tests do:**
+- Download kubectl from `dl.k8s.io` (official Kubernetes release CDN) if not already in image
+- Verify manager deployment is available
+- Verify manager pod is running
+
+**Test configuration:**
+
+The test image can be customized via `values.yaml`:
+
+```yaml
+test:
+  image:
+    repository: busybox  # Base image for test pod
+    tag: "1.37"          # Use version-pinned tag
+    pullPolicy: IfNotPresent
+  kubectlVersion: v1.35.0  # kubectl version to download
+```
+
+This allows users to:
+- Use their own registry (e.g., `test.image.repository: my-registry.com/busybox`)
+- Match kubectl version to their cluster
+- Control image pull behavior for air-gapped environments
+
+**Note:** Tests only run when you execute `helm test`. They do NOT run automatically during `helm install` or `helm upgrade`.
 
 ## Flags
 
