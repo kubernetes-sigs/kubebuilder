@@ -18,6 +18,7 @@ package golang
 
 import (
 	"path"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -68,9 +69,9 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
-	// ControllerName is an optional custom name for the controller.
-	// When set, allows scaffolding multiple controllers for the same GVK.
-	ControllerName string
+	// Controller holds optional metadata for the controller being scaffolded.
+	// When Controller.Name is set, it allows scaffolding multiple controllers for the same GVK.
+	Controller resource.Controller
 
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
@@ -105,9 +106,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoController {
-		res.Controller = true
-		if opts.ControllerName != "" {
-			res.ControllerName = opts.ControllerName
+		controllerName := opts.Controller.Name
+		if controllerName == "" {
+			controllerName = strings.ToLower(res.Kind)
+		}
+		if !res.HasControllerName(controllerName) {
+			res.Controllers = append(res.Controllers, resource.Controller{Name: controllerName})
 		}
 	}
 
@@ -154,7 +158,14 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		var alreadyHasAPI bool
 		loadedRes, err := c.GetResource(res.GVK)
 		alreadyHasAPI = err == nil && loadedRes.HasAPI()
-		if !alreadyHasAPI {
+		if alreadyHasAPI {
+			if res.Path == "" {
+				res.Path = loadedRes.Path
+			}
+			if res.Domain == "" {
+				res.Domain = loadedRes.Domain
+			}
+		} else {
 			if res.External {
 				res.Path = opts.ExternalAPIPath
 				res.Domain = opts.ExternalAPIDomain

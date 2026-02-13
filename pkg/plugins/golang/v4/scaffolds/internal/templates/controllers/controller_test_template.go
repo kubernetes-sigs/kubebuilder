@@ -99,7 +99,9 @@ import (
 	{{- end }}
 )
 
-var _ = Describe("{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }} Controller", func() {
+{{ $rcn := .Resource.Kind -}}
+{{ if .ControllerName }}{{ $rcn = (toPascalCase .ControllerName) }}{{ end -}}
+var _ = Describe("{{ $rcn }} Controller", func() {
 	Context("When reconciling a resource", func() {
 		{{ if .DoAPI -}}
 		const resourceName = "test-resource"
@@ -140,7 +142,7 @@ var _ = Describe("{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ e
 		It("should successfully reconcile the resource", func() {
 			{{ if .DoAPI -}}
 			By("Reconciling the created resource")
-			controllerReconciler := &{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler{
+			controllerReconciler := &{{ $rcn }}Reconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

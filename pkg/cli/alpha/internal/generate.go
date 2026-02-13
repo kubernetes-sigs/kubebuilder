@@ -486,21 +486,25 @@ func getDeployImageOptions(resourceData deployimagev1alpha1.ResourceData) []stri
 
 // Creates an API resource.
 func createAPI(res resource.Resource) error {
-	args := append([]string{"create", "api"}, getGVKFlags(res)...)
-	args = append(args, getAPIResourceFlags(res)...)
+	if res.API != nil && !res.API.IsEmpty() {
+		args := append([]string{"create", "api"}, getGVKFlags(res)...)
+		args = append(args, getAPIResourceFlags(res)...)
+		args = append(args, "--controller=false")
+		args = append(args, getExternalAPIFlags(res)...)
 
-	// Add the external API flags if the resource is external
-	if res.IsExternal() {
-		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
-		// Add module if specified
-		if res.Module != "" {
-			args = append(args, "--external-api-module", res.Module)
+		if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+			return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
 		}
 	}
 
-	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
-		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+	for _, controller := range res.NormalizedControllers() {
+		args := append([]string{"create", "api"}, getGVKFlags(res)...)
+		args = append(args, getControllerResourceFlags(controller.Name)...)
+		args = append(args, getExternalAPIFlags(res)...)
+
+		if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+			return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+		}
 	}
 
 	return nil
@@ -510,9 +514,7 @@ func createAPI(res resource.Resource) error {
 func getAPIResourceFlags(res resource.Resource) []string {
 	var args []string
 
-	if res.API == nil || res.API.IsEmpty() {
-		args = append(args, "--resource=false")
-	} else {
+	if res.API != nil && !res.API.IsEmpty() {
 		args = append(args, "--resource")
 		if res.API.Namespaced {
 			args = append(args, "--namespaced")
@@ -520,14 +522,28 @@ func getAPIResourceFlags(res resource.Resource) []string {
 			args = append(args, "--namespaced=false")
 		}
 	}
-	if res.Controller {
-		args = append(args, "--controller")
-	} else {
-		args = append(args, "--controller=false")
+
+	return args
+}
+
+func getControllerResourceFlags(name string) []string {
+	return []string{
+		"--resource=false",
+		"--controller",
+		"--controller-name", name,
 	}
-	if res.ControllerName != "" {
-		args = append(args, "--controller-name", res.ControllerName)
+}
+
+func getExternalAPIFlags(res resource.Resource) []string {
+	var args []string
+	if res.IsExternal() {
+		args = append(args, "--external-api-path", res.Path)
+		args = append(args, "--external-api-domain", res.Domain)
+		if res.Module != "" {
+			args = append(args, "--external-api-module", res.Module)
+		}
 	}
+
 	return args
 }
 

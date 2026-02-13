@@ -50,7 +50,7 @@ When `--controller-name` is provided:
 - The controller file is named after the controller name (e.g. `internal/controller/memcached_backup_controller.go`)
 - The reconciler struct uses the PascalCase form (e.g. `MemcachedBackupReconciler`)
 - The controller is registered with `Named("memcached-backup")` for unique metrics and logging
-- The name is tracked in the [PROJECT file][project-doc] via the `controllerName` field
+- The name is tracked in the [PROJECT file][project-doc] via `resources.controllers[].name`
 
 The `--controller-name` value must be a DNS-1035 label (lowercase alphanumeric and hyphens, starting with a letter).
 

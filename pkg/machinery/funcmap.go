@@ -23,6 +23,8 @@ import (
 	"text/template"
 
 	"golang.org/x/text/cases"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // DefaultFuncMap returns the default template.FuncMap for rendering the template.
@@ -52,11 +54,5 @@ func hashFNV(s string) string {
 
 // toPascalCase converts a hyphenated name like "captain-health" to "CaptainHealth".
 func toPascalCase(s string) string {
-	parts := strings.Split(s, "-")
-	for i, part := range parts {
-		if len(part) > 0 {
-			parts[i] = strings.ToUpper(part[:1]) + part[1:]
-		}
-	}
-	return strings.Join(parts, "")
+	return resource.ToPascalCase(s)
 }

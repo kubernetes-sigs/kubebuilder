@@ -91,6 +91,10 @@ func (s *apiScaffolder) Scaffold() error {
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
+	controllerName := ""
+	if doController {
+		controllerName = s.resource.GetControllerName()
+	}
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
@@ -111,12 +115,12 @@ func (s *apiScaffolder) Scaffold() error {
 			&controllers.Controller{
 				ControllerRuntimeVersion: ControllerRuntimeVersion,
 				Force:                    s.force,
-				ControllerName:           s.resource.ControllerName,
+				ControllerName:           controllerName,
 			},
 			&controllers.ControllerTest{
 				Force:          s.force,
 				DoAPI:          doAPI,
-				ControllerName: s.resource.ControllerName,
+				ControllerName: controllerName,
 			},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %w", err)
@@ -127,7 +131,7 @@ func (s *apiScaffolder) Scaffold() error {
 		&cmd.MainUpdater{
 			WireResource:   doAPI,
 			WireController: doController,
-			ControllerName: s.resource.ControllerName,
+			ControllerName: controllerName,
 		},
 	); err != nil {
 		return fmt.Errorf("error updating cmd/main.go: %w", err)

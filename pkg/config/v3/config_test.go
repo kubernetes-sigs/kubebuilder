@@ -154,7 +154,7 @@ var _ = Describe("Cfg", func() {
 					CRDVersion: "v1",
 					Namespaced: true,
 				},
-				Controller: true,
+				Controllers: []resource.Controller{{Name: "kind"}},
 				Webhooks: &resource.Webhooks{
 					WebhookVersion: "v1",
 					Defaulting:     true,
@@ -180,7 +180,7 @@ var _ = Describe("Cfg", func() {
 					Expect(result.API.CRDVersion).To(Equal(expected.API.CRDVersion))
 					Expect(result.API.Namespaced).To(Equal(expected.API.Namespaced))
 				}
-				Expect(result.Controller).To(Equal(expected.Controller))
+				Expect(result.Controllers).To(Equal(expected.Controllers))
 				if expected.Webhooks == nil {
 					Expect(result.Webhooks).To(BeNil())
 				} else {
@@ -276,7 +276,7 @@ var _ = Describe("Cfg", func() {
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
-		Context("ControllerName-aware operations", func() {
+		Context("Controller list operations", func() {
 			var resWithCN resource.Resource
 
 			BeforeEach(func() {
@@ -286,49 +286,55 @@ var _ = Describe("Cfg", func() {
 						Version: "v1",
 						Kind:    "Kind",
 					},
-					Plural:         "kinds",
-					Path:           "api/v1",
-					Controller:     true,
-					ControllerName: "kind-backup",
+					Plural:      "kinds",
+					Path:        "api/v1",
+					Controllers: []resource.Controller{{Name: "kind-backup"}},
 				}
 			})
 
-			It("AddResource should allow adding the same GVK with a different controller name", func() {
+			It("AddResource should merge controllers for same GVK", func() {
 				Expect(c.AddResource(res)).To(Succeed())
 				Expect(c.Resources).To(HaveLen(1))
 
 				Expect(c.AddResource(resWithCN)).To(Succeed())
-				Expect(c.Resources).To(HaveLen(2))
+				Expect(c.Resources).To(HaveLen(1))
+				Expect(c.Resources[0].Controllers).To(Equal([]resource.Controller{
+					{Name: "kind"},
+					{Name: "kind-backup"},
+				}))
 			})
 
-			It("AddResource should not duplicate same GVK with same controller name", func() {
+			It("AddResource should not duplicate same controller names", func() {
 				Expect(c.AddResource(resWithCN)).To(Succeed())
 				Expect(c.Resources).To(HaveLen(1))
 
 				Expect(c.AddResource(resWithCN)).To(Succeed())
 				Expect(c.Resources).To(HaveLen(1))
+				Expect(c.Resources[0].Controllers).To(Equal([]resource.Controller{{Name: "kind-backup"}}))
 			})
 
-			It("AddResource should allow two different controller names for same GVK", func() {
+			It("UpdateResource should merge different controller names for same GVK", func() {
+				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.Resources).To(HaveLen(1))
+
 				resWithCN2 := resWithCN.Copy()
-				resWithCN2.ControllerName = "kind-status"
+				resWithCN2.Controllers = []resource.Controller{{Name: "kind-status"}}
 
-				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.UpdateResource(resWithCN2)).To(Succeed())
 				Expect(c.Resources).To(HaveLen(1))
 
-				Expect(c.AddResource(resWithCN2)).To(Succeed())
-				Expect(c.Resources).To(HaveLen(2))
-
-				Expect(c.Resources[0].ControllerName).To(Equal("kind-backup"))
-				Expect(c.Resources[1].ControllerName).To(Equal("kind-status"))
+				Expect(c.Resources[0].Controllers).To(Equal([]resource.Controller{
+					{Name: "kind-backup"},
+					{Name: "kind-status"},
+				}))
 			})
 
-			It("UpdateResource should update matching GVK+ControllerName", func() {
+			It("UpdateResource should update matching GVK and preserve controllers", func() {
 				Expect(c.AddResource(resWithCN)).To(Succeed())
 				Expect(c.Resources).To(HaveLen(1))
 				Expect(c.Resources[0].API).To(BeNil())
 
-				// Update with API info for the same GVK+ControllerName
+				// Update with API info for the same GVK
 				updated := resWithCN.Copy()
 				updated.API = &resource.API{CRDVersion: "v1", Namespaced: true}
 
@@ -336,31 +342,48 @@ var _ = Describe("Cfg", func() {
 				Expect(c.Resources).To(HaveLen(1))
 				Expect(c.Resources[0].API).NotTo(BeNil())
 				Expect(c.Resources[0].API.CRDVersion).To(Equal("v1"))
+				Expect(c.Resources[0].Controllers).To(Equal([]resource.Controller{{Name: "kind-backup"}}))
 			})
 
-			It("UpdateResource should not match different controller name for same GVK", func() {
-				Expect(c.AddResource(resWithCN)).To(Succeed())
-				Expect(c.Resources).To(HaveLen(1))
-
-				// Add a resource with same GVK but different controller name
-				resWithCN2 := resWithCN.Copy()
-				resWithCN2.ControllerName = "kind-status"
-
-				Expect(c.UpdateResource(resWithCN2)).To(Succeed())
-				Expect(c.Resources).To(HaveLen(2))
-			})
-
-			It("HasResource should still find resource by GVK regardless of controller name", func() {
+			It("HasResource should find merged resource by GVK", func() {
 				Expect(c.AddResource(resWithCN)).To(Succeed())
 				Expect(c.HasResource(resWithCN.GVK)).To(BeTrue())
 			})
 
-			It("GetResource should return the first matching GVK regardless of controller name", func() {
+			It("GetResource should return merged controllers for a GVK", func() {
+				resWithCN2 := resWithCN.Copy()
+				resWithCN2.Controllers = []resource.Controller{{Name: "kind-status"}}
+
 				Expect(c.AddResource(resWithCN)).To(Succeed())
+				Expect(c.UpdateResource(resWithCN2)).To(Succeed())
+
 				r, err := c.GetResource(resWithCN.GVK)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(r.Kind).To(Equal("Kind"))
-				Expect(r.ControllerName).To(Equal("kind-backup"))
+				Expect(r.Controllers).To(Equal([]resource.Controller{
+					{Name: "kind-backup"},
+					{Name: "kind-status"},
+				}))
+			})
+
+			It("UnmarshalYAML should normalize legacy controller fields", func() {
+				yaml := `domain: my.domain
+layout:
+- go.kubebuilder.io/v2
+projectName: ProjectName
+repo: myrepo
+resources:
+- controller: true
+  controllerName: kind-backup
+  group: group
+  kind: Kind
+  version: v1
+version: "3"
+`
+				var unmarshalled Cfg
+				Expect(unmarshalled.UnmarshalYAML([]byte(yaml))).To(Succeed())
+				Expect(unmarshalled.Resources).To(HaveLen(1))
+				Expect(unmarshalled.Resources[0].Controllers).To(Equal([]resource.Controller{{Name: "kind-backup"}}))
 			})
 		})
 
@@ -562,9 +585,9 @@ var _ = Describe("Cfg", func() {
 							Version: "v1",
 							Kind:    "Kind2",
 						},
-						API:        &resource.API{CRDVersion: "v1"},
-						Controller: true,
-						Webhooks:   &resource.Webhooks{WebhookVersion: "v1"},
+						API:         &resource.API{CRDVersion: "v1"},
+						Controllers: []resource.Controller{{Name: "kind2"}},
+						Webhooks:    &resource.Webhooks{WebhookVersion: "v1"},
 					},
 					{
 						GVK: resource.GVK{
@@ -586,7 +609,7 @@ var _ = Describe("Cfg", func() {
 							CRDVersion: "v1",
 							Namespaced: true,
 						},
-						Controller: true,
+						Controllers: []resource.Controller{{Name: "kind"}},
 						Webhooks: &resource.Webhooks{
 							WebhookVersion: "v1",
 							Defaulting:     true,
@@ -641,7 +664,8 @@ resources:
   version: v1
 - api:
     crdVersion: v1
-  controller: true
+  controllers:
+  - name: kind2
   group: group
   kind: Kind2
   version: v1
@@ -654,7 +678,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: kind
   group: group2
   kind: Kind
   version: v1
@@ -697,14 +722,14 @@ version: "3"
 			Entry("string layout", func() string { return s1bis }, func() Cfg { return c1 }),
 		)
 
-		Context("ControllerName serialization", func() {
+		Context("Controllers serialization", func() {
 			var (
-				cfgWithCN Cfg
-				sCN       string
+				cfgWithControllers Cfg
+				controllersYAML    string
 			)
 
 			BeforeEach(func() {
-				cfgWithCN = Cfg{
+				cfgWithControllers = Cfg{
 					Version:     Version,
 					Domain:      domain,
 					Repository:  repo,
@@ -717,22 +742,15 @@ version: "3"
 								Version: "v1alpha1",
 								Kind:    "Memcached",
 							},
-							Controller:     true,
-							ControllerName: "memcached-health",
-							API:            &resource.API{CRDVersion: "v1", Namespaced: true},
-						},
-						{
-							GVK: resource.GVK{
-								Group:   "cache",
-								Version: "v1alpha1",
-								Kind:    "Memcached",
+							Controllers: []resource.Controller{
+								{Name: "memcached-health"},
+								{Name: "memcached-status"},
 							},
-							Controller:     true,
-							ControllerName: "memcached-status",
+							API: &resource.API{CRDVersion: "v1", Namespaced: true},
 						},
 					},
 				}
-				sCN = `domain: my.domain
+				controllersYAML = `domain: my.domain
 layout:
 - go.kubebuilder.io/v2
 projectName: ProjectName
@@ -741,13 +759,9 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
-  controllerName: memcached-health
-  group: cache
-  kind: Memcached
-  version: v1alpha1
-- controller: true
-  controllerName: memcached-status
+  controllers:
+  - name: memcached-health
+  - name: memcached-status
   group: cache
   kind: Memcached
   version: v1alpha1
@@ -755,25 +769,24 @@ version: "3"
 `
 			})
 
-			It("MarshalYAML should serialize controllerName field", func() {
-				b, err := cfgWithCN.MarshalYAML()
+			It("MarshalYAML should serialize controllers field", func() {
+				b, err := cfgWithControllers.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(b)).To(Equal(sCN))
+				Expect(string(b)).To(Equal(controllersYAML))
 			})
 
-			It("UnmarshalYAML should deserialize controllerName field", func() {
+			It("UnmarshalYAML should deserialize controllers field", func() {
 				var unmarshalled Cfg
-				Expect(unmarshalled.UnmarshalYAML([]byte(sCN))).To(Succeed())
-				Expect(unmarshalled.Resources).To(HaveLen(2))
-				Expect(unmarshalled.Resources[0].ControllerName).To(Equal("memcached-health"))
-				Expect(unmarshalled.Resources[0].Controller).To(BeTrue())
+				Expect(unmarshalled.UnmarshalYAML([]byte(controllersYAML))).To(Succeed())
+				Expect(unmarshalled.Resources).To(HaveLen(1))
 				Expect(unmarshalled.Resources[0].Kind).To(Equal("Memcached"))
-				Expect(unmarshalled.Resources[1].ControllerName).To(Equal("memcached-status"))
-				Expect(unmarshalled.Resources[1].Controller).To(BeTrue())
-				Expect(unmarshalled.Resources[1].Kind).To(Equal("Memcached"))
+				Expect(unmarshalled.Resources[0].Controllers).To(Equal([]resource.Controller{
+					{Name: "memcached-health"},
+					{Name: "memcached-status"},
+				}))
 			})
 
-			It("UnmarshalYAML should handle resources without controllerName", func() {
+			It("UnmarshalYAML should normalize legacy controller fields", func() {
 				yaml := `domain: my.domain
 layout:
 - go.kubebuilder.io/v2
@@ -781,6 +794,7 @@ projectName: ProjectName
 repo: myrepo
 resources:
 - controller: true
+  controllerName: memcached-health
   group: cache
   kind: Memcached
   version: v1alpha1
@@ -789,7 +803,9 @@ version: "3"
 				var unmarshalled Cfg
 				Expect(unmarshalled.UnmarshalYAML([]byte(yaml))).To(Succeed())
 				Expect(unmarshalled.Resources).To(HaveLen(1))
-				Expect(unmarshalled.Resources[0].ControllerName).To(BeEmpty())
+				Expect(unmarshalled.Resources[0].Controllers).To(Equal([]resource.Controller{
+					{Name: "memcached-health"},
+				}))
 			})
 		})
 

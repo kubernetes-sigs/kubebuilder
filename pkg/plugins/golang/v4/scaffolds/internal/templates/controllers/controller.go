@@ -93,8 +93,10 @@ import (
 	{{- end }}
 )
 
-// {{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler reconciles a {{ .Resource.Kind }} object
-type {{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler struct {
+{{ $rcn := .Resource.Kind -}}
+{{ if .ControllerName }}{{ $rcn = (toPascalCase .ControllerName) }}{{ end -}}
+// {{ $rcn }}Reconciler reconciles a {{ .Resource.Kind }} object
+type {{ $rcn }}Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -118,7 +120,7 @@ type {{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Res
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@{{ .ControllerRuntimeVersion }}/pkg/reconcile
-func (r *{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *{{ $rcn }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = logf.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -127,7 +129,7 @@ func (r *{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *{{ $rcn }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		{{ if not (isEmptyStr .Resource.Path) -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).

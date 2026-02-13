@@ -41,7 +41,8 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: memcached
     domain: testproject.org
     group: example.com
     kind: Memcached
@@ -53,13 +54,15 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: busybox
     domain: testproject.org
     group: example.com
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
-  - controller: true
+  - controllers:
+      - name: certificate
     domain: io
     external: true
     group: cert-manager
@@ -74,22 +77,16 @@ version: "3"
 
 Kubebuilder supports scaffolding multiple controllers for the same API type (same Group/Version/Kind). This is useful for splitting responsibilities across controllers, running different reconciliation modes, or migration scenarios.
 
-When using the `--controller-name` flag with `create api`, the controller name is tracked in the PROJECT file via the `controllerName` field. Each entry with a different `controllerName` is treated as a distinct resource entry:
+When using the `--controller-name` flag with `create api`, controller names are tracked in the PROJECT file via the `controllers` list under the resource:
 
 ```yaml
 resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
-    controllerName: memcached-health
-    domain: example.com
-    group: cache
-    kind: Memcached
-    path: example.com/memcached-operator/api/v1alpha1
-    version: v1alpha1
-  - controller: true
-    controllerName: memcached-status
+    controllers:
+      - name: memcached-health
+      - name: memcached-status
     domain: example.com
     group: cache
     kind: Memcached
@@ -97,7 +94,7 @@ resources:
     version: v1alpha1
 ```
 
-In the example above, two controllers exist for the same `Memcached` Kind: `memcached-health` and `memcached-status`. The first entry also owns the API definition, while the second is controller-only (`--resource=false`).
+In the example above, a single `Memcached` resource tracks two controllers: `memcached-health` and `memcached-status`.
 
 ## Why do we need to store the plugins and data used?
 
@@ -147,7 +144,8 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: memcached
     domain: testproject.org
     group: example.com
     kind: Memcached
@@ -159,13 +157,15 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: busybox
     domain: testproject.org
     group: example.com
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
-  - controller: true
+  - controllers:
+      - name: certificate
     domain: io
     external: true
     group: cert-manager
@@ -192,8 +192,8 @@ Now let's check its layout fields definition:
 | `resources.api`                     | The API scaffolded in the project via the sub-command `create api`.                                                                                                                                                                                                             |
 | `resources.api.crdVersion`          | The Kubernetes API version (`apiVersion`) used to do the scaffolding for the CRD resource.                                                                                                                                                                                      |
 | `resources.api.namespaced`          | The API RBAC permissions which can be namespaced or cluster scoped.                                                                                                                                                                                                             |
-| `resources.controller`              | Indicates whether a controller was scaffolded for the API.                                                                                                                                                                                                                      |
-| `resources.controllerName`          | **(Optional)** A custom name for the controller, provided via the `--controller-name` flag. When set, it allows multiple controllers for the same GVK. The name is used for the controller file name, the reconciler struct name, and the controller's `Named()` registration. Must be a DNS-1035 label (lowercase alphanumeric and hyphens). |
+| `resources.controller`              | **(Deprecated, compatibility only)** Legacy boolean kept for backward compatibility with older PROJECT files. New projects should rely on `resources.controllers`.                                                                                                             |
+| `resources.controllers`             | **(Optional)** A list of controllers scaffolded for the resource. Each entry contains a `name` provided via `--controller-name` (or the default lowercase kind). Names are used for controller file names, reconciler struct naming, and `Named()` registration. Must be DNS-1035 labels (lowercase alphanumeric and hyphens). |
 | `resources.domain`                  | The domain of the resource which was provided by the `--domain` flag when the project was initialized or via the flag `--external-api-domain` when it was used to scaffold controllers for an [External Type][external-type].                                                   |
 | `resources.group`                   | The GKV group of the resource which is provided by the `--group` flag when the sub-command `create api` is used.                                                                                                                                                                |
 | `resources.version`                 | The GKV version of the resource which is provided by the `--version` flag when the sub-command `create api` is used.                                                                                                                                                            |

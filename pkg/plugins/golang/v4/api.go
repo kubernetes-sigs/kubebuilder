@@ -114,7 +114,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
 
-	fs.StringVar(&p.options.ControllerName, "controller-name", "",
+	fs.StringVar(&p.options.Controller.Name, "controller-name", "",
 		"a unique name for the controller (e.g. memcached-backup). When set, allows scaffolding "+
 			"multiple controllers for the same GVK. Must be a DNS-1035 label.")
 
@@ -148,6 +148,17 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
+	p.options.UpdateResource(p.resource, p.config)
+
+	return nil
+}
+
+func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
+	// check if main.go is present in the root directory
+	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+	}
+
 	// Ensure that external API options cannot be used when creating an API in the project.
 	if p.options.DoAPI {
 		if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 ||
@@ -163,52 +174,50 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
 
-	// Validate controller name if provided
-	if p.options.ControllerName != "" {
+	// Validate controller name if provided.
+	if p.options.Controller.Name != "" {
 		if !p.options.DoController {
 			return errors.New("cannot use '--controller-name' with '--controller=false'")
 		}
-		if errs := validation.IsDNS1035Label(p.options.ControllerName); len(errs) != 0 {
+		if errs := validation.IsDNS1035Label(p.options.Controller.Name); len(errs) != 0 {
 			return fmt.Errorf("invalid controller name %q: must be a DNS-1035 label "+
-				"(lowercase, alphanumeric, hyphens, starting with a letter)", p.options.ControllerName)
+				"(lowercase, alphanumeric, hyphens, starting with a letter)", p.options.Controller.Name)
 		}
 	}
-
-	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
 	}
 
-	// When adding a named controller for an existing GVK, skip API re-scaffolding
-	if p.options.ControllerName != "" && p.options.DoAPI {
-		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() {
-			p.options.DoAPI = false
-			p.resource.API = nil
+	existingResource, existingResourceErr := p.config.GetResource(p.resource.GVK)
+
+	// When adding a named controller for an existing GVK, skip API re-scaffolding.
+	if p.options.Controller.Name != "" && p.options.DoAPI &&
+		existingResourceErr == nil && existingResource.HasAPI() {
+		p.options.DoAPI = false
+		p.resource.API = nil
+	}
+
+	// Check if the controller name already exists for this GVK.
+	if p.options.DoController {
+		controllerName := p.resource.GetControllerName()
+		if existingResourceErr == nil && existingResource.HasControllerName(controllerName) && !p.force {
+			return fmt.Errorf("controller %q already exists for this resource", controllerName)
 		}
 	}
 
-	// In case we want to scaffold a resource API we need to do some checks
+	// In case we want to scaffold a resource API we need to do some checks.
 	if p.options.DoAPI {
-		// Check that resource doesn't have the API scaffolded or flag force was set
-		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() && !p.force {
+		// Check that resource doesn't have the API scaffolded or flag force was set.
+		if existingResourceErr == nil && existingResource.HasAPI() && !p.force {
 			return errors.New("API resource already exists")
 		}
 
-		// Check that the provided group can be added to the project
+		// Check that the provided group can be added to the project.
 		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, " +
 				"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html")
 		}
-	}
-
-	return nil
-}
-
-func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
-	// check if main.go is present in the root directory
-	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
 	}
 
 	return nil

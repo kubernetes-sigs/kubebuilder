@@ -17,12 +17,16 @@ limitations under the License.
 package v4
 
 import (
+	"os"
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
@@ -32,6 +36,8 @@ var _ = Describe("createAPISubcommand", func() {
 		subCmd *createAPISubcommand
 		cfg    config.Config
 		res    *resource.Resource
+		tmpDir string
+		cwd    string
 	)
 
 	BeforeEach(func() {
@@ -55,15 +61,34 @@ var _ = Describe("createAPISubcommand", func() {
 			Webhooks: &resource.Webhooks{},
 		}
 
+		var err error
+		cwd, err = os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+
+		tmpDir, err = os.MkdirTemp("", "kb-create-api-test-")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.MkdirAll(filepath.Join(tmpDir, "cmd"), 0o755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(tmpDir, "cmd", "main.go"), []byte("package main"), 0o644)).To(Succeed())
+		Expect(os.Chdir(tmpDir)).To(Succeed())
+
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 	})
+
+	AfterEach(func() {
+		Expect(os.Chdir(cwd)).To(Succeed())
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+	})
+
+	preScaffold := func() error {
+		return subCmd.PreScaffold(machinery.Filesystem{})
+	}
 
 	It("should reject external API options when creating API in project", func() {
 		subCmd.options.DoAPI = true
 		subCmd.options.ExternalAPIPath = "github.com/external/api"
 
-		err := subCmd.InjectResource(res)
-
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		err := preScaffold()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("cannot use '--external-api-path'"))
 	})
@@ -73,8 +98,8 @@ var _ = Describe("createAPISubcommand", func() {
 		subCmd.options.ExternalAPIModule = "github.com/external/api@v1.0.0"
 		subCmd.options.ExternalAPIPath = ""
 
-		err := subCmd.InjectResource(res)
-
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		err := preScaffold()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("requires '--external-api-path'"))
 	})
@@ -88,8 +113,8 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(cfg.AddResource(resWithAPI)).To(Succeed())
 
 		subCmd.force = false
-		err := subCmd.InjectResource(res)
-
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		err := preScaffold()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("API resource already exists"))
 	})
@@ -103,9 +128,8 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(cfg.AddResource(resWithAPI)).To(Succeed())
 
 		subCmd.force = true
-		err := subCmd.InjectResource(res)
-
-		Expect(err).NotTo(HaveOccurred())
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(preScaffold()).To(Succeed())
 	})
 
 	It("should prevent multiple groups in single-group project", func() {
@@ -127,8 +151,8 @@ var _ = Describe("createAPISubcommand", func() {
 		res.Group = "crew"
 		res.Plural = "captains"
 
-		err := subCmd.InjectResource(res)
-
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		err := preScaffold()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("multiple groups are not allowed"))
 	})
@@ -154,5 +178,47 @@ var _ = Describe("createAPISubcommand", func() {
 		res.Group = "crew"
 
 		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(preScaffold()).To(Succeed())
+	})
+
+	It("should reject duplicate controller name without force", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.Controller.Name = "captain-main"
+		subCmd.force = true
+
+		Expect(cfg.AddResource(resource.Resource{
+			GVK: res.GVK,
+			Controllers: []resource.Controller{
+				{Name: "captain-main"},
+			},
+		})).To(Succeed())
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(preScaffold()).To(Succeed())
+	})
+
+	It("should allow additional controllers for external types", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.Controller.Name = "certificate-backup"
+		subCmd.options.ExternalAPIPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		subCmd.options.ExternalAPIDomain = "io"
+
+		res.Group = "cert-manager"
+		res.Kind = "Certificate"
+		res.Domain = "io"
+
+		Expect(cfg.AddResource(resource.Resource{
+			GVK: res.GVK,
+			Controllers: []resource.Controller{
+				{Name: "certificate-main"},
+			},
+			External: true,
+			Path:     "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+		})).To(Succeed())
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(preScaffold()).To(Succeed())
 	})
 })

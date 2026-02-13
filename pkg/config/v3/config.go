@@ -207,6 +207,7 @@ func (c Cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
 			r := res.Copy()
+			normalizeResourceControllers(&r)
 
 			// Plural is only stored if irregular, so if it is empty recover the regular form
 			if r.Plural == "" {
@@ -225,6 +226,7 @@ func (c Cfg) GetResources() ([]resource.Resource, error) {
 	resources := make([]resource.Resource, 0, len(c.Resources))
 	for _, res := range c.Resources {
 		r := res.Copy()
+		normalizeResourceControllers(&r)
 
 		// Plural is only stored if irregular, so if it is empty recover the regular form
 		if r.Plural == "" {
@@ -237,37 +239,33 @@ func (c Cfg) GetResources() ([]resource.Resource, error) {
 	return resources, nil
 }
 
-// hasResourceWithControllerName checks if a resource with the given GVK and controller name exists.
-func (c Cfg) hasResourceWithControllerName(gvk resource.GVK, controllerName string) bool {
-	for _, res := range c.Resources {
-		if gvk.IsEqualTo(res.GVK) && res.ControllerName == controllerName {
-			return true
-		}
-	}
-	return false
-}
-
 // AddResource implements config.Config
 func (c *Cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
+	normalizeResourceControllers(&res)
 
 	// Plural is only stored if irregular
 	if res.Plural == resource.RegularPlural(res.Kind) {
 		res.Plural = ""
 	}
 
-	// When a controller name is set, allow multiple entries for the same GVK
-	// as long as they have different controller names.
-	if res.ControllerName != "" {
-		if !c.hasResourceWithControllerName(res.GVK, res.ControllerName) {
-			c.Resources = append(c.Resources, res)
-		}
-	} else {
-		if !c.HasResource(res.GVK) {
-			c.Resources = append(c.Resources, res)
+	for i, tracked := range c.Resources {
+		if tracked.IsEqualTo(res.GVK) {
+			// Align plural: it may have been stripped as regular above,
+			// but the stored copy may still carry it.
+			if res.Plural == "" {
+				res.Plural = tracked.Plural
+			}
+			if err := c.Resources[i].Update(res); err != nil {
+				return fmt.Errorf("failed to merge resource %q: %w", res.GVK, err)
+			}
+			normalizeResourceControllers(&c.Resources[i])
+			return nil
 		}
 	}
+
+	c.Resources = append(c.Resources, res)
 	return nil
 }
 
@@ -275,6 +273,7 @@ func (c *Cfg) AddResource(res resource.Resource) error {
 func (c *Cfg) UpdateResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
+	normalizeResourceControllers(&res)
 
 	// Plural is only stored if irregular
 	if res.Plural == resource.RegularPlural(res.Kind) {
@@ -282,10 +281,16 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	}
 
 	for i, r := range c.Resources {
-		if res.IsEqualTo(r.GVK) && res.ControllerName == r.ControllerName {
+		if res.IsEqualTo(r.GVK) {
+			// Align plural: it may have been stripped as regular above,
+			// but the stored copy may still carry it.
+			if res.Plural == "" {
+				res.Plural = r.Plural
+			}
 			if err := c.Resources[i].Update(res); err != nil {
 				return fmt.Errorf("failed to update resource %q: %w", res.GVK, err)
 			}
+			normalizeResourceControllers(&c.Resources[i])
 
 			return nil
 		}
@@ -386,14 +391,18 @@ func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 // MarshalYAML implements config.Config
 func (c Cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
+		normalizeResourceControllers(&r)
+
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
-			c.Resources[i].API = nil
+			r.API = nil
 		}
 		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
 		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
-			c.Resources[i].Webhooks = nil
+			r.Webhooks = nil
 		}
+
+		c.Resources[i] = r
 	}
 
 	content, err := yaml.Marshal(c)
@@ -410,5 +419,18 @@ func (c *Cfg) UnmarshalYAML(b []byte) error {
 		return config.UnmarshalError{Err: err}
 	}
 
+	for i := range c.Resources {
+		normalizeResourceControllers(&c.Resources[i])
+	}
+
 	return nil
+}
+
+func normalizeResourceControllers(res *resource.Resource) {
+	if res == nil {
+		return
+	}
+	res.Controllers = res.NormalizedControllers()
+	res.Controller = false
+	res.ControllerName = ""
 }

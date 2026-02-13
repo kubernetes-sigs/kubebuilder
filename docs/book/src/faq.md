@@ -181,7 +181,7 @@ Some use cases for multiple controllers on the same Kind:
 - **Migration**: run old and new controller side-by-side temporarily, each targeting a subset of resources
 - **Different concurrency settings**: separate queues or rate limiting per controller
 
-The controller name is tracked in the [PROJECT file][project-file-def] and is preserved during re-scaffolding with `kubebuilder alpha generate`. See the [project config reference][project-file-def] for details.
+Controller names are tracked in the [PROJECT file][project-file-def] under `resources.controllers[]` and are preserved during re-scaffolding with `kubebuilder alpha generate`. See the [project config reference][project-file-def] for details.
 
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
 [gvk]: ./cronjob-tutorial/gvks.md
