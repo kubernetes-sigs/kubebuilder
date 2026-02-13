@@ -237,6 +237,16 @@ func (c Cfg) GetResources() ([]resource.Resource, error) {
 	return resources, nil
 }
 
+// hasResourceWithControllerName checks if a resource with the given GVK and controller name exists.
+func (c Cfg) hasResourceWithControllerName(gvk resource.GVK, controllerName string) bool {
+	for _, res := range c.Resources {
+		if gvk.IsEqualTo(res.GVK) && res.ControllerName == controllerName {
+			return true
+		}
+	}
+	return false
+}
+
 // AddResource implements config.Config
 func (c *Cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
@@ -247,8 +257,16 @@ func (c *Cfg) AddResource(res resource.Resource) error {
 		res.Plural = ""
 	}
 
-	if !c.HasResource(res.GVK) {
-		c.Resources = append(c.Resources, res)
+	// When a controller name is set, allow multiple entries for the same GVK
+	// as long as they have different controller names.
+	if res.ControllerName != "" {
+		if !c.hasResourceWithControllerName(res.GVK, res.ControllerName) {
+			c.Resources = append(c.Resources, res)
+		}
+	} else {
+		if !c.HasResource(res.GVK) {
+			c.Resources = append(c.Resources, res)
+		}
 	}
 	return nil
 }
@@ -264,7 +282,7 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	}
 
 	for i, r := range c.Resources {
-		if res.IsEqualTo(r.GVK) {
+		if res.IsEqualTo(r.GVK) && res.ControllerName == r.ControllerName {
 			if err := c.Resources[i].Update(res); err != nil {
 				return fmt.Errorf("failed to update resource %q: %w", res.GVK, err)
 			}

@@ -37,15 +37,26 @@ type ControllerTest struct {
 	Force bool
 
 	DoAPI bool
+
+	// ControllerName is an optional custom name for the controller.
+	ControllerName string
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *ControllerTest) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller_test.go")
+		if f.ControllerName != "" {
+			if f.MultiGroup && f.Resource.Group != "" {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[controller-name]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[controller-name]_controller_test.go")
+			}
 		} else {
-			f.Path = filepath.Join("internal", "controller", "%[kind]_controller_test.go")
+			if f.MultiGroup && f.Resource.Group != "" {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[kind]_controller_test.go")
+			}
 		}
 	}
 
@@ -88,7 +99,7 @@ import (
 	{{- end }}
 )
 
-var _ = Describe("{{ .Resource.Kind }} Controller", func() {
+var _ = Describe("{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }} Controller", func() {
 	Context("When reconciling a resource", func() {
 		{{ if .DoAPI -}}
 		const resourceName = "test-resource"
@@ -129,7 +140,7 @@ var _ = Describe("{{ .Resource.Kind }} Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			{{ if .DoAPI -}}
 			By("Reconciling the created resource")
-			controllerReconciler := &{{ .Resource.Kind }}Reconciler{
+			controllerReconciler := &{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

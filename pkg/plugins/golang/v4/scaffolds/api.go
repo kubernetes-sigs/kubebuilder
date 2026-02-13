@@ -108,15 +108,27 @@ func (s *apiScaffolder) Scaffold() error {
 	if doController {
 		if err := scaffold.Execute(
 			&controllers.SuiteTest{Force: s.force},
-			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
-			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
+			&controllers.Controller{
+				ControllerRuntimeVersion: ControllerRuntimeVersion,
+				Force:                    s.force,
+				ControllerName:           s.resource.ControllerName,
+			},
+			&controllers.ControllerTest{
+				Force:          s.force,
+				DoAPI:          doAPI,
+				ControllerName: s.resource.ControllerName,
+			},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %w", err)
 		}
 	}
 
 	if err := scaffold.Execute(
-		&cmd.MainUpdater{WireResource: doAPI, WireController: doController},
+		&cmd.MainUpdater{
+			WireResource:   doAPI,
+			WireController: doController,
+			ControllerName: s.resource.ControllerName,
+		},
 	); err != nil {
 		return fmt.Errorf("error updating cmd/main.go: %w", err)
 	}

@@ -68,6 +68,10 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
+	// ControllerName is an optional custom name for the controller.
+	// When set, allows scaffolding multiple controllers for the same GVK.
+	ControllerName string
+
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
 	DoController bool
@@ -102,6 +106,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if opts.DoController {
 		res.Controller = true
+		if opts.ControllerName != "" {
+			res.ControllerName = opts.ControllerName
+		}
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {

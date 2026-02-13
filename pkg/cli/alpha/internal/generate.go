@@ -525,6 +525,9 @@ func getAPIResourceFlags(res resource.Resource) []string {
 	} else {
 		args = append(args, "--controller=false")
 	}
+	if res.ControllerName != "" {
+		args = append(args, "--controller-name", res.ControllerName)
+	}
 	return args
 }
 

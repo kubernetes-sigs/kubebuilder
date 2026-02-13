@@ -38,16 +38,28 @@ type Controller struct {
 
 	ControllerRuntimeVersion string
 
+	// ControllerName is an optional custom name for the controller.
+	// When set, it is used for file naming, struct naming, and the Named() call.
+	ControllerName string
+
 	Force bool
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
+		if f.ControllerName != "" {
+			if f.MultiGroup && f.Resource.Group != "" {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[controller-name]_controller.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[controller-name]_controller.go")
+			}
 		} else {
-			f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
+			if f.MultiGroup && f.Resource.Group != "" {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
+			}
 		}
 	}
 
@@ -81,8 +93,8 @@ import (
 	{{- end }}
 )
 
-// {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
-type {{ .Resource.Kind }}Reconciler struct {
+// {{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler reconciles a {{ .Resource.Kind }} object
+type {{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -106,7 +118,7 @@ type {{ .Resource.Kind }}Reconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@{{ .ControllerRuntimeVersion }}/pkg/reconcile
-func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = logf.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -115,7 +127,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *{{ if .ControllerName }}{{ toPascalCase .ControllerName }}{{ else }}{{ .Resource.Kind }}{{ end }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		{{ if not (isEmptyStr .Resource.Path) -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
@@ -123,7 +135,9 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		// For().
 		{{- end }}
-		{{- if and (.MultiGroup) (not (isEmptyStr .Resource.Group)) }}
+		{{- if .ControllerName }}
+		Named("{{ .ControllerName }}").
+		{{- else if and (.MultiGroup) (not (isEmptyStr .Resource.Group)) }}
 		Named("{{ lower .Resource.Group }}-{{ lower .Resource.Kind }}").
 		{{- else }}
 		Named("{{ lower .Resource.Kind }}").

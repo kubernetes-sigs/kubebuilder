@@ -69,6 +69,36 @@ resources:
     version: v1
 version: "3"
 ```
+
+### Multiple Controllers for the Same GVK
+
+Kubebuilder supports scaffolding multiple controllers for the same API type (same Group/Version/Kind). This is useful for splitting responsibilities across controllers, running different reconciliation modes, or migration scenarios.
+
+When using the `--controller-name` flag with `create api`, the controller name is tracked in the PROJECT file via the `controllerName` field. Each entry with a different `controllerName` is treated as a distinct resource entry:
+
+```yaml
+resources:
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    controllerName: memcached-health
+    domain: example.com
+    group: cache
+    kind: Memcached
+    path: example.com/memcached-operator/api/v1alpha1
+    version: v1alpha1
+  - controller: true
+    controllerName: memcached-status
+    domain: example.com
+    group: cache
+    kind: Memcached
+    path: example.com/memcached-operator/api/v1alpha1
+    version: v1alpha1
+```
+
+In the example above, two controllers exist for the same `Memcached` Kind: `memcached-health` and `memcached-status`. The first entry also owns the API definition, while the second is controller-only (`--resource=false`).
+
 ## Why do we need to store the plugins and data used?
 
 Following some examples of motivations to track the input used:
@@ -163,6 +193,7 @@ Now let's check its layout fields definition:
 | `resources.api.crdVersion`          | The Kubernetes API version (`apiVersion`) used to do the scaffolding for the CRD resource.                                                                                                                                                                                      |
 | `resources.api.namespaced`          | The API RBAC permissions which can be namespaced or cluster scoped.                                                                                                                                                                                                             |
 | `resources.controller`              | Indicates whether a controller was scaffolded for the API.                                                                                                                                                                                                                      |
+| `resources.controllerName`          | **(Optional)** A custom name for the controller, provided via the `--controller-name` flag. When set, it allows multiple controllers for the same GVK. The name is used for the controller file name, the reconciler struct name, and the controller's `Named()` registration. Must be a DNS-1035 label (lowercase alphanumeric and hyphens). |
 | `resources.domain`                  | The domain of the resource which was provided by the `--domain` flag when the project was initialized or via the flag `--external-api-domain` when it was used to scaffold controllers for an [External Type][external-type].                                                   |
 | `resources.group`                   | The GKV group of the resource which is provided by the `--group` flag when the sub-command `create api` is used.                                                                                                                                                                |
 | `resources.version`                 | The GKV version of the resource which is provided by the `--version` flag when the sub-command `create api` is used.                                                                                                                                                            |

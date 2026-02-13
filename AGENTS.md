@@ -272,6 +272,24 @@ kubebuilder alpha generate    # Experimental: generate from PROJECT file
 kubebuilder alpha update      # Experimental: update to latest plugin versions
 ```
 
+### Multiple Controllers for the Same GVK
+
+Use `--controller-name` to scaffold additional controllers for an existing API.
+Each controller gets its own file, reconciler struct, and unique `Named()` registration:
+
+```bash
+# Create the API and its default controller
+kubebuilder create api --group batch --version v1 --kind CronJob
+
+# Add a second controller for the same CronJob Kind
+kubebuilder create api --group batch --version v1 --kind CronJob \
+  --controller-name cronjob-cleanup --resource=false
+```
+
+This produces `internal/controller/cronjob_cleanup_controller.go` with a `CronjobCleanupReconciler` struct.
+The `--resource=false` flag skips re-creating the API types. The controller name is tracked in the PROJECT file
+via the `controllerName` field.
+
 ## Common Patterns
 
 ### Code Style

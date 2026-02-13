@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
@@ -87,6 +88,10 @@ make generate will be run.
 
   # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
   make run
+
+  # Create a second controller for an existing API with a custom name
+  %[1]s create api --group ship --version v1beta1 --kind Frigate \
+    --controller-name frigate-backup --resource=false
 `, cliMeta.CommandName)
 }
 
@@ -108,6 +113,10 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
+
+	fs.StringVar(&p.options.ControllerName, "controller-name", "",
+		"a unique name for the controller (e.g. memcached-backup). When set, allows scaffolding "+
+			"multiple controllers for the same GVK. Must be a DNS-1035 label.")
 
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
 		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
@@ -154,10 +163,29 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
 
+	// Validate controller name if provided
+	if p.options.ControllerName != "" {
+		if !p.options.DoController {
+			return errors.New("cannot use '--controller-name' with '--controller=false'")
+		}
+		if errs := validation.IsDNS1035Label(p.options.ControllerName); len(errs) != 0 {
+			return fmt.Errorf("invalid controller name %q: must be a DNS-1035 label "+
+				"(lowercase, alphanumeric, hyphens, starting with a letter)", p.options.ControllerName)
+		}
+	}
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
+	}
+
+	// When adding a named controller for an existing GVK, skip API re-scaffolding
+	if p.options.ControllerName != "" && p.options.DoAPI {
+		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() {
+			p.options.DoAPI = false
+			p.resource.API = nil
+		}
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks

@@ -40,6 +40,11 @@ type Resource struct {
 	// Controller specifies if a controller has been scaffolded.
 	Controller bool `json:"controller,omitempty"`
 
+	// ControllerName is an optional custom name for the controller.
+	// When set, it allows multiple controllers for the same GVK.
+	// The name is used in the controller file name, struct name, and Named() call.
+	ControllerName string `json:"controllerName,omitempty"`
+
 	// Webhooks holds the information related to the associated webhooks.
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
 
@@ -113,6 +118,35 @@ func (r Resource) HasAPI() bool {
 // HasController returns true if the resource has an associated controller.
 func (r Resource) HasController() bool {
 	return r.Controller
+}
+
+// GetControllerName returns the controller name if set, or the default (lowercase Kind) if not.
+func (r Resource) GetControllerName() string {
+	if r.ControllerName != "" {
+		return r.ControllerName
+	}
+	return strings.ToLower(r.Kind)
+}
+
+// ControllerClassName returns the PascalCase name for the reconciler struct.
+// If ControllerName is set (e.g. "captain-health"), returns "CaptainHealth".
+// Otherwise returns the Kind (e.g. "Captain").
+func (r Resource) ControllerClassName() string {
+	if r.ControllerName != "" {
+		return ToPascalCase(r.ControllerName)
+	}
+	return r.Kind
+}
+
+// ToPascalCase converts a hyphenated name like "captain-health" to "CaptainHealth".
+func ToPascalCase(s string) string {
+	parts := strings.Split(s, "-")
+	for i, part := range parts {
+		if len(part) > 0 {
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}
+	}
+	return strings.Join(parts, "")
 }
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
@@ -190,6 +224,9 @@ func (r *Resource) Update(other Resource) error {
 
 	// Update controller.
 	r.Controller = r.Controller || other.Controller
+	if other.ControllerName != "" {
+		r.ControllerName = other.ControllerName
+	}
 
 	// Update Webhooks.
 	if r.Webhooks == nil && other.Webhooks != nil {
@@ -212,6 +249,7 @@ func (r Resource) Replacer() *strings.Replacer {
 	replacements = append(replacements, wrapKey("kind"), strings.ToLower(r.Kind))
 	replacements = append(replacements, wrapKey("plural"), strings.ToLower(r.Plural))
 	replacements = append(replacements, wrapKey("package-name"), r.PackageName())
+	replacements = append(replacements, wrapKey("controller-name"), r.GetControllerName())
 
 	return strings.NewReplacer(replacements...)
 }
