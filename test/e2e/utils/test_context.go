@@ -410,6 +410,8 @@ func (t *TestContext) InstallHelm() error {
 
 // UninstallHelmRelease removes the specified Helm release from the cluster.
 // Uses the chart name (project name) as the release name, which is standard Helm practice.
+// Note: With crd.keep=true (default), CRDs are preserved after uninstall.
+// Use DeleteCRDs() to clean them up after verifying they persisted.
 func (t *TestContext) UninstallHelmRelease() error {
 	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
 	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
@@ -434,13 +436,22 @@ func (t *TestContext) EditHelmPlugin() error {
 // When release name matches chart name, chart.fullname simplifies to just the chart name,
 // preserving kustomize resource naming.
 func (t *TestContext) HelmInstallRelease() error {
+	return t.HelmInstallReleaseWithOptions(true) // Default: crd.keep=true
+}
+
+// HelmInstallReleaseWithOptions is for running `helm install` with configurable options
+// crdKeep controls whether CRDs are preserved on helm uninstall (helm.sh/resource-policy: keep)
+func (t *TestContext) HelmInstallReleaseWithOptions(crdKeep bool) error {
 	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
 	// Set the image to match what was built (format: e2e-test/controller-manager:suffix)
 	// Helm chart uses manager.image.repository and manager.image.tag
+	// --create-namespace ensures the namespace exists before installing
 	cmd := exec.Command("helm", "install", releaseName, "dist/chart",
 		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix),
+		"--create-namespace",
 		"--set", fmt.Sprintf("manager.image.repository=%s", "e2e-test/controller-manager"),
-		"--set", fmt.Sprintf("manager.image.tag=%s", t.TestSuffix))
+		"--set", fmt.Sprintf("manager.image.tag=%s", t.TestSuffix),
+		"--set", fmt.Sprintf("crd.keep=%t", crdKeep))
 	_, err := t.Run(cmd)
 	return err
 }

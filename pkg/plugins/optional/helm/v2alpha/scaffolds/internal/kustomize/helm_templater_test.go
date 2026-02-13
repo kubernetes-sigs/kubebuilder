@@ -442,6 +442,55 @@ metadata:
 			// Cert-manager annotation should still be conditional on certManager.enable
 			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
 		})
+
+		It("should add crd.enable conditional and resource-policy annotation for CRDs", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("guestbooks.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: guestbooks.example.com
+spec:
+  group: example.com`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Should be wrapped with crd.enable conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+			// Should have resource-policy annotation for helm uninstall protection
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
+			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+		})
+
+		It("should add resource-policy annotation to CRDs that already have annotations", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("configs.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.0
+  name: configs.example.com
+spec:
+  group: example.com`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Should be wrapped with crd.enable conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			// Should have resource-policy annotation
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
+			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+			// Should preserve existing annotation
+			Expect(result).To(ContainSubstring("controller-gen.kubebuilder.io/version"))
+		})
 	})
 
 	Context("helper RBAC wrapping", func() {
