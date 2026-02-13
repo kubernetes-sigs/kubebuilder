@@ -7,7 +7,7 @@ metadata:
         "helm.sh/resource-policy": keep
         {{- end }}
         cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "project-v4-with-plugins.resourceName" (dict "suffix" "serving-cert" "context" $) }}
-        controller-gen.kubebuilder.io/version: v0.20.0
+        controller-gen.kubebuilder.io/version: v0.20.1
     name: wordpresses.example.com.testproject.org
 spec:
     conversion:
