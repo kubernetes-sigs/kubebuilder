@@ -30,9 +30,8 @@ The **helm/v2-alpha** plugin converts the bundle (`dist/install.yaml`) into a He
 - **Preserves Customizations**: Keeps env vars, labels, annotations, and patches.
 - **Structured Output**: Templates follow your `config/` directory layout.
 - **Smart Values**: `values.yaml` includes only actual configurable parameters.
-- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `templates/tests/test-manager-ready.yaml` and `.github/workflows/test-chart.yml` are preserved.
+- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore` and `.github/workflows/test-chart.yml` are preserved.
 - **Handles Custom Resources**: Resources not matching standard layout (custom Services, ConfigMaps, etc.) are placed in `templates/extras/` with proper templating.
-- **Built-in Tests**: Includes Helm test templates to validate deployment health.
 
 ## When to Use It
 
@@ -119,8 +118,6 @@ The plugin creates a chart layout that matches your `config/`:
     │   └── webhook-service.yaml
     ├── monitoring/
     │   └── servicemonitor.yaml
-    ├── tests/
-    │   └── test-manager-ready.yaml
     └── extras/                  # Custom resources (if any)
         ├── my-service.yaml
         └── my-config.yaml
@@ -343,27 +340,13 @@ helm install my-release ./dist/chart \
 
 The Makefile targets use sensible defaults extracted from your project configuration (namespace from manifests, release name from project name, chart directory from `--output-dir` flag).
 
-### Testing
-
-The generated chart includes Helm tests to verify deployment health:
-
-```shell
-# Run tests after installation
-helm test my-release --namespace my-project-system
-```
-
-Tests verify:
-- Manager deployment is available
-- Manager pod is running
-- Cert-manager certificates are ready (if cert-manager is enabled)
-
 ## Flags
 
 | Flag                | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-manager-ready.yaml`, `test-chart.yml`) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
 
 <aside class="note">
 <H1> Examples </H1>

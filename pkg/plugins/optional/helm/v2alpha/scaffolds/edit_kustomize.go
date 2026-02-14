@@ -152,11 +152,6 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			OutputDir: s.outputDir,
 			Force:     s.force,
 		},
-		&charttemplates.TestManagerReady{
-			HasWebhooks: hasWebhooks,
-			OutputDir:   s.outputDir,
-			Force:       s.force,
-		},
 	}
 
 	// Only scaffold the generic ServiceMonitor when the project does NOT already

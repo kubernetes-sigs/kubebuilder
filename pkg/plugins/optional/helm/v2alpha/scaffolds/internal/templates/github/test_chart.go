@@ -120,8 +120,4 @@ jobs:
       - name: Check Helm release status
         run: |
           make helm-status
-
-      - name: Run Helm tests
-        run: |
-          helm test {{ .ProjectName }} --namespace {{ .ProjectName }}-system
 `
