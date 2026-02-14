@@ -75,11 +75,13 @@ type Update struct {
 	// Push, when true, pushes the OutputBranch to the "origin" remote after the update completes.
 	Push bool
 
-	// CommitMessage is the custom commit message to use for successful merges (no conflicts).
+	// CommitMessage is the custom merge message to use for successful merges (no conflicts).
+	// Set via --merge-message flag.
 	// If empty, defaults to: "chore(kubebuilder): update scaffold <from> -> <to>".
 	CommitMessage string
 
-	// CommitMessageConflict is the custom commit message to use when conflicts occur.
+	// CommitMessageConflict is the custom conflict message to use when conflicts occur.
+	// Set via --conflict-message flag.
 	// If empty, defaults to: "chore(kubebuilder): (:warning: manual conflict resolution required)
 	// update scaffold <from> -> <to>".
 	CommitMessageConflict string
