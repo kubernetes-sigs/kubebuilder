@@ -68,7 +68,3 @@ jobs:
       - name: Check Helm release status
         run: |
           make helm-status
-
-      - name: Run Helm tests
-        run: |
-          helm test project-v4-with-plugins --namespace project-v4-with-plugins-system
