@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	log "log/slog"
 
 	"github.com/spf13/afero"
 
@@ -91,6 +92,12 @@ func (s *editScaffolder) Scaffold() error {
 			fmt.Println("Run with --force to update config/manager/manager.yaml with WATCH_NAMESPACE")
 		}
 
+		// Check if project has webhooks and warn about scope mismatch
+		if s.hasWebhooks() {
+			log.Warn("your project has webhooks which are cluster-scoped.\n" +
+				"You will need to manually configure namespaceSelector or objectSelector")
+		}
+
 		// Print next steps
 		fmt.Println()
 		fmt.Println("Next steps:")
@@ -99,6 +106,11 @@ func (s *editScaffolder) Scaffold() error {
 		fmt.Printf("   // +kubebuilder:rbac:groups=mygroup,resources=myresources,verbs=get;list,"+
 			"namespace=%s-system\n", s.config.GetProjectName())
 		fmt.Println("3. Run: make manifests")
+
+		if s.hasWebhooks() {
+			fmt.Println("4. Configure namespaceSelector or objectSelector for webhooks")
+		}
+
 		fmt.Println()
 		fmt.Println("See: https://book.kubebuilder.io/migration/namespace-scoped.html")
 	} else if !s.namespaced && wasNamespaced {
@@ -154,4 +166,18 @@ func (s *editScaffolder) scaffoldClusterRBAC(force bool) error {
 		return fmt.Errorf("failed to scaffold RBAC: %w", err)
 	}
 	return nil
+}
+
+// hasWebhooks checks if any resources in the project have webhooks configured
+func (s *editScaffolder) hasWebhooks() bool {
+	resources, err := s.config.GetResources()
+	if err != nil {
+		return false
+	}
+	for _, res := range resources {
+		if res.Webhooks != nil && !res.Webhooks.IsEmpty() {
+			return true
+		}
+	}
+	return false
 }

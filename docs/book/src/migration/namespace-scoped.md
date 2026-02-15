@@ -270,6 +270,24 @@ kubectl apply -f config/samples/ -n <manager-namespace>
 kubectl apply -f config/samples/ -n other-namespace
 ```
 
+<aside class="warning">
+
+<h1>Webhooks and Namespace-Scoped Mode</h1>
+
+If your project has webhooks, the manager cache is restricted to `WATCH_NAMESPACE`, but webhooks receive requests from all namespaces by default.
+
+**The Problem:**
+
+Your webhook server receives admission requests from all namespaces, but the cache only has data from `WATCH_NAMESPACE`. If a webhook handler queries the cache for an object outside the watched namespaces, the lookup fails.
+
+**Solution:**
+
+Configure `namespaceSelector` or `objectSelector` on your webhooks to align webhook scope with the cache. Currently, controller-gen does not have markers for this. You must add these manually using Kustomize patches.
+
+See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html) guide for detailed steps on creating and applying namespace selector patches.
+
+</aside>
+
 ## AI-Assisted Migration
 
 If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
@@ -486,11 +504,11 @@ This command automatically:
 ## Important Notes
 
 - **Only controllers need RBAC updates**: Only update `+kubebuilder:rbac` markers in controller files (files with `Reconcile` function). Webhook files do NOT use RBAC markers - webhooks use certificate-based authentication with the API server.
-- **Webhooks remain cluster-scoped**: `ValidatingWebhookConfiguration` and `MutatingWebhookConfiguration` are cluster-scoped resources that validate/mutate CRs in all namespaces. This is correct - webhooks enforce schema consistency across the cluster, while controllers (namespace-scoped) only reconcile resources in their watched namespace(s).
 - **RBAC markers control scope**: The `namespace=` parameter in controller RBAC markers determines whether controller-gen generates `Role` (namespace-scoped) or `ClusterRole` (cluster-scoped). Without the `namespace=` parameter, controller-gen always generates `ClusterRole`.
 - **Controller-gen regenerates role.yaml**: After running `make manifests`, controller-gen will regenerate `config/rbac/role.yaml` based on your controller RBAC markers. The initial `Role` scaffold from `kubebuilder edit --namespaced=true` serves as a template, but controller-gen manages the actual content.
 - **Namespace parameter format**: Use `namespace=<your-namespace>` in controller RBAC markers, typically `namespace=<project-name>-system` to match your deployment namespace.
 - **Metrics auth role stays cluster-scoped**: The `metrics-auth-role` uses cluster-scoped APIs (TokenReview, SubjectAccessReview) and correctly remains a ClusterRole without namespace parameter.
+- **Webhooks require manual configuration**: Currently, controller-gen does not support `namespaceSelector` or `objectSelector` markers for webhooks. See the webhook section above for details.
 
 ## See Also
 

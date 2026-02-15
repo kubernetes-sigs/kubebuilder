@@ -145,6 +145,24 @@ The `testdata/project-v4-with-plugins` in the Kubebuilder repository demonstrate
 See: [testdata/project-v4-with-plugins](https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins)
 </aside>
 
+<aside class="warning">
+
+<h1>Webhooks and Namespace-Scoped Mode</h1>
+
+If your project has webhooks, the manager cache is restricted to `WATCH_NAMESPACE`, but webhooks receive requests from all namespaces by default.
+
+**The Problem:**
+
+Your webhook server receives admission requests from all namespaces, but the cache only has data from `WATCH_NAMESPACE`. If a webhook handler queries the cache for an object outside the watched namespaces, the lookup fails.
+
+**Solution:**
+
+Configure `namespaceSelector` or `objectSelector` on your webhooks to align webhook scope with the cache. Currently, controller-gen does not have markers for this. You must add these manually using Kustomize patches.
+
+See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html) guide for detailed steps on creating and applying namespace selector patches.
+
+</aside>
+
 ## See Also
 
 - [Understanding Scopes](./scopes.md) - Overview of manager and CRD scopes
