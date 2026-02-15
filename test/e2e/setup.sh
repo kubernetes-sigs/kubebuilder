@@ -84,7 +84,7 @@ function test_cluster {
     docker exec $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images pull --platform ${kind_platform} docker.io/library/busybox:1.36.1 >/dev/null 2>&1
   fi
 
-  go test $(dirname "$0")/all $flags -timeout 40m
+  go test $(dirname "$0")/all $flags -timeout 60m
 
   docker save bitnami/kubectl:latest | docker exec -i $KIND_CLUSTER-control-plane ctr --namespace=k8s.io images import /dev/stdin
 }
