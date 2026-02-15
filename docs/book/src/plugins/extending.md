@@ -16,7 +16,7 @@ This flexibility enables you to create custom project
 setups tailored to specific needs.
 
 <aside class="note">
-<h1>Why use the Kubebuilder style?</h1>
+<h4>Why use the Kubebuilder style?</h4>
 
 Kubebuilder and SDK are both broadly adopted projects which leverage the [controller-runtime][controller-runtime] project. They both allow users to build solutions using the [Operator Pattern][operator-pattern] and follow common standards.
 

@@ -2,7 +2,7 @@
 # FAQ
 
 <aside class="note">
-<h1> Controller-Runtime FAQ </h1>
+<h4> Controller-Runtime FAQ </h4>
 
 Kubebuilder is developed on top of the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)
 and [controller-tools](https://github.com/kubernetes-sigs/controller-tools) libraries. We recommend you also check

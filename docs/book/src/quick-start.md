@@ -15,7 +15,7 @@ This Quick Start guide will cover:
 - Access to a Kubernetes v1.11.3+ cluster.
 
 <aside class="note">
-<h1>Versions Compatibility and Supportability</h1>
+<h4>Versions Compatibility and Supportability</h4>
 
 Please, ensure that you see the [guidance](./versions_compatibility_supportability.md).
 
@@ -32,7 +32,7 @@ chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
 ```
 
 <aside class="note">
-<h1>Using the Master Branch</h1>
+<h4>Using the Master Branch</h4>
 
 You can work with the master branch by cloning the repository and running `make install` to generate the binary.
 Please follow the steps in the section **How to Build Kubebuilder Locally** from the [Contributing Guide](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md#how-to-build-kubebuilder-locally).
@@ -40,7 +40,7 @@ Please follow the steps in the section **How to Build Kubebuilder Locally** from
 </aside>
 
 <aside class="note">
-<h1>Enabling shell autocompletion</h1>
+<h4>Enabling shell autocompletion</h4>
 
 Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
@@ -57,7 +57,7 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook
 ```
 
 <aside class="note">
-<h1>Developing in $GOPATH</h1>
+<h4>Developing in $GOPATH</h4>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
@@ -75,7 +75,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
 <aside class="note">
-<h1>Press Options</h1>
+<h4>Press Options</h4>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
 and the `internal/controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
@@ -146,7 +146,7 @@ type Guestbook struct {
 
 
 <aside class="note">
-<h1> `+kubebuilder` markers </h1>
+<h4> `+kubebuilder` markers </h4>
 
 `+kubebuilder` are [markers][markers] processed by [controller-gen][controller-gen]
 to generate CRDs and RBAC. Kubebuilder also provides [scaffolding markers][scaffolding-markers]
@@ -161,7 +161,7 @@ You'll need a Kubernetes cluster to run against. You can use
 run against a remote cluster.
 
 <aside class="note">
-<h1>Context Used</h1>
+<h4>Context Used</h4>
 
 Your controller will automatically use the current context in your
 kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
@@ -229,7 +229,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>Registry Permission</h1>
+<h4>Registry Permission</h4>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
@@ -245,7 +245,7 @@ kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 It is highly recommended to use [Kind][kind] for development purposes and CI.
 To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
 
-<h1>RBAC errors</h1>
+<h4>RBAC errors</h4>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.
@@ -273,7 +273,7 @@ Kubebuilder design is based on [Plugins][plugins] and you can use
 [available plugins][available-plugins] to add optional features to your project.
 
 <aside class="note">
-<h1>References and Examples</h1>
+<h4>References and Examples</h4>
 
 Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a reference when creating your project. It follows Kubernetes conventions and recommended good practices. For example:
 
@@ -284,7 +284,7 @@ kubebuilder create api --group webapp --version v1alpha1 --kind Busybox --image=
 </aside>
 
 <aside class="note">
-<h1> Keeping your project up to date with ecosystem changes </h1>
+<h4> Keeping your project up to date with ecosystem changes </h4>
 
 Use [AutoUpdate Plugin][autoupdate-v1-alpha] to keep your project
 aligned with the latest ecosystem changes. When a new release is available,

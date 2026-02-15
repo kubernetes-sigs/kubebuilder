@@ -6,7 +6,7 @@ default metrics which are exported by projects
 using [controller-runtime][controller-runtime].
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 You can check its default scaffold by looking at the `project-v4-with-plugins` projects
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
