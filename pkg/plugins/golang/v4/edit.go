@@ -35,6 +35,9 @@ type editSubcommand struct {
 	multigroup bool
 	namespaced bool
 	force      bool
+
+	// fs stores the FlagSet to check if flags were explicitly set
+	fs *pflag.FlagSet
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -80,6 +83,7 @@ Note: To add optional plugins after initialization, use 'kubebuilder edit --plug
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
+	p.fs = fs
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
 	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespace-scoped deployment")
 	fs.BoolVar(&p.force, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
@@ -87,6 +91,19 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+
+	return nil
+}
+
+func (p *editSubcommand) PreScaffold(machinery.Filesystem) error {
+	// If flags were not explicitly set, preserve existing PROJECT file values
+	// This prevents one flag from clearing another when using default values
+	if !p.fs.Changed("multigroup") {
+		p.multigroup = p.config.IsMultiGroup()
+	}
+	if !p.fs.Changed("namespaced") {
+		p.namespaced = p.config.IsNamespaced()
+	}
 
 	return nil
 }
