@@ -85,6 +85,44 @@ The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder r
 
 <img width="600" height="188" alt="Conflicts" src="https://github.com/user-attachments/assets/2142887a-730c-499a-94df-c717f09ab600" />
 
+## Customizing the Workflow
+
+The generated workflow uses the `kubebuilder alpha update` command with default flags. You can customize the workflow by editing `.github/workflows/auto_update.yml` to add additional flags:
+
+**Default flags used:**
+- `--force` - Continue even if conflicts occur (automation-friendly)
+- `--push` - Automatically push the output branch to remote
+- `--restore-path .github/workflows` - Preserve CI workflows from base branch
+- `--open-gh-issue` - Create a GitHub Issue with PR compare link
+- `--use-gh-models` - (optional) Add AI summary to the issue
+
+**Additional available flags:**
+- `--merge-message` - Custom commit message for clean merges
+- `--conflict-message` - Custom commit message when conflicts occur
+- `--from-version` - Specify the version to upgrade from
+- `--to-version` - Specify the version to upgrade to
+- `--output-branch` - Custom output branch name
+- `--show-commits` - Keep full history instead of squashing
+- `--git-config` - Pass per-invocation Git config
+
+For complete documentation on all available flags, see the [`kubebuilder alpha update`][alpha-update-command] reference.
+
+**Example: Customize commit messages**
+
+Edit `.github/workflows/auto_update.yml`:
+
+```yaml
+- name: Run kubebuilder alpha update
+  run: |
+    kubebuilder alpha update \
+      --force \
+      --push \
+      --restore-path .github/workflows \
+      --open-gh-issue \
+      --merge-message "chore: update kubebuilder scaffold" \
+      --conflict-message "chore: update with conflicts - review needed"
+```
+
 ## Troubleshooting
 
 #### If you get the 403 Forbidden Error
