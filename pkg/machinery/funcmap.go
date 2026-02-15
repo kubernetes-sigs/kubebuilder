@@ -23,16 +23,19 @@ import (
 	"text/template"
 
 	"golang.org/x/text/cases"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // DefaultFuncMap returns the default template.FuncMap for rendering the template.
 func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"title":      cases.Title,
-		"lower":      strings.ToLower,
-		"upper":      strings.ToUpper,
-		"isEmptyStr": isEmptyString,
-		"hashFNV":    hashFNV,
+		"title":        cases.Title,
+		"lower":        strings.ToLower,
+		"upper":        strings.ToUpper,
+		"isEmptyStr":   isEmptyString,
+		"hashFNV":      hashFNV,
+		"toPascalCase": toPascalCase,
 	}
 }
 
@@ -47,4 +50,9 @@ func hashFNV(s string) string {
 	// Hash.Write never returns an error
 	_, _ = hasher.Write([]byte(s))
 	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+// toPascalCase converts a hyphenated name like "captain-health" to "CaptainHealth".
+func toPascalCase(s string) string {
+	return resource.ToPascalCase(s)
 }

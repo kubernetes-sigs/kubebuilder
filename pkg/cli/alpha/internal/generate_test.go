@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -492,20 +493,57 @@ var _ = Describe("generate: get-args-helpers", func() {
 		})
 
 		Context("returns correct flags", func() {
-			It("for nil API with Controller set", func() {
-				res.Controller = true
-				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller"))
-			})
 			It("for non nil API (namespaced not set) with Controller not set", func() {
 				res.API.CRDVersion = "v1"
 				res.API.Namespaced = true
-				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource", "--namespaced", "--controller=false"))
+				Expect(getAPIResourceFlags(res)).To(Equal([]string{"--resource", "--namespaced"}))
 			})
 			It("for non nil API (namespaced set) with Controller not set", func() {
 				res.API.CRDVersion = "v1"
 				res.API.Namespaced = false
-				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource", "--namespaced=false", "--controller=false"))
+				Expect(getAPIResourceFlags(res)).To(Equal([]string{"--resource", "--namespaced=false"}))
 			})
+			It("for nil API", func() {
+				res.API = nil
+				Expect(getAPIResourceFlags(res)).To(BeEmpty())
+			})
+		})
+	})
+
+	Context("getControllerResourceFlags", func() {
+		It("returns controller-only create-api flags", func() {
+			Expect(getControllerResourceFlags("captain-backup")).To(Equal([]string{
+				"--resource=false",
+				"--controller",
+				"--controller-name", "captain-backup",
+			}))
+		})
+	})
+
+	Context("NormalizedControllers", func() {
+		It("uses controllers list as source of truth", func() {
+			res := resource.Resource{
+				GVK: resource.GVK{Kind: "Captain"},
+				Controllers: []resource.Controller{
+					{Name: "captain-main"},
+					{Name: "captain-backup"},
+				},
+			}
+			Expect(res.NormalizedControllers()).To(Equal([]resource.Controller{
+				{Name: "captain-main"},
+				{Name: "captain-backup"},
+			}))
+		})
+
+		It("supports legacy controller fields", func() {
+			res := resource.Resource{
+				GVK:            resource.GVK{Kind: "Captain"},
+				Controller:     true,
+				ControllerName: "captain-main",
+			}
+			Expect(res.NormalizedControllers()).To(Equal([]resource.Controller{
+				{Name: "captain-main"},
+			}))
 		})
 	})
 	// getWebhookResourceFlags
@@ -594,60 +632,80 @@ var _ = Describe("generate: create-helpers", func() {
 
 	// createAPI
 	Describe("createAPI", func() {
-		Context("Without External flag", func() {
-			It("runs kubebuilder create api successfully for a resource", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
-					Plural:     "examples",
-					API:        &resource.API{Namespaced: true},
-					Controller: true,
-				}
-				// Run createAPI and verify no errors
-				Expect(createAPI(res)).To(Succeed())
-			})
+		readKubebuilderLogLines := func() []string {
+			logPath := filepath.Join(kbc.Dir, "kubebuilder.log")
+			content, err := os.ReadFile(logPath)
+			if os.IsNotExist(err) {
+				return nil
+			}
+			Expect(err).NotTo(HaveOccurred())
+			text := strings.TrimSpace(string(content))
+			if text == "" {
+				return nil
+			}
+			return strings.Split(text, "\n")
+		}
+
+		It("creates API first then one create-api call per controller", func() {
+			res := resource.Resource{
+				GVK:    resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+				Plural: "examples",
+				API: &resource.API{
+					CRDVersion: "v1",
+					Namespaced: true,
+				},
+				Controllers: []resource.Controller{
+					{Name: "example-main"},
+					{Name: "example-backup"},
+				},
+			}
+
+			Expect(createAPI(res)).To(Succeed())
+			lines := readKubebuilderLogLines()
+			Expect(lines).To(HaveLen(3))
+			Expect(lines[0]).To(ContainSubstring(
+				"create api --plural examples --group example.com " +
+					"--version v1 --kind Example --resource --namespaced --controller=false"))
+			Expect(lines[1]).To(ContainSubstring(
+				"create api --plural examples --group example.com " +
+					"--version v1 --kind Example --resource=false --controller --controller-name example-main"))
+			Expect(lines[2]).To(ContainSubstring(
+				"create api --plural examples --group example.com " +
+					"--version v1 --kind Example --resource=false --controller --controller-name example-backup"))
 		})
 
-		Context("With External flag set", func() {
-			It("runs kubebuilder create api successfully for a resource", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "external"},
-					Plural:     "examples",
-					API:        &resource.API{Namespaced: true},
-					Controller: true,
-					External:   true,
-					Path:       "external/path",
-				}
-				// Run createAPI and verify no errors
-				Expect(createAPI(res)).To(Succeed())
-			})
+		It("creates external controller-only calls with external flags", func() {
+			res := resource.Resource{
+				GVK:    resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
+				Plural: "certificates",
+				Controllers: []resource.Controller{
+					{Name: "certificate-main"},
+				},
+				External: true,
+				Path:     "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+				Module:   "github.com/cert-manager/cert-manager@v1.18.2",
+			}
 
-			It("runs kubebuilder create api successfully with module version", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
-					Plural:     "certificates",
-					API:        nil, // External resources typically don't scaffold API
-					Controller: true,
-					External:   true,
-					Path:       "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
-					Module:     "github.com/cert-manager/cert-manager@v1.18.2",
-				}
-				// Run createAPI and verify no errors
-				Expect(createAPI(res)).To(Succeed())
-			})
+			Expect(createAPI(res)).To(Succeed())
+			lines := readKubebuilderLogLines()
+			Expect(lines).To(HaveLen(1))
+			Expect(lines[0]).To(ContainSubstring(
+				"create api --plural certificates --group cert-manager " +
+					"--version v1 --kind Certificate --resource=false --controller --controller-name certificate-main"))
+			Expect(lines[0]).To(ContainSubstring(
+				"--external-api-path github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"))
+			Expect(lines[0]).To(ContainSubstring("--external-api-domain io"))
+			Expect(lines[0]).To(ContainSubstring("--external-api-module github.com/cert-manager/cert-manager@v1.18.2"))
+		})
 
-			It("runs kubebuilder create api successfully WITHOUT module version", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: "cert-manager", Version: "v1", Kind: "Certificate", Domain: "io"},
-					Plural:     "certificates",
-					API:        nil,
-					Controller: true,
-					External:   true,
-					Path:       "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
-					Module:     "", // No module specified
-				}
-				// Run createAPI and verify no errors
-				Expect(createAPI(res)).To(Succeed())
-			})
+		It("does nothing when no API and no controllers are configured", func() {
+			res := resource.Resource{
+				GVK:    resource.GVK{Group: "example.com", Version: "v1", Kind: "Example", Domain: "test"},
+				Plural: "examples",
+				API:    nil,
+			}
+			Expect(createAPI(res)).To(Succeed())
+			Expect(readKubebuilderLogLines()).To(BeEmpty())
 		})
 	})
 

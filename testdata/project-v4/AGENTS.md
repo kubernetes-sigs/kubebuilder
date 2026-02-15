@@ -75,6 +75,10 @@ make test       # Run unit tests
 ### Create API (your own types)
 ```bash
 kubebuilder create api --group <group> --version <version> --kind <Kind>
+
+# Add a second controller for an existing API (multiple controllers per GVK)
+kubebuilder create api --group <group> --version <version> --kind <Kind> \
+  --controller-name <name> --resource=false
 ```
 
 ### Deploy Image Plugin (scaffold to deploy/manage ANY container image)
