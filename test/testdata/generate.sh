@@ -118,6 +118,9 @@ function scaffold_test_project {
     $kb create api --group example.com --version v2 --kind Wordpress --controller=false --resource=true  --make=false
     $kb create webhook --group example.com --version v1 --kind Wordpress --conversion --make=false --spoke v2
 
+    header_text 'Creating API with server-side-apply plugin ...'
+    $kb create api --group apps --version v1 --kind Application --plugins="server-side-apply/v1-alpha" --controller=true --resource=true --make=false
+
     header_text 'Editing project with Grafana plugin ...'
     $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
