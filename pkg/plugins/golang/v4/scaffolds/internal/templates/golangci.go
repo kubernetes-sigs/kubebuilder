@@ -65,7 +65,12 @@ linters:
     - unconvert
     - unparam
     - unused
+    - logcheck
   settings:
+    custom:
+      logcheck:
+        type: "module"
+        description: Checks Go logging calls for Kubernetes logging conventions.
     revive:
       rules:
         - name: comment-spacings

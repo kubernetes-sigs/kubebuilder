@@ -31,15 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
 )
 
-// Helpers to keep lines short and consistent with production messages.
-func expNormalMsg(from, to string) string {
-	return fmt.Sprintf("(chore) scaffold update: %s -> %s", from, to)
-}
-
-func expConflictMsg(from, to string) string {
-	return fmt.Sprintf(":warning: (chore) [with conflicts] scaffold update: %s -> %s", from, to)
-}
-
 // Mock response for binary executables.
 func mockBinResponse(script, mockBin string) error {
 	err := os.WriteFile(mockBin, []byte(script), 0o755)
@@ -394,7 +385,7 @@ exit 1`
 				fmt.Sprintf("merge --no-edit --no-commit %s", opts.OriginalBranch),
 			))
 			Expect(s).To(ContainSubstring("add --all"))
-			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
+			Expect(s).To(ContainSubstring(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
 		})
 
 		It("fails when branch creation fails", func() {
@@ -439,7 +430,7 @@ exit 0`
 
 			s, _ := os.ReadFile(logFile)
 			Expect(string(s)).To(ContainSubstring(
-				expConflictMsg(opts.FromVersion, opts.ToVersion),
+				helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion),
 			))
 		})
 	})
@@ -478,7 +469,7 @@ exit 0`
 
 			Expect(s).To(ContainSubstring(fmt.Sprintf("checkout %s -- .", opts.MergeBranch)))
 			Expect(s).To(ContainSubstring("add --all"))
-			Expect(s).To(ContainSubstring(expNormalMsg(opts.FromVersion, opts.ToVersion)))
+			Expect(s).To(ContainSubstring(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
 			Expect(s).To(ContainSubstring("commit --no-verify -m"))
 		})
 
@@ -548,6 +539,50 @@ exit 1`
 			err := runAlphaGenerate(tmpDir, "v4.5.0")
 			Expect(err).To(HaveOccurred())
 			Expect(os.Getenv("PATH")).To(Equal(orig))
+		})
+	})
+
+	Context("getMergeMessage", func() {
+		BeforeEach(func() {
+			opts.FromVersion = "v4.5.0"
+			opts.ToVersion = "v4.6.0"
+			opts.CommitMessage = ""
+			opts.CommitMessageConflict = ""
+		})
+
+		It("uses custom commit message when provided (no conflicts)", func() {
+			opts.CommitMessage = "chore: custom update message"
+			msg := opts.getMergeMessage(false)
+			Expect(msg).To(Equal("chore: custom update message"))
+		})
+
+		It("uses custom conflict message when provided (with conflicts)", func() {
+			opts.CommitMessageConflict = "chore: custom conflict message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal("chore: custom conflict message"))
+		})
+
+		It("uses default message when no custom message (no conflicts)", func() {
+			msg := opts.getMergeMessage(false)
+			Expect(msg).To(Equal(helpers.MergeCommitMessage(opts.FromVersion, opts.ToVersion)))
+		})
+
+		It("uses default conflict message when no custom message (with conflicts)", func() {
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal(helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)))
+		})
+
+		It("prefers conflict message over regular message when conflicts occur", func() {
+			opts.CommitMessage = "chore: regular message"
+			opts.CommitMessageConflict = "chore: conflict message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal("chore: conflict message"))
+		})
+
+		It("falls back to default conflict message when only regular message is set", func() {
+			opts.CommitMessage = "chore: regular message"
+			msg := opts.getMergeMessage(true)
+			Expect(msg).To(Equal(helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)))
 		})
 	})
 })

@@ -91,7 +91,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if apierrors.IsNotFound(err) {
 			// If the custom resource is not found then it usually means that it was deleted or not created
 			// In this way, we will stop the reconciliation
-			log.Info("busybox resource not found. Ignoring since object must be deleted")
+			log.Info("Busybox resource not found, ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -121,7 +121,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
-		log.Info("Adding Finalizer for Busybox")
+		log.Info("Adding finalizer for Busybox")
 		controllerutil.AddFinalizer(busybox, busyboxFinalizer)
 		if err = r.Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
@@ -134,7 +134,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	isBusyboxMarkedToBeDeleted := busybox.GetDeletionTimestamp() != nil
 	if isBusyboxMarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
-			log.Info("Performing Finalizer Operations for Busybox before delete CR")
+			log.Info("Performing finalizer operations for Busybox before deleting CR")
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
@@ -172,7 +172,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 
-			log.Info("Removing Finalizer for Busybox after successfully perform the operations")
+			log.Info("Removing finalizer for Busybox after successfully performing the operations")
 			if ok := controllerutil.RemoveFinalizer(busybox, busyboxFinalizer); !ok {
 				err = fmt.Errorf("finalizer for Busybox was not removed")
 				log.Error(err, "Failed to remove finalizer for Busybox")

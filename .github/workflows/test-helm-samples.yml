@@ -57,11 +57,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Verify Helm installation
-        run: helm version
+        run: make install-helm
 
       - name: Lint Helm chart for project-v4-with-plugins
         run: |
@@ -71,8 +67,8 @@ jobs:
         run: |
           cd testdata/project-v4-with-plugins/
           go mod tidy
-          make docker-build IMG=project-v4-with-plugins:v0.1.0
-          kind load docker-image project-v4-with-plugins:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
 
       - name: Install Prometheus Operator CRDs
         run: |
@@ -95,17 +91,19 @@ jobs:
         run: |
           helm template testdata/project-v4-with-plugins/dist/chart --namespace=project-v4-with-plugins-system
 
-      - name: Install Helm chart for project-v4-with-plugins
+      - name: Deploy manager via Helm
+        working-directory: testdata/project-v4-with-plugins
         run: |
-          helm install my-release \
-            testdata/project-v4-with-plugins/dist/chart \
-            --namespace project-v4-with-plugins-system \
-            --create-namespace \
-            --set prometheus.enable=true
+          make helm-deploy IMG=controller:latest HELM_EXTRA_ARGS="--set prometheus.enable=true"
 
       - name: Check Helm release status
+        working-directory: testdata/project-v4-with-plugins
         run: |
-          helm status my-release --namespace project-v4-with-plugins-system
+          make helm-status
+
+      - name: Run Helm tests
+        run: |
+          helm test project-v4-with-plugins --namespace project-v4-with-plugins-system
 
       - name: Delete kind cluster
         if: always()
@@ -143,8 +141,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        run: make install-helm
 
       - name: Install kubebuilder binary
         run: make install
@@ -158,30 +155,32 @@ jobs:
           go mod init test-helm-no-webhooks
           kubebuilder init
           kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
-          kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
+          kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha
 
       - name: Build and load Docker image
         working-directory: test-helm-no-webhooks
         run: |
-          make docker-build IMG=test-helm-no-webhooks:v0.1.0
-          kind load docker-image test-helm-no-webhooks:v0.1.0
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
 
       - name: Lint Helm chart
         working-directory: test-helm-no-webhooks
         run: helm lint ./dist/chart
 
-      - name: Deploy Helm chart without cert-manager
+      - name: Deploy manager via Helm
         working-directory: test-helm-no-webhooks
         run: |
-          helm install my-release \
-            ./dist/chart \
-            --create-namespace \
-            --namespace test-helm-no-webhooks-system
+          make helm-deploy IMG=controller:latest
 
       - name: Verify deployment is working
         working-directory: test-helm-no-webhooks
         run: |
-          helm status my-release --namespace test-helm-no-webhooks-system
+          make helm-status
+
+      - name: Run Helm tests
+        working-directory: test-helm-no-webhooks
+        run: |
+          helm test test-helm-no-webhooks --namespace test-helm-no-webhooks-system
 
       - name: Delete kind cluster
         if: always()

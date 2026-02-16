@@ -58,9 +58,9 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --programmatic-validation --validation-path=/custom-validate-admiral --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.3
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.3
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --defaulting
     # Webhook for kubernetes Core type that is part of an api group - test incremental
@@ -69,9 +69,6 @@ function scaffold_test_project {
   fi
 
   if [[ $project =~ multigroup ]]; then
-    header_text 'Switching to multigroup layout ...'
-    $kb edit --multigroup=true
-
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     # Test incremental webhook additions
@@ -92,14 +89,21 @@ function scaffold_test_project {
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.3
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.19.3
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --programmatic-validation --make=false
     # Webhook for kubernetes Core type that is part of an api group - test incremental
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting --make=false
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
+  fi
+
+  if [[ $project =~ with-plugins ]] ; then
+    header_text 'Enabling namespace-scoped deployment ...'
+    # Use edit command to test toggling namespaced mode on existing projects
+    # This test is to ensure that we don't break and we still with both flags
+    $kb edit --namespaced --force
   fi
 
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
@@ -138,5 +142,5 @@ function scaffold_test_project {
 build_kb
 
 scaffold_test_project project-v4 --plugins="go/v4"
-scaffold_test_project project-v4-multigroup --plugins="go/v4"
-scaffold_test_project project-v4-with-plugins --plugins="go/v4"
+scaffold_test_project project-v4-multigroup --plugins="go/v4" --multigroup
+scaffold_test_project project-v4-with-plugins --plugins="go/v4" --namespaced

@@ -53,6 +53,8 @@ Conflicts:
 Other options:
   • --restore-path: restore paths from base when squashing (e.g., CI configs).
   • --output-branch: override the output branch name.
+  • --merge-message: custom commit message for clean merges.
+  • --conflict-message: custom commit message for merges with conflicts.
   • --push: push the output branch to 'origin' after the update.
   • --git-config: pass per-invocation Git config as -c key=value (repeatable). When not set,
       defaults are set to improve detection during merges.
@@ -81,6 +83,11 @@ Defaults:
 
   # Run update and push the output branch to origin (works with or without --show-commits)
   kubebuilder alpha update --from-version v4.6.0 --to-version v4.7.0 --force --push
+
+  # Use custom commit messages for both scenarios
+  kubebuilder alpha update --force \
+    --merge-message "chore: upgrade kubebuilder scaffold" \
+    --conflict-message "chore: upgrade with conflicts - manual review needed"
 
   # Create an issue and add an AI overview comment
   kubebuilder alpha update --open-gh-issue --use-gh-models
@@ -156,6 +163,12 @@ Defaults:
 		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
 	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
 		"Push the output branch to the remote repository after the update.")
+	updateCmd.Flags().StringVar(&opts.CommitMessage, "merge-message", "",
+		"Custom commit message for successful merges (no conflicts). "+
+			"Defaults to 'chore(kubebuilder): update scaffold <from> -> <to>'.")
+	updateCmd.Flags().StringVar(&opts.CommitMessageConflict, "conflict-message", "",
+		"Custom commit message for merges with conflicts. "+
+			"Defaults to 'chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold <from> -> <to>'.")
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
 		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
 	updateCmd.Flags().BoolVar(

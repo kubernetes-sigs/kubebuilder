@@ -336,6 +336,18 @@ func (c *CLI) getInfoFromConfig(projectConfig config.Config) error {
 
 // getInfoFromFlags obtains the project version and plugin keys from flags.
 func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
+	// Check if --plugins is followed by --help or -h to avoid parsing help as a plugin value
+	// This fixes: kubebuilder init --plugins --help
+	for i := 0; i < len(os.Args)-1; i++ {
+		if os.Args[i] == "--plugins" || os.Args[i] == "--plugins=" {
+			nextArg := os.Args[i+1]
+			if isHelpFlag(nextArg) {
+				// Help was requested, return early to let Cobra handle it
+				return nil
+			}
+		}
+	}
+
 	// Partially parse the command line arguments
 	fs := pflag.NewFlagSet("base", pflag.ContinueOnError)
 
@@ -364,15 +376,38 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	if pluginKeys, err := fs.GetStringSlice(pluginsFlag); err != nil {
 		return fmt.Errorf("invalid flag %q: %w", pluginsFlag, err)
 	} else if len(pluginKeys) != 0 {
-		// Remove leading and trailing spaces and validate the plugin keys
-		for i, key := range pluginKeys {
-			pluginKeys[i] = strings.TrimSpace(key)
-			if err := plugin.ValidateKey(pluginKeys[i]); err != nil {
-				return fmt.Errorf("invalid plugin %q found in flags: %w", pluginKeys[i], err)
+		// Filter out help flags that may have been incorrectly parsed as plugin values
+		// This fixes the issue where "kubebuilder edit --plugins --help" treats --help as a plugin
+		validPluginKeys := make([]string, 0, len(pluginKeys))
+		helpRequested := false
+		for _, key := range pluginKeys {
+			key = strings.TrimSpace(key)
+			// Skip help flags
+			if isHelpFlag(key) {
+				helpRequested = true
+				continue
+			}
+			validPluginKeys = append(validPluginKeys, key)
+		}
+
+		// If help was requested via --plugins flag, set the help flag to trigger Cobra's help display
+		// This prevents command execution and shows help instead
+		if helpRequested {
+			if err := fs.Set("help", "true"); err == nil {
+				return nil
+			}
+			// If setting help flag fails, still return nil to avoid validation errors
+			return nil
+		}
+
+		// Validate the remaining plugin keys
+		for i, key := range validPluginKeys {
+			if err := plugin.ValidateKey(key); err != nil {
+				return fmt.Errorf("invalid plugin %q found in flags: %w", validPluginKeys[i], err)
 			}
 		}
 
-		c.pluginKeys = pluginKeys
+		c.pluginKeys = validPluginKeys
 	}
 
 	// If the project version flag was accepted but not provided keep the empty version and try to resolve it later,
@@ -566,6 +601,10 @@ func (c CLI) metadata() plugin.CLIMetadata {
 // If an error is found, command help and examples will be printed.
 func (c CLI) Run() error {
 	if err := c.cmd.Execute(); err != nil {
+		// Don't return error if help was displayed (from --plugins --help pattern)
+		if err == errHelpDisplayed {
+			return nil
+		}
 		return fmt.Errorf("error executing command: %w", err)
 	}
 

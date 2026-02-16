@@ -57,6 +57,8 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+	multigroup         bool
+	namespaced         bool
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -68,30 +70,73 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
   - a "Makefile" with several useful make targets for the project
   - several YAML files for project deployment under the "config" directory
   - a "cmd/main.go" file that creates the manager that will run the project controllers
-`
-	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project with your domain and name in copyright
-  %[1]s init --plugins go/v4 --domain example.org --owner "Your name"
 
-  # Initialize a new project defining a specific project version
-  %[1]s init --plugins go/v4 --project-version 3
+Required flags:
+  --domain: Domain for your APIs (e.g., example.org creates crew.example.org for API groups)
+
+Configuration flags:
+  --repo: Go module path (e.g., github.com/user/repo); auto-detected if not provided
+  --owner: Owner name for copyright license headers
+  --license: License to use (apache2 or none, default: apache2)
+
+Plugin flags:
+  --plugins: Comma-separated list of plugins to use (default: go/v4)
+             Plugins scaffold files during init and are saved to the PROJECT layout
+             Future operations (i.e. create api, create webhook) call all plugins in the chain
+             Run 'kubebuilder init --plugins --help' to see available plugins
+
+Layout flags:
+  --multigroup: Enable multigroup layout to organize APIs by group
+                Scaffolds APIs in api/<group>/<version>/ instead of api/<version>/
+                Useful when managing multiple API groups (e.g., batch, apps, crew)
+  --namespaced: Enable namespace-scoped deployment instead of cluster-scoped
+                Manager watches one or more specific namespaces instead of all namespaces
+                Namespaces to watch are configured via WATCH_NAMESPACE environment variable
+                Uses Role/RoleBinding instead of ClusterRole/ClusterRoleBinding
+                Suitable for multi-tenant environments or limited scope deployments
+
+Note: Layout settings can be changed later with 'kubebuilder edit'.
+`
+	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project
+  %[1]s init --domain example.org
+
+  # Initialize with multigroup layout
+  %[1]s init --domain example.org --multigroup
+
+  # Initialize with namespace-scoped deployment
+  %[1]s init --domain example.org --namespaced
+
+  # Initialize with optional plugins
+  %[1]s init --plugins go/v4,autoupdate/v1-alpha --domain example.org
+  %[1]s init --plugins go/v4,helm/v2-alpha --domain example.org
+
+  # Initialize with custom settings
+  %[1]s init --domain example.org --owner "Your Name" --license apache2
+
+  # Initialize with all options combined
+  %[1]s init --plugins go/v4,autoupdate/v1-alpha --domain example.org --multigroup --namespaced
 `, cliMeta.CommandName)
 }
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.skipGoVersionCheck, "skip-go-version-check",
-		false, "if specified, skip checking the Go version")
+		false, "skip Go version check")
 
 	// dependency args
-	fs.BoolVar(&p.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
+	fs.BoolVar(&p.fetchDeps, "fetch-deps", true, "download dependencies after scaffolding")
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
-		"license to use to boilerplate, may be one of 'apache2', 'none'")
-	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+		"license header to use (apache2 or none)")
+	fs.StringVar(&p.owner, "owner", "", "copyright owner for license headers")
 
 	// project args
-	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
-		"defaults to the go package of the current working directory.")
+	fs.StringVar(&p.repo, "repo", "", "Go module name (e.g., github.com/user/repo); "+
+		"auto-detected from current directory if not provided")
+	fs.BoolVar(&p.multigroup, "multigroup", false,
+		"enable multigroup layout (organize APIs by group)")
+	fs.BoolVar(&p.namespaced, "namespaced", false,
+		"enable namespace-scoped deployment (default: cluster-scoped)")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
@@ -108,6 +153,18 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 
 	if err := p.config.SetRepository(p.repo); err != nil {
 		return fmt.Errorf("error setting repository: %w", err)
+	}
+
+	if p.multigroup {
+		if err := p.config.SetMultiGroup(); err != nil {
+			return fmt.Errorf("error setting multigroup: %w", err)
+		}
+	}
+
+	if p.namespaced {
+		if err := p.config.SetNamespaced(); err != nil {
+			return fmt.Errorf("error setting namespaced: %w", err)
+		}
 	}
 
 	return nil
@@ -133,7 +190,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	if !p.fetchDeps {
-		log.Info("Skipping fetching dependencies.")
+		log.Info("skipping fetching dependencies")
 		return nil
 	}
 

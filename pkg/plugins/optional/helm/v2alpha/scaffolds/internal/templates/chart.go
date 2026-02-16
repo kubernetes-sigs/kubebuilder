@@ -57,9 +57,16 @@ func (f *HelmChart) SetTemplateDefaults() error {
 
 const helmChartTemplate = `apiVersion: v2
 name: {{ .ProjectName }}
-description: A Helm chart to distribute the project {{ .ProjectName }}
+description: A Helm chart to distribute {{ .ProjectName }}
 type: application
+
 version: 0.1.0
 appVersion: "0.1.0"
-icon: "https://example.com/icon.png"
+
+keywords:
+  - kubernetes
+  - operator
+
+annotations:
+  kubebuilder.io/generated-by: kubebuilder
 `

@@ -383,8 +383,9 @@ metadata:
 
 			// Should NOT wrap essential RBAC with conditionals
 			Expect(result).NotTo(ContainSubstring("{{- if .Values"))
+		})
 
-			// Test webhook service (also essential)
+		It("should add webhook conditional for webhook services", func() {
 			serviceResource := &unstructured.Unstructured{}
 			serviceResource.SetAPIVersion("v1")
 			serviceResource.SetKind("Service")
@@ -397,11 +398,12 @@ metadata:
 
 			webhookResult := templater.ApplyHelmSubstitutions(webhookContent, serviceResource)
 
-			// Should NOT wrap webhook service with conditionals (it's essential)
-			Expect(webhookResult).NotTo(ContainSubstring("{{- if .Values"))
+			// Should wrap webhook service with webhook.enable conditional
+			Expect(webhookResult).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(webhookResult).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should NOT add cert-manager conditionals to webhook configurations", func() {
+		It("should add webhook conditional for webhook configurations", func() {
 			mutatingWebhookResource := &unstructured.Unstructured{}
 			mutatingWebhookResource.SetAPIVersion("admissionregistration.k8s.io/v1")
 			mutatingWebhookResource.SetKind("MutatingWebhookConfiguration")
@@ -414,9 +416,80 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, mutatingWebhookResource)
 
-			// Webhook configurations should NOT be conditional on cert-manager
-			// (they're essential and cert-manager is optional)
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			// Webhook configurations should be conditional on webhook.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should add webhook conditional for validating webhook configurations", func() {
+			validatingWebhookResource := &unstructured.Unstructured{}
+			validatingWebhookResource.SetAPIVersion("admissionregistration.k8s.io/v1")
+			validatingWebhookResource.SetKind("ValidatingWebhookConfiguration")
+			validatingWebhookResource.SetName("test-project-validating-webhook-configuration")
+
+			content := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: test-project-system/test-project-serving-cert
+  name: test-project-validating-webhook-configuration`
+
+			result := templater.ApplyHelmSubstitutions(content, validatingWebhookResource)
+
+			// Webhook configurations should be wrapped with webhook.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+			// Cert-manager annotation should still be conditional on certManager.enable
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+		})
+
+		It("should add crd.enable conditional and resource-policy annotation for CRDs", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("guestbooks.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: guestbooks.example.com
+spec:
+  group: example.com`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Should be wrapped with crd.enable conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+			// Should have resource-policy annotation for helm uninstall protection
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
+			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+		})
+
+		It("should add resource-policy annotation to CRDs that already have annotations", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("configs.example.com")
+
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.0
+  name: configs.example.com
+spec:
+  group: example.com`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// Should be wrapped with crd.enable conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			// Should have resource-policy annotation
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
+			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+			// Should preserve existing annotation
+			Expect(result).To(ContainSubstring("controller-gen.kubebuilder.io/version"))
 		})
 	})
 
@@ -1909,6 +1982,141 @@ subjects:
 			Expect(result).To(ContainSubstring(expectedRB))
 			Expect(result).To(ContainSubstring(expectedRole))
 			Expect(result).To(ContainSubstring(expectedSA))
+		})
+	})
+
+	Context("custom container name support", func() {
+		It("should template deployment fields when container name is not 'manager'", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with custom container name "controller-test" using default-container annotation
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: controller-test
+    spec:
+      containers:
+      - name: controller-test
+        image: controller:latest
+        imagePullPolicy: Always
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts: []
+      serviceAccountName: controller-manager
+      volumes: []`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should template image reference (not hardcoded)
+			Expect(result).To(ContainSubstring(
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
+
+			// Should template imagePullPolicy
+			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
+			Expect(result).NotTo(ContainSubstring("imagePullPolicy: Always"))
+
+			// Should template resources
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.resources | nindent"))
+
+			// Should template environment variables
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.env }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.env | nindent"))
+
+			// Should template args
+			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
+
+			// Container name should remain "controller-test"
+			Expect(result).To(ContainSubstring("name: controller-test"))
+		})
+
+		It("should fall back to 'manager' when default-container annotation is missing", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment without default-container annotation (backward compatibility test)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should still template fields for "manager" container
+			Expect(result).To(ContainSubstring(
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
+		})
+
+		It("should not template when container name doesn't match annotation", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with mismatched annotation and container name
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: main-container
+    spec:
+      containers:
+      - name: sidecar
+        image: sidecar:latest
+        resources:
+          limits:
+            cpu: 100m`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should NOT template sidecar container (doesn't match annotation)
+			Expect(result).To(ContainSubstring("image: sidecar:latest"))
+			Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"))
 		})
 	})
 })

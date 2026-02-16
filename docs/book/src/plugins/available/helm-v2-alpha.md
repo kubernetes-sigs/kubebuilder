@@ -30,7 +30,7 @@ The **helm/v2-alpha** plugin converts the bundle (`dist/install.yaml`) into a He
 - **Preserves Customizations**: Keeps env vars, labels, annotations, and patches.
 - **Structured Output**: Templates follow your `config/` directory layout.
 - **Smart Values**: `values.yaml` includes only actual configurable parameters.
-- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `_helpers.tpl`, `.helmignore`, and `.github/workflows/test-chart.yml` are preserved.
+- **File Preservation**: `Chart.yaml` is never overwritten. Without `--force`, `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore` and `.github/workflows/test-chart.yml` are preserved.
 - **Handles Custom Resources**: Resources not matching standard layout (custom Services, ConfigMaps, etc.) are placed in `templates/extras/` with proper templating.
 
 ## When to Use It
@@ -82,7 +82,9 @@ The plugin creates a chart layout that matches your `config/`:
 <output-dir>/chart/
 ├── Chart.yaml
 ├── values.yaml
+├── .helmignore
 └── templates/
+    ├── NOTES.txt
     ├── _helpers.tpl
     ├── rbac/                    # Individual RBAC files (examples)
     │   ├── controller-manager.yaml
@@ -158,6 +160,16 @@ In short:
 This design choice prioritizes correctness and maintainability over Helm's default convention,
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
 </aside>
+
+## Post-Install Notes
+
+The plugin generates a `NOTES.txt` template that displays helpful information after `helm install` or `helm upgrade`:
+
+- Installation confirmation with release name and namespace
+- Commands to verify the deployment (kubectl get pods, CRDs)
+- How to get more information using helm commands
+
+The `NOTES.txt` file is preserved on subsequent runs (unless `--force` is used), allowing you to customize the post-install message for your users.
 
 ## Values Configuration
 
@@ -308,7 +320,17 @@ prometheus:
 
 ### Installation
 
-Install the chart into a namespace using Helm flags (the chart does not create namespaces):
+The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
+
+```shell
+make helm-deploy IMG=<registry>/<project:tag>  # Deploy/upgrade the chart
+make helm-status                                # Check release status
+make helm-history                               # View release history
+make helm-rollback                              # Rollback to previous version
+make helm-uninstall                             # Remove the release
+```
+
+You can also install manually using Helm commands:
 
 ```shell
 helm install my-release ./dist/chart \
@@ -316,13 +338,15 @@ helm install my-release ./dist/chart \
   --create-namespace
 ```
 
+The Makefile targets use sensible defaults extracted from your project configuration (namespace from manifests, release name from project name, chart directory from `--output-dir` flag).
+
 ## Flags
 
 | Flag                | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (values.yaml, _helpers.tpl, .helmignore, test-chart.yml) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
 
 <aside class="note">
 <H1> Examples </H1>

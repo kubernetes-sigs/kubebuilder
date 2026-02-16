@@ -36,7 +36,9 @@ type fakeConfig struct {
 	pluginChain []string
 	domain      string
 	repo        string
+	projectName string
 	multigroup  bool
+	namespaced  bool
 	resources   []resource.Resource
 	pluginErr   error
 	getResErr   error
@@ -46,7 +48,9 @@ type fakeConfig struct {
 func (f *fakeConfig) GetPluginChain() []string { return f.pluginChain }
 func (f *fakeConfig) GetDomain() string        { return f.domain }
 func (f *fakeConfig) GetRepository() string    { return f.repo }
+func (f *fakeConfig) GetProjectName() string   { return f.projectName }
 func (f *fakeConfig) IsMultiGroup() bool       { return f.multigroup }
+func (f *fakeConfig) IsNamespaced() bool       { return f.namespaced }
 func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
 	if f.getResErr != nil {
 		return nil, f.getResErr
@@ -376,6 +380,67 @@ var _ = Describe("generate: get-args-helpers", func() {
 					args := getInitArgs(store)
 					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
+				})
+			})
+
+			When("project name is set", func() {
+				It("returns correct args including project name", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						projectName: "my-project",
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
+				})
+			})
+
+			When("multigroup flag is enabled", func() {
+				It("includes --multigroup in init args", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						multigroup:  true,
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--multigroup"))
+				})
+			})
+
+			When("namespaced flag is enabled", func() {
+				It("includes --namespaced in init args", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						namespaced:  true,
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
+				})
+			})
+
+			When("both multigroup and namespaced are enabled", func() {
+				It("includes both flags in init args", func() {
+					cfg := &fakeConfig{
+						pluginChain: []string{"go.kubebuilder.io/v4"},
+						domain:      "foo.com",
+						repo:        "bar",
+						multigroup:  true,
+						namespaced:  true,
+					}
+					store := &fakeStore{cfg: cfg}
+					args := getInitArgs(store)
+					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+						"--domain", "foo.com", "--repo", "bar", "--multigroup", "--namespaced"))
 				})
 			})
 		})
@@ -716,15 +781,6 @@ var _ = Describe("generate: kubebuilder", func() {
 			store := &fakeStore{cfg: cfg}
 			// Run kubebuilderCreate and verify no errors
 			Expect(kubebuilderCreate(store)).To(Succeed())
-		})
-	})
-
-	Context("kubebuilderEdit", func() {
-		It("runs kubebuilder edit successfully for multigroup layout", func() {
-			cfg := &fakeConfig{multigroup: true}
-			store := &fakeStore{cfg: cfg}
-			// Run kubebuilderEdit and verify no errors
-			Expect(kubebuilderEdit(store)).To(Succeed())
 		})
 	})
 

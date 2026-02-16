@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,28 +22,28 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &Role{}
+var _ machinery.Template = &ClusterRole{}
 
-// Role scaffolds a file that defines the role for the manager
-type Role struct {
+// ClusterRole scaffolds a ClusterRole for the manager
+type ClusterRole struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements machinery.Template
-func (f *Role) SetTemplateDefaults() error {
+func (f *ClusterRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "role.yaml")
 	}
 
-	f.TemplateBody = managerRoleTemplate
+	f.TemplateBody = clusterRoleTemplate
 
-	f.IfExistsAction = machinery.SkipFile
+	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }
 
-const managerRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+const clusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:

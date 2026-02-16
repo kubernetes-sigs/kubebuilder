@@ -62,6 +62,20 @@ func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmT
 	}
 }
 
+// getDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
+// This allows the Helm plugin to work with any container name, not just "manager".
+// If the annotation is not found, it falls back to "manager" for backward compatibility.
+func (t *HelmTemplater) getDefaultContainerName(yamlContent string) string {
+	// Look for kubectl.kubernetes.io/default-container annotation
+	pattern := regexp.MustCompile(`kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
+	matches := pattern.FindStringSubmatch(yamlContent)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	// Fallback to "manager" for backward compatibility with older scaffolds
+	return "manager"
+}
+
 // resourceNameTemplate creates a Helm template for a resource name with 63-char safety.
 // Uses <chartname>.resourceName helper which intelligently truncates when base + suffix > 63 chars.
 // Template name is scoped to the chart to prevent collisions when used as a Helm dependency.
@@ -258,10 +272,10 @@ func (t *HelmTemplater) substituteCertificateDNSNames(yamlContent string, resour
 		// Metrics certificates should point to metrics service
 		// Use chart-specific resourceName helper for consistent naming with 63-char safety
 		metricsServiceTemplate := "{{ include \"" + t.chartName + ".resourceName\" " +
-			"(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" .) }}"
-		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc"
+			"(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}"
+		metricsServiceFQDN := metricsServiceTemplate + ".{{ include \"" + t.chartName + ".namespaceName\" $ }}.svc"
 		metricsServiceFQDNCluster := metricsServiceTemplate +
-			".{{ include \"" + t.chartName + ".namespaceName\" . }}.svc.cluster.local"
+			".{{ include \"" + t.chartName + ".namespaceName\" $ }}.svc.cluster.local"
 
 		// Replace placeholders
 		yamlContent = strings.ReplaceAll(yamlContent, "SERVICE_NAME.SERVICE_NAMESPACE.svc", metricsServiceFQDN)
@@ -303,24 +317,61 @@ func (t *HelmTemplater) substituteCertManagerReferences(
 
 // substituteResourceNamesWithPrefix templates ALL resource names using chart.serviceName helper.
 // Generic regex-based approach works for any resource type without hardcoding specific names.
+// Excludes container names since those are internal pod identifiers that don't need templating.
 func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ *unstructured.Unstructured) string {
 	namePattern := regexp.MustCompile(
 		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(t.detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
 
-	yamlContent = namePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-		parts := namePattern.FindStringSubmatch(match)
-		if len(parts) < 4 {
-			return match
+	lines := strings.Split(yamlContent, "\n")
+	result := make([]string, 0, len(lines))
+
+	for i, line := range lines {
+		if !namePattern.MatchString(line) {
+			result = append(result, line)
+			continue
 		}
 
-		indent := parts[1]
-		fieldName := parts[2]
-		suffix := parts[3][1:] // Remove leading dash
+		// Check if this is a container name by looking at surrounding context
+		// Container names appear after "containers:" and before other container fields (image, args, etc.)
+		isContainerName := false
+		if strings.Contains(line, "name:") {
+			// Look backward for "containers:" within ~20 lines
+			for j := i - 1; j >= 0 && j >= i-20; j-- {
+				trimmed := strings.TrimSpace(lines[j])
+				if trimmed == "containers:" {
+					isContainerName = true
+					break
+				}
+				// Stop if we hit a new top-level section
+				if strings.HasPrefix(lines[j], "  ") && strings.HasSuffix(trimmed, ":") &&
+					(trimmed == "spec:" || trimmed == "template:" || trimmed == "volumes:") {
+					break
+				}
+			}
+		}
 
-		return indent + fieldName + ": " + t.resourceNameTemplate(suffix)
-	})
+		if isContainerName {
+			// Don't template container names - keep them as-is
+			result = append(result, line)
+		} else {
+			// Template other resource names
+			templatedLine := namePattern.ReplaceAllStringFunc(line, func(match string) string {
+				parts := namePattern.FindStringSubmatch(match)
+				if len(parts) < 4 {
+					return match
+				}
 
-	return yamlContent
+				indent := parts[1]
+				fieldName := parts[2]
+				suffix := parts[3][1:] // Remove leading dash
+
+				return indent + fieldName + ": " + t.resourceNameTemplate(suffix)
+			})
+			result = append(result, templatedLine)
+		}
+	}
+
+	return strings.Join(result, "\n")
 }
 
 // addHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents
@@ -468,6 +519,17 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 
 // substituteRBACValues applies RBAC-specific template substitutions
 func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
+	roleRefBlockPattern := regexp.MustCompile(
+		`(?s)(roleRef:\s*\n(?:\s+\w+:.*\n)*?)(\s+)name:\s+` +
+			regexp.QuoteMeta(t.detectedPrefix) + `-manager-role`)
+	yamlContent = roleRefBlockPattern.ReplaceAllString(
+		yamlContent, `${1}${2}name: `+t.resourceNameTemplate("manager-role"))
+
+	roleRefBlockPatternSimple := regexp.MustCompile(
+		`(?s)(roleRef:\s*\n(?:\s+\w+:.*\n)*?)(\s+)name:\s+manager-role`)
+	yamlContent = roleRefBlockPatternSimple.ReplaceAllString(
+		yamlContent, `${1}${2}name: `+t.resourceNameTemplate("manager-role"))
+
 	return yamlContent
 }
 
@@ -519,7 +581,11 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 
 // templateEnvironmentVariables exposes environment variables via values.yaml
 func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	// Check for both literal container name and templated container name
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	if !hasLiteralName && !hasTemplatedName {
 		return yamlContent
 	}
 
@@ -572,7 +638,11 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 
 // templateResources converts resource sections to Helm templates
 func (t *HelmTemplater) templateResources(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") || !strings.Contains(yamlContent, "resources:") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	// Check for both literal container name and templated container name
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	if (!hasLiteralName && !hasTemplatedName) || !strings.Contains(yamlContent, "resources:") {
 		return yamlContent
 	}
 
@@ -759,7 +829,11 @@ func (t *HelmTemplater) templatePodSecurityContext(yamlContent string) string {
 
 // templateContainerSecurityContext exposes container securityContext via values.yaml
 func (t *HelmTemplater) templateContainerSecurityContext(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") || !strings.Contains(yamlContent, "securityContext:") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	// Check for both literal container name and templated container name
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	if (!hasLiteralName && !hasTemplatedName) || !strings.Contains(yamlContent, "securityContext:") {
 		return yamlContent
 	}
 
@@ -825,7 +899,11 @@ func leadingWhitespace(line string) (string, int) {
 
 // templateControllerManagerArgs exposes controller manager args via values.yaml while keeping core defaults
 func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	// Check for both literal container name and templated container name
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	if !hasLiteralName && !hasTemplatedName {
 		return yamlContent
 	}
 
@@ -926,7 +1004,12 @@ func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string
 
 // templateImageReference converts hardcoded image references to Helm templates
 func (t *HelmTemplater) templateImageReference(yamlContent string) string {
-	if !strings.Contains(yamlContent, "name: manager") {
+	containerName := t.getDefaultContainerName(yamlContent)
+	// Check for both literal container name and templated container name (which may have been
+	// converted by substituteResourceNamesWithPrefix before this function runs)
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	if !hasLiteralName && !hasTemplatedName {
 		return yamlContent
 	}
 
@@ -1271,6 +1354,69 @@ func (t *HelmTemplater) makeMetricsVolumeMountsConditional(yamlContent string) s
 	return yamlContent
 }
 
+// injectCRDResourcePolicyAnnotation adds the helm.sh/resource-policy: keep annotation
+// to CRDs conditionally based on .Values.crd.keep. This prevents CRDs from being deleted
+// on helm uninstall when crd.keep is true in values.yaml.
+func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) string {
+	// Check if metadata section exists
+	if !strings.Contains(yamlContent, "metadata:") {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+
+	// Check if annotations: already exists
+	if strings.Contains(yamlContent, "annotations:") {
+		// Find the annotations: line and determine its indentation
+		for i, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "annotations:" || strings.HasPrefix(trimmed, "annotations:") {
+				annotationsIndent, _ := leadingWhitespace(line)
+				// Annotation values need one more level of indentation (4 spaces for go-yaml)
+				valueIndent := annotationsIndent + "    "
+
+				// Build the conditional annotation block
+				resourcePolicyBlock := fmt.Sprintf(
+					"%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
+					valueIndent, valueIndent, valueIndent)
+
+				// Insert after the annotations: line
+				result := make([]string, 0, len(lines)+3)
+				result = append(result, lines[:i+1]...)
+				result = append(result, resourcePolicyBlock)
+				result = append(result, lines[i+1:]...)
+				return strings.Join(result, "\n")
+			}
+		}
+	} else {
+		// No annotations section exists, need to add it after metadata:
+		for i, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "metadata:" || strings.HasPrefix(trimmed, "metadata:") {
+				metadataIndent, _ := leadingWhitespace(line)
+				// Fields under metadata need one more level of indentation (4 spaces for go-yaml)
+				fieldIndent := metadataIndent + "    "
+				// Annotation values need two more levels (8 spaces total)
+				valueIndent := metadataIndent + "        "
+
+				// Build annotations section with conditional resource-policy
+				annotationsSection := fmt.Sprintf(
+					"%sannotations:\n%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
+					fieldIndent, valueIndent, valueIndent, valueIndent)
+
+				// Insert after the metadata: line
+				result := make([]string, 0, len(lines)+4)
+				result = append(result, lines[:i+1]...)
+				result = append(result, annotationsSection)
+				result = append(result, lines[i+1:]...)
+				return strings.Join(result, "\n")
+			}
+		}
+	}
+
+	return yamlContent
+}
+
 // addConditionalWrappers adds conditional Helm logic based on resource type
 func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *unstructured.Unstructured) string {
 	kind := resource.GetKind()
@@ -1281,6 +1427,8 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 	case kind == kindNamespace:
 		return ""
 	case kind == "CustomResourceDefinition":
+		// CRDs need resource-policy annotation for helm uninstall protection
+		yamlContent = t.injectCRDResourcePolicyAnnotation(yamlContent)
 		// CRDs need crd.enable condition
 		return fmt.Sprintf("{{- if .Values.crd.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindCertificate && apiVersion == apiVersionCertManager:
@@ -1314,16 +1462,20 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		// These are required for the controller to function properly
 		return yamlContent
 	case kind == kindValidatingWebhook || kind == kindMutatingWebhook:
-		// Webhook configurations should always exist if project has webhooks
-		// Only the cert-manager annotations should be conditional
-		return t.makeWebhookAnnotationsConditional(yamlContent)
+		// Webhook configurations should be conditional on webhook.enable
+		yamlContent = t.makeWebhookAnnotationsConditional(yamlContent)
+		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindService:
 		// Services need conditional logic based on their purpose
 		if strings.Contains(name, "metrics") {
 			// Metrics services need metrics enabled
 			return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
 		}
-		// Other services (webhook service, etc.) don't need conditionals - they're essential
+		if strings.Contains(name, "webhook") {
+			// Webhook services need webhook enabled
+			return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
+		}
+		// Other services don't need conditionals
 		return yamlContent
 	default:
 		// No conditional wrapper needed for other resources (Deployment, Namespace)

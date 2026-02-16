@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:dupl
 package cli
 
 import (
@@ -30,8 +31,7 @@ func (c CLI) newCreateWebhookCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "webhook",
 		Short: "Scaffold a webhook for an API resource",
-		Long: `Scaffold a webhook for an API resource.
-`,
+		Long:  `Scaffold a webhook for an API resource.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("webhook subcommand requires an existing project"),
 		),
@@ -62,6 +62,12 @@ func (c CLI) newCreateWebhookCmd() *cobra.Command {
 	}
 
 	c.applySubcommandHooks(cmd, subcommands, webhookErrorMsg, false)
+
+	// Append plugin table after metadata updates
+	c.appendPluginTable(cmd, func(p plugin.Plugin) bool {
+		_, isValid := p.(plugin.CreateWebhook)
+		return isValid
+	}, "Available plugins that support 'create webhook'")
 
 	return cmd
 }

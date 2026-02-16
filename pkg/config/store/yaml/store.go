@@ -84,25 +84,25 @@ func (s *yamlStore) LoadFrom(path string) error {
 	// Read the file
 	in, err := afero.ReadFile(s.fs, path)
 	if err != nil {
-		return store.LoadError{Err: fmt.Errorf("unable to read %q file: %w", path, err)}
+		return store.LoadError{Err: fmt.Errorf("failed to read %q file: %w", path, err)}
 	}
 
 	// Check the file version
 	var versioned versionedConfig
 	if err = yaml.Unmarshal(in, &versioned); err != nil {
-		return store.LoadError{Err: fmt.Errorf("unable to determine config version: %w", err)}
+		return store.LoadError{Err: fmt.Errorf("failed to determine config version: %w", err)}
 	}
 
 	// Create the config object
 	var cfg config.Config
 	cfg, err = config.New(versioned.Version)
 	if err != nil {
-		return store.LoadError{Err: fmt.Errorf("unable to create config for version %q: %w", versioned.Version, err)}
+		return store.LoadError{Err: fmt.Errorf("failed to create config for version %q: %w", versioned.Version, err)}
 	}
 
 	// Unmarshal the file content
 	if err := cfg.UnmarshalYAML(in); err != nil {
-		return store.LoadError{Err: fmt.Errorf("unable to unmarshal config at %q: %w", path, err)}
+		return store.LoadError{Err: fmt.Errorf("failed to unmarshal config at %q: %w", path, err)}
 	}
 
 	s.cfg = cfg
@@ -130,14 +130,14 @@ func (s yamlStore) SaveTo(path string) error {
 			return store.SaveError{Err: fmt.Errorf("configuration already exists in %q", path)}
 		} else if !os.IsNotExist(err) {
 			// Error occurred while checking file existence
-			return store.SaveError{Err: fmt.Errorf("unable to check for file prior existence: %w", err)}
+			return store.SaveError{Err: fmt.Errorf("failed to check for file prior existence: %w", err)}
 		}
 	}
 
 	// Marshall into YAML
 	content, err := s.cfg.MarshalYAML()
 	if err != nil {
-		return store.SaveError{Err: fmt.Errorf("unable to marshal to YAML: %w", err)}
+		return store.SaveError{Err: fmt.Errorf("failed to marshal to YAML: %w", err)}
 	}
 
 	// Prepend warning comment for the 'PROJECT' file

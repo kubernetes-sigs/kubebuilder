@@ -36,12 +36,8 @@ arch=$(go env GOARCH)
 # translate arch to rust's conventions (if we can)
 if [[ ${arch} == "amd64" ]]; then
     arch="x86_64"
-elif [[ ${arch} == "x86" ]]; then
-    arch="i686"
 elif [[ ${arch} == "arm64" ]]; then
-    # arm64 is not supported for v0.4.40 mdbook, so using x86_64 type.
-    # Once the mdbook is upgraded to latest, use 'aarch64'
-    arch="x86_64"
+    arch="aarch64"
 fi
 
 # translate os to rust's conventions (if we can)
@@ -66,8 +62,7 @@ case ${os} in
 esac
 
 # grab mdbook
-# we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-MDBOOK_VERSION="v0.5.0"
+MDBOOK_VERSION="v0.5.2"
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
 
@@ -77,7 +72,7 @@ curl -fL -o /tmp/mdbook.${ext} "${MDBOOK_URL}"
 ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
-CONTROLLER_GEN_VERSION="v0.20.0"
+CONTROLLER_GEN_VERSION="v0.20.1"
 
 echo "grabbing the controller-gen version: ${CONTROLLER_GEN_VERSION}"
 go version

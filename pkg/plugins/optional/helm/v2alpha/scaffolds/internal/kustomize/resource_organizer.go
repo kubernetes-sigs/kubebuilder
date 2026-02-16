@@ -163,15 +163,28 @@ func (o *ResourceOrganizer) collectPrometheusResources() []*unstructured.Unstruc
 }
 
 // isWebhookService determines if a service is webhook-related
+// Verifies KIND is "Service" and name ends with "webhook-service" suffix
 func (o *ResourceOrganizer) isWebhookService(service *unstructured.Unstructured) bool {
+	// Only match resources with KIND "Service" (excludes ServiceAccount, ServiceMonitor, etc.)
+	if service.GetKind() != kindService {
+		return false
+	}
 	serviceName := service.GetName()
-	return strings.Contains(serviceName, "webhook")
+	// Use suffix matching to avoid false positives when project names contain "webhook"
+	// e.g., project "test-helm-no-webhooks" should not match webhook services
+	return strings.HasSuffix(serviceName, "webhook-service")
 }
 
 // isMetricsService determines if a service is metrics-related
+// Verifies KIND is "Service" and name ends with "metrics-service" suffix
 func (o *ResourceOrganizer) isMetricsService(service *unstructured.Unstructured) bool {
+	// Only match resources with KIND "Service" (excludes ServiceAccount, ServiceMonitor, etc.)
+	if service.GetKind() != kindService {
+		return false
+	}
 	serviceName := service.GetName()
-	return strings.Contains(serviceName, "metrics")
+	// Use suffix matching to avoid false positives when project names contain "metrics"
+	return strings.HasSuffix(serviceName, "metrics-service")
 }
 
 // collectExtrasResources gathers uncategorized resources that don't fit standard categories

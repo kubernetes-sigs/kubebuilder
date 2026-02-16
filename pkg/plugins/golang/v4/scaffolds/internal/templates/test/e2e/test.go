@@ -146,9 +146,34 @@ func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 			// Readiness checks only for defaulting/validation webhooks (they use webhook service)
 			// Conversion webhooks don't need separate webhook service readiness checks
 			if f.WireWebhook {
+				// Skip if webhook readiness checks are already present
+				// This prevents duplicate insertion when multiple webhooks are scaffolded
+				if strings.Contains(string(content), "waiting for the webhook service endpoints to be ready") {
+					continue
+				}
+
 				webhookServiceName := fmt.Sprintf("%s-webhook-service", f.ProjectName)
-				fragments := []string{fmt.Sprintf(metricsWebhookReadinessFragment, webhookServiceName)}
-				codeFragments[marker] = fragments
+				var fragments []string
+
+				// Add endpoint readiness check (applies to all webhook types)
+				fragments = append(fragments, fmt.Sprintf(webhookEndpointsReadinessFragment, webhookServiceName))
+
+				// Add mutating webhook configuration check if defaulting webhooks exist
+				if f.Resource != nil && f.Resource.HasDefaultingWebhook() {
+					fragments = append(fragments, fmt.Sprintf(mutatingWebhookReadinessFragment, f.ProjectName))
+				}
+
+				// Add validating webhook configuration check if validation webhooks exist
+				if f.Resource != nil && f.Resource.HasValidationWebhook() {
+					fragments = append(fragments, fmt.Sprintf(validatingWebhookReadinessFragment, f.ProjectName))
+				}
+
+				// Add stabilization wait at the end
+				fragments = append(fragments, webhookStabilizationFragment)
+
+				if len(fragments) > 0 {
+					codeFragments[marker] = fragments
+				}
 			}
 		}
 	}
@@ -220,7 +245,7 @@ const conversionWebhookChecksFragment = `It("should have CA injection for %[1]s 
 
 `
 
-const metricsWebhookReadinessFragment = `By("waiting for the webhook service endpoints to be ready")
+const webhookEndpointsReadinessFragment = `By("waiting for the webhook service endpoints to be ready")
 	verifyWebhookEndpointsReady := func(g Gomega) {
 		cmd := exec.Command("kubectl", "get", "endpointslices.discovery.k8s.io", "-n", namespace,
 			"-l", "kubernetes.io/service-name=%s",
@@ -230,6 +255,37 @@ const metricsWebhookReadinessFragment = `By("waiting for the webhook service end
 		g.Expect(output).ShouldNot(BeEmpty(), "Webhook endpoints not yet ready")
 	}
 	Eventually(verifyWebhookEndpointsReady, 3*time.Minute, time.Second).Should(Succeed())
+
+`
+
+const mutatingWebhookReadinessFragment = `By("verifying the mutating webhook server is ready")
+	verifyMutatingWebhookReady := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get", "mutatingwebhookconfigurations.admissionregistration.k8s.io",
+			"%s-mutating-webhook-configuration",
+			"-o", "jsonpath={.webhooks[0].clientConfig.caBundle}")
+		output, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred(), "MutatingWebhookConfiguration should exist")
+		g.Expect(output).ShouldNot(BeEmpty(), "Mutating webhook CA bundle not yet injected")
+	}
+	Eventually(verifyMutatingWebhookReady, 3*time.Minute, time.Second).Should(Succeed())
+
+`
+
+const validatingWebhookReadinessFragment = `By("verifying the validating webhook server is ready")
+	verifyValidatingWebhookReady := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get", "validatingwebhookconfigurations.admissionregistration.k8s.io",
+			"%s-validating-webhook-configuration",
+			"-o", "jsonpath={.webhooks[0].clientConfig.caBundle}")
+		output, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred(), "ValidatingWebhookConfiguration should exist")
+		g.Expect(output).ShouldNot(BeEmpty(), "Validating webhook CA bundle not yet injected")
+	}
+	Eventually(verifyValidatingWebhookReady, 3*time.Minute, time.Second).Should(Succeed())
+
+`
+
+const webhookStabilizationFragment = `By("waiting additional time for webhook server to stabilize")
+	time.Sleep(5 * time.Second)
 
 `
 
@@ -443,7 +499,12 @@ var _ = Describe("Manager", Ordered, func() {
 							"name": "curl",
 							"image": "curlimages/curl:latest",
 							"command": ["/bin/sh", "-c"],
-							"args": ["curl -v -k -H 'Authorization: Bearer %s' https://%s.%s.svc.cluster.local:8443/metrics"],
+							"args": [
+								"for i in $(seq 1 30); do ` +
+	`curl -v -k -H 'Authorization: Bearer %s' ` +
+	`https://%s.%s.svc.cluster.local:8443/metrics ` +
+	`&& exit 0 || sleep 2; done; exit 1"
+							],
 							"securityContext": {
 								"readOnlyRootFilesystem": true,
 								"allowPrivilegeEscalation": false,

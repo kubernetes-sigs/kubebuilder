@@ -264,6 +264,25 @@ kubectl logs -n <project>-system deployment/<project>-controller-manager -c mana
 - **Watch secondary resources**: Use ` + "`.Owns()`" + ` or ` + "`.Watches()`" + `, not just ` + "`RequeueAfter`" + `
 - **Finalizers**: Clean up external resources (buckets, VMs, DNS entries)
 
+### Logging
+
+**Follow Kubernetes logging message style guidelines:**
+
+- Start from a capital letter
+- Do not end the message with a period
+- Active voice: subject present (` + "`\"Deployment could not create Pod\"`" + `) or omitted (` + "`\"Could not create Pod\"`" + `)
+- Past tense: ` + "`\"Could not delete Pod\"`" + ` not ` + "`\"Cannot delete Pod\"`" + `
+- Specify object type: ` + "`\"Deleted Pod\"`" + ` not ` + "`\"Deleted\"`" + `
+- Balanced key-value pairs
+
+` + "```go" + `
+log.Info("Starting reconciliation")
+log.Info("Created Deployment", "name", deploy.Name)
+log.Error(err, "Failed to create Pod", "name", name)
+` + "```" + `
+
+**Reference:** https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines
+
 ### Webhooks
 - **Create all types together**: ` + "`--defaulting --programmatic-validation --conversion`" + `
 - **When` + "`--force`" + `is used**: Backup custom logic first, then restore after scaffolding
@@ -305,13 +324,28 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/<repo>/<tag>/dist/insta
 ### Option 2: Helm Chart
 
 ` + "```bash" + `
-{{ .CommandName }} edit --plugins=helm/v2-alpha  # One-time, generates dist/chart/
-# Users install: helm install my-release ./dist/chart/ --namespace <ns> --create-namespace
+{{ .CommandName }} edit --plugins=helm/v2-alpha                      # Generates dist/chart/ (default)
+{{ .CommandName }} edit --plugins=helm/v2-alpha --output-dir=charts  # Generates charts/chart/
+` + "```" + `
+
+**For development:**
+` + "```bash" + `
+make helm-deploy IMG=<registry>/<project>:<tag>          # Deploy manager via Helm
+make helm-deploy IMG=$IMG HELM_EXTRA_ARGS="--set ..."    # Deploy with custom values
+make helm-status                                         # Show release status
+make helm-uninstall                                      # Remove release
+make helm-history                                        # View release history
+make helm-rollback                                       # Rollback to previous version
+` + "```" + `
+
+**For end users/production:**
+` + "```bash" + `
+helm install my-release ./<output-dir>/chart/ --namespace <ns> --create-namespace
 ` + "```" + `
 
 **Important:** If you add webhooks or modify manifests after initial chart generation:
-1. Backup any customizations in ` + "`dist/chart/values.yaml`" + ` and ` + "`dist/chart/manager/manager.yaml`" + `
-2. Re-run: ` + "`{{ .CommandName }} edit --plugins=helm/v2-alpha --force`" + `
+1. Backup any customizations in ` + "`<output-dir>/chart/values.yaml`" + ` and ` + "`<output-dir>/chart/manager/manager.yaml`" + `
+2. Re-run: ` + "`{{ .CommandName }} edit --plugins=helm/v2-alpha --force`" + ` (use same ` + "`--output-dir`" + ` if customized)
 3. Manually restore your custom values from the backup
 
 ### Publish Container Image
@@ -327,6 +361,7 @@ make docker-build docker-push IMG=$IMG
 - **Kubebuilder Book**: https://book.kubebuilder.io (comprehensive guide)
 - **controller-runtime FAQ**: https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md (common patterns and questions)
 - **Good Practices**: https://book.kubebuilder.io/reference/good-practices.html (why reconciliation is idempotent, status conditions, etc.)
+- **Logging Conventions**: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md#message-style-guidelines (message style, verbosity levels)
 
 ### API Design & Implementation
 - **API Conventions**: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md

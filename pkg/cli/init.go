@@ -72,6 +72,12 @@ For further help about a specific plugin, set --plugins.
 
 	c.applySubcommandHooks(cmd, subcommands, initErrorMsg, true)
 
+	// Append plugin table after metadata updates
+	c.appendPluginTable(cmd, func(p plugin.Plugin) bool {
+		_, isValid := p.(plugin.Init)
+		return isValid
+	}, "Available plugins that support 'init'")
+
 	return cmd
 }
 

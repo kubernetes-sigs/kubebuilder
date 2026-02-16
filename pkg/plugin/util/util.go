@@ -143,7 +143,7 @@ func UncommentCode(filename, target, prefix string) error {
 
 	idx := strings.Index(strContent, target)
 	if idx < 0 {
-		return fmt.Errorf("unable to find the code %q to be uncomment", target)
+		return fmt.Errorf("unable to find the code %q to be uncommented", target)
 	}
 
 	out := new(bytes.Buffer)
@@ -193,7 +193,7 @@ func CommentCode(filename, target, prefix string) error {
 	// Find the target code to be commented
 	idx := strings.Index(strContent, target)
 	if idx < 0 {
-		return fmt.Errorf("unable to find the code %q to be commented", target)
+		return fmt.Errorf("failed to find the code %q to be commented", target)
 	}
 
 	// Create a buffer to hold the modified content

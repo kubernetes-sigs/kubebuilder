@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2025 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v4
+package all
 
 import (
 	"fmt"
@@ -27,38 +27,48 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
-// Run e2e tests using the Ginkgo runner.
+// Run unified e2e tests using the Ginkgo runner.
+// This consolidates all plugin tests (v4, helm, deployimage) into a single suite
+// to share infrastructure setup (cert-manager, Prometheus) and reduce overhead.
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
-	_, _ = fmt.Fprintf(GinkgoWriter, "Starting kubebuilder suite\n")
-	RunSpecs(t, "Kubebuilder e2e suite")
+	_, _ = fmt.Fprintf(GinkgoWriter, "Starting unified Kubebuilder e2e suite (all plugins)\n")
+	RunSpecs(t, "Kubebuilder Unified E2E Suite")
 }
 
-// BeforeSuite run before any specs are run to perform the required actions for all e2e Go tests.
+// BeforeSuite runs once before all specs to set up shared infrastructure.
+// This is run ONCE instead of 3 times (once per plugin), significantly reducing test time.
 var _ = BeforeSuite(func() {
 	var err error
 
+	_, _ = fmt.Fprintf(GinkgoWriter, "\n=== Setting up shared test infrastructure ===\n")
+
 	kbc, err := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kbc.Prepare()).To(Succeed())
 
-	By("installing the cert-manager bundle")
+	By("installing cert-manager bundle (shared across all tests)")
 	Expect(kbc.InstallCertManager()).To(Succeed())
 
-	By("installing the Prometheus operator")
+	By("installing Prometheus operator (shared across all tests)")
 	Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
+
+	_, _ = fmt.Fprintf(GinkgoWriter, "=== Shared infrastructure ready ===\n\n")
 })
 
-// AfterSuite run after all the specs have run, regardless of whether any tests have failed to ensures that
-// all be cleaned up
+// AfterSuite runs once after all specs to clean up shared infrastructure.
 var _ = AfterSuite(func() {
+	_, _ = fmt.Fprintf(GinkgoWriter, "\n=== Cleaning up shared test infrastructure ===\n")
+
 	kbc, err := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kbc.Prepare()).To(Succeed())
 
-	By("uninstalling the Prometheus manager bundle")
+	By("uninstalling Prometheus operator")
 	kbc.UninstallPrometheusOperManager()
 
-	By("uninstalling the cert-manager bundle")
+	By("uninstalling cert-manager bundle")
 	kbc.UninstallCertManager()
+
+	_, _ = fmt.Fprintf(GinkgoWriter, "=== Cleanup complete ===\n")
 })

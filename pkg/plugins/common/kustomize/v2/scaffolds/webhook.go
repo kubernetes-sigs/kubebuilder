@@ -110,6 +110,12 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %w", err)
 	}
 
+	// Warn users about potential bootstrap problem for core type webhooks
+	if s.resource.Core {
+		log.Warn("Webhooks for core types may cause circular dependencies during deployment. " +
+			"More info: https://book.kubebuilder.io/reference/webhook-bootstrap-problem")
+	}
+
 	// Apply project-specific customizations:
 	// - Add reference to allow-webhook-traffic.yaml in network policy configuration.
 	// - Enable all webhook-related sections in config/default/kustomization.yaml.
@@ -222,8 +228,8 @@ func uncommentCodeForConversionWebhooks(r resource.Resource) {
 			`configurations:
 - kustomizeconfig.yaml`)
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the target configurations with kustomizeconfig.yaml "+
-				"to uncomment in the file. ConverstionWebhooks requires this configuration "+
+			log.Warn("unable to find the target configurations with kustomizeconfig.yaml "+
+				"to uncomment in the file; conversion webhooks require this configuration "+
 				"to be uncommented to inject CA", "file", kustomizeCRDFilePath)
 		}
 	}
@@ -270,9 +276,9 @@ func uncommentCodeForDefaultWebhooks() {
      - select:
          kind: MutatingWebhookConfiguration`)
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the MutatingWebhookConfiguration section "+
+			log.Warn("unable to find the MutatingWebhookConfiguration section "+
 				"to uncomment in the file. Webhooks scaffolded with '--defaulting' require "+
-				"this configuration for CA injection.",
+				"this configuration for CA injection",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -319,9 +325,9 @@ func uncommentCodeForValidationWebhooks() {
      - select:
          kind: ValidatingWebhookConfiguration`)
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the ValidatingWebhookConfiguration section "+
+			log.Warn("unable to find the ValidatingWebhookConfiguration section "+
 				"to uncomment in the file. Webhooks scaffolded with '--programmatic-validation' "+
-				"require this configuration for CA injection.",
+				"require this configuration for CA injection",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -332,7 +338,7 @@ func enableWebhookDefaults() {
 	if err != nil {
 		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the target #- ../webhook to uncomment in the file",
+			log.Warn("unable to find the target #- ../webhook to uncomment in the file",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -341,7 +347,7 @@ func enableWebhookDefaults() {
 	if err != nil {
 		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the line '#patches:' to uncomment in the file",
+			log.Warn("unable to find the line '#patches:' to uncomment in the file",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -353,7 +359,7 @@ func enableWebhookDefaults() {
 		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath,
 			"- path: manager_webhook_patch.yaml")
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file",
+			log.Warn("unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -363,9 +369,9 @@ func enableWebhookDefaults() {
 		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath,
 			"../certmanager")
 		if !hasWebHookUncommented || errCheck != nil {
-			log.Warn("Unable to find the '../certmanager' section to uncomment in the file. "+
-				"Projects that use webhooks must enable certificate management."+
-				"Please ensure cert-manager integration is enabled.",
+			log.Warn("unable to find the '../certmanager' section to uncomment in the file. "+
+				"Projects that use webhooks must enable certificate management; "+
+				"Please ensure cert-manager integration is enabled",
 				"file", kustomizeFilePath)
 		}
 	}
@@ -442,8 +448,8 @@ func addNetworkPoliciesForWebhooks() {
 	err := pluginutil.InsertCodeIfNotExist(policyKustomizeFilePath,
 		"resources:", allowWebhookTrafficFragment)
 	if err != nil {
-		log.Error("Unable to add the line '- allow-webhook-traffic.yaml' at the end of the file "+
-			"to allow webhook traffic.", "file", policyKustomizeFilePath)
+		log.Error("failed to add the line '- allow-webhook-traffic.yaml' at the end of the file "+
+			"to allow webhook traffic", "file", policyKustomizeFilePath)
 	}
 }
 

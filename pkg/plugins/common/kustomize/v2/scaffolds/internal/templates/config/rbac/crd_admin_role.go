@@ -33,6 +33,7 @@ type CRDAdminRole struct {
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 	machinery.ProjectNameMixin
+	machinery.NamespacedMixin
 
 	RoleName string
 }
@@ -61,6 +62,8 @@ func (f *CRDAdminRole) SetTemplateDefaults() error {
 
 	f.TemplateBody = crdRoleAdminTemplate
 
+	f.IfExistsAction = machinery.OverwriteFile
+
 	return nil
 }
 
@@ -72,7 +75,7 @@ const crdRoleAdminTemplate = `# This rule is not used by the project {{ .Project
 # enabling them to delegate specific permissions to other users or groups as needed.
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ if .Namespaced }}Role{{ else }}ClusterRole{{ end }}
 metadata:
   labels:
     app.kubernetes.io/name: {{ .ProjectName }}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v4
+package helpers
 
 import (
 	"fmt"
@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
+	. "github.com/onsi/gomega"    //nolint:staticcheck
 
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
@@ -273,6 +273,17 @@ func initingTheProject(kbc *utils.TestContext) {
 	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
 }
 
+func initingNamespacedProject(kbc *utils.TestContext) {
+	By("initializing a namespace-scoped project")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+		"--namespaced",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize namespace-scoped project")
+}
+
 const metricsTarget = `- path: manager_metrics_patch.yaml
   target:
     kind: Deployment`
@@ -410,3 +421,42 @@ const metricsCertReplaces = `# - source: # Uncomment the following block to enab
 #         delimiter: '.'
 #         index: 1
 #         create: true`
+
+// GenerateV4Namespaced implements a go/v4 plugin namespace-scoped project defined by a TestContext.
+func GenerateV4Namespaced(kbc *utils.TestContext) {
+	initingNamespacedProject(kbc)
+	creatingAPI(kbc)
+
+	By("scaffolding mutating and validating webhooks")
+	err := kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffolding mutating webhook")
+
+	By("implementing the mutating and validating webhooks")
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
+
+	scaffoldConversionWebhook(kbc)
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
+		monitorTLSPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertReplaces, "#")).To(Succeed())
+}

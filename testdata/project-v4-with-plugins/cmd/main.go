@@ -19,7 +19,9 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,6 +31,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -56,6 +59,32 @@ func init() {
 	utilruntime.Must(examplecomv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+}
+
+// getWatchNamespace returns the namespace(s) the manager should watch for changes.
+// It reads the value from the WATCH_NAMESPACE environment variable.
+// - If WATCH_NAMESPACE is not set, an error is returned
+// - If WATCH_NAMESPACE contains a single namespace, the manager watches that namespace
+// - If WATCH_NAMESPACE contains comma-separated namespaces, the manager watches those namespaces
+func getWatchNamespace() (string, error) {
+	watchNamespaceEnvVar := "WATCH_NAMESPACE"
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// setupCacheNamespaces configures the cache to watch specific namespace(s).
+// It supports both single namespace ("ns1") and multi-namespace ("ns1,ns2,ns3") formats.
+func setupCacheNamespaces(namespaces string) cache.Options {
+	defaultNamespaces := make(map[string]cache.Config)
+	for ns := range strings.SplitSeq(namespaces, ",") {
+		defaultNamespaces[strings.TrimSpace(ns)] = cache.Config{}
+	}
+	return cache.Options{
+		DefaultNamespaces: defaultNamespaces,
+	}
 }
 
 // nolint:gocyclo
@@ -100,7 +129,7 @@ func main() {
 	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
 	// - https://github.com/advisories/GHSA-4374-p667-p6c8
 	disableHTTP2 := func(c *tls.Config) {
-		setupLog.Info("disabling http/2")
+		setupLog.Info("Disabling HTTP/2")
 		c.NextProtos = []string{"http/1.1"}
 	}
 
@@ -160,7 +189,17 @@ func main() {
 		metricsServerOptions.KeyName = metricsCertKey
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// Get the namespace(s) for namespace-scoped mode from WATCH_NAMESPACE environment variable.
+	// The manager will only watch and manage resources in the specified namespace(s).
+	watchNamespace, err := getWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "Unable to get WATCH_NAMESPACE, "+
+			"the manager will watch and manage resources in all namespaces")
+		os.Exit(1)
+	}
+
+	// Configure manager options for namespace-scoped mode
+	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
@@ -178,9 +217,15 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
-	})
+	}
+
+	// Configure cache to watch namespace(s) specified in WATCH_NAMESPACE
+	mgrOptions.Cache = setupCacheNamespaces(watchNamespace)
+	setupLog.Info("Watching namespace(s)", "namespaces", watchNamespace)
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
 
@@ -189,7 +234,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("memcached-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
+		setupLog.Error(err, "Failed to create controller", "controller", "Memcached")
 		os.Exit(1)
 	}
 	if err := (&controller.BusyboxReconciler{
@@ -197,13 +242,13 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("busybox-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
+		setupLog.Error(err, "Failed to create controller", "controller", "Busybox")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}
@@ -211,30 +256,30 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Wordpress")
+		setupLog.Error(err, "Failed to create controller", "controller", "Wordpress")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := webhookv1.SetupWordpressWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
+			setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}
 	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "Failed to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "Failed to set up ready check")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
 }

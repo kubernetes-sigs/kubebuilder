@@ -85,6 +85,11 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcom
 // GetInitSubcommand will return the subcommand which is responsible for init autoupdate plugin
 func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
 
+// Description returns a short description of the plugin
+func (Plugin) Description() string {
+	return "Proposes Kubebuilder scaffold updates via GitHub Actions"
+}
+
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
 func (p Plugin) DeprecationWarning() string {
 	return ""

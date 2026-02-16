@@ -60,9 +60,16 @@ install: build ## Build and install the binary with the current source code. Use
 	# Make the binary discoverable for kubebuilder
 	./install.sh
 
+.PHONY: test-unit
+test-unit: ## Run unit tests.
+	go test ./scaffolds/... -v
+
+.PHONY: test-e2e
+test-e2e: ## Run e2e tests.
+	go test ./test/e2e/... -v -ginkgo.v
+
 .PHONY: test-plugin
-test-plugin: ## Run the plugin test.
-	./test/test.sh
+test-plugin: test-unit test-e2e ## Run all tests (unit + e2e).
 
 .PHONY: clean
 clean: ## Clean build artifacts.

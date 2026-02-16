@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("VCS metadata resolution", func(t *testing.T) {
+	t.Run("VCS metadata resolution with tagged release", func(t *testing.T) {
 		v := &Version{KubeBuilderVersion: "v1.0.0"}
 		settings := []debug.BuildSetting{
 			{Key: "vcs.revision", Value: "abcdef123"},
@@ -60,8 +60,9 @@ func TestNew(t *testing.T) {
 		if !strings.HasSuffix(v.GitCommit, "-dirty") {
 			t.Errorf("expected commit to be dirty, got %s", v.GitCommit)
 		}
-		if !strings.Contains(v.KubeBuilderVersion, "-dirty") {
-			t.Errorf("expected version to be dirty, got %s", v.KubeBuilderVersion)
+		// For tagged releases, we ignore dirty flag to support GoReleaser builds
+		if v.KubeBuilderVersion != "v1.0.0" {
+			t.Errorf("expected version to remain v1.0.0, got %s", v.KubeBuilderVersion)
 		}
 	})
 
@@ -148,8 +149,31 @@ func TestApplyVCSMetadata(t *testing.T) {
 				{Key: "vcs.time", Value: "2025-12-29T19:30:00Z"},
 			},
 			expectCommit:  "abcdef123-dirty",
-			expectVersion: "(devel)-dirty",
+			expectVersion: "(devel)",
 			expectDate:    "2025-12-29T19:30:00Z",
+		},
+		{
+			name:           "Dirty tagged release (GoReleaser scenario)",
+			initialVersion: "v4.5.3-rc.1",
+			settings: []debug.BuildSetting{
+				{Key: "vcs.revision", Value: "abcdef123"},
+				{Key: "vcs.modified", Value: "true"},
+				{Key: "vcs.time", Value: "2025-12-30T10:00:00Z"},
+			},
+			expectCommit:  "abcdef123-dirty",
+			expectVersion: "v4.5.3-rc.1", // Stays clean for tagged releases
+			expectDate:    "2025-12-30T10:00:00Z",
+		},
+		{
+			name:           "Dirty pseudo-version",
+			initialVersion: "v1.2.4-0.20191109021931-daa7c04131f5",
+			settings: []debug.BuildSetting{
+				{Key: "vcs.revision", Value: "abcdef123"},
+				{Key: "vcs.modified", Value: "true"},
+			},
+			expectCommit:  "abcdef123-dirty",
+			expectVersion: "(devel)", // Pseudo-versions become (devel) when dirty
+			expectDate:    "",
 		},
 	}
 

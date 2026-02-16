@@ -99,10 +99,6 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
-	if err = kubebuilderEdit(projectConfig); err != nil {
-		return fmt.Errorf("error editing project config: %w", err)
-	}
-
 	if err = kubebuilderCreate(projectConfig); err != nil {
 		return fmt.Errorf("error creating project config: %w", err)
 	}
@@ -198,18 +194,6 @@ func kubebuilderInit(s store.Store) error {
 	}
 	if err := util.RunCmd("kubebuilder init", execPath, args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder init command: %w", err)
-	}
-
-	return nil
-}
-
-// Edits the project to enable or disable multigroup layout.
-func kubebuilderEdit(s store.Store) error {
-	if s.Config().IsMultiGroup() {
-		args := []string{"edit", "--multigroup"}
-		if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
-			return fmt.Errorf("failed to run kubebuilder edit command: %w", err)
-		}
 	}
 
 	return nil
@@ -435,6 +419,15 @@ func getInitArgs(s store.Store) []string {
 	}
 	if repo := s.Config().GetRepository(); repo != "" {
 		args = append(args, "--repo", repo)
+	}
+	if projectName := s.Config().GetProjectName(); projectName != "" {
+		args = append(args, "--project-name", projectName)
+	}
+	if s.Config().IsMultiGroup() {
+		args = append(args, "--multigroup")
+	}
+	if s.Config().IsNamespaced() {
+		args = append(args, "--namespaced")
 	}
 	return args
 }

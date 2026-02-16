@@ -19,13 +19,17 @@ package v2alpha
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/pflag"
+	"go.yaml.in/yaml/v3"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -37,6 +41,8 @@ const (
 	DefaultManifestsFile = "dist/install.yaml"
 	// DefaultOutputDir is the default output directory for Helm charts
 	DefaultOutputDir = "dist"
+	// v1AlphaPluginKey is the deprecated v1-alpha plugin key
+	v1AlphaPluginKey = "helm.kubebuilder.io/v1-alpha"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -52,11 +58,8 @@ type editSubcommand struct {
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = `Generate a Helm chart from your project's kustomize output.
 
-This plugin dynamically generates Helm chart templates by parsing the output of 'make build-installer' 
-(dist/install.yaml by default). The generated chart preserves all customizations made to your kustomize 
-configuration including environment variables, labels, and annotations.
-
-The chart structure mirrors your config/ directory organization for easy maintenance.`
+Parses 'make build-installer' output (dist/install.yaml) and generates chart to allow easy
+distribution of your project. When enabled, adds Helm helpers targets to Makefile`
 
 	subcmdMeta.Examples = fmt.Sprintf(`# Generate Helm chart from default manifests (dist/install.yaml) to default output (dist/)
   %[1]s edit --plugins=%[2]s
@@ -77,10 +80,11 @@ The chart structure mirrors your config/ directory organization for easy mainten
   make build-installer  # Generate dist/install.yaml with latest changes
   %[1]s edit --plugins=%[2]s  # Generate/update Helm chart in dist/chart/
 
-**NOTE**: Chart.yaml is never overwritten (contains user-managed version info). 
-Without --force, the plugin also preserves values.yaml, _helpers.tpl, .helmignore, and 
-.github/workflows/test-chart.yml. All template files in templates/ are always regenerated 
-to match your current kustomize output. Use --force to regenerate all files except Chart.yaml.
+**NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
+Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
+and .github/workflows/test-chart.yml.
+All other template files in templates/ are always regenerated to match your current
+kustomize output. Use --force to regenerate all files except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
 <output>/chart/
@@ -88,6 +92,7 @@ The generated chart structure mirrors your config/ directory:
 ├── values.yaml
 ├── .helmignore
 └── templates/
+    ├── NOTES.txt
     ├── _helpers.tpl
     ├── rbac/
     ├── manager/
@@ -123,16 +128,23 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		return fmt.Errorf("error scaffolding Helm chart: %w", err)
 	}
 
+	// Remove deprecated v1-alpha plugin entry from PROJECT file
+	// This must happen in Scaffold (before config is saved) to be persisted
+	p.removeV1AlphaPluginEntry()
+
 	// Save plugin config to PROJECT file
 	key := plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{})
 	canonicalKey := plugin.KeyFor(Plugin{})
 	cfg := pluginConfig{}
+	isFirstRun := false
 	if err = p.config.DecodePluginConfig(key, &cfg); err != nil {
 		switch {
 		case errors.As(err, &config.UnsupportedFieldError{}):
 			// Config version doesn't support plugin metadata
 			return nil
 		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			// This is the first time the plugin is run
+			isFirstRun = true
 			if key != canonicalKey {
 				if err2 := p.config.DecodePluginConfig(canonicalKey, &cfg); err2 != nil {
 					if errors.As(err2, &config.UnsupportedFieldError{}) {
@@ -141,6 +153,9 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 					if !errors.As(err2, &config.PluginKeyNotFoundError{}) {
 						return fmt.Errorf("error decoding plugin configuration: %w", err2)
 					}
+				} else {
+					// Found config under canonical key, not first run
+					isFirstRun = false
 				}
 			}
 		default:
@@ -154,6 +169,16 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 	if err = p.config.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
+	}
+
+	// Add Helm deployment targets to Makefile only on first run
+	if isFirstRun {
+		slog.Info("adding Helm deployment targets to Makefile...")
+		// Extract namespace from manifests for accurate Makefile generation
+		namespace := p.extractNamespaceFromManifests()
+		if err := p.addHelmMakefileTargets(namespace); err != nil {
+			slog.Warn("failed to add Helm targets to Makefile", "error", err)
+		}
 	}
 
 	return nil
@@ -218,6 +243,143 @@ func (p *editSubcommand) PostScaffold() error {
 	return nil
 }
 
+// addHelmMakefileTargets appends Helm deployment targets to the Makefile if they don't already exist
+func (p *editSubcommand) addHelmMakefileTargets(namespace string) error {
+	makefilePath := "Makefile"
+	if _, err := os.Stat(makefilePath); os.IsNotExist(err) {
+		return fmt.Errorf("makefile not found")
+	}
+
+	// Get the Helm Makefile targets
+	helmTargets := getHelmMakefileTargets(p.config.GetProjectName(), namespace, p.outputDir)
+
+	// Append the targets if they don't already exist
+	if err := util.AppendCodeIfNotExist(makefilePath, helmTargets); err != nil {
+		return fmt.Errorf("failed to append Helm targets to Makefile: %w", err)
+	}
+
+	slog.Info("added Helm deployment targets to Makefile",
+		"targets", "helm-deploy, helm-uninstall, helm-status, helm-history, helm-rollback")
+	return nil
+}
+
+// extractNamespaceFromManifests parses the manifests file to extract the manager namespace.
+// Returns projectName-system if manifests don't exist or namespace not found.
+func (p *editSubcommand) extractNamespaceFromManifests() string {
+	// Default to project-name-system pattern
+	defaultNamespace := p.config.GetProjectName() + "-system"
+
+	// If manifests file doesn't exist, use default
+	if _, err := os.Stat(p.manifestsFile); os.IsNotExist(err) {
+		return defaultNamespace
+	}
+
+	// Parse the manifests to get the namespace
+	file, err := os.Open(p.manifestsFile)
+	if err != nil {
+		return defaultNamespace
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	// Parse YAML documents looking for the manager Deployment
+	decoder := yaml.NewDecoder(file)
+	for {
+		var doc map[string]any
+		if err := decoder.Decode(&doc); err != nil {
+			if err == io.EOF {
+				break
+			}
+			continue
+		}
+
+		// Check if this is a Deployment (manager)
+		if kind, ok := doc["kind"].(string); ok && kind == "Deployment" {
+			if metadata, ok := doc["metadata"].(map[string]any); ok {
+				// Check if it's the manager deployment
+				if name, ok := metadata["name"].(string); ok && strings.Contains(name, "controller-manager") {
+					// Extract namespace from the manager Deployment
+					if namespace, ok := metadata["namespace"].(string); ok && namespace != "" {
+						return namespace
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback to default if manager Deployment not found
+	return defaultNamespace
+}
+
+// getHelmMakefileTargets returns the Helm Makefile targets as a string
+// following the same patterns as the existing Makefile deployment section
+func getHelmMakefileTargets(projectName, namespace, outputDir string) string {
+	if outputDir == "" {
+		outputDir = "dist"
+	}
+
+	// Use the project name as default for release name
+	release := projectName
+
+	return helmMakefileTemplate(namespace, release, outputDir)
+}
+
+// helmMakefileTemplate returns the Helm deployment section template
+// This follows the same pattern as the Kustomize deployment section in the Go plugin
+const helmMakefileTemplateFormat = `
+##@ Helm Deployment
+
+## Helm binary to use for deploying the chart
+HELM ?= helm
+## Namespace to deploy the Helm release
+HELM_NAMESPACE ?= %s
+## Name of the Helm release
+HELM_RELEASE ?= %s
+## Path to the Helm chart directory
+HELM_CHART_DIR ?= %s/chart
+## Additional arguments to pass to helm commands
+HELM_EXTRA_ARGS ?=
+
+.PHONY: install-helm
+install-helm: ## Install the latest version of Helm.
+	@command -v $(HELM) >/dev/null 2>&1 || { \
+		echo "Installing Helm..." && \
+		curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash; \
+	}
+
+.PHONY: helm-deploy
+helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+	$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
+		--namespace $(HELM_NAMESPACE) \
+		--create-namespace \
+		--set manager.image.repository=$${IMG%%:*} \
+		--set manager.image.tag=$${IMG##*:} \
+		--wait \
+		--timeout 5m \
+		$(HELM_EXTRA_ARGS)
+
+.PHONY: helm-uninstall
+helm-uninstall: ## Uninstall the Helm release from the K8s cluster.
+	$(HELM) uninstall $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-status
+helm-status: ## Show Helm release status.
+	$(HELM) status $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-history
+helm-history: ## Show Helm release history.
+	$(HELM) history $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-rollback
+helm-rollback: ## Rollback to previous Helm release.
+	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+`
+
+func helmMakefileTemplate(namespace, release, outputDir string) string {
+	return fmt.Sprintf(helmMakefileTemplateFormat, namespace, release, outputDir)
+}
+
 func hasWebhooksWith(c config.Config) bool {
 	resources, err := c.GetResources()
 	if err != nil {
@@ -231,4 +393,24 @@ func hasWebhooksWith(c config.Config) bool {
 	}
 
 	return false
+}
+
+// removeV1AlphaPluginEntry removes the deprecated helm.kubebuilder.io/v1-alpha plugin entry.
+// This must be called from Scaffold (before config is saved) for changes to be persisted.
+func (p *editSubcommand) removeV1AlphaPluginEntry() {
+	// Only attempt to remove if using v3 config (which supports plugin configs)
+	cfg, ok := p.config.(*cfgv3.Cfg)
+	if !ok {
+		return
+	}
+
+	// Check if v1-alpha plugin entry exists
+	if cfg.Plugins == nil {
+		return
+	}
+
+	if _, exists := cfg.Plugins[v1AlphaPluginKey]; exists {
+		delete(cfg.Plugins, v1AlphaPluginKey)
+		slog.Info("removed deprecated v1-alpha plugin entry")
+	}
 }

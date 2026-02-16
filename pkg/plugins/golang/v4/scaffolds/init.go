@@ -43,7 +43,7 @@ const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.23.1"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.20.0"
+	ControllerToolsVersion = "v0.20.1"
 
 	imageName = "controller:latest"
 )
@@ -117,15 +117,15 @@ func (s *initScaffolder) Scaffold() error {
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 		if err != nil {
 			if errors.Is(err, afero.ErrFileNotFound) {
-				log.Warn("Unable to find boilerplate file. "+
-					"This file is used to generate the license header in the project. "+
-					"Note that controller-gen will also use this. Therefore, ensure that you "+
-					"add the license file or configure your project accordingly.",
+				log.Warn("unable to find boilerplate file. "+
+					"This file is used to generate the license header in the project.\n"+
+					"Note that controller-gen will also use this. Ensure that you "+
+					"add the license file or configure your project accordingly",
 					"file_path", s.boilerplatePath,
 					"error", err)
 				boilerplate = []byte("")
 			} else {
-				return fmt.Errorf("unable to load boilerplate: %w", err)
+				return fmt.Errorf("failed to load boilerplate: %w", err)
 			}
 		}
 		// Initialize the machinery.Scaffold that will write the files to disk
@@ -177,6 +177,9 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Readme{CommandName: s.commandName},
 		&templates.Agents{CommandName: s.commandName},
 		&templates.Golangci{},
+		&templates.CustomGcl{
+			GolangciLintVersion: GolangciLintVersion,
+		},
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},

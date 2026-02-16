@@ -57,3 +57,14 @@ func GitCmd(gitConfig []string, args ...string) *exec.Cmd {
 	gitArgs = append(gitArgs, args...)
 	return exec.Command("git", gitArgs...)
 }
+
+// MergeCommitMessage returns the commit message for a successful merge update
+func MergeCommitMessage(from, to string) string {
+	return fmt.Sprintf("chore(kubebuilder): update scaffold %s -> %s", from, to)
+}
+
+// ConflictCommitMessage returns the commit message for a merge update with conflicts
+func ConflictCommitMessage(from, to string) string {
+	//nolint:lll
+	return fmt.Sprintf("chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold %s -> %s", from, to)
+}

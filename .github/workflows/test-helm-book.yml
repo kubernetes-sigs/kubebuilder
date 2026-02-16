@@ -59,11 +59,7 @@ jobs:
           kind load docker-image ${{ steps.project.outputs.name}}:v0.1.0
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Verify Helm installation
-        run: helm version
+        run: make install-helm
 
       - name: Lint Helm chart
         run: |
@@ -91,11 +87,17 @@ jobs:
         run: |
           helm template ${{ matrix.folder }}/dist/chart --namespace=${{ steps.project.outputs.name }}-system
 
-      - name: Install Helm chart
+      - name: Deploy manager via Helm
+        working-directory: ${{ matrix.folder }}
         run: |
-          helm install my-release ${{ matrix.folder }}/dist/chart --create-namespace --namespace ${{ steps.project.outputs.name}}-system
+          make helm-deploy IMG=${{ steps.project.outputs.name}}:v0.1.0
 
       - name: Check Helm release status
+        working-directory: ${{ matrix.folder }}
         run: |
-          helm status my-release --namespace ${{ steps.project.outputs.name}}-system
+          make helm-status
+
+      - name: Run Helm tests
+        run: |
+          helm test ${{ steps.project.outputs.name}} --namespace ${{ steps.project.outputs.name}}-system
 
