@@ -5,6 +5,7 @@
     Finalizers are a mechanism to
     execute any custom logic related to a resource before it gets deleted from
     Kubernetes cluster.
+  - [Strict Field Validation](strict-field-validation.md)
   - [Watching Resources](watching-resources.md)
     Watch resources in the Kubernetes cluster to be informed and take actions on changes.
       - [Watching Secondary Resources that are `Owned` ](watching-resources/secondary-owned-resources.md)
