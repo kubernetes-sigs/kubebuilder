@@ -67,35 +67,35 @@ func (v *ValueInjector) injectDeploymentValues(yamlContent string) string {
 	}
 
 	// Inject custom manager fields
-	for fieldName, fieldValue := range v.userValues.CustomManagerFields {
+	for fieldName := range v.userValues.CustomManagerFields {
 		// Skip special fields that are handled separately
-		if fieldName == "labels" || fieldName == "annotations" || 
-		   fieldName == "podLabels" || fieldName == "podAnnotations" ||
-		   fieldName == "env" {
+		if fieldName == "labels" || fieldName == "annotations" ||
+			fieldName == "podLabels" || fieldName == "podAnnotations" ||
+			fieldName == "env" {
 			continue
 		}
 
 		// Inject based on field name patterns
 		switch fieldName {
 		case "ports":
-			yamlContent = v.injectCustomPorts(yamlContent, fieldValue)
+			yamlContent = v.injectCustomPorts(yamlContent)
 		case "volumes":
-			yamlContent = v.injectCustomVolumes(yamlContent, fieldValue)
+			yamlContent = v.injectCustomVolumes(yamlContent)
 		case "volumeMounts":
-			yamlContent = v.injectCustomVolumeMounts(yamlContent, fieldValue)
+			yamlContent = v.injectCustomVolumeMounts(yamlContent)
 		case "initContainers":
-			yamlContent = v.injectInitContainers(yamlContent, fieldValue)
+			yamlContent = v.injectInitContainers(yamlContent)
 		case "serviceAccountName":
-			yamlContent = v.injectServiceAccountName(yamlContent, fieldValue)
+			yamlContent = v.injectServiceAccountName(yamlContent)
 		case "hostNetwork":
-			yamlContent = v.injectHostNetwork(yamlContent, fieldValue)
+			yamlContent = v.injectHostNetwork(yamlContent)
 		case "dnsPolicy":
-			yamlContent = v.injectDNSPolicy(yamlContent, fieldValue)
+			yamlContent = v.injectDNSPolicy(yamlContent)
 		case "priorityClassName":
-			yamlContent = v.injectPriorityClassName(yamlContent, fieldValue)
+			yamlContent = v.injectPriorityClassName(yamlContent)
 		default:
 			// For unknown fields, try to inject them generically
-			yamlContent = v.injectGenericField(yamlContent, fieldName, fieldValue)
+			yamlContent = v.injectGenericField(yamlContent)
 		}
 	}
 
@@ -120,33 +120,33 @@ func (v *ValueInjector) injectMetadataLabels(yamlContent string, resource *unstr
 	var result []string
 	foundMetadataLabels := false
 	labelsIndent := ""
-	
+
 	for i, line := range lines {
 		result = append(result, line)
-		
+
 		// Look for "labels:" in metadata section (not in spec.template)
 		if strings.Contains(line, "labels:") && !foundMetadataLabels {
 			// Check if this is in metadata by looking at previous lines
 			isInMetadata := false
 			for j := i - 1; j >= 0 && j >= i-10; j-- {
-				if strings.TrimSpace(lines[j]) == "metadata:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyMetadata {
 					isInMetadata = true
 					break
 				}
-				if strings.TrimSpace(lines[j]) == "spec:" || strings.TrimSpace(lines[j]) == "template:" {
+				if strings.TrimSpace(lines[j]) == yamlKeySpec || strings.TrimSpace(lines[j]) == "template:" {
 					break
 				}
 			}
-			
+
 			if !isInMetadata {
 				continue
 			}
-			
+
 			foundMetadataLabels = true
 			// Extract indentation from the labels line
-			idx := strings.Index(line, "labels:")
-			labelsIndent = line[:idx] + "  "
-			
+			before, _, _ := strings.Cut(line, "labels:")
+			labelsIndent = before + "  "
+
 			// Add custom labels after existing labels
 			for key := range v.userValues.ManagerLabels {
 				valuePath := fmt.Sprintf(".Values.manager.labels.%s", escapeYAMLKey(key))
@@ -154,7 +154,7 @@ func (v *ValueInjector) injectMetadataLabels(yamlContent string, resource *unstr
 			}
 		}
 	}
-	
+
 	return strings.Join(result, "\n")
 }
 
@@ -181,33 +181,33 @@ func (v *ValueInjector) injectMetadataAnnotations(yamlContent string, resource *
 	var result []string
 	foundMetadataAnnotations := false
 	annotationsIndent := ""
-	
+
 	for i, line := range lines {
 		result = append(result, line)
-		
+
 		// Look for "annotations:" in metadata section
 		if strings.Contains(line, "annotations:") && !foundMetadataAnnotations {
 			// Check if this is in metadata by looking at previous lines
 			isInMetadata := false
 			for j := i - 1; j >= 0 && j >= i-10; j-- {
-				if strings.TrimSpace(lines[j]) == "metadata:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyMetadata {
 					isInMetadata = true
 					break
 				}
-				if strings.TrimSpace(lines[j]) == "spec:" || strings.TrimSpace(lines[j]) == "template:" {
+				if strings.TrimSpace(lines[j]) == yamlKeySpec || strings.TrimSpace(lines[j]) == yamlKeyTemplate {
 					break
 				}
 			}
-			
+
 			if !isInMetadata {
 				continue
 			}
-			
+
 			foundMetadataAnnotations = true
 			// Extract indentation from the annotations line
-			idx := strings.Index(line, "annotations:")
-			annotationsIndent = line[:idx] + "  "
-			
+			before, _, _ := strings.Cut(line, "annotations:")
+			annotationsIndent = before + "  "
+
 			// Add custom annotations after existing annotations
 			for key := range v.userValues.ManagerAnnotations {
 				valuePath := fmt.Sprintf(".Values.manager.annotations.%s", escapeYAMLKey(key))
@@ -215,7 +215,7 @@ func (v *ValueInjector) injectMetadataAnnotations(yamlContent string, resource *
 			}
 		}
 	}
-	
+
 	return strings.Join(result, "\n")
 }
 
@@ -226,38 +226,37 @@ func (v *ValueInjector) addAnnotationsSection(yamlContent string) string {
 	var result []string
 	foundMetadataLabels := false
 	labelsIndent := ""
-	
+
 	for i, line := range lines {
 		result = append(result, line)
-		
+
 		// Look for "labels:" in metadata section
 		if strings.Contains(line, "labels:") && !foundMetadataLabels {
 			// Check if this is in metadata
 			isInMetadata := false
 			for j := i - 1; j >= 0 && j >= i-10; j-- {
-				if strings.TrimSpace(lines[j]) == "metadata:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyMetadata {
 					isInMetadata = true
 					break
 				}
 			}
-			
+
 			if !isInMetadata {
 				continue
 			}
-			
+
 			foundMetadataLabels = true
 			// Extract indentation
-			idx := strings.Index(line, "labels:")
-			labelsIndent = line[:idx]
-			
+			before, _, _ := strings.Cut(line, "labels:")
+			labelsIndent = before
+
 			// Skip existing label entries
 			j := i + 1
 			for j < len(lines) && strings.HasPrefix(lines[j], labelsIndent+"  ") {
 				result = append(result, lines[j])
 				j++
 			}
-			i = j - 1 // Adjust loop counter
-			
+
 			// Add annotations section
 			result = append(result, labelsIndent+"annotations:")
 			for key := range v.userValues.ManagerAnnotations {
@@ -266,7 +265,7 @@ func (v *ValueInjector) addAnnotationsSection(yamlContent string) string {
 			}
 		}
 	}
-	
+
 	return strings.Join(result, "\n")
 }
 
@@ -286,24 +285,27 @@ func (v *ValueInjector) injectPodTemplateValues(yamlContent string) string {
 }
 
 // injectPodLabels injects custom labels into pod template
-func (v *ValueInjector) injectPodLabels(yamlContent string) string {
-	// Find the template.metadata.labels section (within spec.template)
+// injectPodTemplateField injects custom labels or annotations into pod template metadata
+func (v *ValueInjector) injectPodTemplateField(
+	yamlContent, fieldName, valuesPath string,
+	fieldMap map[string]string,
+) string {
 	lines := strings.Split(yamlContent, "\n")
 	var result []string
-	foundPodLabels := false
-	labelsIndent := ""
+	foundField := false
+	fieldIndent := ""
 	inTemplate := false
-	
+
 	for i, line := range lines {
 		result = append(result, line)
-		
+
 		// Track if we're in the template section
 		if strings.Contains(line, "template:") {
 			inTemplate = true
 		}
-		
-		// Look for "labels:" within template.metadata
-		if inTemplate && strings.Contains(line, "labels:") && !foundPodLabels {
+
+		// Look for the field within template.metadata
+		if inTemplate && strings.Contains(line, fieldName+":") && !foundField {
 			// Check if this is within template.metadata
 			isInPodMetadata := false
 			for j := i - 1; j >= 0 && j >= i-5; j-- {
@@ -319,80 +321,38 @@ func (v *ValueInjector) injectPodLabels(yamlContent string) string {
 					break
 				}
 			}
-			
+
 			if !isInPodMetadata {
 				continue
 			}
-			
-			foundPodLabels = true
+
+			foundField = true
 			// Extract indentation
-			idx := strings.Index(line, "labels:")
-			labelsIndent = line[:idx] + "  "
-			
-			// Add custom pod labels
-			for key := range v.userValues.ManagerPodLabels {
-				valuePath := fmt.Sprintf(".Values.manager.podLabels.%s", escapeYAMLKey(key))
-				result = append(result, fmt.Sprintf("%s%s: {{ %s }}", labelsIndent, key, valuePath))
+			before, _, _ := strings.Cut(line, fieldName+":")
+			fieldIndent = before + "  "
+
+			// Add custom field entries
+			for key := range fieldMap {
+				valuePath := fmt.Sprintf("%s.%s", valuesPath, escapeYAMLKey(key))
+				result = append(result, fmt.Sprintf("%s%s: {{ %s }}", fieldIndent, key, valuePath))
 			}
 		}
 	}
-	
+
 	return strings.Join(result, "\n")
+}
+
+func (v *ValueInjector) injectPodLabels(yamlContent string) string {
+	return v.injectPodTemplateField(
+		yamlContent, "labels", ".Values.manager.podLabels", v.userValues.ManagerPodLabels,
+	)
 }
 
 // injectPodAnnotations injects custom annotations into pod template
 func (v *ValueInjector) injectPodAnnotations(yamlContent string) string {
-	// Find the template.metadata.annotations section (within spec.template)
-	lines := strings.Split(yamlContent, "\n")
-	var result []string
-	foundPodAnnotations := false
-	annotationsIndent := ""
-	inTemplate := false
-	
-	for i, line := range lines {
-		result = append(result, line)
-		
-		// Track if we're in the template section
-		if strings.Contains(line, "template:") {
-			inTemplate = true
-		}
-		
-		// Look for "annotations:" within template.metadata
-		if inTemplate && strings.Contains(line, "annotations:") && !foundPodAnnotations {
-			// Check if this is within template.metadata
-			isInPodMetadata := false
-			for j := i - 1; j >= 0 && j >= i-5; j-- {
-				trimmed := strings.TrimSpace(lines[j])
-				if trimmed == "metadata:" {
-					// Check if there's a template: before this metadata
-					for k := j - 1; k >= 0 && k >= j-5; k-- {
-						if strings.Contains(lines[k], "template:") {
-							isInPodMetadata = true
-							break
-						}
-					}
-					break
-				}
-			}
-			
-			if !isInPodMetadata {
-				continue
-			}
-			
-			foundPodAnnotations = true
-			// Extract indentation
-			idx := strings.Index(line, "annotations:")
-			annotationsIndent = line[:idx] + "  "
-			
-			// Add custom pod annotations
-			for key := range v.userValues.ManagerPodAnnotations {
-				valuePath := fmt.Sprintf(".Values.manager.podAnnotations.%s", escapeYAMLKey(key))
-				result = append(result, fmt.Sprintf("%s%s: {{ %s }}", annotationsIndent, key, valuePath))
-			}
-		}
-	}
-	
-	return strings.Join(result, "\n")
+	return v.injectPodTemplateField(
+		yamlContent, "annotations", ".Values.manager.podAnnotations", v.userValues.ManagerPodAnnotations,
+	)
 }
 
 // injectEnvVars injects environment variables from manager.env
@@ -405,11 +365,11 @@ func (v *ValueInjector) injectEnvVars(yamlContent string) string {
 }
 
 // injectCustomPorts injects custom container ports
-func (v *ValueInjector) injectCustomPorts(yamlContent string, portsValue any) string {
+func (v *ValueInjector) injectCustomPorts(yamlContent string) string {
 	// Find the ports section in the container
 	portsPattern := regexp.MustCompile(`(?m)^(\s+)ports:\s*$\n`)
 	matches := portsPattern.FindStringIndex(yamlContent)
-	
+
 	if matches == nil {
 		return yamlContent
 	}
@@ -420,41 +380,41 @@ func (v *ValueInjector) injectCustomPorts(yamlContent string, portsValue any) st
 {{- toYaml .Values.manager.ports | nindent 8 }}
 {{- end }}
 `
-	
+
 	return yamlContent[:portsEndIdx] + customPortsTemplate + yamlContent[portsEndIdx:]
 }
 
 // injectCustomVolumes injects custom volumes at pod level
-func (v *ValueInjector) injectCustomVolumes(yamlContent string, volumesValue any) string {
+func (v *ValueInjector) injectCustomVolumes(yamlContent string) string {
 	// Find the existing volumes section in pod spec and add custom volumes template
 	lines := strings.Split(yamlContent, "\n")
 	volumesLineIdx := -1
 	lastVolumeLineIdx := -1
 	volumesIndent := ""
 	inVolumesSection := false
-	
+
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		
+
 		// Look for "volumes:" line - this is always at pod spec level after serviceAccountName
 		if trimmed == "volumes:" && volumesLineIdx == -1 {
 			volumesLineIdx = i
 			inVolumesSection = true
 			// Get the base indentation for volume entries
-			idx := strings.Index(line, "volumes:")
-			volumesIndent = line[:idx]
+			before, _, _ := strings.Cut(line, "volumes:")
+			volumesIndent = before
 			continue
 		}
-		
+
 		// Track lines within the volumes section
 		if inVolumesSection {
 			if trimmed == "" {
 				continue // Skip empty lines
 			}
-			
+
 			lineIndent := len(line) - len(strings.TrimLeft(line, " "))
 			baseIndent := len(volumesIndent)
-			
+
 			// YAML list items start with "- " at the same level as the parent key
 			// Content under the list item is further indented
 			// So we check if line is at baseIndent (list item) or deeper (list item content)
@@ -466,7 +426,7 @@ func (v *ValueInjector) injectCustomVolumes(yamlContent string, volumesValue any
 			}
 		}
 	}
-	
+
 	// If we found volumes, add custom volumes template after the last volume entry
 	if volumesLineIdx >= 0 && lastVolumeLineIdx >= 0 {
 		// Build the custom volumes template with proper indentation
@@ -477,19 +437,19 @@ func (v *ValueInjector) injectCustomVolumes(yamlContent string, volumesValue any
 			fmt.Sprintf("%s{{- toYaml . | nindent %d }}", volumeEntryIndent, len(volumeEntryIndent)),
 			fmt.Sprintf("%s{{- end }}", volumeEntryIndent),
 		}
-		
+
 		// Insert after the last volume line
 		newLines := append([]string{}, lines[:lastVolumeLineIdx+1]...)
 		newLines = append(newLines, customVolumesTemplate...)
 		newLines = append(newLines, lines[lastVolumeLineIdx+1:]...)
 		return strings.Join(newLines, "\n")
 	}
-	
+
 	return yamlContent
 }
 
 // injectCustomVolumeMounts injects custom volume mounts at container level
-func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string, volumeMountsValue any) string {
+func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string) string {
 	// Find the existing volumeMounts section in the manager container
 	lines := strings.Split(yamlContent, "\n")
 	foundVolumeMounts := false
@@ -498,7 +458,7 @@ func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string, volumeMount
 	volumeMountsIndent := ""
 	inManagerContainer := false
 	inVolumeMounts := false
-	
+
 	for i, line := range lines {
 		// Track if we're in the manager container
 		if strings.Contains(line, "name: manager") || strings.Contains(line, `name: {{ include`) {
@@ -511,27 +471,27 @@ func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string, volumeMount
 				inManagerContainer = false
 			}
 		}
-		
+
 		// Look for "volumeMounts:" in manager container
 		if inManagerContainer && strings.Contains(line, "volumeMounts:") && volumeMountsLineIdx == -1 {
 			volumeMountsLineIdx = i
 			inVolumeMounts = true
-			idx := strings.Index(line, "volumeMounts:")
-			volumeMountsIndent = line[:idx]
+			before, _, _ := strings.Cut(line, "volumeMounts:")
+			volumeMountsIndent = before
 			foundVolumeMounts = true
 			continue
 		}
-		
+
 		// Track lines within volumeMounts section
 		if inVolumeMounts {
 			trimmed := strings.TrimSpace(line)
 			if trimmed == "" {
 				continue // Skip empty lines
 			}
-			
+
 			lineIndent := len(line) - len(strings.TrimLeft(line, " "))
 			baseIndent := len(volumeMountsIndent)
-			
+
 			// List items and their content are at baseIndent or deeper
 			if lineIndent >= baseIndent {
 				lastVolumeMountIdx = i
@@ -541,7 +501,7 @@ func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string, volumeMount
 			}
 		}
 	}
-	
+
 	// Insert custom volumeMounts template after last volumeMount
 	if foundVolumeMounts && lastVolumeMountIdx >= 0 {
 		// Volume mount list items are indented 2 spaces from "volumeMounts:" line (YAML list syntax)
@@ -551,22 +511,22 @@ func (v *ValueInjector) injectCustomVolumeMounts(yamlContent string, volumeMount
 			fmt.Sprintf("%s{{- toYaml . | nindent %d }}", volumeMountEntryIndent, len(volumeMountEntryIndent)),
 			fmt.Sprintf("%s{{- end }}", volumeMountEntryIndent),
 		}
-		
+
 		newLines := append([]string{}, lines[:lastVolumeMountIdx+1]...)
 		newLines = append(newLines, customVolumeMountsTemplate...)
 		newLines = append(newLines, lines[lastVolumeMountIdx+1:]...)
 		return strings.Join(newLines, "\n")
 	}
-	
+
 	return yamlContent
 }
 
 // injectInitContainers injects init containers
-func (v *ValueInjector) injectInitContainers(yamlContent string, initContainersValue any) string {
+func (v *ValueInjector) injectInitContainers(yamlContent string) string {
 	// Find spec.template.spec section and add initContainers
 	specPattern := regexp.MustCompile(`(?m)^(\s+)spec:\s*$\n\s+containers:\s*$`)
 	matches := specPattern.FindStringSubmatchIndex(yamlContent)
-	
+
 	if matches == nil {
 		return yamlContent
 	}
@@ -574,91 +534,91 @@ func (v *ValueInjector) injectInitContainers(yamlContent string, initContainersV
 	// Insert initContainers before containers
 	insertIdx := matches[0]
 	indent := yamlContent[matches[2]:matches[3]]
-	
+
 	initContainersTemplate := fmt.Sprintf(`%sinitContainers:
 {{- if .Values.manager.initContainers }}
 {{- toYaml .Values.manager.initContainers | nindent 8 }}
 {{- end }}
 `, indent)
-	
+
 	return yamlContent[:insertIdx] + initContainersTemplate + yamlContent[insertIdx:]
 }
 
 // injectServiceAccountName injects custom service account name
-func (v *ValueInjector) injectServiceAccountName(yamlContent string, serviceAccountValue any) string {
+func (v *ValueInjector) injectServiceAccountName(yamlContent string) string {
 	// Replace existing serviceAccountName with conditional template
 	serviceAccountPattern := regexp.MustCompile(`(?m)^(\s+)serviceAccountName:.*$`)
-	
+
 	serviceAccountTemplate := `{{- if .Values.manager.serviceAccountName }}
       serviceAccountName: {{ .Values.manager.serviceAccountName }}
 {{- else }}
-      serviceAccountName: {{ include "` + v.chartName + `.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+			serviceAccountName: {{ include "` + v.chartName + `.resourceName" (dict "suffix" "controller-manager" "context" $) }}
 {{- end }}`
-	
+
 	return serviceAccountPattern.ReplaceAllString(yamlContent, serviceAccountTemplate)
 }
 
 // injectHostNetwork injects hostNetwork setting
-func (v *ValueInjector) injectHostNetwork(yamlContent string, hostNetworkValue any) string {
+func (v *ValueInjector) injectHostNetwork(yamlContent string) string {
 	// Add hostNetwork conditionally
 	specPattern := regexp.MustCompile(`(?m)^(\s+)spec:\s*$\n`)
 	matches := specPattern.FindStringSubmatchIndex(yamlContent)
-	
+
 	if matches == nil {
 		return yamlContent
 	}
 
 	indent := yamlContent[matches[2]:matches[3]]
 	insertIdx := matches[1]
-	
+
 	hostNetworkTemplate := fmt.Sprintf(`
 %shostNetwork: {{ .Values.manager.hostNetwork | default false }}`, indent)
-	
+
 	return yamlContent[:insertIdx] + hostNetworkTemplate + yamlContent[insertIdx:]
 }
 
 // injectDNSPolicy injects DNS policy
-func (v *ValueInjector) injectDNSPolicy(yamlContent string, dnsPolicyValue any) string {
+func (v *ValueInjector) injectDNSPolicy(yamlContent string) string {
 	// Add dnsPolicy conditionally
 	specPattern := regexp.MustCompile(`(?m)^(\s+)securityContext:\s*$`)
 	matches := specPattern.FindStringIndex(yamlContent)
-	
+
 	if matches == nil {
 		return yamlContent
 	}
 
 	insertIdx := matches[0]
-	
+
 	dnsPolicyTemplate := `{{- if .Values.manager.dnsPolicy }}
       dnsPolicy: {{ .Values.manager.dnsPolicy }}
 {{- end }}
 `
-	
+
 	return yamlContent[:insertIdx] + dnsPolicyTemplate + yamlContent[insertIdx:]
 }
 
 // injectPriorityClassName injects priority class name
-func (v *ValueInjector) injectPriorityClassName(yamlContent string, priorityClassValue any) string {
+func (v *ValueInjector) injectPriorityClassName(yamlContent string) string {
 	// Add priorityClassName conditionally
 	securityContextPattern := regexp.MustCompile(`(?m)^(\s+)securityContext:\s*$`)
 	matches := securityContextPattern.FindStringIndex(yamlContent)
-	
+
 	if matches == nil {
 		return yamlContent
 	}
 
 	insertIdx := matches[0]
-	
+
 	priorityClassTemplate := `{{- if .Values.manager.priorityClassName }}
       priorityClassName: {{ .Values.manager.priorityClassName }}
 {{- end }}
 `
-	
+
 	return yamlContent[:insertIdx] + priorityClassTemplate + yamlContent[insertIdx:]
 }
 
 // injectGenericField attempts to inject a generic field
-func (v *ValueInjector) injectGenericField(yamlContent string, fieldName string, fieldValue any) string {
+func (v *ValueInjector) injectGenericField(yamlContent string) string {
 	// This is a fallback for fields we don't have specific handling for
 	// We'll add them as comments that users can uncomment and modify
 	return yamlContent

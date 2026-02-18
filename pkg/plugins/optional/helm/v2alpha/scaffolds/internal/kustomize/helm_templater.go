@@ -44,6 +44,11 @@ const (
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
 	apiVersionMonitoring  = "monitoring.coreos.com/v1"
+
+	// YAML keys
+	yamlKeyMetadata = "metadata:"
+	yamlKeySpec     = "spec:"
+	yamlKeyTemplate = "template:"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
@@ -355,7 +360,7 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ 
 				}
 				// Stop if we hit a new top-level section
 				if strings.HasPrefix(lines[j], "  ") && strings.HasSuffix(trimmed, ":") &&
-					(trimmed == "spec:" || trimmed == "template:" || trimmed == "volumes:") {
+					(trimmed == "spec:" || trimmed == yamlKeyTemplate || trimmed == "volumes:") {
 					break
 				}
 			}
@@ -496,7 +501,7 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 					isInLabelsSection = true
 					break
 				}
-				if strings.TrimSpace(lines[j]) == "metadata:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyMetadata {
 					break
 				}
 			}
@@ -601,7 +606,7 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 	}
 
 	lines := strings.Split(yamlContent, "\n")
-	
+
 	// First pass: look for existing env: block and template it
 	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "env:" {
@@ -654,26 +659,26 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 		if !strings.HasPrefix(trimmed, "command:") {
 			continue
 		}
-		
+
 		// Get the indent level of the command: field
 		indentStr, indentLen := leadingWhitespace(lines[i])
-		
+
 		// Find the end of the command block
 		end := i + 1
 		for ; end < len(lines); end++ {
 			_, lineIndent := leadingWhitespace(lines[end])
 			trimmed := strings.TrimSpace(lines[end])
-			
+
 			// Empty line or same/less indentation (next field) = end of command block
 			if trimmed == "" || lineIndent <= indentLen {
 				break
 			}
 		}
-		
+
 		// Insert env block after command block
 		childIndent := indentStr + "  "
 		childIndentWidth := strconv.Itoa(len(childIndent))
-		
+
 		envBlock := []string{
 			indentStr + "env:",
 			childIndent + "{{- if .Values.manager.env }}",
@@ -682,7 +687,7 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 			childIndent + "[]",
 			childIndent + "{{- end }}",
 		}
-		
+
 		newLines := append([]string{}, lines[:end]...)
 		newLines = append(newLines, envBlock...)
 		newLines = append(newLines, lines[end:]...)
@@ -1448,7 +1453,7 @@ func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) st
 		// No annotations section exists, need to add it after metadata:
 		for i, line := range lines {
 			trimmed := strings.TrimSpace(line)
-			if trimmed == "metadata:" || strings.HasPrefix(trimmed, "metadata:") {
+			if trimmed == yamlKeyMetadata || strings.HasPrefix(trimmed, yamlKeyMetadata) {
 				metadataIndent, _ := leadingWhitespace(line)
 				// Fields under metadata need one more level of indentation (4 spaces for go-yaml)
 				fieldIndent := metadataIndent + "    "

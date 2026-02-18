@@ -124,17 +124,17 @@ func (p *ValuesParser) DetectUserAddedValues(parsed *ParsedValues) *UserAddedVal
 	}
 
 	standardManagerFields := map[string]bool{
-		"replicas":             true,
-		"image":                true,
-		"args":                 true,
-		"env":                  true,
-		"imagePullSecrets":     true,
-		"podSecurityContext":   true,
-		"securityContext":      true,
-		"resources":            true,
-		"affinity":             true,
-		"nodeSelector":         true,
-		"tolerations":          true,
+		"replicas":           true,
+		"image":              true,
+		"args":               true,
+		"env":                true,
+		"imagePullSecrets":   true,
+		"podSecurityContext": true,
+		"securityContext":    true,
+		"resources":          true,
+		"affinity":           true,
+		"nodeSelector":       true,
+		"tolerations":        true,
 	}
 
 	// Detect top-level custom fields
@@ -205,7 +205,7 @@ func GetStandardFieldPaths() map[string]bool {
 		// Top level
 		"nameOverride":     true,
 		"fullnameOverride": true,
-		
+
 		// Manager
 		"manager.replicas":           true,
 		"manager.image.repository":   true,
@@ -213,29 +213,29 @@ func GetStandardFieldPaths() map[string]bool {
 		"manager.image.pullPolicy":   true,
 		"manager.args":               true,
 		"manager.env":                true,
-	"manager.envFrom":            true,
-	"manager.imagePullSecrets":   true,
-	"manager.podSecurityContext": true,
-	"manager.securityContext":    true,
-	"manager.resources":          true,
-	"manager.affinity":           true,
-	"manager.nodeSelector":       true,
-	"manager.tolerations":        true,
-	"manager.volumes":            true,
-	"manager.volumeMounts":       true,
-	"manager.ports":              true,
-		
+		"manager.envFrom":            true,
+		"manager.imagePullSecrets":   true,
+		"manager.podSecurityContext": true,
+		"manager.securityContext":    true,
+		"manager.resources":          true,
+		"manager.affinity":           true,
+		"manager.nodeSelector":       true,
+		"manager.tolerations":        true,
+		"manager.volumes":            true,
+		"manager.volumeMounts":       true,
+		"manager.ports":              true,
+
 		// Metrics
 		"metrics.enable": true,
 		"metrics.port":   true,
-		
+
 		// Cert Manager
 		"certManager.enable": true,
-		
+
 		// Webhook
 		"webhook.enable": true,
 		"webhook.port":   true,
-		
+
 		// Prometheus
 		"prometheus.enable": true,
 	}
@@ -245,7 +245,7 @@ func GetStandardFieldPaths() map[string]bool {
 func GetValuePath(values map[string]any, path string) (any, bool) {
 	parts := strings.Split(path, ".")
 	current := any(values)
-	
+
 	for _, part := range parts {
 		if m, ok := current.(map[string]any); ok {
 			if val, exists := m[part]; exists {
@@ -257,6 +257,6 @@ func GetValuePath(values map[string]any, path string) (any, bool) {
 			return nil, false
 		}
 	}
-	
+
 	return current, true
 }

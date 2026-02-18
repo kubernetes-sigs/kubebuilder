@@ -141,7 +141,7 @@ spec:
 				BeforeEach(func() {
 					userValues.CustomManagerFields["volumes"] = []any{
 						map[string]any{
-							"name": "custom-volume",
+							"name":     "custom-volume",
 							"emptyDir": map[string]any{},
 						},
 					}
@@ -165,13 +165,13 @@ spec:
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
 					Expect(result).To(ContainSubstring("{{- with .Values.manager.volumes }}"))
-				Expect(result).To(ContainSubstring("{{- toYaml . | nindent 10 }}"))
+					Expect(result).To(ContainSubstring("{{- toYaml . | nindent 10 }}"))
 					// Verify the template is added after existing volumes
 					lines := splitLines(result)
 					volumesIdx := -1
 					certVolumeIdx := -1
 					templateIdx := -1
-					
+
 					for i, line := range lines {
 						if containsAny(line, "volumes:") {
 							volumesIdx = i
@@ -183,7 +183,7 @@ spec:
 							templateIdx = i
 						}
 					}
-					
+
 					Expect(volumesIdx).To(BeNumerically(">", 0))
 					Expect(certVolumeIdx).To(BeNumerically(">", volumesIdx))
 					Expect(templateIdx).To(BeNumerically(">", certVolumeIdx))
@@ -210,12 +210,12 @@ spec:
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
 					Expect(result).To(ContainSubstring("{{- with .Values.manager.volumes }}"))
-					
+
 					// Verify it comes after webhook-certs volume
 					lines := splitLines(result)
 					webhookCertsIdx := -1
 					templateIdx := -1
-					
+
 					for i, line := range lines {
 						if containsAny(line, "- name: webhook-certs") {
 							webhookCertsIdx = i
@@ -224,7 +224,7 @@ spec:
 							templateIdx = i
 						}
 					}
-					
+
 					Expect(webhookCertsIdx).To(BeNumerically(">", 0))
 					Expect(templateIdx).To(BeNumerically(">", webhookCertsIdx))
 				})
@@ -262,7 +262,7 @@ spec:
 					volumeMountsIdx := -1
 					certMountIdx := -1
 					templateIdx := -1
-					
+
 					for i, line := range lines {
 						if containsAny(line, "volumeMounts:") {
 							volumeMountsIdx = i
@@ -274,7 +274,7 @@ spec:
 							templateIdx = i
 						}
 					}
-					
+
 					Expect(volumeMountsIdx).To(BeNumerically(">", 0))
 					Expect(certMountIdx).To(BeNumerically(">", volumeMountsIdx))
 					Expect(templateIdx).To(BeNumerically(">", certMountIdx))
@@ -303,13 +303,13 @@ spec:
           readOnly: true`
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
-					
+
 					// Should only inject into manager container, not kube-rbac-proxy
 					lines := splitLines(result)
 					managerIdx := -1
 					proxyIdx := -1
 					templateCount := 0
-					
+
 					for i, line := range lines {
 						if containsAny(line, "name: kube-rbac-proxy") {
 							proxyIdx = i
@@ -327,7 +327,7 @@ spec:
 							}
 						}
 					}
-					
+
 					// Should only have one template injection
 					Expect(templateCount).To(Equal(1))
 				})
@@ -337,7 +337,7 @@ spec:
 				BeforeEach(func() {
 					userValues.CustomManagerFields["volumes"] = []any{
 						map[string]any{
-							"name": "custom-volume",
+							"name":     "custom-volume",
 							"emptyDir": map[string]any{},
 						},
 					}
@@ -377,27 +377,27 @@ spec:
         emptyDir: {}`
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
-					
+
 					// Verify existing volumes are preserved
 					Expect(result).To(ContainSubstring("- name: config-volume"))
 					Expect(result).To(ContainSubstring("name: app-config"))
 					Expect(result).To(ContainSubstring("- name: data-volume"))
 					Expect(result).To(ContainSubstring("emptyDir: {}"))
-					
+
 					// Verify custom volume template is added AFTER existing volumes
 					Expect(result).To(ContainSubstring("{{- with .Values.manager.volumes }}"))
-					
+
 					// Verify order: existing volumes -> custom template
 					lines := splitLines(result)
 					configVolIdx := -1
 					dataVolIdx := -1
 					customVolTemplateIdx := -1
-					
+
 					for i, line := range lines {
 						if containsAny(line, "- name: config-volume") && configVolIdx == -1 {
 							// This is the volume, not volumeMount
-							if i > 0 && containsAny(lines[i-1], "volumes:") || 
-							   (i > 1 && containsAny(lines[i-2], "volumes:")) {
+							if i > 0 && containsAny(lines[i-1], "volumes:") ||
+								(i > 1 && containsAny(lines[i-2], "volumes:")) {
 								configVolIdx = i
 							}
 						}
@@ -411,7 +411,7 @@ spec:
 							customVolTemplateIdx = i
 						}
 					}
-					
+
 					Expect(configVolIdx).To(BeNumerically(">", 0), "Should find config-volume")
 					Expect(dataVolIdx).To(BeNumerically(">", configVolIdx), "data-volume should be after config-volume")
 					Expect(customVolTemplateIdx).To(BeNumerically(">", dataVolIdx), "Custom template should be after existing volumes")
@@ -435,22 +435,22 @@ spec:
           readOnly: false`
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
-					
+
 					// Verify existing volumeMounts are preserved
 					Expect(result).To(ContainSubstring("- name: config-volume"))
 					Expect(result).To(ContainSubstring("mountPath: /etc/config"))
 					Expect(result).To(ContainSubstring("- name: data-volume"))
 					Expect(result).To(ContainSubstring("mountPath: /var/data"))
-					
+
 					// Verify custom volumeMount template is added AFTER existing volumeMounts
 					Expect(result).To(ContainSubstring("{{- with .Values.manager.volumeMounts }}"))
-					
+
 					// Verify order
 					lines := splitLines(result)
 					configVmIdx := -1
 					dataVmIdx := -1
 					customVmTemplateIdx := -1
-					
+
 					for i, line := range lines {
 						if containsAny(line, "- name: config-volume") {
 							configVmIdx = i
@@ -462,7 +462,7 @@ spec:
 							customVmTemplateIdx = i
 						}
 					}
-					
+
 					Expect(configVmIdx).To(BeNumerically(">", 0))
 					Expect(dataVmIdx).To(BeNumerically(">", configVmIdx))
 					Expect(customVmTemplateIdx).To(BeNumerically(">", dataVmIdx))
@@ -485,7 +485,7 @@ spec:
           name: existing-config`
 
 					result := injector.InjectCustomValues(yamlContent, deployment)
-					
+
 					// The structure should be:
 					// volumes:
 					// - name: existing-volume  (preserved)
@@ -493,16 +493,16 @@ spec:
 					// {{- with .Values.manager.volumes }}  (custom template)
 					// {{- toYaml . | nindent 10 }}
 					// {{- end }}
-					
+
 					// When Helm renders this, it will produce:
 					// volumes:
 					// - name: existing-volume
 					// - name: custom-volume  (from values.yaml)
-					
+
 					Expect(result).To(ContainSubstring("- name: existing-volume"))
 					Expect(result).To(ContainSubstring("configMap:"))
 					Expect(result).To(ContainSubstring("{{- with .Values.manager.volumes }}"))
-					
+
 					// Verify the template comes AFTER the existing volume
 					existingVolIdx := strings.Index(result, "- name: existing-volume")
 					templateIdx := strings.Index(result, "{{- with .Values.manager.volumes }}")
@@ -524,7 +524,8 @@ spec:
 						},
 					},
 				}
-				userValues.ManagerAnnotations["custom.io/annotation"] = "value"
+				const testValue = "value"
+				userValues.ManagerAnnotations["custom.io/annotation"] = testValue
 			})
 
 			Context("when annotations section exists", func() {
@@ -587,8 +588,9 @@ spec:
 			})
 
 			It("should inject pod annotation templates", func() {
-				userValues.ManagerPodAnnotations["pod.annotation.io/key"] = "value"
-				
+				const testValue = "value"
+				userValues.ManagerPodAnnotations["pod.annotation.io/key"] = testValue
+
 				yamlContent := `apiVersion: apps/v1
 kind: Deployment
 spec:
@@ -654,7 +656,7 @@ spec:
           secretName: cert`
 
 				result := injector.InjectCustomValues(yamlContent, deployment)
-				
+
 				// Verify all injections are present
 				Expect(result).To(ContainSubstring(".Values.manager.labels.custom-label"))
 				Expect(result).To(ContainSubstring(".Values.manager.annotations"))
@@ -678,8 +680,9 @@ spec:
 			})
 
 			It("should escape dots and slashes in label keys", func() {
-				userValues.ManagerLabels["custom.io/special-label"] = "value"
-				
+				const testValue = "value"
+				userValues.ManagerLabels["custom.io/special-label"] = testValue
+
 				yamlContent := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -693,7 +696,7 @@ metadata:
 			It("should escape dots and slashes in annotation keys", func() {
 				userValues.ManagerAnnotations["prometheus.io/scrape"] = "true"
 				userValues.ManagerAnnotations["custom.domain.com/config"] = "enabled"
-				
+
 				yamlContent := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -732,7 +735,7 @@ metadata:
 				userValues.CustomManagerFields["volumes"] = []any{
 					map[string]any{"name": "custom", "emptyDir": map[string]any{}},
 				}
-				
+
 				yamlContent := `apiVersion: apps/v1
 kind: Deployment
 spec:
@@ -751,7 +754,7 @@ spec:
 				userValues.CustomManagerFields["volumeMounts"] = []any{
 					map[string]any{"name": "custom", "mountPath": "/custom"},
 				}
-				
+
 				yamlContent := `apiVersion: apps/v1
 kind: Deployment
 spec:

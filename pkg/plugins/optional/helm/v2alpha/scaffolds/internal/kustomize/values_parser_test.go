@@ -26,9 +26,9 @@ import (
 
 var _ = Describe("ValuesParser", func() {
 	var (
-		parser    *ValuesParser
-		tempDir   string
-		chartDir  string
+		parser     *ValuesParser
+		tempDir    string
+		chartDir   string
 		valuesPath string
 	)
 
@@ -36,11 +36,11 @@ var _ = Describe("ValuesParser", func() {
 		var err error
 		tempDir, err = os.MkdirTemp("", "values-parser-test-*")
 		Expect(err).NotTo(HaveOccurred())
-		
+
 		chartDir = filepath.Join(tempDir, "chart")
 		err = os.MkdirAll(chartDir, 0o755)
 		Expect(err).NotTo(HaveOccurred())
-		
+
 		valuesPath = filepath.Join(chartDir, "values.yaml")
 		parser = NewValuesParser(tempDir)
 	})
