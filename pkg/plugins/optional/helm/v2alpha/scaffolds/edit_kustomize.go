@@ -129,6 +129,34 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
 	chartName := s.config.GetProjectName()
 	chartConverter := kustomize.NewChartConverter(resources, namePrefix, chartName, s.outputDir)
+	
+	// Parse existing values.yaml to detect user-added customizations
+	valuesParser := kustomize.NewValuesParser(s.outputDir)
+	parsedValues, parseErr := valuesParser.ParseExistingValues()
+	if parseErr != nil {
+		slog.Warn("failed to parse existing values.yaml, continuing without custom value injection", "error", parseErr)
+	} else if parsedValues != nil && len(parsedValues.Raw) > 0 {
+		// Detect user-added values by comparing with standard schema
+		userAddedValues := valuesParser.DetectUserAddedValues(parsedValues)
+		
+		// Log detected custom values for visibility
+		if len(userAddedValues.ManagerLabels) > 0 {
+			slog.Info("detected user-added manager labels", "count", len(userAddedValues.ManagerLabels))
+		}
+		if len(userAddedValues.ManagerAnnotations) > 0 {
+			slog.Info("detected user-added manager annotations", "count", len(userAddedValues.ManagerAnnotations))
+		}
+		if len(userAddedValues.CustomManagerFields) > 0 {
+			slog.Info("detected custom manager fields", "count", len(userAddedValues.CustomManagerFields))
+		}
+		if len(userAddedValues.CustomTopLevelFields) > 0 {
+			slog.Info("detected custom top-level fields", "count", len(userAddedValues.CustomTopLevelFields))
+		}
+		
+		// Configure chart converter to inject user-added values into templates
+		chartConverter.SetUserAddedValues(userAddedValues)
+	}
+	
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files
