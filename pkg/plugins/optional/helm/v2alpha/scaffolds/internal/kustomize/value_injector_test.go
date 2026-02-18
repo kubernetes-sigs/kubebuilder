@@ -18,17 +18,11 @@ package kustomize
 
 import (
 	"strings"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-func TestValueInjector(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ValueInjector Suite")
-}
 
 var _ = Describe("ValueInjector", func() {
 	var (

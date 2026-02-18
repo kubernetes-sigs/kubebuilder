@@ -19,16 +19,10 @@ package kustomize
 import (
 	"os"
 	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestValuesParser(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ValuesParser Suite")
-}
 
 var _ = Describe("ValuesParser", func() {
 	var (
