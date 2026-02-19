@@ -2,30 +2,30 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "busybox-editor-role" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "busybox-editor-role" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 rules:
-    - apiGroups:
-        - example.com.testproject.org
-      resources:
-        - busyboxes
-      verbs:
-        - create
-        - delete
-        - get
-        - list
-        - patch
-        - update
-        - watch
-    - apiGroups:
-        - example.com.testproject.org
-      resources:
-        - busyboxes/status
-      verbs:
-        - get
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
 {{- end }}
