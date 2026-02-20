@@ -21,7 +21,7 @@ spec:
       clientConfig:
         service:
           name: project-webhook-service
-          namespace: project-system
+          namespace: system
           path: /convert
       conversionReviewVersions:
       - v1
@@ -8571,8 +8571,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-webhook-service
-      namespace: project-system
+      name: webhook-service
+      namespace: system
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: mcronjob-v1.kb.io
@@ -8591,8 +8591,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-webhook-service
-      namespace: project-system
+      name: webhook-service
+      namespace: system
       path: /mutate-batch-tutorial-kubebuilder-io-v2-cronjob
   failurePolicy: Fail
   name: mcronjob-v2.kb.io
@@ -8619,8 +8619,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-webhook-service
-      namespace: project-system
+      name: webhook-service
+      namespace: system
       path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: vcronjob-v1.kb.io
@@ -8639,8 +8639,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-webhook-service
-      namespace: project-system
+      name: webhook-service
+      namespace: system
       path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
   failurePolicy: Fail
   name: vcronjob-v2.kb.io

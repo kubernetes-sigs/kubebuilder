@@ -12,8 +12,8 @@ webhooks:
         - v1
       clientConfig:
         service:
-            name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-            namespace: {{ .Release.Namespace }}
+            name: webhook-service
+            namespace: system
             path: /validate-example-com-testproject-org-v1alpha1-memcached
       failurePolicy: Fail
       name: vmemcached-v1alpha1.kb.io

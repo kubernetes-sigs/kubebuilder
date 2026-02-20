@@ -51,7 +51,7 @@ metadata:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-monitor
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 spec:
   endpoints:
     - path: /metrics

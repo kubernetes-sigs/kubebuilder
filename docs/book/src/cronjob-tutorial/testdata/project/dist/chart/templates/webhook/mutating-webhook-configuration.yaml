@@ -12,8 +12,8 @@ webhooks:
         - v1
       clientConfig:
         service:
-            name: {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-            namespace: {{ .Release.Namespace }}
+            name: webhook-service
+            namespace: system
             path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
       failurePolicy: Fail
       name: mcronjob-v1.kb.io

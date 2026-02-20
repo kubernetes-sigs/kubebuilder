@@ -1418,7 +1418,7 @@ spec:
       clientConfig:
         service:
           name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
+          namespace: system
           path: /convert
       conversionReviewVersions:
       - v1
@@ -3048,8 +3048,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: mcaptain-v1.kb.io
@@ -3068,8 +3068,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /mutate-apps-v1-deployment
   failurePolicy: Fail
   name: mdeployment-v1.kb.io
@@ -3088,8 +3088,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /mutate-ship-testproject-org-v1-destroyer
   failurePolicy: Fail
   name: mdestroyer-v1.kb.io
@@ -3108,8 +3108,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
@@ -3136,8 +3136,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: vcaptain-v1.kb.io
@@ -3156,8 +3156,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /validate-ship-testproject-org-v2alpha1-cruiser
   failurePolicy: Fail
   name: vcruiser-v2alpha1.kb.io
@@ -3176,8 +3176,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /validate-apps-v1-deployment
   failurePolicy: Fail
   name: vdeployment-v1.kb.io
@@ -3196,8 +3196,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /validate-example-com-testproject-org-v1alpha1-memcached
   failurePolicy: Fail
   name: vmemcached-v1alpha1.kb.io
@@ -3216,8 +3216,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
+      name: webhook-service
+      namespace: system
       path: /validate--v1-pod
   failurePolicy: Fail
   name: vpod-v1.kb.io

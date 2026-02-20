@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: project-v4-with-plugins
     app.kubernetes.io/managed-by: kustomize
   name: metrics-certs  # this name should match the one appeared in kustomizeconfig.yaml
-  namespace: system
+  namespace: project-v4-with-plugins-system
 spec:
   dnsNames:
   # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize

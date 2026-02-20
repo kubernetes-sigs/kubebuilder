@@ -61,13 +61,13 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
-  name: system
+  name: {{ .ProjectName }}-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: system
+  namespace: {{ .ProjectName }}-system
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: {{ .ProjectName }}

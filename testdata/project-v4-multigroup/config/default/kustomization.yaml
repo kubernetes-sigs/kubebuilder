@@ -1,11 +1,15 @@
-# Adds namespace to all resources.
-namespace: project-v4-multigroup-system
+# Adds namespace to all resources that don't already have one.
+# The namespace field has been replaced with a NamespaceTransformer to support
+# multi-namespace RBAC scenarios. See namespace-transformer.yaml for details.
+# If you don't need multi-namespace support, you can uncomment the line below
+# and remove the namespace-transformer.yaml reference from the transformers section.
+#namespace: project-v4-multigroup-system
 
 # Value of this field is prepended to the
-# names of all resources, e.g. a deployment named
+# names of all resources, e.g. a deployment	 named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
-# field above.
+# field in namespace-transformer.yaml.
 namePrefix: project-v4-multigroup-
 
 # Labels to add to all resources and selectors.
@@ -13,6 +17,11 @@ namePrefix: project-v4-multigroup-
 #- includeSelectors: true
 #  pairs:
 #    someName: someValue
+
+# Apply namespace transformation to resources that don't have one set.
+# This preserves namespaces from RBAC markers while adding default namespace to other resources.
+transformers:
+- namespace-transformer.yaml
 
 resources:
 - ../crd

@@ -53,7 +53,7 @@ metadata:
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
-  namespace: system
+  namespace: {{ .ProjectName }}-system
 spec:
   # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize
   # replacements in the config/default/kustomization.yaml file.
