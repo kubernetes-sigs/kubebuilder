@@ -82,24 +82,25 @@ Create a Pull Request using the URL below to review the changes and resolve conf
 
 ## Next steps
 
-### 1. Resolve conflicts
-After fixing conflicts, run:
+1. Fetch the **%[4]s** branch locally:
+
+~~~bash
+git fetch https://github.com/%[5]s %[4]s:%[4]s
+git checkout %[4]s
+~~~
+
+2. Locate and resolve the merge conflicts.
+
+3. After fixing conflicts, run:
+
 ~~~bash
 make manifests generate fmt vet lint-fix
 ~~~
 
-### 2. Optional: work on a new branch
-To apply the update in a clean branch, run:
-~~~bash
-kubebuilder alpha update --output-branch my-fix-branch
-~~~
+4. Verify the changes:
 
-This will create a new branch (my-fix-branch) with the update applied.  
-Resolve conflicts there, complete the merge locally, and push the branch.
-
-### 3. Verify the changes
-- Build the project  
-- Run tests  
+- Build the project
+- Run tests
 - Confirm everything still works
 
 :book: **More info:** https://kubebuilder.io/reference/commands/alpha_update
