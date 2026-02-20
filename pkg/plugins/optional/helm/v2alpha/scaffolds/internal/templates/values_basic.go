@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.yaml.in/yaml/v3"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -227,7 +227,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  ## Environment variables\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  env:\n")
-		if envYaml, err := yaml.Marshal(env); err == nil {
+		if envYaml, err := sigsyaml.Marshal(env); err == nil {
 			f.IndentYamlProperly(buf, envYaml)
 		} else {
 			buf.WriteString("    []\n")
@@ -244,7 +244,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  ## Image pull secrets\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  imagePullSecrets:\n")
-		if imagePullSecretsYaml, err := yaml.Marshal(imagePullSecrets); err == nil {
+		if imagePullSecretsYaml, err := sigsyaml.Marshal(imagePullSecrets); err == nil {
 			lines := bytes.SplitSeq(imagePullSecretsYaml, []byte("\n"))
 			for line := range lines {
 				if len(line) > 0 {
@@ -264,7 +264,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  ## Pod-level security settings\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  podSecurityContext:\n")
-		if secYaml, err := yaml.Marshal(podSecCtx); err == nil {
+		if secYaml, err := sigsyaml.Marshal(podSecCtx); err == nil {
 			f.IndentYamlProperly(buf, secYaml)
 		}
 		buf.WriteString("\n")
@@ -277,7 +277,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  ## Container-level security settings\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  securityContext:\n")
-		if secYaml, err := yaml.Marshal(secCtx); err == nil {
+		if secYaml, err := sigsyaml.Marshal(secCtx); err == nil {
 			f.IndentYamlProperly(buf, secYaml)
 		}
 		buf.WriteString("\n")
@@ -290,7 +290,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  ## Resource limits and requests\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  resources:\n")
-		if resYaml, err := yaml.Marshal(resources); err == nil {
+		if resYaml, err := sigsyaml.Marshal(resources); err == nil {
 			f.IndentYamlProperly(buf, resYaml)
 		}
 		buf.WriteString("\n")
@@ -302,7 +302,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	buf.WriteString("  ##\n")
 	if affinity, exists := f.DeploymentConfig["podAffinity"]; exists && affinity != nil {
 		buf.WriteString("  affinity:\n")
-		if affYaml, err := yaml.Marshal(affinity); err == nil {
+		if affYaml, err := sigsyaml.Marshal(affinity); err == nil {
 			f.IndentYamlProperly(buf, affYaml)
 		}
 		buf.WriteString("\n")
@@ -315,7 +315,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	buf.WriteString("  ##\n")
 	if nodeSelector, exists := f.DeploymentConfig["podNodeSelector"]; exists && nodeSelector != nil {
 		buf.WriteString("  nodeSelector:\n")
-		if nodYaml, err := yaml.Marshal(nodeSelector); err == nil {
+		if nodYaml, err := sigsyaml.Marshal(nodeSelector); err == nil {
 			f.IndentYamlProperly(buf, nodYaml)
 		}
 		buf.WriteString("\n")
@@ -328,7 +328,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	buf.WriteString("  ##\n")
 	if tolerations, exists := f.DeploymentConfig["podTolerations"]; exists && tolerations != nil {
 		buf.WriteString("  tolerations:\n")
-		if tolYaml, err := yaml.Marshal(tolerations); err == nil {
+		if tolYaml, err := sigsyaml.Marshal(tolerations); err == nil {
 			f.IndentYamlProperly(buf, tolYaml)
 		}
 		buf.WriteString("\n")
@@ -367,7 +367,7 @@ func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
 
 	if f.DeploymentConfig != nil {
 		if args, exists := f.DeploymentConfig["args"]; exists && args != nil {
-			if argsYaml, err := yaml.Marshal(args); err == nil {
+			if argsYaml, err := sigsyaml.Marshal(args); err == nil {
 				if trimmed := strings.TrimSpace(string(argsYaml)); trimmed != "" && trimmed != "[]" {
 					lines := bytes.Split(argsYaml, []byte("\n"))
 					buf.WriteString("  args:\n")
