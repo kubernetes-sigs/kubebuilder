@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -77,6 +79,22 @@ var _ = Describe("kubebuilder", func() {
 				HasNetworkPolicies: false,
 				InstallMethod:      helpers.InstallMethodHelm,
 			})
+
+			By("upgrading the release to 3 replicas and verifying " +
+				"manager.replicas is respected (leader election ensures only one active)")
+			Expect(kbc.HelmUpgradeReleaseWithReplicas(3)).To(Succeed())
+			deploymentName := fmt.Sprintf("e2e-%s-controller-manager", kbc.TestSuffix)
+			Eventually(func(g Gomega) {
+				out, err := kbc.Kubectl.Get(
+					true,
+					"deployment", deploymentName,
+					"-o", "jsonpath={.spec.replicas}",
+				)
+				g.Expect(err).NotTo(HaveOccurred())
+				replicas, atoiErr := strconv.Atoi(strings.TrimSpace(out))
+				g.Expect(atoiErr).NotTo(HaveOccurred(), "replicas field is not an integer")
+				g.Expect(replicas).To(Equal(3), "expected deployment spec.replicas to be 3 after helm upgrade")
+			}, helpers.DefaultTimeout, 30*time.Second).Should(Succeed())
 		})
 
 		It("should generate a runnable project without metrics exposed", func() {
@@ -201,7 +219,7 @@ var _ = Describe("kubebuilder", func() {
 						"CRD %s still exists but should have been deleted", crdName)
 				}
 			}
-			Eventually(verifyCRDsDeleted, "60s", "2s").Should(Succeed())
+			Eventually(verifyCRDsDeleted, helpers.DefaultTimeout, 30*time.Second).Should(Succeed())
 		})
 	})
 })

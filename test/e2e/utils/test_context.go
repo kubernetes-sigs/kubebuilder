@@ -455,3 +455,16 @@ func (t *TestContext) HelmInstallReleaseWithOptions(crdKeep bool) error {
 	_, err := t.Run(cmd)
 	return err
 }
+
+// HelmUpgradeReleaseWithReplicas runs `helm upgrade` with manager.replicas set.
+// Uses --reuse-values so existing image and other settings are preserved.
+func (t *TestContext) HelmUpgradeReleaseWithReplicas(replicas int) error {
+	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
+	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
+	cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+		"--namespace", ns,
+		"--reuse-values",
+		"--set", fmt.Sprintf("manager.replicas=%d", replicas))
+	_, err := t.Run(cmd)
+	return err
+}
