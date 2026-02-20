@@ -546,6 +546,8 @@ func (t *HelmTemplater) substituteCertManagerAnnotations(yamlContent string) str
 
 // templateDeploymentFields converts deployment-specific fields to Helm templates
 func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
+	// Template replicas from values.yaml (manager.replicas)
+	yamlContent = t.templateReplicas(yamlContent)
 	// Template configuration fields
 	yamlContent = t.templateImageReference(yamlContent)
 	yamlContent = t.templateEnvironmentVariables(yamlContent)
@@ -577,6 +579,19 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	)
 
 	return yamlContent
+}
+
+// templateReplicas replaces deployment spec.replicas with .Values.manager.replicas so the
+// value in values.yaml is used. With leader election, only one replica is active at a time;
+// multiple replicas are valid for HA (standby replicas).
+func (t *HelmTemplater) templateReplicas(yamlContent string) string {
+	if strings.Contains(yamlContent, ".Values.manager.replicas") {
+		return yamlContent
+	}
+	// Match a line that is exactly "  replicas: <digits>" (deployment spec.replicas).
+	// Preserve indentation so the replacement fits the existing YAML structure.
+	replicasPattern := regexp.MustCompile(`(?m)^(\s*)replicas:\s*\d+\s*$`)
+	return replicasPattern.ReplaceAllString(yamlContent, "${1}replicas: {{ .Values.manager.replicas }}")
 }
 
 // templateEnvironmentVariables exposes environment variables via values.yaml

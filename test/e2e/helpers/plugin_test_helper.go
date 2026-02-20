@@ -32,10 +32,15 @@ import (
 )
 
 const (
-	// defaultTimeout is the default timeout for Eventually checks
-	defaultTimeout = 3 * time.Minute
-	// defaultPollingInterval is the default polling interval for Eventually checks
-	defaultPollingInterval = time.Second
+	// DefaultTimeout is the default timeout for Eventually checks
+	DefaultTimeout = 3 * time.Minute
+	// DefaultPollingInterval is the default polling interval for Eventually checks
+	DefaultPollingInterval = time.Second
+
+	// defaultTimeout is the default timeout for Eventually checks (package-internal alias)
+	defaultTimeout = DefaultTimeout
+	// defaultPollingInterval is the default polling interval for Eventually checks (package-internal alias)
+	defaultPollingInterval = DefaultPollingInterval
 )
 
 // InstallMethod defines how the project will be deployed
