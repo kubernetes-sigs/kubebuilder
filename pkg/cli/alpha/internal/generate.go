@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	serversideapplyv1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/server-side-apply/v1alpha1"
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
@@ -119,6 +120,10 @@ func (opts *Generate) Generate() error {
 
 	if err = migrateDeployImagePlugin(projectConfig); err != nil {
 		return fmt.Errorf("error migrating deploy-image plugin: %w", err)
+	}
+
+	if err = migrateServerSideApplyPlugin(projectConfig); err != nil {
+		return fmt.Errorf("error migrating server-side-apply plugin: %w", err)
 	}
 
 	// Run make targets to ensure the project is properly set up.
@@ -326,6 +331,8 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 }
 
 // Migrates the Deploy Image plugin.
+//
+//nolint:dupl
 func migrateDeployImagePlugin(s store.Store) error {
 	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), deployimagev1alpha1.Plugin{})
 	canonicalKey := plugin.KeyFor(deployimagev1alpha1.Plugin{})
@@ -379,6 +386,79 @@ func migrateDeployImagePlugin(s store.Store) error {
 func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) error {
 	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
 	args = append(args, getDeployImageOptions(resourceData)...)
+	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+	}
+
+	return nil
+}
+
+// migrateServerSideApplyPlugin migrates the Server-Side Apply plugin
+//
+//nolint:dupl
+func migrateServerSideApplyPlugin(s store.Store) error {
+	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), serversideapplyv1alpha1.Plugin{})
+	canonicalKey := plugin.KeyFor(serversideapplyv1alpha1.Plugin{})
+	var ssaPlugin serversideapplyv1alpha1.PluginConfig
+	found := true
+
+	var err error
+	err = s.Config().DecodePluginConfig(key, &ssaPlugin)
+	if err != nil {
+		switch {
+		case errors.As(err, &config.PluginKeyNotFoundError{}):
+			found = false
+			if key != canonicalKey {
+				if err = s.Config().DecodePluginConfig(canonicalKey, &ssaPlugin); err != nil {
+					switch {
+					case errors.As(err, &config.PluginKeyNotFoundError{}):
+						// still not found
+					case errors.As(err, &config.UnsupportedFieldError{}):
+						slog.Info("Project config version does not support plugin metadata, skipping Server-Side Apply migration")
+						return nil
+					default:
+						return fmt.Errorf("failed to decode server-side-apply plugin config: %w", err)
+					}
+				} else {
+					found = true
+				}
+			}
+		case errors.As(err, &config.UnsupportedFieldError{}):
+			slog.Info("Project config version does not support plugin metadata, skipping Server-Side Apply migration")
+			return nil
+		default:
+			return fmt.Errorf("failed to decode server-side-apply plugin config: %w", err)
+		}
+	}
+
+	if !found {
+		slog.Info("Server-side-apply plugin not found, skipping migration")
+		return nil
+	}
+
+	for _, r := range ssaPlugin.Resources {
+		if err := createAPIWithServerSideApply(r); err != nil {
+			return fmt.Errorf("failed to create API with server-side-apply: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// createAPIWithServerSideApply creates an API with Server-Side Apply plugin
+func createAPIWithServerSideApply(resourceData serversideapplyv1alpha1.ResourceData) error {
+	args := []string{"create", "api"}
+
+	// Add GVK flags
+	if resourceData.Group != "" {
+		args = append(args, "--group", resourceData.Group)
+	}
+	args = append(args, "--version", resourceData.Version)
+	args = append(args, "--kind", resourceData.Kind)
+
+	// Add plugin flag
+	args = append(args, fmt.Sprintf("--plugins=%s", plugin.KeyFor(serversideapplyv1alpha1.Plugin{})))
+
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
 	}
