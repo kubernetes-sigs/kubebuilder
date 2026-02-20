@@ -5,13 +5,13 @@ It provides scaffolding and abstractions that accelerate the development of **co
 
 ## Quick Reference
 
-| Item       | Value                                                     |
-|------------|-----------------------------------------------------------|
-| Language   | Defined in the go.mod                                     |
-| Module     | `sigs.k8s.io/kubebuilder/v4`                              |
-| Binary     | `./bin/kubebuilder`                                       |
-| Core deps  | `controller-runtime`, `controller-tools`, Helm, Kustomize |
-| Docs       | https://book.kubebuilder.io                               |
+| Item      | Value                                                     |
+| --------- | --------------------------------------------------------- |
+| Language  | Defined in the go.mod                                     |
+| Module    | `sigs.k8s.io/kubebuilder/v4`                              |
+| Binary    | `./bin/kubebuilder`                                       |
+| Core deps | `controller-runtime`, `controller-tools`, Helm, Kustomize |
+| Docs      | https://book.kubebuilder.io                               |
 
 
 ## Directory Map
@@ -271,6 +271,24 @@ kubebuilder edit --plugins=helm/v2-alpha
 kubebuilder alpha generate    # Experimental: generate from PROJECT file
 kubebuilder alpha update      # Experimental: update to latest plugin versions
 ```
+
+### Multiple Controllers for the Same GVK
+
+Use `--controller-name` to scaffold additional controllers for an existing API.
+Each controller gets its own file, reconciler struct, and unique `Named()` registration:
+
+```bash
+# Create the API and its default controller
+kubebuilder create api --group batch --version v1 --kind CronJob
+
+# Add a second controller for the same CronJob Kind
+kubebuilder create api --group batch --version v1 --kind CronJob \
+  --controller-name cronjob-cleanup --resource=false
+```
+
+This produces `internal/controller/cronjob_cleanup_controller.go` with a `CronjobCleanupReconciler` struct.
+The `--resource=false` flag skips re-creating the API types. The controller name is tracked in the PROJECT file
+via the `resources.controllers[]` field.
 
 ## Common Patterns
 

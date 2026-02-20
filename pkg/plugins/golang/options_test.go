@@ -95,7 +95,14 @@ var _ = Describe("Options", func() {
 					} else {
 						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
-					Expect(res.Controller).To(Equal(options.DoController))
+					Expect(res.HasController()).To(Equal(options.DoController))
+					if options.DoController {
+						expectedControllerName := options.Controller.Name
+						if expectedControllerName == "" {
+							expectedControllerName = "firstmate"
+						}
+						Expect(res.Controllers).To(Equal([]resource.Controller{{Name: expectedControllerName}}))
+					}
 					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
@@ -120,10 +127,40 @@ var _ = Describe("Options", func() {
 			Entry("when updating nothing", Options{}),
 			Entry("when updating the plural", Options{Plural: "mates"}),
 			Entry("when updating the Controller", Options{DoController: true}),
+			Entry("when updating the Controller with custom name",
+				Options{DoController: true, Controller: resource.Controller{Name: "firstmate-backup"}}),
 			Entry("when updating with External API Path", Options{ExternalAPIPath: "testPath", ExternalAPIDomain: "test.io"}),
 			Entry("when updating the API with setting webhooks params",
 				Options{DoAPI: true, DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
+
+		It("should reuse existing API path when creating an internal controller-only resource", func() {
+			existing := resource.Resource{
+				GVK: gvk,
+				API: &resource.API{
+					CRDVersion: "v1",
+					Namespaced: true,
+				},
+				Path: "existing/api/path",
+			}
+			Expect(cfg.UpdateResource(existing)).To(Succeed())
+
+			res := resource.Resource{
+				GVK:      gvk,
+				Plural:   "firstmates",
+				API:      &resource.API{},
+				Webhooks: &resource.Webhooks{},
+			}
+
+			options := Options{
+				DoAPI:        false,
+				DoController: true,
+			}
+			options.UpdateResource(&res, cfg)
+
+			Expect(res.Path).To(Equal("existing/api/path"))
+			Expect(res.Controllers).To(Equal([]resource.Controller{{Name: "firstmate"}}))
+		})
 
 		DescribeTable("should use core apis",
 			func(group, qualified string) {

@@ -37,8 +37,16 @@ type Resource struct {
 	// API holds the information related to the resource API.
 	API *API `json:"api,omitempty"`
 
+	// Controllers holds the controllers scaffolded for this resource.
+	Controllers []Controller `json:"controllers,omitempty"`
+
 	// Controller specifies if a controller has been scaffolded.
+	// Deprecated: this field is legacy compatibility only and should not be used by new code.
 	Controller bool `json:"controller,omitempty"`
+
+	// ControllerName is an optional custom name for the controller.
+	// Deprecated: this field is legacy compatibility only and should not be used by new code.
+	ControllerName string `json:"controllerName,omitempty"`
 
 	// Webhooks holds the information related to the associated webhooks.
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
@@ -53,6 +61,12 @@ type Resource struct {
 
 	// Core specifies if the resource is from Kubernetes API.
 	Core bool `json:"core,omitempty"`
+}
+
+// Controller contains metadata for a scaffolded controller.
+type Controller struct {
+	// Name is the unique name of the controller.
+	Name string `json:"name,omitempty"`
 }
 
 // Validate checks that the Resource is valid.
@@ -112,7 +126,51 @@ func (r Resource) HasAPI() bool {
 
 // HasController returns true if the resource has an associated controller.
 func (r Resource) HasController() bool {
-	return r.Controller
+	return len(r.NormalizedControllers()) > 0
+}
+
+// HasControllerName returns true if a controller with the provided name exists.
+func (r Resource) HasControllerName(name string) bool {
+	for _, controller := range r.NormalizedControllers() {
+		if controller.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GetControllerName returns the controller name if set, or the default (lowercase Kind) if not.
+func (r Resource) GetControllerName() string {
+	controllers := r.NormalizedControllers()
+	if len(controllers) != 0 {
+		return controllers[0].Name
+	}
+
+	return strings.ToLower(r.Kind)
+}
+
+// ControllerClassName returns the PascalCase name for the reconciler struct.
+// If ControllerName is set (e.g. "captain-health"), returns "CaptainHealth".
+// Otherwise returns the Kind (e.g. "Captain").
+func (r Resource) ControllerClassName() string {
+	controllers := r.NormalizedControllers()
+	if len(controllers) != 0 {
+		return ToPascalCase(controllers[0].Name)
+	}
+
+	return r.Kind
+}
+
+// ToPascalCase converts a hyphenated name like "captain-health" to "CaptainHealth".
+func ToPascalCase(s string) string {
+	parts := strings.Split(s, "-")
+	for i, part := range parts {
+		if len(part) > 0 {
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}
+	}
+	return strings.Join(parts, "")
 }
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
@@ -152,6 +210,8 @@ func (r Resource) Copy() Resource {
 		webhooks := r.Webhooks.Copy()
 		r.Webhooks = &webhooks
 	}
+	r.Controllers = append([]Controller(nil), r.Controllers...)
+
 	return r
 }
 
@@ -188,8 +248,19 @@ func (r *Resource) Update(other Resource) error {
 		return err
 	}
 
-	// Update controller.
-	r.Controller = r.Controller || other.Controller
+	// Update controllers.
+	existingControllers := r.NormalizedControllers()
+	otherControllers := other.NormalizedControllers()
+	if len(existingControllers) == 0 {
+		r.Controllers = append([]Controller(nil), otherControllers...)
+	} else {
+		r.Controllers = append([]Controller(nil), existingControllers...)
+		for _, controller := range otherControllers {
+			if !r.HasControllerName(controller.Name) {
+				r.Controllers = append(r.Controllers, controller)
+			}
+		}
+	}
 
 	// Update Webhooks.
 	if r.Webhooks == nil && other.Webhooks != nil {
@@ -212,6 +283,39 @@ func (r Resource) Replacer() *strings.Replacer {
 	replacements = append(replacements, wrapKey("kind"), strings.ToLower(r.Kind))
 	replacements = append(replacements, wrapKey("plural"), strings.ToLower(r.Plural))
 	replacements = append(replacements, wrapKey("package-name"), r.PackageName())
+	replacements = append(replacements, wrapKey("controller-name"), r.GetControllerName())
 
 	return strings.NewReplacer(replacements...)
+}
+
+// NormalizedControllers returns a deduplicated list of controllers, merging
+// the modern Controllers list with legacy Controller/ControllerName fields.
+func (r Resource) NormalizedControllers() []Controller {
+	controllers := make([]Controller, 0, len(r.Controllers)+1)
+	seen := make(map[string]struct{}, len(r.Controllers)+1)
+	add := func(name string) {
+		if name == "" {
+			return
+		}
+		if _, exists := seen[name]; exists {
+			return
+		}
+		seen[name] = struct{}{}
+		controllers = append(controllers, Controller{Name: name})
+	}
+
+	for _, c := range r.Controllers {
+		add(c.Name)
+	}
+
+	if r.ControllerName != "" {
+		add(r.ControllerName)
+	} else if r.Controller {
+		add(strings.ToLower(r.Kind))
+	}
+
+	if len(controllers) == 0 {
+		return nil
+	}
+	return controllers
 }
