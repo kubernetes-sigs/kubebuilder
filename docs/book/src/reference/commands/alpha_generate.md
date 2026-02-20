@@ -39,7 +39,7 @@ This approach allows you to compare changes between your current branch and upst
 scaffold updates (e.g., from the main branch), and helps you overlay custom code atop the new scaffold.
 
 <aside class="note tip">
-<h1>Looking for a more automated migration?</h1>
+<h4>Looking for a more automated migration?</h4>
 
 If you want to upgrade your project scaffold with less manual work,
 try [`kubebuilder alpha update`](./alpha_update.md).

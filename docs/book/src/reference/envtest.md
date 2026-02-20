@@ -96,7 +96,7 @@ err = testEnv.Stop()
 Logs from the test runs are prefixed with `test-env`.
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
@@ -160,7 +160,7 @@ var _ = AfterSuite(func() {
 ```
 
 <aside class="note">
-<h1>ENV TEST Config Options</h1>
+<h4>ENV TEST Config Options</h4>
 
 You can look at the controller-runtime docs to know more about its configuration options, see [here](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment). On top of that, if you are
 looking to use ENV TEST to test your webhooks then you might want to give a look at its install [options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
@@ -343,7 +343,7 @@ testEnv = &envtest.Environment{
 ```
 
 <aside class="note">
-<h1>Setup ENV TEST tool</h1>
+<h4>Setup ENV TEST tool</h4>
 To know more about the tooling used to configure ENVTEST which is used in the setup-envtest target in the Makefile
 of the projects build with Kubebuilder see the [README][readme]
 of its tooling.

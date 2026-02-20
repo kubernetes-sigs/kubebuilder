@@ -7,7 +7,7 @@ schema option.
 See [Generating CRDs](/reference/generating-crd.md) for examples.
 
 <aside class="note">
-<h1>Understanding Marker Grouping in Documentation</h1>
+<h4>Understanding Marker Grouping in Documentation</h4>
 
 Certain markers may seem duplicated. However, these markers are grouped based on their context of use
 — such as fields, types, or arrays. For instance, a marker like `+kubebuilder:validation:Enum` can be applied to
@@ -18,7 +18,7 @@ The grouping ensures clarity by showing how the same marker can be reused for di
 </aside>
 
 <aside class="note">
-<h1>Schema & Validation</h1>
+<h4>Schema & Validation</h4>
 
 Custom resources are validated using the generated OpenAPI v3 schema and must comply with Kubernetes structural schema rules.
 Only field types and constraints that can be represented in the CRD schema are enforced by the API server.

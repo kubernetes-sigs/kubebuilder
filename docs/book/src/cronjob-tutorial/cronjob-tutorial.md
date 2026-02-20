@@ -21,7 +21,7 @@ use this as an opportunity to see how to interact with external types.
 
 <aside class="note">
 
-<h1>Following Along vs Jumping Ahead</h1>
+<h4>Following Along vs Jumping Ahead</h4>
 
 Note that most of this tutorial is generated from literate Go files that
 live in the book source directory:
@@ -64,7 +64,7 @@ Kubebuilder has scaffolded for us so far...
 
 <aside class="note">
 
-<h1>Developing in <code>$GOPATH</code></h1>
+<h4>Developing in <code>$GOPATH</code></h4>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
