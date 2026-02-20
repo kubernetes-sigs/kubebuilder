@@ -44,6 +44,11 @@ const (
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
 	apiVersionMonitoring  = "monitoring.coreos.com/v1"
+
+	// YAML keys
+	yamlKeyMetadata = "metadata:"
+	yamlKeySpec     = "spec:"
+	yamlKeyTemplate = "template:"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
@@ -51,6 +56,7 @@ type HelmTemplater struct {
 	detectedPrefix   string
 	chartName        string
 	managerNamespace string
+	valueInjector    *ValueInjector
 }
 
 // NewHelmTemplater creates a new Helm templater
@@ -60,6 +66,11 @@ func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmT
 		chartName:        chartName,
 		managerNamespace: managerNamespace,
 	}
+}
+
+// SetValueInjector sets the value injector for custom value handling
+func (t *HelmTemplater) SetValueInjector(injector *ValueInjector) {
+	t.valueInjector = injector
 }
 
 // getDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
@@ -125,6 +136,11 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	// Apply port templating for Services and Deployments
 	if resource.GetKind() == kindService || resource.GetKind() == kindDeployment {
 		yamlContent = t.templatePorts(yamlContent, resource)
+	}
+
+	// Apply custom user-added values if value injector is set
+	if t.valueInjector != nil {
+		yamlContent = t.valueInjector.InjectCustomValues(yamlContent, resource)
 	}
 
 	// Final tidy-up: avoid accidental blank lines after Helm if-block starts
@@ -344,7 +360,7 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ 
 				}
 				// Stop if we hit a new top-level section
 				if strings.HasPrefix(lines[j], "  ") && strings.HasSuffix(trimmed, ":") &&
-					(trimmed == "spec:" || trimmed == "template:" || trimmed == "volumes:") {
+					(trimmed == "spec:" || trimmed == yamlKeyTemplate || trimmed == "volumes:") {
 					break
 				}
 			}
@@ -485,7 +501,7 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 					isInLabelsSection = true
 					break
 				}
-				if strings.TrimSpace(lines[j]) == "metadata:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyMetadata {
 					break
 				}
 			}
@@ -590,6 +606,8 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 	}
 
 	lines := strings.Split(yamlContent, "\n")
+
+	// First pass: look for existing env: block and template it
 	for i := range lines {
 		if strings.TrimSpace(lines[i]) != "env:" {
 			continue
@@ -629,6 +647,49 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 
 		newLines := append([]string{}, lines[:i]...)
 		newLines = append(newLines, block...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
+
+	// Second pass: if no env: block exists, inject one after command: field
+	// Find the manager container and insert env: after command:
+	for i := range lines {
+		trimmed := strings.TrimSpace(lines[i])
+		// Look for command: field in the manager container
+		if !strings.HasPrefix(trimmed, "command:") {
+			continue
+		}
+
+		// Get the indent level of the command: field
+		indentStr, indentLen := leadingWhitespace(lines[i])
+
+		// Find the end of the command block
+		end := i + 1
+		for ; end < len(lines); end++ {
+			_, lineIndent := leadingWhitespace(lines[end])
+			trimmed := strings.TrimSpace(lines[end])
+
+			// Empty line or same/less indentation (next field) = end of command block
+			if trimmed == "" || lineIndent <= indentLen {
+				break
+			}
+		}
+
+		// Insert env block after command block
+		childIndent := indentStr + "  "
+		childIndentWidth := strconv.Itoa(len(childIndent))
+
+		envBlock := []string{
+			indentStr + "env:",
+			childIndent + "{{- if .Values.manager.env }}",
+			childIndent + "{{- toYaml .Values.manager.env | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- else }}",
+			childIndent + "[]",
+			childIndent + "{{- end }}",
+		}
+
+		newLines := append([]string{}, lines[:end]...)
+		newLines = append(newLines, envBlock...)
 		newLines = append(newLines, lines[end:]...)
 		return strings.Join(newLines, "\n")
 	}
@@ -1392,7 +1453,7 @@ func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) st
 		// No annotations section exists, need to add it after metadata:
 		for i, line := range lines {
 			trimmed := strings.TrimSpace(line)
-			if trimmed == "metadata:" || strings.HasPrefix(trimmed, "metadata:") {
+			if trimmed == yamlKeyMetadata || strings.HasPrefix(trimmed, yamlKeyMetadata) {
 				metadataIndent, _ := leadingWhitespace(line)
 				// Fields under metadata need one more level of indentation (4 spaces for go-yaml)
 				fieldIndent := metadataIndent + "    "

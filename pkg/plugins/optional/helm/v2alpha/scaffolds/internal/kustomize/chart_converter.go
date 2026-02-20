@@ -66,6 +66,14 @@ func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, ou
 	}
 }
 
+// SetUserAddedValues configures the chart converter to inject user-added custom values
+func (c *ChartConverter) SetUserAddedValues(userValues *UserAddedValues) {
+	if userValues != nil {
+		injector := NewValueInjector(userValues, c.chartName)
+		c.templater.SetValueInjector(injector)
+	}
+}
+
 // WriteChartFiles converts all resources to Helm chart templates and writes them to the filesystem
 func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
 	// Organize resources by their logical function
