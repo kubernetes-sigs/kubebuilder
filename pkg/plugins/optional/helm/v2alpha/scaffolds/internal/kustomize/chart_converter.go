@@ -134,6 +134,10 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 	extractContainerResources(container, config)
 	extractContainerSecurityContext(container, config)
 
+	// Extra volumes/mounts from input (exclude default webhook/metrics volumes; those are templated separately)
+	extractExtraVolumes(specMap, config)
+	extractExtraVolumeMounts(container, config)
+
 	return config
 }
 
@@ -415,4 +419,69 @@ func extractContainerSecurityContext(container map[string]any, config map[string
 	}
 
 	config["securityContext"] = securityContext
+}
+
+// Default volume names from the Kustomize scaffold (manager_webhook_patch.yaml and
+// cert_metrics_manager_patch.yaml). These match what main.go's --webhook-cert-path and
+// --metrics-cert-path are used with. Volumes with these names are never considered "extra".
+var defaultWebhookMetricsVolumeNames = map[string]struct{}{
+	"webhook-certs": {}, // manager_webhook_patch.yaml
+	"metrics-certs": {}, // cert_metrics_manager_patch.yaml
+}
+
+// extractExtraVolumes copies pod volumes into config["extraVolumes"], excluding volumes
+// whose name is one of the default webhook/metrics names from the Kustomize scaffold.
+// Only set when there is at least one extra volume.
+func extractExtraVolumes(specMap map[string]any, config map[string]any) {
+	volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes")
+	if !found || err != nil {
+		return
+	}
+	volumesList, ok := volumes.([]any)
+	if !ok || len(volumesList) == 0 {
+		return
+	}
+	extra := make([]any, 0, len(volumesList))
+	for _, v := range volumesList {
+		vm, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := vm["name"].(string)
+		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
+			continue
+		}
+		extra = append(extra, v)
+	}
+	if len(extra) > 0 {
+		config["extraVolumes"] = extra
+	}
+}
+
+// extractExtraVolumeMounts copies container volumeMounts into config["extraVolumeMounts"],
+// excluding mounts that reference the default webhook/metrics volume names. Only set when there is at least one extra.
+func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
+	mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts")
+	if !found || err != nil {
+		return
+	}
+	mountsList, ok := mounts.([]any)
+	if !ok || len(mountsList) == 0 {
+		return
+	}
+	extra := make([]any, 0, len(mountsList))
+	for _, m := range mountsList {
+		mm, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := mm["name"].(string)
+		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
+			continue
+		}
+		extra = append(extra, m)
+	}
+	if len(extra) > 0 {
+		config["extraVolumeMounts"] = extra
+	}
 }

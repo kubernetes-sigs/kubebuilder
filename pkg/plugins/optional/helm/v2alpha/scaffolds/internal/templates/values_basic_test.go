@@ -167,6 +167,42 @@ var _ = Describe("HelmValuesBasic", func() {
 		})
 	})
 
+	Context("with extra volumes from input (not webhook/metrics)", func() {
+		BeforeEach(func() {
+			deploymentConfig := map[string]any{
+				"extraVolumeMounts": []any{
+					map[string]any{
+						"name":      "custom-volume",
+						"mountPath": "/etc/my-secrets",
+						"readOnly":  true,
+					},
+				},
+				"extraVolumes": []any{
+					map[string]any{
+						"name":   "custom-volume",
+						"secret": map[string]any{"secretName": "my-secret"},
+					},
+				},
+			}
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks:      false,
+				DeploymentConfig: deploymentConfig,
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should include extraVolumeMounts and extraVolumes in values", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("Extra volume mounts and volumes (from input; not webhook/metrics)"))
+			Expect(content).To(ContainSubstring("extraVolumeMounts:"))
+			Expect(content).To(ContainSubstring("mountPath: /etc/my-secrets"))
+			Expect(content).To(ContainSubstring("extraVolumes:"))
+			Expect(content).To(ContainSubstring("secretName: my-secret"))
+		})
+	})
+
 	Context("with nodeSelector, affinity and tolerations configuration", func() {
 		BeforeEach(func() {
 			deploymentConfig := map[string]any{

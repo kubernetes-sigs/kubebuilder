@@ -336,6 +336,44 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  tolerations: []\n")
 		buf.WriteString("\n")
 	}
+
+	f.addExtraVolumesFromConfig(buf)
+}
+
+// addExtraVolumesFromConfig adds extraVolumeMounts and extraVolumes to values only when the
+// deployment input (e.g. from Kustomize) contained volumes that are not webhook or metrics.
+func (f *HelmValuesBasic) addExtraVolumesFromConfig(buf *bytes.Buffer) {
+	if f.DeploymentConfig == nil {
+		return
+	}
+	_, hasMounts := f.DeploymentConfig["extraVolumeMounts"]
+	_, hasVols := f.DeploymentConfig["extraVolumes"]
+	if !hasMounts && !hasVols {
+		return
+	}
+	buf.WriteString("  ## Extra volume mounts and volumes (from input; not webhook/metrics)\n")
+	buf.WriteString("  ##\n")
+	if hasMounts {
+		buf.WriteString("  extraVolumeMounts:\n")
+		if list, ok := f.DeploymentConfig["extraVolumeMounts"].([]any); ok && len(list) > 0 {
+			if yamlBytes, err := yaml.Marshal(list); err == nil {
+				f.IndentYamlProperly(buf, yamlBytes)
+			}
+		}
+	} else {
+		buf.WriteString("  extraVolumeMounts: []\n")
+	}
+	if hasVols {
+		buf.WriteString("  extraVolumes:\n")
+		if list, ok := f.DeploymentConfig["extraVolumes"].([]any); ok && len(list) > 0 {
+			if yamlBytes, err := yaml.Marshal(list); err == nil {
+				f.IndentYamlProperly(buf, yamlBytes)
+			}
+		}
+	} else {
+		buf.WriteString("  extraVolumes: []\n")
+	}
+	buf.WriteString("\n")
 }
 
 func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) {
