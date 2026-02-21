@@ -52,10 +52,18 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("manager:"))
 			Expect(content).To(ContainSubstring("args: []"))
 			Expect(content).To(ContainSubstring("env: []"))
+			Expect(content).To(ContainSubstring("envOverrides: {}"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
 			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
+		})
+
+		It("should include env list and envOverrides for CLI", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("env: []"))
+			Expect(content).To(ContainSubstring("envOverrides: {}"))
+			Expect(content).To(ContainSubstring("--set manager.envOverrides.VAR=value"))
 		})
 	})
 
@@ -153,8 +161,8 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("args:"))
 			Expect(content).To(ContainSubstring("- --leader-elect"))
 			Expect(content).To(ContainSubstring("env:"))
-			Expect(content).To(ContainSubstring("name: TEST_ENV"))
-			Expect(content).To(ContainSubstring("value: test-value"))
+			Expect(content).To(ContainSubstring("TEST_ENV"))
+			Expect(content).To(ContainSubstring("test-value"))
 			Expect(content).To(ContainSubstring("repository: example.com/custom-controller"))
 			Expect(content).To(ContainSubstring("tag: v1.2.3"))
 			Expect(content).To(ContainSubstring("pullPolicy: Always"))
@@ -288,7 +296,7 @@ var _ = Describe("HelmValuesBasic", func() {
 		It("should render nested env configuration", func() {
 			content := valuesTemplate.GetBody()
 			Expect(content).To(ContainSubstring("env:"))
-			Expect(content).To(ContainSubstring("name: POD_NAMESPACE"))
+			Expect(content).To(ContainSubstring("POD_NAMESPACE"))
 			Expect(content).To(ContainSubstring("valueFrom:"))
 			Expect(content).To(ContainSubstring("fieldRef:"))
 			Expect(content).To(ContainSubstring("fieldPath: metadata.namespace"))

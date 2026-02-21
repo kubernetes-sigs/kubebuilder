@@ -2047,9 +2047,10 @@ spec:
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.resources | nindent"))
 
-			// Should template environment variables
-			Expect(result).To(ContainSubstring("{{- if .Values.manager.env }}"))
-			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.env | nindent"))
+			// Env list + envOverrides (--set). Secret refs go in env list.
+			Expect(result).To(ContainSubstring(".Values.manager.env"))
+			Expect(result).To(ContainSubstring("toYaml .Values.manager.env"))
+			Expect(result).To(ContainSubstring("envOverrides"))
 
 			// Should template args
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
