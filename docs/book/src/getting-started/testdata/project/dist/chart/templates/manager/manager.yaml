@@ -77,7 +77,12 @@ spec:
           {{- else }}
           {}
           {{- end }}
-        volumeMounts: []
+        volumeMounts:
+          {{- if .Values.manager.extraVolumeMounts }}
+          {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
+          {{- else }}
+          []
+          {{- end }}
       securityContext:
         {{- if .Values.manager.podSecurityContext }}
         {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
@@ -86,4 +91,9 @@ spec:
         {{- end }}
       serviceAccountName: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
       terminationGracePeriodSeconds: 10
-      volumes: []
+      volumes:
+        {{- if .Values.manager.extraVolumes }}
+        {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
+        {{- else }}
+        []
+        {{- end }}

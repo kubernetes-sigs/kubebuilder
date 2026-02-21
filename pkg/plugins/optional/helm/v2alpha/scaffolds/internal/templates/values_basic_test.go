@@ -175,6 +175,65 @@ var _ = Describe("HelmValuesBasic", func() {
 		})
 	})
 
+	Context("with extra volumes in deployment config", func() {
+		It("should add extraVolumeMounts and extraVolumes section to values", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks: false,
+				DeploymentConfig: map[string]any{
+					"extraVolumes": []any{
+						map[string]any{"name": "my-secret", "secret": map[string]any{"secretName": "my-secret"}},
+					},
+					"extraVolumeMounts": []any{
+						map[string]any{"name": "my-secret", "mountPath": "/etc/secret", "readOnly": true},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("Additional volume mounts"))
+			Expect(content).To(ContainSubstring("extraVolumeMounts: []"))
+			Expect(content).To(ContainSubstring("extraVolumes: []"))
+		})
+
+		It("should not include webhook or metrics volume names in values when extra volumes are present", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks: true,
+				DeploymentConfig: map[string]any{
+					"extraVolumes": []any{
+						map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "app-secret"}},
+					},
+					"extraVolumeMounts": []any{
+						map[string]any{"name": "app-secret", "mountPath": "/etc/app", "readOnly": true},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("extraVolumes:"))
+			Expect(content).To(ContainSubstring("extraVolumeMounts:"))
+			Expect(content).NotTo(ContainSubstring("webhook-certs"))
+			Expect(content).NotTo(ContainSubstring("metrics-certs"))
+		})
+
+		It("should not add extraVolumes section when deployment config has no extra volumes", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks:      false,
+				DeploymentConfig: map[string]any{},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).NotTo(ContainSubstring("Additional volume mounts"))
+			Expect(content).NotTo(ContainSubstring("extraVolumeMounts:"))
+			Expect(content).NotTo(ContainSubstring("extraVolumes:"))
+		})
+	})
+
 	Context("with nodeSelector, affinity and tolerations configuration", func() {
 		BeforeEach(func() {
 			deploymentConfig := map[string]any{
