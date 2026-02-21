@@ -97,6 +97,9 @@ spec:
                       name: webhook-certs
                       readOnly: true
                     {{- end }}
+                    {{- if .Values.manager.extraVolumeMounts }}
+                    {{- toYaml .Values.manager.extraVolumeMounts | nindent 20 }}
+                    {{- end }}
             securityContext:
               {{- if .Values.manager.podSecurityContext }}
               {{- toYaml .Values.manager.podSecurityContext | nindent 14 }}
@@ -124,3 +127,6 @@ spec:
                   secret:
                     secretName: webhook-server-cert
                 {{- end }}
+              {{- if .Values.manager.extraVolumes }}
+              {{- toYaml .Values.manager.extraVolumes | nindent 14 }}
+              {{- end }}

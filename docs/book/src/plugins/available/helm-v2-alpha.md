@@ -318,6 +318,15 @@ prometheus:
   enable: false
 ```
 
+### Extra volumes
+
+The chart supports extra volumes and volume mounts for the manager (e.g. secrets, config files) in addition to the built-in webhook and metrics cert volumes.
+
+- **From kustomize**: If your deployment in `dist/install.yaml` includes volumes other than the default `webhook-certs` and `metrics-certs` (from the scaffolded patches), the plugin adds them to `values.yaml` as `manager.extraVolumes` and `manager.extraVolumeMounts`. The manager template merges them into the deployment.
+- **Manual**: You can add `manager.extraVolumes` and `manager.extraVolumeMounts` in `values.yaml` yourself; the template will use them. Use the same structure as in a Pod spec (list of volume and volumeMount entries). Mount names in `extraVolumeMounts` must match names in `extraVolumes`.
+
+Default webhook and metrics volumes (names `webhook-certs` and `metrics-certs`) are always handled by the chart and are not part of the extra lists.
+
 ### Installation
 
 The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
