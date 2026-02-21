@@ -737,17 +737,78 @@ func (t *HelmTemplater) templateSecurityContexts(yamlContent string) string {
 	return yamlContent
 }
 
-// templateVolumeMounts converts volumeMounts sections to keep them as-is since they're webhook-specific
+// templateVolumeMounts appends .Values.manager.extraVolumeMounts. Webhook and metrics
+// mounts are conditional (makeWebhookVolumeMountsConditional, makeMetricsVolumeMountsConditional).
 func (t *HelmTemplater) templateVolumeMounts(yamlContent string) string {
-	// For webhook volumeMounts, we keep them as-is since they're required for webhook functionality
-	// They will be conditionally included based on webhook configuration
-	return yamlContent
+	return t.appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
 }
 
-// templateVolumes converts volumes sections to keep them as-is since they're webhook-specific
+// templateVolumes appends .Values.manager.extraVolumes. Webhook and metrics volumes
+// are conditional (makeWebhookVolumesConditional, makeMetricsVolumesConditional).
 func (t *HelmTemplater) templateVolumes(yamlContent string) string {
-	// For webhook volumes, we keep them as-is since they're required for webhook functionality
-	// They will be conditionally included based on webhook configuration
+	return t.appendToListFromValues(yamlContent, "volumes:", ".Values.manager.extraVolumes")
+}
+
+// appendToListFromValues finds "key:" or "key: []", and either appends values path to an existing list
+// or replaces "key: []" with a template that outputs the values path when set. Idempotent if already present.
+func (t *HelmTemplater) appendToListFromValues(yamlContent string, keyColon string, valuesPath string) string {
+	if !strings.Contains(yamlContent, keyColon) {
+		return yamlContent
+	}
+	if strings.Contains(yamlContent, valuesPath) {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	keyEmpty := keyColon + " []"
+
+	for i := range lines {
+		trimmed := strings.TrimSpace(lines[i])
+		indentStr, indentLen := leadingWhitespace(lines[i])
+		childIndent := indentStr + "  "
+		childIndentWidth := strconv.Itoa(len(childIndent))
+
+		if trimmed == keyEmpty {
+			block := []string{
+				indentStr + keyColon,
+				childIndent + "{{- if " + valuesPath + " }}",
+				childIndent + "{{- toYaml " + valuesPath + " | nindent " + childIndentWidth + " }}",
+				childIndent + "{{- else }}",
+				childIndent + "[]",
+				childIndent + "{{- end }}",
+			}
+			newLines := append([]string{}, lines[:i]...)
+			newLines = append(newLines, block...)
+			newLines = append(newLines, lines[i+1:]...)
+			return strings.Join(newLines, "\n")
+		}
+
+		if trimmed != keyColon {
+			continue
+		}
+
+		end := i + 1
+		for ; end < len(lines); end++ {
+			tLine := strings.TrimSpace(lines[end])
+			if tLine == "" {
+				break
+			}
+			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
+			if lineIndent <= indentLen {
+				break
+			}
+		}
+
+		block := []string{
+			childIndent + "{{- if " + valuesPath + " }}",
+			childIndent + "{{- toYaml " + valuesPath + " | nindent " + childIndentWidth + " }}",
+			childIndent + "{{- end }}",
+		}
+		newLines := append([]string{}, lines[:end]...)
+		newLines = append(newLines, block...)
+		newLines = append(newLines, lines[end:]...)
+		return strings.Join(newLines, "\n")
+	}
 	return yamlContent
 }
 

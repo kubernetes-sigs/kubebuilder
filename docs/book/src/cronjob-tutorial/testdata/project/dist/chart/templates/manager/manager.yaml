@@ -87,6 +87,9 @@ spec:
           {}
           {{- end }}
         volumeMounts:
+          {{- if .Values.manager.extraVolumeMounts }}
+          {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
+          {{- end }}
         {{- if and .Values.certManager.enable .Values.metrics.enable }}
         - mountPath: /tmp/k8s-metrics-server/metrics-certs
           name: metrics-certs
@@ -106,6 +109,9 @@ spec:
       serviceAccountName: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
       terminationGracePeriodSeconds: 10
       volumes:
+        {{- if .Values.manager.extraVolumes }}
+        {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
+        {{- end }}
       {{- if and .Values.certManager.enable .Values.metrics.enable }}
       - name: metrics-certs
         secret:

@@ -217,7 +217,6 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	f.addArgsSection(buf)
 
 	if f.DeploymentConfig == nil {
-		// Add default sections with examples
 		f.addDefaultDeploymentSections(buf)
 		return
 	}
@@ -321,6 +320,26 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("  tolerations: []\n")
 		buf.WriteString("\n")
 	}
+
+	f.addExtraVolumesFromConfig(buf)
+}
+
+// addExtraVolumesFromConfig adds manager.extraVolumeMounts and manager.extraVolumes to values
+// only when the deployment config has extra volumes (not webhook/metrics). Config volumes
+// are in the chart template; use these keys to add more without re-running edit.
+func (f *HelmValuesBasic) addExtraVolumesFromConfig(buf *bytes.Buffer) {
+	if f.DeploymentConfig == nil {
+		return
+	}
+	_, hasMounts := f.DeploymentConfig["extraVolumeMounts"]
+	_, hasVols := f.DeploymentConfig["extraVolumes"]
+	if !hasMounts && !hasVols {
+		return
+	}
+	buf.WriteString("  ## Additional volume mounts\n")
+	buf.WriteString("  extraVolumeMounts: []\n")
+	buf.WriteString("  extraVolumes: []\n")
+	buf.WriteString("\n")
 }
 
 func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) {

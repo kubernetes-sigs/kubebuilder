@@ -311,6 +311,95 @@ var _ = Describe("ChartConverter", func() {
 			config := converter.ExtractDeploymentConfig()
 			Expect(config).To(BeEmpty())
 		})
+
+		It("should extract extraVolumes and extraVolumeMounts excluding webhook and metrics", func() {
+			volumes := []any{
+				map[string]any{
+					"name":   "webhook-certs",
+					"secret": map[string]any{"secretName": "webhook-server-cert"},
+				},
+				map[string]any{
+					"name":   "custom-volume",
+					"secret": map[string]any{"secretName": "my-secret"},
+				},
+			}
+			volumeMounts := []any{
+				map[string]any{
+					"name":      "webhook-certs",
+					"mountPath": "/tmp/k8s-webhook-server/serving-certs",
+					"readOnly":  true,
+				},
+				map[string]any{
+					"name":      "custom-volume",
+					"mountPath": "/etc/my-secrets",
+					"readOnly":  true,
+				},
+			}
+			containers := []any{
+				map[string]any{
+					"name":         "manager",
+					"image":        "controller:latest",
+					"volumeMounts": volumeMounts,
+				},
+			}
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				volumes,
+				"spec", "template", "spec", "volumes",
+			)
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("extraVolumes"))
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "custom-volume"))
+
+			Expect(config).To(HaveKey("extraVolumeMounts"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("mountPath", "/etc/my-secrets"))
+		})
+
+		It("should not add webhook-certs or metrics-certs to extraVolumes or extraVolumeMounts", func() {
+			volumes := []any{
+				map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+				map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+				map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "app-secret"}},
+			}
+			volumeMounts := []any{
+				map[string]any{"name": "webhook-certs", "mountPath": "/tmp/webhook", "readOnly": true},
+				map[string]any{"name": "metrics-certs", "mountPath": "/tmp/metrics", "readOnly": true},
+				map[string]any{"name": "app-secret", "mountPath": "/etc/app", "readOnly": true},
+			}
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest", "volumeMounts": volumeMounts},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, volumes, "spec", "template", "spec", "volumes")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "app-secret"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("name", "app-secret"))
+		})
 	})
 
 	Context("extractPortFromArg", func() {

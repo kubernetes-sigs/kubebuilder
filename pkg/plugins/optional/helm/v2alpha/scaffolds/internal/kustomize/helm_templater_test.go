@@ -2100,6 +2100,106 @@ spec:
 			Expect(result).To(ContainSubstring("name: controller-test"))
 		})
 
+		It("should append extraVolumes and extraVolumeMounts when lists are present", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+		})
+
+		It("should inject extraVolumes/extraVolumeMounts when Kustomize has volumeMounts: [] and volumes: []", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Default Kustomize output: single-line empty lists (no webhook/metrics patches)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts: []
+      volumes: []`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+		})
+
+		It("should append only extraVolumes from values and keep webhook/metrics conditional", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      - name: metrics-certs
+        secret:
+          secretName: metrics-server-cert
+      - name: app-secret-1
+        secret:
+          secretName: app-secret-1
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: metrics-certs
+          mountPath: /tmp/k8s-metrics-server/metrics-certs
+          readOnly: true
+        - name: app-secret-1
+          mountPath: /etc/secrets
+          readOnly: true
+`
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+			Expect(result).To(ContainSubstring(".Values.certManager.enable"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring("app-secret-1"))
+		})
+
 		It("should fall back to 'manager' when default-container annotation is missing", func() {
 			deployment := &unstructured.Unstructured{}
 			deployment.SetAPIVersion("apps/v1")
