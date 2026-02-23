@@ -108,6 +108,33 @@ webhooks:
 			Expect(result).NotTo(ContainSubstring("cert-manager.io/inject-ca-from:\n\n"))
 		})
 
+		It("should template deployment spec.replicas from .Values.manager.replicas", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+`
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+			Expect(result).To(ContainSubstring("replicas: {{ .Values.manager.replicas }}"))
+			Expect(result).NotTo(ContainSubstring("replicas: 1"))
+		})
+
 		It("should handle container args with proper indentation", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")
