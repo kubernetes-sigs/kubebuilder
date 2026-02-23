@@ -611,21 +611,36 @@ func (t *HelmTemplater) templateEnvironmentVariables(yamlContent string) string 
 			}
 		}
 
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.env") {
+		nextLine := ""
+		if i+1 < len(lines) {
+			nextLine = lines[i+1]
+		}
+		if strings.Contains(nextLine, ".Values.manager.env") || strings.Contains(nextLine, "envOverrides") {
 			return yamlContent
 		}
 
 		childIndent := indentStr + "  "
 		childIndentWidth := strconv.Itoa(len(childIndent))
-
-		block := []string{
-			indentStr + "env:",
-			childIndent + "{{- if .Values.manager.env }}",
-			childIndent + "{{- toYaml .Values.manager.env | nindent " + childIndentWidth + " }}",
-			childIndent + "{{- else }}",
-			childIndent + "[]",
-			childIndent + "{{- end }}",
-		}
+		// Env list + envOverrides (CLI --set). Secret refs go in env list.
+		hasEnv := `{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) ` +
+			`(not (empty .Values.manager.envOverrides))) }}`
+		block := make([]string, 0, 22)
+		block = append(block,
+			indentStr+"env:",
+			hasEnv,
+			childIndent+`{{- if .Values.manager.env }}`,
+			childIndent+"{{- toYaml .Values.manager.env | nindent "+childIndentWidth+" }}",
+			childIndent+`{{- end }}`,
+			childIndent+`{{- if kindIs "map" .Values.manager.envOverrides }}`,
+			childIndent+`{{- range $k, $v := .Values.manager.envOverrides }}`,
+			childIndent+`- name: {{ $k }}`,
+			childIndent+`  value: {{ $v | quote }}`,
+			childIndent+`{{ end }}`,
+			childIndent+`{{- end }}`,
+			childIndent+`{{- else }}`,
+			childIndent+"[]",
+			childIndent+`{{- end }}`,
+		)
 
 		newLines := append([]string{}, lines[:i]...)
 		newLines = append(newLines, block...)

@@ -53,8 +53,16 @@ spec:
                   command:
                     - /manager
                   env:
+{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
                     {{- if .Values.manager.env }}
                     {{- toYaml .Values.manager.env | nindent 20 }}
+                    {{- end }}
+                    {{- if kindIs "map" .Values.manager.envOverrides }}
+                    {{- range $k, $v := .Values.manager.envOverrides }}
+                    - name: {{ $k }}
+                      value: {{ $v | quote }}
+                    {{ end }}
+                    {{- end }}
                     {{- else }}
                     []
                     {{- end }}

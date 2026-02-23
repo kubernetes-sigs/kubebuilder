@@ -222,22 +222,7 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		return
 	}
 
-	// Add environment variables if they exist
-	if env, exists := f.DeploymentConfig["env"]; exists && env != nil {
-		buf.WriteString("  ## Environment variables\n")
-		buf.WriteString("  ##\n")
-		buf.WriteString("  env:\n")
-		if envYaml, err := yaml.Marshal(env); err == nil {
-			f.IndentYamlProperly(buf, envYaml)
-		} else {
-			buf.WriteString("    []\n")
-		}
-		buf.WriteString("\n")
-	} else {
-		buf.WriteString("  ## Environment variables\n")
-		buf.WriteString("  ##\n")
-		buf.WriteString("  env: []\n\n")
-	}
+	f.addEnvSection(buf)
 
 	// Add image pull secrets
 	if imagePullSecrets, exists := f.DeploymentConfig["imagePullSecrets"]; exists && imagePullSecrets != nil {
@@ -349,11 +334,41 @@ func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) 
 	}
 }
 
+// addEnvSection writes env (list, same as master) and only adds envOverrides for CLI.
+func (f *HelmValuesBasic) addEnvSection(buf *bytes.Buffer) {
+	buf.WriteString("  ## Environment variables\n")
+	buf.WriteString("  ##\n")
+	if env, exists := f.DeploymentConfig["env"]; exists && env != nil {
+		if list, ok := env.([]any); ok && len(list) > 0 {
+			buf.WriteString("  env:\n")
+			if envYaml, err := yaml.Marshal(list); err == nil {
+				f.IndentYamlProperly(buf, envYaml)
+			}
+		} else {
+			buf.WriteString("  env: []\n")
+		}
+	} else {
+		buf.WriteString("  env: []\n")
+	}
+	buf.WriteString("\n")
+	buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
+	buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  envOverrides: {}\n")
+	buf.WriteString("\n")
+}
+
 // addDefaultDeploymentSections adds default sections when no deployment config is available
 func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
 	buf.WriteString("  ## Environment variables\n")
 	buf.WriteString("  ##\n")
-	buf.WriteString("  env: []\n\n")
+	buf.WriteString("  env: []\n")
+	buf.WriteString("\n")
+	buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
+	buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  envOverrides: {}\n")
+	buf.WriteString("\n")
 
 	f.addDefaultImagePullSecrets(buf)
 	f.addDefaultPodSecurityContext(buf)
