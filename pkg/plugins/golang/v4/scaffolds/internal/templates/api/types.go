@@ -64,6 +64,11 @@ func (f *Types) SetTemplateDefaults() error {
 //nolint:lll
 const typesTemplate = `{{ .Boilerplate }}
 
+{{ if .Resource.HasApplyConfiguration }}
+// +kubebuilder:ac:generate=true
+{{ else }}
+// +kubebuilder:ac:generate=false
+{{ end }}
 package {{ .Resource.Version }}
 
 import (
@@ -116,6 +121,8 @@ type {{ .Resource.Kind }}Status struct {
 // +kubebuilder:resource:scope=Cluster
 {{- else if not .Resource.IsRegularPlural }}
 // +kubebuilder:resource:path={{ .Resource.Plural }}
+{{- else }}
+// +kubebuilder:resource
 {{- end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API

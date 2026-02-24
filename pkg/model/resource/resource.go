@@ -140,6 +140,11 @@ func (r Resource) IsRegularPlural() bool {
 	return r.Plural == RegularPlural(r.Kind)
 }
 
+// HasApplyConfiguration returns true if the resource has applyconfiguration generation enabled.
+func (r Resource) HasApplyConfiguration() bool {
+	return r.API != nil && r.API.GenerateApplyConfiguration
+}
+
 // Copy returns a deep copy of the Resource that can be safely modified without affecting the original.
 func (r Resource) Copy() Resource {
 	// As this function doesn't use a pointer receiver, r is already a shallow copy.
