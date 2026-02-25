@@ -46,27 +46,13 @@ var _ = Describe("createSubcommand", func() {
 		}
 	})
 
-	It("should parse force flag correctly", func() {
-		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		fs.Bool("force", false, "force flag")
-		subCmd.BindFlags(fs)
+	It("should bind force flag and receive value via merge/sync", func() {
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		subCmd.BindFlags(flags)
 
-		err := fs.Set("force", "true")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = subCmd.configure()
+		err := flags.Set("force", "true")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subCmd.force).To(BeTrue())
-	})
-
-	It("should return error for invalid force flag value", func() {
-		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		fs.String("force", "invalid", "force flag")
-		subCmd.BindFlags(fs)
-
-		err := subCmd.configure()
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("invalid value for --force"))
 	})
 
 	It("should inject config and resource successfully", func() {

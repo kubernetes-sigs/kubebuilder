@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -259,12 +260,202 @@ var _ = Describe("cmd_helpers", func() {
 			Expect(result).To(BeEmpty())
 		})
 	})
+
+	Context("duplicate flag handling (mergeFlagSetInto, syncDuplicateFlags)", func() {
+		It("should not panic when merging two FlagSets that define the same flag name (same type)", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			src := pflag.NewFlagSet("src", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var destBool bool
+			var srcBool bool
+			dest.BoolVar(&destBool, "force", false, "overwrite files (plugin A)")
+			src.BoolVar(&srcBool, "force", false, "regenerate all files (plugin B)")
+
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dest.Lookup("force")).NotTo(BeNil())
+			Expect(duplicateValues["force"]).To(HaveLen(1))
+		})
+
+		It("should aggregate help text as For plugin (key): desc AND for plugin (key): desc", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			src := pflag.NewFlagSet("src", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var a, b bool
+			dest.BoolVar(&a, "force", false, "overwrite files (plugin A)")
+			src.BoolVar(&b, "force", false, "regenerate all files (plugin B)")
+
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			Expect(err).NotTo(HaveOccurred())
+
+			flag := dest.Lookup("force")
+			Expect(flag).NotTo(BeNil())
+			Expect(flag.Usage).To(ContainSubstring("overwrite files (plugin A)"))
+			Expect(flag.Usage).To(ContainSubstring("AND for plugin (pluginB/v1):"))
+			Expect(flag.Usage).To(ContainSubstring("regenerate all files (plugin B)"))
+		})
+
+		It("should prefix first plugin with For plugin (key): when both flags merged via mergeFlagSetInto", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			pluginA := pflag.NewFlagSet("a", pflag.ExitOnError)
+			pluginB := pflag.NewFlagSet("b", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var a, b bool
+			pluginA.BoolVar(&a, "force", false, "overwrite files (plugin A)")
+			pluginB.BoolVar(&b, "force", false, "regenerate all files (plugin B)")
+
+			Expect(mergeFlagSetInto(dest, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(dest, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+
+			flag := dest.Lookup("force")
+			Expect(flag).NotTo(BeNil())
+			Expect(flag.Usage).To(Equal(
+				"For plugin (pluginA/v1): overwrite files (plugin A) AND for plugin (pluginB/v1): regenerate all files (plugin B)"))
+		})
+
+		It("should show full plugin keys in aggregated usage", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			goPlugin := pflag.NewFlagSet("go", pflag.ExitOnError)
+			helmPlugin := pflag.NewFlagSet("helm", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var a, b bool
+			goPlugin.BoolVar(&a, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
+			helmPlugin.BoolVar(&b, "force", false, "if true, regenerates all the files")
+
+			Expect(mergeFlagSetInto(dest, goPlugin, duplicateValues, "base.go.kubebuilder.io/v4", firstPluginByFlag)).
+				NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(dest, helmPlugin, duplicateValues, "helm.kubebuilder.io/v2-alpha", firstPluginByFlag)).
+				NotTo(HaveOccurred())
+
+			flag := dest.Lookup("force")
+			Expect(flag).NotTo(BeNil())
+			expectedUsage := "For plugin (base.go.kubebuilder.io/v4): overwrite scaffolded files to apply changes " +
+				"(manual edits may be lost) AND for plugin (helm.kubebuilder.io/v2-alpha): if true, regenerates all the files"
+			Expect(flag.Usage).To(Equal(expectedUsage))
+		})
+
+		It("should return error when same flag name is bound with different value types", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			src := pflag.NewFlagSet("src", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+			firstPluginByFlag["flag"] = "pluginA/v1" // dest already has this flag from a previous plugin
+
+			var a bool
+			var b string
+			dest.BoolVar(&a, "flag", false, "bool usage (plugin A)")
+			src.StringVar(&b, "flag", "", "string usage (plugin B)")
+
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("same flag name"))
+			Expect(err.Error()).To(ContainSubstring("different value types"))
+			Expect(err.Error()).To(ContainSubstring("flag"))
+			Expect(err.Error()).To(ContainSubstring("bool"))
+			Expect(err.Error()).To(ContainSubstring("string"))
+			Expect(err.Error()).To(ContainSubstring("pluginA/v1"))
+			Expect(err.Error()).To(ContainSubstring("pluginB/v1"))
+		})
+
+		It("should sync parsed value to duplicate Values after syncDuplicateFlags", func() {
+			flags := pflag.NewFlagSet("cmd", pflag.ExitOnError)
+			var mainVal, dupVal bool
+			flags.BoolVar(&mainVal, "force", false, "usage")
+			tmpFS := pflag.NewFlagSet("", pflag.ExitOnError)
+			tmpFS.BoolVar(&dupVal, "force", false, "")
+			duplicateValues := map[string][]pflag.Value{
+				"force": {tmpFS.Lookup("force").Value},
+			}
+
+			Expect(flags.Parse([]string{"--force", "true"})).NotTo(HaveOccurred())
+			Expect(mainVal).To(BeTrue())
+			Expect(dupVal).To(BeFalse())
+
+			syncDuplicateFlags(flags, duplicateValues)
+			Expect(dupVal).To(BeTrue())
+		})
+
+		It("should give all plugins in the chain the same value for a shared flag (e.g. --force)", func() {
+			cmdFlags := pflag.NewFlagSet("edit", pflag.ExitOnError)
+			pluginA := pflag.NewFlagSet("pluginA", pflag.ExitOnError)
+			pluginB := pflag.NewFlagSet("pluginB", pflag.ExitOnError)
+			var forceA, forceB bool
+			pluginA.BoolVar(&forceA, "force", false, "plugin A force")
+			pluginB.BoolVar(&forceB, "force", false, "plugin B force")
+
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+			Expect(mergeFlagSetInto(cmdFlags, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(cmdFlags, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+
+			Expect(cmdFlags.Parse([]string{"--force", "true"})).NotTo(HaveOccurred())
+			syncDuplicateFlags(cmdFlags, duplicateValues)
+			Expect(forceA).To(BeTrue(), "plugin A must receive the value passed by the user")
+			Expect(forceB).To(BeTrue(), "plugin B must receive the same value as the command")
+		})
+
+		It("should sync string flag value to duplicate Values", func() {
+			flags := pflag.NewFlagSet("cmd", pflag.ExitOnError)
+			var mainVal, dupVal string
+			flags.StringVar(&mainVal, "name", "", "name usage")
+			tmpFS := pflag.NewFlagSet("", pflag.ExitOnError)
+			tmpFS.StringVar(&dupVal, "name", "", "")
+			duplicateValues := map[string][]pflag.Value{
+				"name": {tmpFS.Lookup("name").Value},
+			}
+
+			Expect(flags.Parse([]string{"--name", "foo"})).NotTo(HaveOccurred())
+			syncDuplicateFlags(flags, duplicateValues)
+			Expect(dupVal).To(Equal("foo"))
+		})
+
+		It("applies merge and sync for any subcommand (init, api, webhook, edit), not only edit", func() {
+			cmd := &cobra.Command{Use: "api"}
+			pluginA := &mockSubcommandWithForceFlag{}
+			pluginB := &mockSubcommandWithForceFlag{}
+			tuples := []keySubcommandTuple{
+				{key: "pluginA.kubebuilder.io/v1", subcommand: pluginA},
+				{key: "pluginB.kubebuilder.io/v1", subcommand: pluginB},
+			}
+			meta := plugin.CLIMetadata{}
+
+			result, err := initializationHooks(cmd, tuples, meta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.duplicateFlagValues["force"]).To(HaveLen(1), "second plugin's Value recorded as duplicate")
+
+			Expect(cmd.ParseFlags([]string{"--force", "true"})).NotTo(HaveOccurred())
+			syncDuplicateFlags(cmd.Flags(), result.duplicateFlagValues)
+			Expect(pluginA.Force).To(BeTrue(), "first plugin (flag on command) receives value")
+			Expect(pluginB.Force).To(BeTrue(), "second plugin (duplicate) receives same value after sync")
+		})
+	})
 })
 
 type mockTestSubcommand struct{}
 
 func (m *mockTestSubcommand) Scaffold(machinery.Filesystem) error {
 	return nil
+}
+
+// mockSubcommandWithForceFlag implements Subcommand and HasFlags for tests with a shared flag.
+type mockSubcommandWithForceFlag struct {
+	Force bool
+}
+
+func (m *mockSubcommandWithForceFlag) Scaffold(machinery.Filesystem) error {
+	return nil
+}
+
+func (m *mockSubcommandWithForceFlag) BindFlags(flags *pflag.FlagSet) {
+	flags.BoolVar(&m.Force, "force", false, "force usage")
 }
 
 type mockPluginWithSubcommand struct {

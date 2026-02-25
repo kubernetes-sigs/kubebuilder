@@ -31,9 +31,6 @@ type createAPISubcommand struct {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	if err := p.configure(); err != nil {
-		return err
-	}
 	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {

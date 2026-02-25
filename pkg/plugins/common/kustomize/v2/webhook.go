@@ -31,9 +31,6 @@ type createWebhookSubcommand struct {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	if err := p.configure(); err != nil {
-		return err
-	}
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
