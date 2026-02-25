@@ -67,6 +67,7 @@ func (s *initScaffolder) Scaffold() error {
 	templates := []machinery.Builder{
 		&rbac.Kustomization{},
 		&kdefault.MetricsService{},
+		&kdefault.NamespaceTransformer{},
 		&rbac.MetricsAuthRole{},
 		&rbac.MetricsAuthRoleBinding{},
 		&rbac.MetricsReaderRole{},
