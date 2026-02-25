@@ -101,7 +101,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 ##
 manager:
   replicas: 1
-  
+
   image:
     repository: %s
     tag: %s

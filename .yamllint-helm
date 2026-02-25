@@ -1,0 +1,6 @@
+# yamllint config for Helm-rendered manifest output (stdin or temp files).
+# Extends repo .yamllint; relaxes rules that are noisy for generated/template output.
+extends: .yamllint
+rules:
+  line-length: disable
+  trailing-spaces: disable

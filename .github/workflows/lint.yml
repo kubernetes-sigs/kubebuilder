@@ -32,7 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
-      - name: Run yamllint make target
+      - name: Install Helm
+        run: make install-helm
+      - name: Run yamllint (YAML + Helm chart output 2-space indentation)
         run: make yamllint
 
   license:
