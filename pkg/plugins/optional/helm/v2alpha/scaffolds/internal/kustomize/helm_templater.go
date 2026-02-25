@@ -1491,7 +1491,12 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 			// Metrics RBAC depends on metrics being enabled
 			return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
 		}
-		// Essential RBAC (controller-manager, leader-election, manager roles) - always enabled
+		// Cluster-scoped RBAC (ClusterRole/ClusterRoleBinding) - conditional on rbac.clusterScope
+		// This allows operators to be deployed without cluster-wide permissions when needed
+		if kind == kindClusterRole || kind == kindClusterRoleBinding {
+			return fmt.Sprintf("{{- if .Values.rbac.clusterScope.enabled }}\n%s{{- end }}\n", yamlContent)
+		}
+		// Namespace-scoped RBAC (Role/RoleBinding, ServiceAccount) - always enabled
 		// These are required for the controller to function properly
 		return yamlContent
 	case kind == kindValidatingWebhook || kind == kindMutatingWebhook:

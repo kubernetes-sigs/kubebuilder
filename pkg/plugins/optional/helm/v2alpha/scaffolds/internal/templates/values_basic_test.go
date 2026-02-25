@@ -55,6 +55,9 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("envOverrides: {}"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
+			Expect(content).To(ContainSubstring("rbac:"))
+			Expect(content).To(ContainSubstring("clusterScope:"))
+			Expect(content).To(ContainSubstring("enabled: true"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
 			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
@@ -92,6 +95,9 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("args: []"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
+			Expect(content).To(ContainSubstring("rbac:"))
+			Expect(content).To(ContainSubstring("clusterScope:"))
+			Expect(content).To(ContainSubstring("enabled: true"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
 			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
 		})
@@ -317,6 +323,29 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
 			Expect(content).To(ContainSubstring("enable: false"))
+		})
+	})
+
+	Context("rbac.clusterScope configuration", func() {
+		BeforeEach(func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks: false,
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should have rbac.clusterScope.enabled set to true by default", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("rbac:"))
+			Expect(content).To(ContainSubstring("clusterScope:"))
+			Expect(content).To(ContainSubstring("enabled: true"))
+		})
+
+		It("should include description comment for clusterScope", func() {
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("Cluster-scoped RBAC resources"))
 		})
 	})
 

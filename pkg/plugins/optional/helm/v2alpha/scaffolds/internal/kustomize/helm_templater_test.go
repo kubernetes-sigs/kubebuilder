@@ -394,8 +394,8 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should NOT add conditionals to essential resources", func() {
-			// Test essential RBAC
+		It("should add rbac.clusterScope conditional for essential ClusterRole", func() {
+			// Test essential ClusterRole gets rbac.clusterScope conditional
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			clusterRoleResource.SetKind("ClusterRole")
@@ -408,7 +408,26 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should NOT wrap essential RBAC with conditionals
+			// Should wrap ClusterRole with rbac.clusterScope conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.clusterScope.enabled }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should NOT add conditionals to namespace-scoped RBAC resources", func() {
+			// Test namespace-scoped Role does NOT get conditional
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Should NOT wrap namespace-scoped Role with conditionals
 			Expect(result).NotTo(ContainSubstring("{{- if .Values"))
 		})
 
@@ -568,6 +587,24 @@ metadata:
 
 			// Should be wrapped with rbacHelpers conditional
 			Expect(result).To(ContainSubstring("{{- if .Values.rbacHelpers.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should add rbac.clusterScope conditional for essential ClusterRoleBinding", func() {
+			bindingResource := &unstructured.Unstructured{}
+			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			bindingResource.SetKind("ClusterRoleBinding")
+			bindingResource.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-project-manager-rolebinding`
+
+			result := templater.ApplyHelmSubstitutions(content, bindingResource)
+
+			// Should wrap ClusterRoleBinding with rbac.clusterScope conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.clusterScope.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 	})
