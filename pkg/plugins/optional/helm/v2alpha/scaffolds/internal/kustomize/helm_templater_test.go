@@ -491,6 +491,13 @@ spec:
 			// Should have resource-policy annotation for helm uninstall protection
 			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
 			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+			// Injected annotations should use 2-space indentation matching sigs.k8s.io/yaml output.
+			// annotations: at 2-space indent, values at 4-space indent.
+			expectedAnnotations := "  annotations:\n" +
+				"    {{- if .Values.crd.keep }}\n" +
+				"    \"helm.sh/resource-policy\": keep\n" +
+				"    {{- end }}"
+			Expect(result).To(ContainSubstring(expectedAnnotations))
 		})
 
 		It("should add resource-policy annotation to CRDs that already have annotations", func() {
@@ -517,6 +524,13 @@ spec:
 			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
 			// Should preserve existing annotation
 			Expect(result).To(ContainSubstring("controller-gen.kubebuilder.io/version"))
+			// Injected annotation should be at same indent as existing annotations (4 spaces)
+			expectedAnnotations := "  annotations:\n" +
+				"    {{- if .Values.crd.keep }}\n" +
+				"    \"helm.sh/resource-policy\": keep\n" +
+				"    {{- end }}\n" +
+				"    controller-gen.kubebuilder.io/version"
+			Expect(result).To(ContainSubstring(expectedAnnotations))
 		})
 	})
 

@@ -158,8 +158,9 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 //
 // This means our Helm templates work normally while existing templates are preserved.
 func (t *HelmTemplater) escapeExistingTemplateSyntax(yamlContent string) string {
-	// Find all {{ ... }} patterns (non-greedy for multiple on same line)
-	templatePattern := regexp.MustCompile(`\{\{(.*?)\}\}`)
+	// (?s) makes '.' match newlines so split-line templates produced by sigs.k8s.io/yaml's
+	// ~80-column folding (e.g. "{{ .LongName\n    }}") are matched in a single pass.
+	templatePattern := regexp.MustCompile(`(?s)\{\{(.*?)\}\}`)
 
 	yamlContent = templatePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 		// Extract content between {{ and }}
@@ -189,8 +190,10 @@ func (t *HelmTemplater) escapeExistingTemplateSyntax(yamlContent string) string 
 		}
 
 		// Otherwise, escape it to preserve as literal text
-		// Escape any quotes inside the template content
-		escapedContent := strings.ReplaceAll(content, `"`, `\"`)
+		// Collapse any newline+indent that sigs.k8s.io/yaml may have introduced via line-wrapping,
+		// then escape any quotes inside the template content.
+		collapsed := regexp.MustCompile(`\n[ \t]+`).ReplaceAllString(content, " ")
+		escapedContent := strings.ReplaceAll(collapsed, `"`, `\"`)
 
 		// Wrap in Helm string literal: {{ "{{...}}" }}
 		return `{{ "{{` + escapedContent + `}}" }}`
@@ -1402,8 +1405,8 @@ func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) st
 			trimmed := strings.TrimSpace(line)
 			if trimmed == "annotations:" || strings.HasPrefix(trimmed, "annotations:") {
 				annotationsIndent, _ := leadingWhitespace(line)
-				// Annotation values need one more level of indentation (4 spaces for go-yaml)
-				valueIndent := annotationsIndent + "    "
+				// Annotation values need one more level of indentation (2 spaces for sigs.k8s.io/yaml)
+				valueIndent := annotationsIndent + "  "
 
 				// Build the conditional annotation block
 				resourcePolicyBlock := fmt.Sprintf(
@@ -1424,10 +1427,10 @@ func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) st
 			trimmed := strings.TrimSpace(line)
 			if trimmed == "metadata:" || strings.HasPrefix(trimmed, "metadata:") {
 				metadataIndent, _ := leadingWhitespace(line)
-				// Fields under metadata need one more level of indentation (4 spaces for go-yaml)
-				fieldIndent := metadataIndent + "    "
-				// Annotation values need two more levels (8 spaces total)
-				valueIndent := metadataIndent + "        "
+				// Fields under metadata need one more level of indentation (2 spaces for sigs.k8s.io/yaml)
+				fieldIndent := metadataIndent + "  "
+				// Annotation values need two more levels (4 spaces total)
+				valueIndent := metadataIndent + "    "
 
 				// Build annotations section with conditional resource-policy
 				annotationsSection := fmt.Sprintf(

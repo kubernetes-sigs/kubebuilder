@@ -1,17 +1,17 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project.resourceName" (dict "suffix" "manager-rolebinding" "context" $) }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project.resourceName" (dict "suffix" "manager-rolebinding" "context" $) }}
 roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: {{ include "project.resourceName" (dict "suffix" "manager-role" "context" $) }}
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "project.resourceName" (dict "suffix" "manager-role" "context" $) }}
 subjects:
-    - kind: ServiceAccount
-      name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-      namespace: {{ .Release.Namespace }}
+- kind: ServiceAccount
+  name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}

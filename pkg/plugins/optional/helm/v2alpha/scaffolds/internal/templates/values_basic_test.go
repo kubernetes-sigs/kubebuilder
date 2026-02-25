@@ -234,14 +234,14 @@ var _ = Describe("HelmValuesBasic", func() {
   ##
   affinity:
     nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-                - matchExpressions:
-                    - key: topology.kubernetes.io/zone
-                      operator: In
-                      values:
-                        - antarctica-east1
-                        - antarctica-east2`))
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values:
+            - antarctica-east1
+            - antarctica-east2`))
 		})
 	})
 

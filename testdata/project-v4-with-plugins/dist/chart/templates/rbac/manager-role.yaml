@@ -1,65 +1,65 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "manager-role" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "manager-role" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 rules:
-    - apiGroups:
-        - ""
-      resources:
-        - pods
-      verbs:
-        - get
-        - list
-        - watch
-    - apiGroups:
-        - apps
-      resources:
-        - deployments
-      verbs:
-        - create
-        - delete
-        - get
-        - list
-        - patch
-        - update
-        - watch
-    - apiGroups:
-        - events.k8s.io
-      resources:
-        - events
-      verbs:
-        - create
-        - patch
-    - apiGroups:
-        - example.com.testproject.org
-      resources:
-        - busyboxes
-        - memcacheds
-        - wordpresses
-      verbs:
-        - create
-        - delete
-        - get
-        - list
-        - patch
-        - update
-        - watch
-    - apiGroups:
-        - example.com.testproject.org
-      resources:
-        - busyboxes/finalizers
-        - memcacheds/finalizers
-        - wordpresses/finalizers
-      verbs:
-        - update
-    - apiGroups:
-        - example.com.testproject.org
-      resources:
-        - busyboxes/status
-        - memcacheds/status
-        - wordpresses/status
-      verbs:
-        - get
-        - patch
-        - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  - memcacheds
+  - wordpresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/finalizers
+  - memcacheds/finalizers
+  - wordpresses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  - memcacheds/status
+  - wordpresses/status
+  verbs:
+  - get
+  - patch
+  - update

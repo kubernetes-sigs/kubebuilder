@@ -2,19 +2,19 @@
 apiVersion: v1
 kind: Service
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "webhook-service" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 spec:
-    ports:
-        - port: 443
-          protocol: TCP
-          targetPort: {{ .Values.webhook.port }}
-    selector:
-        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-        control-plane: controller-manager
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: {{ .Values.webhook.port }}
+  selector:
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    control-plane: controller-manager
 {{- end }}
