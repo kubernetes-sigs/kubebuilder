@@ -66,11 +66,22 @@ linters:
     - unparam
     - unused
     - logcheck
+    - kubeapilinter
   settings:
     custom:
       logcheck:
         type: "module"
         description: Checks Go logging calls for Kubernetes logging conventions.
+      kubeapilinter:
+        type: module
+        description: "Kube API Linter plugin"
+        original-url: "sigs.k8s.io/kube-api-linter"
+        settings:
+          linters: {}
+          lintersConfig:
+            optionalfields:
+              pointers:
+                preference: WhenRequired
     revive:
       rules:
         - name: comment-spacings
@@ -88,6 +99,9 @@ linters:
           - dupl
           - lll
         path: internal/*
+      - path-except: "^api/"
+        linters:
+          - kubeapilinter
     paths:
       - third_party$
       - builtin$
