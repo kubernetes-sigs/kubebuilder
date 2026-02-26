@@ -23,7 +23,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/update"
 )
 
 // NewUpdateCommand creates and returns a new Cobra command for updating Kubebuilder projects.
