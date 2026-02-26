@@ -10,7 +10,7 @@
 ##
 manager:
   replicas: 1
-  
+
   image:
     repository: controller
     tag: latest

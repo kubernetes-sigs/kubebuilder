@@ -104,7 +104,7 @@ check-docs: ## Run the script to ensure that the docs are updated
 	./hack/docs/check.sh
 
 .PHONY: lint
-lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
+lint: golangci-lint yamllint check-sample-permissions ## Run golangci-lint linter, yamllint & sample permissions check
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
@@ -115,10 +115,22 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
 	$(GOLANGCI_LINT) config verify
 
-.PHONY: yamllint
-yamllint:
-	@files=$$(find testdata -name '*.yaml' ! -path 'testdata/*/dist/*'); \
-    	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest $$files -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
+# Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
+# Repo YAML uses .yamllint; Helm output uses .yamllint-helm.
+YAMLLINT_FILES := $(shell find testdata -name '*.yaml' ! -path 'testdata/.helm-rendered.yaml' \( ! -path 'testdata/*/dist/*' -o -path 'testdata/*/dist/chart/Chart.yaml' -o -path 'testdata/*/dist/chart/values.yaml' \) 2>/dev/null)
+HELM_CHARTS := $(shell find testdata docs/book -type d -path '*/dist/chart' 2>/dev/null)
+
+.PHONY: yamllint yamllint-yaml yamllint-helm
+yamllint: yamllint-yaml yamllint-helm
+
+yamllint-yaml:
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data cytopia/yamllint:latest $(YAMLLINT_FILES) -c .yamllint --no-warnings
+
+yamllint-helm:
+	@for chart in $(HELM_CHARTS); do \
+	  helm template release $$chart --namespace=release-system 2>/dev/null | \
+	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
+	done
 
 .PHONY: golangci-lint
 golangci-lint:

@@ -1,0 +1,33 @@
+# yamllint configuration for Kubebuilder
+# Aligns with Kubernetes YAML best practices:
+# - 2-space indentation, spaces only (no tabs)
+# - true/false over yes/no for booleans (truthy)
+# - Newline at end of file, no trailing spaces (POSIX)
+# - Unix newlines, consistent colons/hyphens
+# - No duplicate keys (key-duplicates)
+# - Document start (---) recommended for manifests; not enforced to allow existing testdata
+extends: default
+rules:
+  line-length:
+    max: 120
+    allow-non-breakable-words: true
+    # Generated CRDs and Prometheus manifests often have long lines
+    ignore: |
+      **/config/crd/bases/*.yaml
+      **/config/prometheus/*.yaml
+  indentation:
+    spaces: 2
+    # Kubernetes manifests often use list items at same indent as key (rules:\n- apiGroups:)
+    indent-sequences: whatever
+    # Uncommented replacement blocks in config/default/kustomization.yaml use 1-space for list items
+    ignore: |
+      **/config/default/kustomization.yaml
+  # Kubernetes: prefer true/false over yes/no; do not check keys (e.g. "on" in workflows)
+  truthy:
+    check-keys: false
+  # Allow single trailing blank line (common in editors)
+  empty-lines:
+    max-end: 1
+  # Optional: document-start (---) is K8s best practice but not enforced for testdata
+  document-start: disable
+  document-end: disable
