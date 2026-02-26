@@ -38,8 +38,6 @@ Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installat
 
 See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
 
-![Quick Start](docs/gif/kb-demo.v3.11.1.svg)
-
 Also, ensure that you check out the [Deploy Image](./docs/book/src/plugins/available/deploy-image-plugin-v1-alpha.md)
 Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an
 Operand (image) on the cluster following the guidelines and best practices. It abstracts the
