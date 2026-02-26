@@ -22,8 +22,9 @@ import (
 	"slices"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
-	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 )
 
 // KeyFor returns a Plugin's unique identifying string.
