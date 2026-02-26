@@ -17,9 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -30,13 +27,13 @@ type createSubcommand struct {
 	config   config.Config
 	resource *resource.Resource
 
-	flagSet *pflag.FlagSet
-
 	// force indicates whether to scaffold files even if they exist.
 	force bool
 }
 
-func (p *createSubcommand) BindFlags(fs *pflag.FlagSet) { p.flagSet = fs }
+func (p *createSubcommand) BindFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&p.force, "force", false, "overwrite existing files")
+}
 
 func (p *createSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
@@ -45,14 +42,5 @@ func (p *createSubcommand) InjectConfig(c config.Config) error {
 
 func (p *createSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
-	return nil
-}
-
-func (p *createSubcommand) configure() (err error) {
-	if forceFlag := p.flagSet.Lookup("force"); forceFlag != nil {
-		if p.force, err = strconv.ParseBool(forceFlag.Value.String()); err != nil {
-			return fmt.Errorf("invalid value for --force %s: %w", forceFlag.Value.String(), err)
-		}
-	}
 	return nil
 }

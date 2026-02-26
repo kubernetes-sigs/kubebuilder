@@ -253,7 +253,7 @@ func bindAllFlags(fs *pflag.FlagSet, args []string) {
 	}
 }
 
-// bindSpecificFlags with bind flags that are specified by an external plugin as an allowed flag
+// bindSpecificFlags binds flags that are specified by an external plugin as allowed.
 func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
 	// Only bind flags returned by the external plugin
 	for _, flag := range flags {
