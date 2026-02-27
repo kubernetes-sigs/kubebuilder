@@ -104,7 +104,7 @@ check-docs: ## Run the script to ensure that the docs are updated
 	./hack/docs/check.sh
 
 .PHONY: lint
-lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
+lint: golangci-lint yamllint check-sample-permissions ## Run golangci-lint linter, yamllint & sample permissions check
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
@@ -115,10 +115,36 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
 	$(GOLANGCI_LINT) config verify
 
-.PHONY: yamllint
-yamllint:
-	@files=$$(find testdata -name '*.yaml' ! -path 'testdata/*/dist/*'); \
-    	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest $$files -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
+# Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
+# Repo YAML uses .yamllint; Helm output uses .yamllint-helm.
+YAMLLINT_FILES := $(shell find testdata -name '*.yaml' ! -path 'testdata/.helm-rendered.yaml' \( ! -path 'testdata/*/dist/*' -o -path 'testdata/*/dist/chart/Chart.yaml' -o -path 'testdata/*/dist/chart/values.yaml' \) 2>/dev/null)
+HELM_CHARTS := $(shell find testdata docs/book -type d -path '*/dist/chart' 2>/dev/null)
+
+.PHONY: yamllint yamllint-yaml yamllint-helm
+yamllint: yamllint-yaml yamllint-helm
+
+yamllint-yaml:
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data cytopia/yamllint:latest $(YAMLLINT_FILES) -c .yamllint --no-warnings
+
+yamllint-helm:
+	@for chart in $(HELM_CHARTS); do \
+	  helm template release $$chart --namespace=release-system 2>/dev/null | \
+	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
+	done
+
+# All Kubebuilder-generated samples (go/v4, kustomize, helm use machinery defaults 0755/0644).
+SAMPLE_ROOTS := testdata \
+	docs/book/src/getting-started/testdata \
+	docs/book/src/cronjob-tutorial/testdata \
+	docs/book/src/multiversion-tutorial/testdata
+
+.PHONY: check-sample-permissions
+check-sample-permissions: ## Fail if any file/dir under testdata or docs samples has wrong permissions (expect 0644/0755). bin/ excluded.
+	@for d in $(SAMPLE_ROOTS); do \
+		test -d "$$d" || continue; \
+		bad=$$(find "$$d" -path '*/bin' -prune -o \( \( -type f ! -perm 0644 \) -o \( -type d ! -perm 0755 \) \) -print 2>/dev/null); \
+		if [ -n "$$bad" ]; then echo "Invalid permissions under $$d (expect 0644/0755):"; echo "$$bad"; exit 1; fi; \
+	done
 
 .PHONY: golangci-lint
 golangci-lint:

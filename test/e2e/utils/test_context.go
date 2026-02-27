@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	certmanagerVersion = "v1.19.3"
+	certmanagerVersion = "v1.19.4"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 
 	defaultKindCluster = "kind"
@@ -452,6 +452,19 @@ func (t *TestContext) HelmInstallReleaseWithOptions(crdKeep bool) error {
 		"--set", fmt.Sprintf("manager.image.repository=%s", "e2e-test/controller-manager"),
 		"--set", fmt.Sprintf("manager.image.tag=%s", t.TestSuffix),
 		"--set", fmt.Sprintf("crd.keep=%t", crdKeep))
+	_, err := t.Run(cmd)
+	return err
+}
+
+// HelmUpgradeReleaseWithReplicas runs `helm upgrade` with manager.replicas set.
+// Uses --reuse-values so existing image and other settings are preserved.
+func (t *TestContext) HelmUpgradeReleaseWithReplicas(replicas int) error {
+	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
+	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
+	cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+		"--namespace", ns,
+		"--reuse-values",
+		"--set", fmt.Sprintf("manager.replicas=%d", replicas))
 	_, err := t.Run(cmd)
 	return err
 }

@@ -2,19 +2,19 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "metrics-certs" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "metrics-certs" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 spec:
-    dnsNames:
-        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc
-        - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc.cluster.local
-    issuerRef:
-        kind: Issuer
-        name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
-    secretName: metrics-server-cert
+  dnsNames:
+  - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc
+  - {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "project-v4-with-plugins.namespaceName" $ }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
+  secretName: metrics-server-cert
 {{- end }}

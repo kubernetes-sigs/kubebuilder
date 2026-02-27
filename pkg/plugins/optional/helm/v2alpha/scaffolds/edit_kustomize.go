@@ -131,7 +131,7 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	chartConverter := kustomize.NewChartConverter(resources, namePrefix, chartName, s.outputDir)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
-	// Create scaffold for standard Helm chart files
+	// Create scaffold for standard Helm chart files (uses machinery defaults 0755/0644).
 	scaffold := machinery.NewScaffold(s.fs, machinery.WithConfig(s.config))
 
 	// Define the standard Helm chart files to generate

@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
-	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -100,7 +100,7 @@ func (w *ChartWriter) writeGroupDirectory(
 	return w.writeFileWithNewline(fs, filePath, finalContent.String())
 }
 
-// convertToYAML converts an unstructured object to YAML string
+// convertToYAML converts an unstructured object to YAML string with 2-space indentation
 func (w *ChartWriter) convertToYAML(resource *unstructured.Unstructured) string {
 	yamlBytes, err := yaml.Marshal(resource.Object)
 	if err != nil {

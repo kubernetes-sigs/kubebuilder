@@ -1,18 +1,18 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "leader-election-rolebinding" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "leader-election-rolebinding" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "leader-election-role" "context" $) }}
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "leader-election-role" "context" $) }}
 subjects:
-    - kind: ServiceAccount
-      name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-      namespace: {{ .Release.Namespace }}
+- kind: ServiceAccount
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}

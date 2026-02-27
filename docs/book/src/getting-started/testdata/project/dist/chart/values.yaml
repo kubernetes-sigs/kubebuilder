@@ -10,7 +10,7 @@
 ##
 manager:
   replicas: 1
-  
+
   image:
     repository: controller
     tag: latest
@@ -25,6 +25,11 @@ manager:
   ##
   env: []
 
+  ## Env overrides (--set manager.envOverrides.VAR=value)
+  ## Same name in env above: this value takes precedence.
+  ##
+  envOverrides: {}
+
   ## Image pull secrets
   ##
   imagePullSecrets: []
@@ -34,26 +39,26 @@ manager:
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
-        type: RuntimeDefault
+      type: RuntimeDefault
 
   ## Container-level security settings
   ##
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
-        drop:
-            - ALL
+      drop:
+      - ALL
     readOnlyRootFilesystem: true
 
   ## Resource limits and requests
   ##
   resources:
     limits:
-        cpu: 500m
-        memory: 128Mi
+      cpu: 500m
+      memory: 128Mi
     requests:
-        cpu: 10m
-        memory: 64Mi
+      cpu: 10m
+      memory: 64Mi
 
   ## Manager pod's affinity
   ##

@@ -2,18 +2,18 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "metrics-auth-role" "context" $) }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "metrics-auth-role" "context" $) }}
 rules:
-    - apiGroups:
-        - authentication.k8s.io
-      resources:
-        - tokenreviews
-      verbs:
-        - create
-    - apiGroups:
-        - authorization.k8s.io
-      resources:
-        - subjectaccessreviews
-      verbs:
-        - create
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
 {{- end }}

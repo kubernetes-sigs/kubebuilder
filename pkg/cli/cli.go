@@ -310,7 +310,7 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	}
 
 	if modified != original {
-		err := afero.WriteFile(fs, path, []byte(modified), 0o755)
+		err := afero.WriteFile(fs, path, []byte(modified), machinery.DefaultFilePermission)
 		if err != nil {
 			return fmt.Errorf("failed to write patched PROJECT file: %w", err)
 		}

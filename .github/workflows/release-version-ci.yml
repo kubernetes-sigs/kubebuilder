@@ -38,7 +38,7 @@ jobs:
           echo "$HOME/bin" >> $GITHUB_PATH
           
       - name: Run GoReleaser in mock mode using tag
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: v2.7.0
           args: release --skip=publish --clean -f ./build/.goreleaser.yml

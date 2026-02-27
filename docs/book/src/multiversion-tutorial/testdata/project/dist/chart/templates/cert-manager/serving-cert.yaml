@@ -2,19 +2,19 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ include "project.name" . }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-    name: {{ include "project.resourceName" (dict "suffix" "serving-cert" "context" $) }}
-    namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "project.resourceName" (dict "suffix" "serving-cert" "context" $) }}
+  namespace: {{ .Release.Namespace }}
 spec:
-    dnsNames:
-        - {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc
-        - {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc.cluster.local
-    issuerRef:
-        kind: Issuer
-        name: {{ include "project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
-    secretName: webhook-server-cert
+  dnsNames:
+  - {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc
+  - {{ include "project.resourceName" (dict "suffix" "webhook-service" "context" $) }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ include "project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
+  secretName: webhook-server-cert
 {{- end }}

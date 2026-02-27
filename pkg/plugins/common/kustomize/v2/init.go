@@ -23,9 +23,9 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
-	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"

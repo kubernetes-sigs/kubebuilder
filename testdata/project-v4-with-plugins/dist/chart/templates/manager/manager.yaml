@@ -1,111 +1,119 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.manager.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
         app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
         helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
         control-plane: controller-manager
-    name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-    namespace: {{ .Release.Namespace }}
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-            control-plane: controller-manager
-    template:
-        metadata:
-            annotations:
-                kubectl.kubernetes.io/default-container: manager
-            labels:
-                app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-                helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-                app.kubernetes.io/instance: {{ .Release.Name }}
-                app.kubernetes.io/managed-by: {{ .Release.Service }}
-                control-plane: controller-manager
-        spec:
-            {{- with .Values.manager.tolerations }}
-            tolerations: {{ toYaml . | nindent 16 }}
-            {{- end }}
-            {{- with .Values.manager.affinity }}
-            affinity: {{ toYaml . | nindent 16 }}
-            {{- end }}
-            {{- with .Values.manager.nodeSelector }}
-            nodeSelector: {{ toYaml . | nindent 16 }}
-            {{- end }}
-            containers:
-                - args:
-                    {{- if .Values.metrics.enable }}
-                    - --metrics-bind-address=:{{ .Values.metrics.port }}
-                    {{- else }}
-                    # Bind to :0 to disable the controller-runtime managed metrics server
-                    - --metrics-bind-address=0
-                    {{- end }}
-                    - --health-probe-bind-address=:8081
-                    {{- range .Values.manager.args }}
-                    - {{ . }}
-                    {{- end }}
-                    {{- if .Values.certManager.enable }}
-                    - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-                    {{- end }}
-                  command:
-                    - /manager
-                  env:
-                    {{- if .Values.manager.env }}
-                    {{- toYaml .Values.manager.env | nindent 20 }}
-                    {{- else }}
-                    []
-                    {{- end }}
-                  image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
-                  imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
-                  livenessProbe:
-                    httpGet:
-                        path: /healthz
-                        port: 8081
-                    initialDelaySeconds: 15
-                    periodSeconds: 20
-                  name: manager
-                  ports:
-                    - containerPort: {{ .Values.webhook.port }}
-                      name: webhook-server
-                      protocol: TCP
-                  readinessProbe:
-                    httpGet:
-                        path: /readyz
-                        port: 8081
-                    initialDelaySeconds: 5
-                    periodSeconds: 10
-                  resources:
-                    {{- if .Values.manager.resources }}
-                    {{- toYaml .Values.manager.resources | nindent 20 }}
-                    {{- else }}
-                    {}
-                    {{- end }}
-                  securityContext:
-                    {{- if .Values.manager.securityContext }}
-                    {{- toYaml .Values.manager.securityContext | nindent 20 }}
-                    {{- else }}
-                    {}
-                    {{- end }}
-                  volumeMounts:
-                    {{- if .Values.certManager.enable }}
-                    - mountPath: /tmp/k8s-webhook-server/serving-certs
-                      name: webhook-certs
-                      readOnly: true
-                    {{- end }}
-            securityContext:
-              {{- if .Values.manager.podSecurityContext }}
-              {{- toYaml .Values.manager.podSecurityContext | nindent 14 }}
-              {{- else }}
-              {}
-              {{- end }}
-            serviceAccountName: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-            terminationGracePeriodSeconds: 10
-            volumes:
-                {{- if .Values.certManager.enable }}
-                - name: webhook-certs
-                  secret:
-                    secretName: webhook-server-cert
-                {{- end }}
+    spec:
+      {{- with .Values.manager.tolerations }}
+      tolerations: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.affinity }}
+      affinity: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      containers:
+      - args:
+        {{- if .Values.metrics.enable }}
+        - --metrics-bind-address=:{{ .Values.metrics.port }}
+        {{- else }}
+        # Bind to :0 to disable the controller-runtime managed metrics server
+        - --metrics-bind-address=0
+        {{- end }}
+        - --health-probe-bind-address=:8081
+        {{- range .Values.manager.args }}
+        - {{ . }}
+        {{- end }}
+        {{- if .Values.certManager.enable }}
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        {{- end }}
+        command:
+        - /manager
+        env:
+{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
+          {{- if .Values.manager.env }}
+          {{- toYaml .Values.manager.env | nindent 10 }}
+          {{- end }}
+          {{- if kindIs "map" .Values.manager.envOverrides }}
+          {{- range $k, $v := .Values.manager.envOverrides }}
+          - name: {{ $k }}
+            value: {{ $v | quote }}
+          {{ end }}
+          {{- end }}
+          {{- else }}
+          []
+          {{- end }}
+        image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+        imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: {{ .Values.webhook.port }}
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- if .Values.manager.resources }}
+          {{- toYaml .Values.manager.resources | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
+        securityContext:
+          {{- if .Values.manager.securityContext }}
+          {{- toYaml .Values.manager.securityContext | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
+        volumeMounts:
+        {{- if .Values.certManager.enable }}
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
+          readOnly: true
+        {{- end }}
+      securityContext:
+        {{- if .Values.manager.podSecurityContext }}
+        {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
+        {{- else }}
+        {}
+        {{- end }}
+      serviceAccountName: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+      {{- if .Values.certManager.enable }}
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      {{- end }}

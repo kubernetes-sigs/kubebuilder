@@ -31,3 +31,5 @@ docs/book/src/docs
 
 ## Skip testdata files that generate by tests using TestContext
 **/e2e-*/**
+# Optional rendered chart output (e.g. from make yamllint-helm when debugging)
+testdata/.helm-rendered.yaml
