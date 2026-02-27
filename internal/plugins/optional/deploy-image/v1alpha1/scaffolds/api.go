@@ -25,15 +25,15 @@ import (
 
 	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
 	golangv4scaffolds "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 

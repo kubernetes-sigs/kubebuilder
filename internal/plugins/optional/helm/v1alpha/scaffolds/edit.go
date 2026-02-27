@@ -27,19 +27,19 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates"
+	charttemplates "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates"
+	templatescertmanager "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/cert-manager"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/manager"
+	templatesmetrics "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/metrics"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
+	templateswebhooks "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/webhook"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
-	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates"
-	charttemplates "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates"
-	templatescertmanager "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/cert-manager"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/manager"
-	templatesmetrics "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/metrics"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
-	templateswebhooks "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/webhook"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
 )
 
 var _ plugins.Scaffolder = &editScaffolder{}

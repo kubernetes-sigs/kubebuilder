@@ -23,11 +23,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/autoupdate/v1alpha"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
-	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
-	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 

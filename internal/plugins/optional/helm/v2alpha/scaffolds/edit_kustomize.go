@@ -24,13 +24,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha/scaffolds/internal/templates"
+	charttemplates "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha/scaffolds/internal/templates/chart-templates"
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha/scaffolds/internal/templates/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/templates"
-	charttemplates "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/templates/chart-templates"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/templates/github"
 )
 
 const (

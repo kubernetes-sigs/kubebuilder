@@ -28,12 +28,12 @@ import (
 	"github.com/spf13/pflag"
 	"go.yaml.in/yaml/v3"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha/scaffolds"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 const (

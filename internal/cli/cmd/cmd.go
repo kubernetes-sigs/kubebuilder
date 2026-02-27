@@ -24,18 +24,18 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/internal/cli/version"
 	"sigs.k8s.io/kubebuilder/v4/internal/logging"
+	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/autoupdate/v1alpha"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/deploy-image/v1alpha1"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v1alpha"
+	helmv2alpha "sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/helm/v2alpha"
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
-	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
-	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
-	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Run bootstraps & runs the CLI
