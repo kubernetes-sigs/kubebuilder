@@ -36,6 +36,8 @@ jobs:
         run: make install-helm
       - name: Run yamllint (YAML + Helm chart output 2-space indentation)
         run: make yamllint
+      - name: Check sample permissions
+        run: make check-sample-permissions
 
   license:
     runs-on: ubuntu-latest

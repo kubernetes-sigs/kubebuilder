@@ -38,8 +38,11 @@ import (
 const (
 	createOrUpdate = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 
-	defaultDirectoryPermission os.FileMode = 0o700
-	defaultFilePermission      os.FileMode = 0o600
+	// DefaultDirectoryPermission and DefaultFilePermission are used so generated
+	// files work in shared and container workflows. Use them when writing scaffolded
+	// or config files for consistency.
+	DefaultDirectoryPermission os.FileMode = 0o755
+	DefaultFilePermission      os.FileMode = 0o644
 )
 
 var options = imports.Options{
@@ -69,8 +72,8 @@ type ScaffoldOption func(*Scaffold)
 func NewScaffold(fs Filesystem, options ...ScaffoldOption) *Scaffold {
 	s := &Scaffold{
 		fs:       fs.FS,
-		dirPerm:  defaultDirectoryPermission,
-		filePerm: defaultFilePermission,
+		dirPerm:  DefaultDirectoryPermission,
+		filePerm: DefaultFilePermission,
 	}
 
 	for _, option := range options {

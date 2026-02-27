@@ -132,6 +132,20 @@ yamllint-helm:
 	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
 	done
 
+# All Kubebuilder-generated samples (go/v4, kustomize, helm use machinery defaults 0755/0644).
+SAMPLE_ROOTS := testdata \
+	docs/book/src/getting-started/testdata \
+	docs/book/src/cronjob-tutorial/testdata \
+	docs/book/src/multiversion-tutorial/testdata
+
+.PHONY: check-sample-permissions
+check-sample-permissions: ## Fail if any file/dir under testdata or docs samples has wrong permissions (expect 0644/0755). bin/ excluded.
+	@for d in $(SAMPLE_ROOTS); do \
+		test -d "$$d" || continue; \
+		bad=$$(find "$$d" -path '*/bin' -prune -o \( \( -type f ! -perm 0644 \) -o \( -type d ! -perm 0755 \) \) -print 2>/dev/null); \
+		if [ -n "$$bad" ]; then echo "Invalid permissions under $$d (expect 0644/0755):"; echo "$$bad"; exit 1; fi; \
+	done
+
 .PHONY: golangci-lint
 golangci-lint:
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,${GOLANGCI_LINT_VERSION})
