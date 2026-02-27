@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal"
 )
 
 // NewScaffoldCommand returns a new scaffold command, providing the `kubebuilder alpha generate`

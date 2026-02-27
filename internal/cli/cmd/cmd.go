@@ -22,10 +22,10 @@ import (
 
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v4/internal/version"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/version"
+	"sigs.k8s.io/kubebuilder/v4/internal/logging"
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
