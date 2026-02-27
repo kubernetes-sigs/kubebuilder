@@ -57,7 +57,10 @@ NOTE: This plugin requires kustomize version v5 and kubectl >= 1.22.
 }
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
+	fs.StringVar(&p.domain, "domain", "my.domain", "[Required] Domain for API groups (e.g., example.org). "+
+		"This becomes the suffix for your API groups (e.g., crew.example.org/v1). "+
+		"Should be a domain you control. "+
+		"Cannot be changed after project initialization")
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
 }
 
