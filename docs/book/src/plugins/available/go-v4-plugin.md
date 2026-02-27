@@ -33,6 +33,27 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 -  Create API -  `kubebuilder create api [OPTIONS]`
 -  Create Webhook - `kubebuilder create webhook [OPTIONS]`
 
+## Multiple Controllers for the Same API
+
+The `create api` subcommand supports a `--controller-name` flag that allows scaffolding multiple controllers for the same Group/Version/Kind. This is useful when you need to split reconciliation responsibilities, run different modes of reconciliation, or manage migration scenarios.
+
+```sh
+# Create the initial API and controller
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached
+
+# Add a second controller for the same Memcached Kind
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached \
+  --controller-name memcached-backup --resource=false
+```
+
+When `--controller-name` is provided:
+- The controller file is named after the controller name (e.g. `internal/controller/memcached_backup_controller.go`)
+- The reconciler struct uses the PascalCase form (e.g. `MemcachedBackupReconciler`)
+- The controller is registered with `Named("memcached-backup")` for unique metrics and logging
+- The name is tracked in the [PROJECT file][project-doc] via `resources.controllers[].name`
+
+The `--controller-name` value must be a DNS-1035 label (lowercase alphanumeric and hyphens, starting with a letter).
+
 ## Further resources
 
 - To see the composition of plugins, you can check the source code for the Kubebuilder [main.go][plugins-main].

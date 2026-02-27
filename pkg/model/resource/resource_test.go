@@ -191,12 +191,39 @@ var _ = Describe("Resource", func() {
 		})
 
 		Context("HasController", func() {
-			It("should return true if the controller is scaffolded", func() {
-				Expect(Resource{Controller: true}.HasController()).To(BeTrue())
+			It("should return true if a controller list is present", func() {
+				Expect(Resource{Controllers: []Controller{{Name: "kind"}}}.HasController()).To(BeTrue())
 			})
 
-			It("should return false if the controller is not scaffolded", func() {
-				Expect(Resource{Controller: false}.HasController()).To(BeFalse())
+			It("should return true for legacy controller field", func() {
+				Expect(Resource{GVK: gvk, Controller: true}.HasController()).To(BeTrue())
+			})
+
+			It("should return false if no controller is scaffolded", func() {
+				Expect(Resource{Controller: false, Controllers: nil}.HasController()).To(BeFalse())
+			})
+		})
+
+		Context("HasControllerName", func() {
+			It("should return true for existing controller names", func() {
+				r := Resource{
+					Controllers: []Controller{
+						{Name: "kind"},
+						{Name: "kind-backup"},
+					},
+				}
+				Expect(r.HasControllerName("kind")).To(BeTrue())
+				Expect(r.HasControllerName("kind-backup")).To(BeTrue())
+			})
+
+			It("should return true for legacy controller name", func() {
+				r := Resource{ControllerName: "kind-backup"}
+				Expect(r.HasControllerName("kind-backup")).To(BeTrue())
+			})
+
+			It("should return false if not present", func() {
+				r := Resource{Controllers: []Controller{{Name: "kind"}}}
+				Expect(r.HasControllerName("kind-status")).To(BeFalse())
 			})
 		})
 
@@ -273,7 +300,7 @@ var _ = Describe("Resource", func() {
 					CRDVersion: crdVersion,
 					Namespaced: true,
 				},
-				Controller: true,
+				Controllers: []Controller{{Name: "kind"}},
 				Webhooks: &Webhooks{
 					WebhookVersion: webhookVersion,
 					Defaulting:     true,
@@ -294,13 +321,19 @@ var _ = Describe("Resource", func() {
 			Expect(other.API).NotTo(BeNil())
 			Expect(other.API.CRDVersion).To(Equal(res.API.CRDVersion))
 			Expect(other.API.Namespaced).To(Equal(res.API.Namespaced))
-			Expect(other.Controller).To(Equal(res.Controller))
+			Expect(other.Controllers).To(Equal(res.Controllers))
 			Expect(other.Webhooks).NotTo(BeNil())
 			Expect(other.Webhooks.WebhookVersion).To(Equal(res.Webhooks.WebhookVersion))
 			Expect(other.Webhooks.Defaulting).To(Equal(res.Webhooks.Defaulting))
 			Expect(other.Webhooks.Validation).To(Equal(res.Webhooks.Validation))
 			Expect(other.Webhooks.Conversion).To(Equal(res.Webhooks.Conversion))
 			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
+		})
+
+		It("should preserve legacy ControllerName", func() {
+			res.ControllerName = "kind-legacy"
+			other := res.Copy()
+			Expect(other.ControllerName).To(Equal("kind-legacy"))
 		})
 
 		It("modifying the copy should not affect the original", func() {
@@ -314,7 +347,8 @@ var _ = Describe("Resource", func() {
 			other.API.CRDVersion = v1beta1
 			other.API.Namespaced = false
 			other.API = nil // Change fields before changing pointer
-			other.Controller = false
+			other.Controllers[0].Name = "kind-mutated"
+			other.Controllers = nil
 			other.Webhooks.WebhookVersion = v1beta1
 			other.Webhooks.Defaulting = false
 			other.Webhooks.Validation = false
@@ -330,7 +364,7 @@ var _ = Describe("Resource", func() {
 			Expect(res.API).NotTo(BeNil())
 			Expect(res.API.CRDVersion).To(Equal(crdVersion))
 			Expect(res.API.Namespaced).To(BeTrue())
-			Expect(res.Controller).To(BeTrue())
+			Expect(res.Controllers).To(Equal([]Controller{{Name: "kind"}}))
 			Expect(res.Webhooks).NotTo(BeNil())
 			Expect(res.Webhooks.WebhookVersion).To(Equal(webhookVersion))
 			Expect(res.Webhooks.Defaulting).To(BeTrue())
@@ -422,42 +456,49 @@ var _ = Describe("Resource", func() {
 			// The rest of the cases are tested in API.Update
 		})
 
-		Context("Controller", func() {
-			It("should set the controller flag if provided and not previously set", func() {
+		Context("Controllers", func() {
+			It("should set a default controller from legacy bool when provided", func() {
 				r = Resource{GVK: gvk}
 				other = Resource{
 					GVK:        gvk,
 					Controller: true,
 				}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
+				Expect(r.Controllers).To(Equal([]Controller{{Name: strings.ToLower(kind)}}))
 			})
 
-			It("should keep the controller flag if previously set", func() {
+			It("should merge controller lists without duplicates", func() {
 				r = Resource{
-					GVK:        gvk,
-					Controller: true,
+					GVK:         gvk,
+					Controllers: []Controller{{Name: "kind"}, {Name: "kind-backup"}},
 				}
-
-				By("not providing it")
-				other = Resource{GVK: gvk}
-				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
-
-				By("providing it")
 				other = Resource{
-					GVK:        gvk,
-					Controller: true,
+					GVK:         gvk,
+					Controllers: []Controller{{Name: "kind-backup"}, {Name: "kind-status"}},
 				}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
+				Expect(r.Controllers).To(Equal([]Controller{
+					{Name: "kind"},
+					{Name: "kind-backup"},
+					{Name: "kind-status"},
+				}))
 			})
 
-			It("should not set the controller flag if not provided and not previously set", func() {
-				r = Resource{GVK: gvk}
-				other = Resource{GVK: gvk}
+			It("should preserve existing controllers if other has none", func() {
+				r = Resource{
+					GVK:         gvk,
+					Controllers: []Controller{{Name: "kind"}},
+				}
+				other = Resource{GVK: gvk, API: &API{CRDVersion: v1}}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeFalse())
+				Expect(r.Controllers).To(Equal([]Controller{{Name: "kind"}}))
+			})
+
+			It("should import legacy controller name when provided", func() {
+				r = Resource{GVK: gvk}
+				other = Resource{GVK: gvk, ControllerName: "kind-backup"}
+				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Controllers).To(Equal([]Controller{{Name: "kind-backup"}}))
 			})
 		})
 
@@ -507,5 +548,57 @@ var _ = Describe("Resource", func() {
 			Entry("pattern `%[plural]`", "%[plural]", func() string { return res.Plural }),
 			Entry("pattern `%[package-name]`", "%[package-name]", func() string { return res.PackageName() }),
 		)
+
+		It("should replace %[controller-name] with default (lowercase kind) when no controller is set", func() {
+			Expect(replacer.Replace("%[controller-name]")).To(Equal(strings.ToLower(res.Kind)))
+		})
+
+		It("should replace %[controller-name] with the custom controller name when set", func() {
+			resWithCN := res.Copy()
+			resWithCN.Controllers = []Controller{{Name: "kind-backup"}}
+			r := resWithCN.Replacer()
+			Expect(r.Replace("%[controller-name]")).To(Equal("kind-backup"))
+		})
+	})
+
+	Context("ToPascalCase", func() {
+		DescribeTable("should convert hyphenated names to PascalCase",
+			func(input, expected string) {
+				Expect(ToPascalCase(input)).To(Equal(expected))
+			},
+			Entry("single word", "captain", "Captain"),
+			Entry("two words", "captain-health", "CaptainHealth"),
+			Entry("three words", "memcached-backup-sync", "MemcachedBackupSync"),
+			Entry("already capitalized parts", "Captain-Health", "CaptainHealth"),
+			Entry("empty string", "", ""),
+			Entry("single letter segments", "a-b-c", "ABC"),
+		)
+	})
+
+	Context("GetControllerName", func() {
+		It("should return the lowercase kind when no controller is set", func() {
+			Expect(res.GetControllerName()).To(Equal(strings.ToLower(res.Kind)))
+		})
+
+		It("should return the first controller name when set", func() {
+			res.Controllers = []Controller{{Name: "kind-backup"}}
+			Expect(res.GetControllerName()).To(Equal("kind-backup"))
+		})
+
+		It("should support legacy controller name", func() {
+			res.ControllerName = "kind-legacy"
+			Expect(res.GetControllerName()).To(Equal("kind-legacy"))
+		})
+	})
+
+	Context("ControllerClassName", func() {
+		It("should return the kind when no controller is set", func() {
+			Expect(res.ControllerClassName()).To(Equal(res.Kind))
+		})
+
+		It("should return PascalCase of the custom controller name when set", func() {
+			res.Controllers = []Controller{{Name: "kind-backup"}}
+			Expect(res.ControllerClassName()).To(Equal("KindBackup"))
+		})
 	})
 })

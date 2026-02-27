@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const defaultMainPath = "cmd/main.go"
@@ -63,6 +64,9 @@ type MainUpdater struct {
 
 	// Flags to indicate which parts need to be included when updating the file
 	WireResource, WireController, WireWebhook bool
+
+	// ControllerName is an optional custom name for the controller.
+	ControllerName string
 
 	// Deprecated - The flag should be removed from go/v5
 	// IsLegacyPath indicates if webhooks should be scaffolded under the API.
@@ -187,12 +191,18 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	// Generate setup code fragments
 	setup := make([]string, 0)
 	if f.WireController {
+		controllerClassName := f.Resource.Kind
+		controllerLogName := f.Resource.Kind
+		if f.ControllerName != "" {
+			controllerClassName = resource.ToPascalCase(f.ControllerName)
+			controllerLogName = f.ControllerName
+		}
 		if !f.MultiGroup || f.Resource.Group == "" {
 			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
-				f.Resource.Kind, f.Resource.Kind))
+				controllerClassName, controllerLogName))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind))
+				f.Resource.PackageName(), controllerClassName, controllerLogName))
 		}
 	}
 	if f.WireWebhook {

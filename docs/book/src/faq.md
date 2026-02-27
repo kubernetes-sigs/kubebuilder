@@ -160,6 +160,29 @@ type StructName struct {
 
 
 
+## How can I have multiple controllers for the same Kind (GVK)?
+
+Use the `--controller-name` flag when running `create api` to scaffold additional controllers for an existing API. Each controller must have a unique name:
+
+```bash
+# First, create the API and default controller
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached
+
+# Then, add a second controller for the same Kind
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached \
+  --controller-name memcached-backup --resource=false
+```
+
+This scaffolds a separate controller file (`internal/controller/memcached_backup_controller.go`) with its own reconciler struct (`MemcachedBackupReconciler`), registered with a unique name for metrics and logging. The `--resource=false` flag avoids re-creating the API types that already exist.
+
+Some use cases for multiple controllers on the same Kind:
+- **Split responsibilities**: one controller manages status/conditions, another manages dependent resources
+- **Reconciliation modes**: different behavior based on labels/annotations, each controller using predicates
+- **Migration**: run old and new controller side-by-side temporarily, each targeting a subset of resources
+- **Different concurrency settings**: separate queues or rate limiting per controller
+
+Controller names are tracked in the [PROJECT file][project-file-def] under `resources.controllers[]` and are preserved during re-scaffolding with `kubebuilder alpha generate`. See the [project config reference][project-file-def] for details.
+
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
 [gvk]: ./cronjob-tutorial/gvks.md
 [project-file-def]: ./reference/project-config.md
