@@ -14,12 +14,10 @@ This Quick Start guide will cover:
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
 
-<aside class="note">
-<h1>Versions Compatibility and Supportability</h1>
-
-Please, ensure that you see the [guidance](./versions_compatibility_supportability.md).
-
-</aside>
+> [!IMPORTANT]
+>
+> For **version compatibility and supportability**, please ensure that you see the
+> [guidance](./versions_compatibility_supportability.md).
 
 ## Installation
 
@@ -31,20 +29,16 @@ curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go 
 chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
 ```
 
-<aside class="note">
-<h1>Using the Master Branch</h1>
+> [!TIP]
+>
+> You can **work with the master branch** by cloning the repository and running `make install` to generate the binary.
+> Please follow the steps in the section **How to Build Kubebuilder Locally** from the
+> [Contributing Guide](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md#how-to-build-kubebuilder-locally).
 
-You can work with the master branch by cloning the repository and running `make install` to generate the binary.
-Please follow the steps in the section **How to Build Kubebuilder Locally** from the [Contributing Guide](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md#how-to-build-kubebuilder-locally).
-
-</aside>
-
-<aside class="note">
-<h1>Enabling shell autocompletion</h1>
-
-Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
-
-</aside>
+> [!TIP]
+>
+> Kubebuilder provides **shell autocompletion** support via the command `kubebuilder completion <bash|fish|powershell|zsh>`,
+> which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 ## Create a Project
 
@@ -56,15 +50,13 @@ cd ~/projects/guestbook
 kubebuilder init --domain my.domain --repo my.domain/guestbook
 ```
 
-<aside class="note">
-<h1>Developing in $GOPATH</h1>
-
-If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
-Otherwise `--repo=<module path>` must be set.
-
-Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
-
-</aside>
+> [!CAUTION]
+>
+> If your project is initialized **within [`$GOPATH`][GOPATH-golang-docs]**,
+> the implicitly called `go mod init` will interpolate the module path for you.
+> Otherwise `--repo=<module path>` must be set.
+>
+> Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
 
 ## Create an API
 
@@ -74,13 +66,12 @@ Run the following command to create a new API (group/version) as `webapp/v1` and
 kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
-<aside class="note">
-<h1>Press Options</h1>
-
-If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
-and the `internal/controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
-
-</aside>
+> [!NOTE]
+>
+> If you press `y` for `Create Resource [y/n]` and for `Create Controller [y/n]`, then
+> this will create the files `api/v1/guestbook_types.go` where the API is defined
+> and the `internal/controller/guestbook_controller.go` where the reconciliation
+> business logic is implemented for this Kind (CRD).
 
 **OPTIONAL:** Edit the API definition and the reconciliation business
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
@@ -145,14 +136,11 @@ type Guestbook struct {
 </details>
 
 
-<aside class="note">
-<h1> `+kubebuilder` markers </h1>
-
-`+kubebuilder` are [markers][markers] processed by [controller-gen][controller-gen]
-to generate CRDs and RBAC. Kubebuilder also provides [scaffolding markers][scaffolding-markers]
-to inject code into existing files and simplify common tasks. See `cmd/main.go` for examples.
-
-</aside>
+> [!NOTE]
+>
+> `+kubebuilder` are [markers][markers] processed by [controller-gen][controller-gen]
+> to generate CRDs and RBAC. Kubebuilder also provides [scaffolding markers][scaffolding-markers]
+> to inject code into existing files and simplify common tasks. See `cmd/main.go` for examples.
 
 ## Test It Out
 
@@ -160,13 +148,10 @@ You'll need a Kubernetes cluster to run against. You can use
 [KinD][kind] to get a local cluster for testing, or
 run against a remote cluster.
 
-<aside class="note">
-<h1>Context Used</h1>
-
-Your controller will automatically use the current context in your
-kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
-
-</aside>
+> [!NOTE]
+>
+> Your controller will automatically use the **current context in your kubeconfig file**
+> (i.e. whatever cluster `kubectl cluster-info` shows).
 
 Install the CRDs into the cluster:
 
@@ -228,29 +213,28 @@ Deploy the controller to the cluster with image specified by `IMG`:
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-<aside class="note">
-<h1>Registry Permission</h1>
+> [!NOTE]
+>
+> This image ought to be published in the **personal registry** you specified.
+> And it is required to have access to pull the image from the working environment.
+> Make sure you have the proper permission to the registry if the above commands don't work.
+>
+> Consider incorporating [Kind][kind] into your workflow for a faster, more efficient local development and CI experience.
+> Note that, if you're using a [Kind][kind] cluster, there's no need to push your image to a remote container registry.
+> You can directly load your local image into your specified [Kind][kind] cluster:
+>
+> ```bash
+> kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+> ```
+>
+> It is highly recommended to use [Kind][kind] for development purposes and CI.
+> To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
 
-This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don't work.
-
-Consider incorporating [Kind][kind] into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a [Kind][kind] cluster, there's no need to push your image to a remote container registry.
-You can directly load your local image into your specified [Kind][kind] cluster:
-
-```bash
-kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
-```
-
-It is highly recommended to use [Kind][kind] for development purposes and CI.
-To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
-
-<h1>RBAC errors</h1>
-
-If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.
-
-</aside>
+> [!TIP]
+>
+> If you encounter **RBAC errors**, you may need to grant yourself cluster-admin
+> privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on
+> GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.
 
 ## Uninstall CRDs
 
@@ -267,34 +251,31 @@ Undeploy the controller to the cluster:
 ```bash
 make undeploy
 ```
+
 ## Using Plugins
 
 Kubebuilder design is based on [Plugins][plugins] and you can use
 [available plugins][available-plugins] to add optional features to your project.
 
-<aside class="note">
-<h1>References and Examples</h1>
+> [!TIP]
+>
+> Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a
+> reference when creating your project.
+> It follows Kubernetes **conventions and recommended good practices**. For example:
+>
+> ```bash
+> kubebuilder create api --group webapp --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha"
+> ```
 
-Use the [Deploy Image Plugin (deploy-image/v1-alpha)][deploy-image-v1-alpha] as a reference when creating your project. It follows Kubernetes conventions and recommended good practices. For example:
-
-```bash
-kubebuilder create api --group webapp --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha"
-```
-
-</aside>
-
-<aside class="note">
-<h1> Keeping your project up to date with ecosystem changes </h1>
-
-Use [AutoUpdate Plugin][autoupdate-v1-alpha] to keep your project
-aligned with the latest ecosystem changes. When a new release is available,
-it automatically opens an issue with a PR comparison link so you can review and update easily.
-
-```bash
-kubebuilder edit --plugins="autoupdate/v1-alpha"
-```
-
-</aside>
+> [!IMPORTANT]
+>
+> Use [AutoUpdate Plugin][autoupdate-v1-alpha] to **keep your project
+> aligned with the latest ecosystem changes**. When a new release is available,
+> it automatically opens an issue with a PR comparison link so you can review and update easily.
+>
+> ```bash
+> kubebuilder edit --plugins="autoupdate/v1-alpha"
+> ```
 
 ## Next Steps
 
