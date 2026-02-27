@@ -105,9 +105,7 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
-
-Therefore, you have a few options to workround this scenario such as:
+You have a few options to work around this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
@@ -126,6 +124,15 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
 **By re-design your APIs:**
 
 You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
+
+**By using Server-Side Apply:**
+
+Server-Side Apply does not store the entire configuration in the `last-applied-configuration` annotation, which helps avoid size limits. If your controller manages resources that might be customized by users (e.g., users adding their own labels, annotations), consider using the [Server-Side Apply plugin][server-side-apply-plugin]. This approach:
+- Avoids annotation size limits
+- Enables safer field management when resources are shared between controllers and users
+- Prevents accidentally overwriting user customizations
+
+See the [Server-Side Apply plugin documentation][server-side-apply-plugin] for usage details.
 
 ## How can I validate and parse fields in CRDs effectively?
 
@@ -168,4 +175,4 @@ type StructName struct {
 [permission-issue]: https://github.com/kubernetes/kubernetes/issues/82573
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
-[controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[server-side-apply-plugin]: ./plugins/available/server-side-apply-v1-alpha.md

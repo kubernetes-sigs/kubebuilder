@@ -11,9 +11,11 @@ resources:
 - bases/foo.policy.testproject.org_healthcheckpolicies.yaml
 - bases/foo.testproject.org_bars.yaml
 - bases/fiz.testproject.org_bars.yaml
+- bases/sea-creatures.testproject.org_prawns.yaml
 - bases/example.com.testproject.org_memcacheds.yaml
 - bases/example.com.testproject.org_busyboxes.yaml
 - bases/example.com.testproject.org_wordpresses.yaml
+- bases/example.com.testproject.org_applications.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

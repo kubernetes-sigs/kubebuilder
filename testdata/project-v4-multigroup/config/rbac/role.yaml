@@ -100,6 +100,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications
   - busyboxes
   - memcacheds
   - wordpresses
@@ -114,6 +115,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications/finalizers
   - busyboxes/finalizers
   - memcacheds/finalizers
   - wordpresses/finalizers
@@ -122,6 +124,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications/status
   - busyboxes/status
   - memcacheds/status
   - wordpresses/status
@@ -189,6 +192,7 @@ rules:
   resources:
   - krakens
   - leviathans
+  - prawns
   verbs:
   - create
   - delete
@@ -202,6 +206,7 @@ rules:
   resources:
   - krakens/finalizers
   - leviathans/finalizers
+  - prawns/finalizers
   verbs:
   - update
 - apiGroups:
@@ -209,6 +214,7 @@ rules:
   resources:
   - krakens/status
   - leviathans/status
+  - prawns/status
   verbs:
   - get
   - patch

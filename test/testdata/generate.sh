@@ -97,6 +97,8 @@ function scaffold_test_project {
     # Webhook for kubernetes Core type that is part of an api group - test incremental
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting --make=false
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
+    # Creating API with server-side-apply plugin (multigroup)
+    $kb create api --group sea-creatures --version v1 --kind Prawn --plugins="server-side-apply/v1-alpha" --controller=true --resource=true --make=false
   fi
 
   if [[ $project =~ with-plugins ]] ; then
@@ -117,6 +119,10 @@ function scaffold_test_project {
     $kb create api --group example.com --version v1 --kind Wordpress --controller=true --resource=true  --make=false
     $kb create api --group example.com --version v2 --kind Wordpress --controller=false --resource=true  --make=false
     $kb create webhook --group example.com --version v1 --kind Wordpress --conversion --make=false --spoke v2
+
+    header_text 'Creating API with server-side-apply plugin ...'
+    # Creating API with server-side-apply plugin (single-group)
+    $kb create api --group example.com --version v1 --kind Application --plugins="server-side-apply/v1-alpha" --controller=true --resource=true --make=false
 
     header_text 'Editing project with Grafana plugin ...'
     $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
