@@ -82,7 +82,6 @@ func (w *ChartWriter) writeGroupDirectory(
 ) error {
 	var finalContent bytes.Buffer
 
-	// Convert each resource to YAML and apply templating
 	for i, resource := range resources {
 		if i > 0 {
 			finalContent.WriteString("---\n")

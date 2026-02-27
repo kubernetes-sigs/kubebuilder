@@ -134,6 +134,9 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 	extractContainerResources(container, config)
 	extractContainerSecurityContext(container, config)
 
+	extractExtraVolumes(specMap, config)
+	extractExtraVolumeMounts(container, config)
+
 	return config
 }
 
@@ -415,4 +418,67 @@ func extractContainerSecurityContext(container map[string]any, config map[string
 	}
 
 	config["securityContext"] = securityContext
+}
+
+// defaultWebhookMetricsVolumeNames are volume names from the Kustomize scaffold;
+// they are never added to extraVolumes (conditional in chart).
+var defaultWebhookMetricsVolumeNames = map[string]struct{}{
+	"webhook-certs": {},
+	"metrics-certs": {},
+}
+
+// extractExtraVolumes copies pod volumes into config["extraVolumes"], excluding
+// webhook-certs and metrics-certs. Only set when there is at least one extra volume.
+func extractExtraVolumes(specMap map[string]any, config map[string]any) {
+	volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes")
+	if !found || err != nil {
+		return
+	}
+	volumesList, ok := volumes.([]any)
+	if !ok || len(volumesList) == 0 {
+		return
+	}
+	extra := make([]any, 0, len(volumesList))
+	for _, v := range volumesList {
+		vm, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := vm["name"].(string)
+		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
+			continue
+		}
+		extra = append(extra, v)
+	}
+	if len(extra) > 0 {
+		config["extraVolumes"] = extra
+	}
+}
+
+// extractExtraVolumeMounts copies container volumeMounts into config["extraVolumeMounts"],
+// excluding webhook-certs and metrics-certs. Only set when there is at least one extra.
+func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
+	mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts")
+	if !found || err != nil {
+		return
+	}
+	mountsList, ok := mounts.([]any)
+	if !ok || len(mountsList) == 0 {
+		return
+	}
+	extra := make([]any, 0, len(mountsList))
+	for _, m := range mountsList {
+		mm, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := mm["name"].(string)
+		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
+			continue
+		}
+		extra = append(extra, m)
+	}
+	if len(extra) > 0 {
+		config["extraVolumeMounts"] = extra
+	}
 }

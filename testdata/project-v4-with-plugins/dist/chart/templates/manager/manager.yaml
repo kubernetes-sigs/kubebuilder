@@ -98,6 +98,9 @@ spec:
           {}
           {{- end }}
         volumeMounts:
+          {{- if .Values.manager.extraVolumeMounts }}
+          {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
+          {{- end }}
         {{- if .Values.certManager.enable }}
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: webhook-certs
@@ -112,6 +115,9 @@ spec:
       serviceAccountName: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
       terminationGracePeriodSeconds: 10
       volumes:
+        {{- if .Values.manager.extraVolumes }}
+        {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
+        {{- end }}
       {{- if .Values.certManager.enable }}
       - name: webhook-certs
         secret:
