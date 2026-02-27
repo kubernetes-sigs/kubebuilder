@@ -10,7 +10,7 @@ By using this plugin, you will get:
 - Environment variable support for managing the Operand (image) within the manager.
 
 <aside class="note">
-<h1>Examples</h1>
+<h4>Examples</h4>
 
 See the `project-v4-with-plugins` directory under the [testdata][testdata]
 directory in the Kubebuilder project to check an example
@@ -66,7 +66,7 @@ kubebuilder create api \
    ```
 
 <aside class="warning">
-<h1>Note on make run:</h1>
+<h4>Note on make run:</h4>
 
 When running the project locally with `make run`, the Operand image
 provided will be stored as an environment variable in the

@@ -78,7 +78,7 @@ func formatPrefix(prefix string) string {
 ```
 
 <aside class="note">
-<h1>Implementation Reference</h1>
+<h4>Implementation Reference</h4>
 
 The `formatPrefix` implementation shown above is adapted from Kubebuilder's internal
 [markerPrefix function](https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/machinery/marker.go).

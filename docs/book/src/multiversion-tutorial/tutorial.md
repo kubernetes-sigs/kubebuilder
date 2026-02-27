@@ -13,7 +13,7 @@ Tutorial](/cronjob-tutorial/cronjob-tutorial.md).
 
 <aside class="note">
 
-<h1>Following Along vs Jumping Ahead</h1>
+<h4>Following Along vs Jumping Ahead</h4>
 
 Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:

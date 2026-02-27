@@ -38,7 +38,7 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 This changes the path in the webhook marker annotation but does not change where the webhook files are scaffolded. The webhook files will still be created in `internal/webhook/v1/`.
 
 <aside class="note">
-<h1>Version Requirements</h1>
+<h4>Version Requirements</h4>
 
 Custom webhook paths require **controller-runtime v0.21+**. In earlier versions (< `v0.21`), the webhook path must follow a specific pattern and cannot be customized. The path is automatically generated based on the resource's group, version, and kind (e.g., `/mutate-batch-v1-cronjob`).
 

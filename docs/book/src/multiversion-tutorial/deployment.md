@@ -83,7 +83,7 @@ reconcile, even though our controller is written against our v1 API version.
 
 <aside class="note">
 
-<h1>kubectl and Preferred Versions</h1>
+<h4>kubectl and Preferred Versions</h4>
 
 When we access our API types from Go code, we ask for a specific version
 by using that version's Go type (e.g. `batchv2.CronJob`).

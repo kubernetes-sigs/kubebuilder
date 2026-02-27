@@ -5,7 +5,7 @@ It is often useful to publish *Event* objects from the controller Reconcile func
  Recent Events for an object can be viewed by running `$ kubectl describe <resource kind> <resource name>`. Also, they can be checked by running `$ kubectl get events`.
 
 <aside class="warning">
-<h1>Events should be raised in certain circumstances only</h1>
+<h4>Events should be raised in certain circumstances only</h4>
 
 Be aware that it is **not** recommended to emit Events for all operations. If authors raise too many events, it brings bad UX experiences for those consuming the solutions on the cluster, and they may find it difficult to filter an actionable event from the cluster. For more information, please take a look at the [Kubernetes APIs convention][Events].
 
@@ -29,7 +29,7 @@ Eventf(regarding, related runtime.Object, eventtype, reason, action, message str
 
 
 <aside class="note">
-<h1>Example Usage</h1>
+<h4>Example Usage</h4>
 
 Following is an example of a code implementation that raises an Event.
 

@@ -30,7 +30,7 @@ for users to upgrade their projects from `vX` to `v(X+1)-alpha`.
 
 <aside class="note">
 
-<h1>Example</h1>
+<h4>Example</h4>
 
 Kubebuilder scaffolds projects with plugin `go.kubebuilder.io/v4` by default.
 

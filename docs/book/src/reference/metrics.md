@@ -241,7 +241,7 @@ spec:
 ### **(Recommended)** Enabling certificates for Production (Disabled by default)
 
 <aside class="warning">
-<h1>Why Is This Not Enabled by Default?</h1>
+<h4>Why Is This Not Enabled by Default?</h4>
 
 This option is not enabled by default because it introduces a dependency on CertManager.
 To keep the project as lightweight and beginner-friendly as possible, it is disabled by default.
@@ -249,7 +249,7 @@ To keep the project as lightweight and beginner-friendly as possible, it is disa
 </aside>
 
 <aside class="warning">
-<h1>Recommended for Production</h1>
+<h4>Recommended for Production</h4>
 
 The default scaffold in `cmd/main.go` uses a **controller-runtime feature** to
 automatically generate a self-signed certificate to secure the metrics server.
@@ -456,7 +456,7 @@ You may then record metrics to those collectors from any part of your
 reconcile loop. These metrics can be evaluated from anywhere in the operator code.
 
 <aside class="note">
-<h1>Enabling metrics in Prometheus UI</h1>
+<h4>Enabling metrics in Prometheus UI</h4>
 
 In order to publish metrics and view them on the Prometheus UI, the Prometheus instance would have to be configured to select the Service Monitor instance based on its labels.
 
@@ -468,7 +468,7 @@ other openmetrics systems to scrape.
 ![Screen Shot 2021-06-14 at 10 15 59 AM](https://user-images.githubusercontent.com/37827279/121932262-8843cd80-ccf9-11eb-9c8e-98d0eda80169.png)
 
 <aside class="note">
-<h1>Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</h1>
+<h4>Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</h4>
 
 Some known limitations and considerations have been identified. The settings for `cache TTL`, `anonymous access`, and
 `timeouts` are currently hardcoded, which may lead to performance and security concerns due to the inability to

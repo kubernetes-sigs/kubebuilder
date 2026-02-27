@@ -8,7 +8,7 @@ Migration may involve updating to a newer plugin version (e.g., from `go.kubebui
 Kubebuilder provides multiple migration paths to suit your workflow. Choose the approach that best fits your needs.
 
 <aside class="note">
-<h1>Understanding the PROJECT File</h1>
+<h4>Understanding the PROJECT File</h4>
 
 From Kubebuilder `v3.0.0` onwards, all inputs used by Kubebuilder are tracked in the [PROJECT][project-config] file.
 If you use the CLI to generate your scaffolds, this file will record the project's configuration and metadata,
@@ -22,7 +22,7 @@ which automation tools (alpha update, alpha generate, autoupdate plugin) depend 
 </aside>
 
 <aside class="warning">
-<h1>Project Customizations</h1>
+<h4>Project Customizations</h4>
 
 After using the CLI to create your project, you are free to customize the business logic and add features as you see fit.
 However, it is not recommended to deviate from the proposed project layout unless you know what you are doing.
@@ -59,7 +59,7 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
 <aside class="note">
-<h1>Requirements and Limitations</h1>
+<h4>Requirements and Limitations</h4>
 
 - Requires GitHub repository (GitHub Actions workflow)
 - Requires branch protection rules for safety (recommended)
@@ -82,7 +82,7 @@ This command uses the same underlying mechanism as the AutoUpdate Plugin. You ca
 resolve any conflicts if needed, and then push a Pull Request from your local environment.
 
 <aside class="note">
-<h1>Requirements and Limitations</h1>
+<h4>Requirements and Limitations</h4>
 
 - Requires projects created with Kubebuilder **`v4.5.0`** or later
 - For projects created before `v4.6.0`: the CLI version is not tracked in the `PROJECT` file, so you may need to use `alpha generate` first to establish a baseline
@@ -109,7 +109,7 @@ kubebuilder alpha generate
 ```
 
 <aside class="note">
-<h1>Requirements and Limitations</h1>
+<h4>Requirements and Limitations</h4>
 
 - Requires a `PROJECT` file (projects created with Kubebuilder **v3.0.0** or later)
 - Only re-scaffolds resources that were created using the CLI and tracked in the `PROJECT` file
@@ -132,7 +132,7 @@ webhooks, and other resources. Then, manually copy your business logic and custo
 To streamline this one-time migration, [AI Migration Helpers](./migration/ai-helpers.md) have been added to automate repetitive tasks.
 
 <aside class="note">
-<h1>When to Use Manual Migration</h1>
+<h4>When to Use Manual Migration</h4>
 
 Use this approach when:
 - Your project was created with Kubebuilder versions **before `v3.0.0`** (no `PROJECT` file)
