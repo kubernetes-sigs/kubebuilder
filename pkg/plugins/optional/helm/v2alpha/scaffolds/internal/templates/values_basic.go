@@ -113,7 +113,18 @@ manager:
 	f.addDeploymentConfig(&buf)
 
 	// RBAC configuration
-	buf.WriteString(`## Helper RBAC roles for managing custom resources
+	buf.WriteString(`## RBAC configuration
+##
+rbac:
+  ## Cluster-scoped RBAC resources (ClusterRole/ClusterRoleBinding)
+  ##
+  clusterScope:
+    # Set to false to skip cluster-scoped RBAC, useful when the operator
+    # should be restricted to a single namespace or when cluster-wide
+    # permissions are managed externally.
+    enabled: true
+
+## Helper RBAC roles for managing custom resources
 ##
 rbacHelpers:
   # Install convenience admin/editor/viewer roles for CRDs

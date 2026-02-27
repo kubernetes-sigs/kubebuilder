@@ -1,3 +1,4 @@
+{{- if .Values.rbac.clusterScope.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -15,3 +16,4 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
   namespace: {{ .Release.Namespace }}
+{{- end }}
