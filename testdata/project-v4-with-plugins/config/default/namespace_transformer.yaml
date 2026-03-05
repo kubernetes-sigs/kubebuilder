@@ -1,0 +1,39 @@
+# This NamespaceTransformer is an alternative to the
+# "namespace:" field in kustomization.yaml.
+# While the "namespace:" field overrides ALL namespaces
+# (potentially breaking multi-namespace setups), this transformer
+# with "unsetOnly: true" only sets namespace on resources
+# that don't already have one.
+#
+# This is useful when using namespace-scoped RBAC markers such as:
+#   //+kubebuilder:rbac:groups=apps,namespace=infrastructure,...
+# which generate Roles with explicit namespaces that should
+# be preserved.
+#
+# TIP: When using multiple namespaces, also consider using the
+# "roleName" parameter in your RBAC markers to give each Role
+# a unique name, e.g.:
+#   //+kubebuilder:rbac:namespace=infra,roleName=infra-role,...
+# This avoids ID conflicts even before switching to the
+# NamespaceTransformer.
+#
+# Usage:
+#   1. Comment out the "namespace:" field in kustomization.yaml
+#   2. Uncomment the "transformers:" section in kustomization.yaml
+#   3. Remove "namespace: system" from any resource files under
+#      config/ that should receive the default namespace from
+#      this transformer instead
+#
+# More info:
+#   https://kubectl.docs.kubernetes.io/references/kustomize/builtins/
+#   #_namespacetransformer_
+apiVersion: builtin
+kind: NamespaceTransformer
+metadata:
+  name: namespace-transformer
+  namespace: project-v4-with-plugins-system
+setRoleBindingSubjects: allServiceAccounts
+unsetOnly: true
+fieldSpecs:
+  - path: metadata/namespace
+    create: true
