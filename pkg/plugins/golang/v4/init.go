@@ -64,38 +64,30 @@ type initSubcommand struct {
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	p.commandName = cliMeta.CommandName
 
-	subcmdMeta.Description = `Initialize a new project including the following files:
-  - a "go.mod" with project dependencies
-  - a "PROJECT" file that stores project configuration
-  - a "Makefile" with several useful make targets for the project
-  - several YAML files for project deployment under the "config" directory
-  - a "cmd/main.go" file that creates the manager that will run the project controllers
+	subcmdMeta.Description = `Initialize a new project in the current directory.
+ 
+Following files will be generated automatically:
+  - go.mod: Go module with project dependencies
+  - PROJECT: file that stores project configuration
+  - Makefile: provides useful make targets for the project
+  - config/: Kubernetes manifests for deployment
+  - cmd/main.go: controller manager entry point
+  - Dockerfile: build controller manager container image
+  - test/: unit tests for the project
+  - hack/: contains licensing boilerplate.
 
-Required flags:
-  --domain: Domain for your APIs (e.g., example.org creates crew.example.org for API groups)
+Note:
+	
+    Below are some useful flags, see the Flags section for detailed descriptions.
+	Required flags:      --domain
+	Configuration flags: --repo, --owner, --license
+	Plugin flags:        --plugins
+	Layout flags:        --multigroup	
+	
+	Run 'kubebuilder init --plugins --help' to see available plugins.
 
-Configuration flags:
-  --repo: Go module path (e.g., github.com/user/repo); auto-detected if not provided
-  --owner: Owner name for copyright license headers
-  --license: License to use (apache2 or none, default: apache2)
+	Layout settings can be changed later with 'kubebuilder edit'.
 
-Plugin flags:
-  --plugins: Comma-separated list of plugins to use (default: go/v4)
-             Plugins scaffold files during init and are saved to the PROJECT layout
-             Future operations (i.e. create api, create webhook) call all plugins in the chain
-             Run 'kubebuilder init --plugins --help' to see available plugins
-
-Layout flags:
-  --multigroup: Enable multigroup layout to organize APIs by group
-                Scaffolds APIs in api/<group>/<version>/ instead of api/<version>/
-                Useful when managing multiple API groups (e.g., batch, apps, crew)
-  --namespaced: Enable namespace-scoped deployment instead of cluster-scoped
-                Manager watches one or more specific namespaces instead of all namespaces
-                Namespaces to watch are configured via WATCH_NAMESPACE environment variable
-                Uses Role/RoleBinding instead of ClusterRole/ClusterRoleBinding
-                Suitable for multi-tenant environments or limited scope deployments
-
-Note: Layout settings can be changed later with 'kubebuilder edit'.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project
   %[1]s init --domain example.org
@@ -127,16 +119,22 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
-		"license header to use (apache2 or none)")
-	fs.StringVar(&p.owner, "owner", "", "copyright owner for license headers")
+		"[Configuration] license to use (apache2 or none, default: apache2)")
+	fs.StringVar(&p.owner, "owner", "", "[Configuration] copyright owner for license headers")
 
 	// project args
-	fs.StringVar(&p.repo, "repo", "", "Go module name (e.g., github.com/user/repo); "+
-		"auto-detected from current directory if not provided")
+	fs.StringVar(&p.repo, "repo", "", "[Configuration] Go module path (e.g., github.com/user/repo); "+
+		"auto-detected if not provided and project is initialized within $GOPATH")
 	fs.BoolVar(&p.multigroup, "multigroup", false,
-		"enable multigroup layout (organize APIs by group)")
+		"[Layout] Enable multigroup layout to organize APIs by group. "+
+			"Scaffolds APIs in api/<group>/<version>/ instead of api/<version>/ "+
+			"Useful when managing multiple API groups (e.g., batch, apps, crew). ")
 	fs.BoolVar(&p.namespaced, "namespaced", false,
-		"enable namespace-scoped deployment (default: cluster-scoped)")
+		"[Layout] Enable namespace-scoped deployment instead of cluster-scoped (default: cluster-scoped). "+
+			"Manager watches one or more specific namespaces instead of all namespaces. "+
+			"Namespaces to watch are configured via WATCH_NAMESPACE environment variable. "+
+			"Uses Role/RoleBinding instead of ClusterRole/ClusterRoleBinding. "+
+			"Suitable for multi-tenant environments or limited scope deployments.")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
