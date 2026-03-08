@@ -105,7 +105,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
 
 	// Register --project-version on the root command so that it shows up in help.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version to scaffold (default: latest stable)")
 
 	// As the root command will be used to shot the help message under some error conditions,
 	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
