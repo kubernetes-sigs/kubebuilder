@@ -4,6 +4,10 @@
     publish = "docs/book/book"
     functions = "docs/book/functions"
 
+# Disables Pretty URLs feature so it doesn't break mdBook's ToC logic
+[build.processing.html]
+    pretty_urls = false
+
 # TODO(directxman12): I don't know why, but this (functions) stanza is in the
 # docs and local `netlify dev`, but the above one (under build) is used by the
 # online version :-/
