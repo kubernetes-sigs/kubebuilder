@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	certmanagerVersion = "v1.19.4"
+	certmanagerVersion = "v1.20.0"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 
 	defaultKindCluster = "kind"
