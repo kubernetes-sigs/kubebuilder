@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
