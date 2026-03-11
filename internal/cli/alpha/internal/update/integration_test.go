@@ -42,6 +42,32 @@ const (
 	toVersion             = "v4.6.0"
 	toVersionWithConflict = "v4.7.0"
 
+	// Memcached operator + all plugins integration test (mirrors testdata generate.sh with-plugins)
+	// Upgrade from a fixed past version to current (latest release when test runs).
+	memcachedFromVersion = "v4.11.1"
+
+	// Custom registry value added to Helm values.yaml; must be preserved after alpha update.
+	memcachedHelmCustomRegistry = "myregistry.io/custom/controller"
+
+	// Regex matching the commented Affinity block in deploy-image memcached controller (any whitespace).
+	// Used with plugin util ReplaceRegexInFile so we can use backtick replacement string.
+	memcachedAffinityCommentedRegex = `(?s)// TODO\(user\): Uncomment the following code to configure the nodeAffinity expression.*?//\s*\},`
+
+	// Uncommented Affinity block (customization to be preserved by alpha update).
+	memcachedAffinityUncommented = `// Node affinity for multi-arch (customization preserved by update)
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{Key: "kubernetes.io/arch", Operator: "In", Values: []string{"amd64", "arm64", "ppc64le", "s390x"}},
+										{Key: "kubernetes.io/os", Operator: "In", Values: []string{"linux"}},
+									},
+								}},
+							},
+						},
+					},`
+
 	controllerImplementation = `// Fetch the TestOperator instance
 	testOperator := &webappv1.TestOperator{}
 	err := r.Get(ctx, req.NamespacedName, testOperator)
@@ -289,6 +315,198 @@ var _ = Describe("kubebuilder", func() {
 			Expect(string(output)).To(ContainSubstring("No action taken"))
 		})
 	})
+
+	// Scaffolding (mock) is done with v4.11.1; the alpha update step is run with the current
+	// binary (kbc.BinaryName from PATH, e.g. from make install) so we test current code changes.
+	Context("alpha update with memcached operator and all plugins (Grafana, Helm, deploy-image)", func() {
+		var (
+			pathBinV4111 string
+			kbc          *utils.TestContext
+		)
+
+		BeforeEach(func() {
+			var err error
+			By("setting up test context (scaffold with v4.11.1; alpha update will use current binary)")
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(kbc.Prepare()).To(Succeed())
+
+			By("downloading kubebuilder release " + memcachedFromVersion)
+			pathBinV4111, err = downloadKubebuilderVersion(memcachedFromVersion)
+			Expect(err).NotTo(HaveOccurred())
+
+			kb := pathBinV4111
+			dir := kbc.Dir
+
+			By("initializing project (go/v4) as in generate.sh with-plugins")
+			cmd := exec.Command(kb, "init", "--domain", "testproject.org", "--repo",
+				"github.com/example/memcached-operator", "--plugins=go/v4")
+			cmd.Dir = dir
+			output, err := cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("init failed: %s", output))
+			// Note: v4.11.1 does not support --namespaced on init/edit; we scaffold without it for compatibility
+
+			By("creating Memcached API with deploy-image plugin (same args as generate.sh)")
+			cmd = exec.Command(kb, "create", "api",
+				"--group", "example.com", "--version", "v1alpha1", "--kind", "Memcached",
+				"--image=memcached:1.6.26-alpine3.19",
+				"--image-container-command=memcached,--memory-limit=64,-o,modern,-v",
+				"--image-container-port=11211", "--run-as-user=1001",
+				"--plugins=deploy-image/v1-alpha", "--make=false")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create api Memcached failed: %s", output))
+
+			By("creating webhook for Memcached (programmatic-validation)")
+			cmd = exec.Command(kb, "create", "webhook",
+				"--group", "example.com", "--version", "v1alpha1", "--kind", "Memcached",
+				"--programmatic-validation", "--make=false")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create webhook Memcached failed: %s", output))
+
+			By("adding custom implementation to Memcached controller (uncomment Affinity block)")
+			memcachedControllerPath := filepath.Join(dir, "internal", "controller", "memcached_controller.go")
+			Expect(util.ReplaceRegexInFile(memcachedControllerPath, memcachedAffinityCommentedRegex, memcachedAffinityUncommented)).
+				To(Succeed(), "failed to uncomment Affinity in memcached_controller.go")
+
+			By("creating Busybox API with deploy-image plugin")
+			cmd = exec.Command(kb, "create", "api",
+				"--group", "example.com", "--version", "v1alpha1", "--kind", "Busybox",
+				"--image=busybox:1.36.1", "--plugins=deploy-image/v1-alpha", "--make=false")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create api Busybox failed: %s", output))
+
+			By("creating Wordpress v1 and v2 with conversion webhook")
+			cmd = exec.Command(kb, "create", "api", "--group", "example.com", "--version", "v1", "--kind", "Wordpress",
+				"--controller", "--resource", "--make=false")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create api Wordpress v1 failed: %s", output))
+			cmd = exec.Command(kb, "create", "api", "--group", "example.com", "--version", "v2", "--kind", "Wordpress",
+				"--controller=false", "--resource", "--make=false")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create api Wordpress v2 failed: %s", output))
+			cmd = exec.Command(kb, "create", "webhook", "--group", "example.com", "--version", "v1", "--kind", "Wordpress",
+				"--conversion", "--make=false", "--spoke", "v2")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create webhook Wordpress conversion failed: %s", output))
+
+			By("editing project with Grafana plugin")
+			cmd = exec.Command(kb, "edit", "--plugins=grafana.kubebuilder.io/v1-alpha")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("edit grafana failed: %s", output))
+
+			By("running make all")
+			Expect(kbc.Make("all")).To(Succeed())
+
+			By("editing project with Helm plugin")
+			cmd = exec.Command(kb, "edit", "--plugins=helm.kubebuilder.io/v2-alpha")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("edit helm failed: %s", output))
+
+			By("customizing Helm chart values (custom registry to be preserved after update)")
+			valuesPath := filepath.Join(dir, "dist", "chart", "values.yaml")
+			Expect(util.ReplaceInFile(valuesPath, "repository: controller", "repository: "+memcachedHelmCustomRegistry)).
+				To(Succeed(), "failed to set custom registry in dist/chart/values.yaml")
+
+			By("editing project with Auto Update plugin")
+			cmd = exec.Command(kb, "edit", "--plugins=autoupdate.kubebuilder.io/v1-alpha", "--use-gh-models")
+			cmd.Dir = dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("edit autoupdate failed: %s", output))
+
+			By("running go mod tidy")
+			goTidy := exec.Command("go", "mod", "tidy")
+			goTidy.Dir = dir
+			output, err = goTidy.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("go mod tidy failed: %s", output))
+
+			By("initializing git and committing")
+			initializeGitRepo(dir)
+		})
+
+		AfterEach(func() {
+			By("cleaning up test artifacts")
+			if pathBinV4111 != "" {
+				_ = os.RemoveAll(filepath.Dir(pathBinV4111))
+			}
+			if kbc != nil {
+				_ = os.RemoveAll(kbc.Dir)
+				kbc.Destroy()
+			}
+		})
+
+		It("should update from v4.11.1 to current (latest) and regenerate Helm, Grafana, and deploy-image scaffolds", func() {
+			// kbc.BinaryName is the current binary (from PATH / make install); we test current code.
+			By("running alpha update from " + memcachedFromVersion + " to current (latest) with --force (temp dir: kbc.Dir)")
+			cmd := exec.Command(
+				kbc.BinaryName, "alpha", "update",
+				"--from-version", memcachedFromVersion,
+				"--from-branch", "main",
+				"--force",
+			)
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), string(out))
+
+			// With --force, update completes even with conflicts; result is on the output branch (squashed).
+			projectDir := kbc.Dir
+
+			By("checking that no unexpected conflict markers remain in key plugin outputs")
+			// Allow conflicts only in Makefile or go.mod if versions changed; plugin scaffolds should be clean
+			expectNoConflictMarkersInPath(projectDir, "dist/chart")
+			expectNoConflictMarkersInPath(projectDir, "grafana")
+			expectNoConflictMarkersInPath(projectDir, "api/v1alpha1")
+			expectNoConflictMarkersInPath(projectDir, "internal/controller")
+			expectNoConflictMarkersInPath(projectDir, "config/samples")
+			expectNoConflictMarkersInPath(projectDir, "config/rbac")
+
+			By("asserting Helm chart was properly regenerated (deploy-image resources included)")
+			expectFileExists(projectDir, "dist/chart/Chart.yaml")
+			expectFileExists(projectDir, "dist/chart/values.yaml")
+			expectFileExists(projectDir, "dist/chart/templates/crd/memcacheds.example.com.testproject.org.yaml")
+			expectFileExists(projectDir, "dist/chart/templates/crd/busyboxes.example.com.testproject.org.yaml")
+			expectFileExists(projectDir, "dist/chart/templates/crd/wordpresses.example.com.testproject.org.yaml")
+			expectFileExists(projectDir, "dist/chart/templates/rbac/memcached-admin-role.yaml")
+			expectFileExists(projectDir, "dist/chart/templates/rbac/busybox-admin-role.yaml")
+
+			By("asserting custom Helm values (registry) were preserved after regeneration")
+			valuesContent, err := os.ReadFile(filepath.Join(projectDir, "dist/chart/values.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(valuesContent)).To(ContainSubstring(memcachedHelmCustomRegistry),
+				"custom registry in values.yaml must be preserved by alpha update")
+
+			By("asserting Grafana dashboards were properly regenerated")
+			expectFileExists(projectDir, "grafana/controller-runtime-metrics.json")
+			expectFileExists(projectDir, "grafana/controller-resources-metrics.json")
+
+			By("asserting deploy-image scaffolds (Memcached, Busybox) were properly regenerated")
+			expectFileExists(projectDir, "api/v1alpha1/memcached_types.go")
+			expectFileExists(projectDir, "api/v1alpha1/busybox_types.go")
+			expectFileExists(projectDir, "internal/controller/memcached_controller.go")
+			expectFileExists(projectDir, "internal/controller/busybox_controller.go")
+			expectFileExists(projectDir, "config/samples/example.com_v1alpha1_memcached.yaml")
+			expectFileExists(projectDir, "config/samples/example.com_v1alpha1_busybox.yaml")
+			expectFileExists(projectDir, "config/rbac/memcached_admin_role.yaml")
+			expectFileExists(projectDir, "config/rbac/busybox_admin_role.yaml")
+
+			By("asserting custom Memcached controller implementation (uncommented Affinity) was preserved")
+			memcachedControllerContent, err := os.ReadFile(filepath.Join(projectDir, "internal/controller/memcached_controller.go"))
+			Expect(err).NotTo(HaveOccurred(), "failed to read memcached_controller.go")
+			memcachedControllerStr := string(memcachedControllerContent)
+			Expect(memcachedControllerStr).To(ContainSubstring("Affinity: &corev1.Affinity{"),
+				"uncommented Affinity in memcached controller must be preserved by alpha update")
+			Expect(memcachedControllerStr).To(ContainSubstring("NodeAffinity: &corev1.NodeAffinity{"))
+			Expect(memcachedControllerStr).To(ContainSubstring(`Key: "kubernetes.io/arch"`),
+				"node affinity MatchExpressions must be preserved")
+		})
+	})
 })
 
 func modifyMakefileControllerTools(projectDir, newVersion string) {
@@ -488,4 +706,32 @@ func expectModuleVersion(projectDir, module, version string) {
 	expected := fmt.Sprintf("%s %s", module, version)
 	Expect(string(content)).To(ContainSubstring(expected),
 		fmt.Sprintf("Expected to find: %s", expected))
+}
+
+// expectFileExists asserts that the given path under projectDir exists (file or dir).
+func expectFileExists(projectDir, relPath string) {
+	p := filepath.Join(projectDir, relPath)
+	_, err := os.Stat(p)
+	Expect(err).NotTo(HaveOccurred(), "expected file or dir to exist: %s", p)
+}
+
+// expectNoConflictMarkersInPath asserts that no file under dir (relative to projectDir) contains Git conflict markers.
+// Skips if dir does not exist (e.g. optional plugin not scaffolded).
+func expectNoConflictMarkersInPath(projectDir, dir string) {
+	root := filepath.Join(projectDir, dir)
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return
+	}
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		content, readErr := os.ReadFile(path)
+		if readErr != nil || bytes.Contains(content, []byte{0}) {
+			return nil
+		}
+		Expect(string(content)).NotTo(ContainSubstring("<<<<<<<"),
+			"expected no conflict markers in plugin output: %s", path)
+		return nil
+	})
 }
