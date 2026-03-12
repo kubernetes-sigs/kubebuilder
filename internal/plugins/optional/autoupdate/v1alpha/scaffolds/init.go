@@ -20,10 +20,10 @@ import (
 	"fmt"
 	log "log/slog"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/plugins/optional/autoupdate/v1alpha/scaffolds/internal/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha/scaffolds/internal/github"
 )
 
 var _ plugins.Scaffolder = &initScaffolder{}
