@@ -188,7 +188,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Captain")
+		setupLog.Error(err, "Failed to create controller", "controller", "captain")
+		os.Exit(1)
+	}
+	if err := (&controller.CaptainBackupReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "captain-backup")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -202,7 +209,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "FirstMate")
+		setupLog.Error(err, "Failed to create controller", "controller", "firstmate")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -216,7 +223,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Sailor")
+		setupLog.Error(err, "Failed to create controller", "controller", "sailor")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -230,7 +237,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Admiral")
+		setupLog.Error(err, "Failed to create controller", "controller", "admiral")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -244,7 +251,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Certificate")
+		setupLog.Error(err, "Failed to create controller", "controller", "certificate")
 		os.Exit(1)
 	}
 	// nolint:goconst

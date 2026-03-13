@@ -507,7 +507,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 		Context("returns correct flags", func() {
 			It("for nil API with Controller set", func() {
 				res.Controller = true
-				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller"))
+				// Controllers are now created separately, so always --controller=false in API step
+				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller=false"))
 			})
 			It("for non nil API (namespaced not set) with Controller not set", func() {
 				res.API.CRDVersion = "v1"
@@ -521,6 +522,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			})
 		})
 	})
+
 	// getWebhookResourceFlags
 	Context("getWebhookResourceFlags", func() {
 		It("returns correct flags for specified resources", func() {

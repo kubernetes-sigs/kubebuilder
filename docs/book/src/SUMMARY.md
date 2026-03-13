@@ -98,6 +98,7 @@
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
   - [Using an external Resource / API](./reference/using_an_external_resource.md)
+  - [Multiple Controllers Per Resource](./reference/multiple-controllers.md)
 
   - [Configuring EnvTest](./reference/envtest.md)
 

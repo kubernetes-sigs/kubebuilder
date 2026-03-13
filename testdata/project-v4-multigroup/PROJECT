@@ -32,7 +32,9 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: captain
+  - name: captain-backup
   domain: testproject.org
   group: crew
   kind: Captain

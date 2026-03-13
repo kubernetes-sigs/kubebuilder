@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const defaultMainPath = "cmd/main.go"
@@ -64,11 +65,20 @@ type MainUpdater struct {
 	// Flags to indicate which parts need to be included when updating the file
 	WireResource, WireController, WireWebhook bool
 
+	// ControllerName is the specific name for the controller being wired.
+	// If empty, the default name based on the resource kind will be used.
+	ControllerName string
+
 	// Deprecated - The flag should be removed from go/v5
 	// IsLegacyPath indicates if webhooks should be scaffolded under the API.
 	// Webhooks are now decoupled from APIs based on controller-runtime updates and community feedback.
 	// This flag ensures backward compatibility by allowing scaffolding in the legacy/deprecated path.
 	IsLegacyPath bool
+}
+
+// ReconcilerName returns the name for the reconciler struct.
+func (f *MainUpdater) ReconcilerName() string {
+	return resource.NormalizeReconcilerName(f.ControllerName, f.Resource.Kind)
 }
 
 // GetPath implements file.Builder
@@ -109,7 +119,7 @@ const (
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
 `
-	reconcilerSetupCodeFragment = `if err := (&controller.%sReconciler{
+	reconcilerSetupCodeFragment = `if err := (&controller.%s{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -117,7 +127,7 @@ const (
 		os.Exit(1)
 	}
 `
-	multiGroupReconcilerSetupCodeFragment = `if err := (&%scontroller.%sReconciler{
+	multiGroupReconcilerSetupCodeFragment = `if err := (&%scontroller.%s{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -187,12 +197,15 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	// Generate setup code fragments
 	setup := make([]string, 0)
 	if f.WireController {
+		reconcilerName := f.ReconcilerName()
+		controllerName := resource.GetControllerName(f.ControllerName, f.Resource.Kind, f.Resource.Group, f.MultiGroup)
+
 		if !f.MultiGroup || f.Resource.Group == "" {
 			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
-				f.Resource.Kind, f.Resource.Kind))
+				reconcilerName, controllerName))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind))
+				f.Resource.PackageName(), reconcilerName, controllerName))
 		}
 	}
 	if f.WireWebhook {
