@@ -134,6 +134,16 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 ```
 
+<aside class="note">
+<h1>Choosing the Write Method</h1>
+
+This example uses `Update` and `Status().Update` to keep the reconciliation flow readable. For
+production controllers, `Patch` with optimistic concurrency is usually safer when you only change a
+few fields, especially on shared objects. Use `Apply` when your controller declaratively owns fields
+on child resources. See [Choosing Between Update, Patch, and Apply][update-patch-apply].
+
+</aside>
+
 ## Watching Secondary Resources
 
 To ensure that changes to the secondary resource (such as the `Deployment`) trigger
@@ -186,3 +196,5 @@ Note that we are granting permissions to `watch` the resources.
 [cr-owner-ref-doc]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/controller/controllerutil#SetOwnerReference
 [controller-gen]: ./../controller-gen.md
 [markers]:./../markers/rbac.md
+[update-patch-apply]: ../update-patch-apply.md
+[strict-field-validation]: ../strict-field-validation.md
