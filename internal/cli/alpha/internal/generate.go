@@ -39,8 +39,9 @@ import (
 
 // Generate store the required info for the command
 type Generate struct {
-	InputDir  string
-	OutputDir string
+	InputDir           string
+	OutputDir          string
+	SkipGoVersionCheck bool
 }
 
 // Define a variable to allow overriding the behavior of getExecutablePath for testing.
@@ -95,7 +96,7 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error changing working directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err = kubebuilderInit(projectConfig); err != nil {
+	if err = kubebuilderInit(projectConfig, opts); err != nil {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
@@ -186,8 +187,8 @@ func changeWorkingDirectory(outputDir string) error {
 }
 
 // Initializes the project with Kubebuilder.
-func kubebuilderInit(s store.Store) error {
-	args := append([]string{"init"}, getInitArgs(s)...)
+func kubebuilderInit(s store.Store, opts *Generate) error {
+	args := append([]string{"init"}, getInitArgs(s, opts)...)
 	execPath, err := getExecutablePathFunc()
 	if err != nil {
 		return err
@@ -387,8 +388,13 @@ func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) err
 }
 
 // Helper function to get Init arguments for Kubebuilder.
-func getInitArgs(s store.Store) []string {
+func getInitArgs(s store.Store, opts *Generate) []string {
 	var args []string
+
+	if opts.SkipGoVersionCheck {
+		args = append(args, "--skip-go-version-check")
+	}
+
 	plugins := s.Config().GetPluginChain()
 
 	// Define outdated plugin versions that need replacement
