@@ -340,8 +340,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -350,8 +350,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3-alpha"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -364,8 +364,10 @@ var _ = Describe("generate: get-args-helpers", func() {
 						repo:        "bar",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements(
+						"--skip-go-version-check",
+						"--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
 						"--domain", "foo.com", "--repo", "bar"))
 					Expect(args).NotTo(ContainElement(ContainSubstring("helm.kubebuilder.io/v1-alpha")))
 				})
@@ -377,8 +379,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("returns correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -392,8 +394,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						projectName: "my-project",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
 				})
 			})
@@ -407,8 +409,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						multigroup:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--multigroup"))
 				})
 			})
@@ -422,8 +424,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
 				})
 			})
@@ -438,10 +440,21 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true})
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--multigroup", "--namespaced"))
 				})
+			})
+		})
+
+		Context("when skipGoVersionCheck is false", func() {
+			It("does not include --skip-go-version-check", func() {
+				cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
+				store := &fakeStore{cfg: cfg}
+				args := getInitArgs(store, &Generate{SkipGoVersionCheck: false})
+				Expect(args).NotTo(ContainElement("--skip-go-version-check"))
+				Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					"--domain", "foo.com", "--repo", "bar"))
 			})
 		})
 	})
@@ -766,7 +779,7 @@ var _ = Describe("generate: kubebuilder", func() {
 				repo:        "github.com/example/repo",
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(kubebuilderInit(store)).To(Succeed())
+			Expect(kubebuilderInit(store, &Generate{SkipGoVersionCheck: true})).To(Succeed())
 		})
 	})
 
