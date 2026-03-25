@@ -190,10 +190,17 @@ func (t *HelmTemplater) escapeExistingTemplateSyntax(yamlContent string) string 
 		}
 
 		// Otherwise, escape it to preserve as literal text
-		// Collapse any newline+indent that sigs.k8s.io/yaml may have introduced via line-wrapping,
-		// then escape any quotes inside the template content.
+		// Collapse any newline+indent that sigs.k8s.io/yaml may have introduced via line-wrapping.
 		collapsed := regexp.MustCompile(`\n[ \t]+`).ReplaceAllString(content, " ")
-		escapedContent := strings.ReplaceAll(collapsed, `"`, `\"`)
+
+		// Before re-escaping for Go template string literals, unescape any YAML double-quoted
+		// scalar escape sequences. yaml.Marshal emits \" for a literal " inside a double-quoted
+		// YAML scalar; without this step the subsequent "→\" replacement double-escapes them to
+		// \\" which breaks Helm's Go template parser: \\ becomes one backslash, then the next "
+		// closes the string prematurely, leaving tokens like "asset-id" outside where "-" is a
+		// bad character (U+002D).
+		unescaped := strings.ReplaceAll(collapsed, `\"`, `"`)
+		escapedContent := strings.ReplaceAll(unescaped, `"`, `\"`)
 
 		// Wrap in Helm string literal: {{ "{{...}}" }}
 		return `{{ "{{` + escapedContent + `}}" }}`

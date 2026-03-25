@@ -26,7 +26,7 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/update/helpers"
 )
 
 // Validate checks the input info provided for the update and populates the cliVersion

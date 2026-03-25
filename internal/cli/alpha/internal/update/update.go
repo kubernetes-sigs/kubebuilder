@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/update/helpers"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/update/helpers"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 

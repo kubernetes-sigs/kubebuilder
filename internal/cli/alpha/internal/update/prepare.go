@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal/common"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 )
 

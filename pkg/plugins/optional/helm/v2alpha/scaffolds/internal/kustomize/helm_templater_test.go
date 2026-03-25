@@ -948,6 +948,37 @@ spec:
 			Expect(result).To(ContainSubstring(`{{ "{{ .Config.Message \"default\" }}" }}`))
 		})
 
+		It("should not double-escape quotes already escaped by yaml.Marshal in double-quoted YAML scalars", func() {
+			// Regression test: yaml.Marshal represents literal " inside a {{ }} expression as \"
+			// in a double-quoted YAML scalar, so a second pass escaping " → \" produced \\" which
+			// broke Helm's template parser by closing the string literal early (U+002D '-' error).
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("webrequestcommitstatuses.promoter.argoproj.io")
+
+			// Simulate the raw YAML text that yaml.Marshal produces for a double-quoted scalar
+			// containing a " character – the inner " appears as \" in the YAML text.
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+spec:
+  versions:
+  - schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            description: "example: {{ index .NamespaceMetadata.Labels \"asset-id\" }}"`
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// The escaped form must be valid Go template syntax: \" (single backslash+quote),
+			// NOT \\" (double backslash+quote) which would terminate the string literal early.
+			Expect(result).To(ContainSubstring(`{{ "{{ index .NamespaceMetadata.Labels \"asset-id\" }}" }}`),
+				"pre-escaped YAML quotes must not be double-escaped to \\\\ which breaks Helm template parsing")
+			Expect(result).NotTo(ContainSubstring(`\\"asset-id\\"`),
+				"double-escaped quotes (\\\\\") must not appear in the output")
+		})
+
 		It("should escape templates in ConfigMaps and other non-CRD resources", func() {
 			configMapResource := &unstructured.Unstructured{}
 			configMapResource.SetAPIVersion("v1")

@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
+	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal"
 )
 
 // NewScaffoldCommand returns a new scaffold command, providing the `kubebuilder alpha generate`
@@ -77,6 +77,9 @@ If no output directory is provided, the current working directory will be cleane
 		"Directory where the new project scaffold will be written. "+
 			"If unset, re-scaffolding occurs in-place "+
 			"and will delete existing files (except .git and PROJECT).")
+
+	scaffoldCmd.Flags().BoolVar(&opts.SkipGoVersionCheck, "skip-go-version-check", true,
+		"skip the Go version check during project generation")
 
 	return scaffoldCmd
 }

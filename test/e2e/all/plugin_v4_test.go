@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/test/e2e/helpers"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/internal/helpers"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 

@@ -614,9 +614,81 @@ version: "3"
 				var c Cfg
 				Expect(c.UnmarshalYAML([]byte(content))).NotTo(Succeed())
 			},
-			Entry("for unknown fields", `field: 1
-version: "3"`),
+			Entry("for invalid YAML", `invalid: yaml: content
+  badly indented`),
 		)
+
+		// Test forward compatibility - unknown fields should be ignored
+		Context("Forward compatibility", func() {
+			It("should ignore unknown fields for forward compatibility", func() {
+				// Old kubebuilder reading PROJECT file with new fields
+				content := `version: "3"
+domain: example.com
+repo: github.com/example/project
+projectName: test-project
+unknownField: "should be ignored"
+anotherUnknownField: 123`
+
+				var c Cfg
+				Expect(c.UnmarshalYAML([]byte(content))).To(Succeed())
+				Expect(c.Domain).To(Equal("example.com"))
+				Expect(c.Repository).To(Equal("github.com/example/project"))
+				Expect(c.Name).To(Equal("test-project"))
+			})
+
+			It("should ignore the new 'controllers' field for backward compatibility", func() {
+				// Simulates old kubebuilder reading PROJECT file from new kubebuilder
+				// that has the "controllers" field in resources
+				content := `version: "3"
+domain: testproject.org
+repo: sigs.k8s.io/kubebuilder/testdata/project
+projectName: test-project
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controllers:
+  - name: captain
+  - name: captain-backup
+  domain: testproject.org
+  group: crew
+  kind: Captain
+  version: v1`
+
+				var c Cfg
+				Expect(c.UnmarshalYAML([]byte(content))).To(Succeed())
+				Expect(c.Domain).To(Equal("testproject.org"))
+				Expect(c.Resources).To(HaveLen(1))
+				Expect(c.Resources[0].Group).To(Equal("crew"))
+				Expect(c.Resources[0].Kind).To(Equal("Captain"))
+				// The "controllers" field should be silently ignored by older versions
+			})
+
+			It("should handle mixed known and unknown fields", func() {
+				content := `version: "3"
+domain: example.com
+repo: github.com/example/project
+projectName: test-project
+layout:
+- go.kubebuilder.io/v4
+unknownField1: "ignored"
+multigroup: true
+unknownField2:
+  nested: "also ignored"
+resources:
+- group: apps
+  version: v1
+  kind: Deployment
+  newField: "ignored in resource"`
+
+				var c Cfg
+				Expect(c.UnmarshalYAML([]byte(content))).To(Succeed())
+				Expect(c.Domain).To(Equal("example.com"))
+				Expect(c.MultiGroup).To(BeTrue())
+				Expect(c.PluginChain).To(Equal(stringSlice{"go.kubebuilder.io/v4"}))
+				Expect(c.Resources).To(HaveLen(1))
+			})
+		})
 	})
 })
 

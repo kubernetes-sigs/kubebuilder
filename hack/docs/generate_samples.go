@@ -23,7 +23,7 @@ import (
 	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
 	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
 	multiversion "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/multiversion-tutorial"
-	"sigs.k8s.io/kubebuilder/v4/pkg/logging"
+	"sigs.k8s.io/kubebuilder/v4/internal/logging"
 )
 
 // KubebuilderBinName make sure executing `build_kb` to generate kb executable from the source code
