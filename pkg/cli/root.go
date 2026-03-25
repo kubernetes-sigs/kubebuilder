@@ -103,6 +103,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 
 	// Global flags for all subcommands.
 	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
+	cmd.PersistentFlags().String(projectFileFlag, "", "path to the project configuration file (default \"PROJECT\")")
 
 	// Register --project-version on the root command so that it shows up in help.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
