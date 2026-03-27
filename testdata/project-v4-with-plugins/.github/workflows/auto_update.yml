@@ -24,7 +24,7 @@ jobs:
     # Checkout the repository.
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
 
     # Set up Go environment.
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
       with:
         go-version: stable
 
