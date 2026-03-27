@@ -19,7 +19,6 @@ package hack
 import (
 	"fmt"
 	"path/filepath"
-	"time"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
@@ -42,9 +41,6 @@ type Boilerplate struct {
 
 	// Owner is the copyright owner - e.g. "The Kubernetes Authors"
 	Owner string
-
-	// Year is the copyright year
-	Year string
 }
 
 // Validate implements file.RequiresValidation
@@ -79,10 +75,6 @@ func (f *Boilerplate) SetTemplateDefaults() error {
 		}
 	}
 
-	if f.Year == "" {
-		f.Year = fmt.Sprintf("%v", time.Now().Year())
-	}
-
 	// Boilerplate given
 	if len(f.Boilerplate) > 0 {
 		f.TemplateBody = f.Boilerplate
@@ -96,9 +88,9 @@ func (f *Boilerplate) SetTemplateDefaults() error {
 
 const boilerplateTemplate = `/*
 {{ if .Owner -}}
-Copyright {{ .Year }} {{ .Owner }}.
+Copyright YEAR {{ .Owner }}.
 {{- else -}}
-Copyright {{ .Year }}.
+Copyright YEAR.
 {{- end }}
 {{ index .Licenses .License }}*/`
 

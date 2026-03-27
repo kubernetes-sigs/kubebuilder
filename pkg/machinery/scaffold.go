@@ -25,8 +25,10 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/tools/imports"
@@ -108,10 +110,11 @@ func WithConfig(cfg config.Config) ScaffoldOption {
 	}
 }
 
-// WithBoilerplate provides the boilerplate to the Scaffold
+// WithBoilerplate provides the boilerplate to the Scaffold.
+// Any YEAR placeholder in the boilerplate is substituted with the current year.
 func WithBoilerplate(boilerplate string) ScaffoldOption {
 	return func(s *Scaffold) {
-		s.injector.boilerplate = boilerplate
+		s.injector.boilerplate = SubstituteYear(boilerplate)
 	}
 }
 
@@ -545,4 +548,10 @@ func (s Scaffold) writeFile(f *File) error {
 	}
 
 	return nil
+}
+
+// SubstituteYear replaces every occurrence of "YEAR" in the boilerplate string
+// with the current UTC year.
+func SubstituteYear(boilerplate string) string {
+	return strings.ReplaceAll(boilerplate, "YEAR", strconv.Itoa(time.Now().UTC().Year()))
 }
