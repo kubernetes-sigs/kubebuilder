@@ -229,8 +229,13 @@ func (sp *Sample) GenerateSampleProject() {
 
 // CodeGen will call targets to generate code
 func (sp *Sample) CodeGen() {
-	cmd := exec.Command("go", "mod", "tidy")
+	// Pin google.golang.org/grpc to the patched version (CVE: SNYK-GOLANG-GOOGLEGOLANGORGGRPC-15691172)
+	cmd := exec.Command("go", "get", "google.golang.org/grpc@v1.79.3")
 	_, err := sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to pin google.golang.org/grpc for getting started tutorial", err)
+
+	cmd = exec.Command("go", "mod", "tidy")
+	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run go mod tidy all for getting started tutorial", err)
 
 	cmd = exec.Command("make", "all")

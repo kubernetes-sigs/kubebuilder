@@ -135,6 +135,8 @@ function scaffold_test_project {
 
   # To avoid conflicts
   rm -f go.sum
+  # Pin google.golang.org/grpc to the patched version (CVE: SNYK-GOLANG-GOOGLEGOLANGORGGRPC-15691172)
+  go get google.golang.org/grpc@v1.79.3
   go mod tidy
   popd
 }

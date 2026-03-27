@@ -96,8 +96,13 @@ func (sp *Sample) UpdateTutorial() {
 	// 4. update makefile
 	sp.updateMakefile()
 	// 5. generate extra files
-	cmd := exec.Command("go", "mod", "tidy")
+	// Pin google.golang.org/grpc to the patched version (CVE: SNYK-GOLANG-GOOGLEGOLANGORGGRPC-15691172)
+	cmd := exec.Command("go", "get", "google.golang.org/grpc@v1.79.3")
 	_, err := sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to pin google.golang.org/grpc for cronjob tutorial", err)
+
+	cmd = exec.Command("go", "mod", "tidy")
+	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
 
 	cmd = exec.Command("go", "get", "github.com/robfig/cron")
