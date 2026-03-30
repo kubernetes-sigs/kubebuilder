@@ -318,6 +318,15 @@ prometheus:
   enable: false
 ```
 
+### Extra volumes
+
+The chart supports additional volumes and volume mounts for the manager (e.g. secrets, config files), alongside the built-in webhook and metrics cert volumes.
+
+- **Config volumes**: Volumes in the manager deployment (e.g. `config/manager/manager.yaml` or kustomize patches) are written into the chart template. Re-running `kubebuilder edit --plugins=helm/v2-alpha` updates the template from config; `values.yaml` is not overwritten.
+- **Values**: When the manager deployment has extra volumes (other than webhook/metrics), `values.yaml` gets `manager.extraVolumes` and `manager.extraVolumeMounts`. Use them to add more entries; the template appends them after the config volumes. Same structure as in a Pod spec; mount names must match volume names.
+
+Webhook and metrics (`webhook-certs`, `metrics-certs`) are not in `extraVolumes`. They are conditional on `certManager.enable` and `metrics.enable`, like the rest of the chart.
+
 ### Installation
 
 The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
