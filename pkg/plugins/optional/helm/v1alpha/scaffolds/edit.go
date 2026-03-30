@@ -14,6 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package scaffolds implements the scaffolding engine for the Helm v1-alpha plugin.
+//
+// Deprecated: The helm/v1alpha/scaffolds package is deprecated. Use [helm/v2alpha/scaffolds] instead.
+// The new helm/v2-alpha plugin replaces the deprecated helm/v1-alpha and brings major improvements in
+// flexibility and maintainability, championing changes driven by community feedback. Chart values are
+// now better exposed, enabling easier customization and addressing long-standing issues.
+// See [Helm Plugin (helm/v2-alpha)].
+//
+// This package is kept for compatibility and will eventually be removed.
+//
+// [helm/v2alpha/scaffolds]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds
+// [Helm Plugin (helm/v2-alpha)]: https://book.kubebuilder.io/plugins/available/helm-v2-alpha
 package scaffolds
 
 import (
