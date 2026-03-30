@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 var _ machinery.Template = &Controller{}
@@ -39,15 +40,26 @@ type Controller struct {
 	ControllerRuntimeVersion string
 
 	Force bool
+
+	// ControllerName is the specific name for this controller.
+	// If empty, a default name based on the resource kind will be used.
+	ControllerName string
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
+		fileName := "%[kind]_controller.go"
+		if f.ControllerName != "" {
+			// Normalize controller name for file naming (hyphens to underscores)
+			normalizedName := resource.NormalizeFileName(f.ControllerName)
+			fileName = normalizedName + "_controller.go"
+		}
+
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
+			f.Path = filepath.Join("internal", "controller", "%[group]", fileName)
 		} else {
-			f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
+			f.Path = filepath.Join("internal", "controller", fileName)
 		}
 	}
 
@@ -63,6 +75,16 @@ func (f *Controller) SetTemplateDefaults() error {
 	}
 
 	return nil
+}
+
+// ReconcilerName returns the name for the reconciler struct.
+func (f *Controller) ReconcilerName() string {
+	return resource.NormalizeReconcilerName(f.ControllerName, f.Resource.Kind)
+}
+
+// ControllerRuntimeName returns the controller runtime name used in Named().
+func (f *Controller) ControllerRuntimeName() string {
+	return resource.GetControllerName(f.ControllerName, f.Resource.Kind, f.Resource.Group, f.MultiGroup)
 }
 
 //nolint:lll
@@ -81,8 +103,8 @@ import (
 	{{- end }}
 )
 
-// {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
-type {{ .Resource.Kind }}Reconciler struct {
+// {{ .ReconcilerName }} reconciles a {{ .Resource.Kind }} object
+type {{ .ReconcilerName }} struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -106,7 +128,7 @@ type {{ .Resource.Kind }}Reconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@{{ .ControllerRuntimeVersion }}/pkg/reconcile
-func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *{{ .ReconcilerName }}) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = logf.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -115,7 +137,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *{{ .ReconcilerName }}) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		{{ if not (isEmptyStr .Resource.Path) -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
@@ -123,11 +145,7 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		// For().
 		{{- end }}
-		{{- if and (.MultiGroup) (not (isEmptyStr .Resource.Group)) }}
-		Named("{{ lower .Resource.Group }}-{{ lower .Resource.Kind }}").
-		{{- else }}
-		Named("{{ lower .Resource.Kind }}").
-		{{- end }}
+		Named("{{ .ControllerRuntimeName }}").
 		Complete(r)
 }
 `

@@ -474,9 +474,9 @@ var _ = Describe("Cfg", func() {
 							Version: "v1",
 							Kind:    "Kind2",
 						},
-						API:        &resource.API{CRDVersion: "v1"},
-						Controller: true,
-						Webhooks:   &resource.Webhooks{WebhookVersion: "v1"},
+						API:         &resource.API{CRDVersion: "v1"},
+						Controllers: &resource.Controllers{{Name: "kind2"}},
+						Webhooks:    &resource.Webhooks{WebhookVersion: "v1"},
 					},
 					{
 						GVK: resource.GVK{
@@ -498,7 +498,7 @@ var _ = Describe("Cfg", func() {
 							CRDVersion: "v1",
 							Namespaced: true,
 						},
-						Controller: true,
+						Controllers: &resource.Controllers{{Name: "kind"}},
 						Webhooks: &resource.Webhooks{
 							WebhookVersion: "v1",
 							Defaulting:     true,
@@ -553,7 +553,8 @@ resources:
   version: v1
 - api:
     crdVersion: v1
-  controller: true
+  controllers:
+  - name: kind2
   group: group
   kind: Kind2
   version: v1
@@ -566,7 +567,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: kind
   group: group2
   kind: Kind
   version: v1

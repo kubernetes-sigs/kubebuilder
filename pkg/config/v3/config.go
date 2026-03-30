@@ -395,5 +395,10 @@ func (c *Cfg) UnmarshalYAML(b []byte) error {
 		return config.UnmarshalError{Err: err}
 	}
 
+	// Normalize resources to auto-migrate legacy controller: true format
+	for i := range c.Resources {
+		c.Resources[i].Normalize()
+	}
+
 	return nil
 }

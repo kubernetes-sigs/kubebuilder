@@ -106,9 +106,25 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if doController {
+		// Get the controller name to scaffold
+		// If using the new Controllers field, get the last added controller name
+		// Otherwise, use empty string to generate default name
+		controllerName := ""
+		if s.resource.Controllers != nil && !s.resource.Controllers.IsEmpty() {
+			names := s.resource.Controllers.GetControllerNames()
+			if len(names) > 0 {
+				// Use the last controller name (the one just added)
+				controllerName = names[len(names)-1]
+			}
+		}
+
 		if err := scaffold.Execute(
 			&controllers.SuiteTest{Force: s.force},
-			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
+			&controllers.Controller{
+				ControllerRuntimeVersion: ControllerRuntimeVersion,
+				Force:                    s.force,
+				ControllerName:           controllerName,
+			},
 			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %w", err)
@@ -116,7 +132,19 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(
-		&cmd.MainUpdater{WireResource: doAPI, WireController: doController},
+		&cmd.MainUpdater{
+			WireResource:   doAPI,
+			WireController: doController,
+			ControllerName: func() string {
+				if s.resource.Controllers != nil && !s.resource.Controllers.IsEmpty() {
+					names := s.resource.Controllers.GetControllerNames()
+					if len(names) > 0 {
+						return names[len(names)-1]
+					}
+				}
+				return ""
+			}(),
+		},
 	); err != nil {
 		return fmt.Errorf("error updating cmd/main.go: %w", err)
 	}

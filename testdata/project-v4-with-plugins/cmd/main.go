@@ -234,7 +234,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("memcached-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Memcached")
+		setupLog.Error(err, "Failed to create controller", "controller", "memcached")
 		os.Exit(1)
 	}
 	if err := (&controller.BusyboxReconciler{
@@ -242,7 +242,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("busybox-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Busybox")
+		setupLog.Error(err, "Failed to create controller", "controller", "busybox")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -256,7 +256,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Wordpress")
+		setupLog.Error(err, "Failed to create controller", "controller", "wordpress")
 		os.Exit(1)
 	}
 	// nolint:goconst

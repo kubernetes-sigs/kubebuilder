@@ -223,7 +223,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Captain")
+		setupLog.Error(err, "Failed to create controller", "controller", "crew-captain")
+		os.Exit(1)
+	}
+	if err := (&crewcontroller.CaptainBackupReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "crew-captain-backup")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -237,14 +244,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Frigate")
+		setupLog.Error(err, "Failed to create controller", "controller", "ship-frigate")
 		os.Exit(1)
 	}
 	if err := (&shipcontroller.DestroyerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Destroyer")
+		setupLog.Error(err, "Failed to create controller", "controller", "ship-destroyer")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -258,7 +265,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Cruiser")
+		setupLog.Error(err, "Failed to create controller", "controller", "ship-cruiser")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -272,49 +279,49 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Kraken")
+		setupLog.Error(err, "Failed to create controller", "controller", "sea-creatures-kraken")
 		os.Exit(1)
 	}
 	if err := (&seacreaturescontroller.LeviathanReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Leviathan")
+		setupLog.Error(err, "Failed to create controller", "controller", "sea-creatures-leviathan")
 		os.Exit(1)
 	}
 	if err := (&foopolicycontroller.HealthCheckPolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "HealthCheckPolicy")
+		setupLog.Error(err, "Failed to create controller", "controller", "foo.policy-healthcheckpolicy")
 		os.Exit(1)
 	}
 	if err := (&appscontroller.DeploymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Deployment")
+		setupLog.Error(err, "Failed to create controller", "controller", "apps-deployment")
 		os.Exit(1)
 	}
 	if err := (&foocontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Bar")
+		setupLog.Error(err, "Failed to create controller", "controller", "foo-bar")
 		os.Exit(1)
 	}
 	if err := (&fizcontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Bar")
+		setupLog.Error(err, "Failed to create controller", "controller", "fiz-bar")
 		os.Exit(1)
 	}
 	if err := (&certmanagercontroller.CertificateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Certificate")
+		setupLog.Error(err, "Failed to create controller", "controller", "cert-manager-certificate")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -343,7 +350,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("memcached-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Memcached")
+		setupLog.Error(err, "Failed to create controller", "controller", "example.com-memcached")
 		os.Exit(1)
 	}
 	if err := (&examplecomcontroller.BusyboxReconciler{
@@ -351,7 +358,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorder("busybox-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Busybox")
+		setupLog.Error(err, "Failed to create controller", "controller", "example.com-busybox")
 		os.Exit(1)
 	}
 	// nolint:goconst
@@ -365,7 +372,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "Wordpress")
+		setupLog.Error(err, "Failed to create controller", "controller", "example.com-wordpress")
 		os.Exit(1)
 	}
 	// nolint:goconst

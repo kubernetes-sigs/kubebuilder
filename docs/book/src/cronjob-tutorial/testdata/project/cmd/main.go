@@ -204,7 +204,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "CronJob")
+		setupLog.Error(err, "Failed to create controller", "controller", "cronjob")
 		os.Exit(1)
 	}
 
