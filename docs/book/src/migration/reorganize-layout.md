@@ -11,9 +11,9 @@ Reorganize files to match the new directory layout.
 
 **If ALL are already in the new layout**, skip to [Step 2](./discovery-commands.md)
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Important: Best Effort Only</h1>
+<p class="note-title">Important: Best Effort Only</p>
 
 These AI instructions work for projects using **standard Kubebuilder directory layout**. Projects with heavily customized structures may require manual reorganization.
 

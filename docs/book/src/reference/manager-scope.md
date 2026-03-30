@@ -2,8 +2,8 @@
 
 Manager scope determines which namespace(s) your manager watches and manages resources in.
 
-<aside class="note">
-<h1>Manager Scope vs CRD Scope</h1>
+<aside class="note" role="note">
+<p class="note-title">Manager Scope vs CRD Scope</p>
 
 Manager scope is independent from CRD scope. See [Understanding Scopes](./scopes.md) for an explanation of how these two concepts differ.
 </aside>
@@ -137,17 +137,17 @@ kubectl apply -f dist/install.yaml
 
 The `setupCacheNamespaces` helper function automatically handles both single and multiple namespaces without conditional logic.
 
-<aside class="note">
-<h1>Example</h1>
+<aside class="note" role="note">
+<p class="note-title">Example</p>
 
 The `testdata/project-v4-with-plugins` in the Kubebuilder repository demonstrates a complete namespace-scoped manager configuration.
 
 See: [testdata/project-v4-with-plugins](https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins)
 </aside>
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Webhooks and Namespace-Scoped Mode</h1>
+<p class="note-title">Webhooks and Namespace-Scoped Mode</p>
 
 If your project has webhooks, the manager cache is restricted to `WATCH_NAMESPACE`, but webhooks receive requests from all namespaces by default.
 

@@ -4,8 +4,8 @@ By default, controller-runtime builds a global prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
 
-<aside class="warning">
-    <h3>IMPORTANT: If you are using `kube-rbac-proxy`</h3>
+<aside class="warning" role="note">
+    <p class="note-title">IMPORTANT: If you are using `kube-rbac-proxy`</p>
 
 Please stop using the image `gcr.io/kubebuilder/kube-rbac-proxy` as soon as possible.
 Your projects will be affected and may fail to work if the image cannot be pulled.
@@ -73,8 +73,8 @@ config/rbac/metrics_reader_role.yaml
 
 This file contains the required RBAC rules to allow access to the metrics endpoint.
 
-<aside class="note">
-<H1>This ClusterRole is only a helper </H1>
+<aside class="note" role="note">
+<p class="note-title">This ClusterRole is only a helper </p>
 
 Kubebuilder **does not scaffold a RoleBinding or ClusterRoleBinding by default.**
 This is an intentional design choice to avoid:
@@ -112,8 +112,8 @@ subjects:
   namespace: system # Replace 'system' with your controller-manager's namespace
 ```
 
-<aside class="note">
-<H1>Why this is manual:</H1>
+<aside class="note" role="note">
+<p class="note-title">Why this is manual:</p>
 
 Kubebuilder avoids scaffolding RoleBindings by default because it might:
  - Bind to the wrong ServiceAccount
@@ -157,8 +157,8 @@ curl -v -k -H "Authorization: Bearer $TOKEN" \
   https://<project-name>-controller-manager-metrics-service.<project-name>-system.svc.cluster.local:8443/metrics
 ```
 
-<aside class="note">
-<H1>Notes</H1>
+<aside class="note" role="note">
+<p class="note-title">Notes</p>
 
 - Replace `<project-name>`, `<namespace>`, and `<service-account-name>` accordingly.
 - Ensure TLS is enabled and certificates are valid if not skipping verification (`-k`).
@@ -240,16 +240,16 @@ spec:
 
 ### **(Recommended)** Enabling certificates for Production (Disabled by default)
 
-<aside class="warning">
-<h1>Why Is This Not Enabled by Default?</h1>
+<aside class="warning" role="note">
+<p class="note-title">Why Is This Not Enabled by Default?</p>
 
 This option is not enabled by default because it introduces a dependency on CertManager.
 To keep the project as lightweight and beginner-friendly as possible, it is disabled by default.
 
 </aside>
 
-<aside class="warning">
-<h1>Recommended for Production</h1>
+<aside class="warning" role="note">
+<p class="note-title">Recommended for Production</p>
 
 The default scaffold in `cmd/main.go` uses a **controller-runtime feature** to
 automatically generate a self-signed certificate to secure the metrics server.
@@ -394,9 +394,9 @@ NAME                                         AGE
 monitor-controller-manager-metrics-monitor   2m8s
 ```
 
-<aside class="warning">
-<h2>If you are using Prometheus Operator ensure that you have the required
-permissions</h2>
+<aside class="warning" role="note">
+<p class="note-title">If you are using Prometheus Operator ensure that you have the required
+permissions</p>
 
 If you are using Prometheus Operator, be aware that, by default, its RBAC
 rules are only enabled for the `default` and `kube-system namespaces`. See its
@@ -455,8 +455,8 @@ func init() {
 You may then record metrics to those collectors from any part of your
 reconcile loop. These metrics can be evaluated from anywhere in the operator code.
 
-<aside class="note">
-<h1>Enabling metrics in Prometheus UI</h1>
+<aside class="note" role="note">
+<p class="note-title">Enabling metrics in Prometheus UI</p>
 
 In order to publish metrics and view them on the Prometheus UI, the Prometheus instance would have to be configured to select the Service Monitor instance based on its labels.
 
@@ -467,8 +467,8 @@ other openmetrics systems to scrape.
 
 ![Screen Shot 2021-06-14 at 10 15 59 AM](https://user-images.githubusercontent.com/37827279/121932262-8843cd80-ccf9-11eb-9c8e-98d0eda80169.png)
 
-<aside class="note">
-<h1>Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</h1>
+<aside class="note" role="note">
+<p class="note-title">Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</p>
 
 Some known limitations and considerations have been identified. The settings for `cache TTL`, `anonymous access`, and
 `timeouts` are currently hardcoded, which may lead to performance and security concerns due to the inability to

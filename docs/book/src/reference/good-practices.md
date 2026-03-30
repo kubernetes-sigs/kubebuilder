@@ -55,8 +55,8 @@ We recommend you manage your solutions using Status Conditionals following the [
 - **Observability**: Status conditions can be monitored and tracked by cluster administrators and external monitoring tools, enabling better visibility into the state of the custom resources managed by the Operator.
 - **Compatibility**: By adopting the common pattern of using conditions in Kubernetes APIs, Operator authors ensure their custom resources align with the broader ecosystem, which helps users to have a consistent experience when interacting with multiple Operators and resources in their clusters.
 
-<aside class="note">
-<h1> Example of Usage </h1>
+<aside class="note" role="note">
+<p class="note-title"> Example of Usage </p>
 
 Check out the [Deploy Image Plugin][deploy-image]. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the
 complexities of achieving this goal while allowing users to customize the generated code.

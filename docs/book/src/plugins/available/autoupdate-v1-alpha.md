@@ -7,8 +7,8 @@ Kubebuilder release is available — keeping your project **maintained, secure, 
 This automation uses the [`kubebuilder alpha update`][alpha-update-command] command with a **3-way merge strategy** to
 refresh your project scaffold, and wraps it in a GitHub Actions workflow that opens an **Issue** with a **Pull Request compare link** so you can create the PR and review it.
 
-<aside class="warning">
-<h3>Protect your branches</h3>
+<aside class="warning" role="note">
+<p class="note-title">Protect your branches</p>
 
 This workflow by default **only** creates and pushes the merged files to a branch
 called `kubebuilder-update-from-<from-version>-to-<to-version>`.
@@ -47,8 +47,8 @@ If you want AI-generated summaries in your update issues:
 kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
 ```
 
-<aside class="note">
-<h1>Permissions required to use GitHub Models in GitHub Actions</h1>
+<aside class="note" role="note">
+<p class="note-title">Permissions required to use GitHub Models in GitHub Actions</p>
 
 To use GitHub Models in your workflows, organization and repository administrators must grant this permission.
 

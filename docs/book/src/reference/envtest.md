@@ -95,8 +95,8 @@ err = testEnv.Stop()
 
 Logs from the test runs are prefixed with `test-env`.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
@@ -159,8 +159,8 @@ var _ = AfterSuite(func() {
 })
 ```
 
-<aside class="note">
-<h1>ENV TEST Config Options</h1>
+<aside class="note" role="note">
+<p class="note-title">ENV TEST Config Options</p>
 
 You can look at the controller-runtime docs to know more about its configuration options, see [here](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment). On top of that, if you are
 looking to use ENV TEST to test your webhooks then you might want to give a look at its install [options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
@@ -201,9 +201,9 @@ expectedOwnerReference := v1.OwnerReference{
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h2>Namespace usage limitation</h2>
+<p class="note-title">Namespace usage limitation</p>
 
 EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
 
@@ -342,8 +342,8 @@ testEnv = &envtest.Environment{
 }
 ```
 
-<aside class="note">
-<h1>Setup ENV TEST tool</h1>
+<aside class="note" role="note">
+<p class="note-title">Setup ENV TEST tool</p>
 To know more about the tooling used to configure ENVTEST which is used in the setup-envtest target in the Makefile
 of the projects build with Kubebuilder see the [README][readme]
 of its tooling.

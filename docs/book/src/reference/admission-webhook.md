@@ -22,8 +22,8 @@ basic auth, bearer token, or a cert to authenticate itself to the webhooks.
 You can find detailed steps
 [here](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers).
 
-<aside class="note">
-<H1>Execution Order</H1>
+<aside class="note" role="note">
+<p class="note-title">Execution Order</p>
 
 **Validating webhooks run after all mutating webhooks**, so you don't need to worry about another webhook changing an
 object after your validation has accepted it.
@@ -53,8 +53,8 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob \
   --defaulting-path=/custom-mutate --validation-path=/custom-validate
 ```
 
-<aside class="note">
-<h1>Version Requirements</h1>
+<aside class="note" role="note">
+<p class="note-title">Version Requirements</p>
 
 Custom webhook paths require **controller-runtime v0.21+**. In earlier versions (< `v0.21`), the webhook path follows a
 fixed pattern based on the resource's group, version, and kind, and cannot be customized.
@@ -63,8 +63,8 @@ fixed pattern based on the resource's group, version, and kind, and cannot be cu
 
 ## Handling Resource Status in Admission Webhooks
 
-<aside class="warning">
-<H1>Modify status</H1>
+<aside class="warning" role="note">
+<p class="note-title">Modify status</p>
 
 **You cannot modify or default the status of a resource using a mutating admission webhook**.
 Set initial status in your controller when you first see a new object.
