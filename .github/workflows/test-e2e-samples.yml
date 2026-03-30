@@ -12,6 +12,8 @@ on:
 
 jobs:
   e2e-tests-project-v4:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -19,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
@@ -51,6 +55,8 @@ jobs:
           make test-e2e
 
   e2e-tests-project-v4-with-plugins:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -58,6 +64,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
@@ -87,6 +95,8 @@ jobs:
           make test-e2e
 
   e2e-tests-project-v4-multigroup:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -94,6 +104,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
@@ -124,11 +136,15 @@ jobs:
 
   # Test to validate e2e integration when no APIs are scaffolded
   e2e-test-basic-project:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
