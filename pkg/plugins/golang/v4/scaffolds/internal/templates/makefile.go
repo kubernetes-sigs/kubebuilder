@@ -75,6 +75,8 @@ func (f *Makefile) SetTemplateDefaults() error {
 //nolint:lll
 const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
+# YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
+YEAR ?= $(shell date +%Y)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -123,7 +125,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	{{ if .BoilerplatePath -}}
-	"$(CONTROLLER_GEN)" object:headerFile={{printf "%q" .BoilerplatePath}} paths="./..."
+	"$(CONTROLLER_GEN)" object:headerFile={{printf "%q" .BoilerplatePath}},year=$(YEAR) paths="./..."
 	{{- else -}}
 	"$(CONTROLLER_GEN)" object paths="./..."
 	{{- end }}
