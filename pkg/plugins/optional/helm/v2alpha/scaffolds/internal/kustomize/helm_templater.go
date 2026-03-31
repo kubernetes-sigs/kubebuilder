@@ -558,6 +558,13 @@ func (t *HelmTemplater) substituteCertManagerAnnotations(yamlContent string) str
 func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	// Template replicas from values.yaml (manager.replicas)
 	yamlContent = t.templateReplicas(yamlContent)
+	// Template strategy at Deployment spec level
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"strategy",
+		"spec",
+		".Values.manager.strategy",
+	)
 	// Template configuration fields
 	yamlContent = t.templateImageReference(yamlContent)
 	yamlContent = t.templateEnvironmentVariables(yamlContent)
@@ -587,6 +594,30 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 		"spec.template.spec",
 		".Values.manager.tolerations",
 	)
+
+	// Template additional pod spec fields
+	podSpecFields := []string{
+		"priorityClassName",
+		"initContainers",
+		"ephemeralContainers",
+		"hostname",
+		"dnsConfig",
+		"dnsPolicy",
+		"hostIPC",
+		"hostNetwork",
+		"restartPolicy",
+		"nodeName",
+		"topologySpreadConstraints",
+		"schedulerName",
+	}
+	for _, field := range podSpecFields {
+		yamlContent = t.templateBasicWithStatement(
+			yamlContent,
+			field,
+			"spec.template.spec",
+			".Values.manager."+field,
+		)
+	}
 
 	return yamlContent
 }

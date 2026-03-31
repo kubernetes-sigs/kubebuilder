@@ -172,6 +172,9 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("affinity: {}"))
 			Expect(content).To(ContainSubstring("nodeSelector: {}"))
 			Expect(content).To(ContainSubstring("tolerations: []"))
+			Expect(content).To(ContainSubstring("# priorityClassName:"))
+			Expect(content).To(ContainSubstring("# initContainers:"))
+			Expect(content).To(ContainSubstring("# ephemeralContainers:"))
 		})
 	})
 

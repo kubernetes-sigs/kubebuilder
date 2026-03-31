@@ -102,6 +102,10 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 manager:
   replicas: 1
 
+  ## Deployment strategy
+  ##
+  # strategy: {}
+
   image:
     repository: %s
     tag: %s
@@ -318,6 +322,33 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("\n")
 	} else {
 		buf.WriteString("  tolerations: []\n")
+		buf.WriteString("\n")
+	}
+
+	// Additional pod spec fields
+	podSpecFields := []struct {
+		comment string
+		field   string
+		value   string
+	}{
+		{"Manager pod's priority class", "priorityClassName", `""`},
+		{"Init containers to run before the manager container", "initContainers", "[]"},
+		{"Ephemeral containers for debugging", "ephemeralContainers", "[]"},
+		{"Hostname for the pod", "hostname", `""`},
+		{"DNS configuration for the pod", "dnsConfig", "{}"},
+		{"DNS policy for the pod", "dnsPolicy", `""`},
+		{"Share the host IPC namespace", "hostIPC", "false"},
+		{"Share the host network namespace", "hostNetwork", "false"},
+		{"Restart policy for the pod", "restartPolicy", `""`},
+		{"Node name to schedule the pod on", "nodeName", `""`},
+		{"Topology spread constraints", "topologySpreadConstraints", "[]"},
+		{"Scheduler name", "schedulerName", `""`},
+	}
+
+	for _, field := range podSpecFields {
+		buf.WriteString("  ## " + field.comment + "\n")
+		buf.WriteString("  ##\n")
+		buf.WriteString("  # " + field.field + ": " + field.value + "\n")
 		buf.WriteString("\n")
 	}
 
