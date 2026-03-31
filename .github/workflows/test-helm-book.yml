@@ -16,6 +16,8 @@ on:
 
 jobs:
   helm-test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -33,6 +35,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
@@ -55,8 +59,10 @@ jobs:
         run: |
           cd ${{ matrix.folder }}
           go mod tidy
-          make docker-build IMG=${{ steps.project.outputs.name}}:v0.1.0
-          kind load docker-image ${{ steps.project.outputs.name}}:v0.1.0
+          make docker-build IMG=${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
+          kind load docker-image ${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
+        env:
+          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
 
       - name: Install Helm
         run: make install-helm
@@ -85,12 +91,16 @@ jobs:
 
       - name: Render Helm chart
         run: |
-          helm template ${{ matrix.folder }}/dist/chart --namespace=${{ steps.project.outputs.name }}-system
+          helm template ${{ matrix.folder }}/dist/chart --namespace=${STEPS_PROJECT_OUTPUTS_NAME}-system
+        env:
+          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name }}
 
       - name: Deploy manager via Helm
         working-directory: ${{ matrix.folder }}
         run: |
-          make helm-deploy IMG=${{ steps.project.outputs.name}}:v0.1.0
+          make helm-deploy IMG=${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
+        env:
+          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
 
       - name: Check Helm release status
         working-directory: ${{ matrix.folder }}
@@ -99,5 +109,7 @@ jobs:
 
       - name: Run Helm tests
         run: |
-          helm test ${{ steps.project.outputs.name}} --namespace ${{ steps.project.outputs.name}}-system
+          helm test ${STEPS_PROJECT_OUTPUTS_NAME} --namespace ${STEPS_PROJECT_OUTPUTS_NAME}-system
+        env:
+          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
 
