@@ -10,6 +10,8 @@ on:
       - 'build/.goreleaser.yml'
       - '.github/workflows/release-version-ci.yml'
 
+permissions: {}
+
 jobs:
   go-releaser-test:
     runs-on: ubuntu-latest

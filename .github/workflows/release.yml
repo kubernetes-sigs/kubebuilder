@@ -4,11 +4,12 @@ on:
     tags:
       - '*'
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   goreleaser:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
