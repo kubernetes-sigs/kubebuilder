@@ -16,8 +16,8 @@ Also, before starting, it is recommended to check [What's in a basic project?][b
 to better understand the project layouts and structure.
 
 
-<aside class="warning">
-<h1>About Manual Migration</h1>
+<aside class="warning" role="note">
+<p class="note-title">About Manual Migration</p>
 
 Manual migration is more complex than automated methods but gives you complete control. Use manual migration when:
 - Your project has significant customizations
@@ -53,9 +53,9 @@ git checkout -b reorganize
 
 ### 1.2 Reorganize file locations
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Skip if Using AI Migration Helper</h1>
+<p class="note-title">Skip if Using AI Migration Helper</p>
 
 If you used [Step 1: Reorganize to New Layout](./reorganize-layout.md) AI migration helper, your project is already reorganized. Skip to [Phase 2](#phase-2-migrate-to-latest-version).
 
@@ -152,9 +152,9 @@ find . -not -path './.git*' -not -name '.' -not -name '..' -delete
 
 Identify the information you'll need for initialization from your backup.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Skip if Using AI Migration Helper</h1>
+<p class="note-title">Skip if Using AI Migration Helper</p>
 
 If you used [Step 2: Discovery CLI Commands](./discovery-commands.md) AI migration helper, you already have a complete script with all commands. Execute it and skip to [Step 4: Port Your Custom Code](#step-4-port-your-custom-code).
 
@@ -208,8 +208,8 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 
 Replace with your actual domain and repository (module path).
 
-<aside class="note">
-<h1>Understanding init options</h1>
+<aside class="note" role="note">
+<p class="note-title">Understanding init options</p>
 
 - `--domain`: The domain for your API groups (e.g., `tutorial.kubebuilder.io`). Your full API groups will be `<group>.<domain>`.
 - `--repo`: Your Go module path (same as in `go.mod`)
@@ -241,8 +241,8 @@ You can also check your backup's `PROJECT` file for `multigroup: true`.
 kubebuilder edit --multigroup=true
 ```
 
-<aside class="warning">
-<h1>Important</h1>
+<aside class="warning" role="note">
+<p class="note-title">Important</p>
 
 This must be done before creating any APIs to ensure they're scaffolded in the multi-group structure.
 
@@ -282,8 +282,8 @@ resources:
     version: v1
 ```
 
-<aside class="note">
-<h1>Tip</h1>
+<aside class="note" role="note">
+<p class="note-title">Tip</p>
 
 Make a list of all APIs with their group, version, kind, and whether they have a controller.
 This will help you systematically re-scaffold everything.
@@ -320,8 +320,8 @@ See the [Quick Start][quick-start] guide for a detailed walkthrough of the API c
 
 Repeat this process for **ALL** APIs in your project.
 
-<aside class="note">
-<h1>Using External Types (controllers for types not defined in your project)</h1>
+<aside class="note" role="note">
+<p class="note-title">Using External Types (controllers for types not defined in your project)</p>
 
 If your project has controllers for Kubernetes built-in types (like `Deployment`, `Pod`) or types from other projects:
 
@@ -388,8 +388,8 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 
 If your project has multi-version APIs with conversion webhooks, you need to set up the hub-spoke conversion pattern.
 
-<aside class="note">
-<h1>Understanding Hub-Spoke Conversion</h1>
+<aside class="note" role="note">
+<p class="note-title">Understanding Hub-Spoke Conversion</p>
 
 In Kubernetes multi-version APIs, the **hub** is the version that all other versions (spokes) convert to and from:
 - **Hub version**: Usually the most complete/stable version (often the storage version)
@@ -430,8 +430,8 @@ The command generates method stubs that you'll fill in during Step 4:
 
 See the [Multi-Version Tutorial][multiversion-tutorial] for comprehensive guidance on implementing the conversion logic.
 
-<aside class="note">
-<H1> Forget a type of webhook ? </h1>
+<aside class="note" role="note">
+<p class="note-title"> Forget a type of webhook ? </p>
 
 If you forget a webhook type, use `--force` to re-run the command:
 
@@ -440,8 +440,8 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 ```
 </aside>
 
-<aside class="note">
-<h1>Webhook for External Types</h1>
+<aside class="note" role="note">
+<p class="note-title">Webhook for External Types</p>
 
 **For external types**, you can also create webhooks:
 
@@ -460,9 +460,9 @@ make manifests && make build
 
 ## Step 4: Port Your Custom Code
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Using AI Migration Helper</h1>
+<p class="note-title">Using AI Migration Helper</p>
 
 If you used [Step 3: Port Custom Code](./port-code.md) AI migration helper, your code is already ported.
 
@@ -472,8 +472,8 @@ You may skip to [Step 5](#step-5-test-and-verify). However, it's still recommend
 
 Manually port your custom business logic and configurations from the backup to the new project.
 
-<aside class="note">
-<h1>Use diff tools</h1>
+<aside class="note" role="note">
+<p class="note-title">Use diff tools</p>
 
 Use IDE diff tools or commands like `diff -r ../migration-backup/ .` to compare directories and identify all customizations you need to port.
 Most modern IDEs support directory-level comparison which makes this process much easier.
@@ -561,8 +561,8 @@ Webhooks have changed location between Kubebuilder versions. Be aware of the pat
 4. **Helper functions** - Any validation or defaulting helper functions
 5. **Webhook markers** - Usually auto-generated, but verify they match your needs
 
-<aside class="note">
-<h1>Important</h1>
+<aside class="note" role="note">
+<p class="note-title">Important</p>
 
 Even if the webhook file is in a different location, the implementation logic remains largely the same.
 Copy the method implementations, not just the entire file.
@@ -646,8 +646,8 @@ For dependencies, run `go mod tidy` or copy `go.mod`/`go.sum` from backup for co
 Check for additional customizations (Makefile, Dockerfile, test files). Use diff tools to compare with backup and identify missed files.
 
 
-<aside class="note">
-<h1>Using diff tools</h1>
+<aside class="note" role="note">
+<p class="note-title">Using diff tools</p>
 
 Use your IDE's diff tools to compare the current directory with your backup (`../migration-backup/`) or use git to compare
 your current branch with your main branch. This helps identify any files you may have missed.
@@ -676,9 +676,9 @@ make test && make lint-fix
 
 Deploy to a test cluster (e.g. [kind][kind-doc]) and verify the changes (i.e. validate expected behavior, run regression checks, confirm the full CI pipeline still passes, and execute the e2e tests).
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>If You Have a Helm Chart</h1>
+<p class="note-title">If You Have a Helm Chart</p>
 
 If you had a Helm chart to distribute your project, you may want to regenerate it with the [helm/v2-alpha plugin](../plugins/available/helm-v2-alpha.md), then apply your customizations.
 

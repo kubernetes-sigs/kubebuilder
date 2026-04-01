@@ -4,9 +4,9 @@ Kubebuilder scaffolds single-group projects by default to keep things simple, as
 
 See the [design doc][multigroup-design] for the rationale behind this design decision.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>What's a Multi-Group Project?</h1>
+<p class="note-title">What's a Multi-Group Project?</p>
 
 Multi-group layout is useful when you're building APIs for different purposes or domains. For example, you might have:
 - A `batch` group for job-related resources (CronJob, Job)
@@ -19,9 +19,9 @@ See [Groups and Versions and Kinds, oh my!][gvks] to better understand API group
 
 </aside>
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>AI-Assisted Migration</h1>
+<p class="note-title">AI-Assisted Migration</p>
 
 This migration involves repetitive file moving and import path updates. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
@@ -51,8 +51,8 @@ You can tell which layout you're using by checking your `PROJECT` file for `mult
 
 The following steps migrate the [CronJob example][cronjob-tutorial] from single-group to multi-group layout.
 
-<aside class="note">
-<h1>Starting new projects with multigroup</h1>
+<aside class="note" role="note">
+<p class="note-title">Starting new projects with multigroup</p>
 
 If you're starting a **new project** and already know you want multigroup layout, you can use the `--multigroup` flag during initialization:
 
@@ -76,8 +76,8 @@ This command updates your `PROJECT` file by adding `multigroup: true`. After thi
 - **New APIs** you create will automatically use the multi-group structure (`api/<group>/<version>/`)
 - **Existing APIs** remain in their current location and must be migrated manually (steps 3-9 below)
 
-<aside class="note">
-<h1>What this command changes</h1>
+<aside class="note" role="note">
+<p class="note-title">What this command changes</p>
 
 The command adds or updates this line in your PROJECT file:
 
@@ -271,9 +271,9 @@ make build          # Build the project
 
 If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate most of the migration steps.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>AI Migration Instructions</h1>
+<p class="note-title">AI Migration Instructions</p>
 
 **Prerequisites:**
 1. First, identify the API group name from `api/v1/groupversion_info.go` (look for `+groupName=<group>.<domain>`)

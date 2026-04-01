@@ -5,8 +5,8 @@ files where additional code will be injected as new resources (such as controlle
 This enables Kubebuilder to seamlessly integrate newly generated components into the project without affecting
 user-defined code.
 
-<aside class="warning">
-    <h3>If you delete or change the `+kubebuilder:scaffold` markers</h3>
+<aside class="warning" role="note">
+    <p class="note-title">If you delete or change the `+kubebuilder:scaffold` markers</p>
 
 The Kubebuilder CLI specifically looks for these markers in expected
 files during code generation. If the marker is moved or removed, the CLI will
@@ -109,8 +109,8 @@ properly registered with the manager, so that the controller can reconcile the r
 | `+kubebuilder:scaffold:manifestskustomizesamples`                              | `config/samples`             | Marks where Kustomize sample manifests are injected.                            |
 | `+kubebuilder:scaffold:e2e-webhooks-checks`                                    | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
 | `+kubebuilder:scaffold:e2e-metrics-webhooks-readiness`                         | `test/e2e`                   | Adds readiness logic so metrics e2e tests wait for webhook service endpoints before creating pods. |
-<aside class="warning">
-    <h3> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </h3>
+<aside class="warning" role="note">
+    <p class="note-title"> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </p>
 
 If you find this marker in your code please:
 
@@ -164,8 +164,8 @@ For further guidance, you can refer to examples in the `testdata/` directory in 
 
 </aside>
 
-<aside class="note">
-<h1>Creating Your Own Markers</h1>
+<aside class="note" role="note">
+<p class="note-title">Creating Your Own Markers</p>
 
 If you are using Kubebuilder as a library to create [your own plugins](./../../plugins/creating-plugins.md) and extend its CLI functionalities,
 you have the flexibility to define and use your own markers. To implement your own markers, refer to the [kubebuilder/v4/pkg/machinery](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/machinery),

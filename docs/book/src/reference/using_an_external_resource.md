@@ -31,8 +31,8 @@ For example, if you're managing Certificates from Cert Manager:
 kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
-<aside class="note">
-<h1>Pinning External API Versions</h1>
+<aside class="note" role="note">
+<p class="note-title">Pinning External API Versions</p>
 
 You can pin a specific version of the external API dependency using the `--external-api-module` flag:
 

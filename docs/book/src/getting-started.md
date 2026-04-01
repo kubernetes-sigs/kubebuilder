@@ -7,8 +7,8 @@ We will create a sample project to let you know how it works. This sample will:
 - Not allow more instances than the size defined in the CR which will be applied
 - Update the Memcached CR status
 
-<aside class="note">
-<h1>Why Operators?</h1>
+<aside class="note" role="note">
+<p class="note-title">Why Operators?</p>
 
 By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources
 but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if
@@ -17,8 +17,8 @@ without any human intervention.
 
 </aside>
 
-<aside class="note">
-<h1>Following Along vs Jumping Ahead</h1>
+<aside class="note" role="note">
+<p class="note-title">Following Along vs Jumping Ahead</p>
 
 Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
@@ -38,8 +38,8 @@ cd $GOPATH/memcached-operator
 kubebuilder init --domain=example.com
 ```
 
-<aside class="note">
-<h1>Developing in $GOPATH</h1>
+<aside class="note" role="note">
+<p class="note-title">Developing in $GOPATH</p>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
@@ -66,8 +66,8 @@ By leveraging the Kubebuilder tool, we can define our APIs and objects represent
 While we've added only one Kind of resource in this example, we can have as many `Groups` and `Kinds` as necessary.
 To make it easier to understand, think of CRDs as the definition of our custom Objects, while CRs are instances of them.
 
-<aside class="note">
-<h1> Please ensure that you check </h1>
+<aside class="note" role="note">
+<p class="note-title"> Please ensure that you check </p>
 
 [Groups and Versions and Kinds, oh my!][group-kind-oh-my].
 
@@ -106,8 +106,8 @@ type MemcachedStatus struct {
 }
 ```
 
-<aside class="note">
-<h1> Status Conditions </h1>
+<aside class="note" role="note">
+<p class="note-title"> Status Conditions </p>
 
 Kubernetes has established conventions, and because of this, we use
 Status Conditions here. We want our custom APIs and controllers to behave
@@ -197,8 +197,8 @@ reconcile App {
 }
 ```
 
-<aside class="note">
-<h1> Return Options </h1>
+<aside class="note" role="note">
+<p class="note-title"> Return Options </p>
 
 The following are a few possible return options to restart the Reconcile:
 
@@ -356,9 +356,9 @@ if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
 }
 ```
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1><code>ownerRef</code> and Cascading Events</h1>
+<p class="note-title"><code>ownerRef</code> and Cascading Events</p>
 
 The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
 if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
@@ -435,8 +435,8 @@ see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 - To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
 
-<aside class="note">
-<h1> Using Deploy Image plugin to generate APIs and source code </h1>
+<aside class="note" role="note">
+<p class="note-title"> Using Deploy Image plugin to generate APIs and source code </p>
 
 Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
 This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.

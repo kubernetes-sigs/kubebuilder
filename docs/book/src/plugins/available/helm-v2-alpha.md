@@ -123,8 +123,8 @@ The plugin creates a chart layout that matches your `config/`:
         └── my-config.yaml
 ```
 
-<aside class="note">
-<H1>Chart Structure</H1>
+<aside class="note" role="note">
+<p class="note-title">Chart Structure</p>
 
 The chart structure mirrors your project's resources:
 
@@ -136,8 +136,8 @@ By default, `make build-installer` does not include samples in `dist/install.yam
 
 </aside>
 
-<aside class="note">
-<H1> Why CRDs are added under templates? </H1>
+<aside class="note" role="note">
+<p class="note-title"> Why CRDs are added under templates? </p>
 
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
 
@@ -357,8 +357,8 @@ The Makefile targets use sensible defaults extracted from your project configura
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
 | **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
 
-<aside class="note">
-<H1> Examples </H1>
+<aside class="note" role="note">
+<p class="note-title"> Examples </p>
 
 You can find example projects in [testdata/project-v4-with-plugins](https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins).
 

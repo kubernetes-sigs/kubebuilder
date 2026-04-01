@@ -234,6 +234,10 @@ test-external-plugin: install  ## Run tests for external plugin
 test-spaces:  ## Run the trailing spaces check
 	./test/check_spaces.sh
 
+.PHONY: test-docs-accessibility
+test-docs-accessibility:  ## Run the documentation accessibility check
+	./test/check_docs_accessibility.sh
+
 ## TODO: Remove me when go/v4 plugin be removed
 ## Deprecated
 .PHONY: test-legacy

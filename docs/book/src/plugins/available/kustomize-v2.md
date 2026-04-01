@@ -16,8 +16,8 @@ updates across multiple language plugins. This approach allows the
 creation of "helper" plugins that work with different projects
 and languages.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check the kustomize content by looking at the `config/` directory provided in the sample `project-v4-*`
 under the [testdata][testdata] directory of the Kubebuilder project.
@@ -72,8 +72,8 @@ The kustomize plugin implements the following subcommands:
 * create api (`$ kubebuilder create api [OPTIONS]`)
 * create webhook (`$ kubebuilder create api [OPTIONS]`)
 
-<aside class="note">
-<h1>Create API and Webhook</h1>
+<aside class="note" role="note">
+<p class="note-title">Create API and Webhook</p>
 
 The implementation for the `create api` subcommand scaffolds the kustomize
 manifests specific to each API. See more [here][kustomize-create-api].

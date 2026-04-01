@@ -16,9 +16,9 @@ manifests using controller-tools, if needed:
 make install
 ```
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Too long annotations error</h1>
+<p class="note-title">Too long annotations error</p>
 
 If you encounter errors when applying the CRDs, due to `metadata.annotations` exceeding the
 262144 bytes limit, please refer to the specific entry in the [FAQ section](/faq#the-error-too-long-must-have-at-most-262144-bytes-is-faced-when-i-run-make-install-to-apply-the-crd-manifests-how-to-solve-it-why-this-error-is-faced).
@@ -29,9 +29,9 @@ Now that we've installed our CRDs, we can run the controller against our
 cluster.  This will use whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Running webhooks locally</h1>
+<p class="note-title">Running webhooks locally</p>
 
 If you want to run the webhooks locally, you'll have to generate
 certificates for serving the webhooks, and place them in the right
@@ -82,8 +82,8 @@ make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-<aside class="note">
-<h1>Registry Permission</h1>
+<aside class="note" role="note">
+<p class="note-title">Registry Permission</p>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
@@ -98,7 +98,7 @@ kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 
 To know more, see: [Using Kind For Development Purposes and CI](./../reference/kind.md)
 
-<h1>RBAC errors</h1>
+<p class="note-title">RBAC errors</p>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.

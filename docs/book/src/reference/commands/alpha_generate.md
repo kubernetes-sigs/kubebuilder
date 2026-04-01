@@ -12,8 +12,8 @@ in newer Kubebuilder releases.
 You may choose to re-scaffold the project in-place (overwriting existing files) or in a separate
 directory for diff-based inspection and manual integration.
 
-<aside class="warning">
-    <h3>Deletes files during scaffold regeneration</h3>
+<aside class="warning" role="note">
+    <p class="note-title">Deletes files during scaffold regeneration</p>
 When executed in-place, this command deletes all files except `.git` and `PROJECT`.
 
 Always back up your project or use version control before running this command.
@@ -38,8 +38,8 @@ It is also useful if your project was created with an older CLI version and does
 This approach allows you to compare changes between your current branch and upstream
 scaffold updates (e.g., from the main branch), and helps you overlay custom code atop the new scaffold.
 
-<aside class="note tip">
-<h1>Looking for a more automated migration?</h1>
+<aside class="note tip" role="note">
+<p class="note-title">Looking for a more automated migration?</p>
 
 If you want to upgrade your project scaffold with less manual work,
 try [`kubebuilder alpha update`](./alpha_update.md).
