@@ -949,7 +949,7 @@ spec:
 		})
 
 		It("should not double-escape quotes already escaped by yaml.Marshal in double-quoted YAML scalars", func() {
-			// Regression test: yaml.Marshal represents literal " inside a {{ }} expression as \"
+			// yaml.Marshal represents literal " inside a {{ }} expression as \"
 			// in a double-quoted YAML scalar, so a second pass escaping " → \" produced \\" which
 			// broke Helm's template parser by closing the string literal early (U+002D '-' error).
 			crdResource := &unstructured.Unstructured{}
@@ -2190,6 +2190,207 @@ spec:
 			// Should NOT template sidecar container (doesn't match annotation)
 			Expect(result).To(ContainSubstring("image: sidecar:latest"))
 			Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"))
+		})
+	})
+
+	// templateBasicWithStatement must correctly consume entire YAML sequence blocks
+	// (like tolerations) because their list items start at the same indentation as
+	// the parent key, distinguished only by the leading "- " marker.
+	Context("scheduling fields templating (nodeSelector / affinity / tolerations)", func() {
+		It("should replace an existing multi-item tolerations block with a single Helm stanza", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoExecute
+        key: another-key
+        value: somevalue
+      securityContext:
+        runAsNonRoot: true`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Exactly one Helm-templated tolerations stanza must be present.
+			Expect(strings.Count(result, "tolerations:")).To(Equal(1),
+				"Expected exactly one tolerations: line in output")
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.tolerations }}"))
+			Expect(result).To(ContainSubstring("tolerations: {{ toYaml . | nindent"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+
+			// The raw list items must be gone.
+			Expect(result).NotTo(ContainSubstring("- effect: NoSchedule"))
+			Expect(result).NotTo(ContainSubstring("- effect: NoExecute"))
+			Expect(result).NotTo(ContainSubstring("key: node-role.kubernetes.io/control-plane"))
+			Expect(result).NotTo(ContainSubstring("key: another-key"))
+
+			// Fields after tolerations must still be present.
+			Expect(result).To(ContainSubstring("securityContext:"))
+			Expect(result).To(ContainSubstring("runAsNonRoot: true"))
+		})
+
+		It("should insert a tolerations Helm stanza when the field is absent", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      securityContext:
+        runAsNonRoot: true`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.tolerations }}"))
+			Expect(result).To(ContainSubstring("tolerations: {{ toYaml . | nindent"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should be idempotent: running templating twice does not duplicate stanzas", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists`
+
+			first := templater.ApplyHelmSubstitutions(content, deployment)
+			second := templater.ApplyHelmSubstitutions(first, deployment)
+
+			Expect(strings.Count(second, "{{- with .Values.manager.tolerations }}")).To(Equal(1),
+				"Expected exactly one {{- with .Values.manager.tolerations }} after two passes")
+			Expect(strings.Count(second, "tolerations:")).To(Equal(1),
+				"Expected exactly one tolerations: line after two passes")
+		})
+
+		It("should correctly template nodeSelector (map type) without regression", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      nodeSelector:
+        kubernetes.io/os: linux
+        custom-label: my-node`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(strings.Count(result, "nodeSelector:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.nodeSelector }}"))
+			Expect(result).To(ContainSubstring("nodeSelector: {{ toYaml . | nindent"))
+			// Raw entries must be removed.
+			Expect(result).NotTo(ContainSubstring("kubernetes.io/os: linux"))
+			Expect(result).NotTo(ContainSubstring("custom-label: my-node"))
+		})
+
+		It("should correctly template affinity (map type) without regression", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(strings.Count(result, "affinity:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.affinity }}"))
+			Expect(result).To(ContainSubstring("affinity: {{ toYaml . | nindent"))
+			// Raw sub-fields must be removed.
+			Expect(result).NotTo(ContainSubstring("nodeAffinity:"))
+			Expect(result).NotTo(ContainSubstring("requiredDuringSchedulingIgnoredDuringExecution:"))
+		})
+
+		It("should not match a key that only shares a prefix with the target field name", func() {
+			// Regression guard: key matching must require the trailing colon so that
+			// e.g. "nodeSelector" does not accidentally match "nodeSelectorTerms:".
+			// This YAML tests that nodeSelectorTerms inside an affinity block is not
+			// treated as the nodeSelector field itself.
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// The nodeSelector Helm stanza must be inserted (field was absent).
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.nodeSelector }}"))
+			// The affinity block must only appear once and be Helm-templated.
+			Expect(strings.Count(result, "affinity:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.affinity }}"))
+			// nodeSelectorTerms is part of the affinity value; it must be gone since
+			// the whole affinity block is replaced by the Helm stanza.
+			Expect(result).NotTo(ContainSubstring("nodeSelectorTerms:"))
 		})
 	})
 })

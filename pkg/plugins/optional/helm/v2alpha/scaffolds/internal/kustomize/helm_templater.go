@@ -1120,6 +1120,10 @@ func (t *HelmTemplater) templateBasicWithStatement(
 	parentKey string,
 	valuePath string,
 ) string {
+	if strings.Contains(yamlContent, valuePath) {
+		return yamlContent
+	}
+
 	lines := strings.Split(yamlContent, "\n")
 	yamlKey := fmt.Sprintf("%s:", key)
 
@@ -1151,9 +1155,9 @@ func (t *HelmTemplater) templateBasicWithStatement(
 		}
 		_, indentLen = leadingWhitespace(lines[start])
 	} else {
-		// Find the existing block
+		// Find the existing block - stop at the first match.
 		for i := range len(lines) {
-			if !strings.HasPrefix(strings.TrimSpace(lines[i]), key) {
+			if !strings.HasPrefix(strings.TrimSpace(lines[i]), yamlKey) {
 				continue
 			}
 			start = i
@@ -1161,14 +1165,21 @@ func (t *HelmTemplater) templateBasicWithStatement(
 			trimmed := strings.TrimSpace(lines[i])
 			if len(trimmed) == len(yamlKey) {
 				_, indentLenSearch := leadingWhitespace(lines[i])
-				for j := end; j < len(lines); j++ {
+				end = len(lines)
+				for j := i + 1; j < len(lines); j++ {
+					trimmedJ := strings.TrimSpace(lines[j])
 					_, indentLenLine := leadingWhitespace(lines[j])
-					if indentLenLine <= indentLenSearch {
+					if indentLenLine < indentLenSearch {
+						end = j
+						break
+					}
+					if indentLenLine == indentLenSearch && !strings.HasPrefix(trimmedJ, "- ") {
 						end = j
 						break
 					}
 				}
 			}
+			break // use the first match only
 		}
 		_, indentLen = leadingWhitespace(lines[start])
 	}
