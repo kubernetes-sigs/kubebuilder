@@ -50,18 +50,34 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 
 			Expect(content).To(ContainSubstring("manager:"))
-			Expect(content).To(ContainSubstring("args: []"))
-			Expect(content).To(ContainSubstring("env: []"))
-			Expect(content).To(ContainSubstring("envOverrides: {}"))
+			// Operator-specific runtime fields (args, env, envOverrides) should NOT appear when DeploymentConfig is empty
+			Expect(content).NotTo(ContainSubstring("args:"))
+			Expect(content).NotTo(ContainSubstring("env:"))
+			Expect(content).NotTo(ContainSubstring("envOverrides:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
+			// Optional Kubernetes fields (imagePullSecrets) should be COMMENTED when not found
+			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
+			// New fields should be commented when not found
+			Expect(content).To(ContainSubstring("# strategy:"))
+			Expect(content).To(ContainSubstring("# priorityClassName:"))
+			Expect(content).To(ContainSubstring("# topologySpreadConstraints: []"))
+			Expect(content).To(ContainSubstring("# terminationGracePeriodSeconds: 10"))
 		})
 
-		It("should include env list and envOverrides for CLI", func() {
+		It("should include env and envOverrides only when env exists in kustomize", func() {
+			// Add env to deployment config (operator-specific runtime fields - only appear if found in kustomize)
+			valuesTemplate.DeploymentConfig = map[string]any{
+				"env": []any{
+					map[string]any{"name": "FOO", "value": "bar"},
+				},
+			}
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+
 			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("env: []"))
+			Expect(content).To(ContainSubstring("env:"))
 			Expect(content).To(ContainSubstring("envOverrides: {}"))
 			Expect(content).To(ContainSubstring("--set manager.envOverrides.VAR=value"))
 		})
@@ -89,11 +105,13 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 
 			Expect(content).To(ContainSubstring("manager:"))
-			Expect(content).To(ContainSubstring("args: []"))
+			// Operator-specific runtime fields (args) should NOT appear when DeploymentConfig is empty
+			Expect(content).NotTo(ContainSubstring("args:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
 			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
+			// Optional Kubernetes fields (imagePullSecrets) should be COMMENTED when not found
+			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
 		})
 	})
 
@@ -560,6 +578,120 @@ var _ = Describe("HelmValuesBasic", func() {
 
 				Expect(metricsLine).To(BeNumerically(">", 0))
 				Expect(portLine).To(BeNumerically(">", metricsLine))
+			})
+		})
+
+		Context("Optional Kubernetes deployment fields", func() {
+			It("should be commented when not found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      false,
+					DeploymentConfig: map[string]any{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// All optional Kubernetes fields should be commented when not found in kustomize
+				Expect(content).To(ContainSubstring("# strategy:"))
+				Expect(content).To(ContainSubstring("# priorityClassName:"))
+				Expect(content).To(ContainSubstring("# topologySpreadConstraints: []"))
+				Expect(content).To(ContainSubstring("# terminationGracePeriodSeconds: 10"))
+			})
+
+			It("should be uncommented when strategy is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"strategy": map[string]any{
+							"type": "RollingUpdate",
+							"rollingUpdate": map[string]any{
+								"maxSurge":       "25%",
+								"maxUnavailable": "25%",
+							},
+						},
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// strategy should be uncommented with actual values
+				Expect(content).To(ContainSubstring("strategy:"))
+				Expect(content).To(ContainSubstring("type: RollingUpdate"))
+				Expect(content).To(ContainSubstring("maxSurge: 25%"))
+				Expect(content).To(ContainSubstring("maxUnavailable: 25%"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# strategy:"))
+			})
+
+			It("should be uncommented when priorityClassName is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"priorityClassName": "high-priority",
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// priorityClassName should be uncommented with actual value
+				Expect(content).To(ContainSubstring("priorityClassName: high-priority"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# priorityClassName:"))
+			})
+
+			It("should be uncommented when topologySpreadConstraints is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"topologySpreadConstraints": []any{
+							map[string]any{
+								"maxSkew":           1,
+								"topologyKey":       "kubernetes.io/hostname",
+								"whenUnsatisfiable": "DoNotSchedule",
+							},
+						},
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// topologySpreadConstraints should be uncommented with actual values
+				Expect(content).To(ContainSubstring("topologySpreadConstraints:"))
+				Expect(content).To(ContainSubstring("maxSkew: 1"))
+				Expect(content).To(ContainSubstring("topologyKey: kubernetes.io/hostname"))
+				Expect(content).To(ContainSubstring("whenUnsatisfiable: DoNotSchedule"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# topologySpreadConstraints:"))
+			})
+
+			It("should be uncommented when terminationGracePeriodSeconds is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"terminationGracePeriodSeconds": 30,
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// terminationGracePeriodSeconds should be uncommented with actual value
+				Expect(content).To(ContainSubstring("terminationGracePeriodSeconds: 30"))
+				// Should NOT have commented version at default value
+				Expect(content).NotTo(ContainSubstring("# terminationGracePeriodSeconds: 10"))
 			})
 		})
 	})

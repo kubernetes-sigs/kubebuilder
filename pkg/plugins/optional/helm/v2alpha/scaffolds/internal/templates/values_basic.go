@@ -75,6 +75,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 	imageRepo := "controller"
 	imageTag := "latest"
 	imagePullPolicy := "IfNotPresent"
+	replicas := 1
 	if f.DeploymentConfig != nil {
 		if imgCfg, ok := f.DeploymentConfig["image"].(map[string]any); ok {
 			if repo, ok := imgCfg["repository"].(string); ok && repo != "" {
@@ -85,6 +86,15 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 			}
 			if policy, ok := imgCfg["pullPolicy"].(string); ok && policy != "" {
 				imagePullPolicy = policy
+			}
+		}
+		// Accept replicas >= 0 (scale-to-zero is valid)
+		// Handle both int and int64 (YAML unmarshaling often produces int64)
+		if repValue, exists := f.DeploymentConfig["replicas"]; exists {
+			if rep, ok := repValue.(int); ok && rep >= 0 {
+				replicas = rep
+			} else if rep64, ok := repValue.(int64); ok && rep64 >= 0 {
+				replicas = int(rep64)
 			}
 		}
 	}
@@ -100,14 +110,14 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 ## Configure the controller manager deployment
 ##
 manager:
-  replicas: 1
+  replicas: %d
 
   image:
     repository: %s
     tag: %s
     pullPolicy: %s
 
-`, imageRepo, imageTag, imagePullPolicy))
+`, replicas, imageRepo, imageTag, imagePullPolicy))
 
 	// Add extracted deployment configuration
 	f.addDeploymentConfig(&buf)
@@ -321,6 +331,10 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 		buf.WriteString("\n")
 	}
 
+	f.addStrategySection(buf)
+	f.addPriorityClassNameSection(buf)
+	f.addTopologySpreadConstraintsSection(buf)
+	f.addTerminationGracePeriodSecondsSection(buf)
 	f.addExtraVolumesFromConfig(buf)
 }
 
@@ -353,11 +367,14 @@ func (f *HelmValuesBasic) IndentYamlProperly(buf *bytes.Buffer, envYaml []byte) 
 	}
 }
 
-// addEnvSection writes env (list, same as master) and only adds envOverrides for CLI.
+// addEnvSection writes env and envOverrides ONLY if env exists in kustomize input.
+// These are operator-specific runtime configurations that are part of the operator's contract.
+// We only add them to values.yaml when found in the kustomize-generated deployment,
+// preventing users from being misled into thinking unsupported env vars are configurable.
 func (f *HelmValuesBasic) addEnvSection(buf *bytes.Buffer) {
-	buf.WriteString("  ## Environment variables\n")
-	buf.WriteString("  ##\n")
 	if env, exists := f.DeploymentConfig["env"]; exists && env != nil {
+		buf.WriteString("  ## Environment variables\n")
+		buf.WriteString("  ##\n")
 		if list, ok := env.([]any); ok && len(list) > 0 {
 			buf.WriteString("  env:\n")
 			if envYaml, err := yaml.Marshal(list); err == nil {
@@ -366,41 +383,56 @@ func (f *HelmValuesBasic) addEnvSection(buf *bytes.Buffer) {
 		} else {
 			buf.WriteString("  env: []\n")
 		}
-	} else {
-		buf.WriteString("  env: []\n")
+		buf.WriteString("\n")
+		buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
+		buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
+		buf.WriteString("  ##\n")
+		buf.WriteString("  envOverrides: {}\n")
+		buf.WriteString("\n")
 	}
-	buf.WriteString("\n")
-	buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
-	buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
-	buf.WriteString("  ##\n")
-	buf.WriteString("  envOverrides: {}\n")
-	buf.WriteString("\n")
+	// If env doesn't exist in kustomize, don't add env or envOverrides at all
 }
 
-// addDefaultDeploymentSections adds default sections when no deployment config is available
+// addDefaultDeploymentSections adds optional Kubernetes deployment fields as commented examples.
+// These are shown as commented to guide users on available configuration options.
+// Operator-specific fields (env, args) are handled separately and only appear when found in kustomize.
 func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
-	buf.WriteString("  ## Environment variables\n")
-	buf.WriteString("  ##\n")
-	buf.WriteString("  env: []\n")
-	buf.WriteString("\n")
-	buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
-	buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
-	buf.WriteString("  ##\n")
-	buf.WriteString("  envOverrides: {}\n")
-	buf.WriteString("\n")
-
 	f.addDefaultImagePullSecrets(buf)
 	f.addDefaultPodSecurityContext(buf)
 	f.addDefaultSecurityContext(buf)
 	f.addDefaultResources(buf)
+
+	// Add standard scheduling fields
+	buf.WriteString("  ## Manager pod's affinity\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  affinity: {}\n")
+	buf.WriteString("\n")
+
+	buf.WriteString("  ## Manager pod's node selector\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  nodeSelector: {}\n")
+	buf.WriteString("\n")
+
+	buf.WriteString("  ## Manager pod's tolerations\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  tolerations: []\n")
+	buf.WriteString("\n")
+
+	// Add new optional Kubernetes fields (always shown for discoverability)
+	f.addStrategySection(buf)
+	f.addPriorityClassNameSection(buf)
+	f.addTopologySpreadConstraintsSection(buf)
+	f.addTerminationGracePeriodSecondsSection(buf)
 }
 
-// addArgsSection adds controller manager args section to the values file
+// addArgsSection adds controller manager args ONLY if args exist in kustomize input.
+// Args are operator-specific runtime configuration that are part of the operator's contract.
+// We only add them to values.yaml when found in the kustomize-generated deployment,
+// preventing users from being misled into thinking arbitrary args are supported.
 func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
-	buf.WriteString("  ## Arguments\n  ##\n")
-
 	if f.DeploymentConfig != nil {
 		if args, exists := f.DeploymentConfig["args"]; exists && args != nil {
+			buf.WriteString("  ## Arguments\n  ##\n")
 			if argsYaml, err := yaml.Marshal(args); err == nil {
 				if trimmed := strings.TrimSpace(string(argsYaml)); trimmed != "" && trimmed != "[]" {
 					lines := bytes.Split(argsYaml, []byte("\n"))
@@ -416,49 +448,139 @@ func (f *HelmValuesBasic) addArgsSection(buf *bytes.Buffer) {
 					return
 				}
 			}
+			// If args exists but is empty/invalid, still show []
+			buf.WriteString("  args: []\n\n")
 		}
 	}
-
-	buf.WriteString("  args: []\n\n")
+	// If args doesn't exist in kustomize, don't add it at all
 }
 
-// addDefaultImagePullSecrets adds default imagePullSecrets section
+// addDefaultImagePullSecrets adds imagePullSecrets as a commented example.
+// This is an optional Kubernetes feature shown to guide users.
 func (f *HelmValuesBasic) addDefaultImagePullSecrets(buf *bytes.Buffer) {
 	buf.WriteString("  ## Image pull secrets\n")
 	buf.WriteString("  ##\n")
-	buf.WriteString("  imagePullSecrets: []\n\n")
+	buf.WriteString("  # imagePullSecrets:\n")
+	buf.WriteString("  #   - name: myregistrykey\n\n")
 }
 
-// addDefaultPodSecurityContext adds default podSecurityContext section
+// addDefaultPodSecurityContext adds podSecurityContext as a commented example.
+// This is an optional Kubernetes feature shown to guide users.
 func (f *HelmValuesBasic) addDefaultPodSecurityContext(buf *bytes.Buffer) {
 	buf.WriteString("  ## Pod-level security settings\n")
 	buf.WriteString("  ##\n")
-	buf.WriteString("  podSecurityContext: {}\n")
-	buf.WriteString("    # fsGroup: 2000\n\n")
+	buf.WriteString("  # podSecurityContext:\n")
+	buf.WriteString("  #   fsGroup: 2000\n\n")
 }
 
-// addDefaultSecurityContext adds default securityContext section
+// addDefaultSecurityContext adds securityContext as a commented example.
+// This is an optional Kubernetes feature shown to guide users.
 func (f *HelmValuesBasic) addDefaultSecurityContext(buf *bytes.Buffer) {
 	buf.WriteString("  ## Container-level security settings\n")
 	buf.WriteString("  ##\n")
-	buf.WriteString("  securityContext: {}\n")
-	buf.WriteString("    # capabilities:\n")
-	buf.WriteString("    #   drop:\n")
-	buf.WriteString("    #   - ALL\n")
-	buf.WriteString("    # readOnlyRootFilesystem: true\n")
-	buf.WriteString("    # runAsNonRoot: true\n")
-	buf.WriteString("    # runAsUser: 1000\n\n")
+	buf.WriteString("  # securityContext:\n")
+	buf.WriteString("  #   capabilities:\n")
+	buf.WriteString("  #     drop:\n")
+	buf.WriteString("  #     - ALL\n")
+	buf.WriteString("  #   readOnlyRootFilesystem: true\n")
+	buf.WriteString("  #   runAsNonRoot: true\n")
+	buf.WriteString("  #   runAsUser: 1000\n\n")
 }
 
-// addDefaultResources adds default resources section
+// addDefaultResources adds resources as a commented example.
+// This is an optional Kubernetes feature shown to guide users.
 func (f *HelmValuesBasic) addDefaultResources(buf *bytes.Buffer) {
 	buf.WriteString("  ## Resource limits and requests\n")
 	buf.WriteString("  ##\n")
-	buf.WriteString("  resources: {}\n")
-	buf.WriteString("    # limits:\n")
-	buf.WriteString("    #   cpu: 100m\n")
-	buf.WriteString("    #   memory: 128Mi\n")
-	buf.WriteString("    # requests:\n")
-	buf.WriteString("    #   cpu: 100m\n")
-	buf.WriteString("    #   memory: 128Mi\n\n")
+	buf.WriteString("  # resources:\n")
+	buf.WriteString("  #   limits:\n")
+	buf.WriteString("  #     cpu: 100m\n")
+	buf.WriteString("  #     memory: 128Mi\n")
+	buf.WriteString("  #   requests:\n")
+	buf.WriteString("  #     cpu: 100m\n")
+	buf.WriteString("  #     memory: 128Mi\n\n")
+}
+
+// addStrategySection adds deployment strategy section.
+// Shows actual value from kustomize if found, otherwise provides a commented example.
+func (f *HelmValuesBasic) addStrategySection(buf *bytes.Buffer) {
+	if f.DeploymentConfig != nil {
+		if strategy, exists := f.DeploymentConfig["strategy"]; exists && strategy != nil {
+			buf.WriteString("  ## Deployment strategy\n")
+			buf.WriteString("  ##\n")
+			buf.WriteString("  strategy:\n")
+			if stratYaml, err := yaml.Marshal(strategy); err == nil {
+				f.IndentYamlProperly(buf, stratYaml)
+			}
+			buf.WriteString("\n")
+			return
+		}
+	}
+	buf.WriteString("  ## Deployment strategy\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # strategy:\n")
+	buf.WriteString("  #   type: RollingUpdate\n")
+	buf.WriteString("  #   rollingUpdate:\n")
+	buf.WriteString("  #     maxSurge: 25%\n")
+	buf.WriteString("  #     maxUnavailable: 25%\n")
+	buf.WriteString("\n")
+}
+
+// addPriorityClassNameSection adds priorityClassName for pod scheduling priority.
+// Shows actual value from kustomize if found, otherwise provides a commented example.
+func (f *HelmValuesBasic) addPriorityClassNameSection(buf *bytes.Buffer) {
+	if f.DeploymentConfig != nil {
+		if priorityClassName, exists := f.DeploymentConfig["priorityClassName"].(string); exists && priorityClassName != "" {
+			buf.WriteString("  ## Priority class name\n")
+			buf.WriteString("  ##\n")
+			// Use YAML marshaling to ensure proper quoting (handles values like "true", "null", etc.)
+			if priorityClassNameYAML, err := yaml.Marshal(priorityClassName); err == nil {
+				fmt.Fprintf(buf, "  priorityClassName: %s\n\n", strings.TrimSpace(string(priorityClassNameYAML)))
+				return
+			}
+		}
+	}
+	buf.WriteString("  ## Priority class name\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # priorityClassName: \"\"\n\n")
+}
+
+// addTopologySpreadConstraintsSection adds topology spread constraints for high availability.
+// Shows actual value from kustomize if found, otherwise provides a commented example.
+func (f *HelmValuesBasic) addTopologySpreadConstraintsSection(buf *bytes.Buffer) {
+	if f.DeploymentConfig != nil {
+		topologySpreadConstraints, hasTopologySpreadConstraints := f.DeploymentConfig["topologySpreadConstraints"]
+		if hasTopologySpreadConstraints && topologySpreadConstraints != nil {
+			buf.WriteString("  ## Topology spread constraints\n")
+			buf.WriteString("  ##\n")
+			buf.WriteString("  topologySpreadConstraints:\n")
+			if tscYaml, err := yaml.Marshal(topologySpreadConstraints); err == nil {
+				f.IndentYamlProperly(buf, tscYaml)
+			}
+			buf.WriteString("\n")
+			return
+		}
+	}
+	buf.WriteString("  ## Topology spread constraints\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # topologySpreadConstraints: []\n\n")
+}
+
+// addTerminationGracePeriodSecondsSection adds graceful shutdown period.
+// Shows actual value from kustomize if found, otherwise provides a commented example.
+func (f *HelmValuesBasic) addTerminationGracePeriodSecondsSection(buf *bytes.Buffer) {
+	if f.DeploymentConfig != nil {
+		// Accept terminationGracePeriodSeconds >= 0 (0 means immediate termination, which is valid)
+		if tgpsValue, exists := f.DeploymentConfig["terminationGracePeriodSeconds"]; exists && tgpsValue != nil {
+			buf.WriteString("  ## Termination grace period seconds\n")
+			buf.WriteString("  ##\n")
+			if tgpsYaml, err := yaml.Marshal(tgpsValue); err == nil {
+				fmt.Fprintf(buf, "  terminationGracePeriodSeconds: %s\n\n", strings.TrimSpace(string(tgpsYaml)))
+				return
+			}
+		}
+	}
+	buf.WriteString("  ## Termination grace period seconds\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # terminationGracePeriodSeconds: 10\n\n")
 }

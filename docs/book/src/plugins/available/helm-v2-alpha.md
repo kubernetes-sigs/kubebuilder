@@ -154,8 +154,8 @@ any other resource, ensuring they are applied and upgraded as expected.
 While this prevents mixing CRDs and CRs of the same type in a single chart (since Helm cannot wait between creation steps), it ensures predictable and explicit lifecycle management of CRDs.
 
 In short:
-- **Helm `crds/` directory** → one-time install only, no upgrades.
-- **Kubebuilder `templates/crd`** → CRDs managed like other manifests, upgrades included.
+- **Helm `crds/` directory**: one-time install only, no upgrades.
+- **Kubebuilder `templates/crd`**: CRDs managed like other manifests, upgrades included.
 
 This design choice prioritizes correctness and maintainability over Helm's default convention,
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
@@ -175,6 +175,42 @@ The `NOTES.txt` file is preserved on subsequent runs (unless `--force` is used),
 
 The generated `values.yaml` provides configuration options extracted from your actual deployment.
 Namespace creation is not managed by the chart; use Helm's `--namespace` and `--create-namespace` flags when installing.
+
+### How Fields Are Exposed
+
+The plugin intelligently decides which fields to include in `values.yaml` based on their purpose:
+
+**Operator-specific runtime configuration (only if found in kustomize):**
+
+These fields are part of your operator's runtime contract and only appear when present in your deployment:
+- `manager.args` - Controller manager arguments
+- `manager.env` - Environment variables
+- `manager.envOverrides` - Environment variable overrides (CLI --set)
+- `manager.extraVolumes` / `manager.extraVolumeMounts` - Additional volumes
+
+**Optional Kubernetes features (commented unless found in kustomize):**
+
+These are valid deployment options shown as commented examples when not used. If found in kustomize, they appear uncommented with actual values:
+- `manager.imagePullSecrets` - Registry credentials
+- `manager.podSecurityContext` - Pod-level security settings
+- `manager.securityContext` - Container-level security settings
+- `manager.resources` - Resource limits and requests
+- `manager.strategy` - Deployment strategy (RollingUpdate/Recreate)
+- `manager.priorityClassName` - Pod scheduling priority
+- `manager.topologySpreadConstraints` - High availability scheduling
+- `manager.terminationGracePeriodSeconds` - Graceful shutdown period
+
+**Standard Helm configuration (always exposed):**
+
+These are standard Helm fields always present for user customization:
+- `nameOverride` / `fullnameOverride` - Chart naming (commented by default)
+- `manager.replicas` - Pod replica count
+- `manager.image.*` - Container image configuration
+- `manager.affinity` - Pod affinity rules
+- `manager.nodeSelector` - Node selection
+- `manager.tolerations` - Node tolerations
+
+**Important:** If a value is defined in kustomize, it will appear uncommented in `values.yaml` with the actual value. This ensures the Helm chart mirrors your operator's configuration exactly.
 
 **Example**
 
@@ -210,10 +246,13 @@ manager:
     - name: MEMCACHED_IMAGE
       value: memcached:1.6.26-alpine3.19
 
+  ## Env overrides (--set manager.envOverrides.VAR=value)
+  ## Same name in env above: this value takes precedence.
+  ##
+  envOverrides: {}
+
   ## Image pull secrets
   ##
-  imagePullSecrets: []
-  # Example:
   # imagePullSecrets:
   #   - name: myregistrykey
 
@@ -276,6 +315,34 @@ manager:
   #     effect: "NoExecute"
   #     tolerationSeconds: 6000
 
+  ## Deployment strategy
+  ##
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxSurge: 25%
+  #     maxUnavailable: 25%
+
+  ## Priority class name
+  ##
+  # priorityClassName: ""
+
+  ## Topology spread constraints
+  ##
+  # topologySpreadConstraints: []
+  # Example:
+  # topologySpreadConstraints:
+  #   - maxSkew: 1
+  #     topologyKey: kubernetes.io/hostname
+  #     whenUnsatisfiable: DoNotSchedule
+  #     labelSelector:
+  #       matchLabels:
+  #         app.kubernetes.io/name: project
+
+  ## Termination grace period seconds
+  ##
+  terminationGracePeriodSeconds: 10
+
 ## Helper RBAC roles for managing custom resources
 ##
 rbacHelpers:
@@ -326,6 +393,37 @@ The chart supports additional volumes and volume mounts for the manager (e.g. se
 - **Values**: When the manager deployment has extra volumes (other than webhook/metrics), `values.yaml` gets `manager.extraVolumes` and `manager.extraVolumeMounts`. Use them to add more entries; the template appends them after the config volumes. Same structure as in a Pod spec; mount names must match volume names.
 
 Webhook and metrics (`webhook-certs`, `metrics-certs`) are not in `extraVolumes`. They are conditional on `certManager.enable` and `metrics.enable`, like the rest of the chart.
+
+### Template Conditionals
+
+Operator-specific and optional fields use Helm conditionals in templates matching the patterns in `templates/manager/manager.yaml`:
+
+```yaml
+# Operator-specific - env always renders the key, with [] when unset
+env:
+{{- if .Values.manager.env }}
+  {{- toYaml .Values.manager.env | nindent 2 }}
+{{- else }}
+  []
+{{- end }}
+
+# Optional feature - strategy renders only when defined (uses 'with')
+{{- with .Values.manager.strategy }}
+strategy:
+  {{- toYaml . | nindent 6 }}
+{{- end }}
+
+# terminationGracePeriodSeconds renders when the key exists, even if set to 0
+{{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+{{- end }}
+```
+
+This means:
+- If you comment out an optional field in `values.yaml`, it won't appear in the deployed manifests
+- You can safely uncomment optional fields to enable Kubernetes features
+- Operator-specific fields (env, args) always render when present in templates
+- Zero values like `terminationGracePeriodSeconds: 0` work correctly with `hasKey`
 
 ### Installation
 
