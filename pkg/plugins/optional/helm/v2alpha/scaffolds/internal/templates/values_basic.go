@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -44,6 +45,13 @@ type HelmValuesBasic struct {
 	HasWebhooks bool
 	// HasMetrics is true when metrics service/monitor were found in the config
 	HasMetrics bool
+	// HasClusterScopedRBAC is true when ClusterRole resources were found (excluding metrics-auth-role)
+	HasClusterScopedRBAC bool
+	// RoleNamespaces maps Role/RoleBinding resource name suffixes (without project prefix) to their target namespaces
+	// for multi-namespace RBAC. Keys are suffixes for stability across different release names.
+	// Example: {"manager-role-infrastructure": "infrastructure", "manager-role-users": "users"}
+	// NOT: {"project-manager-role-infrastructure": ...} - the project prefix is stripped.
+	RoleNamespaces map[string]string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -126,11 +134,50 @@ manager:
 	f.addDeploymentConfig(&buf)
 
 	// RBAC configuration
-	buf.WriteString(`## Helper RBAC roles for managing custom resources
+	buf.WriteString(`## RBAC configuration
 ##
-rbacHelpers:
-  # Install convenience admin/editor/viewer roles for CRDs
-  enable: false
+rbac:
+`)
+	// Only add namespaced option if the project has cluster-scoped RBAC
+	if f.HasClusterScopedRBAC {
+		buf.WriteString(`  # RBAC resource scope
+  # - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  # - true: Role/RoleBinding (release namespace only)
+  namespaced: false
+
+`)
+	}
+
+	// Add role-specific namespace configuration if detected
+	if len(f.RoleNamespaces) > 0 {
+		buf.WriteString(`  # Specific namespace deployments for Roles and RoleBindings.
+  # Keys are resource name suffixes (without project prefix).
+  # Detected from controller RBAC markers with explicit namespace attributes.
+  # These values are optional - if omitted, the original namespace from kustomize is used.
+  # Override these values to deploy roles to different namespaces.
+  roleNamespaces:
+`)
+		// Sort role names for consistent output
+		roleNames := make([]string, 0, len(f.RoleNamespaces))
+		for roleName := range f.RoleNamespaces {
+			roleNames = append(roleNames, roleName)
+		}
+		slices.Sort(roleNames)
+
+		for _, roleName := range roleNames {
+			ns := f.RoleNamespaces[roleName]
+			buf.WriteString(fmt.Sprintf("    # RBAC resource %s deploys to namespace %s\n", roleName, ns))
+			buf.WriteString(fmt.Sprintf("    %q: %q\n", roleName, ns))
+		}
+		buf.WriteString("\n")
+	}
+
+	// Add helper roles section
+	buf.WriteString(`  # Helper roles for CRD management (admin/editor/viewer)
+`)
+	buf.WriteString(`  helpers:
+    # Install convenience admin/editor/viewer roles for CRDs
+    enable: false
 
 `)
 
@@ -155,22 +202,28 @@ crd:
 
 	if f.HasMetrics {
 		buf.WriteString(fmt.Sprintf(`## Controller metrics endpoint.
-## Enable to expose /metrics endpoint with RBAC protection.
+## Enable to expose /metrics endpoint
 ##
 metrics:
   enable: true
   # Metrics server port
   port: %d
+  # Enable secure metrics: HTTPS with certs/auth (true) or HTTP (false).
+  # Note: Metrics authn/authz needs ClusterRole access.
+  secure: true
 
 `, metricsPort))
 	} else {
 		buf.WriteString(fmt.Sprintf(`## Controller metrics endpoint.
-## Enable to expose /metrics endpoint with RBAC protection.
+## Enable to expose /metrics endpoint
 ##
 metrics:
   enable: false
   # Metrics server port
   port: %d
+  # Enable secure metrics: HTTPS with certs/auth (true) or HTTP (false).
+  # Note: Metrics authn/authz needs ClusterRole access.
+  secure: true
 
 `, metricsPort))
 	}

@@ -42,7 +42,9 @@ type ChartConverter struct {
 }
 
 // NewChartConverter creates a new chart converter with all necessary components
-func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, outputDir string) *ChartConverter {
+func NewChartConverter(
+	resources *ParsedResources, detectedPrefix, chartName, outputDir string, roleNamespaces map[string]string,
+) *ChartConverter {
 	// Extract manager namespace from Deployment, default to <prefix>-system
 	managerNamespace := detectedPrefix + "-system"
 	if resources.Deployment != nil {
@@ -52,7 +54,7 @@ func NewChartConverter(resources *ParsedResources, detectedPrefix, chartName, ou
 	}
 
 	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(detectedPrefix, chartName, managerNamespace)
+	templater := NewHelmTemplater(detectedPrefix, chartName, managerNamespace, roleNamespaces)
 	writer := NewChartWriter(templater, outputDir, managerNamespace)
 
 	return &ChartConverter{

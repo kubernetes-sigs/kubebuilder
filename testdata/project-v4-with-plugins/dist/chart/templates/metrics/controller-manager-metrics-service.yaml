@@ -12,7 +12,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-  - name: https
+  - name: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
     port: {{ .Values.metrics.port }}
     protocol: TCP
     targetPort: {{ .Values.metrics.port }}

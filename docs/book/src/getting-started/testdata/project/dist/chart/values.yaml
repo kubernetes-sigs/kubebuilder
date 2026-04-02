@@ -101,11 +101,18 @@ manager:
   #   labels: {}
   #   annotations: {}
 
-## Helper RBAC roles for managing custom resources
+## RBAC configuration
 ##
-rbacHelpers:
-  # Install convenience admin/editor/viewer roles for CRDs
-  enable: false
+rbac:
+  # RBAC resource scope
+  # - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  # - true: Role/RoleBinding (release namespace only)
+  namespaced: false
+
+  # Helper roles for CRD management (admin/editor/viewer)
+  helpers:
+    # Install convenience admin/editor/viewer roles for CRDs
+    enable: false
 
 ## Custom Resource Definitions
 ##
@@ -116,12 +123,15 @@ crd:
   keep: true
 
 ## Controller metrics endpoint.
-## Enable to expose /metrics endpoint with RBAC protection.
+## Enable to expose /metrics endpoint
 ##
 metrics:
   enable: true
   # Metrics server port
   port: 8443
+  # Enable secure metrics: HTTPS with certs/auth (true) or HTTP (false).
+  # Note: Metrics authn/authz needs ClusterRole access.
+  secure: true
 
 ## Cert-manager integration for TLS certificates.
 ## Required for webhook certificates and metrics endpoint certificates.

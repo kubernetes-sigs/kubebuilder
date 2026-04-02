@@ -57,14 +57,23 @@ type HelmTemplater struct {
 	detectedPrefix   string
 	chartName        string
 	managerNamespace string
+	// roleNamespaces maps RBAC resource suffixes (without project prefix) to their target namespaces
+	// for multi-namespace deployments. This enables Roles/RoleBindings to be deployed to specific
+	// namespaces outside the manager namespace.
+	// Example: {"manager-role-infrastructure": "infrastructure"} (key is suffix, not full name)
+	// These are templated as: {{ index .Values.rbac.roleNamespaces "suffix" | default "namespace" }}
+	roleNamespaces map[string]string
 }
 
 // NewHelmTemplater creates a new Helm templater
-func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmTemplater {
+func NewHelmTemplater(
+	detectedPrefix, chartName, managerNamespace string, roleNamespaces map[string]string,
+) *HelmTemplater {
 	return &HelmTemplater{
 		detectedPrefix:   detectedPrefix,
 		chartName:        chartName,
 		managerNamespace: managerNamespace,
+		roleNamespaces:   roleNamespaces,
 	}
 }
 
@@ -132,6 +141,11 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	// Apply port templating for Services and Deployments
 	if resource.GetKind() == kindService || resource.GetKind() == kindDeployment {
 		yamlContent = t.templatePorts(yamlContent, resource)
+	}
+
+	// Apply ServiceMonitor templating for metrics scheme and port
+	if resource.GetKind() == kindServiceMonitor {
+		yamlContent = t.templateServiceMonitor(yamlContent)
 	}
 
 	// Final tidy-up: avoid accidental blank lines after Helm if-block starts
@@ -244,6 +258,34 @@ func (t *HelmTemplater) substituteProjectNames(yamlContent string, _ *unstructur
 func (t *HelmTemplater) substituteNamespace(yamlContent string, resource *unstructured.Unstructured) string {
 	managerNamespace := t.managerNamespace
 	namespaceTemplate := "{{ .Release.Namespace }}"
+
+	// 0. MULTI-NAMESPACE RBAC: Handle specific role deployments first.
+	//    For Roles/RoleBindings deployed to specific namespaces (not manager namespace),
+	//    template them to use index-based access into .Values.rbac.roleNamespaces
+	//    with the resource suffix (without project prefix) as the key.
+	//    This makes keys stable across different release names and overrides.
+	//    If the key is missing, fall back to the original namespace from kustomize.
+	resourceName := resource.GetName()
+	// Extract suffix by removing detected prefix
+	suffix := strings.TrimPrefix(resourceName, t.detectedPrefix+"-")
+
+	if targetNs, found := t.roleNamespaces[suffix]; found {
+		// This resource should use role-based namespace template with fallback to original namespace
+		// Use suffix as the lookup key (e.g., "manager-role-infrastructure" not "project-manager-role-infrastructure")
+		roleTemplate := fmt.Sprintf("{{ index .Values.rbac.roleNamespaces %q | default %q }}", suffix, targetNs)
+
+		// Replace namespace field for this resource
+		nsPattern := regexp.MustCompile(`(?m)^(\s*)namespace:\s+` + regexp.QuoteMeta(targetNs) + `\s*$`)
+		yamlContent = nsPattern.ReplaceAllString(yamlContent, "${1}namespace: "+roleTemplate)
+
+		// Replace resource references for this namespace
+		refPattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(targetNs) + `/`)
+		yamlContent = refPattern.ReplaceAllString(yamlContent, roleTemplate+"/")
+
+		// Replace DNS names for this namespace
+		dnsPattern := regexp.MustCompile(`\.` + regexp.QuoteMeta(targetNs) + `\.`)
+		yamlContent = dnsPattern.ReplaceAllString(yamlContent, "."+roleTemplate+".")
+	}
 
 	// 1. NAMESPACE FIELDS: Replace `namespace: <manager-namespace>`
 	//    Pattern: Line-anchored to prevent false matches
@@ -1163,6 +1205,12 @@ func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string
 		builder.WriteString(metricsLine)
 		builder.WriteString("\n")
 		builder.WriteString(metricsIndent)
+		builder.WriteString("{{- if not .Values.metrics.secure }}\n")
+		builder.WriteString(metricsIndent)
+		builder.WriteString("- --metrics-secure=false\n")
+		builder.WriteString(metricsIndent)
+		builder.WriteString("{{- end }}\n")
+		builder.WriteString(metricsIndent)
 		builder.WriteString("{{- else }}\n")
 		builder.WriteString(metricsIndent)
 		builder.WriteString("# Bind to :0 to disable the controller-runtime managed metrics server\n")
@@ -1634,51 +1682,22 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		// CRDs need crd.enable condition
 		return fmt.Sprintf("{{- if .Values.crd.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindCertificate && apiVersion == apiVersionCertManager:
-		// Handle different certificate types
-		if strings.Contains(name, "metrics-cert") || strings.Contains(name, "metrics") {
-			// Metrics certificates need both certManager and metrics enabled
-			return fmt.Sprintf("{{- if and .Values.certManager.enable .Values.metrics.enable }}\n%s{{- end }}\n",
-				yamlContent)
-		}
-		// Other certificates (webhook serving certs) only need certManager enabled
-		return fmt.Sprintf("{{- if .Values.certManager.enable }}\n%s{{- end }}", yamlContent)
+		return t.handleCertificateConditionalWrappers(yamlContent, name)
 	case kind == kindIssuer && apiVersion == apiVersionCertManager:
 		// All cert-manager issuers need certManager enabled
 		return fmt.Sprintf("{{- if .Values.certManager.enable }}\n%s{{- end }}", yamlContent)
 	case kind == kindServiceMonitor && apiVersion == apiVersionMonitoring:
 		// ServiceMonitors need prometheus enabled
 		return fmt.Sprintf("{{- if .Values.prometheus.enable }}\n%s{{- end }}", yamlContent)
-	case kind == kindServiceAccount || kind == kindRole || kind == kindClusterRole ||
-		kind == kindRoleBinding || kind == kindClusterRoleBinding:
-		// Distinguish between essential RBAC and helper RBAC
-		if strings.Contains(name, "admin-role") || strings.Contains(name, "editor-role") ||
-			strings.Contains(name, "viewer-role") {
-			// Helper RBAC roles (admin/editor/viewer) - convenience roles for CRD management
-			return fmt.Sprintf("{{- if .Values.rbacHelpers.enable }}\n%s{{- end }}\n", yamlContent)
-		}
-		if strings.Contains(name, "metrics") {
-			// Metrics RBAC depends on metrics being enabled
-			return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
-		}
-		// Essential RBAC (controller-manager, leader-election, manager roles) - always enabled
-		// These are required for the controller to function properly
-		return yamlContent
+	case kind == kindServiceAccount, kind == kindRole, kind == kindClusterRole,
+		kind == kindRoleBinding, kind == kindClusterRoleBinding:
+		return t.handleRBACConditionalWrappers(yamlContent, kind, name)
 	case kind == kindValidatingWebhook || kind == kindMutatingWebhook:
 		// Webhook configurations should be conditional on webhook.enable
 		yamlContent = t.makeWebhookAnnotationsConditional(yamlContent)
 		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
 	case kind == kindService:
-		// Services need conditional logic based on their purpose
-		if strings.Contains(name, "metrics") {
-			// Metrics services need metrics enabled
-			return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
-		}
-		if strings.Contains(name, "webhook") {
-			// Webhook services need webhook enabled
-			return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
-		}
-		// Other services don't need conditionals
-		return yamlContent
+		return t.handleServiceConditionalWrappers(yamlContent, name)
 	case kind == kindDeployment:
 		// Only the manager deployment should be conditional on manager.enabled.
 		// Enabled when the key is absent (backward compatibility) OR when it's true.
@@ -1695,6 +1714,124 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		// No conditional wrapper needed for other unhandled resource kinds
 		return yamlContent
 	}
+}
+
+// handleCertificateConditionalWrappers handles conditional logic for Certificate resources
+func (t *HelmTemplater) handleCertificateConditionalWrappers(yamlContent, name string) string {
+	// Handle different certificate types using suffix matching to avoid false positives
+	// when project name contains "metrics" (e.g., "metrics-operator")
+	isMetricsCert := strings.HasSuffix(name, "-metrics-certs") || strings.HasSuffix(name, "-metrics-cert")
+	if isMetricsCert {
+		// Metrics certificates need certManager, metrics enabled, AND secure metrics (TLS)
+		// When metrics.secure=false, metrics use HTTP so TLS certs are not needed
+		return fmt.Sprintf(
+			"{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n",
+			yamlContent)
+	}
+	// Other certificates (webhook serving certs) only need certManager enabled
+	return fmt.Sprintf("{{- if .Values.certManager.enable }}\n%s{{- end }}", yamlContent)
+}
+
+// handleServiceConditionalWrappers handles conditional logic for Service resources
+func (t *HelmTemplater) handleServiceConditionalWrappers(yamlContent, name string) string {
+	// Services need conditional logic based on their purpose.
+	// Use suffix matching to avoid false positives when project name contains these substrings.
+	if strings.HasSuffix(name, "-metrics-service") || strings.HasSuffix(name, "-controller-manager-metrics-service") {
+		// Metrics services need metrics enabled
+		return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
+	}
+	if strings.HasSuffix(name, "-webhook-service") {
+		// Webhook services need webhook enabled
+		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
+	}
+	// Other services don't need conditionals
+	return yamlContent
+}
+
+// handleRBACConditionalWrappers handles conditional logic for RBAC resources
+func (t *HelmTemplater) handleRBACConditionalWrappers(yamlContent, kind, name string) string {
+	// Distinguish between essential RBAC and helper RBAC.
+	// Use suffix matching to avoid false positives when project name contains these substrings.
+	// Check both roles (-admin-role, -editor-role, -viewer-role) and their bindings (-rolebinding)
+	isHelper := strings.HasSuffix(name, "-admin-role") || strings.HasSuffix(name, "-editor-role") ||
+		strings.HasSuffix(name, "-viewer-role") ||
+		strings.HasSuffix(name, "-admin-rolebinding") || strings.HasSuffix(name, "-editor-rolebinding") ||
+		strings.HasSuffix(name, "-viewer-rolebinding")
+
+	// Check for specific Kubebuilder-scaffolded metrics RBAC resources
+	isMetricsAuthRole := strings.HasSuffix(name, "-metrics-auth-role")
+	isMetricsAuthBinding := strings.HasSuffix(name, "-metrics-auth-rolebinding")
+	isMetricsReader := strings.HasSuffix(name, "-metrics-reader")
+
+	// Apply kind-switching for ClusterRole/ClusterRoleBinding (except metrics-auth role/binding and metrics-reader)
+	isClusterRoleKind := kind == kindClusterRole || kind == kindClusterRoleBinding
+	needsKindSwitching := !isMetricsAuthRole && !isMetricsAuthBinding && !isMetricsReader
+	if isClusterRoleKind && needsKindSwitching {
+		// Metrics-auth-role/binding/reader must stay ClusterRole/ClusterRoleBinding (use cluster-scoped APIs/nonResourceURLs)
+		yamlContent = t.makeRBACKindConditional(yamlContent, kind)
+	}
+
+	if isHelper {
+		return fmt.Sprintf("{{- if .Values.rbac.helpers.enable }}\n%s{{- end }}\n", yamlContent)
+	}
+	if isMetricsAuthRole {
+		// Only needed when secure metrics enabled (authn via TokenReview/SubjectAccessReview)
+		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+	}
+	if isMetricsReader {
+		// Only needed when secure metrics enabled (uses nonResourceURLs for /metrics access)
+		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+	}
+	if isMetricsAuthBinding {
+		// Binding for metrics-auth-role, only needed when secure metrics enabled
+		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+	}
+	// Essential RBAC (manager, leader-election) - always created
+	return yamlContent
+}
+
+// makeRBACKindConditional adds conditional rendering for ClusterRole/ClusterRoleBinding
+// to switch between cluster-scoped and namespace-scoped based on .Values.rbac.namespaced
+func (t *HelmTemplater) makeRBACKindConditional(yamlContent string, kind string) string {
+	var replacements []struct{ old, new string }
+
+	if kind == kindClusterRole {
+		// Replace kind: ClusterRole with conditional
+		replacements = append(replacements, struct{ old, new string }{
+			old: "kind: ClusterRole",
+			new: "{{- if .Values.rbac.namespaced }}\nkind: Role\n{{- else }}\nkind: ClusterRole\n{{- end }}",
+		})
+		// Add namespace after metadata for Role variant
+		replacements = append(replacements, struct{ old, new string }{
+			old: "metadata:",
+			new: "metadata:\n{{- if .Values.rbac.namespaced }}\n  namespace: {{ .Release.Namespace }}\n{{- end }}",
+		})
+	}
+
+	if kind == kindClusterRoleBinding {
+		// Replace kind: ClusterRoleBinding with conditional
+		replacements = append(replacements, struct{ old, new string }{
+			old: "kind: ClusterRoleBinding",
+			new: "{{- if .Values.rbac.namespaced }}\nkind: RoleBinding\n{{- else }}\nkind: ClusterRoleBinding\n{{- end }}",
+		})
+		// Add namespace after metadata for RoleBinding variant
+		replacements = append(replacements, struct{ old, new string }{
+			old: "metadata:",
+			new: "metadata:\n{{- if .Values.rbac.namespaced }}\n  namespace: {{ .Release.Namespace }}\n{{- end }}",
+		})
+		// Replace roleRef kind
+		replacements = append(replacements, struct{ old, new string }{
+			old: "  kind: ClusterRole",
+			new: "  {{- if .Values.rbac.namespaced }}\n  kind: Role\n  {{- else }}\n  kind: ClusterRole\n  {{- end }}",
+		})
+	}
+
+	result := yamlContent
+	for _, r := range replacements {
+		result = strings.Replace(result, r.old, r.new, 1)
+	}
+
+	return result
 }
 
 // collapseBlankLineAfterIf removes a single empty line that may appear
@@ -1892,6 +2029,13 @@ func (t *HelmTemplater) templatePorts(yamlContent string, resource *unstructured
 		// Replace targetPort: 8443 with metrics.port template
 		yamlContent = regexp.MustCompile(`(\s*)targetPort:\s*8443`).
 			ReplaceAllString(yamlContent, "${1}targetPort: {{ .Values.metrics.port }}")
+
+		// Template port name based on metrics.secure (http vs https)
+		// This ensures Service and ServiceMonitor use the correct scheme
+		if resource.GetKind() == kindService {
+			yamlContent = regexp.MustCompile(`(\s*)- name:\s*https(\s+port:)`).
+				ReplaceAllString(yamlContent, `${1}- name: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}${2}`)
+		}
 	}
 
 	// Template port-related arguments in Deployment
@@ -1959,6 +2103,69 @@ func (t *HelmTemplater) addCustomLabelsAndAnnotations(yamlContent string) string
 		result = t.handleDeploymentLabels(state, result, line, trimmed, indentLen)
 		result = t.handlePodAnnotations(state, result, line, trimmed, indent, indentLen)
 		result = t.handlePodLabels(state, result, line, trimmed, indentLen)
+	}
+
+	return strings.Join(result, "\n")
+}
+
+// templateServiceMonitor templates ServiceMonitor scheme and port based on metrics.secure
+func (t *HelmTemplater) templateServiceMonitor(yamlContent string) string {
+	yamlContent = regexp.MustCompile(`(\s*)port:\s*https`).
+		ReplaceAllString(yamlContent, `${1}port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}`)
+
+	yamlContent = regexp.MustCompile(`(\s*)scheme:\s*https`).
+		ReplaceAllString(yamlContent, `${1}scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}`)
+
+	// Make bearer token and TLS config conditional on metrics.secure
+	yamlContent = t.makeServiceMonitorBearerTokenConditional(yamlContent)
+	yamlContent = t.makeServiceMonitorTLSConditional(yamlContent)
+
+	return yamlContent
+}
+
+// makeServiceMonitorTLSConditional wraps ServiceMonitor tlsConfig with metrics.secure check
+func (t *HelmTemplater) makeServiceMonitorTLSConditional(yamlContent string) string {
+	// Use line-based parsing to avoid over-capturing (regex would capture selector block)
+	lines := strings.Split(yamlContent, "\n")
+	var result []string
+	inTLSConfig := false
+	tlsConfigIndent := 0
+	var tlsBlock []string
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
+
+		if strings.HasPrefix(trimmed, "tlsConfig:") {
+			inTLSConfig = true
+			tlsConfigIndent = currentIndent
+			tlsBlock = []string{line}
+			continue
+		}
+
+		if inTLSConfig {
+			// Stop when we hit a line with same or less indentation (not empty/comment)
+			if trimmed != "" && !strings.HasPrefix(trimmed, "#") && currentIndent <= tlsConfigIndent {
+				indentStr := strings.Repeat(" ", tlsConfigIndent)
+				result = append(result, fmt.Sprintf("%s{{- if .Values.metrics.secure }}", indentStr))
+				result = append(result, tlsBlock...)
+				result = append(result, fmt.Sprintf("%s{{- end }}", indentStr))
+				inTLSConfig = false
+				tlsBlock = nil
+				result = append(result, line)
+			} else {
+				tlsBlock = append(tlsBlock, line)
+			}
+		} else {
+			result = append(result, line)
+		}
+
+		if inTLSConfig && i == len(lines)-1 {
+			indentStr := strings.Repeat(" ", tlsConfigIndent)
+			result = append(result, fmt.Sprintf("%s{{- if .Values.metrics.secure }}", indentStr))
+			result = append(result, tlsBlock...)
+			result = append(result, fmt.Sprintf("%s{{- end }}", indentStr))
+		}
 	}
 
 	return strings.Join(result, "\n")
@@ -2480,4 +2687,14 @@ func (t *HelmTemplater) handleFlowStyleAnnotations(
 	}
 
 	return result
+}
+
+// makeServiceMonitorBearerTokenConditional wraps bearerTokenFile with metrics.secure check
+func (t *HelmTemplater) makeServiceMonitorBearerTokenConditional(yamlContent string) string {
+	// Handle case where bearerTokenFile is first field in list: "  - bearerTokenFile: ..."
+	listItemPattern := regexp.MustCompile(`(?m)^(\s*)-\s+bearerTokenFile:\s*([^\n]+)`)
+	yamlContent = listItemPattern.ReplaceAllString(yamlContent,
+		`$1- {{- if .Values.metrics.secure }}`+"\n"+`$1  bearerTokenFile: $2`+"\n"+`$1  {{- end }}`)
+
+	return yamlContent
 }
