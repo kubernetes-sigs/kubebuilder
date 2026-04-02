@@ -8,6 +8,8 @@ on:
   schedule:
     - cron: '30 20 * * 1'  # Runs every Monday at 8:30 PM
 
+permissions: {}
+
 jobs:
   analyze:
     name: Analyze Go

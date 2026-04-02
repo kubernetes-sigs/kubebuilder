@@ -9,6 +9,8 @@ on:
     paths-ignore:
       - '**/*.md'
 
+permissions: {}
+
 jobs:
   test:
     permissions:

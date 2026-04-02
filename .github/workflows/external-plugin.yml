@@ -12,6 +12,8 @@ on:
       - 'docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin'
       - '.github/workflows/external-plugin.yml'
 
+permissions: {}
+  
 jobs:
   external:
     name: Verify external plugin

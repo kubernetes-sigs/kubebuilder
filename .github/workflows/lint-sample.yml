@@ -12,6 +12,8 @@ on:
       - 'docs/book/src/**/testdata/**'
       - '.github/workflows/lint-sample.yml'
 
+permissions: {}
+
 jobs:
   lint-samples:
     permissions:
