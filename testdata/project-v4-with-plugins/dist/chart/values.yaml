@@ -104,6 +104,20 @@ manager:
   ##
   terminationGracePeriodSeconds: 10
 
+  ## Custom Deployment labels
+  ##
+  # labels: {}
+
+  ## Custom Deployment annotations
+  ##
+  # annotations: {}
+
+  ## Custom Pod labels and annotations
+  ##
+  # pod:
+  #   labels: {}
+  #   annotations: {}
+
 ## Helper RBAC roles for managing custom resources
 ##
 rbacHelpers:
