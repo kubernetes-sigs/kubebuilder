@@ -1,3 +1,4 @@
+{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -138,3 +139,4 @@ spec:
         secret:
           secretName: webhook-server-cert
       {{- end }}
+{{- end }}

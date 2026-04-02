@@ -111,7 +111,7 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 	yamlContent = t.substituteRBACValues(yamlContent)
 
 	// Apply deployment-specific templating
-	if resource.GetKind() == kindDeployment {
+	if resource.GetKind() == kindDeployment && isManagerDeployment(resource) {
 		yamlContent = t.templateDeploymentFields(yamlContent)
 
 		// Apply conditional logic for cert-manager related fields in deployments
@@ -1065,6 +1065,16 @@ func leadingWhitespace(line string) (string, int) {
 	return line[:indentLen], indentLen
 }
 
+// isManagerDeployment checks if a Deployment is the controller manager.
+// It returns true if either the deployment name contains "controller-manager"
+// OR the deployment has the label "control-plane: controller-manager".
+func isManagerDeployment(resource *unstructured.Unstructured) bool {
+	name := resource.GetName()
+	labels := resource.GetLabels()
+	return strings.Contains(name, "controller-manager") ||
+		(labels != nil && labels["control-plane"] == "controller-manager")
+}
+
 // templateControllerManagerArgs exposes controller manager args via values.yaml while keeping core defaults
 func (t *HelmTemplater) templateControllerManagerArgs(yamlContent string) string {
 	containerName := t.getDefaultContainerName(yamlContent)
@@ -1656,8 +1666,20 @@ func (t *HelmTemplater) addConditionalWrappers(yamlContent string, resource *uns
 		}
 		// Other services don't need conditionals
 		return yamlContent
+	case kind == kindDeployment:
+		// Only the manager deployment should be conditional on manager.enabled.
+		// Enabled when the key is absent (backward compatibility) OR when it's true.
+		// Disabled only when explicitly set to false.
+		if isManagerDeployment(resource) {
+			return fmt.Sprintf(
+				"{{- if or (not (hasKey .Values.manager \"enabled\")) (.Values.manager.enabled) }}\n%s\n{{- end }}\n",
+				yamlContent,
+			)
+		}
+		// Other deployments don't need conditionals
+		return yamlContent
 	default:
-		// No conditional wrapper needed for other resources (Deployment, Namespace)
+		// No conditional wrapper needed for other unhandled resource kinds
 		return yamlContent
 	}
 }
