@@ -1,11 +1,13 @@
+<p align="center"><img src="./docs/book/src/logos/kb-logo-one-line.svg" alt="kubebuilder logo" width="400" height="auto"></p>
+
+---
+
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/kubernetes-sigs/kubebuilder/badge)](https://scorecard.dev/viewer/?uri=github.com/kubernetes-sigs/kubebuilder)
 [![Lint](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml/badge.svg)](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml)
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
 [![Coverage Status](https://coveralls.io/repos/github/kubernetes-sigs/kubebuilder/badge.svg?branch=master)](https://coveralls.io/github/kubernetes-sigs/kubebuilder?branch=master)
 [![Latest release](https://img.shields.io/github/v/release/kubernetes-sigs/kubebuilder)](https://github.com/kubernetes-sigs/kubebuilder/releases)
 [![Go Reference](https://pkg.go.dev/badge/sigs.k8s.io/kubebuilder/v4.svg)](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4)
-
-## Kubebuilder
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
