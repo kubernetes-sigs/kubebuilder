@@ -415,6 +415,80 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(valuesStr).To(ContainSubstring("securityContext:"))
 		})
 	})
+
+	// A project that already has hand-authored tolerations, nodeSelector, and affinity in
+	// its manager Deployment (typical of a project created before the Helm plugin was added)
+	// must produce a chart where each scheduling field appears exactly once in
+	// templates/manager/manager.yaml as a Helm-templated stanza only, without any leftover
+	// raw YAML list items that would cause duplicate blocks and Helm parse errors.
+	Context("Scheduling fields upgrade-path", func() {
+		It("should produce exactly one Helm-templated stanza per scheduling field with no raw remnants", func() {
+			kustomizeYAML := createKustomizeWithTolerationsAndSchedulingFields("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = &editKustomizeScaffolder{
+				config:        projectConfig,
+				fs:            fs,
+				manifestsFile: manifestsFile,
+				outputDir:     outputDir,
+			}
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+
+			By("reading the generated manager template")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			By("verifying tolerations appears exactly once and is Helm-templated")
+			Expect(strings.Count(managerStr, "tolerations:")).To(Equal(1),
+				"tolerations: must appear exactly once in the manager template")
+			Expect(managerStr).To(ContainSubstring("{{- with .Values.manager.tolerations }}"),
+				"manager template must contain Helm with-block for tolerations")
+			Expect(managerStr).To(ContainSubstring("tolerations: {{ toYaml . | nindent"),
+				"manager template must use toYaml for tolerations")
+
+			By("verifying no raw toleration list items remain")
+			Expect(managerStr).NotTo(ContainSubstring("effect: NoSchedule"),
+				"raw toleration effect must not remain in manager template")
+			Expect(managerStr).NotTo(ContainSubstring("key: node-role.kubernetes.io/control-plane"),
+				"raw toleration key must not remain in manager template")
+			Expect(managerStr).NotTo(ContainSubstring("key: dedicated"),
+				"raw toleration key must not remain in manager template")
+
+			By("verifying nodeSelector appears exactly once and is Helm-templated")
+			Expect(strings.Count(managerStr, "nodeSelector:")).To(Equal(1),
+				"nodeSelector: must appear exactly once in the manager template")
+			Expect(managerStr).To(ContainSubstring("{{- with .Values.manager.nodeSelector }}"))
+			Expect(managerStr).NotTo(ContainSubstring("kubernetes.io/os: linux"),
+				"raw nodeSelector entry must not remain in the manager template")
+
+			By("verifying affinity appears exactly once and is Helm-templated")
+			Expect(strings.Count(managerStr, "affinity:")).To(Equal(1),
+				"affinity: must appear exactly once in the manager template")
+			Expect(managerStr).To(ContainSubstring("{{- with .Values.manager.affinity }}"))
+			Expect(managerStr).NotTo(ContainSubstring("nodeAffinity:"),
+				"raw affinity sub-field must not remain in the manager template")
+
+			By("verifying tolerations are extracted to values.yaml")
+			valuesPath := filepath.Join(chartPath, "values.yaml")
+			valuesBytes, err := os.ReadFile(valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			valuesStr := string(valuesBytes)
+			Expect(valuesStr).To(ContainSubstring("tolerations:"),
+				"tolerations must be extracted to values.yaml")
+
+			By("verifying the chart loads cleanly (no YAML parse errors)")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Validate()).To(Succeed())
+		})
+	})
 })
 
 // Helper functions to create kustomize YAML outputs for different scenarios
@@ -673,4 +747,75 @@ func setupKustomizeFile(filePath, content string) error {
 		return err
 	}
 	return os.WriteFile(filePath, []byte(content), 0o644)
+}
+
+// createKustomizeWithTolerationsAndSchedulingFields simulates a manager.yaml that already
+// contains custom tolerations, nodeSelector, and affinity – the real-world case that
+// triggered https://github.com/kubernetes-sigs/kubebuilder/issues/5569 where Helm chart
+// generation produces a duplicate tolerations block causing Helm render failures.
+func createKustomizeWithTolerationsAndSchedulingFields(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoExecute
+        key: dedicated
+        operator: Equal
+        value: controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: ` + projectName + `-controller-manager
+`
 }
