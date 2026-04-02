@@ -52,10 +52,7 @@ const autoUpdateTemplate = `name: Auto Update
 # The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
 # To protect your codebase, please ensure that you have branch protection rules configured for your 
 # main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
-permissions:
-  contents: write  # Create and push the update branch
-  issues: write    # Create GitHub Issue with PR link{{ if .UseGHModels }}
-  models: read     # Use GitHub Models for AI summaries{{ end }}
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -64,6 +61,10 @@ on:
 
 jobs:
   auto-update:
+    permissions:
+      contents: write  # Create and push the update branch
+      issues: write    # Create GitHub Issue with PR link{{ if .UseGHModels }}
+      models: read     # Use GitHub Models for AI summaries{{ end }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
@@ -75,6 +76,7 @@ jobs:
       with:
         token: {{ "${{ secrets.GITHUB_TOKEN }}" }}
         fetch-depth: 0
+        persist-credentials: false
 
     # Configure Git to create commits with the GitHub Actions bot.
     - name: Configure Git
