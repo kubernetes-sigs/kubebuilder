@@ -67,7 +67,7 @@ func NewHelmTemplater(detectedPrefix, chartName, managerNamespace string) *HelmT
 // If the annotation is not found, it falls back to "manager" for backward compatibility.
 func (t *HelmTemplater) getDefaultContainerName(yamlContent string) string {
 	// Look for kubectl.kubernetes.io/default-container annotation
-	pattern := regexp.MustCompile(`kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
+	pattern := regexp.MustCompile(`(?m)^\s*kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
 	matches := pattern.FindStringSubmatch(yamlContent)
 	if len(matches) > 1 {
 		return matches[1]
