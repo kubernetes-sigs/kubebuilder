@@ -2,8 +2,8 @@
 
 This guide covers converting **existing cluster-scoped projects** to namespace-scoped deployment.
 
-<aside class="note">
-<h1>Creating New Namespace-Scoped Projects</h1>
+<aside class="note" role="note">
+<p class="note-title">Creating New Namespace-Scoped Projects</p>
 
 If you're creating a **new project**, simply use:
 
@@ -28,8 +28,8 @@ By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage 
 - Managing cluster-scoped resources (Nodes, ClusterRoles, Namespaces, etc.)
 - Single manager instance managing resources across all namespaces
 
-<aside class="note">
-<h1>AI-Assisted Migration</h1>
+<aside class="note" role="note">
+<p class="note-title">AI-Assisted Migration</p>
 
 This migration involves updating RBAC markers across multiple controller files. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
@@ -44,8 +44,8 @@ This migration involves updating RBAC markers across multiple controller files. 
 4. Run `make manifests` - regenerate RBAC from updated markers
 5. Verify and deploy
 
-<aside class="warning">
-<h2>Manual Steps Required</h2>
+<aside class="warning" role="note">
+<p class="note-title">Manual Steps Required</p>
 
 The `edit` command scaffolds RBAC files and updates manager.yaml automatically (with `--force`), but **cannot** update existing controller files or cmd/main.go.
 
@@ -143,8 +143,8 @@ if err != nil {
 }
 ```
 
-<aside class="note">
-<h1>If You Didn't Use --force</h1>
+<aside class="note" role="note">
+<p class="note-title">If You Didn't Use --force</p>
 
 If you ran `kubebuilder edit --namespaced` without `--force`, manually add WATCH_NAMESPACE to `config/manager/manager.yaml`:
 
@@ -196,8 +196,8 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 Replace `project-system` with your namespace (found in `config/default/kustomization.yaml` under the `namespace:` field).
 
-<aside class="note">
-<h1>New Controllers Get This Automatically</h1>
+<aside class="note" role="note">
+<p class="note-title">New Controllers Get This Automatically</p>
 
 After running `kubebuilder edit --namespaced --force`, any new controllers created will automatically have the `namespace=` parameter:
 
@@ -239,8 +239,8 @@ metadata:
   # Note: namespace is added by kustomize during build, not in source
 ```
 
-<aside class="note">
-<h1>Metrics Auth Role Stays Cluster-Scoped</h1>
+<aside class="note" role="note">
+<p class="note-title">Metrics Auth Role Stays Cluster-Scoped</p>
 
 The `config/rbac/metrics_auth_role.yaml` will remain `kind: ClusterRole` - this is correct. The metrics authentication uses cluster-scoped APIs (TokenReview, SubjectAccessReview) and must stay cluster-scoped even in namespace-scoped projects.
 
@@ -270,9 +270,9 @@ kubectl apply -f config/samples/ -n <manager-namespace>
 kubectl apply -f config/samples/ -n other-namespace
 ```
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Webhooks and Namespace-Scoped Mode</h1>
+<p class="note-title">Webhooks and Namespace-Scoped Mode</p>
 
 If your project has webhooks, the manager cache is restricted to `WATCH_NAMESPACE`, but webhooks receive requests from all namespaces by default.
 
@@ -292,9 +292,9 @@ See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html)
 
 If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>AI Migration Instructions</h1>
+<p class="note-title">AI Migration Instructions</p>
 
 **Instructions to provide to your AI assistant:**
 

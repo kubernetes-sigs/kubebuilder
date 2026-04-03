@@ -2,9 +2,9 @@
 
 After reorganizing your project (Step 1) and executing scaffolding commands from discovery (Step 2), use AI to port your custom code to the new project.
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Important: Best Effort Only</h1>
+<p class="note-title">Important: Best Effort Only</p>
 
 The AI instructions below are provided as an **example** to help you get started. Due to the complexity and variety of Kubebuilder projects, we **cannot guarantee** it will work perfectly for all projects or be 100% accurate.
 
@@ -18,9 +18,9 @@ The instructions may help you understand how to approach certain migration scena
 
 </aside>
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Prerequisites</h1>
+<p class="note-title">Prerequisites</p>
 
 Before using these AI instructions:
 1. You've reorganized your project using Step 1 (`make build` succeeds)
@@ -275,9 +275,9 @@ The AI will:
 
 **Critical: Review carefully!**
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Manual Review Required</h1>
+<p class="note-title">Manual Review Required</p>
 
 After AI ports the code:
 
@@ -385,9 +385,9 @@ After AI ports your code:
 1. Check if nothing is missed, broken or wrongly ported
 2. Deploy to test cluster - Verify behavior
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>If You Have a Helm Chart</h1>
+<p class="note-title">If You Have a Helm Chart</p>
 
 If you had a Helm chart to distribute your project, you may want to consider regenerate with the [helm/v2-alpha plugin](../plugins/available/helm-v2-alpha.md)
 and then applying your customizations on top.

@@ -9,8 +9,8 @@ By using this plugin, you will get:
 - Custom resource samples updated with the necessary specifications.
 - Environment variable support for managing the Operand (image) within the manager.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 See the `project-v4-with-plugins` directory under the [testdata][testdata]
 directory in the Kubebuilder project to check an example
@@ -65,8 +65,8 @@ kubebuilder create api \
    kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,--memory-limit=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
    ```
 
-<aside class="warning">
-<h1>Note on make run:</h1>
+<aside class="warning" role="note">
+<p class="note-title">Note on make run:</p>
 
 When running the project locally with `make run`, the Operand image
 provided will be stored as an environment variable in the

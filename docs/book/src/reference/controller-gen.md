@@ -37,9 +37,9 @@ Output rules configure how a given generator outputs its results. There is
 always one global "fallback" output rule (specified as `output:<rule>`),
 plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Default Rules</h1>
+<p class="note-title">Default Rules</p>
 
 When no fallback rule is specified manually, a set of default
 per-generator rules are used which result in YAML going to

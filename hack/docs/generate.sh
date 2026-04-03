@@ -25,4 +25,8 @@ chmod -R +w docs/book/src/getting-started/testdata/project/
 docs_gen_directory="$(dirname "$0")/../../hack/docs/generate_samples.go"
 go run ${docs_gen_directory}
 
+# Fix documentation accessibility after generating docs
+echo "Fixing documentation accessibility..."
+$(dirname "$0")/fix_note_accessibility.sh
+
 

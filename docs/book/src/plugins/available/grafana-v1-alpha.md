@@ -5,8 +5,8 @@ scaffold Grafana Dashboards to allow you to check out the
 default metrics which are exported by projects
 using [controller-runtime][controller-runtime].
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check its default scaffold by looking at the `project-v4-with-plugins` projects
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
@@ -32,7 +32,7 @@ collected by Prometheus via [Grafana][grafana].
   - Prometheus Data source
     ![pre][prometheus-data-source]
 
-<aside class="note">
+<aside class="note" role="note">
 
 Check the [metrics][reference-metrics-doc] to know how to enable the metrics for your projects scaffold with Kubebuilder.
 

@@ -2,8 +2,8 @@
 
 This document explains CustomResourceDefinition (CRD) scope in Kubernetes: how CRDs can be defined as namespace-scoped or cluster-scoped resources.
 
-<aside class="note">
-<h1>CRD Scope vs Manager Scope</h1>
+<aside class="note" role="note">
+<p class="note-title">CRD Scope vs Manager Scope</p>
 
 CRD scope is independent from manager scope. See [Understanding Scopes](./scopes.md) for an explanation of how these two concepts differ.
 </aside>
@@ -153,8 +153,8 @@ After updating markers, regenerate manifests:
 make manifests
 ```
 
-<aside class="warning">
-<h1>Scope Changes Are Breaking</h1>
+<aside class="warning" role="note">
+<p class="note-title">Scope Changes Are Breaking</p>
 
 Changing CRD scope from Namespaced to Cluster (or vice versa) is a **breaking change**:
 - Existing custom resources will become invalid
@@ -226,8 +226,8 @@ rules:
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ```
 
-<aside class="note">
-<h1>Important</h1>
+<aside class="note" role="note">
+<p class="note-title">Important</p>
 
 Even if your manager is namespace-scoped (watches only one namespace), if it manages cluster-scoped CRDs, it still needs `ClusterRole` permissions for those resources.
 

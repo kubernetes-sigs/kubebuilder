@@ -33,8 +33,8 @@ Currently, Kubebuilder officially supports macOS and Linux platforms. If you are
 
 Contributions towards supporting Windows are not planned.
 
-<aside class="warning">
-    <h3>Project customizations</h3>
+<aside class="warning" role="note">
+    <p class="note-title">Project customizations</p>
 
 After using the CLI to create your project, you are free to customize how
 you see fit. Bear in mind, that it is not recommended to deviate from

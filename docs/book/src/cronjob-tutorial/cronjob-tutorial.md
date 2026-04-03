@@ -19,9 +19,9 @@ once, seeing them to completion.
 Instead of trying to tackle rewriting the Job controller as well, we'll
 use this as an opportunity to see how to interact with external types.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Following Along vs Jumping Ahead</h1>
+<p class="note-title">Following Along vs Jumping Ahead</p>
 
 Note that most of this tutorial is generated from literate Go files that
 live in the book source directory:
@@ -52,7 +52,7 @@ cd project
 kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
 
-<aside class="note">
+<aside class="note" role="note">
 
 Your project's name defaults to that of your current working directory.
 You can pass `--project-name=<dns1123-label-string>` to set a different project name.
@@ -62,9 +62,9 @@ You can pass `--project-name=<dns1123-label-string>` to set a different project 
 Now that we've got a project in place, let's take a look at what
 Kubebuilder has scaffolded for us so far...
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Developing in <code>$GOPATH</code></h1>
+<p class="note-title">Developing in <code>$GOPATH</code></p>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.

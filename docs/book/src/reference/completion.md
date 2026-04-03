@@ -4,8 +4,8 @@ Note that sourcing the completion script in your shell enables Kubebuilder autoc
 
 ## Bash
 
-<aside class="note">
-<h1>Prerequisites for Bash</h1>
+<aside class="note" role="note">
+<p class="note-title">Prerequisites for Bash</p>
 
 The completion Bash script depends on [bash-completion](https://github.com/scop/bash-completion), which means that you have to install this software first (you can test if you have bash-completion already installed). Also, ensure that your Bash version is 4.1+.
 

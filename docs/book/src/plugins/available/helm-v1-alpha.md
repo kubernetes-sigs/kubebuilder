@@ -1,7 +1,7 @@
 # Helm Plugin (`helm/v1-alpha`) - **DEPRECATED**
 
-<aside class="warning">
-<h1> Deprecated Plugin</h1>
+<aside class="warning" role="note">
+<p class="note-title"> Deprecated Plugin</p>
 
 The `helm/v1-alpha` plugin is **deprecated**. Please use [`helm/v2-alpha`](./helm-v2-alpha.md) instead.
 
@@ -30,8 +30,8 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/project-v4/<tag or bran
 However, in many scenarios, you might prefer to provide a Helm chart to package your solution.
 If so, you can use this plugin to generate the Helm chart under the `dist` directory.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check the plugin usage by looking at `project-v4-with-plugins` samples
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
@@ -50,8 +50,8 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
   under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you will need to manually reapply your customizations on top
   of the latest changes after regenerating the Helm chart.
 
-<aside class="note">
-<H1> Why CRDs are added under templates? </H1>
+<aside class="note" role="note">
+<p class="note-title"> Why CRDs are added under templates? </p>
 
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
 
@@ -92,8 +92,8 @@ kubebuilder init
 make manifests
 kubebuilder edit --plugins=helm/v1-alpha
 ```
-<aside class="note">
-  <h1>Use the edit command to update the Helm Chart with the latest changes</h1>
+<aside class="note" role="note">
+  <p class="note-title">Use the edit command to update the Helm Chart with the latest changes</p>
 
   After making changes to your project, ensure that you run `make manifests` and then
   use the command `kubebuilder edit --plugins=helm/v1-alpha` to update the Helm Chart.

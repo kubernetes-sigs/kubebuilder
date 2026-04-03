@@ -16,8 +16,8 @@ and you can find the list of available versions at: [envtest-releases.yaml](http
 When you run `make envtest` or `make test`, the necessary tarballs are downloaded and properly
 configured for your project.
 
-<aside class="note">
-<h1>Setup ENV TEST tool</h1>
+<aside class="note" role="note">
+<p class="note-title">Setup ENV TEST tool</p>
 
 To learn more about the tooling used to configure ENVTEST, which is utilized in the `setup-envtest`
 target in the Makefile of projects built with Kubebuilder, see the [README](https://github.com/kubernetes-sigs/controller-runtime/blob/main/tools/setup-envtest/README.md)
@@ -26,8 +26,8 @@ of its tooling. Additionally, you can find more information by reviewing the Kub
 </aside>
 
 
-<aside class="warning">
-    <h3>IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </h3>
+<aside class="warning" role="note">
+    <p class="note-title">IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </p>
 
 **Artifacts provided under [https://storage.googleapis.com/kubebuilder-tools](https://storage.googleapis.com/kubebuilder-tools) are deprecated and Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these artifacts.**
 
