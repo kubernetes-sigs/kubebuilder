@@ -43,20 +43,27 @@ func NewScaffoldCommand() *cobra.Command {
 	scaffoldCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Re-scaffold a Kubebuilder project from its PROJECT file",
-		Long: `The 'generate' command re-creates a Kubebuilder project scaffold based on the configuration 
-defined in the PROJECT file, using the latest installed Kubebuilder version and plugins.
+		Long: `Re-generate a Kubebuilder project scaffold based on the PROJECT file configuration.
 
-This is helpful for migrating projects to a newer Kubebuilder layout or plugin version (e.g., v3 to v4)
-as update your project from any previous version to the current one.
+This command uses the latest installed Kubebuilder version and plugins to regenerate
+the entire project structure. 
 
-If no output directory is provided, the current working directory will be cleaned (except .git and PROJECT).`,
+This is helpful for migrating projects to newer Kubebuilder 
+layouts or plugin version (e.g., v3 to v4)
+
+This command deletes all files except .git/ and PROJECT before regenerating in-place when 
+--output-dir is not specified.
+
+The PROJECT file must exist and contain valid plugin configuration.`,
 		Example: `
-  # **WARNING**(will delete all files to allow the re-scaffold except .git and PROJECT)
-  # Re-scaffold the project in-place 
+  # Re-scaffold in-place (WARNING: deletes all files except .git and PROJECT)
   kubebuilder alpha generate
 
-  # Re-scaffold the project from ./test into ./my-output
-  kubebuilder alpha generate --input-dir="./path/to/project" --output-dir="./my-output"
+  # Re-scaffold to a different directory (safe, preserves original)
+  kubebuilder alpha generate --output-dir="./regenerated"
+
+  # Re-scaffold from a specific project directory to a different directory
+  kubebuilder alpha generate --input-dir="./my-project" --output-dir="./my-project-v4"
 `,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			return opts.Validate()
@@ -70,13 +77,12 @@ If no output directory is provided, the current working directory will be cleane
 	}
 
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
-		"Path to the directory containing the PROJECT file. "+
-			"Defaults to the current working directory. WARNING: delete existing files (except .git and PROJECT).")
+		"path to directory containing the PROJECT file (default: current directory). "+
+			"WARNING: if --output-dir is not set, all files except .git/ and PROJECT will be deleted")
 
 	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
-		"Directory where the new project scaffold will be written. "+
-			"If unset, re-scaffolding occurs in-place "+
-			"and will delete existing files (except .git and PROJECT).")
+		"path to directory where regenerated scaffold will be written. "+
+			"If not set, regenerates in-place and deletes existing files (except .git/ and PROJECT)")
 
 	scaffoldCmd.Flags().BoolVar(&opts.SkipGoVersionCheck, "skip-go-version-check", true,
 		"skip the Go version check during project generation")

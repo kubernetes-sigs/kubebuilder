@@ -145,38 +145,39 @@ Defaults:
 	}
 
 	updateCmd.Flags().StringVar(&opts.FromVersion, "from-version", "",
-		"binary release version to upgrade from. Should match the version used to init the project and be "+
-			"a valid release version, e.g., v4.6.0. If not set, it defaults to the version specified in the PROJECT file.")
+		"Kubebuilder version to upgrade from (e.g., v4.6.0). Should match version used to initialize project "+
+			"If not set, uses version from PROJECT file")
 	updateCmd.Flags().StringVar(&opts.ToVersion, "to-version", "",
-		"binary release version to upgrade to. Should be a valid release version, e.g., v4.7.0. "+
-			"If not set, it defaults to the latest release version available in the project repository.")
+		"Kubebuilder version to upgrade to (e.g., v4.7.0). "+
+			"If not set, uses latest version available in the project repository")
 	updateCmd.Flags().StringVar(&opts.FromBranch, "from-branch", "",
-		"Git branch to use as current state of the project for the update.")
+		"Git branch containing current project state (default: main)")
 	updateCmd.Flags().BoolVar(&opts.Force, "force", false,
-		"Force the update even if conflicts occur. Conflicted files will include conflict markers, and a "+
-			"commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).")
+		"if true, commit even with conflicts (adds conflict markers). "+
+			"Ideal for automation (CI/CD pipelines, cronjobs)")
 	updateCmd.Flags().BoolVar(&opts.ShowCommits, "show-commits", false,
-		"If set, the update will keep the full history instead of squashing into a single commit.")
+		"if true, keep full commit history instead of squashing. "+
+			"Cannot be used with --restore-path")
 	updateCmd.Flags().StringArrayVar(&opts.RestorePath, "restore-path", nil,
-		"Paths to preserve from the base branch (repeatable). Not supported with --show-commits.")
+		"paths to preserve from base branch (repeatable, e.g., --restore-path .github/workflows). "+
+			"Cannot be used with --show-commits")
 	updateCmd.Flags().StringVar(&opts.OutputBranch, "output-branch", "",
 		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
 	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
-		"Push the output branch to the remote repository after the update.")
+		"if true, push output branch to origin after update")
 	updateCmd.Flags().StringVar(&opts.CommitMessage, "merge-message", "",
-		"Custom commit message for successful merges (no conflicts). "+
-			"Defaults to 'chore(kubebuilder): update scaffold <from> -> <to>'.")
+		"custom commit message for clean merges (no conflicts)"+
+			"(default: 'chore(kubebuilder): update scaffold <from> -> <to>')")
 	updateCmd.Flags().StringVar(&opts.CommitMessageConflict, "conflict-message", "",
-		"Custom commit message for merges with conflicts. "+
-			"Defaults to 'chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold <from> -> <to>'.")
+		"custom commit message for merges with conflicts. "+
+			"(default: 'chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold <from> -> <to>')")
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
-		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
+		"if true, create GitHub issue with a pre-filled checklist and compare link (requires gh CLI)")
 	updateCmd.Flags().BoolVar(
 		&opts.UseGhModels,
 		"use-gh-models",
 		false,
-		"Generate and post an AI summary comment to the GitHub Issue using `gh models run`. "+
-			"Requires --open-gh-issue and GitHub CLI (`gh`) with the `gh-models` extension.")
+		"if true, add AI-generated summary comment to GitHub issue (requires --open-gh-issue and gh CLI with gh-models extension)")
 	updateCmd.Flags().StringArrayVar(
 		&gitCfg,
 		"git-config",
