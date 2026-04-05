@@ -1,9 +1,9 @@
 name: Auto Update
 
 # The 'kubebuilder alpha update' command requires write access to the repository to create a branch
-# with the update files and allow you to open a pull request using the link provided in the issue.
+# with the update files and optionally create a pull request (--open-gh-pr) and/or issue (--open-gh-issue).
 # The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
-# To protect your codebase, please ensure that you have branch protection rules configured for your 
+# To protect your codebase, please ensure that you have branch protection rules configured for your
 # main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
 permissions: {}
 
@@ -16,8 +16,9 @@ jobs:
   auto-update:
     permissions:
       contents: write  # Create and push the update branch
-      issues: write    # Create GitHub Issue with PR link
-      models: read     # Use GitHub Models for AI summaries
+      issues: write  # Create GitHub Issue notification
+      pull-requests: write  # Create Pull Request
+      models: read  # Use GitHub Models
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,13 +65,14 @@ jobs:
       # --force: Completes the merge even if conflicts occur, leaving conflict markers.
       # --push: Automatically pushes the resulting output branch to the 'origin' remote.
       # --restore-path: Preserves specified paths (e.g., CI workflow files) when squashing.
-      # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.
-      # --use-gh-models: Adds an AI-generated comment to the created Issue with
-      #   a short overview of the scaffold changes and conflict-resolution guidance (if any).
+      # --open-gh-issue: Creates a GitHub Issue.
+      # --open-gh-pr: Creates a GitHub Pull Request directly for review.
+      # --use-gh-models: Adds an AI summary to the PR description.
       run: |
         kubebuilder alpha update \
           --force \
           --push \
           --restore-path .github/workflows \
           --open-gh-issue \
+          --open-gh-pr \
           --use-gh-models

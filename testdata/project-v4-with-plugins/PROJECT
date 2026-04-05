@@ -9,6 +9,8 @@ layout:
 namespaced: true
 plugins:
   autoupdate.kubebuilder.io/v1-alpha:
+    openGHIssue: true
+    openGHPR: true
     useGHModels: true
   deploy-image.go.kubebuilder.io/v1-alpha:
     resources:
