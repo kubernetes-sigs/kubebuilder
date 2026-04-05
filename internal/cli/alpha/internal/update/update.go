@@ -87,10 +87,16 @@ type Update struct {
 	CommitMessageConflict string
 
 	// OpenGhIssue, when true, automatically creates a GitHub issue after the update
-	// completes. The issue includes a pre-filled checklist and a compare link from
-	// the base branch (--from-branch) to the output branch. This requires the GitHub
-	// CLI (`gh`) to be installed and authenticated in the local environment.
+	// completes. The issue includes instructions to run the update locally. If
+	// --open-gh-pr is also enabled, the issue will include a link to the PR. This
+	// requires the GitHub CLI (`gh`) to be installed and authenticated in the local
+	// environment.
 	OpenGhIssue bool
+
+	// OpenGhPR, when true, automatically creates a GitHub pull request after the update
+	// completes. The PR includes the scaffold changes and a link to release notes.
+	// This requires the GitHub CLI (`gh`) to be installed and authenticated.
+	OpenGhPR bool
 
 	UseGhModels bool
 
@@ -128,9 +134,10 @@ type Update struct {
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
 func (opts *Update) Update() error {
-	// Inform users about GitHub Models if they're opening an issue but not using AI summary
-	if opts.OpenGhIssue && !opts.UseGhModels {
-		log.Info("Consider enabling GitHub Models to get an AI summary to help with the update")
+	// Inform users about GitHub Models if they're opening a PR but not using AI summary
+	// Note: AI summaries only work with PRs, not issues
+	if opts.OpenGhPR && !opts.UseGhModels {
+		log.Info("Consider enabling GitHub Models to get an AI summary in the PR description")
 		log.Info("Use the --use-gh-models flag if your project/organization has permission to use GitHub Models")
 	}
 
@@ -206,40 +213,47 @@ func (opts *Update) Update() error {
 
 	// Push the output branch if requested
 	if opts.Push {
-		if opts.Push {
-			out := opts.getOutputBranchName()
-			_ = helpers.GitCmd(opts.GitConfig, "checkout", out).Run()
-			if err := helpers.GitCmd(opts.GitConfig, "push", "-u", "origin", out).Run(); err != nil {
-				return fmt.Errorf("failed to push %s: %w", out, err)
-			}
+		out := opts.getOutputBranchName()
+		_ = helpers.GitCmd(opts.GitConfig, "checkout", out).Run()
+		if err := helpers.GitCmd(opts.GitConfig, "push", "-u", "origin", out).Run(); err != nil {
+			return fmt.Errorf("failed to push %s: %w", out, err)
 		}
 	}
 
 	opts.cleanupTempBranches()
-	log.Info("Update completed successfully")
 
+	// Create PR first (if enabled) so we can link to it from the issue
+	var prURL string
+	if opts.OpenGhPR {
+		var err error
+		prURL, err = opts.openGitHubPR(hasConflicts)
+		if err != nil {
+			return fmt.Errorf("failed to open GitHub pull request: %w", err)
+		}
+	}
+
+	// Create issue with optional PR link
 	if opts.OpenGhIssue {
-		if err := opts.openGitHubIssue(hasConflicts); err != nil {
+		if err := opts.openGitHubIssue(hasConflicts, prURL); err != nil {
 			return fmt.Errorf("failed to open GitHub issue: %w", err)
 		}
 	}
 
+	log.Info("Update completed successfully")
 	return nil
 }
 
-func (opts *Update) openGitHubIssue(hasConflicts bool) error {
+func (opts *Update) openGitHubIssue(hasConflicts bool, prURL string) error {
 	log.Info("Creating GitHub Issue to track the need to update the project")
-	out := opts.getOutputBranchName()
 
 	// Detect repo "owner/name"
 	repoCmd := exec.Command("gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
 	repoBytes, err := repoCmd.Output()
 	if err != nil {
-		return fmt.Errorf("failed to detect GitHub repository via `gh repo view`: %s", err)
+		return fmt.Errorf("failed to detect GitHub repository via `gh repo view`: %w", err)
 	}
 	repo := strings.TrimSpace(string(repoBytes))
 
-	createPRURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1", repo, opts.FromBranch, out)
 	title := fmt.Sprintf(helpers.IssueTitleTmpl, opts.ToVersion, opts.FromVersion)
 
 	// Skip if an open issue with same title already exists
@@ -253,12 +267,33 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 		return nil
 	}
 
-	// Base issue body
+	// Build issue body based on whether PR was created
 	var body string
-	if hasConflicts {
-		body = fmt.Sprintf(helpers.IssueBodyTmplWithConflicts, opts.ToVersion, createPRURL, opts.FromVersion, out)
+	if prURL != "" {
+		// If PR exists, use template that links to it
+		body = fmt.Sprintf(helpers.IssueBodyWithPRTmpl, opts.ToVersion, opts.FromVersion, prURL)
 	} else {
-		body = fmt.Sprintf(helpers.IssueBodyTmpl, opts.ToVersion, createPRURL, opts.FromVersion, out)
+		// No PR, use template with local instructions
+		body = fmt.Sprintf(helpers.IssueBodyTmpl, opts.ToVersion, opts.FromVersion)
+	}
+
+	// If conflicts were detected, prepend conflict warning to "What to do" section
+	if hasConflicts {
+		const whatToDoHeading = "## What to do"
+		if idx := strings.Index(body, whatToDoHeading); idx != -1 {
+			// Find the end of the heading line (after potential whitespace and newlines)
+			insertPos := idx + len(whatToDoHeading)
+			for insertPos < len(body) &&
+				(body[insertPos] == ' ' || body[insertPos] == '\t' ||
+					body[insertPos] == '\r' || body[insertPos] == '\n') {
+				insertPos++
+			}
+			body = body[:insertPos] + helpers.ConflictWarningForIssue + body[insertPos:]
+		} else {
+			return fmt.Errorf(
+				"failed to add conflict warning: could not find %q section in issue body template",
+				whatToDoHeading)
+		}
 	}
 
 	log.Info("Creating GitHub Issue")
@@ -291,19 +326,52 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 		}
 		issueURL = strings.TrimSpace(string(urlBytes))
 	}
-	log.Info("GitHub Issue created to track the update", "url", issueURL, "compare", createPRURL)
+	log.Info("GitHub Issue created to track the update", "url", issueURL)
+	return nil
+}
 
+func (opts *Update) openGitHubPR(hasConflicts bool) (string, error) {
+	log.Info("Creating GitHub Pull Request for the update")
+	out := opts.getOutputBranchName()
+
+	// Security validation: Only allow PRs from branches with the expected prefix
+	// This prevents opening PRs from arbitrary branches when using this flag
+	if !strings.HasPrefix(out, "kubebuilder-update-from-") {
+		return "", fmt.Errorf(
+			"security: --open-gh-pr can only be used with branches prefixed 'kubebuilder-update-from-', got: %s", out)
+	}
+
+	// Detect repo "owner/name"
+	repoCmd := exec.Command("gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
+	repoBytes, err := repoCmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to detect GitHub repository via `gh repo view`: %w", err)
+	}
+	repo := strings.TrimSpace(string(repoBytes))
+
+	// Build PR body using common description template
+	var body strings.Builder
+	// Use same base description as issues
+	fmt.Fprintf(&body, helpers.CommonDescriptionTmpl, opts.ToVersion, opts.FromVersion)
+
+	// Append conflict warning if conflicts were detected
+	if hasConflicts {
+		body.WriteString("\n:warning: **Conflicts were detected during the merge.** ")
+		body.WriteString("Please resolve them before moving forward. ")
+		body.WriteString("You can use `kubebuilder alpha update` locally to regenerate this update and fix conflicts. ")
+		body.WriteString("For more information, see: https://kubebuilder.io/reference/commands/alpha_update\n\n")
+	}
+
+	prBody := body.String()
+
+	// If AI models are enabled, generate and append AI summary
 	if opts.UseGhModels {
-		log.Info("Generating AI summary with gh models")
+		log.Info("Generating AI summary with gh models for PR description")
 
-		if issueURL == "" {
-			return fmt.Errorf("issue created but URL could not be determined")
-		}
+		releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s", opts.ToVersion)
+		createPRURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1", repo, opts.FromBranch, out)
 
-		releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s",
-			opts.ToVersion)
-
-		ctx := helpers.BuildFullPrompet(
+		ctx := helpers.BuildFullPrompt(
 			opts.FromVersion, opts.ToVersion, opts.FromBranch, out,
 			createPRURL, releaseURL)
 
@@ -316,34 +384,45 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 		cmd.Stdout = &outBuf
 		cmd.Stderr = &errBuf
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("gh models run failed: %w\nstderr:\n%s", err, errBuf.String())
-		}
-
-		summary := strings.TrimSpace(outBuf.String())
-		if summary != "" {
-			num := helpers.IssueNumberFromURL(issueURL)
-			target := issueURL
-			args := make([]string, 4, 7)
-			args[0] = "issue"
-			args[1] = "comment"
-			args[2] = "--repo"
-			args[3] = repo
-			if num != "" {
-				target = num
-			}
-			args = append(args, target, "--body", summary)
-			commentCmd := exec.Command("gh", args...)
-			commentCmd.Stdout = os.Stdout
-			commentCmd.Stderr = os.Stderr
-			if err := commentCmd.Run(); err != nil {
-				return fmt.Errorf("failed to add AI summary comment: %s", err)
-			}
-			log.Info("AI summary comment added to the issue")
+			log.Warn("Failed to generate AI summary, proceeding without it", "error", err, "stderr", errBuf.String())
 		} else {
-			log.Warn("AI summary was empty, no comment added")
+			summary := strings.TrimSpace(outBuf.String())
+			if summary != "" {
+				prBody = prBody + "\n" + summary
+				log.Info("AI summary generated and added to PR description")
+			} else {
+				log.Warn("AI summary was empty, using basic PR description")
+			}
 		}
 	}
-	return nil
+
+	// Create the pull request
+	title := fmt.Sprintf("chore: upgrade scaffold from %s to %s", opts.FromVersion, opts.ToVersion)
+
+	log.Info("Creating GitHub Pull Request")
+	// Use --body-file with stdin to avoid OS command-line length limits with large AI summaries
+	createCmd := exec.Command("gh", "pr", "create",
+		"--repo", repo,
+		"--base", opts.FromBranch,
+		"--head", out,
+		"--title", title,
+		"--body-file", "-",
+	)
+	createCmd.Stdin = strings.NewReader(prBody)
+	createOut, createErr := createCmd.CombinedOutput()
+	if createErr != nil {
+		return "", fmt.Errorf("failed to create GitHub pull request: %v\n%s", createErr, string(createOut))
+	}
+
+	// Extract PR URL
+	prURL := helpers.FirstURL(string(createOut))
+	if prURL != "" {
+		log.Info("GitHub Pull Request created successfully", "url", prURL)
+	} else {
+		log.Info("GitHub Pull Request created successfully")
+	}
+
+	return prURL, nil
 }
 
 func (opts *Update) cleanupTempBranches() {

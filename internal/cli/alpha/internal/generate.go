@@ -371,10 +371,26 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 		return nil
 	}
 
+	// Validate and auto-fix invalid combinations
+	if autoUpdatePlugin.UseGHModels && !autoUpdatePlugin.OpenGHPR {
+		slog.Warn("Auto Update config has --use-gh-models but not --open-gh-pr. " +
+			"AI summaries require Pull Requests. Auto-enabling --open-gh-pr.")
+		autoUpdatePlugin.OpenGHPR = true
+	}
+
 	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
+
+	// Pass all flags explicitly to avoid relying on edit command defaults
 	if autoUpdatePlugin.UseGHModels {
 		args = append(args, "--use-gh-models")
 	}
+	if autoUpdatePlugin.OpenGHIssue {
+		args = append(args, "--open-gh-issue")
+	}
+	if autoUpdatePlugin.OpenGHPR {
+		args = append(args, "--open-gh-pr")
+	}
+
 	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}

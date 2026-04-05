@@ -28,9 +28,9 @@ import (
 )
 
 //nolint:lll
-const metaDataDescription = `This plugin scaffolds a GitHub Action that helps you keep your project aligned with the latest Kubebuilder improvements. With a tiny amount of setup, you'll receive **automatic issue notifications** whenever a new Kubebuilder release is available. Each issue includes a **compare link** so you can open a Pull Request with one click and review the changes safely.
+const metaDataDescription = `This plugin scaffolds a GitHub Action that helps you keep your project aligned with the latest Kubebuilder improvements. With a tiny amount of setup, you'll receive **automatic notifications** whenever a new Kubebuilder release is available, with both a GitHub Issue and Pull Request created by default.
 
-Under the hood, the workflow runs 'kubebuilder alpha update' using a **3-way merge strategy** to refresh your scaffold while preserving your code. It creates and pushes an update branch, then opens a GitHub **Issue** containing the PR URL you can use to review and merge.
+Under the hood, the workflow runs 'kubebuilder alpha update' using a **3-way merge strategy** to refresh your scaffold while preserving your code. It creates and pushes an update branch, then opens both a GitHub **Issue** (for notification) and a **Pull Request** (for review and merge).
 
 ### How to set it up
 
@@ -38,13 +38,14 @@ Under the hood, the workflow runs 'kubebuilder alpha update' using a **3-way mer
 2) **Review the workflow**: The file '.github/workflows/auto_update.yml' runs on a schedule to check for updates.
 3) **Permissions required** (via the built-in 'GITHUB_TOKEN'):
    - **contents: write** — needed to create and push the update branch.
-   - **issues: write** — needed to create the tracking Issue with the PR link.
+   - **issues: write** — needed to create the notification Issue (can be disabled with --open-gh-issue=false).
+   - **pull-requests: write** — needed to create the Pull Request (can be disabled with --open-gh-pr=false).
    - **models: read** (optional) — only required if using --use-gh-models flag for AI-generated summaries.
 4) **Protect your branches**: Enable **branch protection rules** so automated changes **cannot** be pushed directly. All updates must go through a Pull Request for review.
 
 ### Optional: GitHub Models AI Summary
 
-By default, the workflow does NOT use GitHub Models. To enable AI-generated summaries in GitHub issues:
+By default, the workflow does NOT use GitHub Models. To enable AI-generated summaries in Pull Requests:
   - Ensure your repository/organization has permissions to use GitHub Models.
   - Re-run: kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
 
@@ -67,6 +68,8 @@ var _ plugin.Edit = Plugin{}
 // PluginConfig defines the structure that will be used to track the data
 type PluginConfig struct {
 	UseGHModels bool `json:"useGHModels,omitempty"`
+	OpenGHIssue bool `json:"openGHIssue,omitempty"`
+	OpenGHPR    bool `json:"openGHPR,omitempty"`
 }
 
 // Name returns the name of the plugin
@@ -96,13 +99,15 @@ func insertPluginMetaToConfig(target config.Config, cfg PluginConfig) error {
 	key := plugin.GetPluginKeyForConfig(target.GetPluginChain(), Plugin{})
 	canonicalKey := plugin.KeyFor(Plugin{})
 
-	if err := target.DecodePluginConfig(key, &cfg); err != nil {
+	// Decode existing config for validation, but don't overwrite flag values
+	var existing PluginConfig
+	if err := target.DecodePluginConfig(key, &existing); err != nil {
 		switch {
 		case errors.As(err, &config.UnsupportedFieldError{}):
 			return nil
 		case errors.As(err, &config.PluginKeyNotFoundError{}):
 			if key != canonicalKey {
-				if err2 := target.DecodePluginConfig(canonicalKey, &cfg); err2 != nil {
+				if err2 := target.DecodePluginConfig(canonicalKey, &existing); err2 != nil {
 					if errors.As(err2, &config.UnsupportedFieldError{}) {
 						return nil
 					}
@@ -116,6 +121,7 @@ func insertPluginMetaToConfig(target config.Config, cfg PluginConfig) error {
 		}
 	}
 
+	// Always encode the new config from flags (cfg parameter), not the existing one
 	if err := target.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
 	}
