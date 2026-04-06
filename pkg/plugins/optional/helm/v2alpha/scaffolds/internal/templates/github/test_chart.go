@@ -64,6 +64,8 @@ jobs:
       contents: read
     name: Run on Ubuntu
     runs-on: ubuntu-latest
+    env:
+      IMG: controller:latest
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -90,8 +92,8 @@ jobs:
       - name: Prepare {{ .ProjectName }}
         run: |
           go mod tidy
-          make docker-build IMG=controller:latest
-          kind load docker-image controller:latest
+          make docker-build
+          kind load docker-image $IMG
 
       - name: Install Helm
         run: make install-helm
@@ -121,7 +123,7 @@ jobs:
 
       - name: Deploy manager via Helm
         run: |
-          make helm-deploy IMG={{ .ProjectName }}:v0.1.0
+          make helm-deploy
 
       - name: Check Helm release status
         run: |
