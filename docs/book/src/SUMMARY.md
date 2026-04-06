@@ -67,6 +67,7 @@
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
+  - [License Header](./reference/license-header.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
     - [Owned Resources](./reference/watching-resources/secondary-owned-resources.md)
