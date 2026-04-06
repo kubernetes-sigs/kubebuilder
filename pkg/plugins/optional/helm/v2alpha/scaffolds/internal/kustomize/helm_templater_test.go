@@ -319,6 +319,130 @@ spec:
 
 			Expect(result).To(ContainSubstring("imagePullSecrets:"))
 		})
+
+		It("should template deployment strategy", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    spec:
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.strategy }}"))
+			Expect(result).To(ContainSubstring("strategy: {{ toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("type: RollingUpdate"))
+		})
+
+		It("should template priorityClassName", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.priorityClassName }}"))
+			Expect(result).To(ContainSubstring("priorityClassName: {{ . | quote }}"))
+			Expect(result).NotTo(ContainSubstring("priorityClassName: high-priority"))
+		})
+
+		It("should template topologySpreadConstraints", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.topologySpreadConstraints }}"))
+			Expect(result).To(ContainSubstring("topologySpreadConstraints: {{ toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("maxSkew: 1"))
+		})
+
+		It("should template terminationGracePeriodSeconds with nil check", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring(
+				"{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\")"))
+			Expect(result).To(ContainSubstring("(ne .Values.manager.terminationGracePeriodSeconds nil)"))
+			Expect(result).To(ContainSubstring(
+				"terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}"))
+			Expect(result).NotTo(ContainSubstring("terminationGracePeriodSeconds: 10"))
+		})
+
+		It("should template terminationGracePeriodSeconds zero value", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should use hasKey to support 0 values
+			Expect(result).To(ContainSubstring("hasKey .Values.manager \"terminationGracePeriodSeconds\""))
+			Expect(result).To(ContainSubstring(
+				"terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}"))
+			Expect(result).NotTo(ContainSubstring("terminationGracePeriodSeconds: 0"))
+		})
 	})
 
 	Context("conditional wrapping", func() {
@@ -949,8 +1073,8 @@ spec:
 		})
 
 		It("should not double-escape quotes already escaped by yaml.Marshal in double-quoted YAML scalars", func() {
-			// yaml.Marshal represents literal " inside a {{ }} expression as \"
-			// in a double-quoted YAML scalar, so a second pass escaping " → \" produced \\" which
+			// Regression test: yaml.Marshal represents literal " inside a {{ }} expression as \"
+			// in a double-quoted YAML scalar, so a second pass escaping " to \" produced \\" which
 			// broke Helm's template parser by closing the string literal early (U+002D '-' error).
 			crdResource := &unstructured.Unstructured{}
 			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
@@ -958,7 +1082,7 @@ spec:
 			crdResource.SetName("webrequestcommitstatuses.promoter.argoproj.io")
 
 			// Simulate the raw YAML text that yaml.Marshal produces for a double-quoted scalar
-			// containing a " character – the inner " appears as \" in the YAML text.
+			// containing a " character where the inner " appears as \" in the YAML text.
 			content := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 spec:

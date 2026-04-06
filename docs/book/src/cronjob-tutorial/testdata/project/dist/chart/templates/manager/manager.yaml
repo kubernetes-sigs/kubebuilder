@@ -10,6 +10,9 @@ metadata:
   name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
   namespace: {{ .Release.Namespace }}
 spec:
+  {{- with .Values.manager.strategy }}
+  strategy: {{ toYaml . | nindent 6 }}
+  {{- end }}
   replicas: {{ .Values.manager.replicas }}
   selector:
     matchLabels:
@@ -26,6 +29,12 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         control-plane: controller-manager
     spec:
+      {{- with .Values.manager.topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
       {{- with .Values.manager.tolerations }}
       tolerations: {{ toYaml . | nindent 10 }}
       {{- end }}
@@ -34,6 +43,10 @@ spec:
       {{- end }}
       {{- with .Values.manager.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.manager.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - args:
@@ -107,7 +120,9 @@ spec:
         {}
         {{- end }}
       serviceAccountName: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-      terminationGracePeriodSeconds: 10
+      {{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+      {{- end }}
       volumes:
         {{- if .Values.manager.extraVolumes }}
         {{- toYaml .Values.manager.extraVolumes | nindent 8 }}

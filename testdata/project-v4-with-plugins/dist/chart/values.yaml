@@ -40,7 +40,8 @@ manager:
 
   ## Image pull secrets
   ##
-  imagePullSecrets: []
+  # imagePullSecrets:
+  #   - name: myregistrykey
 
   ## Pod-level security settings
   ##
@@ -79,6 +80,26 @@ manager:
   ## Manager pod's tolerations
   ##
   tolerations: []
+
+  ## Deployment strategy
+  ##
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxSurge: 25%
+  #     maxUnavailable: 25%
+
+  ## Priority class name
+  ##
+  # priorityClassName: ""
+
+  ## Topology spread constraints
+  ##
+  # topologySpreadConstraints: []
+
+  ## Termination grace period seconds
+  ##
+  terminationGracePeriodSeconds: 10
 
 ## Helper RBAC roles for managing custom resources
 ##

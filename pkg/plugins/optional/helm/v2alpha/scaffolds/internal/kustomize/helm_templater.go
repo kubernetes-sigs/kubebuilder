@@ -195,7 +195,7 @@ func (t *HelmTemplater) escapeExistingTemplateSyntax(yamlContent string) string 
 
 		// Before re-escaping for Go template string literals, unescape any YAML double-quoted
 		// scalar escape sequences. yaml.Marshal emits \" for a literal " inside a double-quoted
-		// YAML scalar; without this step the subsequent "→\" replacement double-escapes them to
+		// YAML scalar; without this step the subsequent " to \" replacement double-escapes them to
 		// \\" which breaks Helm's Go template parser: \\ becomes one backslash, then the next "
 		// closes the string prematurely, leaving tokens like "asset-id" outside where "-" is a
 		// bad character (U+002D).
@@ -240,22 +240,22 @@ func (t *HelmTemplater) substituteNamespace(yamlContent string, resource *unstru
 
 	// 1. NAMESPACE FIELDS: Replace `namespace: <manager-namespace>`
 	//    Pattern: Line-anchored to prevent false matches
-	//    Example: `namespace: project-system` → `namespace: {{ .Release.Namespace }}`
+	//    Example: `namespace: project-system` becomes `namespace: {{ .Release.Namespace }}`
 	namespaceFieldPattern := regexp.MustCompile(`(?m)^(\s*)namespace:\s+` + regexp.QuoteMeta(managerNamespace) + `\s*$`)
 	yamlContent = namespaceFieldPattern.ReplaceAllString(yamlContent, "${1}namespace: "+namespaceTemplate)
 
 	// 2. RESOURCE REFERENCES: Replace `<manager-namespace>/resource-name`
 	//    Pattern: Word boundary ensures we don't match partial words
-	//    Example: `cert-manager.io/inject-ca-from: project-system/cert` → `{{ .Release.Namespace }}/cert`
-	//    Example: `configMapRef: project-system/config` → `{{ .Release.Namespace }}/config`
+	//    Example: `cert-manager.io/inject-ca-from: project-system/cert` becomes `{{ .Release.Namespace }}/cert`
+	//    Example: `configMapRef: project-system/config` becomes `{{ .Release.Namespace }}/config`
 	refPattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(managerNamespace) + `/`)
 	yamlContent = refPattern.ReplaceAllString(yamlContent, namespaceTemplate+"/")
 
 	// 3. DNS NAMES: Replace `.<manager-namespace>.` in Kubernetes DNS patterns
 	//    Pattern: Dots on both sides ensure we only match DNS, not arbitrary strings
 	//    Handles ALL K8s DNS patterns: .svc, .svc.cluster.local, .pod, .endpoints, etc.
-	//    Example: `service.project-system.svc` → `service.{{ .Release.Namespace }}.svc`
-	//    Example: `pod.project-system.pod.cluster.local` → `pod.{{ .Release.Namespace }}.pod.cluster.local`
+	//    Example: `service.project-system.svc` becomes `service.{{ .Release.Namespace }}.svc`
+	//    Example: `pod.project-system.pod.cluster.local` becomes `pod.{{ .Release.Namespace }}.pod.cluster.local`
 	//
 	//    SAFETY: This won't match:
 	//    - Resource names: "users" (no dots around it)
@@ -353,6 +353,7 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ 
 					break
 				}
 				// Stop if we hit a new top-level section
+				//nolint:goconst // YAML keywords used in different contexts
 				if strings.HasPrefix(lines[j], "  ") && strings.HasSuffix(trimmed, ":") &&
 					(trimmed == "spec:" || trimmed == "template:" || trimmed == "volumes:") {
 					break
@@ -588,6 +589,24 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 		".Values.manager.tolerations",
 	)
 
+	// Optional Kubernetes features: deployment strategy and pod scheduling
+	// Template conditionals are always created (even if field doesn't exist in kustomize)
+	// so users can uncomment them in values.yaml without regenerating the chart
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"strategy",
+		"spec",
+		".Values.manager.strategy",
+	)
+	yamlContent = t.templatePriorityClassName(yamlContent)
+	yamlContent = t.templateBasicWithStatement(
+		yamlContent,
+		"topologySpreadConstraints",
+		"spec.template.spec",
+		".Values.manager.topologySpreadConstraints",
+	)
+	yamlContent = t.templateTerminationGracePeriodSeconds(yamlContent)
+
 	return yamlContent
 }
 
@@ -819,55 +838,103 @@ func (t *HelmTemplater) appendToListFromValues(yamlContent string, keyColon stri
 	return yamlContent
 }
 
-// templateImagePullSecrets exposes imagePullSecrets via values.yaml
+// templateImagePullSecrets exposes imagePullSecrets via values.yaml.
+// This is an optional Kubernetes deployment field that affects registry authentication but not operator logic.
+// Always injects a conditional template (even when field is missing from kustomize) so users can
+// uncomment it in values.yaml without regenerating the chart.
+// Handles list format with special logic to include all list items.
 func (t *HelmTemplater) templateImagePullSecrets(yamlContent string) string {
-	if !strings.Contains(yamlContent, "imagePullSecrets:") {
+	lines := strings.Split(yamlContent, "\n")
+
+	// Check if field already exists
+	if strings.Contains(yamlContent, "imagePullSecrets:") {
+		for i := range lines {
+			// Use prefix to allow `imagePullSecrets: []` to be preserved
+			if !strings.HasPrefix(strings.TrimSpace(lines[i]), "imagePullSecrets:") {
+				continue
+			}
+
+			// Avoid duplicate templating
+			if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.imagePullSecrets") {
+				return yamlContent
+			}
+
+			indentStr, indentLen := leadingWhitespace(lines[i])
+			end := i + 1
+			// Find end of imagePullSecrets block (including list items)
+			for ; end < len(lines); end++ {
+				trimmed := strings.TrimSpace(lines[end])
+				if trimmed == "" {
+					break
+				}
+				lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
+				if lineIndent < indentLen {
+					break
+				}
+				// Continue if same indent and starts with "-" (list item)
+				if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
+					break
+				}
+			}
+
+			childIndent := indentStr + "  "
+			childIndentWidth := strconv.Itoa(len(childIndent))
+
+			block := []string{
+				indentStr + "{{- with .Values.manager.imagePullSecrets }}",
+				indentStr + "imagePullSecrets:",
+				childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
+				indentStr + "{{- end }}",
+			}
+
+			newLines := append([]string{}, lines[:i]...)
+			newLines = append(newLines, block...)
+			newLines = append(newLines, lines[end:]...)
+			return strings.Join(newLines, "\n")
+		}
+	}
+
+	// Field doesn't exist - inject it after finding parent block (spec.template.spec)
+	// Look for "spec:" (pod spec) under template
+	var insertAt int
+	foundTemplate := false
+	for i := range lines {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "template:" {
+			foundTemplate = true
+			continue
+		}
+		if foundTemplate && trimmed == "spec:" {
+			// Found pod spec, inject at next line
+			insertAt = i + 1
+			break
+		}
+	}
+
+	if insertAt == 0 || insertAt >= len(lines) {
+		// Couldn't find injection point
 		return yamlContent
 	}
 
-	lines := strings.Split(yamlContent, "\n")
-	for i := range lines {
-		// Use prefix to allow `imagePullSecrets: []` to be preserved
-		if !strings.HasPrefix(strings.TrimSpace(lines[i]), "imagePullSecrets:") {
-			continue
-		}
-		indentStr, indentLen := leadingWhitespace(lines[i])
-		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent < indentLen {
-				break
-			}
-			if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
-				break
-			}
-		}
+	// Get indentation from the line after spec:
+	_, indentLen := leadingWhitespace(lines[insertAt])
+	indentStr := strings.Repeat(" ", indentLen)
+	childIndent := indentStr + "  "
+	childIndentWidth := strconv.Itoa(len(childIndent))
 
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.imagePullSecrets") {
-			return yamlContent
-		}
-
-		childIndent := indentStr + "  "
-		childIndentWidth := strconv.Itoa(len(childIndent))
-
-		block := []string{
-			indentStr + "{{- if .Values.manager.imagePullSecrets }}",
-			indentStr + "imagePullSecrets:",
-			childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
-			indentStr + "{{- end }}",
-		}
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, block...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
+	// Create conditional block
+	block := []string{
+		indentStr + "{{- with .Values.manager.imagePullSecrets }}",
+		indentStr + "imagePullSecrets:",
+		childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
+		indentStr + "{{- end }}",
 	}
 
-	return yamlContent
+	// Insert block
+	newLines := append([]string{}, lines[:insertAt]...)
+	newLines = append(newLines, block...)
+	newLines = append(newLines, lines[insertAt:]...)
+	return strings.Join(newLines, "\n")
 }
 
 // templatePodSecurityContext exposes podSecurityContext via values.yaml
@@ -1621,6 +1688,132 @@ func (t *HelmTemplater) collapseBlankLineAfterIf(yamlContent string) string {
 		out = append(out, line)
 	}
 	return strings.Join(out, "\n")
+}
+
+// templatePriorityClassName wraps priorityClassName with conditional Helm logic.
+// This is an optional Kubernetes field for pod scheduling priority that affects deployment
+// behavior but not operator logic. Always injects a conditional template (even when field is
+// missing from kustomize) so users can uncomment it in values.yaml without regenerating the chart.
+// Uses simple inline value since priorityClassName is a string, not a YAML object.
+func (t *HelmTemplater) templatePriorityClassName(yamlContent string) string {
+	// Avoid duplicate templating
+	if strings.Contains(yamlContent, ".Values.manager.priorityClassName") {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+
+	// Check if field already exists
+	if strings.Contains(yamlContent, "priorityClassName:") {
+		// Replace existing field with template (quote filter ensures proper YAML quoting)
+		pattern := regexp.MustCompile(`(?m)^(\s*)priorityClassName:\s*"?([^"\n]*)"?\s*$`)
+		yamlContent = pattern.ReplaceAllString(yamlContent,
+			"${1}{{- with .Values.manager.priorityClassName }}\n"+
+				"${1}priorityClassName: {{ . | quote }}\n"+
+				"${1}{{- end }}")
+		return yamlContent
+	}
+
+	// Field doesn't exist - inject it after finding parent block (spec.template.spec)
+	// Look for "spec:" (pod spec) under template
+	var insertAt int
+	foundTemplate := false
+	for i := range lines {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "template:" {
+			foundTemplate = true
+			continue
+		}
+		if foundTemplate && trimmed == "spec:" {
+			// Found pod spec, inject at next line
+			insertAt = i + 1
+			break
+		}
+	}
+
+	if insertAt == 0 || insertAt >= len(lines) {
+		// Couldn't find injection point
+		return yamlContent
+	}
+
+	// Get indentation from the line after spec:
+	_, indentLen := leadingWhitespace(lines[insertAt])
+	indentStr := strings.Repeat(" ", indentLen)
+
+	// Create conditional block (quote filter ensures proper YAML quoting)
+	block := []string{
+		indentStr + "{{- with .Values.manager.priorityClassName }}",
+		indentStr + "priorityClassName: {{ . | quote }}",
+		indentStr + "{{- end }}",
+	}
+
+	// Insert block
+	newLines := append([]string{}, lines[:insertAt]...)
+	newLines = append(newLines, block...)
+	newLines = append(newLines, lines[insertAt:]...)
+	return strings.Join(newLines, "\n")
+}
+
+// templateTerminationGracePeriodSeconds wraps terminationGracePeriodSeconds with conditional Helm logic.
+// This is an optional Kubernetes field for graceful shutdown that affects deployment behavior but not operator logic.
+// Always injects a conditional template (even when field is missing from kustomize) so users can
+// uncomment it in values.yaml without regenerating the chart.
+// Uses inline value reference since terminationGracePeriodSeconds is an integer, not a YAML object.
+// Note: Uses hasKey to support 0 values (immediate termination is valid).
+func (t *HelmTemplater) templateTerminationGracePeriodSeconds(yamlContent string) string {
+	// Avoid duplicate templating
+	if strings.Contains(yamlContent, ".Values.manager.terminationGracePeriodSeconds") {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+
+	// Check if field already exists
+	if strings.Contains(yamlContent, "terminationGracePeriodSeconds:") {
+		// Replace existing field with template (hasKey + ne nil supports 0 values while preventing <no value>)
+		pattern := regexp.MustCompile(`(?m)^(\s*)terminationGracePeriodSeconds:\s*\d+\s*$`)
+		yamlContent = pattern.ReplaceAllString(yamlContent,
+			"${1}{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\") "+
+				"(ne .Values.manager.terminationGracePeriodSeconds nil) }}\n"+
+				"${1}terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}\n"+
+				"${1}{{- end }}")
+		return yamlContent
+	}
+
+	// Field doesn't exist - inject it after finding serviceAccountName (typical location)
+	// Look for "serviceAccountName:" in pod spec
+	var insertAt int
+	for i := range lines {
+		trimmed := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(trimmed, "serviceAccountName:") {
+			// Inject after serviceAccountName
+			insertAt = i + 1
+			break
+		}
+	}
+
+	if insertAt == 0 || insertAt >= len(lines) {
+		// Couldn't find injection point
+		return yamlContent
+	}
+
+	// Get indentation from serviceAccountName line
+	_, indentLen := leadingWhitespace(lines[insertAt-1])
+	indentStr := strings.Repeat(" ", indentLen)
+
+	// Create conditional block (hasKey + ne nil supports 0 values while preventing <no value>)
+	block := []string{
+		indentStr + "{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\") " +
+			"(ne .Values.manager.terminationGracePeriodSeconds nil) }}",
+		indentStr + "terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}",
+		indentStr + "{{- end }}",
+	}
+
+	// Insert block
+	newLines := append([]string{}, lines[:insertAt]...)
+	newLines = append(newLines, block...)
+	newLines = append(newLines, lines[insertAt:]...)
+	return strings.Join(newLines, "\n")
 }
 
 // templatePorts replaces hardcoded port values with Helm template references

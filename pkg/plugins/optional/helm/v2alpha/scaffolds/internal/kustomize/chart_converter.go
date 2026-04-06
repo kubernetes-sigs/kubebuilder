@@ -111,22 +111,32 @@ func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
 	}
 
 	config := make(map[string]any)
+
+	// Extract deployment-level fields (always exposed)
+	extractDeploymentReplicas(c.resources.Deployment, config)
+	extractDeploymentStrategy(c.resources.Deployment, config)
+
 	specMap := extractDeploymentSpec(c.resources.Deployment)
 	if specMap == nil {
 		return config
 	}
 
+	// Extract optional Kubernetes features (commented in values.yaml unless found in kustomize)
 	extractPodSecurityContext(specMap, config)
 	extractImagePullSecrets(specMap, config)
 	extractPodNodeSelector(specMap, config)
 	extractPodTolerations(specMap, config)
 	extractPodAffinity(specMap, config)
+	extractPriorityClassName(specMap, config)
+	extractTopologySpreadConstraints(specMap, config)
+	extractTerminationGracePeriodSeconds(specMap, config)
 
 	container := firstManagerContainer(specMap)
 	if container == nil {
 		return config
 	}
 
+	// Extract operator-specific runtime configuration (only in values.yaml if found in kustomize)
 	extractContainerEnv(container, config)
 	extractContainerImage(container, config)
 	extractContainerArgs(container, config)
@@ -481,4 +491,77 @@ func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
 	if len(extra) > 0 {
 		config["extraVolumeMounts"] = extra
 	}
+}
+
+// extractDeploymentReplicas extracts replicas from deployment spec
+func extractDeploymentReplicas(deployment *unstructured.Unstructured, config map[string]any) {
+	replicas, found, err := unstructured.NestedInt64(deployment.Object, "spec", "replicas")
+	if !found || err != nil {
+		return
+	}
+
+	// Store replicas including 0 (scale-to-zero is valid)
+	config["replicas"] = int(replicas)
+}
+
+// extractDeploymentStrategy extracts deployment strategy (e.g., RollingUpdate, Recreate)
+func extractDeploymentStrategy(deployment *unstructured.Unstructured, config map[string]any) {
+	strategy, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "strategy")
+	if !found || err != nil {
+		return
+	}
+
+	strategyMap, ok := strategy.(map[string]any)
+	if !ok || len(strategyMap) == 0 {
+		return
+	}
+
+	config["strategy"] = strategy
+}
+
+// extractPriorityClassName extracts priorityClassName from pod spec
+func extractPriorityClassName(specMap map[string]any, config map[string]any) {
+	priorityClassName, found, err := unstructured.NestedString(specMap, "priorityClassName")
+	if !found || err != nil || priorityClassName == "" {
+		return
+	}
+
+	config["priorityClassName"] = priorityClassName
+}
+
+// extractTopologySpreadConstraints extracts topologySpreadConstraints from pod spec
+func extractTopologySpreadConstraints(specMap map[string]any, config map[string]any) {
+	topologySpreadConstraints, found, err := unstructured.NestedFieldNoCopy(specMap, "topologySpreadConstraints")
+	if !found || err != nil {
+		return
+	}
+
+	tscList, ok := topologySpreadConstraints.([]any)
+	if !ok || len(tscList) == 0 {
+		return
+	}
+
+	config["topologySpreadConstraints"] = topologySpreadConstraints
+}
+
+// extractTerminationGracePeriodSeconds extracts terminationGracePeriodSeconds from pod spec
+func extractTerminationGracePeriodSeconds(specMap map[string]any, config map[string]any) {
+	terminationGracePeriodSeconds, found, err := unstructured.NestedInt64(specMap, "terminationGracePeriodSeconds")
+	if !found || err != nil {
+		// Also try as regular int (some YAML parsers may use int instead of int64)
+		if val, ok := specMap["terminationGracePeriodSeconds"]; ok {
+			if intVal, ok := val.(int); ok {
+				config["terminationGracePeriodSeconds"] = intVal
+				return
+			}
+			if int64Val, ok := val.(int64); ok {
+				config["terminationGracePeriodSeconds"] = int(int64Val)
+				return
+			}
+		}
+		return
+	}
+
+	// Store terminationGracePeriodSeconds including 0 (immediate termination is valid)
+	config["terminationGracePeriodSeconds"] = int(terminationGracePeriodSeconds)
 }
