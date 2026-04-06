@@ -44,10 +44,10 @@ jobs:
 
       - name: Display changed workflows in PR
         run: |
-          git diff --name-only origin/${GITHUB_BASE_REF} HEAD
-          
+          git diff --name-only --diff-filter=d origin/${GITHUB_BASE_REF} HEAD
+
       - name: Run pinact on changed workflow files
         run: |
-          git diff --name-only origin/${GITHUB_BASE_REF} HEAD \
+          git diff --name-only --diff-filter=d origin/${GITHUB_BASE_REF} HEAD \
           | grep -E 'workflows/.*\.ya?ml$' \
-          | xargs pinact run --diff --check --verify              
+          | xargs -r pinact run --diff --check --verify              
