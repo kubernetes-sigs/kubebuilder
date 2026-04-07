@@ -69,6 +69,20 @@ If no output directory is provided, the current working directory will be cleane
 		},
 	}
 
+	// Show hint message on how to list flags instead of showing file completion for
+	// commands that don't take files as arguments
+	scaffoldCmd.ValidArgsFunction = func(
+		_ *cobra.Command,
+		args []string,
+		toComplete string,
+	) ([]cobra.Completion, cobra.ShellCompDirective) {
+		completions := []cobra.Completion{}
+		if len(args) == 0 && toComplete == "" {
+			completions = cobra.AppendActiveHelp(completions, "Type '--' and press TAB to list flags")
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
 		"Path to the directory containing the PROJECT file. "+
 			"Defaults to the current working directory. WARNING: delete existing files (except .git and PROJECT).")

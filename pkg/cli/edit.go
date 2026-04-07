@@ -37,6 +37,20 @@ func (c CLI) newEditCmd() *cobra.Command {
 		),
 	}
 
+	// Show hint message on how to list flags instead of showing file completion for
+	// commands that don't take files as arguments
+	cmd.ValidArgsFunction = func(
+		_ *cobra.Command,
+		args []string,
+		toComplete string,
+	) ([]cobra.Completion, cobra.ShellCompDirective) {
+		completions := []cobra.Completion{}
+		if len(args) == 0 && toComplete == "" {
+			completions = cobra.AppendActiveHelp(completions, "Type '--' and press TAB to list flags")
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
 	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
 	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
 	if len(c.resolvedPlugins) == 0 {
