@@ -1,3 +1,4 @@
+{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -112,3 +113,4 @@ spec:
         {{- else }}
         []
         {{- end }}
+{{- end }}

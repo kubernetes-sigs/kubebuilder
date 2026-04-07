@@ -656,6 +656,50 @@ spec:
 				"    controller-gen.kubebuilder.io/version"
 			Expect(result).To(ContainSubstring(expectedAnnotations))
 		})
+
+		It("should add manager.enabled conditional for manager Deployments", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should be wrapped with manager.enabled conditional that defaults to true when key is absent
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			Expect(result).To(ContainSubstring(expectedConditional))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should not add manager.enabled conditional for non-manager Deployments", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("other-deployment")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: other-deployment
+  namespace: test-project-system
+spec:
+  replicas: 1`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should NOT be wrapped with manager.enabled conditional
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			Expect(result).NotTo(ContainSubstring(expectedConditional))
+			Expect(result).NotTo(ContainSubstring(".Values.manager.enabled"))
+		})
 	})
 
 	Context("helper RBAC wrapping", func() {
@@ -2443,7 +2487,8 @@ spec:
         key: another-key
         value: somevalue
       securityContext:
-        runAsNonRoot: true`
+        runAsNonRoot: true
+      serviceAccountName: test-project-controller-manager`
 
 			result := templater.ApplyHelmSubstitutions(content, deployment)
 
@@ -2460,9 +2505,9 @@ spec:
 			Expect(result).NotTo(ContainSubstring("key: node-role.kubernetes.io/control-plane"))
 			Expect(result).NotTo(ContainSubstring("key: another-key"))
 
-			// Fields after tolerations must still be present.
+			// Fields after tolerations must still be present (templated).
 			Expect(result).To(ContainSubstring("securityContext:"))
-			Expect(result).To(ContainSubstring("runAsNonRoot: true"))
+			Expect(result).To(ContainSubstring(".Values.manager.podSecurityContext"))
 		})
 
 		It("should insert a tolerations Helm stanza when the field is absent", func() {

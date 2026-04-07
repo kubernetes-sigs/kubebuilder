@@ -9,6 +9,9 @@
 ## Configure the controller manager deployment
 ##
 manager:
+  # Set to false to skip manager installation
+  enabled: true
+
   replicas: 1
 
   image:

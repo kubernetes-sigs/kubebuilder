@@ -226,6 +226,10 @@ These are standard Helm fields always present for user customization:
 ## Configure the controller manager deployment
 ##
 manager:
+  # Set to false to skip manager installation.
+  # Defaults to true when this field is missing (backward compatibility).
+  enabled: true
+
   replicas: 1
 
   image:
@@ -383,6 +387,32 @@ webhook:
 ##
 prometheus:
   enable: false
+```
+
+### Common Installation Patterns
+
+**CRD and RBAC only installation** (for CRD management separate from the operator):
+
+```shell
+helm install my-release ./dist/chart \
+  --set manager.enabled=false \
+  --set webhook.enable=false \
+  --set certManager.enable=false \
+  --set metrics.enable=false
+```
+
+**Manager without webhooks** (e.g., operator without admission control):
+
+```shell
+helm install my-release ./dist/chart \
+  --set webhook.enable=false \
+  --set certManager.enable=false
+```
+
+**Full installation** (default - all features enabled):
+
+```shell
+helm install my-release ./dist/chart
 ```
 
 ### Extra volumes

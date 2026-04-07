@@ -110,6 +110,9 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 ## Configure the controller manager deployment
 ##
 manager:
+  # Set to false to skip manager installation
+  enabled: true
+
   replicas: %d
 
   image:
