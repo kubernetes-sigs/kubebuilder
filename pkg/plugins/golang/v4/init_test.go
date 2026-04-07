@@ -190,6 +190,26 @@ var _ = Describe("initSubcommand", func() {
 			})
 		})
 
+		It("should scaffold vendor-neutral skills guidance files", func() {
+			testCfg := cfgv3.New()
+			_ = testCfg.SetRepository("github.com/test/repo")
+			_ = testCfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewInitScaffolder(testCfg, "apache2", "Test Owner", "", "kubebuilder")
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			skillsContent, err := os.ReadFile(filepath.Join(tmpDir, "SKILLS.MD"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(skillsContent)).To(ContainSubstring("AI Agent Guide"))
+			Expect(string(skillsContent)).To(ContainSubstring("kubebuilder create api"))
+
+			agentsContent, err := os.ReadFile(filepath.Join(tmpDir, "AGENTS.md"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(agentsContent)).To(Equal(string(skillsContent)))
+		})
+
 		It("should use custom license file when provided", func() {
 			// Create a custom license header file
 			customLicensePath := filepath.Join(tmpDir, "custom-header.txt")

@@ -195,6 +195,7 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&templates.Readme{CommandName: s.commandName},
+		&templates.Skills{CommandName: s.commandName},
 		&templates.Agents{CommandName: s.commandName},
 		&templates.Golangci{},
 		&templates.CustomGcl{
