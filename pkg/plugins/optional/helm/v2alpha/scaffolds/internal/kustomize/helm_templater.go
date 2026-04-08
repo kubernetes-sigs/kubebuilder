@@ -883,7 +883,7 @@ func (t *HelmTemplater) templateImagePullSecrets(yamlContent string) string {
 			block := []string{
 				indentStr + "{{- with .Values.manager.imagePullSecrets }}",
 				indentStr + "imagePullSecrets:",
-				childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
+				childIndent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
 				indentStr + "{{- end }}",
 			}
 
@@ -926,7 +926,7 @@ func (t *HelmTemplater) templateImagePullSecrets(yamlContent string) string {
 	block := []string{
 		indentStr + "{{- with .Values.manager.imagePullSecrets }}",
 		indentStr + "imagePullSecrets:",
-		childIndent + "{{- toYaml .Values.manager.imagePullSecrets | nindent " + childIndentWidth + " }}",
+		childIndent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
 		indentStr + "{{- end }}",
 	}
 
