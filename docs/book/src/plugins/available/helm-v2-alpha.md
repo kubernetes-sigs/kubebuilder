@@ -347,6 +347,20 @@ manager:
   ##
   terminationGracePeriodSeconds: 10
 
+  ## Custom Deployment labels
+  ##
+  # labels: {}
+
+  ## Custom Deployment annotations
+  ##
+  # annotations: {}
+
+  ## Custom Pod labels and annotations
+  ##
+  # pod:
+  #   labels: {}
+  #   annotations: {}
+
 ## Helper RBAC roles for managing custom resources
 ##
 rbacHelpers:
@@ -454,6 +468,22 @@ This means:
 - You can safely uncomment optional fields to enable Kubernetes features
 - Operator-specific fields (env, args) always render when present in templates
 - Zero values like `terminationGracePeriodSeconds: 0` work correctly with `hasKey`
+
+### Custom Labels and Annotations
+
+Add custom labels and annotations to the manager Deployment and Pod template:
+
+- **`manager.labels`**: Custom labels for the Deployment (e.g., team, environment)
+- **`manager.annotations`**: Custom annotations for the Deployment
+- **`manager.pod.labels`**: Custom labels for the Pod template
+- **`manager.pod.annotations`**: Custom annotations for the Pod template (e.g., Prometheus metrics)
+
+<aside class="note" role="note">
+<p class="note-title">Duplicate Key Filtering</p>
+
+Duplicate keys are automatically filtered - existing keys from the kustomize output (such as `control-plane`) are detected and excluded from your custom values to prevent conflicts.
+
+</aside>
 
 ### Installation
 

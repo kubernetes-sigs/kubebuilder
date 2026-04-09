@@ -17,6 +17,7 @@ limitations under the License.
 package kustomize
 
 import (
+	"regexp"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -2660,6 +2661,600 @@ spec:
 			// nodeSelectorTerms is part of the affinity value; it must be gone since
 			// the whole affinity block is replaced by the Helm stanza.
 			Expect(result).NotTo(ContainSubstring("nodeSelectorTerms:"))
+		})
+	})
+
+	Context("custom labels and annotations", func() {
+		It("should add custom labels and annotations to manager Deployment only", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ include "test-project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: {{ include "test-project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.manager.replicas }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: {{ include "test-project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should add manager.labels to Deployment (with automatic filtering of existing keys)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.labels }}"),
+				ContainSubstring("{{- if .Values.manager.labels }}"),
+			))
+
+			// Should add manager.pod.labels to Pod template (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .labels }}"))
+
+			// Should add manager.annotations to Deployment
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata: (not top-level)
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should add manager.pod.annotations to Pod template (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Each field should appear exactly once (check for either pattern: with/without omit)
+			labelsCount := strings.Count(result, ".Values.manager.labels")
+			Expect(labelsCount).To(BeNumerically(">=", 1), "Should have labels block in Deployment")
+
+			podLabelsCount := strings.Count(result, ".labels")
+			Expect(podLabelsCount).To(BeNumerically(">=", 1), "Should have pod.labels block in Pod template")
+
+			annotationsCount := strings.Count(result, ".Values.manager.annotations")
+			Expect(annotationsCount).To(BeNumerically(">=", 1), "Should have annotations block in Deployment")
+
+			podAnnotationsCount := strings.Count(result, ".annotations")
+			Expect(podAnnotationsCount).To(BeNumerically(">=", 1), "Should have pod.annotations block in Pod template")
+		})
+
+		It("should not add custom labels/annotations to non-manager Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("other-deployment")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: other
+  name: other-deployment
+spec:
+  template:
+    metadata:
+      labels:
+        app: other`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should not add any manager custom labels/annotations
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.manager.labels }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.manager.annotations }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .labels }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .annotations }}"))
+		})
+
+		It("should not duplicate labels/annotations blocks when applied twice", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager`
+
+			// Apply templating twice
+			result1 := templater.ApplyHelmSubstitutions(content, deployment)
+			result2 := templater.ApplyHelmSubstitutions(result1, deployment)
+
+			// Each field should appear exactly once (idempotency check)
+			// Count manager.labels references (either with if or with omit)
+			labelsCount := strings.Count(result2, ".Values.manager.labels")
+			Expect(labelsCount).To(BeNumerically("<=", 2), "Should not duplicate labels blocks excessively")
+
+			// Count .labels references in pod context
+			podLabelsPattern := regexp.MustCompile(`{{- with (?:omit )?\.labels`)
+			podLabelsMatches := podLabelsPattern.FindAllString(result2, -1)
+			Expect(len(podLabelsMatches)).To(BeNumerically("<=", 2), "Should not duplicate pod.labels blocks excessively")
+
+			// Count manager.annotations references
+			annotationsCount := strings.Count(result2, ".Values.manager.annotations")
+			Expect(annotationsCount).To(BeNumerically("<=", 2), "Should not duplicate annotations blocks excessively")
+
+			// Count .annotations references in pod context
+			podAnnotationsPattern := regexp.MustCompile(`{{- with (?:omit )?\.annotations`)
+			podAnnotationsMatches := podAnnotationsPattern.FindAllString(result2, -1)
+			Expect(len(podAnnotationsMatches)).To(BeNumerically("<=", 2),
+				"Should not duplicate pod.annotations blocks excessively")
+		})
+
+		It("should add pod annotations even when pod template has no annotations field", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Pod template with labels but NO annotations field
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should create annotations section before labels
+			Expect(result).To(ContainSubstring("annotations:"))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Verify annotations come before labels in pod template
+			// Find the pod annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- with (?:omit )?\.annotations`)
+			labelsPattern := regexp.MustCompile(`{{- with (?:omit )?\.labels`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			labelsMatch := labelsPattern.FindStringIndex(result)
+			if annotationsMatch != nil && labelsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically("<", labelsMatch[0]), "Annotations should come before labels")
+			}
+		})
+
+		It("should inject custom annotations into existing Deployment metadata annotations", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with existing annotations in metadata (e.g., from commonAnnotations)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    existing-annotation: from-kustomize
+    another-annotation: value
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations into existing annotations block (with filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should NOT create duplicate annotations: key
+			annotationsCount := strings.Count(result, "annotations:")
+			Expect(annotationsCount).To(Equal(2),
+				"Should have exactly 2 annotations blocks (1 for Deployment, 1 for Pod template)")
+
+			// Existing annotations should still be present
+			Expect(result).To(ContainSubstring("existing-annotation: from-kustomize"))
+			Expect(result).To(ContainSubstring("another-annotation: value"))
+
+			// Verify injection order: custom annotations should come after existing ones
+			// Find the manager annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			existingAnnotationIdx := strings.Index(result, "existing-annotation: from-kustomize")
+			if annotationsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotationIdx),
+					"Custom annotations should be injected after existing annotations")
+			}
+		})
+
+		It("should convert empty map annotations: {} to block style for injection", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with empty map annotations: {}
+			// Should be converted to block style to allow custom annotation injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Empty map should be converted to block style (not preserved as {})
+			Expect(result).NotTo(ContainSubstring("annotations: {}"))
+
+			// Should inject custom annotations template
+			Expect(result).To(Or(
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+			))
+
+			// Should have block-style annotations: key (not flow-style)
+			Expect(regexp.MustCompile(`(?m)^  annotations:\n`).MatchString(result)).To(BeTrue(),
+				"Empty map annotations should be converted to block style")
+		})
+
+		It("should handle inline annotations with values in Deployment metadata", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with inline annotations containing a value
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {existing: value}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {kubectl.kubernetes.io/default-container: manager}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should inject pod annotations (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Should NOT create duplicate annotations: key
+			annotationsCount := strings.Count(result, "annotations:")
+			Expect(annotationsCount).To(Equal(2),
+				"Should have exactly 2 annotations blocks (1 for Deployment, 1 for Pod template)")
+		})
+
+		It("should convert flow-style annotations to block-style before injecting templates", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with flow-style annotations (inline format)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {existing: value, another: test}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {kubectl.kubernetes.io/default-container: manager, other: value}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Flow-style should be converted to block-style
+			Expect(result).NotTo(ContainSubstring("annotations: {"))
+
+			// Should have block-style annotations with existing entries preserved
+			Expect(result).To(ContainSubstring("existing: value"))
+			Expect(result).To(ContainSubstring("another: test"))
+
+			// Should inject custom annotations template blocks (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+
+			// Verify the structure is valid (annotations: key followed by indented content)
+			lines := strings.Split(result, "\n")
+			foundDeploymentAnnotations := false
+			for i, line := range lines {
+				if strings.TrimSpace(line) == "annotations:" && !foundDeploymentAnnotations {
+					foundDeploymentAnnotations = true
+					// Next lines should be indented (existing values or templates)
+					if i+1 < len(lines) {
+						nextLine := lines[i+1]
+						Expect(nextLine).To(MatchRegexp(`^\s{2,}`), // At least 2 spaces of indentation
+							"Content after annotations: should be indented")
+					}
+				}
+			}
+			Expect(foundDeploymentAnnotations).To(BeTrue(), "Should have Deployment annotations block")
+		})
+
+		It("should convert flow-style annotations without space to block-style", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Test YAML variant without space: annotations:{...} (also valid YAML)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:{existing: value, another: test}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:{kubectl.kubernetes.io/default-container: manager}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Flow-style should be converted to block-style (both with and without space)
+			Expect(result).NotTo(ContainSubstring("annotations: {"))
+			Expect(result).NotTo(ContainSubstring("annotations:{"))
+
+			// Should have block-style annotations with existing entries preserved
+			Expect(result).To(ContainSubstring("existing: value"))
+			Expect(result).To(ContainSubstring("another: test"))
+
+			// Should inject custom annotations template blocks
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+		})
+
+		It("should handle annotations as last field before spec in Deployment metadata", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with annotations as LAST field in metadata (before spec)
+			// This tests the edge case where there's no subsequent field to trigger injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  annotations:
+    existing-annotation: value1
+    another-annotation: value2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations after existing ones (with filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("existing-annotation: value1"))
+			Expect(result).To(ContainSubstring("another-annotation: value2"))
+
+			// Verify injection order: custom annotations should come after existing ones
+			// Find the manager annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			existingAnnotation1Idx := strings.Index(result, "existing-annotation: value1")
+			existingAnnotation2Idx := strings.Index(result, "another-annotation: value2")
+			if annotationsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotation1Idx),
+					"Custom annotations should be injected after first existing annotation")
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotation2Idx),
+					"Custom annotations should be injected after last existing annotation")
+			}
+		})
+
+		It("should handle annotations with varying indentation from kustomize", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Test with 4-space indentation (some kustomize configurations)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+    labels:
+        control-plane: controller-manager
+    annotations:
+        existing-annotation: value1
+    name: test-project-controller-manager
+spec:
+    template:
+        metadata:
+            annotations:
+                kubectl.kubernetes.io/default-container: manager
+            labels:
+                control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should handle different indentation correctly (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+
+			// Verify custom annotations come after existing ones
+			deploymentAnnotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			deploymentAnnotationsMatch := deploymentAnnotationsPattern.FindStringIndex(result)
+			deploymentExistingIdx := strings.Index(result, "existing-annotation: value1")
+			if deploymentAnnotationsMatch != nil {
+				Expect(deploymentAnnotationsMatch[0]).To(BeNumerically(">", deploymentExistingIdx))
+			}
+
+			podCustomIdx := strings.LastIndex(result, "{{- with .Values.manager.pod }}")
+			podDefaultIdx := strings.Index(result, "kubectl.kubernetes.io/default-container: manager")
+			Expect(podCustomIdx).To(BeNumerically(">", podDefaultIdx))
+		})
+
+		It("should add deployment annotations when name appears before labels", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Edge case: metadata.name comes before metadata.labels
+			// Previous implementation relied on name: to trigger annotations injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  labels:
+    control-plane: controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should still inject annotations template even when no annotations field exists
+			// and name appears before labels
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("annotations:"))
+		})
+
+		It("should inject deployment labels when labels is the last metadata field before spec", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Edge case: labels is the last field in metadata, immediately followed by spec
+			// Previous implementation would update position to positionAfterDeploymentMetadata
+			// before checking shouldInjectDeploymentLabels
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  labels:
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom labels template
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.labels }}"),
+				ContainSubstring("{{- if .Values.manager.labels }}"),
+			))
+
+			// Verify labels come after existing label
+			labelsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.labels`)
+			labelsMatch := labelsPattern.FindStringIndex(result)
+			existingLabelIdx := strings.Index(result, "control-plane: controller-manager")
+			if labelsMatch != nil {
+				Expect(labelsMatch[0]).To(BeNumerically(">", existingLabelIdx),
+					"Custom labels should be injected after existing labels")
+			}
 		})
 	})
 })

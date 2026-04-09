@@ -19,10 +19,12 @@ package kustomize
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -44,6 +46,10 @@ const (
 	// API versions
 	apiVersionCertManager = "cert-manager.io/v1"
 	apiVersionMonitoring  = "monitoring.coreos.com/v1"
+
+	// YAML keys
+	yamlKeyAnnotations = "annotations:"
+	yamlKeyLabels      = "labels:"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
@@ -112,6 +118,7 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 
 	// Apply deployment-specific templating
 	if resource.GetKind() == kindDeployment && isManagerDeployment(resource) {
+		yamlContent = t.addCustomLabelsAndAnnotations(yamlContent)
 		yamlContent = t.templateDeploymentFields(yamlContent)
 
 		// Apply conditional logic for cert-manager related fields in deployments
@@ -328,6 +335,8 @@ func (t *HelmTemplater) substituteCertManagerReferences(
 // substituteResourceNamesWithPrefix templates ALL resource names using chart.serviceName helper.
 // Generic regex-based approach works for any resource type without hardcoding specific names.
 // Excludes container names since those are internal pod identifiers that don't need templating.
+//
+//nolint:goconst
 func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ *unstructured.Unstructured) string {
 	namePattern := regexp.MustCompile(
 		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(t.detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
@@ -407,6 +416,8 @@ func (t *HelmTemplater) addHelmLabelsAndAnnotations(
 
 // checkExistingLabels checks if standard Helm labels already exist in a labels section
 // by looking both backward and forward from the current position
+//
+//nolint:goconst
 func checkExistingLabels(lines []string, currentIndex int, indent string) (hasChart, hasInstance, hasManagedBy bool) {
 	// Look backward from current position (managed-by often appears before name in kustomize output)
 	for j := currentIndex - 1; j >= 0 && j >= currentIndex-10; j-- {
@@ -460,6 +471,8 @@ func checkExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 
 // addStandardHelmLabels adds standard Helm labels (helm.sh/chart, app.kubernetes.io/instance,
 // and app.kubernetes.io/managed-by) to all labels sections except selectors (which must be immutable)
+//
+//nolint:goconst
 func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) string {
 	lines := strings.Split(yamlContent, "\n")
 	result := make([]string, 0, len(lines)+10) // Pre-allocate with extra space for added labels
@@ -1555,11 +1568,11 @@ func (t *HelmTemplater) injectCRDResourcePolicyAnnotation(yamlContent string) st
 	lines := strings.Split(yamlContent, "\n")
 
 	// Check if annotations: already exists
-	if strings.Contains(yamlContent, "annotations:") {
+	if strings.Contains(yamlContent, yamlKeyAnnotations) {
 		// Find the annotations: line and determine its indentation
 		for i, line := range lines {
 			trimmed := strings.TrimSpace(line)
-			if trimmed == "annotations:" || strings.HasPrefix(trimmed, "annotations:") {
+			if trimmed == yamlKeyAnnotations || strings.HasPrefix(trimmed, yamlKeyAnnotations) {
 				annotationsIndent, _ := leadingWhitespace(line)
 				// Annotation values need one more level of indentation (2 spaces for sigs.k8s.io/yaml)
 				valueIndent := annotationsIndent + "  "
@@ -1893,4 +1906,578 @@ func (t *HelmTemplater) templatePorts(yamlContent string, resource *unstructured
 	}
 
 	return yamlContent
+}
+
+// addCustomLabelsAndAnnotations injects Helm templates for manager.labels, manager.annotations,
+// manager.pod.labels, and manager.pod.annotations, with automatic duplicate key filtering.
+// Each block is checked and added independently, allowing additive updates in partial/upgrade scenarios.
+func (t *HelmTemplater) addCustomLabelsAndAnnotations(yamlContent string) string {
+	// Check which blocks are already present to enable additive updates
+	hasDeploymentLabels := strings.Contains(yamlContent, "{{- if .Values.manager.labels }}") ||
+		strings.Contains(yamlContent, "{{- with .Values.manager.labels }}")
+	hasDeploymentAnnotations := strings.Contains(yamlContent, "{{- if .Values.manager.annotations }}") ||
+		strings.Contains(yamlContent, "{{- with .Values.manager.annotations }}")
+	hasPodBlock := strings.Contains(yamlContent, "{{- with .Values.manager.pod }}")
+	hasPodLabels := hasPodBlock && strings.Contains(yamlContent, "{{- with .labels }}")
+	hasPodAnnotations := hasPodBlock && (strings.Contains(yamlContent, "{{- with .annotations }}") ||
+		strings.Contains(yamlContent, "{{- if .Values.manager.pod.annotations }}"))
+
+	lines := strings.Split(yamlContent, "\n")
+	result := make([]string, 0, len(lines))
+	state := &customFieldsState{
+		position:                     positionStart,
+		addedLabelsToDeployment:      hasDeploymentLabels,
+		addedAnnotationsToDeployment: hasDeploymentAnnotations,
+		addedPodLabels:               hasPodLabels,
+		addedPodAnnotations:          hasPodAnnotations,
+	}
+
+	for i := range lines {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		indent, indentLen := leadingWhitespace(line)
+
+		// Create missing annotations block if Deployment has none
+		if state.position == positionDeploymentMetadata &&
+			trimmed == "spec:" &&
+			!state.addedAnnotationsToDeployment &&
+			!state.hasDeploymentAnnotations {
+			metadataChildIndent := strings.Repeat(" ", state.deploymentMetadataDepth) + "  "
+			result = append(result, metadataChildIndent+"{{- if .Values.manager.annotations }}")
+			result = append(result, metadataChildIndent+"annotations:")
+			childIndent := metadataChildIndent + "  "
+			childIndentWidth := strconv.Itoa(len(childIndent))
+			result = append(result, childIndent+"{{- toYaml .Values.manager.annotations | nindent "+childIndentWidth+" }}")
+			result = append(result, metadataChildIndent+"{{- end }}")
+			state.addedAnnotationsToDeployment = true
+		}
+
+		t.updateMetadataTracking(state, lines, i, trimmed, indentLen)
+		result = append(result, line)
+
+		result = t.handleDeploymentAnnotations(state, result, line, trimmed, indent, indentLen)
+		result = t.handleDeploymentLabels(state, result, line, trimmed, indentLen)
+		result = t.handlePodAnnotations(state, result, line, trimmed, indent, indentLen)
+		result = t.handlePodLabels(state, result, line, trimmed, indentLen)
+	}
+
+	return strings.Join(result, "\n")
+}
+
+// handleDeploymentAnnotations handles injection of custom Deployment annotations.
+func (t *HelmTemplater) handleDeploymentAnnotations(
+	state *customFieldsState, result []string, line, trimmed, indent string, indentLen int,
+) []string {
+	if state.position == positionDeploymentMetadata &&
+		state.currentBlock == blockNone &&
+		(trimmed == yamlKeyAnnotations || strings.HasPrefix(trimmed, yamlKeyAnnotations)) {
+		state.hasDeploymentAnnotations = true
+		state.currentBlock = blockDeploymentAnnotations
+		state.currentBlockIndent = indentLen
+		return t.handleFlowStyleAnnotations(result, line, indent)
+	}
+
+	if t.shouldInjectDeploymentAnnotations(state, trimmed, indentLen) {
+		result = result[:len(result)-1]
+
+		existingKeys := t.extractKeysFromLines(result)
+		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+		childIndent := t.detectChildIndent(result, parentIndent)
+
+		if len(existingKeys) == 0 {
+			// Empty annotations block (e.g., from "annotations: {}") - wrap header in conditional
+			// to avoid rendering "annotations: null" when values not set
+			result = result[:len(result)-1]
+			childIndentWidth := strconv.Itoa(len(childIndent))
+			result = append(result,
+				parentIndent+"{{- if .Values.manager.annotations }}",
+				parentIndent+"annotations:",
+				childIndent+"{{- toYaml .Values.manager.annotations | nindent "+childIndentWidth+" }}",
+				parentIndent+"{{- end }}",
+			)
+		} else {
+			// Has existing annotations - inject additional ones with omit() filtering
+			result = t.injectDeploymentAnnotations(result, childIndent)
+		}
+
+		result = append(result, line)
+		state.addedAnnotationsToDeployment = true
+		state.currentBlock = blockNone
+	}
+
+	return result
+}
+
+// handlePodAnnotations handles injection of custom Pod template annotations.
+func (t *HelmTemplater) handlePodAnnotations(
+	state *customFieldsState, result []string, line, trimmed, indent string, indentLen int,
+) []string {
+	if state.position == positionPodMetadata &&
+		state.currentBlock == blockNone &&
+		(trimmed == yamlKeyAnnotations || strings.HasPrefix(trimmed, yamlKeyAnnotations)) {
+		state.currentBlock = blockPodAnnotations
+		state.currentBlockIndent = indentLen
+		return t.handleFlowStyleAnnotations(result, line, indent)
+	}
+
+	if t.shouldInjectPodAnnotations(state, trimmed, indentLen) {
+		result = result[:len(result)-1]
+
+		existingKeys := t.extractKeysFromLines(result)
+		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+		childIndent := t.detectChildIndent(result, parentIndent)
+
+		if len(existingKeys) == 0 {
+			// Empty annotations block (e.g., from "annotations: {}") - wrap header in conditional
+			// to avoid rendering "annotations: null" when values not set
+			result = result[:len(result)-1]
+			childIndentWidth := strconv.Itoa(len(childIndent))
+			result = append(result,
+				parentIndent+"{{- with .Values.manager.pod }}",
+				parentIndent+"{{- with .annotations }}",
+				parentIndent+"annotations:",
+				childIndent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+				parentIndent+"{{- end }}",
+				parentIndent+"{{- end }}",
+			)
+		} else {
+			// Has existing annotations - inject additional ones with omit() filtering
+			result = t.addPodAnnotations(result, childIndent)
+		}
+
+		result = append(result, line)
+		state.addedPodAnnotations = true
+		state.currentBlock = blockNone
+	}
+
+	if state.position == positionPodMetadata && !state.addedPodAnnotations && trimmed == "labels:" {
+		result = result[:len(result)-1]
+		result = append(result, indent+"{{- if .Values.manager.pod.annotations }}")
+		result = append(result, indent+"annotations:")
+		result = t.addPodAnnotations(result, indent+"  ")
+		result = append(result, indent+"{{- end }}")
+		result = append(result, indent+"labels:")
+		state.addedPodAnnotations = true
+	}
+
+	return result
+}
+
+// shouldInjectDeploymentAnnotations checks if we should inject Deployment annotations.
+func (t *HelmTemplater) shouldInjectDeploymentAnnotations(
+	state *customFieldsState, trimmed string, indentLen int,
+) bool {
+	return (state.position == positionDeploymentMetadata || state.position == positionAfterDeploymentMetadata) &&
+		state.currentBlock == blockDeploymentAnnotations &&
+		!state.addedAnnotationsToDeployment &&
+		indentLen <= state.currentBlockIndent &&
+		trimmed != "" &&
+		trimmed != yamlKeyAnnotations &&
+		!strings.HasPrefix(trimmed, yamlKeyAnnotations+" {")
+}
+
+// shouldInjectPodAnnotations checks if we should inject Pod annotations.
+func (t *HelmTemplater) shouldInjectPodAnnotations(state *customFieldsState, trimmed string, indentLen int) bool {
+	return (state.position == positionPodMetadata || state.position == positionAfterDeploymentMetadata) &&
+		state.currentBlock == blockPodAnnotations &&
+		!state.addedPodAnnotations &&
+		indentLen <= state.currentBlockIndent &&
+		trimmed != "" &&
+		trimmed != yamlKeyAnnotations &&
+		!strings.HasPrefix(trimmed, yamlKeyAnnotations+" {")
+}
+
+// handleDeploymentLabels handles injection of custom Deployment labels.
+func (t *HelmTemplater) handleDeploymentLabels(
+	state *customFieldsState, result []string, line, trimmed string, indentLen int,
+) []string {
+	if state.position == positionDeploymentMetadata &&
+		state.currentBlock == blockNone &&
+		trimmed == yamlKeyLabels {
+		state.currentBlock = blockDeploymentLabels
+		state.currentBlockIndent = indentLen
+		return result
+	}
+
+	if t.shouldInjectDeploymentLabels(state, trimmed, indentLen) {
+		result = result[:len(result)-1]
+		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+		childIndent := t.detectChildIndent(result, parentIndent)
+		result = t.injectDeploymentLabels(result, childIndent)
+		result = append(result, line)
+		state.addedLabelsToDeployment = true
+		state.currentBlock = blockNone
+	}
+
+	return result
+}
+
+// handlePodLabels handles injection of custom Pod template labels.
+func (t *HelmTemplater) handlePodLabels(
+	state *customFieldsState, result []string, line, trimmed string, indentLen int,
+) []string {
+	if state.position == positionPodMetadata &&
+		state.currentBlock == blockNone &&
+		trimmed == yamlKeyLabels {
+		state.currentBlock = blockPodLabels
+		state.currentBlockIndent = indentLen
+		return result
+	}
+
+	if t.shouldInjectPodLabels(state, trimmed, indentLen) {
+		result = result[:len(result)-1]
+		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+		childIndent := t.detectChildIndent(result, parentIndent)
+		result = t.injectPodLabels(result, childIndent)
+		result = append(result, line)
+		state.addedPodLabels = true
+		state.currentBlock = blockNone
+	}
+
+	return result
+}
+
+// shouldInjectDeploymentLabels checks if we should inject Deployment labels.
+func (t *HelmTemplater) shouldInjectDeploymentLabels(
+	state *customFieldsState, trimmed string, indentLen int,
+) bool {
+	return (state.position == positionDeploymentMetadata || state.position == positionAfterDeploymentMetadata) &&
+		state.currentBlock == blockDeploymentLabels &&
+		!state.addedLabelsToDeployment &&
+		indentLen <= state.currentBlockIndent &&
+		trimmed != "" &&
+		trimmed != yamlKeyLabels
+}
+
+// shouldInjectPodLabels checks if we should inject Pod labels.
+func (t *HelmTemplater) shouldInjectPodLabels(
+	state *customFieldsState, trimmed string, indentLen int,
+) bool {
+	return (state.position == positionPodMetadata || state.position == positionAfterDeploymentMetadata) &&
+		state.currentBlock == blockPodLabels &&
+		!state.addedPodLabels &&
+		indentLen <= state.currentBlockIndent &&
+		trimmed != "" &&
+		trimmed != yamlKeyLabels
+}
+
+// appendHelmMapBlock appends Helm template blocks for rendering YAML maps with optional key filtering.
+// When existingKeys is empty, uses simple {{- if }} conditional.
+// When existingKeys is provided, uses nested {{- with }} blocks with omit() to filter duplicate keys.
+func (t *HelmTemplater) appendHelmMapBlock(
+	result []string,
+	indent string,
+	valuePath string,
+	existingKeys []string,
+) []string {
+	childIndentWidth := strconv.Itoa(len(indent))
+
+	if len(existingKeys) > 0 {
+		omitKeys := strings.Join(existingKeys, "\" \"")
+		return append(result,
+			indent+"{{- with "+valuePath+" }}",
+			indent+"{{- with omit . \""+omitKeys+"\" }}",
+			indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+			indent+"{{- end }}",
+			indent+"{{- end }}",
+		)
+	}
+
+	return append(result,
+		indent+"{{- if "+valuePath+" }}",
+		indent+"{{- toYaml "+valuePath+" | nindent "+childIndentWidth+" }}",
+		indent+"{{- end }}",
+	)
+}
+
+// appendNestedHelmMapBlock appends nested Helm template blocks (e.g., .Values.manager.pod -> .labels).
+// When existingKeys is empty, uses nested {{- with }} without omit().
+// When existingKeys is provided, adds an extra {{- with omit() }} layer for key filtering.
+func (t *HelmTemplater) appendNestedHelmMapBlock(
+	result []string,
+	indent string,
+	outerPath string,
+	innerPath string,
+	existingKeys []string,
+) []string {
+	childIndentWidth := strconv.Itoa(len(indent))
+
+	if len(existingKeys) > 0 {
+		omitKeys := strings.Join(existingKeys, "\" \"")
+		return append(result,
+			indent+"{{- with "+outerPath+" }}",
+			indent+"{{- with "+innerPath+" }}",
+			indent+"{{- with omit . \""+omitKeys+"\" }}",
+			indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+			indent+"{{- end }}",
+			indent+"{{- end }}",
+			indent+"{{- end }}",
+		)
+	}
+
+	return append(result,
+		indent+"{{- with "+outerPath+" }}",
+		indent+"{{- with "+innerPath+" }}",
+		indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+		indent+"{{- end }}",
+		indent+"{{- end }}",
+	)
+}
+
+// injectDeploymentLabels injects the Helm template block for custom Deployment labels.
+func (t *HelmTemplater) injectDeploymentLabels(result []string, childIndent string) []string {
+	existingKeys := t.extractKeysFromLines(result)
+	return t.appendHelmMapBlock(result, childIndent, ".Values.manager.labels", existingKeys)
+}
+
+// injectPodLabels injects the Helm template block for custom Pod template labels.
+func (t *HelmTemplater) injectPodLabels(result []string, childIndent string) []string {
+	existingKeys := t.extractKeysFromLines(result)
+	return t.appendNestedHelmMapBlock(result, childIndent, ".Values.manager.pod", ".labels", existingKeys)
+}
+
+// metadataPosition represents the current position in the deployment manifest.
+type metadataPosition int
+
+const (
+	positionStart metadataPosition = iota
+	positionDeploymentMetadata
+	positionAfterDeploymentMetadata
+	positionPodMetadata
+)
+
+// blockType represents which specific YAML block we're currently inside.
+type blockType int
+
+const (
+	blockNone blockType = iota
+	blockDeploymentLabels
+	blockDeploymentAnnotations
+	blockPodLabels
+	blockPodAnnotations
+)
+
+// customFieldsState tracks parsing state for injecting custom labels and annotations.
+type customFieldsState struct {
+	// Current position in the manifest structure
+	position                metadataPosition
+	deploymentMetadataDepth int
+
+	// Flags to track if we've already injected templates (prevent duplicates)
+	addedLabelsToDeployment      bool
+	addedPodLabels               bool
+	addedAnnotationsToDeployment bool
+	addedPodAnnotations          bool
+	// Whether Deployment has an annotations field in the kustomize output
+	hasDeploymentAnnotations bool
+
+	// Current block being parsed and its indentation
+	currentBlock       blockType
+	currentBlockIndent int
+}
+
+// updateMetadataTracking updates the position state as we traverse the YAML structure.
+func (t *HelmTemplater) updateMetadataTracking(
+	state *customFieldsState, lines []string, i int, trimmed string, indentLen int,
+) {
+	// Track Deployment metadata section
+	if trimmed == "metadata:" && i > 0 {
+		prevLine := strings.TrimSpace(lines[i-1])
+		if strings.HasPrefix(prevLine, "kind: Deployment") || prevLine == "kind: Deployment" {
+			state.position = positionDeploymentMetadata
+			state.deploymentMetadataDepth = indentLen
+		} else if prevLine == "template:" {
+			// Track Pod template metadata section
+			state.position = positionPodMetadata
+		}
+	}
+
+	// Exit deployment metadata when we reach spec:
+	if state.position == positionDeploymentMetadata && trimmed == "spec:" && indentLen == state.deploymentMetadataDepth {
+		state.position = positionAfterDeploymentMetadata
+	}
+
+	// Exit pod template metadata when we reach spec: (pod spec)
+	if state.position == positionPodMetadata && trimmed == "spec:" {
+		state.position = positionAfterDeploymentMetadata
+	}
+}
+
+// detectChildIndent detects the actual child indentation from existing entries in the current block.
+// Returns the detected indentation string, or parentIndent + "  " (2 spaces) as default.
+func (t *HelmTemplater) detectChildIndent(lines []string, parentIndent string) string {
+	// Scan backwards to find the first child entry with indentation > parent
+	parentIndentLen := len(parentIndent)
+
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+
+		// Skip empty lines and Helm template directives
+		if trimmed == "" || strings.HasPrefix(trimmed, "{{") {
+			continue
+		}
+
+		// Stop at section headers
+		if trimmed == yamlKeyLabels || trimmed == yamlKeyAnnotations ||
+			trimmed == "metadata:" || trimmed == "spec:" || trimmed == "template:" {
+			break
+		}
+
+		// Find a line with indentation greater than parent (a child entry)
+		indent, indentLen := leadingWhitespace(line)
+		if indentLen > parentIndentLen && strings.Contains(line, ":") {
+			return indent
+		}
+	}
+
+	// Default to 2-space indentation (sigs.k8s.io/yaml standard)
+	return parentIndent + "  "
+}
+
+// extractKeysFromLines extracts YAML keys from labels/annotations sections.
+// Scans backwards to find the section header to avoid missing keys in large blocks.
+func (t *HelmTemplater) extractKeysFromLines(lines []string) []string {
+	keys := []string{}
+
+	// Find section start by scanning backwards to the nearest header
+	sectionStart := 0
+	for i := len(lines) - 1; i >= 0; i-- {
+		trimmed := strings.TrimSpace(lines[i])
+		// Stop at section headers - this is where our current section began
+		if trimmed == yamlKeyLabels || trimmed == yamlKeyAnnotations {
+			sectionStart = i + 1 // Start extracting from the line after the header
+			break
+		}
+		// Also stop at other major structural boundaries
+		if trimmed == "metadata:" || trimmed == "spec:" || trimmed == "template:" {
+			sectionStart = i + 1
+			break
+		}
+	}
+
+	// Matches YAML keys: "  key: value" (supports dots, slashes, hyphens)
+	keyPattern := regexp.MustCompile(`^\s+([a-zA-Z0-9._/-]+):\s+`)
+
+	for i := sectionStart; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+
+		// Skip Helm template directives (e.g., "{{- if ... }}", "{{- end }}"),
+		// but still parse YAML key/value lines whose values contain templates.
+		// This allows extracting keys like "app.kubernetes.io/name: {{ include ... }}"
+		if strings.HasPrefix(trimmed, "{{") {
+			continue
+		}
+
+		// Stop if we hit another section header
+		if trimmed == yamlKeyLabels || trimmed == yamlKeyAnnotations || trimmed == "metadata:" ||
+			trimmed == "spec:" || trimmed == "template:" {
+			break
+		}
+
+		if matches := keyPattern.FindStringSubmatch(line); matches != nil {
+			keys = append(keys, matches[1])
+		}
+	}
+
+	return keys
+}
+
+// injectDeploymentAnnotations injects the Helm template block for custom Deployment annotations.
+func (t *HelmTemplater) injectDeploymentAnnotations(result []string, indent string) []string {
+	existingKeys := t.extractKeysFromLines(result)
+	return t.appendHelmMapBlock(result, indent, ".Values.manager.annotations", existingKeys)
+}
+
+// addPodAnnotations adds custom annotations to the Pod template metadata.
+func (t *HelmTemplater) addPodAnnotations(result []string, indent string) []string {
+	existingKeys := t.extractKeysFromLines(result)
+	return t.appendNestedHelmMapBlock(result, indent, ".Values.manager.pod", ".annotations", existingKeys)
+}
+
+// handleFlowStyleAnnotations detects and converts flow-style annotations to block-style.
+// Flow-style example: "annotations: {key: value, key2: value2}"
+// Block-style output:
+//
+//	annotations:
+//	  key: value
+//	  key2: value2
+//
+// This conversion is necessary because we cannot inject Helm template blocks after
+// a flow-style mapping - it would produce invalid YAML.
+func (t *HelmTemplater) handleFlowStyleAnnotations(
+	result []string, line string, indent string,
+) []string {
+	trimmed := strings.TrimSpace(line)
+
+	// Detect flow-style annotations: annotations:{} or annotations: {}
+	flowPattern := regexp.MustCompile(`annotations:\s*\{`)
+	if !flowPattern.MatchString(trimmed) {
+		return result
+	}
+
+	// Extract the flow-style content
+	annotationsStart := strings.Index(line, yamlKeyAnnotations)
+	if annotationsStart == -1 {
+		return result
+	}
+
+	// Find the content after "annotations: "
+	contentStart := annotationsStart + len(yamlKeyAnnotations)
+	flowContent := strings.TrimSpace(line[contentStart:])
+
+	// Remove the flow-style line we just added
+	result = result[:len(result)-1]
+
+	// Add block-style annotations: key
+	result = append(result, indent+yamlKeyAnnotations)
+
+	// Parse and convert flow-style entries to block-style
+	// Use YAML parser to properly handle quoted values and edge cases
+	if strings.HasPrefix(flowContent, "{") && strings.HasSuffix(flowContent, "}") {
+		var flowMap map[string]any
+		if err := yaml.Unmarshal([]byte(flowContent), &flowMap); err == nil {
+			childIndent := indent + "  "
+			// When map is empty, leave just the header (annotations:) with no children.
+			// Template injection will add conditional blocks underneath, avoiding invalid
+			// YAML that would result from mixing a {} scalar with mapping entries.
+			if len(flowMap) > 0 {
+				// Sort keys to ensure deterministic output
+				sortedKeys := make([]string, 0, len(flowMap))
+				for key := range flowMap {
+					sortedKeys = append(sortedKeys, key)
+				}
+				slices.Sort(sortedKeys)
+
+				for _, key := range sortedKeys {
+					value := flowMap[key]
+					// Marshal the value to get proper YAML representation
+					valueBytes, err := yaml.Marshal(value)
+					if err != nil {
+						continue
+					}
+					valueStr := strings.TrimSpace(string(valueBytes))
+					result = append(result, fmt.Sprintf("%s%s: %s", childIndent, key, valueStr))
+				}
+			}
+		} else {
+			// Fallback: simple comma split (best effort for non-standard formats)
+			flowContent = strings.TrimPrefix(flowContent, "{")
+			flowContent = strings.TrimSuffix(flowContent, "}")
+			flowContent = strings.TrimSpace(flowContent)
+			if flowContent != "" {
+				entries := strings.Split(flowContent, ",")
+				childIndent := indent + "  "
+				for _, entry := range entries {
+					entry = strings.TrimSpace(entry)
+					if entry != "" {
+						result = append(result, childIndent+entry)
+					}
+				}
+			}
+		}
+	}
+
+	return result
 }

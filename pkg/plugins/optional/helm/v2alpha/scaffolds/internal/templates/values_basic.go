@@ -338,7 +338,29 @@ func (f *HelmValuesBasic) addDeploymentConfig(buf *bytes.Buffer) {
 	f.addPriorityClassNameSection(buf)
 	f.addTopologySpreadConstraintsSection(buf)
 	f.addTerminationGracePeriodSecondsSection(buf)
+	f.addCustomLabelsAnnotationsSections(buf)
 	f.addExtraVolumesFromConfig(buf)
+}
+
+// addCustomLabelsAnnotationsSections adds custom labels and annotations sections for both
+// Deployment and Pod template metadata to values.yaml.
+func (f *HelmValuesBasic) addCustomLabelsAnnotationsSections(buf *bytes.Buffer) {
+	buf.WriteString("  ## Custom Deployment labels\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # labels: {}\n")
+	buf.WriteString("\n")
+
+	buf.WriteString("  ## Custom Deployment annotations\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # annotations: {}\n")
+	buf.WriteString("\n")
+
+	buf.WriteString("  ## Custom Pod labels and annotations\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  # pod:\n")
+	buf.WriteString("  #   labels: {}\n")
+	buf.WriteString("  #   annotations: {}\n")
+	buf.WriteString("\n")
 }
 
 // addExtraVolumesFromConfig adds manager.extraVolumeMounts and manager.extraVolumes to values
@@ -426,6 +448,7 @@ func (f *HelmValuesBasic) addDefaultDeploymentSections(buf *bytes.Buffer) {
 	f.addPriorityClassNameSection(buf)
 	f.addTopologySpreadConstraintsSection(buf)
 	f.addTerminationGracePeriodSecondsSection(buf)
+	f.addCustomLabelsAnnotationsSections(buf)
 }
 
 // addArgsSection adds controller manager args ONLY if args exist in kustomize input.
