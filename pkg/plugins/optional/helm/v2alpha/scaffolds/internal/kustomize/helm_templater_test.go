@@ -321,6 +321,60 @@ spec:
 			Expect(result).To(ContainSubstring("imagePullSecrets:"))
 		})
 
+		// Inside a '{{- with .Values.manager.imagePullSecrets }}' block, '.' is bound to the
+		// imagePullSecrets slice, so using '.Values.manager.imagePullSecrets' inside the block
+		// causes a Helm render error: "can't evaluate field Values in type []interface {}".
+		// Insure usage of '.' for toYaml instead of the full path.
+		It("should use '.' not '.Values.manager.imagePullSecrets' inside with block for imagePullSecrets", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: myregistrykey
+      containers:
+      - args:
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.imagePullSecrets }}"))
+			// Must use '.' inside the with block, NOT '.Values.manager.imagePullSecrets'
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("{{- toYaml .Values.manager.imagePullSecrets | nindent"))
+		})
+
+		It("should use '.' not '.Values.manager.imagePullSecrets' inside with block when field is injected", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			// No imagePullSecrets in the content - the function will inject the block
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: test-project-controller-manager
+      containers:
+      - args:
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.imagePullSecrets }}"))
+			// Must use '.' inside the with block, NOT '.Values.manager.imagePullSecrets'
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("{{- toYaml .Values.manager.imagePullSecrets | nindent"))
+		})
+
 		It("should template deployment strategy", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")

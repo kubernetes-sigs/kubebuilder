@@ -70,7 +70,7 @@ spec:
       {{- end }}
       {{- with .Values.manager.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml .Values.manager.imagePullSecrets | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
       - args:
