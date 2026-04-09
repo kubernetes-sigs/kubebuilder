@@ -8,7 +8,7 @@ Sub-Module Layouts (in a way you could call them a special form of [Monorepo's][
 <p class="note-title">Using External Resources/APIs</p>
 
 If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project
-or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_type.md)
+or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_resource.md)
 for more info.
 
 </aside>
@@ -236,7 +236,7 @@ make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
 
-Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_type.md).
+Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_resource.md).
 When you get to the step `Edit the API files` simply import the dependency with
 
 ```shell
