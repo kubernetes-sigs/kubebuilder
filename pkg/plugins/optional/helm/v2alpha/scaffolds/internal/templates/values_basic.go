@@ -118,7 +118,8 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 ## Configure the controller manager deployment
 ##
 manager:
-  # Set to false to skip manager installation
+  ## Set to false to skip manager installation
+  ##
   enabled: true
 
   replicas: %d
@@ -140,9 +141,10 @@ rbac:
 `)
 	// Only add namespaced option if the project has cluster-scoped RBAC
 	if f.HasClusterScopedRBAC {
-		buf.WriteString(`  # RBAC resource scope
-  # - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
-  # - true: Role/RoleBinding (release namespace only)
+		buf.WriteString(`  ## RBAC resource scope
+  ## - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  ## - true: Role/RoleBinding (release namespace only)
+  ##
   namespaced: false
 
 `)
@@ -150,11 +152,9 @@ rbac:
 
 	// Add role-specific namespace configuration if detected
 	if len(f.RoleNamespaces) > 0 {
-		buf.WriteString(`  # Specific namespace deployments for Roles and RoleBindings.
-  # Keys are resource name suffixes (without project prefix).
-  # Detected from controller RBAC markers with explicit namespace attributes.
-  # These values are optional - if omitted, the original namespace from kustomize is used.
-  # Override these values to deploy roles to different namespaces.
+		buf.WriteString(`  ## Namespace configuration for Roles deployed to namespaces different from the manager namespace
+  ## Keys are resource name suffixes (without project prefix)
+  ##
   roleNamespaces:
 `)
 		// Sort role names for consistent output
@@ -173,10 +173,12 @@ rbac:
 	}
 
 	// Add helper roles section
-	buf.WriteString(`  # Helper roles for CRD management (admin/editor/viewer)
+	buf.WriteString(`  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
 `)
 	buf.WriteString(`  helpers:
-    # Install convenience admin/editor/viewer roles for CRDs
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
     enable: false
 
 `)

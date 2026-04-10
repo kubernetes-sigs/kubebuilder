@@ -9,7 +9,8 @@
 ## Configure the controller manager deployment
 ##
 manager:
-  # Set to false to skip manager installation
+  ## Set to false to skip manager installation
+  ##
   enabled: true
 
   replicas: 1
@@ -121,9 +122,11 @@ manager:
 ## RBAC configuration
 ##
 rbac:
-  # Helper roles for CRD management (admin/editor/viewer)
+  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
   helpers:
-    # Install convenience admin/editor/viewer roles for CRDs
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
     enable: false
 
 ## Custom Resource Definitions
