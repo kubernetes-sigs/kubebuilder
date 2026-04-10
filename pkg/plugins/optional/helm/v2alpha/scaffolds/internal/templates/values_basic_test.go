@@ -56,8 +56,8 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).NotTo(ContainSubstring("envOverrides:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			// Optional Kubernetes fields (imagePullSecrets) should be COMMENTED when not found
+			Expect(content).To(ContainSubstring("rbac:"))
+			// imagePullSecrets should be commented when not found in DeploymentConfig
 			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
 			// New fields should be commented when not found
 			Expect(content).To(ContainSubstring("# strategy:"))
@@ -109,8 +109,8 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).NotTo(ContainSubstring("args:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			// Optional Kubernetes fields (imagePullSecrets) should be COMMENTED when not found
+			Expect(content).To(ContainSubstring("rbac:"))
+			// imagePullSecrets should be commented when not found in DeploymentConfig
 			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
 		})
 	})
@@ -380,21 +380,41 @@ var _ = Describe("HelmValuesBasic", func() {
 		})
 	})
 
-	Context("rbacHelpers configuration", func() {
-		BeforeEach(func() {
-			valuesTemplate = &HelmValuesBasic{
-				HasWebhooks: false,
-			}
-			valuesTemplate.InjectProjectName("test-project")
-			err := valuesTemplate.SetTemplateDefaults()
-			Expect(err).NotTo(HaveOccurred())
-		})
+	Context("rbac configuration", func() {
+		DescribeTable("cluster-scoped RBAC handling",
+			func(hasClusterScopedRBAC bool) {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:          false,
+					HasClusterScopedRBAC: hasClusterScopedRBAC,
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
 
-		It("should have rbacHelpers disabled by default", func() {
-			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("enable: false"))
-		})
+				content := valuesTemplate.GetBody()
+
+				// Both cases should have rbac section and helpers
+				Expect(content).To(ContainSubstring("rbac:"))
+				Expect(content).To(ContainSubstring("helpers:"))
+				Expect(content).To(ContainSubstring("enable: false"))
+
+				if hasClusterScopedRBAC {
+					// Should include namespaced option and comments
+					Expect(content).To(ContainSubstring("namespaced: false"))
+					Expect(content).To(ContainSubstring("RBAC resource scope"))
+					Expect(content).To(ContainSubstring("ClusterRole/ClusterRoleBinding (all namespaces)"))
+					Expect(content).To(ContainSubstring("Role/RoleBinding (release namespace only)"))
+				} else {
+					// Should NOT include namespaced option and comments
+					Expect(content).NotTo(ContainSubstring("namespaced:"))
+					Expect(content).NotTo(ContainSubstring("RBAC resource scope"))
+					Expect(content).NotTo(ContainSubstring("ClusterRole/ClusterRoleBinding (all namespaces)"))
+					Expect(content).NotTo(ContainSubstring("Role/RoleBinding (release namespace only)"))
+				}
+			},
+			Entry("with cluster-scoped RBAC", true),
+			Entry("without cluster-scoped RBAC (namespace-scoped project)", false),
+		)
 	})
 
 	Context("Port configuration", func() {
@@ -692,6 +712,72 @@ var _ = Describe("HelmValuesBasic", func() {
 				Expect(content).To(ContainSubstring("terminationGracePeriodSeconds: 30"))
 				// Should NOT have commented version at default value
 				Expect(content).NotTo(ContainSubstring("# terminationGracePeriodSeconds: 10"))
+			})
+		})
+
+		Context("roleNamespaces configuration", func() {
+			It("should include roleNamespaces section when RoleNamespaces is populated", func() {
+				valuesTemplate := &HelmValuesBasic{
+					HasClusterScopedRBAC: true,
+					RoleNamespaces: map[string]string{
+						"manager-role-infrastructure": "infrastructure",
+						"manager-role-users":          "users",
+						"manager-role-monitoring":     "monitoring",
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// Should have roleNamespaces section
+				Expect(content).To(ContainSubstring("roleNamespaces:"))
+
+				// Should have all three role names with proper quoting (using suffix-based keys)
+				Expect(content).To(ContainSubstring(`"manager-role-infrastructure": "infrastructure"`))
+				Expect(content).To(ContainSubstring(`"manager-role-users": "users"`))
+				Expect(content).To(ContainSubstring(`"manager-role-monitoring": "monitoring"`))
+
+				// Verify stable, sorted order
+				lines := strings.Split(content, "\n")
+				var roleNsLines []string
+				inRoleNs := false
+				for _, line := range lines {
+					if strings.Contains(line, "roleNamespaces:") {
+						inRoleNs = true
+						continue
+					}
+					if inRoleNs {
+						if strings.HasPrefix(strings.TrimSpace(line), `"manager-role-`) {
+							roleNsLines = append(roleNsLines, strings.TrimSpace(line))
+						} else if !strings.HasPrefix(strings.TrimSpace(line), "#") && strings.TrimSpace(line) != "" {
+							// End of roleNamespaces section
+							break
+						}
+					}
+				}
+
+				// Should have exactly 3 role namespace entries in sorted order
+				Expect(roleNsLines).To(HaveLen(3))
+				Expect(roleNsLines[0]).To(ContainSubstring("infrastructure"))
+				Expect(roleNsLines[1]).To(ContainSubstring("monitoring"))
+				Expect(roleNsLines[2]).To(ContainSubstring("users"))
+			})
+
+			It("should not include roleNamespaces section when RoleNamespaces is empty", func() {
+				valuesTemplate := &HelmValuesBasic{
+					HasClusterScopedRBAC: true,
+					RoleNamespaces:       map[string]string{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// Should NOT have roleNamespaces section
+				Expect(content).NotTo(ContainSubstring("roleNamespaces:"))
 			})
 		})
 	})

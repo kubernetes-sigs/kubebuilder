@@ -74,8 +74,9 @@ metadata:
 spec:
   endpoints:
     - path: /metrics
-      port: https
-      scheme: https
+      port: {{ "{{ if .Values.metrics.secure }}https{{ else }}http{{ end }}" }}
+      scheme: {{ "{{ if .Values.metrics.secure }}https{{ else }}http{{ end }}" }}
+      {{ "{{- if .Values.metrics.secure }}" }}
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         {{ "{{- if .Values.certManager.enable }}" }}
@@ -100,6 +101,7 @@ spec:
         # Development/Test mode (insecure configuration)
         insecureSkipVerify: true
         {{ "{{- end }}" }}
+      {{ "{{- end }}" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}

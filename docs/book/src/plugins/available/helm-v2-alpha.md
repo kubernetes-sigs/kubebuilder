@@ -361,11 +361,22 @@ manager:
   #   labels: {}
   #   annotations: {}
 
-## Helper RBAC roles for managing custom resources
+## RBAC configuration
 ##
-rbacHelpers:
-  # Install convenience admin/editor/viewer roles for CRDs
-  enable: false
+rbac:
+  # Operator RBAC scope
+  #
+  # - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  # - true: Role/RoleBinding (release namespace only)
+  #
+  # Note: metrics-auth-role is always a ClusterRole
+  # (requires TokenReview and SubjectAccessReview APIs).
+  namespaced: false
+
+  # Helper roles for CRD management (admin/editor/viewer)
+  helpers:
+    # Install convenience admin/editor/viewer roles for CRDs
+    enable: false
 
 ## Custom Resource Definitions
 ##
@@ -428,6 +439,164 @@ helm install my-release ./dist/chart \
 ```shell
 helm install my-release ./dist/chart
 ```
+
+### RBAC Configuration
+
+#### `rbac.namespaced`
+
+Controls the scope of RBAC permissions:
+
+- **`false` (default)**: ClusterRole/ClusterRoleBinding (all namespaces)
+- **`true`**: Role/RoleBinding (release namespace only)
+
+<aside class="note" role="note">
+<p class="note-title">Important Notes</p>
+
+- This controls RBAC permissions only. To control watch scope, use `WATCH_NAMESPACE` ([Manager Scope](../../reference/manager-scope.md)).
+- `metrics-auth-role` is always a `ClusterRole` ([Metrics Configuration](#metrics-configuration)).
+- `leader-election-role` is always a `Role`.
+
+</aside>
+
+#### `rbac.roleNamespaces`
+
+When your controller requires RBAC permissions in specific namespaces, the Helm plugin automatically detects Roles and RoleBindings deployed to non-manager namespaces and creates separate `roleNamespaces` entries for each resource (both the Role and its corresponding RoleBinding).
+
+**Example scenario:**
+
+Your controller needs to manage deployments in an `infrastructure` namespace and secrets in a `users` namespace:
+
+```go
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,resources=deployments,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",namespace=users,resources=secrets,verbs=get;list;watch
+```
+
+The plugin detects the RBAC resource-to-namespace mappings and generates:
+
+**`values.yaml`:**
+```yaml
+rbac:
+  namespaced: false
+
+  # Specific namespace deployments for Roles and RoleBindings
+  # Keys are resource name suffixes (without project prefix)
+  roleNamespaces:
+    # RBAC resource manager-role-infrastructure deploys to namespace infrastructure
+    "manager-role-infrastructure": "infrastructure"
+    # RBAC resource manager-rolebinding-infrastructure deploys to namespace infrastructure
+    "manager-rolebinding-infrastructure": "infrastructure"
+    # RBAC resource manager-role-users deploys to namespace users
+    "manager-role-users": "users"
+    # RBAC resource manager-rolebinding-users deploys to namespace users
+    "manager-rolebinding-users": "users"
+
+  helpers:
+    enable: false
+```
+
+**Generated templates:**
+```yaml
+# Role template
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-role-infrastructure" "context" $) }}
+  namespace: {{ index .Values.rbac.roleNamespaces "manager-role-infrastructure" | default "infrastructure" }}
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get, list, watch]
+---
+# RoleBinding template
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-rolebinding-infrastructure" "context" $) }}
+  namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-infrastructure" | default "infrastructure" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-role-infrastructure" "context" $) }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "my-operator.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+```
+
+**Override namespace names at deployment:**
+
+You can override namespaces using a values file:
+
+```yaml
+# custom-values.yaml
+rbac:
+  roleNamespaces:
+    "manager-role-infrastructure": "prod-infra"
+    "manager-rolebinding-infrastructure": "prod-infra"
+    "manager-role-users": "prod-users"
+    "manager-rolebinding-users": "prod-users"
+```
+
+```shell
+helm install my-operator ./dist/chart -f custom-values.yaml
+```
+
+Alternatively, use bracket notation with `--set`:
+```shell
+helm install my-operator ./dist/chart \
+  --set 'rbac.roleNamespaces[manager-role-infrastructure]=prod-infra' \
+  --set 'rbac.roleNamespaces[manager-rolebinding-infrastructure]=prod-infra' \
+  --set 'rbac.roleNamespaces[manager-role-users]=prod-users' \
+  --set 'rbac.roleNamespaces[manager-rolebinding-users]=prod-users'
+```
+
+<aside class="note" role="note">
+<p class="note-title">Namespace Configuration</p>
+
+- **Keys use suffix-based naming** (without project prefix) for stability across different release names and overrides
+- Templates use the `index` function with the suffix to access namespace values (e.g., `{{ index .Values.rbac.roleNamespaces "manager-role-infrastructure" | default "infrastructure" }}`), which safely handles names with hyphens
+- If a `roleNamespaces` entry is missing, the template falls back to the original namespace from kustomize, preventing `<no value>` errors
+- This setting controls RBAC permissions only. To control which namespaces the operator watches, configure the `WATCH_NAMESPACE` environment variable (see [Manager Scope](../../reference/manager-scope.md))
+
+</aside>
+
+#### `rbac.helpers.enable`
+
+Controls whether to create convenience RBAC roles (admin/editor/viewer) for your Custom Resources. Default: `false`.
+
+These helper roles follow Kubernetes conventions and can be bound to users or groups to grant different levels of access to your CRs:
+- **admin**: Full CRUD access to the custom resource
+- **editor**: Create, update, and delete access (no special permissions)
+- **viewer**: Read-only access
+
+### Metrics Configuration
+
+#### `metrics.secure`
+
+Controls transport security and authentication for the metrics endpoint. Default: `true`.
+
+- **`true` (HTTPS with RBAC)**:
+  - Uses HTTPS transport (`--metrics-secure=true`, default in controller-runtime)
+  - Creates TLS certificates (when `certManager.enable=true`)
+  - Creates `metrics-auth-role` ClusterRole for TokenReview/SubjectAccessReview
+  - ServiceMonitor uses `scheme: https` with TLS config
+
+- **`false` (HTTP without RBAC)**:
+  - Uses HTTP transport (`--metrics-secure=false`)
+  - No TLS certificates created
+  - No RBAC authentication (metrics endpoint is open)
+  - ServiceMonitor uses `scheme: http` without TLS config
+
+<aside class="note" role="note">
+<p class="note-title">Metrics RBAC is independent from manager RBAC</p>
+
+The `metrics-auth-role` and `metrics-reader` are **always ClusterRoles**, even when `rbac.namespaced=true`.
+
+This is because metrics authentication uses cluster-scoped APIs ([`TokenReview`/`SubjectAccessReview`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/filters#WithAuthenticationAndAuthorization)) for authenticating metric scrapers (like Prometheus), which is separate from the manager's operational RBAC for managing resources.
+
+**You can use `rbac.namespaced=true` with `metrics.secure=true`** - the manager will use namespace-scoped Roles while metrics authentication uses cluster-scoped ClusterRoles.
+
+</aside>
 
 ### Extra volumes
 

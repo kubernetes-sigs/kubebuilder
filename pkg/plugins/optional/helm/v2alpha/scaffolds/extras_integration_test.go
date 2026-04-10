@@ -142,7 +142,7 @@ data:
 			Expect(resources.Other).To(HaveLen(2))
 
 			By("converting to Helm chart")
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -259,7 +259,7 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -321,7 +321,7 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -450,7 +450,7 @@ spec:
 			Expect(resources.RoleBindings).To(HaveLen(1), "should have 1 RoleBinding")
 			Expect(resources.Other).To(HaveLen(1), "ConfigMap should be in Other")
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -674,7 +674,7 @@ spec:
 			Expect(resources.RoleBindings).To(HaveLen(3), "should have 3 RoleBindings")
 
 			By("converting to Helm chart")
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -834,14 +834,21 @@ spec:
 			Expect(prodBindingContentStr).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
 				"RoleBinding subject namespace should be templated to Release.Namespace")
 
-			By("verifying ClusterRole does not have namespace field")
+			By("verifying ClusterRole has conditional namespace logic for rbac.namespaced support")
 			clusterRoleContent, err := afero.ReadFile(fs.FS, clusterRolePath)
 			Expect(err).NotTo(HaveOccurred())
 			clusterRoleContentStr := string(clusterRoleContent)
 
-			// ClusterRole should not have namespace field
-			Expect(clusterRoleContentStr).NotTo(ContainSubstring("namespace:"),
-				"ClusterRole should not have namespace field")
+			// ClusterRole should have conditional kind switching
+			Expect(clusterRoleContentStr).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"),
+				"ClusterRole should have conditional for rbac.namespaced")
+			Expect(clusterRoleContentStr).To(ContainSubstring("kind: Role"),
+				"ClusterRole should have Role alternative")
+			Expect(clusterRoleContentStr).To(ContainSubstring("kind: ClusterRole"),
+				"ClusterRole should have ClusterRole default")
+			// Should have conditional namespace (rendered only when rbac.namespaced=true)
+			Expect(clusterRoleContentStr).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"ClusterRole should have conditional namespace for Role variant")
 		})
 
 		It("should preserve ANY namespace field that differs from manager namespace", func() {
@@ -914,7 +921,7 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1068,7 +1075,7 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1214,7 +1221,7 @@ spec:
 			Expect(cr.GetAPIVersion()).To(Equal("batch.tutorial.kubebuilder.io/v1"))
 			Expect(cr.GetName()).To(Equal("cronjob-sample"))
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist")
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 			err = converter.WriteChartFiles(fs)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1255,6 +1262,224 @@ spec:
 			crdFiles, err := afero.ReadDir(fs.FS, crdDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(crdFiles).To(HaveLen(1), "crd directory should have 1 CRD")
+		})
+	})
+
+	Context("Multi-namespace RBAC support", func() {
+		It("should deploy roles and rolebindings to specific namespaces with configurable overrides", func() {
+			By("creating test manifests with multi-namespace RBAC")
+
+			// Create kustomize output with Roles and RoleBindings in specific namespaces
+			kustomizeOutput := `apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: test-project
+  name: test-project-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-manager-role-infrastructure
+  namespace: infrastructure
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-manager-role-users
+  namespace: users
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding-infrastructure
+  namespace: infrastructure
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-manager-role-infrastructure
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-manager-rolebinding-users
+  namespace: users
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-manager-role-users
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - image: controller:latest
+        name: manager
+      serviceAccountName: test-project-controller-manager
+`
+			// Write kustomize output to file
+			manifestsPath := filepath.Join("dist", "install.yaml")
+			err := fs.FS.MkdirAll(filepath.Dir(manifestsPath), 0755)
+			Expect(err).NotTo(HaveOccurred())
+			err = afero.WriteFile(fs.FS, manifestsPath, []byte(kustomizeOutput), 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("parsing the kustomize output")
+			parser := kustomize.NewParser(filepath.Join(tmpDir, manifestsPath))
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify we have Roles in multiple namespaces
+			Expect(resources.Roles).To(HaveLen(2))
+
+			By("detecting role-namespace mappings")
+			namePrefix := "test-project"
+			managerNamespace := "test-project-system"
+
+			roleNamespaces := make(map[string]string)
+			for _, role := range resources.Roles {
+				ns := role.GetNamespace()
+				if ns != "" && ns != managerNamespace {
+					roleName := role.GetName()
+					// Strip project prefix to get stable suffix
+					suffix := strings.TrimPrefix(roleName, namePrefix+"-")
+					roleNamespaces[suffix] = ns
+				}
+			}
+			for _, binding := range resources.RoleBindings {
+				ns := binding.GetNamespace()
+				if ns != "" && ns != managerNamespace {
+					bindingName := binding.GetName()
+					// Strip project prefix to get stable suffix
+					suffix := strings.TrimPrefix(bindingName, namePrefix+"-")
+					roleNamespaces[suffix] = ns
+				}
+			}
+
+			// Verify detection worked (using suffix-based keys)
+			Expect(roleNamespaces).To(HaveLen(4)) // 2 roles + 2 rolebindings
+			Expect(roleNamespaces).To(HaveKey("manager-role-infrastructure"))
+			Expect(roleNamespaces).To(HaveKey("manager-role-users"))
+			Expect(roleNamespaces).To(HaveKey("manager-rolebinding-infrastructure"))
+			Expect(roleNamespaces).To(HaveKey("manager-rolebinding-users"))
+
+			By("converting to Helm chart with role-namespace mappings")
+			chartConverter := kustomize.NewChartConverter(resources, namePrefix, "test-project", "dist", roleNamespaces)
+			err = chartConverter.WriteChartFiles(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("listing RBAC files for debugging")
+			rbacDir := filepath.Join("dist", "chart", "templates", "rbac")
+			rbacFiles, err := afero.ReadDir(fs.FS, rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+			GinkgoWriter.Printf("RBAC files created:\n")
+			for _, f := range rbacFiles {
+				GinkgoWriter.Printf("  - %s\n", f.Name())
+			}
+
+			By("verifying infrastructure role uses index .Values.rbac.roleNamespaces")
+			// Note: chart_writer appends namespace to filename for cross-namespace resources
+			infraRolePath := filepath.Join("dist", "chart", "templates", "rbac", "manager-role-infrastructure-infrastructure.yaml")
+			exists, err := afero.Exists(fs.FS, infraRolePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "infrastructure role should exist")
+
+			infraContent, err := afero.ReadFile(fs.FS, infraRolePath)
+			Expect(err).NotTo(HaveOccurred())
+			infraContentStr := string(infraContent)
+
+			Expect(infraContentStr).To(ContainSubstring(`namespace: {{ index .Values.rbac.roleNamespaces "manager-role-infrastructure" | default "infrastructure" }}`),
+				"infrastructure role should use index .Values.rbac.roleNamespaces with suffix as key and default fallback")
+			Expect(infraContentStr).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+				"infrastructure role should NOT use .Release.Namespace")
+
+			By("verifying users role uses index .Values.rbac.roleNamespaces")
+			usersRolePath := filepath.Join("dist", "chart", "templates", "rbac", "manager-role-users-users.yaml")
+			exists, err = afero.Exists(fs.FS, usersRolePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "users role should exist")
+
+			usersContent, err := afero.ReadFile(fs.FS, usersRolePath)
+			Expect(err).NotTo(HaveOccurred())
+			usersContentStr := string(usersContent)
+
+			Expect(usersContentStr).To(ContainSubstring(`namespace: {{ index .Values.rbac.roleNamespaces "manager-role-users" | default "users" }}`),
+				"users role should use index .Values.rbac.roleNamespaces with suffix as key and default fallback")
+
+			By("verifying RoleBindings preserve namespace templates correctly")
+			infraBindingPath := filepath.Join("dist", "chart", "templates", "rbac", "manager-rolebinding-infrastructure-infrastructure.yaml")
+			exists, err = afero.Exists(fs.FS, infraBindingPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue(), "infrastructure rolebinding should exist")
+
+			infraBindingContent, err := afero.ReadFile(fs.FS, infraBindingPath)
+			Expect(err).NotTo(HaveOccurred())
+			infraBindingStr := string(infraBindingContent)
+
+			// RoleBinding metadata should use role-based namespace template with default fallback
+			Expect(infraBindingStr).To(ContainSubstring(`namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-infrastructure" | default "infrastructure" }}`),
+				"infrastructure rolebinding metadata should use index .Values.rbac.roleNamespaces with suffix as key and default fallback")
+
+			// Subject namespace should use manager namespace (.Release.Namespace)
+			lines := strings.Split(infraBindingStr, "\n")
+			foundSubjectNs := false
+			for i, line := range lines {
+				if strings.Contains(line, "subjects:") {
+					// Look for namespace field in subject (within a few lines)
+					for j := i; j < i+5 && j < len(lines); j++ {
+						if strings.Contains(lines[j], "namespace:") && strings.Contains(lines[j], "{{ .Release.Namespace }}") {
+							foundSubjectNs = true
+							break
+						}
+					}
+				}
+			}
+			Expect(foundSubjectNs).To(BeTrue(), "subject namespace should use .Release.Namespace")
 		})
 	})
 })

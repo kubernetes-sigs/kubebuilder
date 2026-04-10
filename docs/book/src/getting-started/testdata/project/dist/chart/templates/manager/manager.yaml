@@ -76,6 +76,9 @@ spec:
       - args:
         {{- if .Values.metrics.enable }}
         - --metrics-bind-address=:{{ .Values.metrics.port }}
+        {{- if not .Values.metrics.secure }}
+        - --metrics-secure=false
+        {{- end }}
         {{- else }}
         # Bind to :0 to disable the controller-runtime managed metrics server
         - --metrics-bind-address=0

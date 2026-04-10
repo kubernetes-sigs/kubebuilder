@@ -38,6 +38,7 @@ var _ = Describe("HelmTemplater", func() {
 			detectedPrefix:   "test-project",
 			chartName:        "test-project",
 			managerNamespace: "test-project-system",
+			roleNamespaces:   nil,
 		}
 	})
 
@@ -183,6 +184,8 @@ spec:
 
 			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("{{- if not .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("- --metrics-secure=false"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
 			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
@@ -519,6 +522,85 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
+		It("should template ServiceMonitor port and scheme based on metrics.secure", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Port should be templated to conditional
+			Expect(result).To(ContainSubstring("port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).NotTo(ContainSubstring("port: https"))
+
+			// Scheme should be templated to conditional
+			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).NotTo(ContainSubstring("scheme: https"))
+		})
+
+		It("should wrap ServiceMonitor bearerTokenFile with metrics.secure conditional", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    port: https`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// BearerTokenFile should be wrapped with conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should wrap ServiceMonitor tlsConfig with metrics.secure conditional", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// TLS config should be wrapped with conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("tlsConfig:"))
+			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+
+			// Should have port and scheme templated too
+			Expect(result).To(ContainSubstring("port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+		})
+
 		It("should add metrics conditional for metrics services", func() {
 			serviceResource := &unstructured.Unstructured{}
 			serviceResource.SetAPIVersion("v1")
@@ -568,12 +650,14 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, certResource)
 
-			// Should be wrapped with both metrics and certManager conditionals
-			Expect(result).To(ContainSubstring("{{- if and .Values.certManager.enable .Values.metrics.enable }}"))
+			// Should be wrapped with certManager, metrics, AND metrics.secure conditionals
+			// Metrics certs only needed when using HTTPS (metrics.secure=true)
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should NOT add conditionals to essential resources", func() {
+		It("should add kind conditionals to essential ClusterRole resources", func() {
 			// Test essential RBAC
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -587,8 +671,10 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should NOT wrap essential RBAC with conditionals
-			Expect(result).NotTo(ContainSubstring("{{- if .Values"))
+			// Should NOT have rbac.create conditional (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have kind conditional for namespace-scoped support
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
 		})
 
 		It("should add webhook conditional for webhook services", func() {
@@ -758,7 +844,7 @@ spec:
 	})
 
 	Context("helper RBAC wrapping", func() {
-		It("should add rbacHelpers conditional for helper RBAC roles", func() {
+		It("should add rbac.helpers conditional for helper RBAC roles", func() {
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			clusterRoleResource.SetKind("ClusterRole")
@@ -771,12 +857,12 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should be wrapped with rbacHelpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbacHelpers.enable }}"))
+			// Should be wrapped with rbac.helpers conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should add rbacHelpers conditional for helper ClusterRoleBindings", func() {
+		It("should add rbac.helpers conditional for helper ClusterRoleBindings", func() {
 			bindingResource := &unstructured.Unstructured{}
 			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			bindingResource.SetKind("ClusterRoleBinding")
@@ -789,8 +875,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, bindingResource)
 
-			// Should be wrapped with rbacHelpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbacHelpers.enable }}"))
+			// Should be wrapped with rbac.helpers conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 	})
@@ -1261,7 +1347,7 @@ data:
 			Expect(result).To(BeEmpty())
 		})
 
-		It("should handle resources without namespace", func() {
+		It("should add conditional namespace for ClusterRole when rendering as Role", func() {
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			clusterRoleResource.SetKind("ClusterRole")
@@ -1274,8 +1360,10 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should not add namespace substitution for cluster-scoped resources
-			Expect(result).NotTo(ContainSubstring("namespace:"))
+			// Should add conditional namespace for Role variant
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+			// Namespace should be conditional (only when rbac.namespaced is true)
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
 		})
 
 		It("should handle malformed YAML gracefully", func() {
@@ -1502,6 +1590,7 @@ subjects:
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "user", // Short namespace that appears as substring
+				roleNamespaces:   nil,
 			}
 
 			content := `apiVersion: rbac.authorization.k8s.io/v1
@@ -1547,6 +1636,7 @@ rules:
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "app",
+				roleNamespaces:   nil,
 			}
 
 			roleBindingResource := &unstructured.Unstructured{}
@@ -1649,6 +1739,7 @@ data:
 				detectedPrefix:   "test",
 				chartName:        "test",
 				managerNamespace: "app",
+				roleNamespaces:   nil,
 			}
 
 			content := `apiVersion: v1
@@ -2225,6 +2316,7 @@ spec:
 				detectedPrefix:   "ln",           // Custom short prefix from kustomize
 				chartName:        "test-project", // Chart/project name
 				managerNamespace: "ln-system",    // Manager namespace
+				roleNamespaces:   nil,
 			}
 
 			issuer := &unstructured.Unstructured{}
@@ -3309,6 +3401,376 @@ spec:
 				Expect(labelsMatch[0]).To(BeNumerically(">", existingLabelIdx),
 					"Custom labels should be injected after existing labels")
 			}
+		})
+	})
+
+	Context("conditional RBAC kind rendering", func() {
+		It("should add conditional kind for ClusterRole to support namespace-scoped deployment", func() {
+			clusterRoleResource := &unstructured.Unstructured{}
+			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			clusterRoleResource.SetKind("ClusterRole")
+			clusterRoleResource.SetName("test-project-manager-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get`
+
+			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
+
+			// Should NOT have rbac.create (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have conditional kind based on rbac.namespaced
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+			Expect(result).To(ContainSubstring("kind: Role"))
+			Expect(result).To(ContainSubstring("{{- else }}"))
+			Expect(result).To(ContainSubstring("kind: ClusterRole"))
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should add conditional kind for ClusterRoleBinding to support namespace-scoped deployment", func() {
+			bindingResource := &unstructured.Unstructured{}
+			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			bindingResource.SetKind("ClusterRoleBinding")
+			bindingResource.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, bindingResource)
+
+			// Should NOT have rbac.create (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have conditional kind for binding
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+			Expect(result).To(ContainSubstring("kind: RoleBinding"))
+			Expect(result).To(ContainSubstring("{{- else }}"))
+			Expect(result).To(ContainSubstring("kind: ClusterRoleBinding"))
+			// Should also make roleRef.kind conditional
+			Expect(result).To(ContainSubstring("kind: Role"))
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should NOT add any conditionals to Role (always namespace-scoped)", func() {
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: test-project-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Should NOT have any RBAC conditionals (always created as-is)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// Should preserve kind: Role
+			Expect(result).To(ContainSubstring("kind: Role"))
+			// Should NOT have ClusterRole anywhere
+			Expect(result).NotTo(ContainSubstring("ClusterRole"))
+		})
+
+		It("should NOT add any conditionals to RoleBinding (always namespace-scoped)", func() {
+			bindingResource := &unstructured.Unstructured{}
+			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			bindingResource.SetKind("RoleBinding")
+			bindingResource.SetName("test-project-leader-election-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, bindingResource)
+
+			// Should NOT have any RBAC conditionals (always created as-is)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// Should preserve kind: RoleBinding
+			Expect(result).To(ContainSubstring("kind: RoleBinding"))
+			// roleRef should stay as Role
+			Expect(result).To(ContainSubstring("kind: Role"))
+			// Should NOT have ClusterRoleBinding anywhere
+			Expect(result).NotTo(ContainSubstring("ClusterRoleBinding"))
+		})
+
+		It("should wrap metrics-auth ClusterRole with metrics.enable AND metrics.secure conditional", func() {
+			metricsRoleResource := &unstructured.Unstructured{}
+			metricsRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			metricsRoleResource.SetKind("ClusterRole")
+			metricsRoleResource.SetName("test-project-metrics-auth-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create`
+
+			result := templater.ApplyHelmSubstitutions(content, metricsRoleResource)
+
+			// Should wrap with metrics.enable AND metrics.secure conditional
+			Expect(result).To(ContainSubstring("{{- if and .Values.metrics.enable .Values.metrics.secure }}"))
+			// Should NOT have rbac.create
+			Expect(result).NotTo(ContainSubstring("{{- if and .Values.rbac.create"))
+			// Metrics auth role is ALWAYS ClusterRole (never namespace-scoped)
+			// So it should NOT have kind conditional
+			Expect(result).To(ContainSubstring("kind: ClusterRole"))
+			// Should have only one kind: ClusterRole (not conditional)
+			Expect(strings.Count(result, "kind: ClusterRole")).To(Equal(1))
+			Expect(result).NotTo(ContainSubstring("kind: Role"))
+		})
+
+		It("should NOT add any conditionals to ServiceAccount (always created)", func() {
+			saResource := &unstructured.Unstructured{}
+			saResource.SetAPIVersion("v1")
+			saResource.SetKind("ServiceAccount")
+			saResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, saResource)
+
+			// Should NOT have any conditionals (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// ServiceAccount kind never changes
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+		})
+	})
+
+	Context("multi-namespace RBAC support", func() {
+		It("should preserve role-specific namespace deployments using .Values.rbac.roleNamespaces", func() {
+			// Simulate role-namespace mappings
+			roleNamespaces := map[string]string{
+				"manager-role-infrastructure": "infrastructure",
+				"manager-role-users":          "users",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role in infrastructure namespace
+			infraRole := &unstructured.Unstructured{}
+			infraRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			infraRole.SetKind("Role")
+			infraRole.SetName("manager-role-infrastructure")
+			infraRole.SetNamespace("infrastructure")
+
+			infraContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-infrastructure
+  namespace: infrastructure
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get, list, watch]`
+
+			infraResult := multiNsTemplater.ApplyHelmSubstitutions(infraContent, infraRole)
+
+			// Should template to index .Values.rbac.roleNamespaces "manager-role-infrastructure" with default fallback
+			expectedNs := `namespace: {{ index .Values.rbac.roleNamespaces ` +
+				`"manager-role-infrastructure" | default "infrastructure" }}`
+			Expect(infraResult).To(ContainSubstring(expectedNs))
+			// Should NOT use .Release.Namespace
+			Expect(infraResult).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should preserve namespace in RoleBinding subjects for multi-namespace RBAC", func() {
+			roleNamespaces := map[string]string{
+				"manager-rolebinding-users": "users",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// RoleBinding in users namespace
+			usersBinding := &unstructured.Unstructured{}
+			usersBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			usersBinding.SetKind("RoleBinding")
+			usersBinding.SetName("manager-rolebinding-users")
+			usersBinding.SetNamespace("users")
+
+			bindingContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manager-rolebinding-users
+  namespace: users
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: manager-role-users
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: test-project-system`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(bindingContent, usersBinding)
+
+			// RoleBinding namespace should use index .Values.rbac.roleNamespaces with binding name as key and default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-users" | default "users" }}`))
+			// Subject namespace should use .Release.Namespace (manager namespace)
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should handle multiple role-namespace mappings simultaneously", func() {
+			roleNamespaces := map[string]string{
+				"manager-role-infrastructure": "infrastructure",
+				"manager-role-users":          "users",
+				"manager-role-monitoring":     "monitoring",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role in monitoring namespace
+			monitoringRole := &unstructured.Unstructured{}
+			monitoringRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			monitoringRole.SetKind("Role")
+			monitoringRole.SetName("manager-role-monitoring")
+			monitoringRole.SetNamespace("monitoring")
+
+			monitoringContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-monitoring
+  namespace: monitoring
+rules:
+- apiGroups: [""]
+  resources: [pods]
+  verbs: [get, list]`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(monitoringContent, monitoringRole)
+
+			// Should preserve monitoring namespace with role-based template and default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-role-monitoring" | default "monitoring" }}`))
+		})
+
+		It("should handle role names with hyphens correctly", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "app-infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("manager-role")
+			roleResource.SetNamespace("app-infrastructure")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
+  namespace: app-infrastructure
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get]`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Role name is used as key with default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-role" | default "app-infrastructure" }}`))
+		})
+
+		It("should preserve DNS references for role-specific namespaces", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			configMap := &unstructured.Unstructured{}
+			configMap.SetAPIVersion("v1")
+			configMap.SetKind("ConfigMap")
+			configMap.SetName("config")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  endpoint: "http://service.infrastructure.svc.cluster.local:8080"`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, configMap)
+
+			// ConfigMap is not in roleNamespaces map, so DNS refs won't be templated
+			Expect(result).To(ContainSubstring("infrastructure.svc"))
+		})
+
+		It("should preserve resource references within role resources", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role that has a reference to a resource in its namespace
+			role := &unstructured.Unstructured{}
+			role.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			role.SetKind("Role")
+			role.SetName("manager-role")
+			role.SetNamespace("infrastructure")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
+  namespace: infrastructure
+  annotations:
+    cert-manager.io/inject-ca-from: infrastructure/serving-cert
+rules: []`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, role)
+
+			// Resource reference should be templated with index and default fallback
+			Expect(result).To(ContainSubstring(
+				`{{ index .Values.rbac.roleNamespaces "manager-role" | default "infrastructure" }}/serving-cert`))
 		})
 	})
 })
