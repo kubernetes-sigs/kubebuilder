@@ -226,8 +226,9 @@ These are standard Helm fields always present for user customization:
 ## Configure the controller manager deployment
 ##
 manager:
-  # Set to false to skip manager installation.
-  # Defaults to true when this field is missing (backward compatibility).
+  ## Set to false to skip manager installation.
+  ## Defaults to true when this field is missing (backward compatibility).
+  ##
   enabled: true
 
   replicas: 1
@@ -364,18 +365,17 @@ manager:
 ## RBAC configuration
 ##
 rbac:
-  # Operator RBAC scope
-  #
-  # - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
-  # - true: Role/RoleBinding (release namespace only)
-  #
-  # Note: metrics-auth-role is always a ClusterRole
-  # (requires TokenReview and SubjectAccessReview APIs).
+  ## RBAC resource scope
+  ## - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  ## - true: Role/RoleBinding (release namespace only)
+  ##
   namespaced: false
 
-  # Helper roles for CRD management (admin/editor/viewer)
+  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
   helpers:
-    # Install convenience admin/editor/viewer roles for CRDs
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
     enable: false
 
 ## Custom Resource Definitions
@@ -476,10 +476,15 @@ The plugin detects the RBAC resource-to-namespace mappings and generates:
 **`values.yaml`:**
 ```yaml
 rbac:
+  ## RBAC resource scope
+  ## - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  ## - true: Role/RoleBinding (release namespace only)
+  ##
   namespaced: false
 
-  # Specific namespace deployments for Roles and RoleBindings
-  # Keys are resource name suffixes (without project prefix)
+  ## Namespace configuration for Roles deployed to namespaces different from the manager namespace
+  ## Keys are resource name suffixes (without project prefix)
+  ##
   roleNamespaces:
     # RBAC resource manager-role-infrastructure deploys to namespace infrastructure
     "manager-role-infrastructure": "infrastructure"
@@ -490,7 +495,11 @@ rbac:
     # RBAC resource manager-rolebinding-users deploys to namespace users
     "manager-rolebinding-users": "users"
 
+  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
   helpers:
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
     enable: false
 ```
 
