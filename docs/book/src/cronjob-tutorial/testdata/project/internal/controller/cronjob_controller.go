@@ -662,7 +662,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	job, err := constructJobForCronJob(&cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
-		// don't bother requeuing until we get a change to the spec
+		// don't immediately requeue, wait till the next window since the spec needs to be fixed
 		return scheduledResult, nil
 	}
 
