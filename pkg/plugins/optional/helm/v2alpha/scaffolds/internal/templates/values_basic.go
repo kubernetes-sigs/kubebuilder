@@ -183,6 +183,28 @@ rbac:
 
 `)
 
+	// ServiceAccount configuration
+	buf.WriteString(`## ServiceAccount configuration
+##
+serviceAccount:
+  # Install default ServiceAccount provided
+  enable: true
+
+  ## Existing ServiceAccount name (only when enable=false)
+  ## Note: When enable=true, respects nameOverride/fullnameOverride
+  ##
+  # name: ""
+
+  ## Custom ServiceAccount annotations
+  ##
+  # annotations: {}
+
+  ## Custom ServiceAccount labels
+  ##
+  # labels: {}
+
+`)
+
 	// CRD configuration
 	buf.WriteString(`## Custom Resource Definitions
 ##

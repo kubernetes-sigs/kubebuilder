@@ -9,6 +9,6 @@ roleRef:
   name: {{ include "project.resourceName" (dict "suffix" "metrics-auth-role" "context" $) }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  name: {{ include "project.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}

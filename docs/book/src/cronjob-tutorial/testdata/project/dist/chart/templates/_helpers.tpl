@@ -48,3 +48,16 @@ Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 {{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
+
+{{/*
+ServiceAccount name to use.
+If serviceAccount.enable is false and serviceAccount.name is set, use that name.
+Otherwise, use the standard resourceName helper with "controller-manager" suffix.
+*/}}
+{{- define "project.serviceAccountName" -}}
+{{- if and (not (.Values.serviceAccount.enable | default true)) .Values.serviceAccount.name }}
+{{- .Values.serviceAccount.name }}
+{{- else }}
+{{- include "project.resourceName" (dict "suffix" "controller-manager" "context" .) }}
+{{- end }}
+{{- end }}

@@ -896,8 +896,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, serviceAccountResource)
 
-			// Should template with test-project.resourceName which handles 63-char truncation
-			expected := `name: {{ include "test-project.resourceName" (dict "suffix" "controller-manager" "context" $) }}`
+			// Should template with test-project.serviceAccountName helper
+			expected := `name: {{ include "test-project.serviceAccountName" . }}`
 			Expect(result).To(ContainSubstring(expected))
 			Expect(result).NotTo(ContainSubstring("name: test-project-controller-manager"))
 		})
@@ -2302,10 +2302,10 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deployment)
 
-			// All name fields should use test-project.resourceName
+			// Deployment name uses test-project.resourceName
 			expectedName := `name: {{ include "test-project.resourceName" (dict "suffix" "controller-manager" "context" $) }}`
-			expectedSA := `serviceAccountName: {{ include "test-project.resourceName" ` +
-				`(dict "suffix" "controller-manager" "context" $) }}`
+			// ServiceAccount reference uses test-project.serviceAccountName
+			expectedSA := `serviceAccountName: {{ include "test-project.serviceAccountName" . }}`
 			Expect(result).To(ContainSubstring(expectedName))
 			Expect(result).To(ContainSubstring(expectedSA))
 			Expect(result).NotTo(ContainSubstring("name: test-project-controller-manager"))
@@ -2359,13 +2359,13 @@ subjects:
 
 			result := templater.ApplyHelmSubstitutions(content, rb)
 
-			// All references should use test-project.resourceName
+			// RoleBinding and Role use test-project.resourceName
 			expectedRB := `name: {{ include "test-project.resourceName" ` +
 				`(dict "suffix" "leader-election-rolebinding" "context" $) }}`
 			expectedRole := `name: {{ include "test-project.resourceName" ` +
 				`(dict "suffix" "leader-election-role" "context" $) }}`
-			expectedSA := `name: {{ include "test-project.resourceName" ` +
-				`(dict "suffix" "controller-manager" "context" $) }}`
+			// ServiceAccount subject uses test-project.serviceAccountName
+			expectedSA := `name: {{ include "test-project.serviceAccountName" . }}`
 			Expect(result).To(ContainSubstring(expectedRB))
 			Expect(result).To(ContainSubstring(expectedRole))
 			Expect(result).To(ContainSubstring(expectedSA))
@@ -3771,6 +3771,292 @@ rules: []`
 			// Resource reference should be templated with index and default fallback
 			Expect(result).To(ContainSubstring(
 				`{{ index .Values.rbac.roleNamespaces "manager-role" | default "infrastructure" }}/serving-cert`))
+		})
+	})
+
+	Context("ServiceAccount configuration", func() {
+		Context("when managing ServiceAccount creation via values.yaml", func() {
+			It("allows toggling ServiceAccount installation with enable flag", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+    app.kubernetes.io/managed-by: kustomize
+  name: controller-manager
+  namespace: system`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enable false }}"))
+				Expect(result).To(ContainSubstring("{{- end }}"))
+			})
+
+			It("supports custom annotations for cloud provider integrations", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  name: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
+				Expect(result).To(ContainSubstring("annotations:"))
+				Expect(result).To(ContainSubstring("{{- toYaml . | nindent 4 }}"))
+			})
+
+			It("supports custom labels without duplicating existing standard labels", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+    app.kubernetes.io/managed-by: kustomize
+  name: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
+				Expect(result).To(ContainSubstring(`{{- with omit .`))
+				Expect(result).To(ContainSubstring(`"app.kubernetes.io/name"`))
+				Expect(result).To(ContainSubstring(`"app.kubernetes.io/managed-by"`))
+			})
+
+			It("merges custom annotations with existing annotations without duplication", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  annotations:
+    existing.annotation/key: "existing-value"
+  name: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				// Should NOT have duplicate annotations: keys
+				annotationsCount := strings.Count(result, "annotations:")
+				Expect(annotationsCount).To(Equal(1), "Should have exactly one 'annotations:' key, found %d", annotationsCount)
+
+				// Should preserve existing annotation
+				Expect(result).To(ContainSubstring("existing.annotation/key"))
+
+				// Should add template for custom annotations with duplicate filtering
+				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
+				Expect(result).To(ContainSubstring(`{{- with omit .`))
+				Expect(result).To(ContainSubstring(`"existing.annotation/key"`))
+			})
+		})
+
+		Context("when using default ServiceAccount with nameOverride/fullnameOverride", func() {
+			It("respects nameOverride and fullnameOverride for default ServiceAccount name", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+			})
+
+			It("ensures ServiceAccount name matches across all resource references", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				deployment := &unstructured.Unstructured{}
+				deployment.SetAPIVersion("apps/v1")
+				deployment.SetKind("Deployment")
+				deployment.SetName("controller-manager")
+				deployment.SetLabels(map[string]string{"control-plane": "controller-manager"})
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				Expect(result).To(ContainSubstring(`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+			})
+		})
+
+		Context("when binding RBAC permissions to ServiceAccount", func() {
+			It("references ServiceAccount consistently in RoleBinding subjects", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				roleBinding := &unstructured.Unstructured{}
+				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+				roleBinding.SetKind("RoleBinding")
+				roleBinding.SetName("leader-election-rolebinding")
+
+				content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system`
+
+				result := templater.ApplyHelmSubstitutions(content, roleBinding)
+
+				Expect(result).To(ContainSubstring(`- kind: ServiceAccount
+  name: {{ include "test-project.serviceAccountName" . }}`))
+			})
+
+			It("references ServiceAccount consistently in ClusterRoleBinding subjects", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				clusterRoleBinding := &unstructured.Unstructured{}
+				clusterRoleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+				clusterRoleBinding.SetKind("ClusterRoleBinding")
+				clusterRoleBinding.SetName("manager-rolebinding")
+
+				content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manager-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system`
+
+				result := templater.ApplyHelmSubstitutions(content, clusterRoleBinding)
+
+				Expect(result).To(ContainSubstring(`- kind: ServiceAccount
+  name: {{ include "test-project.serviceAccountName" . }}`))
+			})
+		})
+
+		Context("when handling project names with prefixes", func() {
+			It("templates ServiceAccount name correctly with project prefix", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("test-project-controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+			})
+
+			It("templates Deployment serviceAccountName field correctly with project prefix", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				deployment := &unstructured.Unstructured{}
+				deployment.SetAPIVersion("apps/v1")
+				deployment.SetKind("Deployment")
+				deployment.SetName("controller-manager")
+				deployment.SetLabels(map[string]string{"control-plane": "controller-manager"})
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: test-project-controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				Expect(result).To(ContainSubstring(`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+			})
+
+			It("templates RoleBinding subjects correctly with project prefix", func() {
+				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+
+				roleBinding := &unstructured.Unstructured{}
+				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+				roleBinding.SetKind("RoleBinding")
+				roleBinding.SetName("manager-rolebinding")
+
+				content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, roleBinding)
+
+				Expect(result).To(ContainSubstring(`- kind: ServiceAccount
+  name: {{ include "test-project.serviceAccountName" . }}`))
+			})
+		})
+
+		Context("when ensuring Kubernetes resource name limits", func() {
+			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
+				templater := NewHelmTemplater("very-long-project-name-that-needs-truncation",
+					"very-long-project-name-that-needs-truncation",
+					"very-long-project-name-that-needs-truncation-system", nil)
+
+				serviceAccount := &unstructured.Unstructured{}
+				serviceAccount.SetAPIVersion("v1")
+				serviceAccount.SetKind("ServiceAccount")
+				serviceAccount.SetName("controller-manager")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller-manager`
+
+				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+
+				Expect(result).To(ContainSubstring(
+					`name: {{ include "very-long-project-name-that-needs-truncation.serviceAccountName" . }}`))
+			})
 		})
 	})
 })

@@ -663,6 +663,84 @@ Duplicate keys are automatically filtered - existing keys from the kustomize out
 
 </aside>
 
+### ServiceAccount Configuration
+
+The chart provides flexible ServiceAccount management through the `serviceAccount` configuration block:
+
+- **`serviceAccount.enable`**: Controls whether the chart creates a ServiceAccount (default: `true`)
+- **`serviceAccount.name`**: Specifies an existing ServiceAccount name (only used when `enable=false`)
+- **`serviceAccount.labels`**: Custom labels for the ServiceAccount (only applied when `enable=true`)
+- **`serviceAccount.annotations`**: Custom annotations for the ServiceAccount (only applied when `enable=true`)
+
+**Example values.yaml:**
+
+```yaml
+serviceAccount:
+  # Install default ServiceAccount provided
+  enable: true
+
+  ## Existing ServiceAccount name (only when enable=false)
+  ## Note: When enable=true, respects nameOverride/fullnameOverride
+  ##
+  # name: ""
+
+  ## Custom ServiceAccount annotations
+  ##
+  # annotations: {}
+
+  ## Custom ServiceAccount labels
+  ##
+  # labels: {}
+```
+
+#### Default ServiceAccount (enable=true)
+
+When `enable: true` (default), the chart creates a ServiceAccount with a name that respects `nameOverride` and `fullnameOverride`:
+
+```shell
+# Default: <release-name>-<project-name>-controller-manager
+helm install my-release ./dist/chart
+
+# With nameOverride: <release-name>-myname-controller-manager
+helm install my-release ./dist/chart --set nameOverride=myname
+
+# With fullnameOverride: myfullname-controller-manager
+helm install my-release ./dist/chart --set fullnameOverride=myfullname
+```
+
+Add custom labels and annotations for cloud provider integrations (e.g., workload identity):
+
+```yaml
+serviceAccount:
+  enable: true
+  annotations:
+    iam.gke.io/gcp-service-account: my-operator@project.iam.gserviceaccount.com
+  labels:
+    team: platform
+    environment: production
+```
+
+#### External ServiceAccount (enable=false)
+
+When `enable: false`, the chart skips creating a ServiceAccount and uses the name specified in `serviceAccount.name`. This is useful when:
+- The ServiceAccount is managed externally (e.g., by a security team)
+- You need to use a pre-existing ServiceAccount with specific permissions
+
+```yaml
+serviceAccount:
+  enable: false
+  name: external-service-account
+```
+
+<aside class="note" role="note">
+<p class="note-title">External ServiceAccount Naming</p>
+
+When using an external ServiceAccount (`enable=false`), the `serviceAccount.name` is used as-is and **does not** respect `nameOverride` or `fullnameOverride`. This ensures the chart references exactly the ServiceAccount you specify.
+
+Custom `labels` and `annotations` are ignored when `enable=false` since the ServiceAccount is not created by the chart.
+
+</aside>
+
 ### Installation
 
 The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
