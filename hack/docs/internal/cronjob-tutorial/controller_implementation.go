@@ -651,7 +651,9 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	job, err := constructJobForCronJob(&cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
-		// don't bother requeuing until we get a change to the spec
+		// don't retry immediately; this failure occurred while constructing the Job.
+		// we'll reconcile again at the next scheduled run, and updates to the CronJob
+		// can also trigger reconciliation sooner
 		return scheduledResult, nil
 	}
 
