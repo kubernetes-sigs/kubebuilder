@@ -21,6 +21,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -96,6 +97,12 @@ func New(options ...Option) (*CLI, error) {
 	// Create the CLI.
 	c, err := newCLI(options...)
 	if err != nil {
+		return nil, err
+	}
+
+	// Handle --input-dir flag before building the command tree.
+	// This must happen before getInfoFromConfigFile() tries to load the PROJECT file.
+	if err := handleInputDirBeforeConfigLoad(); err != nil {
 		return nil, err
 	}
 
@@ -316,6 +323,129 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 		}
 	}
 
+	return nil
+}
+
+// parseInputDirFromArgs extracts --input-dir from raw CLI args without depending on
+// Cobra flag registration. It supports both:
+//
+//	--input-dir=/path/to/project
+//	--input-dir /path/to/project
+func parseInputDirFromArgs(args []string) (string, bool) {
+	for i := range args {
+		arg := args[i]
+
+		if arg == "--input-dir" {
+			if i+1 >= len(args) {
+				// Flag needs an argument but none provided
+				return "", false
+			}
+			if strings.HasPrefix(args[i+1], "-") {
+				// Next token is another flag, so treat this as missing a value
+				return "", false
+			}
+			return args[i+1], true
+		}
+
+		if after, ok := strings.CutPrefix(arg, "--input-dir="); ok {
+			return after, true
+		}
+	}
+
+	return "", false
+}
+
+// consumesNextArgForCommandDetection reports whether a pre-command flag takes its
+// value as the next CLI token, so that token should not be treated as a subcommand.
+func consumesNextArgForCommandDetection(arg string) bool {
+	switch arg {
+	case "--" + pluginsFlag, "--" + projectVersionFlag:
+		return true
+	default:
+		return false
+	}
+}
+
+// isEditCommand checks if the command invocation is `kubebuilder edit`
+// by scanning os.Args for the first positional argument, skipping flags and
+// flag values for known pre-command flags.
+func isEditCommand(args []string) bool {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		if arg == "--" {
+			if i+1 < len(args) {
+				return args[i+1] == "edit"
+			}
+			return false
+		}
+
+		if strings.HasPrefix(arg, "-") {
+			// Flags using --flag=value consume only the current token.
+			if strings.Contains(arg, "=") {
+				continue
+			}
+
+			// Skip the next token for known flags that take a separate value.
+			if consumesNextArgForCommandDetection(arg) && i+1 < len(args) {
+				i++
+			}
+			continue
+		}
+
+		// First positional argument is the subcommand.
+		return arg == "edit"
+	}
+	return false
+}
+
+// handleInputDirBeforeConfigLoad checks if --input-dir flag is set for edit command
+// and changes directory if needed. This must run BEFORE the framework loads PROJECT file.
+func handleInputDirBeforeConfigLoad() error {
+	// Only process --input-dir for edit command
+	if !isEditCommand(os.Args[1:]) {
+		return nil
+	}
+
+	inputDir, found := parseInputDirFromArgs(os.Args[1:])
+	if !found || inputDir == "" {
+		return nil
+	}
+
+	// Resolve to absolute path
+	if !filepath.IsAbs(inputDir) {
+		absPath, err := filepath.Abs(inputDir)
+		if err != nil {
+			return fmt.Errorf("failed to resolve input-dir %q: %w", inputDir, err)
+		}
+		inputDir = absPath
+	}
+
+	// Validate directory exists
+	if info, err := os.Stat(inputDir); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("input-dir does not exist: %q", inputDir)
+		}
+		return fmt.Errorf("failed to access input-dir %q: %w", inputDir, err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("input-dir is not a directory: %q", inputDir)
+	}
+
+	// Validate PROJECT file exists in input-dir
+	projectFilePath := filepath.Join(inputDir, yamlstore.DefaultPath)
+	if _, err := os.Stat(projectFilePath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("input-dir does not contain %q: %q", yamlstore.DefaultPath, inputDir)
+		}
+		return fmt.Errorf("failed to access project file %q: %w", projectFilePath, err)
+	}
+
+	// Change working directory
+	if err := os.Chdir(inputDir); err != nil {
+		return fmt.Errorf("failed to change to input-dir %q: %w", inputDir, err)
+	}
+
+	log.Info("Operating in input directory", "path", inputDir)
 	return nil
 }
 

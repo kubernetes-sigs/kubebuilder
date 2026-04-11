@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -805,6 +806,243 @@ plugins:
 				Expect(c.Command()).NotTo(BeNil())
 				Expect(c.Command()).To(Equal(c.cmd))
 			})
+		})
+	})
+
+	Context("parseInputDirFromArgs", func() {
+		It("should return empty when flag is not present", func() {
+			args := []string{"edit", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			dir, found := parseInputDirFromArgs(args)
+			Expect(found).To(BeFalse())
+			Expect(dir).To(BeEmpty())
+		})
+
+		It("should parse --input-dir with = syntax", func() {
+			args := []string{"edit", "--input-dir=/path/to/project", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			dir, found := parseInputDirFromArgs(args)
+			Expect(found).To(BeTrue())
+			Expect(dir).To(Equal("/path/to/project"))
+		})
+
+		It("should parse --input-dir with space syntax", func() {
+			args := []string{"edit", "--input-dir", "/path/to/project", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			dir, found := parseInputDirFromArgs(args)
+			Expect(found).To(BeTrue())
+			Expect(dir).To(Equal("/path/to/project"))
+		})
+
+		It("should return false when --input-dir has no value", func() {
+			args := []string{"edit", "--input-dir"}
+			dir, found := parseInputDirFromArgs(args)
+			Expect(found).To(BeFalse())
+			Expect(dir).To(BeEmpty())
+		})
+
+		It("should return false when --input-dir is followed by another flag", func() {
+			args := []string{"edit", "--input-dir", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			dir, found := parseInputDirFromArgs(args)
+			Expect(found).To(BeFalse())
+			Expect(dir).To(BeEmpty())
+		})
+	})
+
+	Context("isEditCommand", func() {
+		It("should return true for edit command", func() {
+			args := []string{"edit", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			Expect(isEditCommand(args)).To(BeTrue())
+		})
+
+		It("should return true for edit command with flags before", func() {
+			args := []string{"--verbose", "edit", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			Expect(isEditCommand(args)).To(BeTrue())
+		})
+
+		It("should return true for edit command with persistent flags that consume values", func() {
+			args := []string{"--plugins", "helm.kubebuilder.io/v2-alpha", "edit"}
+			Expect(isEditCommand(args)).To(BeTrue())
+		})
+
+		It("should return true for edit command with project-version flag", func() {
+			args := []string{"--project-version", "3", "edit"}
+			Expect(isEditCommand(args)).To(BeTrue())
+		})
+
+		It("should return false for init command", func() {
+			args := []string{"init", "--plugins=go.kubebuilder.io/v4"}
+			Expect(isEditCommand(args)).To(BeFalse())
+		})
+
+		It("should return false for create command", func() {
+			args := []string{"create", "api"}
+			Expect(isEditCommand(args)).To(BeFalse())
+		})
+
+		It("should return false for alpha generate command", func() {
+			args := []string{"alpha", "generate"}
+			Expect(isEditCommand(args)).To(BeFalse())
+		})
+
+		It("should return false for alpha generate with input-dir flag", func() {
+			args := []string{"alpha", "generate", "--input-dir=./project"}
+			Expect(isEditCommand(args)).To(BeFalse())
+		})
+	})
+
+	Context("handleInputDirBeforeConfigLoad integration", func() {
+		var (
+			originalArgs []string
+			originalDir  string
+			tmpDir       string
+		)
+
+		BeforeEach(func() {
+			// Save original os.Args and working directory
+			originalArgs = os.Args
+			var err error
+			originalDir, err = os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create temp directory for testing
+			tmpDir, err = os.MkdirTemp("", "input-dir-integration-*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			// Restore original state
+			os.Args = originalArgs
+			if originalDir != "" {
+				_ = os.Chdir(originalDir)
+			}
+			if tmpDir != "" {
+				_ = os.RemoveAll(tmpDir)
+			}
+		})
+
+		It("should do nothing when not an edit command", func() {
+			os.Args = []string{"kubebuilder", "init", "--plugins=go.kubebuilder.io/v4"}
+			err := handleInputDirBeforeConfigLoad()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying working directory has not changed")
+			currentDir, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(currentDir).To(Equal(originalDir))
+		})
+
+		It("should do nothing when input-dir is not specified", func() {
+			os.Args = []string{"kubebuilder", "edit", "--plugins=helm.kubebuilder.io/v2-alpha"}
+			err := handleInputDirBeforeConfigLoad()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying working directory has not changed")
+			currentDir, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(currentDir).To(Equal(originalDir))
+		})
+
+		It("should return error when input-dir does not exist", func() {
+			os.Args = []string{"kubebuilder", "edit", "--input-dir=/nonexistent/path"}
+			err := handleInputDirBeforeConfigLoad()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("does not exist"))
+		})
+
+		It("should return error when input-dir is not a directory", func() {
+			By("creating a file instead of directory")
+			filePath := filepath.Join(tmpDir, "testfile")
+			err := os.WriteFile(filePath, []byte("test"), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Args = []string{"kubebuilder", "edit", "--input-dir=" + filePath}
+			err = handleInputDirBeforeConfigLoad()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not a directory"))
+		})
+
+		It("should return error when input-dir does not contain PROJECT file", func() {
+			By("creating empty directory")
+			emptyDir := filepath.Join(tmpDir, "empty")
+			err := os.MkdirAll(emptyDir, 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Args = []string{"kubebuilder", "edit", "--input-dir=" + emptyDir}
+			err = handleInputDirBeforeConfigLoad()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("does not contain"))
+			Expect(err.Error()).To(ContainSubstring("PROJECT"))
+		})
+
+		It("should change directory when valid input-dir is provided", func() {
+			By("creating project directory with PROJECT file")
+			projectDir := filepath.Join(tmpDir, "project")
+			err := os.MkdirAll(projectDir, 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			projectFile := filepath.Join(projectDir, "PROJECT")
+			projectContent := `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+- helm.kubebuilder.io/v2-alpha
+projectName: test-project
+repo: example.com/test-project
+version: "3"
+`
+			err = os.WriteFile(projectFile, []byte(projectContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Args = []string{"kubebuilder", "edit", "--input-dir=" + projectDir}
+			err = handleInputDirBeforeConfigLoad()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying directory changed")
+			currentDir, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("resolving symlinks for comparison")
+			expectedDir, err := filepath.EvalSymlinks(projectDir)
+			Expect(err).NotTo(HaveOccurred())
+			actualDir, err := filepath.EvalSymlinks(currentDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(actualDir).To(Equal(expectedDir))
+		})
+
+		It("should handle relative paths correctly", func() {
+			By("creating project directory with PROJECT file")
+			projectDir := filepath.Join(tmpDir, "project")
+			err := os.MkdirAll(projectDir, 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			projectFile := filepath.Join(projectDir, "PROJECT")
+			projectContent := `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: test-project
+repo: example.com/test-project
+version: "3"
+`
+			err = os.WriteFile(projectFile, []byte(projectContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("changing to tmpDir and using relative path")
+			err = os.Chdir(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Args = []string{"kubebuilder", "edit", "--input-dir=./project"}
+			err = handleInputDirBeforeConfigLoad()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying directory changed")
+			currentDir, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+
+			By("resolving symlinks for comparison")
+			expectedDir, err := filepath.EvalSymlinks(projectDir)
+			Expect(err).NotTo(HaveOccurred())
+			actualDir, err := filepath.EvalSymlinks(currentDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(actualDir).To(Equal(expectedDir))
 		})
 	})
 })

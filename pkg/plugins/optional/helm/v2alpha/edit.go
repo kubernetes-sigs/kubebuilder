@@ -52,6 +52,7 @@ type editSubcommand struct {
 	force         bool
 	manifestsFile string
 	outputDir     string
+	inputDir      string
 }
 
 //nolint:lll
@@ -75,6 +76,9 @@ distribution of your project. When enabled, adds Helm helpers targets to Makefil
 
 # Generate from custom manifests to custom output directory
   %[1]s edit --plugins=%[2]s --manifests=manifests/install.yaml --output-dir=helm-charts
+
+# Work with a project in a different directory (useful for monorepos)
+  %[1]s edit --plugins=%[2]s --input-dir=./path/to/project
 
 # Typical workflow:
   make build-installer  # Generate dist/install.yaml with latest changes
@@ -105,10 +109,16 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
 		"path to the YAML file containing Kubernetes manifests from kustomize output")
-	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
+	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir,
+		"output directory for the generated Helm chart")
+	fs.StringVar(&p.inputDir, "input-dir", "",
+		"path to directory containing PROJECT file; "+
+			"all operations will use files from this directory (defaults to current working directory)")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
+	// The --input-dir flag is handled by handleInputDirBeforeConfigLoad in pkg/cli/cli.go
+	// before this method is called, so the working directory is already set.
 	p.config = c
 	return nil
 }

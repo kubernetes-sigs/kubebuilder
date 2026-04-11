@@ -31,6 +31,14 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
+const testProjectContent = `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: test-project
+repo: example.com/test-project
+version: "3"
+`
+
 var _ = Describe("editSubcommand", func() {
 	var (
 		editCmd *editSubcommand
@@ -45,14 +53,7 @@ var _ = Describe("editSubcommand", func() {
 		store := yaml.New(fs)
 
 		// Create a basic PROJECT file
-		projectContent := `domain: example.com
-layout:
-- go.kubebuilder.io/v4
-projectName: test-project
-repo: example.com/test-project
-version: "3"
-`
-		err := afero.WriteFile(memFs, "PROJECT", []byte(projectContent), 0o644)
+		err := afero.WriteFile(memFs, "PROJECT", []byte(testProjectContent), 0o644)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = store.LoadFrom("PROJECT")
@@ -94,6 +95,19 @@ version: "3"
 
 			forceFlag := flagSet.Lookup("force")
 			Expect(forceFlag).NotTo(BeNil())
+
+			inputDirFlag := flagSet.Lookup("input-dir")
+			Expect(inputDirFlag).NotTo(BeNil())
+			Expect(inputDirFlag.DefValue).To(BeEmpty())
+		})
+
+		It("should include input-dir in examples", func() {
+			cliMeta := plugin.CLIMetadata{CommandName: "kubebuilder"}
+			meta := plugin.SubcommandMetadata{}
+			editCmd.UpdateMetadata(cliMeta, &meta)
+
+			Expect(meta.Examples).To(ContainSubstring("--input-dir"))
+			Expect(meta.Examples).To(ContainSubstring("path/to/project"))
 		})
 	})
 
@@ -143,14 +157,7 @@ version: "3"
 			freshFs := machinery.Filesystem{FS: memFs}
 			store := yaml.New(freshFs)
 
-			projectContent := `domain: example.com
-layout:
-- go.kubebuilder.io/v4
-projectName: test-project
-repo: example.com/test-project
-version: "3"
-`
-			err := afero.WriteFile(memFs, "PROJECT", []byte(projectContent), 0o644)
+			err := afero.WriteFile(memFs, "PROJECT", []byte(testProjectContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = store.LoadFrom("PROJECT")

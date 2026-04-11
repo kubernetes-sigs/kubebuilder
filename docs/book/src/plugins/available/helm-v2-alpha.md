@@ -690,7 +690,8 @@ The Makefile targets use sensible defaults extracted from your project configura
 | Flag                | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
-| **--output-dir** string | Output directory for chart (default: `dist`)                                |
+| **--output-dir**    | Output directory for chart (default: `dist`)                                |
+| **--input-dir**     | Path to directory containing PROJECT file. All operations will use files from this directory (default: current working directory) |
 | **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
 
 <aside class="note" role="note">
