@@ -219,13 +219,25 @@ test-legacy:  ## Run the tests to validate legacy path for webhooks
 
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm locally
-	@curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+	@command -v helm >/dev/null 2>&1 || curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+
+.PHONY: install-kube-linter
+install-kube-linter: ## Install kube-linter locally if necessary
+	@mkdir -p $(LOCALBIN)
+	$(call go-install-tool,$(KUBE_LINTER),golang.stackrox.io/kube-linter/cmd/kube-linter,$(KUBE_LINTER_VERSION))
 
 .PHONY: helm-lint
 helm-lint: install-helm ## Lint all Helm charts in testdata and docs
 	@for chart in $(HELM_CHARTS); do \
 		echo "Linting $$chart..."; \
 		helm lint $$chart || exit 1; \
+	done
+
+.PHONY: kube-linter
+kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-linter
+	@for chart in $(HELM_CHARTS); do \
+		echo "Validating $$chart with kube-linter..."; \
+		helm template $$chart | $(KUBE_LINTER) lint - || exit 1; \
 	done
 
 ##@ Verification
@@ -263,15 +275,17 @@ verify-docs: ## Verify documentation (generation, accessibility, trailing spaces
 	./test/check_spaces.sh
 
 .PHONY: verify-helm
-verify-helm: yamllint-helm helm-lint ## Verify Helm charts (yamllint + helm lint)
+verify-helm: yamllint-helm helm-lint kube-linter ## Verify Helm charts (yamllint + helm lint + kube-linter)
 
 ## Tool Binaries
 GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
 GOLANGCI_LINT_VERSION ?= v2.8.0
+KUBE_LINTER_VERSION ?= v0.8.3
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
