@@ -22,12 +22,19 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+
+	"golang.org/x/mod/semver"
+	// Controller-runtime is being added as a dep so we can anchor the minimum version of apimachinery to CR releases.
+	// The conversion package was chosen because of its minimal dependency graph (it only imports apimachinery)
+	_ "sigs.k8s.io/controller-runtime/pkg/conversion"
+	// Controller-tools is being added for the same reason
+	// The loader package was chosen for its minimal dependency graph as well (it only imports apimachinery and x/tools)
+	_ "sigs.k8s.io/controller-tools/pkg/loader"
 )
 
 const (
-	unknown                 = "unknown"
-	develVersion            = "(devel)"
-	kubernetesVendorVersion = "1.35.0"
+	unknown      = "unknown"
+	develVersion = "(devel)"
 )
 
 type Version struct {
@@ -42,7 +49,7 @@ type Version struct {
 func New() Version {
 	v := Version{
 		KubeBuilderVersion: develVersion,
-		KubernetesVendor:   kubernetesVendorVersion,
+		KubernetesVendor:   unknown,
 		GitCommit:          unknown,
 		BuildDate:          unknown,
 		GoOs:               runtime.GOOS,
@@ -52,6 +59,7 @@ func New() Version {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		v.KubeBuilderVersion = resolveMainVersion(info.Main)
 		v.applyVCSMetadata(info.Settings)
+		v.KubernetesVendor = resolveKubernetesVersion(info.Deps, "k8s.io/apimachinery")
 	}
 
 	if testVersion := os.Getenv("KUBEBUILDER_TEST_VERSION"); testVersion != "" {
@@ -74,6 +82,36 @@ func resolveMainVersion(main debug.Module) string {
 		return main.Version
 	}
 	return develVersion
+}
+
+func resolveKubernetesVersion(deps []*debug.Module, targetPath string) string {
+	// Since we anchored the minimum apimachinery version to controller-rutime
+	// we can safely assume that it is the Kubernetes version supported by CR
+	apimachineryVersion := ""
+	for _, dep := range deps {
+		if dep.Path == targetPath {
+			if dep.Replace == nil {
+				apimachineryVersion = dep.Version
+			} else {
+				apimachineryVersion = unknown
+			}
+			break
+		}
+	}
+
+	if apimachineryVersion == "" {
+		return unknown
+	}
+
+	kubernetesVersion := unknown
+	if semver.IsValid(apimachineryVersion) {
+		apimachineryVersion = semver.MajorMinor(apimachineryVersion)
+		if kubernetesResolved, ok := strings.CutPrefix(apimachineryVersion, semver.Major(apimachineryVersion)); ok {
+			kubernetesVersion = "v1" + kubernetesResolved
+		}
+	}
+
+	return kubernetesVersion
 }
 
 // isPseudoVersion reports whether a version is a pseudo-version

@@ -40,8 +40,8 @@ func TestNew(t *testing.T) {
 	t.Run("Fallback behavior", func(t *testing.T) {
 		v := New()
 
-		if v.KubernetesVendor != kubernetesVendorVersion {
-			t.Errorf("expected vendor %s, got %s", kubernetesVendorVersion, v.KubernetesVendor)
+		if v.KubernetesVendor != unknown {
+			t.Errorf("expected vendor %s, got %s", unknown, v.KubernetesVendor)
 		}
 		if v.GoOs == "" || v.GoArch == "" {
 			t.Error("GoOs or GoArch was not populated from runtime")
@@ -192,6 +192,62 @@ func TestApplyVCSMetadata(t *testing.T) {
 			}
 			if v.BuildDate != tt.expectDate {
 				t.Errorf("BuildDate = %v, want %v", v.BuildDate, tt.expectDate)
+			}
+		})
+	}
+}
+
+func TestResolveKubernetesVersion(t *testing.T) {
+	tests := []struct {
+		name       string
+		deps       []*debug.Module
+		targetPath string
+		expected   string
+	}{
+		{
+			name: "Valid apimachinery version",
+			deps: []*debug.Module{
+				{Path: "some/other/dep", Version: "v1.0.0"},
+				{Path: "k8s.io/apimachinery", Version: "v0.35.3"},
+			},
+			targetPath: "k8s.io/apimachinery",
+			expected:   "v1.35",
+		},
+		{
+			name: "Replaced apimachinery module degrades to unknown",
+			deps: []*debug.Module{
+				{
+					Path:    "k8s.io/apimachinery",
+					Version: "v0.35.3",
+					Replace: &debug.Module{Path: "../local-fork", Version: ""},
+				},
+			},
+			targetPath: "k8s.io/apimachinery",
+			expected:   unknown,
+		},
+		{
+			name: "Malformed version string degrades to unknown",
+			deps: []*debug.Module{
+				{Path: "k8s.io/apimachinery", Version: "commit-hash-123"},
+			},
+			targetPath: "k8s.io/apimachinery",
+			expected:   unknown,
+		},
+		{
+			name: "Missing target path returns unknown",
+			deps: []*debug.Module{
+				{Path: "some/other/dep", Version: "v1.0.0"},
+			},
+			targetPath: "k8s.io/apimachinery",
+			expected:   unknown,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := resolveKubernetesVersion(tt.deps, tt.targetPath)
+			if got != tt.expected {
+				t.Errorf("resolveKubernetesVersion() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
