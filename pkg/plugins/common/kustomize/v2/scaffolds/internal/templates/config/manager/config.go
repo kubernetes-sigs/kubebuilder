@@ -128,7 +128,10 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
 {{- end }}
-        ports: []
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
