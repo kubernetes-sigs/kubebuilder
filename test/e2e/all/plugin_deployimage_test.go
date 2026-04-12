@@ -147,7 +147,7 @@ func runDeployImageTests(kbc *utils.TestContext) {
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func(g Gomega) {
-		// Get pod name
+		By("getting pod name")
 		var podOutput string
 		podOutput, err = kbc.Kubectl.Get(
 			true,
@@ -160,7 +160,7 @@ func runDeployImageTests(kbc *utils.TestContext) {
 		controllerPodName = podNames[0]
 		g.Expect(controllerPodName).To(ContainSubstring("controller-manager"))
 
-		// Validate pod status
+		By("validating pod status")
 		g.Expect(kbc.Kubectl.Get(true, "pods", controllerPodName, "-o", "jsonpath={.status.phase}")).
 			To(Equal("Running"), "incorrect controller pod status")
 	}
