@@ -1296,7 +1296,8 @@ func (t *HelmTemplater) templateImageReference(yamlContent string) string {
 		lines = append(lines[:i+1], append(filtered, lines[end:]...)...)
 		end = i + 1 + len(filtered)
 
-		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}\""
+		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository }}:" +
+			"{{ .Values.manager.image.tag | default .Chart.AppVersion }}\""
 		pullPolicyLine := indentStr + "imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"
 
 		remainder := lines[end:]

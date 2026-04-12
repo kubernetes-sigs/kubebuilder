@@ -192,7 +192,7 @@ spec:
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring("image: " +
-				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}\""))
+				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}\""))
 			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
@@ -2423,7 +2423,7 @@ spec:
 
 			// Should template image reference (not hardcoded)
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
 			// Should template imagePullPolicy
@@ -2572,7 +2572,7 @@ spec:
 
 			// Should still template fields for "manager" container
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 		})
 
