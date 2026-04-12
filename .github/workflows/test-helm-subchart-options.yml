@@ -1,0 +1,352 @@
+name: Helm Sub-chart Options
+
+on:
+  push:
+    paths:
+      - "pkg/plugins/optional/helm/v2alpha/**"
+      - ".github/workflows/test-helm-subchart-options.yml"
+  pull_request:
+    paths:
+      - "pkg/plugins/optional/helm/v2alpha/**"
+      - ".github/workflows/test-helm-subchart-options.yml"
+
+permissions: {}
+
+jobs:
+  test-crd-subchart:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Install Helm
+        run: make install-helm
+
+      - name: Install kubebuilder binary
+        run: make install
+
+      - name: Create test directory
+        run: mkdir -p test-helm-crd-subchart
+
+      - name: Scaffold project with --crd-subchart
+        working-directory: test-helm-crd-subchart
+        run: |
+          go mod init test-helm-crd-subchart
+          kubebuilder init
+          kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
+          make build-installer
+          kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha --crd-subchart
+
+      - name: Lint CRD sub-chart
+        working-directory: test-helm-crd-subchart
+        run: helm lint ./dist/chart/crds
+
+      - name: Build Helm dependencies
+        working-directory: test-helm-crd-subchart
+        run: helm dependency build ./dist/chart
+
+      - name: Lint main Helm chart
+        working-directory: test-helm-crd-subchart
+        run: helm lint ./dist/chart
+
+      - name: Render and yamllint main Helm chart
+        run: |
+          cd test-helm-crd-subchart
+          helm template test-release ./dist/chart --namespace test-helm-crd-subchart-system 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Render and yamllint CRD sub-chart
+        run: |
+          cd test-helm-crd-subchart
+          helm template test-release-crds ./dist/chart/crds 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Build and load Docker image
+        working-directory: test-helm-crd-subchart
+        run: |
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Deploy manager via Helm
+        working-directory: test-helm-crd-subchart
+        run: make helm-deploy IMG=controller:latest
+
+      - name: Verify Helm release status
+        working-directory: test-helm-crd-subchart
+        run: make helm-status
+
+      - name: Verify CRDs are installed
+        run: |
+          kubectl get crds | grep apps.example.com || \
+          kubectl get crds apps.example.com.test-helm-crd-subchart
+
+      - name: Verify manager deployment is running
+        run: |
+          kubectl rollout status deployment/test-helm-crd-subchart-controller-manager \
+            --namespace test-helm-crd-subchart-system --timeout=300s
+          kubectl get pods --namespace test-helm-crd-subchart-system
+
+      - name: Delete kind cluster
+        if: always()
+        run: kind delete cluster || true
+
+  test-samples-subchart:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Install Helm
+        run: make install-helm
+
+      - name: Install kubebuilder binary
+        run: make install
+
+      - name: Create test directory
+        run: mkdir -p test-helm-samples-subchart
+
+      - name: Scaffold project with --samples-subchart
+        working-directory: test-helm-samples-subchart
+        run: |
+          go mod init test-helm-samples-subchart
+          kubebuilder init
+          kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
+          sed -i '/^- \.\.\/crd$/a - ../samples' config/default/kustomization.yaml
+          make build-installer
+          kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha --samples-subchart
+
+      - name: Lint main Helm chart
+        working-directory: test-helm-samples-subchart
+        run: helm lint ./dist/chart
+
+      - name: Lint samples sub-chart
+        working-directory: test-helm-samples-subchart
+        run: helm lint ./dist/chart/samples
+
+      - name: Render and yamllint main Helm chart
+        run: |
+          cd test-helm-samples-subchart
+          helm template test-release ./dist/chart --namespace test-helm-samples-subchart-system 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Render and yamllint samples sub-chart
+        run: |
+          cd test-helm-samples-subchart
+          helm template test-release-samples ./dist/chart/samples 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Build and load Docker image
+        working-directory: test-helm-samples-subchart
+        run: |
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Deploy manager via Helm
+        working-directory: test-helm-samples-subchart
+        run: make helm-deploy IMG=controller:latest
+
+      - name: Verify Helm release status
+        working-directory: test-helm-samples-subchart
+        run: make helm-status
+
+      - name: Verify CRDs are in templates (not sub-chart)
+        run: |
+          kubectl get crds | grep apps.example.com
+
+      - name: Wait for manager to be ready
+        run: |
+          kubectl rollout status deployment/test-helm-samples-subchart-controller-manager \
+            --namespace test-helm-samples-subchart-system --timeout=300s
+
+      - name: Deploy samples sub-chart
+        working-directory: test-helm-samples-subchart
+        run: |
+          helm install test-helm-samples-subchart-samples ./dist/chart/samples \
+            --namespace test-helm-samples-subchart-system
+
+      - name: Verify samples are deployed
+        run: |
+          kubectl get apps.example.com --namespace test-helm-samples-subchart-system
+          kubectl get apps.example.com test-helm-samples-subchart-app-sample \
+            --namespace test-helm-samples-subchart-system -o yaml
+
+      - name: Verify manager deployment is running
+        run: |
+          kubectl get pods --namespace test-helm-samples-subchart-system
+          kubectl get deployment --namespace test-helm-samples-subchart-system
+
+      - name: Delete kind cluster
+        if: always()
+        run: kind delete cluster || true
+
+  test-both-subcharts:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Install Helm
+        run: make install-helm
+
+      - name: Install kubebuilder binary
+        run: make install
+
+      - name: Create test directory
+        run: mkdir -p test-helm-both-subcharts
+
+      - name: Scaffold project with both sub-chart flags
+        working-directory: test-helm-both-subcharts
+        run: |
+          go mod init test-helm-both-subcharts
+          kubebuilder init
+          kubebuilder create api --group example.com --version v1 --kind App --controller=true --resource=true
+          sed -i '/^- \.\.\/crd$/a - ../samples' config/default/kustomization.yaml
+          make build-installer
+          kubebuilder edit --plugins=helm.kubebuilder.io/v2-alpha --crd-subchart --samples-subchart
+
+      - name: Lint CRD sub-chart
+        working-directory: test-helm-both-subcharts
+        run: helm lint ./dist/chart/crds
+
+      - name: Lint samples sub-chart
+        working-directory: test-helm-both-subcharts
+        run: helm lint ./dist/chart/samples
+
+      - name: Build Helm dependencies
+        working-directory: test-helm-both-subcharts
+        run: helm dependency build ./dist/chart
+
+      - name: Lint main Helm chart
+        working-directory: test-helm-both-subcharts
+        run: helm lint ./dist/chart
+
+      - name: Render and yamllint main Helm chart
+        run: |
+          cd test-helm-both-subcharts
+          helm template test-release ./dist/chart --namespace test-helm-both-subcharts-system 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Render and yamllint CRD sub-chart
+        run: |
+          cd test-helm-both-subcharts
+          helm template test-release-crds ./dist/chart/crds 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Render and yamllint samples sub-chart
+        run: |
+          cd test-helm-both-subcharts
+          helm template test-release-samples ./dist/chart/samples 2>/dev/null | \
+          docker run --rm -i -v ${{ github.workspace }}:/data -w /data \
+            cytopia/yamllint:latest -c .yamllint-helm --no-warnings -
+
+      - name: Build and load Docker image
+        working-directory: test-helm-both-subcharts
+        run: |
+          make docker-build IMG=controller:latest
+          kind load docker-image controller:latest
+
+      - name: Deploy manager via Helm
+        working-directory: test-helm-both-subcharts
+        run: make helm-deploy IMG=controller:latest
+
+      - name: Verify Helm release status
+        working-directory: test-helm-both-subcharts
+        run: make helm-status
+
+      - name: Verify CRDs are installed from sub-chart
+        run: |
+          kubectl get crds | grep apps.example.com
+
+      - name: Wait for manager to be ready
+        run: |
+          kubectl rollout status deployment/test-helm-both-subcharts-controller-manager \
+            --namespace test-helm-both-subcharts-system --timeout=300s
+
+      - name: Deploy samples sub-chart
+        working-directory: test-helm-both-subcharts
+        run: |
+          helm install test-helm-both-subcharts-samples ./dist/chart/samples \
+            --namespace test-helm-both-subcharts-system
+
+      - name: Verify samples are deployed
+        run: |
+          kubectl get apps.example.com --namespace test-helm-both-subcharts-system
+          kubectl get apps.example.com test-helm-both-subcharts-app-sample \
+            --namespace test-helm-both-subcharts-system -o yaml
+
+      - name: Verify manager deployment is running
+        run: |
+          kubectl get pods --namespace test-helm-both-subcharts-system
+          kubectl get deployment --namespace test-helm-both-subcharts-system
+
+      - name: Verify CRDs from sub-chart dependency
+        run: |
+          echo "Verifying CRDs were installed via sub-chart dependency"
+          kubectl get crds | grep apps.example.com
+
+      - name: Delete kind cluster
+        if: always()
+        run: kind delete cluster || true

@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,12 +22,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-const defaultOutputDir = "dist"
+var _ machinery.Template = &CRDSubchart{}
 
-var _ machinery.Template = &HelmChart{}
-
-// HelmChart scaffolds a file that defines the Helm chart structure
-type HelmChart struct {
+// CRDSubchart scaffolds a Chart.yaml for the CRD sub-chart
+type CRDSubchart struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 
@@ -35,21 +33,19 @@ type HelmChart struct {
 	OutputDir string
 	// Force if true allows overwriting the scaffolded file
 	Force bool
-	// CRDSubchart if true includes the CRD sub-chart as a dependency
-	CRDSubchart bool
 }
 
 // SetTemplateDefaults implements machinery.Template
-func (f *HelmChart) SetTemplateDefaults() error {
+func (f *CRDSubchart) SetTemplateDefaults() error {
 	if f.Path == "" {
 		outputDir := f.OutputDir
 		if outputDir == "" {
 			outputDir = defaultOutputDir
 		}
-		f.Path = filepath.Join(outputDir, "chart", "Chart.yaml")
+		f.Path = filepath.Join(outputDir, "chart", "crds", "Chart.yaml")
 	}
 
-	f.TemplateBody = helmChartTemplate
+	f.TemplateBody = crdSubchartTemplate
 
 	// Chart.yaml is never overwritten as it contains user-managed version info
 	f.IfExistsAction = machinery.SkipFile
@@ -57,25 +53,14 @@ func (f *HelmChart) SetTemplateDefaults() error {
 	return nil
 }
 
-const helmChartTemplate = `apiVersion: v2
-name: {{ .ProjectName }}
-description: A Helm chart to distribute {{ .ProjectName }}
+const crdSubchartTemplate = `apiVersion: v2
+name: {{ .ProjectName }}-crds
+description: Custom Resource Definitions for {{ .ProjectName }}
 type: application
 
 version: 0.1.0
 appVersion: "0.1.0"
 
-keywords:
-  - kubernetes
-  - operator
-
 annotations:
   kubebuilder.io/generated-by: kubebuilder
-{{- if .CRDSubchart }}
-
-dependencies:
-  - name: {{ .ProjectName }}-crds
-    version: 0.1.0
-    repository: file://./crds
-{{- end }}
 `

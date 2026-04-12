@@ -94,6 +94,42 @@ version: "3"
 
 			forceFlag := flagSet.Lookup("force")
 			Expect(forceFlag).NotTo(BeNil())
+
+			crdSubchartFlag := flagSet.Lookup("crd-subchart")
+			Expect(crdSubchartFlag).NotTo(BeNil())
+			Expect(crdSubchartFlag.DefValue).To(Equal("false"))
+
+			samplesSubchartFlag := flagSet.Lookup("samples-subchart")
+			Expect(samplesSubchartFlag).NotTo(BeNil())
+			Expect(samplesSubchartFlag.DefValue).To(Equal("false"))
+		})
+
+		It("should allow independent flag combinations", func() {
+			By("Testing --crd-subchart alone")
+			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			editCmd.BindFlags(flagSet)
+			err := flagSet.Parse([]string{"--crd-subchart"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(editCmd.crdSubchart).To(BeTrue())
+			Expect(editCmd.samplesSubchart).To(BeFalse())
+
+			By("Testing --samples-subchart alone")
+			editCmd2 := &editSubcommand{config: cfg}
+			flagSet2 := pflag.NewFlagSet("test2", pflag.ContinueOnError)
+			editCmd2.BindFlags(flagSet2)
+			err = flagSet2.Parse([]string{"--samples-subchart"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(editCmd2.crdSubchart).To(BeFalse())
+			Expect(editCmd2.samplesSubchart).To(BeTrue())
+
+			By("Testing both flags together")
+			editCmd3 := &editSubcommand{config: cfg}
+			flagSet3 := pflag.NewFlagSet("test3", pflag.ContinueOnError)
+			editCmd3.BindFlags(flagSet3)
+			err = flagSet3.Parse([]string{"--crd-subchart", "--samples-subchart"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(editCmd3.crdSubchart).To(BeTrue())
+			Expect(editCmd3.samplesSubchart).To(BeTrue())
 		})
 	})
 

@@ -48,10 +48,12 @@ const (
 var _ plugin.EditSubcommand = &editSubcommand{}
 
 type editSubcommand struct {
-	config        config.Config
-	force         bool
-	manifestsFile string
-	outputDir     string
+	config          config.Config
+	force           bool
+	manifestsFile   string
+	outputDir       string
+	crdSubchart     bool
+	samplesSubchart bool
 }
 
 //nolint:lll
@@ -76,6 +78,15 @@ distribution of your project. When enabled, adds Helm helpers targets to Makefil
 # Generate from custom manifests to custom output directory
   %[1]s edit --plugins=%[2]s --manifests=manifests/install.yaml --output-dir=helm-charts
 
+# Generate Helm chart with CRDs in a separate sub-chart
+  %[1]s edit --plugins=%[2]s --crd-subchart
+
+# Generate Helm chart with CR samples in a separate sub-chart
+  %[1]s edit --plugins=%[2]s --samples-subchart
+
+# Generate Helm chart with both CRDs and samples in separate sub-charts
+  %[1]s edit --plugins=%[2]s --crd-subchart --samples-subchart
+
 # Typical workflow:
   make build-installer  # Generate dist/install.yaml with latest changes
   %[1]s edit --plugins=%[2]s  # Generate/update Helm chart in dist/chart/
@@ -87,17 +98,66 @@ All other template files in templates/ are always regenerated to match your curr
 kustomize output. Use --force to regenerate all files except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
+
+1. Default (no flags):
 <output>/chart/
 ├── Chart.yaml
 ├── values.yaml
-├── .helmignore
 └── templates/
-    ├── NOTES.txt
-    ├── _helpers.tpl
+    ├── crd/             # CRDs here
     ├── rbac/
     ├── manager/
-    ├── webhook/
-    └── ...
+    └── ...              # CR samples ignored
+
+2. With --crd-subchart:
+<output>/chart/
+├── Chart.yaml (with dependency on crds sub-chart)
+├── values.yaml
+├── crds/                # CRD sub-chart
+│   ├── Chart.yaml
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── samples/         # CR samples here (if found)
+    │   └── *.yaml       # conditional: {{ if .Values.samples.install }}
+    ├── rbac/
+    └── manager/
+
+3. With --samples-subchart:
+<output>/chart/
+├── Chart.yaml
+├── values.yaml
+├── samples/             # Samples sub-chart
+│   ├── Chart.yaml
+│   ├── README.md
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── crd/             # CRDs here
+    ├── rbac/
+    └── manager/
+
+4. With --crd-subchart --samples-subchart:
+<output>/chart/
+├── Chart.yaml (with dependency on crds sub-chart)
+├── values.yaml
+├── crds/                # CRD sub-chart
+│   ├── Chart.yaml
+│   └── templates/
+│       └── *.yaml
+├── samples/             # Samples sub-chart
+│   ├── Chart.yaml
+│   ├── README.md
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── rbac/
+    └── manager/
+
+Installation order with sub-charts:
+  helm install my-crds ./chart/crds                    # (if --crd-subchart)
+  helm install my-app ./chart                          # Main chart
+  helm install my-samples ./chart/samples --wait       # (if --samples-subchart, after manager ready)
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
@@ -106,6 +166,10 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
 		"path to the YAML file containing Kubernetes manifests from kustomize output")
 	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
+	fs.BoolVar(&p.crdSubchart, "crd-subchart", false,
+		"if true, generates CRDs in a separate sub-chart for independent lifecycle management")
+	fs.BoolVar(&p.samplesSubchart, "samples-subchart", false,
+		"if true, generates CR samples (if any) in a separate sub-chart for independent installation")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -121,7 +185,9 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		}
 	}
 
-	scaffolder := scaffolds.NewKustomizeHelmScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
+	scaffolder := scaffolds.NewKustomizeHelmScaffolder(
+		p.config, p.force, p.manifestsFile, p.outputDir, p.crdSubchart, p.samplesSubchart,
+	)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
@@ -166,6 +232,8 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	// Update configuration with current parameters
 	cfg.ManifestsFile = p.manifestsFile
 	cfg.OutputDir = p.outputDir
+	cfg.CRDSubchart = p.crdSubchart
+	cfg.SamplesSubchart = p.samplesSubchart
 
 	if err = p.config.EncodePluginConfig(key, cfg); err != nil {
 		return fmt.Errorf("error encoding plugin configuration: %w", err)
