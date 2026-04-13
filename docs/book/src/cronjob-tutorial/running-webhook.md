@@ -12,8 +12,8 @@ Run the following command to build your image locally.
 make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
-<aside class="note">
-<h1> Using Kind </h1>
+<aside class="note" role="note">
+<p class="note-title"> Using Kind </p>
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
 Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
@@ -73,8 +73,8 @@ kubectl create -f config/samples/batch_v1_cronjob.yaml
 You can also try to create an invalid CronJob (e.g. use an ill-formatted
 schedule field). You should see a creation failure with a validation error.
 
-<aside class="warning">
-<h3>The Bootstrapping Problem</h3>
+<aside class="warning" role="note">
+<p class="note-title">The Bootstrapping Problem</p>
 
 When you deploy a webhook into the same cluster that it will validate, you can run into a *bootstrapping issue*:
 the webhook may try to validate the creation of its own Pod before it’s actually running.

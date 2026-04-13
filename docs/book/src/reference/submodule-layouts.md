@@ -4,11 +4,11 @@ This part describes how to modify a scaffolded project for use with multiple `go
 
 Sub-Module Layouts (in a way you could call them a special form of [Monorepo's][monorepo]) are a special use case and can help in scenarios that involve reuse of APIs without introducing indirect dependencies that should not be available in the project consuming the API externally.
 
-<aside class="note">
-<h1>Using External Resources/APIs</h1>
+<aside class="note" role="note">
+<p class="note-title">Using External Resources/APIs</p>
 
 If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project
-or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_type.md)
+or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_resource.md)
 for more info.
 
 </aside>
@@ -29,8 +29,8 @@ They introduce however multiple caveats into typical projects which is one of th
 - There is always the possibility to extract your APIs into a new repository and arguably also have more control over the release process in a project spanning multiple repos relying on the same API types.
 - It requires at least one [replace directive][replace-directives] either through `go.work` which is at least 2 more files plus an environment variable for build environments without GO_WORK or through `go.mod` replace, which has to be manually dropped and added for every release.
 
-<aside class="warning">
-    <h3>Implications on Maintenance efforts</h3>
+<aside class="warning" role="note">
+    <p class="note-title">Implications on Maintenance efforts</p>
 
 When deciding to deviate from the standard kubebuilder `PROJECT` setup or the extended layouts offered by its plugins, it can result in increased maintenance overhead as there can be breaking changes in upstream that could break with the custom module structure described here.
 
@@ -133,8 +133,8 @@ go mod tidy
 Note that we used the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
 you can use the real version as well. However this will only work if the API Module is already available in the VCS.
 
-<aside class="warning">
-    <h3>Implications on controller releases</h3>
+<aside class="warning" role="note">
+    <p class="note-title">Implications on controller releases</p>
 
 Since the main `go.mod` file now has a replace directive, it is important to drop it again before releasing your controller module.
 To achieve this you can simply run
@@ -236,7 +236,7 @@ make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
 
-Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_type.md).
+Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_resource.md).
 When you get to the step `Edit the API files` simply import the dependency with
 
 ```shell

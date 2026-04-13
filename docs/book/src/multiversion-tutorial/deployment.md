@@ -81,9 +81,9 @@ respectively.  Notice that each has a different API version.
 Finally, if we wait a bit, we should notice that our CronJob continues to
 reconcile, even though our controller is written against our v1 API version.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>kubectl and Preferred Versions</h1>
+<p class="note-title">kubectl and Preferred Versions</p>
 
 When we access our API types from Go code, we ask for a specific version
 by using that version's Go type (e.g. `batchv2.CronJob`).

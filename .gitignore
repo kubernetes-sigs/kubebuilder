@@ -13,6 +13,9 @@ docs/book/src/docs
 \#*#
 *.swp
 
+# skip kubebuilder binary when running go build in root
+kubebuilder
+
 # skip bin dirs
 **/bin
 **/testbin

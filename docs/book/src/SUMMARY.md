@@ -68,6 +68,7 @@
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
   - [Choosing Update, Patch, or Apply](./reference/update-patch-apply.md)
+  - [License Header](./reference/license-header.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
     - [Owned Resources](./reference/watching-resources/secondary-owned-resources.md)
@@ -99,6 +100,7 @@
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
   - [Using an external Resource / API](./reference/using_an_external_resource.md)
+  - [Multiple Controllers Per Resource](./reference/multiple-controllers.md)
 
   - [Configuring EnvTest](./reference/envtest.md)
 

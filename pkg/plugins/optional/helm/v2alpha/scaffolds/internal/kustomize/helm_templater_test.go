@@ -17,6 +17,7 @@ limitations under the License.
 package kustomize
 
 import (
+	"regexp"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,6 +38,7 @@ var _ = Describe("HelmTemplater", func() {
 			detectedPrefix:   "test-project",
 			chartName:        "test-project",
 			managerNamespace: "test-project-system",
+			roleNamespaces:   nil,
 		}
 	})
 
@@ -182,13 +184,15 @@ spec:
 
 			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("{{- if not .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("- --metrics-secure=false"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
 			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring("image: " +
-				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}\""))
+				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}\""))
 			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
@@ -319,6 +323,184 @@ spec:
 
 			Expect(result).To(ContainSubstring("imagePullSecrets:"))
 		})
+
+		// Inside a '{{- with .Values.manager.imagePullSecrets }}' block, '.' is bound to the
+		// imagePullSecrets slice, so using '.Values.manager.imagePullSecrets' inside the block
+		// causes a Helm render error: "can't evaluate field Values in type []interface {}".
+		// Insure usage of '.' for toYaml instead of the full path.
+		It("should use '.' not '.Values.manager.imagePullSecrets' inside with block for imagePullSecrets", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: myregistrykey
+      containers:
+      - args:
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.imagePullSecrets }}"))
+			// Must use '.' inside the with block, NOT '.Values.manager.imagePullSecrets'
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("{{- toYaml .Values.manager.imagePullSecrets | nindent"))
+		})
+
+		It("should use '.' not '.Values.manager.imagePullSecrets' inside with block when field is injected", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			// No imagePullSecrets in the content - the function will inject the block
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: test-project-controller-manager
+      containers:
+      - args:
+        - --leader-elect`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.imagePullSecrets }}"))
+			// Must use '.' inside the with block, NOT '.Values.manager.imagePullSecrets'
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("{{- toYaml .Values.manager.imagePullSecrets | nindent"))
+		})
+
+		It("should template deployment strategy", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    spec:
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.strategy }}"))
+			Expect(result).To(ContainSubstring("strategy: {{ toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("type: RollingUpdate"))
+		})
+
+		It("should template priorityClassName", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.priorityClassName }}"))
+			Expect(result).To(ContainSubstring("priorityClassName: {{ . | quote }}"))
+			Expect(result).NotTo(ContainSubstring("priorityClassName: high-priority"))
+		})
+
+		It("should template topologySpreadConstraints", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.topologySpreadConstraints }}"))
+			Expect(result).To(ContainSubstring("topologySpreadConstraints: {{ toYaml . | nindent"))
+			Expect(result).NotTo(ContainSubstring("maxSkew: 1"))
+		})
+
+		It("should template terminationGracePeriodSeconds with nil check", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).To(ContainSubstring(
+				"{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\")"))
+			Expect(result).To(ContainSubstring("(ne .Values.manager.terminationGracePeriodSeconds nil)"))
+			Expect(result).To(ContainSubstring(
+				"terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}"))
+			Expect(result).NotTo(ContainSubstring("terminationGracePeriodSeconds: 10"))
+		})
+
+		It("should template terminationGracePeriodSeconds zero value", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should use hasKey to support 0 values
+			Expect(result).To(ContainSubstring("hasKey .Values.manager \"terminationGracePeriodSeconds\""))
+			Expect(result).To(ContainSubstring(
+				"terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}"))
+			Expect(result).NotTo(ContainSubstring("terminationGracePeriodSeconds: 0"))
+		})
 	})
 
 	Context("conditional wrapping", func() {
@@ -338,6 +520,85 @@ metadata:
 			// Should be wrapped with prometheus enable conditional
 			Expect(result).To(ContainSubstring("{{- if .Values.prometheus.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should template ServiceMonitor port and scheme based on metrics.secure", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Port should be templated to conditional
+			Expect(result).To(ContainSubstring("port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).NotTo(ContainSubstring("port: https"))
+
+			// Scheme should be templated to conditional
+			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).NotTo(ContainSubstring("scheme: https"))
+		})
+
+		It("should wrap ServiceMonitor bearerTokenFile with metrics.secure conditional", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    port: https`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// BearerTokenFile should be wrapped with conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should wrap ServiceMonitor tlsConfig with metrics.secure conditional", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// TLS config should be wrapped with conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+			Expect(result).To(ContainSubstring("tlsConfig:"))
+			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+
+			// Should have port and scheme templated too
+			Expect(result).To(ContainSubstring("port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
+			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
 		})
 
 		It("should add metrics conditional for metrics services", func() {
@@ -389,12 +650,14 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, certResource)
 
-			// Should be wrapped with both metrics and certManager conditionals
-			Expect(result).To(ContainSubstring("{{- if and .Values.certManager.enable .Values.metrics.enable }}"))
+			// Should be wrapped with certManager, metrics, AND metrics.secure conditionals
+			// Metrics certs only needed when using HTTPS (metrics.secure=true)
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should NOT add conditionals to essential resources", func() {
+		It("should add kind conditionals to essential ClusterRole resources", func() {
 			// Test essential RBAC
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -408,8 +671,10 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should NOT wrap essential RBAC with conditionals
-			Expect(result).NotTo(ContainSubstring("{{- if .Values"))
+			// Should NOT have rbac.create conditional (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have kind conditional for namespace-scoped support
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
 		})
 
 		It("should add webhook conditional for webhook services", func() {
@@ -532,10 +797,54 @@ spec:
 				"    controller-gen.kubebuilder.io/version"
 			Expect(result).To(ContainSubstring(expectedAnnotations))
 		})
+
+		It("should add manager.enabled conditional for manager Deployments", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should be wrapped with manager.enabled conditional that defaults to true when key is absent
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			Expect(result).To(ContainSubstring(expectedConditional))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should not add manager.enabled conditional for non-manager Deployments", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("other-deployment")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: other-deployment
+  namespace: test-project-system
+spec:
+  replicas: 1`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			// Should NOT be wrapped with manager.enabled conditional
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			Expect(result).NotTo(ContainSubstring(expectedConditional))
+			Expect(result).NotTo(ContainSubstring(".Values.manager.enabled"))
+		})
 	})
 
 	Context("helper RBAC wrapping", func() {
-		It("should add rbacHelpers conditional for helper RBAC roles", func() {
+		It("should add rbac.helpers conditional for helper RBAC roles", func() {
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			clusterRoleResource.SetKind("ClusterRole")
@@ -548,12 +857,12 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should be wrapped with rbacHelpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbacHelpers.enable }}"))
+			// Should be wrapped with rbac.helpers conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should add rbacHelpers conditional for helper ClusterRoleBindings", func() {
+		It("should add rbac.helpers conditional for helper ClusterRoleBindings", func() {
 			bindingResource := &unstructured.Unstructured{}
 			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			bindingResource.SetKind("ClusterRoleBinding")
@@ -566,8 +875,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, bindingResource)
 
-			// Should be wrapped with rbacHelpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbacHelpers.enable }}"))
+			// Should be wrapped with rbac.helpers conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 	})
@@ -950,7 +1259,7 @@ spec:
 
 		It("should not double-escape quotes already escaped by yaml.Marshal in double-quoted YAML scalars", func() {
 			// Regression test: yaml.Marshal represents literal " inside a {{ }} expression as \"
-			// in a double-quoted YAML scalar, so a second pass escaping " → \" produced \\" which
+			// in a double-quoted YAML scalar, so a second pass escaping " to \" produced \\" which
 			// broke Helm's template parser by closing the string literal early (U+002D '-' error).
 			crdResource := &unstructured.Unstructured{}
 			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
@@ -958,7 +1267,7 @@ spec:
 			crdResource.SetName("webrequestcommitstatuses.promoter.argoproj.io")
 
 			// Simulate the raw YAML text that yaml.Marshal produces for a double-quoted scalar
-			// containing a " character – the inner " appears as \" in the YAML text.
+			// containing a " character where the inner " appears as \" in the YAML text.
 			content := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 spec:
@@ -1038,7 +1347,7 @@ data:
 			Expect(result).To(BeEmpty())
 		})
 
-		It("should handle resources without namespace", func() {
+		It("should add conditional namespace for ClusterRole when rendering as Role", func() {
 			clusterRoleResource := &unstructured.Unstructured{}
 			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			clusterRoleResource.SetKind("ClusterRole")
@@ -1051,8 +1360,10 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
-			// Should not add namespace substitution for cluster-scoped resources
-			Expect(result).NotTo(ContainSubstring("namespace:"))
+			// Should add conditional namespace for Role variant
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+			// Namespace should be conditional (only when rbac.namespaced is true)
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
 		})
 
 		It("should handle malformed YAML gracefully", func() {
@@ -1279,6 +1590,7 @@ subjects:
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "user", // Short namespace that appears as substring
+				roleNamespaces:   nil,
 			}
 
 			content := `apiVersion: rbac.authorization.k8s.io/v1
@@ -1324,6 +1636,7 @@ rules:
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "app",
+				roleNamespaces:   nil,
 			}
 
 			roleBindingResource := &unstructured.Unstructured{}
@@ -1426,6 +1739,7 @@ data:
 				detectedPrefix:   "test",
 				chartName:        "test",
 				managerNamespace: "app",
+				roleNamespaces:   nil,
 			}
 
 			content := `apiVersion: v1
@@ -2002,6 +2316,7 @@ spec:
 				detectedPrefix:   "ln",           // Custom short prefix from kustomize
 				chartName:        "test-project", // Chart/project name
 				managerNamespace: "ln-system",    // Manager namespace
+				roleNamespaces:   nil,
 			}
 
 			issuer := &unstructured.Unstructured{}
@@ -2108,7 +2423,7 @@ spec:
 
 			// Should template image reference (not hardcoded)
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
 			// Should template imagePullPolicy
@@ -2129,6 +2444,106 @@ spec:
 
 			// Container name should remain "controller-test"
 			Expect(result).To(ContainSubstring("name: controller-test"))
+		})
+
+		It("should append extraVolumes and extraVolumeMounts when lists are present", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+		})
+
+		It("should inject extraVolumes/extraVolumeMounts when Kustomize has volumeMounts: [] and volumes: []", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Default Kustomize output: single-line empty lists (no webhook/metrics patches)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts: []
+      volumes: []`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+		})
+
+		It("should append only extraVolumes from values and keep webhook/metrics conditional", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      - name: metrics-certs
+        secret:
+          secretName: metrics-server-cert
+      - name: app-secret-1
+        secret:
+          secretName: app-secret-1
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: metrics-certs
+          mountPath: /tmp/k8s-metrics-server/metrics-certs
+          readOnly: true
+        - name: app-secret-1
+          mountPath: /etc/secrets
+          readOnly: true
+`
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+			Expect(result).To(ContainSubstring(".Values.certManager.enable"))
+			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(result).To(ContainSubstring("app-secret-1"))
 		})
 
 		It("should fall back to 'manager' when default-container annotation is missing", func() {
@@ -2157,7 +2572,7 @@ spec:
 
 			// Should still template fields for "manager" container
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"`))
+				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 		})
 
@@ -2190,6 +2605,1172 @@ spec:
 			// Should NOT template sidecar container (doesn't match annotation)
 			Expect(result).To(ContainSubstring("image: sidecar:latest"))
 			Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"))
+		})
+	})
+
+	// templateBasicWithStatement must correctly consume entire YAML sequence blocks
+	// (like tolerations) because their list items start at the same indentation as
+	// the parent key, distinguished only by the leading "- " marker.
+	Context("scheduling fields templating (nodeSelector / affinity / tolerations)", func() {
+		It("should replace an existing multi-item tolerations block with a single Helm stanza", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoExecute
+        key: another-key
+        value: somevalue
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: test-project-controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Exactly one Helm-templated tolerations stanza must be present.
+			Expect(strings.Count(result, "tolerations:")).To(Equal(1),
+				"Expected exactly one tolerations: line in output")
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.tolerations }}"))
+			Expect(result).To(ContainSubstring("tolerations: {{ toYaml . | nindent"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+
+			// The raw list items must be gone.
+			Expect(result).NotTo(ContainSubstring("- effect: NoSchedule"))
+			Expect(result).NotTo(ContainSubstring("- effect: NoExecute"))
+			Expect(result).NotTo(ContainSubstring("key: node-role.kubernetes.io/control-plane"))
+			Expect(result).NotTo(ContainSubstring("key: another-key"))
+
+			// Fields after tolerations must still be present (templated).
+			Expect(result).To(ContainSubstring("securityContext:"))
+			Expect(result).To(ContainSubstring(".Values.manager.podSecurityContext"))
+		})
+
+		It("should insert a tolerations Helm stanza when the field is absent", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      securityContext:
+        runAsNonRoot: true`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.tolerations }}"))
+			Expect(result).To(ContainSubstring("tolerations: {{ toYaml . | nindent"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should be idempotent: running templating twice does not duplicate stanzas", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists`
+
+			first := templater.ApplyHelmSubstitutions(content, deployment)
+			second := templater.ApplyHelmSubstitutions(first, deployment)
+
+			Expect(strings.Count(second, "{{- with .Values.manager.tolerations }}")).To(Equal(1),
+				"Expected exactly one {{- with .Values.manager.tolerations }} after two passes")
+			Expect(strings.Count(second, "tolerations:")).To(Equal(1),
+				"Expected exactly one tolerations: line after two passes")
+		})
+
+		It("should correctly template nodeSelector (map type) without regression", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      nodeSelector:
+        kubernetes.io/os: linux
+        custom-label: my-node`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(strings.Count(result, "nodeSelector:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.nodeSelector }}"))
+			Expect(result).To(ContainSubstring("nodeSelector: {{ toYaml . | nindent"))
+			// Raw entries must be removed.
+			Expect(result).NotTo(ContainSubstring("kubernetes.io/os: linux"))
+			Expect(result).NotTo(ContainSubstring("custom-label: my-node"))
+		})
+
+		It("should correctly template affinity (map type) without regression", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			Expect(strings.Count(result, "affinity:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.affinity }}"))
+			Expect(result).To(ContainSubstring("affinity: {{ toYaml . | nindent"))
+			// Raw sub-fields must be removed.
+			Expect(result).NotTo(ContainSubstring("nodeAffinity:"))
+			Expect(result).NotTo(ContainSubstring("requiredDuringSchedulingIgnoredDuringExecution:"))
+		})
+
+		It("should not match a key that only shares a prefix with the target field name", func() {
+			// Regression guard: key matching must require the trailing colon so that
+			// e.g. "nodeSelector" does not accidentally match "nodeSelectorTerms:".
+			// This YAML tests that nodeSelectorTerms inside an affinity block is not
+			// treated as the nodeSelector field itself.
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// The nodeSelector Helm stanza must be inserted (field was absent).
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.nodeSelector }}"))
+			// The affinity block must only appear once and be Helm-templated.
+			Expect(strings.Count(result, "affinity:")).To(Equal(1))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.affinity }}"))
+			// nodeSelectorTerms is part of the affinity value; it must be gone since
+			// the whole affinity block is replaced by the Helm stanza.
+			Expect(result).NotTo(ContainSubstring("nodeSelectorTerms:"))
+		})
+	})
+
+	Context("custom labels and annotations", func() {
+		It("should add custom labels and annotations to manager Deployment only", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ include "test-project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: {{ include "test-project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.manager.replicas }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: {{ include "test-project.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should add manager.labels to Deployment (with automatic filtering of existing keys)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.labels }}"),
+				ContainSubstring("{{- if .Values.manager.labels }}"),
+			))
+
+			// Should add manager.pod.labels to Pod template (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .labels }}"))
+
+			// Should add manager.annotations to Deployment
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata: (not top-level)
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should add manager.pod.annotations to Pod template (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Each field should appear exactly once (check for either pattern: with/without omit)
+			labelsCount := strings.Count(result, ".Values.manager.labels")
+			Expect(labelsCount).To(BeNumerically(">=", 1), "Should have labels block in Deployment")
+
+			podLabelsCount := strings.Count(result, ".labels")
+			Expect(podLabelsCount).To(BeNumerically(">=", 1), "Should have pod.labels block in Pod template")
+
+			annotationsCount := strings.Count(result, ".Values.manager.annotations")
+			Expect(annotationsCount).To(BeNumerically(">=", 1), "Should have annotations block in Deployment")
+
+			podAnnotationsCount := strings.Count(result, ".annotations")
+			Expect(podAnnotationsCount).To(BeNumerically(">=", 1), "Should have pod.annotations block in Pod template")
+		})
+
+		It("should not add custom labels/annotations to non-manager Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("other-deployment")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: other
+  name: other-deployment
+spec:
+  template:
+    metadata:
+      labels:
+        app: other`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should not add any manager custom labels/annotations
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.manager.labels }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.manager.annotations }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .labels }}"))
+			Expect(result).NotTo(ContainSubstring("{{- with .annotations }}"))
+		})
+
+		It("should not duplicate labels/annotations blocks when applied twice", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager`
+
+			// Apply templating twice
+			result1 := templater.ApplyHelmSubstitutions(content, deployment)
+			result2 := templater.ApplyHelmSubstitutions(result1, deployment)
+
+			// Each field should appear exactly once (idempotency check)
+			// Count manager.labels references (either with if or with omit)
+			labelsCount := strings.Count(result2, ".Values.manager.labels")
+			Expect(labelsCount).To(BeNumerically("<=", 2), "Should not duplicate labels blocks excessively")
+
+			// Count .labels references in pod context
+			podLabelsPattern := regexp.MustCompile(`{{- with (?:omit )?\.labels`)
+			podLabelsMatches := podLabelsPattern.FindAllString(result2, -1)
+			Expect(len(podLabelsMatches)).To(BeNumerically("<=", 2), "Should not duplicate pod.labels blocks excessively")
+
+			// Count manager.annotations references
+			annotationsCount := strings.Count(result2, ".Values.manager.annotations")
+			Expect(annotationsCount).To(BeNumerically("<=", 2), "Should not duplicate annotations blocks excessively")
+
+			// Count .annotations references in pod context
+			podAnnotationsPattern := regexp.MustCompile(`{{- with (?:omit )?\.annotations`)
+			podAnnotationsMatches := podAnnotationsPattern.FindAllString(result2, -1)
+			Expect(len(podAnnotationsMatches)).To(BeNumerically("<=", 2),
+				"Should not duplicate pod.annotations blocks excessively")
+		})
+
+		It("should add pod annotations even when pod template has no annotations field", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Pod template with labels but NO annotations field
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should create annotations section before labels
+			Expect(result).To(ContainSubstring("annotations:"))
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Verify annotations come before labels in pod template
+			// Find the pod annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- with (?:omit )?\.annotations`)
+			labelsPattern := regexp.MustCompile(`{{- with (?:omit )?\.labels`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			labelsMatch := labelsPattern.FindStringIndex(result)
+			if annotationsMatch != nil && labelsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically("<", labelsMatch[0]), "Annotations should come before labels")
+			}
+		})
+
+		It("should inject custom annotations into existing Deployment metadata annotations", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with existing annotations in metadata (e.g., from commonAnnotations)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    existing-annotation: from-kustomize
+    another-annotation: value
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations into existing annotations block (with filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should NOT create duplicate annotations: key
+			annotationsCount := strings.Count(result, "annotations:")
+			Expect(annotationsCount).To(Equal(2),
+				"Should have exactly 2 annotations blocks (1 for Deployment, 1 for Pod template)")
+
+			// Existing annotations should still be present
+			Expect(result).To(ContainSubstring("existing-annotation: from-kustomize"))
+			Expect(result).To(ContainSubstring("another-annotation: value"))
+
+			// Verify injection order: custom annotations should come after existing ones
+			// Find the manager annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			existingAnnotationIdx := strings.Index(result, "existing-annotation: from-kustomize")
+			if annotationsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotationIdx),
+					"Custom annotations should be injected after existing annotations")
+			}
+		})
+
+		It("should convert empty map annotations: {} to block style for injection", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with empty map annotations: {}
+			// Should be converted to block style to allow custom annotation injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Empty map should be converted to block style (not preserved as {})
+			Expect(result).NotTo(ContainSubstring("annotations: {}"))
+
+			// Should inject custom annotations template
+			Expect(result).To(Or(
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+			))
+
+			// Should have block-style annotations: key (not flow-style)
+			Expect(regexp.MustCompile(`(?m)^  annotations:\n`).MatchString(result)).To(BeTrue(),
+				"Empty map annotations should be converted to block style")
+		})
+
+		It("should handle inline annotations with values in Deployment metadata", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with inline annotations containing a value
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {existing: value}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {kubectl.kubernetes.io/default-container: manager}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+
+			// Should inject pod annotations (with automatic filtering)
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			Expect(result).To(ContainSubstring("{{- with .annotations }}"))
+
+			// Should NOT create duplicate annotations: key
+			annotationsCount := strings.Count(result, "annotations:")
+			Expect(annotationsCount).To(Equal(2),
+				"Should have exactly 2 annotations blocks (1 for Deployment, 1 for Pod template)")
+		})
+
+		It("should convert flow-style annotations to block-style before injecting templates", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with flow-style annotations (inline format)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {existing: value, another: test}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations: {kubectl.kubernetes.io/default-container: manager, other: value}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Flow-style should be converted to block-style
+			Expect(result).NotTo(ContainSubstring("annotations: {"))
+
+			// Should have block-style annotations with existing entries preserved
+			Expect(result).To(ContainSubstring("existing: value"))
+			Expect(result).To(ContainSubstring("another: test"))
+
+			// Should inject custom annotations template blocks (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+
+			// Verify the structure is valid (annotations: key followed by indented content)
+			lines := strings.Split(result, "\n")
+			foundDeploymentAnnotations := false
+			for i, line := range lines {
+				if strings.TrimSpace(line) == "annotations:" && !foundDeploymentAnnotations {
+					foundDeploymentAnnotations = true
+					// Next lines should be indented (existing values or templates)
+					if i+1 < len(lines) {
+						nextLine := lines[i+1]
+						Expect(nextLine).To(MatchRegexp(`^\s{2,}`), // At least 2 spaces of indentation
+							"Content after annotations: should be indented")
+					}
+				}
+			}
+			Expect(foundDeploymentAnnotations).To(BeTrue(), "Should have Deployment annotations block")
+		})
+
+		It("should convert flow-style annotations without space to block-style", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Test YAML variant without space: annotations:{...} (also valid YAML)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:{existing: value, another: test}
+  labels:
+    control-plane: controller-manager
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:{kubectl.kubernetes.io/default-container: manager}
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Flow-style should be converted to block-style (both with and without space)
+			Expect(result).NotTo(ContainSubstring("annotations: {"))
+			Expect(result).NotTo(ContainSubstring("annotations:{"))
+
+			// Should have block-style annotations with existing entries preserved
+			Expect(result).To(ContainSubstring("existing: value"))
+			Expect(result).To(ContainSubstring("another: test"))
+
+			// Should inject custom annotations template blocks
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+		})
+
+		It("should handle annotations as last field before spec in Deployment metadata", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Deployment with annotations as LAST field in metadata (before spec)
+			// This tests the edge case where there's no subsequent field to trigger injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  annotations:
+    existing-annotation: value1
+    another-annotation: value2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom annotations after existing ones (with filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("existing-annotation: value1"))
+			Expect(result).To(ContainSubstring("another-annotation: value2"))
+
+			// Verify injection order: custom annotations should come after existing ones
+			// Find the manager annotations block (either pattern)
+			annotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			annotationsMatch := annotationsPattern.FindStringIndex(result)
+			existingAnnotation1Idx := strings.Index(result, "existing-annotation: value1")
+			existingAnnotation2Idx := strings.Index(result, "another-annotation: value2")
+			if annotationsMatch != nil {
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotation1Idx),
+					"Custom annotations should be injected after first existing annotation")
+				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotation2Idx),
+					"Custom annotations should be injected after last existing annotation")
+			}
+		})
+
+		It("should handle annotations with varying indentation from kustomize", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Test with 4-space indentation (some kustomize configurations)
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+    labels:
+        control-plane: controller-manager
+    annotations:
+        existing-annotation: value1
+    name: test-project-controller-manager
+spec:
+    template:
+        metadata:
+            annotations:
+                kubectl.kubernetes.io/default-container: manager
+            labels:
+                control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should handle different indentation correctly (with automatic filtering)
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+
+			// Verify custom annotations come after existing ones
+			deploymentAnnotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
+			deploymentAnnotationsMatch := deploymentAnnotationsPattern.FindStringIndex(result)
+			deploymentExistingIdx := strings.Index(result, "existing-annotation: value1")
+			if deploymentAnnotationsMatch != nil {
+				Expect(deploymentAnnotationsMatch[0]).To(BeNumerically(">", deploymentExistingIdx))
+			}
+
+			podCustomIdx := strings.LastIndex(result, "{{- with .Values.manager.pod }}")
+			podDefaultIdx := strings.Index(result, "kubectl.kubernetes.io/default-container: manager")
+			Expect(podCustomIdx).To(BeNumerically(">", podDefaultIdx))
+		})
+
+		It("should add deployment annotations when name appears before labels", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Edge case: metadata.name comes before metadata.labels
+			// Previous implementation relied on name: to trigger annotations injection
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  labels:
+    control-plane: controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should still inject annotations template even when no annotations field exists
+			// and name appears before labels
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.annotations }}"),
+				ContainSubstring("{{- if .Values.manager.annotations }}"),
+			))
+			// Verify annotations are properly nested under metadata:
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+				"manager.annotations should be nested under Deployment metadata")
+			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
+				"annotations should not be emitted as a top-level block before spec")
+			Expect(result).To(ContainSubstring("annotations:"))
+		})
+
+		It("should inject deployment labels when labels is the last metadata field before spec", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Edge case: labels is the last field in metadata, immediately followed by spec
+			// Previous implementation would update position to positionAfterDeploymentMetadata
+			// before checking shouldInjectDeploymentLabels
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  labels:
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// Should inject custom labels template
+			Expect(result).To(Or(
+				ContainSubstring("{{- with .Values.manager.labels }}"),
+				ContainSubstring("{{- if .Values.manager.labels }}"),
+			))
+
+			// Verify labels come after existing label
+			labelsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.labels`)
+			labelsMatch := labelsPattern.FindStringIndex(result)
+			existingLabelIdx := strings.Index(result, "control-plane: controller-manager")
+			if labelsMatch != nil {
+				Expect(labelsMatch[0]).To(BeNumerically(">", existingLabelIdx),
+					"Custom labels should be injected after existing labels")
+			}
+		})
+	})
+
+	Context("conditional RBAC kind rendering", func() {
+		It("should add conditional kind for ClusterRole to support namespace-scoped deployment", func() {
+			clusterRoleResource := &unstructured.Unstructured{}
+			clusterRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			clusterRoleResource.SetKind("ClusterRole")
+			clusterRoleResource.SetName("test-project-manager-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get`
+
+			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
+
+			// Should NOT have rbac.create (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have conditional kind based on rbac.namespaced
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+			Expect(result).To(ContainSubstring("kind: Role"))
+			Expect(result).To(ContainSubstring("{{- else }}"))
+			Expect(result).To(ContainSubstring("kind: ClusterRole"))
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should add conditional kind for ClusterRoleBinding to support namespace-scoped deployment", func() {
+			bindingResource := &unstructured.Unstructured{}
+			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			bindingResource.SetKind("ClusterRoleBinding")
+			bindingResource.SetName("test-project-manager-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-project-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-project-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, bindingResource)
+
+			// Should NOT have rbac.create (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.create }}"))
+			// Should have conditional kind for binding
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+			Expect(result).To(ContainSubstring("kind: RoleBinding"))
+			Expect(result).To(ContainSubstring("{{- else }}"))
+			Expect(result).To(ContainSubstring("kind: ClusterRoleBinding"))
+			// Should also make roleRef.kind conditional
+			Expect(result).To(ContainSubstring("kind: Role"))
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should NOT add any conditionals to Role (always namespace-scoped)", func() {
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("test-project-leader-election-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-project-leader-election-role
+  namespace: test-project-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get`
+
+			result := templater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Should NOT have any RBAC conditionals (always created as-is)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// Should preserve kind: Role
+			Expect(result).To(ContainSubstring("kind: Role"))
+			// Should NOT have ClusterRole anywhere
+			Expect(result).NotTo(ContainSubstring("ClusterRole"))
+		})
+
+		It("should NOT add any conditionals to RoleBinding (always namespace-scoped)", func() {
+			bindingResource := &unstructured.Unstructured{}
+			bindingResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			bindingResource.SetKind("RoleBinding")
+			bindingResource.SetName("test-project-leader-election-rolebinding")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-project-leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-project-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, bindingResource)
+
+			// Should NOT have any RBAC conditionals (always created as-is)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// Should preserve kind: RoleBinding
+			Expect(result).To(ContainSubstring("kind: RoleBinding"))
+			// roleRef should stay as Role
+			Expect(result).To(ContainSubstring("kind: Role"))
+			// Should NOT have ClusterRoleBinding anywhere
+			Expect(result).NotTo(ContainSubstring("ClusterRoleBinding"))
+		})
+
+		It("should wrap metrics-auth ClusterRole with metrics.enable AND metrics.secure conditional", func() {
+			metricsRoleResource := &unstructured.Unstructured{}
+			metricsRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			metricsRoleResource.SetKind("ClusterRole")
+			metricsRoleResource.SetName("test-project-metrics-auth-role")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-project-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create`
+
+			result := templater.ApplyHelmSubstitutions(content, metricsRoleResource)
+
+			// Should wrap with metrics.enable AND metrics.secure conditional
+			Expect(result).To(ContainSubstring("{{- if and .Values.metrics.enable .Values.metrics.secure }}"))
+			// Should NOT have rbac.create
+			Expect(result).NotTo(ContainSubstring("{{- if and .Values.rbac.create"))
+			// Metrics auth role is ALWAYS ClusterRole (never namespace-scoped)
+			// So it should NOT have kind conditional
+			Expect(result).To(ContainSubstring("kind: ClusterRole"))
+			// Should have only one kind: ClusterRole (not conditional)
+			Expect(strings.Count(result, "kind: ClusterRole")).To(Equal(1))
+			Expect(result).NotTo(ContainSubstring("kind: Role"))
+		})
+
+		It("should NOT add any conditionals to ServiceAccount (always created)", func() {
+			saResource := &unstructured.Unstructured{}
+			saResource.SetAPIVersion("v1")
+			saResource.SetKind("ServiceAccount")
+			saResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system`
+
+			result := templater.ApplyHelmSubstitutions(content, saResource)
+
+			// Should NOT have any conditionals (always created)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac"))
+			// ServiceAccount kind never changes
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.rbac.namespaced }}"))
+		})
+	})
+
+	Context("multi-namespace RBAC support", func() {
+		It("should preserve role-specific namespace deployments using .Values.rbac.roleNamespaces", func() {
+			// Simulate role-namespace mappings
+			roleNamespaces := map[string]string{
+				"manager-role-infrastructure": "infrastructure",
+				"manager-role-users":          "users",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role in infrastructure namespace
+			infraRole := &unstructured.Unstructured{}
+			infraRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			infraRole.SetKind("Role")
+			infraRole.SetName("manager-role-infrastructure")
+			infraRole.SetNamespace("infrastructure")
+
+			infraContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-infrastructure
+  namespace: infrastructure
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get, list, watch]`
+
+			infraResult := multiNsTemplater.ApplyHelmSubstitutions(infraContent, infraRole)
+
+			// Should template to index .Values.rbac.roleNamespaces "manager-role-infrastructure" with default fallback
+			expectedNs := `namespace: {{ index .Values.rbac.roleNamespaces ` +
+				`"manager-role-infrastructure" | default "infrastructure" }}`
+			Expect(infraResult).To(ContainSubstring(expectedNs))
+			// Should NOT use .Release.Namespace
+			Expect(infraResult).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should preserve namespace in RoleBinding subjects for multi-namespace RBAC", func() {
+			roleNamespaces := map[string]string{
+				"manager-rolebinding-users": "users",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// RoleBinding in users namespace
+			usersBinding := &unstructured.Unstructured{}
+			usersBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			usersBinding.SetKind("RoleBinding")
+			usersBinding.SetName("manager-rolebinding-users")
+			usersBinding.SetNamespace("users")
+
+			bindingContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manager-rolebinding-users
+  namespace: users
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: manager-role-users
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: test-project-system`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(bindingContent, usersBinding)
+
+			// RoleBinding namespace should use index .Values.rbac.roleNamespaces with binding name as key and default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-users" | default "users" }}`))
+			// Subject namespace should use .Release.Namespace (manager namespace)
+			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
+		})
+
+		It("should handle multiple role-namespace mappings simultaneously", func() {
+			roleNamespaces := map[string]string{
+				"manager-role-infrastructure": "infrastructure",
+				"manager-role-users":          "users",
+				"manager-role-monitoring":     "monitoring",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role in monitoring namespace
+			monitoringRole := &unstructured.Unstructured{}
+			monitoringRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			monitoringRole.SetKind("Role")
+			monitoringRole.SetName("manager-role-monitoring")
+			monitoringRole.SetNamespace("monitoring")
+
+			monitoringContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-monitoring
+  namespace: monitoring
+rules:
+- apiGroups: [""]
+  resources: [pods]
+  verbs: [get, list]`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(monitoringContent, monitoringRole)
+
+			// Should preserve monitoring namespace with role-based template and default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-role-monitoring" | default "monitoring" }}`))
+		})
+
+		It("should handle role names with hyphens correctly", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "app-infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			roleResource := &unstructured.Unstructured{}
+			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			roleResource.SetKind("Role")
+			roleResource.SetName("manager-role")
+			roleResource.SetNamespace("app-infrastructure")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
+  namespace: app-infrastructure
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get]`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, roleResource)
+
+			// Role name is used as key with default fallback
+			Expect(result).To(ContainSubstring(
+				`namespace: {{ index .Values.rbac.roleNamespaces "manager-role" | default "app-infrastructure" }}`))
+		})
+
+		It("should preserve DNS references for role-specific namespaces", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			configMap := &unstructured.Unstructured{}
+			configMap.SetAPIVersion("v1")
+			configMap.SetKind("ConfigMap")
+			configMap.SetName("config")
+
+			content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  endpoint: "http://service.infrastructure.svc.cluster.local:8080"`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, configMap)
+
+			// ConfigMap is not in roleNamespaces map, so DNS refs won't be templated
+			Expect(result).To(ContainSubstring("infrastructure.svc"))
+		})
+
+		It("should preserve resource references within role resources", func() {
+			roleNamespaces := map[string]string{
+				"manager-role": "infrastructure",
+			}
+
+			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+
+			// Role that has a reference to a resource in its namespace
+			role := &unstructured.Unstructured{}
+			role.SetAPIVersion("rbac.authorization.k8s.io/v1")
+			role.SetKind("Role")
+			role.SetName("manager-role")
+			role.SetNamespace("infrastructure")
+
+			content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
+  namespace: infrastructure
+  annotations:
+    cert-manager.io/inject-ca-from: infrastructure/serving-cert
+rules: []`
+
+			result := multiNsTemplater.ApplyHelmSubstitutions(content, role)
+
+			// Resource reference should be templated with index and default fallback
+			Expect(result).To(ContainSubstring(
+				`{{ index .Values.rbac.roleNamespaces "manager-role" | default "infrastructure" }}/serving-cert`))
 		})
 	})
 })

@@ -116,6 +116,24 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 			}
 		}
 	}
+	// Check if project has cluster-scoped RBAC (ClusterRole resources for business logic).
+	// By default, Kubebuilder scaffolds metrics-auth-role (for TokenReview/SubjectAccessReview APIs)
+	// and metrics-reader (for /metrics nonResourceURLs). Both must always remain ClusterRoles as they
+	// access cluster-scoped APIs. This check identifies whether the project has additional ClusterRoles
+	// for business logic (e.g., controller permissions), which can optionally be converted to namespace-scoped
+	// Roles via the rbac.namespaced toggle.
+	hasClusterScopedRBAC := false
+	for _, cr := range resources.ClusterRoles {
+		name := cr.GetName()
+		// Exclude the specific Kubebuilder-scaffolded metrics roles which are always cluster-scoped.
+		// Use suffix matching to avoid false positives with project names containing "metrics".
+		if strings.HasSuffix(name, "-metrics-auth-role") || strings.HasSuffix(name, "-metrics-reader") {
+			continue
+		}
+		// Found a ClusterRole that's not a metrics role - this is business logic RBAC
+		hasClusterScopedRBAC = true
+		break
+	}
 
 	// When Prometheus is enabled via kustomize, ensure any previously-generated
 	// generic ServiceMonitor file is removed to avoid duplicates in the chart.
@@ -128,7 +146,44 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 	}
 	namePrefix := resources.EstimatePrefix(s.config.GetProjectName())
 	chartName := s.config.GetProjectName()
-	chartConverter := kustomize.NewChartConverter(resources, namePrefix, chartName, s.outputDir)
+
+	// Detect multi-namespace RBAC scenarios for proper Helm templating.
+	// First, identify the manager's deployment namespace (the primary/default namespace).
+	// Then collect any Roles/RoleBindings that target namespaces OTHER than the manager namespace.
+	// These "additional" namespaces will be exposed via .Values.rbac.roleNamespaces for user configuration.
+	managerNamespace := namePrefix + "-system"
+	if resources.Deployment != nil {
+		if ns := resources.Deployment.GetNamespace(); ns != "" {
+			managerNamespace = ns
+		}
+	}
+
+	// Collect Roles and RoleBindings that deploy to namespaces other than the manager namespace.
+	// Map: resource suffix (without project prefix) -> target namespace
+	// This makes keys stable across different release names and overrides
+	roleNamespaces := make(map[string]string)
+	for _, role := range resources.Roles {
+		ns := role.GetNamespace()
+		// Only track roles deployed to namespaces other than the manager namespace
+		if ns != "" && ns != managerNamespace {
+			roleName := role.GetName()
+			// Strip project prefix to get stable suffix
+			suffix := strings.TrimPrefix(roleName, namePrefix+"-")
+			roleNamespaces[suffix] = ns
+		}
+	}
+	for _, binding := range resources.RoleBindings {
+		ns := binding.GetNamespace()
+		// Only track rolebindings deployed to namespaces other than the manager namespace
+		if ns != "" && ns != managerNamespace {
+			bindingName := binding.GetName()
+			// Strip project prefix to get stable suffix
+			suffix := strings.TrimPrefix(bindingName, namePrefix+"-")
+			roleNamespaces[suffix] = ns
+		}
+	}
+
+	chartConverter := kustomize.NewChartConverter(resources, namePrefix, chartName, s.outputDir, roleNamespaces)
 	deploymentConfig := chartConverter.ExtractDeploymentConfig()
 
 	// Create scaffold for standard Helm chart files (uses machinery defaults 0755/0644).
@@ -140,11 +195,13 @@ func (s *editKustomizeScaffolder) Scaffold() error {
 		&templates.HelmChart{OutputDir: s.outputDir, Force: s.force},
 		&templates.HelmValuesBasic{
 			// values.yaml with dynamic config
-			HasWebhooks:      hasWebhooks,
-			HasMetrics:       hasMetrics,
-			DeploymentConfig: deploymentConfig,
-			OutputDir:        s.outputDir,
-			Force:            s.force,
+			HasWebhooks:          hasWebhooks,
+			HasMetrics:           hasMetrics,
+			HasClusterScopedRBAC: hasClusterScopedRBAC,
+			RoleNamespaces:       roleNamespaces,
+			DeploymentConfig:     deploymentConfig,
+			OutputDir:            s.outputDir,
+			Force:                s.force,
 		},
 		&templates.HelmIgnore{OutputDir: s.outputDir, Force: s.force},
 		&charttemplates.HelmHelpers{OutputDir: s.outputDir, Force: s.force},

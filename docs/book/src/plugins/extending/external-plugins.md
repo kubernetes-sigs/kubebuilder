@@ -106,7 +106,7 @@ structures.
 ```
 
 <aside>
-<H1> </H1>
+<p class="note-title"> </p>
 
 Avoid printing directly to `stdout` in your external plugin.
 Since communication between Kubebuilder and the plugin occurs through
@@ -139,8 +139,8 @@ External plugins can support the following Kubebuilder subcommands:
 - `metadata`: Provide plugin descriptions and examples with the `--help` flag.
 - `flags`: Inform Kubebuilder of supported flags, enabling early error detection.
 
-<aside class="note">
-<h1>More about `flags` subcommand</h1>
+<aside class="note" role="note">
+<p class="note-title">More about `flags` subcommand</p>
 
 The `flags` subcommand in an external plugin allows for early error detection by informing Kubebuilder about the flags the plugin supports. If an unsupported flag is identified, Kubebuilder can issue an error before the plugin is called to execute.
 If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all flags to the plugin, making it the external plugin's responsibility to handle any invalid flags.

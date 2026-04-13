@@ -52,10 +52,7 @@ const autoUpdateTemplate = `name: Auto Update
 # The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
 # To protect your codebase, please ensure that you have branch protection rules configured for your 
 # main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
-permissions:
-  contents: write  # Create and push the update branch
-  issues: write    # Create GitHub Issue with PR link{{ if .UseGHModels }}
-  models: read     # Use GitHub Models for AI summaries{{ end }}
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -64,6 +61,10 @@ on:
 
 jobs:
   auto-update:
+    permissions:
+      contents: write  # Create and push the update branch
+      issues: write    # Create GitHub Issue with PR link{{ if .UseGHModels }}
+      models: read     # Use GitHub Models for AI summaries{{ end }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
@@ -71,10 +72,11 @@ jobs:
     # Checkout the repository.
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         token: {{ "${{ secrets.GITHUB_TOKEN }}" }}
         fetch-depth: 0
+        persist-credentials: false
 
     # Configure Git to create commits with the GitHub Actions bot.
     - name: Configure Git
@@ -84,7 +86,7 @@ jobs:
 
     # Set up Go environment.
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
       with:
         go-version: stable
 

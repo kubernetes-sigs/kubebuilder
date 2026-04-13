@@ -388,8 +388,16 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 
 // UnmarshalYAML implements config.Config
 func (c *Cfg) UnmarshalYAML(b []byte) error {
-	if err := yaml.UnmarshalStrict(b, c); err != nil {
+	// Use non-strict unmarshaling to allow forward compatibility and external plugin fields.
+	// Older versions of kubebuilder should be able to read PROJECT files
+	// with newer fields and simply ignore unknown fields.
+	if err := yaml.Unmarshal(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
+	}
+
+	// Normalize resources to auto-migrate legacy controller: true format
+	for i := range c.Resources {
+		c.Resources[i].Normalize()
 	}
 
 	return nil

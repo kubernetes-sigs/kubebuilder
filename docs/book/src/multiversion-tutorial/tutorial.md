@@ -11,9 +11,9 @@ different versions are supported by our CronJob project.
 If you haven't already, make sure you've gone through the base [CronJob
 Tutorial](/cronjob-tutorial/cronjob-tutorial.md).
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Following Along vs Jumping Ahead</h1>
+<p class="note-title">Following Along vs Jumping Ahead</p>
 
 Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:

@@ -340,8 +340,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -350,8 +350,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3-alpha"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -364,8 +364,10 @@ var _ = Describe("generate: get-args-helpers", func() {
 						repo:        "bar",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements(
+						"--skip-go-version-check",
+						"--plugins", ContainSubstring("helm.kubebuilder.io/v2-alpha"),
 						"--domain", "foo.com", "--repo", "bar"))
 					Expect(args).NotTo(ContainElement(ContainSubstring("helm.kubebuilder.io/v1-alpha")))
 				})
@@ -377,8 +379,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 				It("returns correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar"))
 				})
 			})
@@ -392,8 +394,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						projectName: "my-project",
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--project-name", "my-project"))
 				})
 			})
@@ -407,8 +409,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						multigroup:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--multigroup"))
 				})
 			})
@@ -422,8 +424,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--namespaced"))
 				})
 			})
@@ -438,10 +440,21 @@ var _ = Describe("generate: get-args-helpers", func() {
 						namespaced:  true,
 					}
 					store := &fakeStore{cfg: cfg}
-					args := getInitArgs(store)
-					Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					args := getInitArgs(store, &Generate{SkipGoVersionCheck: true}, "")
+					Expect(args).To(ContainElements("--skip-go-version-check", "--plugins", ContainSubstring("go.kubebuilder.io/v4"),
 						"--domain", "foo.com", "--repo", "bar", "--multigroup", "--namespaced"))
 				})
+			})
+		})
+
+		Context("when skipGoVersionCheck is false", func() {
+			It("does not include --skip-go-version-check", func() {
+				cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v4"}, domain: "foo.com", repo: "bar"}
+				store := &fakeStore{cfg: cfg}
+				args := getInitArgs(store, &Generate{SkipGoVersionCheck: false}, "")
+				Expect(args).NotTo(ContainElement("--skip-go-version-check"))
+				Expect(args).To(ContainElements("--plugins", ContainSubstring("go.kubebuilder.io/v4"),
+					"--domain", "foo.com", "--repo", "bar"))
 			})
 		})
 	})
@@ -494,7 +507,8 @@ var _ = Describe("generate: get-args-helpers", func() {
 		Context("returns correct flags", func() {
 			It("for nil API with Controller set", func() {
 				res.Controller = true
-				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller"))
+				// Controllers are now created separately, so always --controller=false in API step
+				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller=false"))
 			})
 			It("for non nil API (namespaced not set) with Controller not set", func() {
 				res.API.CRDVersion = "v1"
@@ -508,6 +522,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			})
 		})
 	})
+
 	// getWebhookResourceFlags
 	Context("getWebhookResourceFlags", func() {
 		It("returns correct flags for specified resources", func() {
@@ -766,7 +781,7 @@ var _ = Describe("generate: kubebuilder", func() {
 				repo:        "github.com/example/repo",
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(kubebuilderInit(store)).To(Succeed())
+			Expect(kubebuilderInit(store, &Generate{SkipGoVersionCheck: true}, "")).To(Succeed())
 		})
 	})
 
@@ -822,6 +837,74 @@ var _ = Describe("generate: hasHelmPlugin", func() {
 		hasPlugin, isV2Alpha := hasHelmPlugin(store)
 		Expect(hasPlugin).To(BeFalse())
 		Expect(isV2Alpha).To(BeFalse())
+	})
+})
+
+var _ = Describe("generate: boilerplate preservation", func() {
+	Describe("getInitArgs with boilerplate handling", func() {
+		It("should include --license none when no boilerplate exists", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			args := getInitArgs(store, &Generate{}, "") // tempLicenseFile = "" (no boilerplate)
+
+			Expect(args).To(ContainElement("--license"))
+			// Find --license and verify next element is "none"
+			foundLicenseNone := false
+			for i, arg := range args {
+				if arg == "--license" && i+1 < len(args) && args[i+1] == "none" {
+					foundLicenseNone = true
+					break
+				}
+			}
+			Expect(foundLicenseNone).To(BeTrue(), "Expected --license none when no boilerplate exists")
+		})
+
+		It("should use --license-file when temp file is provided", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+			args := getInitArgs(store, &Generate{}, "/tmp/preserved-license.txt") // tempLicenseFile provided
+
+			// Should have --license-file flag (not --license none)
+			Expect(args).To(ContainElement("--license-file"))
+			Expect(args).To(ContainElement("/tmp/preserved-license.txt"))
+
+			// Should NOT have --license none
+			foundLicenseNone := false
+			for i, arg := range args {
+				if arg == "--license" && i+1 < len(args) && args[i+1] == "none" {
+					foundLicenseNone = true
+					break
+				}
+			}
+			Expect(foundLicenseNone).To(BeFalse(), "Should not use --license none when temp file is provided")
+		})
+
+		It("should always include either --license-file or --license none", func() {
+			cfg := &fakeConfig{
+				pluginChain: []string{"go.kubebuilder.io/v4"},
+				domain:      "example.com",
+				repo:        "github.com/example/repo",
+			}
+			store := &fakeStore{cfg: cfg}
+
+			// With temp file: should have --license-file
+			argsWithFile := getInitArgs(store, &Generate{}, "/tmp/custom-license.txt")
+			Expect(argsWithFile).To(ContainElement("--license-file"))
+			Expect(argsWithFile).To(ContainElement("/tmp/custom-license.txt"))
+
+			// Without temp file: should have --license none
+			argsWithoutFile := getInitArgs(store, &Generate{}, "")
+			Expect(argsWithoutFile).To(ContainElement("--license"))
+			Expect(argsWithoutFile).To(ContainElement("none"))
+		})
 	})
 })
 

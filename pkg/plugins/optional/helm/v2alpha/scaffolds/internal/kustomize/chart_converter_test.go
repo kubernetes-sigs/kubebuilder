@@ -55,7 +55,7 @@ var _ = Describe("ChartConverter", func() {
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 
 		// Create converter
-		converter = NewChartConverter(resources, "test-project", "test-project", "dist")
+		converter = NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
 	})
 
 	Context("NewChartConverter", func() {
@@ -309,7 +309,198 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should handle deployment without containers", func() {
 			config := converter.ExtractDeploymentConfig()
-			Expect(config).To(BeEmpty())
+			// Should still extract deployment-level fields (replicas, strategy) even without containers
+			Expect(config).To(HaveKey("replicas"))
+			Expect(config["replicas"]).To(Equal(1))
+
+			// But should not have container-level fields (env, args, resources, etc.)
+			Expect(config).NotTo(HaveKey("env"))
+			Expect(config).NotTo(HaveKey("args"))
+			Expect(config).NotTo(HaveKey("resources"))
+			Expect(config).NotTo(HaveKey("image"))
+		})
+
+		It("should extract extraVolumes and extraVolumeMounts excluding webhook and metrics", func() {
+			volumes := []any{
+				map[string]any{
+					"name":   "webhook-certs",
+					"secret": map[string]any{"secretName": "webhook-server-cert"},
+				},
+				map[string]any{
+					"name":   "custom-volume",
+					"secret": map[string]any{"secretName": "my-secret"},
+				},
+			}
+			volumeMounts := []any{
+				map[string]any{
+					"name":      "webhook-certs",
+					"mountPath": "/tmp/k8s-webhook-server/serving-certs",
+					"readOnly":  true,
+				},
+				map[string]any{
+					"name":      "custom-volume",
+					"mountPath": "/etc/my-secrets",
+					"readOnly":  true,
+				},
+			}
+			containers := []any{
+				map[string]any{
+					"name":         "manager",
+					"image":        "controller:latest",
+					"volumeMounts": volumeMounts,
+				},
+			}
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				volumes,
+				"spec", "template", "spec", "volumes",
+			)
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("extraVolumes"))
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "custom-volume"))
+
+			Expect(config).To(HaveKey("extraVolumeMounts"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("mountPath", "/etc/my-secrets"))
+		})
+
+		It("should not add webhook-certs or metrics-certs to extraVolumes or extraVolumeMounts", func() {
+			volumes := []any{
+				map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+				map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+				map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "app-secret"}},
+			}
+			volumeMounts := []any{
+				map[string]any{"name": "webhook-certs", "mountPath": "/tmp/webhook", "readOnly": true},
+				map[string]any{"name": "metrics-certs", "mountPath": "/tmp/metrics", "readOnly": true},
+				map[string]any{"name": "app-secret", "mountPath": "/etc/app", "readOnly": true},
+			}
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest", "volumeMounts": volumeMounts},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, volumes, "spec", "template", "spec", "volumes")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "app-secret"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("name", "app-secret"))
+		})
+
+		It("should extract deployment replicas", func() {
+			// replicas is set in BeforeEach to 1
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("replicas"))
+			Expect(config["replicas"]).To(Equal(1))
+		})
+
+		It("should extract deployment strategy", func() {
+			// Set up deployment with strategy
+			strategy := map[string]any{
+				"type": "RollingUpdate",
+				"rollingUpdate": map[string]any{
+					"maxSurge":       "25%",
+					"maxUnavailable": "25%",
+				},
+			}
+			err := unstructured.SetNestedField(resources.Deployment.Object, strategy, "spec", "strategy")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("strategy"))
+			strategyConfig, ok := config["strategy"].(map[string]any)
+			Expect(ok).To(BeTrue())
+			Expect(strategyConfig["type"]).To(Equal("RollingUpdate"))
+		})
+
+		It("should extract priorityClassName from pod spec", func() {
+			// Set up deployment with priorityClassName
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedField(
+				resources.Deployment.Object, "high-priority", "spec", "template", "spec", "priorityClassName")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("priorityClassName"))
+			Expect(config["priorityClassName"]).To(Equal("high-priority"))
+		})
+
+		It("should extract topologySpreadConstraints from pod spec", func() {
+			// Set up deployment with topologySpreadConstraints
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			topologySpreadConstraints := []any{
+				map[string]any{
+					"maxSkew":           int64(1),
+					"topologyKey":       "kubernetes.io/hostname",
+					"whenUnsatisfiable": "DoNotSchedule",
+					"labelSelector": map[string]any{
+						"matchLabels": map[string]any{
+							"app": "manager",
+						},
+					},
+				},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object, topologySpreadConstraints,
+				"spec", "template", "spec", "topologySpreadConstraints")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("topologySpreadConstraints"))
+			tsc, ok := config["topologySpreadConstraints"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(tsc).To(HaveLen(1))
+		})
+
+		It("should extract terminationGracePeriodSeconds from pod spec", func() {
+			// Set up deployment with terminationGracePeriodSeconds
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedField(
+				resources.Deployment.Object, int64(30), "spec", "template", "spec", "terminationGracePeriodSeconds")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("terminationGracePeriodSeconds"))
+			Expect(config["terminationGracePeriodSeconds"]).To(Equal(30))
 		})
 	})
 

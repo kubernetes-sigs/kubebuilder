@@ -50,18 +50,34 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 
 			Expect(content).To(ContainSubstring("manager:"))
-			Expect(content).To(ContainSubstring("args: []"))
-			Expect(content).To(ContainSubstring("env: []"))
-			Expect(content).To(ContainSubstring("envOverrides: {}"))
+			// Operator-specific runtime fields (args, env, envOverrides) should NOT appear when DeploymentConfig is empty
+			Expect(content).NotTo(ContainSubstring("args:"))
+			Expect(content).NotTo(ContainSubstring("env:"))
+			Expect(content).NotTo(ContainSubstring("envOverrides:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
+			Expect(content).To(ContainSubstring("rbac:"))
+			// imagePullSecrets should be commented when not found in DeploymentConfig
+			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
+			// New fields should be commented when not found
+			Expect(content).To(ContainSubstring("# strategy:"))
+			Expect(content).To(ContainSubstring("# priorityClassName:"))
+			Expect(content).To(ContainSubstring("# topologySpreadConstraints: []"))
+			Expect(content).To(ContainSubstring("# terminationGracePeriodSeconds: 10"))
 		})
 
-		It("should include env list and envOverrides for CLI", func() {
+		It("should include env and envOverrides only when env exists in kustomize", func() {
+			// Add env to deployment config (operator-specific runtime fields - only appear if found in kustomize)
+			valuesTemplate.DeploymentConfig = map[string]any{
+				"env": []any{
+					map[string]any{"name": "FOO", "value": "bar"},
+				},
+			}
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+
 			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("env: []"))
+			Expect(content).To(ContainSubstring("env:"))
 			Expect(content).To(ContainSubstring("envOverrides: {}"))
 			Expect(content).To(ContainSubstring("--set manager.envOverrides.VAR=value"))
 		})
@@ -89,11 +105,13 @@ var _ = Describe("HelmValuesBasic", func() {
 			content := valuesTemplate.GetBody()
 
 			Expect(content).To(ContainSubstring("manager:"))
-			Expect(content).To(ContainSubstring("args: []"))
+			// Operator-specific runtime fields (args) should NOT appear when DeploymentConfig is empty
+			Expect(content).NotTo(ContainSubstring("args:"))
 			Expect(content).To(ContainSubstring("metrics:"))
 			Expect(content).To(ContainSubstring("prometheus:"))
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("imagePullSecrets: []"))
+			Expect(content).To(ContainSubstring("rbac:"))
+			// imagePullSecrets should be commented when not found in DeploymentConfig
+			Expect(content).To(ContainSubstring("# imagePullSecrets:"))
 		})
 	})
 
@@ -172,6 +190,65 @@ var _ = Describe("HelmValuesBasic", func() {
 			Expect(content).To(ContainSubstring("affinity: {}"))
 			Expect(content).To(ContainSubstring("nodeSelector: {}"))
 			Expect(content).To(ContainSubstring("tolerations: []"))
+		})
+	})
+
+	Context("with extra volumes in deployment config", func() {
+		It("should add extraVolumeMounts and extraVolumes section to values", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks: false,
+				DeploymentConfig: map[string]any{
+					"extraVolumes": []any{
+						map[string]any{"name": "my-secret", "secret": map[string]any{"secretName": "my-secret"}},
+					},
+					"extraVolumeMounts": []any{
+						map[string]any{"name": "my-secret", "mountPath": "/etc/secret", "readOnly": true},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("Additional volume mounts"))
+			Expect(content).To(ContainSubstring("extraVolumeMounts: []"))
+			Expect(content).To(ContainSubstring("extraVolumes: []"))
+		})
+
+		It("should not include webhook or metrics volume names in values when extra volumes are present", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks: true,
+				DeploymentConfig: map[string]any{
+					"extraVolumes": []any{
+						map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "app-secret"}},
+					},
+					"extraVolumeMounts": []any{
+						map[string]any{"name": "app-secret", "mountPath": "/etc/app", "readOnly": true},
+					},
+				},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).To(ContainSubstring("extraVolumes:"))
+			Expect(content).To(ContainSubstring("extraVolumeMounts:"))
+			Expect(content).NotTo(ContainSubstring("webhook-certs"))
+			Expect(content).NotTo(ContainSubstring("metrics-certs"))
+		})
+
+		It("should not add extraVolumes section when deployment config has no extra volumes", func() {
+			valuesTemplate = &HelmValuesBasic{
+				HasWebhooks:      false,
+				DeploymentConfig: map[string]any{},
+			}
+			valuesTemplate.InjectProjectName("test-project")
+			err := valuesTemplate.SetTemplateDefaults()
+			Expect(err).NotTo(HaveOccurred())
+			content := valuesTemplate.GetBody()
+			Expect(content).NotTo(ContainSubstring("Additional volume mounts"))
+			Expect(content).NotTo(ContainSubstring("extraVolumeMounts:"))
+			Expect(content).NotTo(ContainSubstring("extraVolumes:"))
 		})
 	})
 
@@ -303,21 +380,41 @@ var _ = Describe("HelmValuesBasic", func() {
 		})
 	})
 
-	Context("rbacHelpers configuration", func() {
-		BeforeEach(func() {
-			valuesTemplate = &HelmValuesBasic{
-				HasWebhooks: false,
-			}
-			valuesTemplate.InjectProjectName("test-project")
-			err := valuesTemplate.SetTemplateDefaults()
-			Expect(err).NotTo(HaveOccurred())
-		})
+	Context("rbac configuration", func() {
+		DescribeTable("cluster-scoped RBAC handling",
+			func(hasClusterScopedRBAC bool) {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:          false,
+					HasClusterScopedRBAC: hasClusterScopedRBAC,
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
 
-		It("should have rbacHelpers disabled by default", func() {
-			content := valuesTemplate.GetBody()
-			Expect(content).To(ContainSubstring("rbacHelpers:"))
-			Expect(content).To(ContainSubstring("enable: false"))
-		})
+				content := valuesTemplate.GetBody()
+
+				// Both cases should have rbac section and helpers
+				Expect(content).To(ContainSubstring("rbac:"))
+				Expect(content).To(ContainSubstring("helpers:"))
+				Expect(content).To(ContainSubstring("enable: false"))
+
+				if hasClusterScopedRBAC {
+					// Should include namespaced option and comments
+					Expect(content).To(ContainSubstring("namespaced: false"))
+					Expect(content).To(ContainSubstring("RBAC resource scope"))
+					Expect(content).To(ContainSubstring("ClusterRole/ClusterRoleBinding (all namespaces)"))
+					Expect(content).To(ContainSubstring("Role/RoleBinding (release namespace only)"))
+				} else {
+					// Should NOT include namespaced option and comments
+					Expect(content).NotTo(ContainSubstring("namespaced:"))
+					Expect(content).NotTo(ContainSubstring("RBAC resource scope"))
+					Expect(content).NotTo(ContainSubstring("ClusterRole/ClusterRoleBinding (all namespaces)"))
+					Expect(content).NotTo(ContainSubstring("Role/RoleBinding (release namespace only)"))
+				}
+			},
+			Entry("with cluster-scoped RBAC", true),
+			Entry("without cluster-scoped RBAC (namespace-scoped project)", false),
+		)
 	})
 
 	Context("Port configuration", func() {
@@ -501,6 +598,186 @@ var _ = Describe("HelmValuesBasic", func() {
 
 				Expect(metricsLine).To(BeNumerically(">", 0))
 				Expect(portLine).To(BeNumerically(">", metricsLine))
+			})
+		})
+
+		Context("Optional Kubernetes deployment fields", func() {
+			It("should be commented when not found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks:      false,
+					DeploymentConfig: map[string]any{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// All optional Kubernetes fields should be commented when not found in kustomize
+				Expect(content).To(ContainSubstring("# strategy:"))
+				Expect(content).To(ContainSubstring("# priorityClassName:"))
+				Expect(content).To(ContainSubstring("# topologySpreadConstraints: []"))
+				Expect(content).To(ContainSubstring("# terminationGracePeriodSeconds: 10"))
+			})
+
+			It("should be uncommented when strategy is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"strategy": map[string]any{
+							"type": "RollingUpdate",
+							"rollingUpdate": map[string]any{
+								"maxSurge":       "25%",
+								"maxUnavailable": "25%",
+							},
+						},
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// strategy should be uncommented with actual values
+				Expect(content).To(ContainSubstring("strategy:"))
+				Expect(content).To(ContainSubstring("type: RollingUpdate"))
+				Expect(content).To(ContainSubstring("maxSurge: 25%"))
+				Expect(content).To(ContainSubstring("maxUnavailable: 25%"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# strategy:"))
+			})
+
+			It("should be uncommented when priorityClassName is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"priorityClassName": "high-priority",
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// priorityClassName should be uncommented with actual value
+				Expect(content).To(ContainSubstring("priorityClassName: high-priority"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# priorityClassName:"))
+			})
+
+			It("should be uncommented when topologySpreadConstraints is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"topologySpreadConstraints": []any{
+							map[string]any{
+								"maxSkew":           1,
+								"topologyKey":       "kubernetes.io/hostname",
+								"whenUnsatisfiable": "DoNotSchedule",
+							},
+						},
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// topologySpreadConstraints should be uncommented with actual values
+				Expect(content).To(ContainSubstring("topologySpreadConstraints:"))
+				Expect(content).To(ContainSubstring("maxSkew: 1"))
+				Expect(content).To(ContainSubstring("topologyKey: kubernetes.io/hostname"))
+				Expect(content).To(ContainSubstring("whenUnsatisfiable: DoNotSchedule"))
+				// Should NOT have commented version
+				Expect(content).NotTo(ContainSubstring("# topologySpreadConstraints:"))
+			})
+
+			It("should be uncommented when terminationGracePeriodSeconds is found in kustomize", func() {
+				valuesTemplate = &HelmValuesBasic{
+					HasWebhooks: false,
+					DeploymentConfig: map[string]any{
+						"terminationGracePeriodSeconds": 30,
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// terminationGracePeriodSeconds should be uncommented with actual value
+				Expect(content).To(ContainSubstring("terminationGracePeriodSeconds: 30"))
+				// Should NOT have commented version at default value
+				Expect(content).NotTo(ContainSubstring("# terminationGracePeriodSeconds: 10"))
+			})
+		})
+
+		Context("roleNamespaces configuration", func() {
+			It("should include roleNamespaces section when RoleNamespaces is populated", func() {
+				valuesTemplate := &HelmValuesBasic{
+					HasClusterScopedRBAC: true,
+					RoleNamespaces: map[string]string{
+						"manager-role-infrastructure": "infrastructure",
+						"manager-role-users":          "users",
+						"manager-role-monitoring":     "monitoring",
+					},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// Should have roleNamespaces section
+				Expect(content).To(ContainSubstring("roleNamespaces:"))
+
+				// Should have all three role names with proper quoting (using suffix-based keys)
+				Expect(content).To(ContainSubstring(`"manager-role-infrastructure": "infrastructure"`))
+				Expect(content).To(ContainSubstring(`"manager-role-users": "users"`))
+				Expect(content).To(ContainSubstring(`"manager-role-monitoring": "monitoring"`))
+
+				// Verify stable, sorted order
+				lines := strings.Split(content, "\n")
+				var roleNsLines []string
+				inRoleNs := false
+				for _, line := range lines {
+					if strings.Contains(line, "roleNamespaces:") {
+						inRoleNs = true
+						continue
+					}
+					if inRoleNs {
+						if strings.HasPrefix(strings.TrimSpace(line), `"manager-role-`) {
+							roleNsLines = append(roleNsLines, strings.TrimSpace(line))
+						} else if !strings.HasPrefix(strings.TrimSpace(line), "#") && strings.TrimSpace(line) != "" {
+							// End of roleNamespaces section
+							break
+						}
+					}
+				}
+
+				// Should have exactly 3 role namespace entries in sorted order
+				Expect(roleNsLines).To(HaveLen(3))
+				Expect(roleNsLines[0]).To(ContainSubstring("infrastructure"))
+				Expect(roleNsLines[1]).To(ContainSubstring("monitoring"))
+				Expect(roleNsLines[2]).To(ContainSubstring("users"))
+			})
+
+			It("should not include roleNamespaces section when RoleNamespaces is empty", func() {
+				valuesTemplate := &HelmValuesBasic{
+					HasClusterScopedRBAC: true,
+					RoleNamespaces:       map[string]string{},
+				}
+				valuesTemplate.InjectProjectName("test-project")
+				err := valuesTemplate.SetTemplateDefaults()
+				Expect(err).NotTo(HaveOccurred())
+
+				content := valuesTemplate.GetBody()
+
+				// Should NOT have roleNamespaces section
+				Expect(content).NotTo(ContainSubstring("roleNamespaces:"))
 			})
 		})
 	})

@@ -9,8 +9,8 @@ not re-applying your code.
 By default, the final result is **squashed into a single commit** on a dedicated output branch.
 If you prefer to keep the full history (no squash), use `--show-commits`.
 
-<aside class="note">
-<H1> Automate this process </H1>
+<aside class="note" role="note">
+<p class="note-title"> Automate this process </p>
 
 You can reduce the burden of keeping your project up to date by using the
 [AutoUpdate Plugin][autoupdate-plugin] which
@@ -218,8 +218,8 @@ kubebuilder alpha update \
   --git-config rerere.enabled=true
 ```
 
-<aside class="warning">
-    <h3>You might need to upgrade your project first</h3>
+<aside class="warning" role="note">
+    <p class="note-title">You might need to upgrade your project first</p>
 
 This command uses `kubebuilder alpha generate` under the hood.
 We support projects created with <strong>v4.5.0+</strong>.
@@ -254,8 +254,8 @@ We use that value to pick the correct CLI for re-scaffolding.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/J8zonID__8k?si=WC-FXOHX0mCjph71" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-<aside class="note">
-<h1>About this demo</h1>
+<aside class="note" role="note">
+<p class="note-title">About this demo</p>
 
 This video was recorded with Kubebuilder release `v7.0.1`.
 Since then, the command has been improved,

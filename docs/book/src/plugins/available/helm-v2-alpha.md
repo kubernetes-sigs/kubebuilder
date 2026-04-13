@@ -123,8 +123,8 @@ The plugin creates a chart layout that matches your `config/`:
         └── my-config.yaml
 ```
 
-<aside class="note">
-<H1>Chart Structure</H1>
+<aside class="note" role="note">
+<p class="note-title">Chart Structure</p>
 
 The chart structure mirrors your project's resources:
 
@@ -136,8 +136,8 @@ By default, `make build-installer` does not include samples in `dist/install.yam
 
 </aside>
 
-<aside class="note">
-<H1> Why CRDs are added under templates? </H1>
+<aside class="note" role="note">
+<p class="note-title"> Why CRDs are added under templates? </p>
 
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
 
@@ -154,8 +154,8 @@ any other resource, ensuring they are applied and upgraded as expected.
 While this prevents mixing CRDs and CRs of the same type in a single chart (since Helm cannot wait between creation steps), it ensures predictable and explicit lifecycle management of CRDs.
 
 In short:
-- **Helm `crds/` directory** → one-time install only, no upgrades.
-- **Kubebuilder `templates/crd`** → CRDs managed like other manifests, upgrades included.
+- **Helm `crds/` directory**: one-time install only, no upgrades.
+- **Kubebuilder `templates/crd`**: CRDs managed like other manifests, upgrades included.
 
 This design choice prioritizes correctness and maintainability over Helm's default convention,
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
@@ -176,6 +176,42 @@ The `NOTES.txt` file is preserved on subsequent runs (unless `--force` is used),
 The generated `values.yaml` provides configuration options extracted from your actual deployment.
 Namespace creation is not managed by the chart; use Helm's `--namespace` and `--create-namespace` flags when installing.
 
+### How Fields Are Exposed
+
+The plugin intelligently decides which fields to include in `values.yaml` based on their purpose:
+
+**Operator-specific runtime configuration (only if found in kustomize):**
+
+These fields are part of your operator's runtime contract and only appear when present in your deployment:
+- `manager.args` - Controller manager arguments
+- `manager.env` - Environment variables
+- `manager.envOverrides` - Environment variable overrides (CLI --set)
+- `manager.extraVolumes` / `manager.extraVolumeMounts` - Additional volumes
+
+**Optional Kubernetes features (commented unless found in kustomize):**
+
+These are valid deployment options shown as commented examples when not used. If found in kustomize, they appear uncommented with actual values:
+- `manager.imagePullSecrets` - Registry credentials
+- `manager.podSecurityContext` - Pod-level security settings
+- `manager.securityContext` - Container-level security settings
+- `manager.resources` - Resource limits and requests
+- `manager.strategy` - Deployment strategy (RollingUpdate/Recreate)
+- `manager.priorityClassName` - Pod scheduling priority
+- `manager.topologySpreadConstraints` - High availability scheduling
+- `manager.terminationGracePeriodSeconds` - Graceful shutdown period
+
+**Standard Helm configuration (always exposed):**
+
+These are standard Helm fields always present for user customization:
+- `nameOverride` / `fullnameOverride` - Chart naming (commented by default)
+- `manager.replicas` - Pod replica count
+- `manager.image.*` - Container image configuration
+- `manager.affinity` - Pod affinity rules
+- `manager.nodeSelector` - Node selection
+- `manager.tolerations` - Node tolerations
+
+**Important:** If a value is defined in kustomize, it will appear uncommented in `values.yaml` with the actual value. This ensures the Helm chart mirrors your operator's configuration exactly.
+
 **Example**
 
 ```yaml
@@ -190,6 +226,11 @@ Namespace creation is not managed by the chart; use Helm's `--namespace` and `--
 ## Configure the controller manager deployment
 ##
 manager:
+  ## Set to false to skip manager installation.
+  ## Defaults to true when this field is missing (backward compatibility).
+  ##
+  enabled: true
+
   replicas: 1
 
   image:
@@ -210,10 +251,13 @@ manager:
     - name: MEMCACHED_IMAGE
       value: memcached:1.6.26-alpine3.19
 
+  ## Env overrides (--set manager.envOverrides.VAR=value)
+  ## Same name in env above: this value takes precedence.
+  ##
+  envOverrides: {}
+
   ## Image pull secrets
   ##
-  imagePullSecrets: []
-  # Example:
   # imagePullSecrets:
   #   - name: myregistrykey
 
@@ -276,11 +320,63 @@ manager:
   #     effect: "NoExecute"
   #     tolerationSeconds: 6000
 
-## Helper RBAC roles for managing custom resources
+  ## Deployment strategy
+  ##
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxSurge: 25%
+  #     maxUnavailable: 25%
+
+  ## Priority class name
+  ##
+  # priorityClassName: ""
+
+  ## Topology spread constraints
+  ##
+  # topologySpreadConstraints: []
+  # Example:
+  # topologySpreadConstraints:
+  #   - maxSkew: 1
+  #     topologyKey: kubernetes.io/hostname
+  #     whenUnsatisfiable: DoNotSchedule
+  #     labelSelector:
+  #       matchLabels:
+  #         app.kubernetes.io/name: project
+
+  ## Termination grace period seconds
+  ##
+  terminationGracePeriodSeconds: 10
+
+  ## Custom Deployment labels
+  ##
+  # labels: {}
+
+  ## Custom Deployment annotations
+  ##
+  # annotations: {}
+
+  ## Custom Pod labels and annotations
+  ##
+  # pod:
+  #   labels: {}
+  #   annotations: {}
+
+## RBAC configuration
 ##
-rbacHelpers:
-  # Install convenience admin/editor/viewer roles for CRDs
-  enable: false
+rbac:
+  ## RBAC resource scope
+  ## - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  ## - true: Role/RoleBinding (release namespace only)
+  ##
+  namespaced: false
+
+  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
+  helpers:
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
+    enable: false
 
 ## Custom Resource Definitions
 ##
@@ -318,6 +414,255 @@ prometheus:
   enable: false
 ```
 
+### Common Installation Patterns
+
+**CRD and RBAC only installation** (for CRD management separate from the operator):
+
+```shell
+helm install my-release ./dist/chart \
+  --set manager.enabled=false \
+  --set webhook.enable=false \
+  --set certManager.enable=false \
+  --set metrics.enable=false
+```
+
+**Manager without webhooks** (e.g., operator without admission control):
+
+```shell
+helm install my-release ./dist/chart \
+  --set webhook.enable=false \
+  --set certManager.enable=false
+```
+
+**Full installation** (default - all features enabled):
+
+```shell
+helm install my-release ./dist/chart
+```
+
+### RBAC Configuration
+
+#### `rbac.namespaced`
+
+Controls the scope of RBAC permissions:
+
+- **`false` (default)**: ClusterRole/ClusterRoleBinding (all namespaces)
+- **`true`**: Role/RoleBinding (release namespace only)
+
+<aside class="note" role="note">
+<p class="note-title">Important Notes</p>
+
+- This controls RBAC permissions only. To control watch scope, use `WATCH_NAMESPACE` ([Manager Scope](../../reference/manager-scope.md)).
+- `metrics-auth-role` is always a `ClusterRole` ([Metrics Configuration](#metrics-configuration)).
+- `leader-election-role` is always a `Role`.
+
+</aside>
+
+#### `rbac.roleNamespaces`
+
+When your controller requires RBAC permissions in specific namespaces, the Helm plugin automatically detects Roles and RoleBindings deployed to non-manager namespaces and creates separate `roleNamespaces` entries for each resource (both the Role and its corresponding RoleBinding).
+
+**Example scenario:**
+
+Your controller needs to manage deployments in an `infrastructure` namespace and secrets in a `users` namespace:
+
+```go
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,resources=deployments,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",namespace=users,resources=secrets,verbs=get;list;watch
+```
+
+The plugin detects the RBAC resource-to-namespace mappings and generates:
+
+**`values.yaml`:**
+```yaml
+rbac:
+  ## RBAC resource scope
+  ## - false (default): ClusterRole/ClusterRoleBinding (all namespaces)
+  ## - true: Role/RoleBinding (release namespace only)
+  ##
+  namespaced: false
+
+  ## Namespace configuration for Roles deployed to namespaces different from the manager namespace
+  ## Keys are resource name suffixes (without project prefix)
+  ##
+  roleNamespaces:
+    # RBAC resource manager-role-infrastructure deploys to namespace infrastructure
+    "manager-role-infrastructure": "infrastructure"
+    # RBAC resource manager-rolebinding-infrastructure deploys to namespace infrastructure
+    "manager-rolebinding-infrastructure": "infrastructure"
+    # RBAC resource manager-role-users deploys to namespace users
+    "manager-role-users": "users"
+    # RBAC resource manager-rolebinding-users deploys to namespace users
+    "manager-rolebinding-users": "users"
+
+  ## Helper roles for CRD management (admin/editor/viewer)
+  ##
+  helpers:
+    ## Install convenience admin/editor/viewer roles for CRDs
+    ##
+    enable: false
+```
+
+**Generated templates:**
+```yaml
+# Role template
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-role-infrastructure" "context" $) }}
+  namespace: {{ index .Values.rbac.roleNamespaces "manager-role-infrastructure" | default "infrastructure" }}
+rules:
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get, list, watch]
+---
+# RoleBinding template
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-rolebinding-infrastructure" "context" $) }}
+  namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-infrastructure" | default "infrastructure" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "my-operator.resourceName" (dict "suffix" "manager-role-infrastructure" "context" $) }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "my-operator.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+```
+
+**Override namespace names at deployment:**
+
+You can override namespaces using a values file:
+
+```yaml
+# custom-values.yaml
+rbac:
+  roleNamespaces:
+    "manager-role-infrastructure": "prod-infra"
+    "manager-rolebinding-infrastructure": "prod-infra"
+    "manager-role-users": "prod-users"
+    "manager-rolebinding-users": "prod-users"
+```
+
+```shell
+helm install my-operator ./dist/chart -f custom-values.yaml
+```
+
+Alternatively, use bracket notation with `--set`:
+```shell
+helm install my-operator ./dist/chart \
+  --set 'rbac.roleNamespaces[manager-role-infrastructure]=prod-infra' \
+  --set 'rbac.roleNamespaces[manager-rolebinding-infrastructure]=prod-infra' \
+  --set 'rbac.roleNamespaces[manager-role-users]=prod-users' \
+  --set 'rbac.roleNamespaces[manager-rolebinding-users]=prod-users'
+```
+
+<aside class="note" role="note">
+<p class="note-title">Namespace Configuration</p>
+
+- **Keys use suffix-based naming** (without project prefix) for stability across different release names and overrides
+- Templates use the `index` function with the suffix to access namespace values (e.g., `{{ index .Values.rbac.roleNamespaces "manager-role-infrastructure" | default "infrastructure" }}`), which safely handles names with hyphens
+- If a `roleNamespaces` entry is missing, the template falls back to the original namespace from kustomize, preventing `<no value>` errors
+- This setting controls RBAC permissions only. To control which namespaces the operator watches, configure the `WATCH_NAMESPACE` environment variable (see [Manager Scope](../../reference/manager-scope.md))
+
+</aside>
+
+#### `rbac.helpers.enable`
+
+Controls whether to create convenience RBAC roles (admin/editor/viewer) for your Custom Resources. Default: `false`.
+
+These helper roles follow Kubernetes conventions and can be bound to users or groups to grant different levels of access to your CRs:
+- **admin**: Full CRUD access to the custom resource
+- **editor**: Create, update, and delete access (no special permissions)
+- **viewer**: Read-only access
+
+### Metrics Configuration
+
+#### `metrics.secure`
+
+Controls transport security and authentication for the metrics endpoint. Default: `true`.
+
+- **`true` (HTTPS with RBAC)**:
+  - Uses HTTPS transport (`--metrics-secure=true`, default in controller-runtime)
+  - Creates TLS certificates (when `certManager.enable=true`)
+  - Creates `metrics-auth-role` ClusterRole for TokenReview/SubjectAccessReview
+  - ServiceMonitor uses `scheme: https` with TLS config
+
+- **`false` (HTTP without RBAC)**:
+  - Uses HTTP transport (`--metrics-secure=false`)
+  - No TLS certificates created
+  - No RBAC authentication (metrics endpoint is open)
+  - ServiceMonitor uses `scheme: http` without TLS config
+
+<aside class="note" role="note">
+<p class="note-title">Metrics RBAC is independent from manager RBAC</p>
+
+The `metrics-auth-role` and `metrics-reader` are **always ClusterRoles**, even when `rbac.namespaced=true`.
+
+This is because metrics authentication uses cluster-scoped APIs ([`TokenReview`/`SubjectAccessReview`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/filters#WithAuthenticationAndAuthorization)) for authenticating metric scrapers (like Prometheus), which is separate from the manager's operational RBAC for managing resources.
+
+**You can use `rbac.namespaced=true` with `metrics.secure=true`** - the manager will use namespace-scoped Roles while metrics authentication uses cluster-scoped ClusterRoles.
+
+</aside>
+
+### Extra volumes
+
+The chart supports additional volumes and volume mounts for the manager (e.g. secrets, config files), alongside the built-in webhook and metrics cert volumes.
+
+- **Config volumes**: Volumes in the manager deployment (e.g. `config/manager/manager.yaml` or kustomize patches) are written into the chart template. Re-running `kubebuilder edit --plugins=helm/v2-alpha` updates the template from config; `values.yaml` is not overwritten.
+- **Values**: When the manager deployment has extra volumes (other than webhook/metrics), `values.yaml` gets `manager.extraVolumes` and `manager.extraVolumeMounts`. Use them to add more entries; the template appends them after the config volumes. Same structure as in a Pod spec; mount names must match volume names.
+
+Webhook and metrics (`webhook-certs`, `metrics-certs`) are not in `extraVolumes`. They are conditional on `certManager.enable` and `metrics.enable`, like the rest of the chart.
+
+### Template Conditionals
+
+Operator-specific and optional fields use Helm conditionals in templates matching the patterns in `templates/manager/manager.yaml`:
+
+```yaml
+# Operator-specific - env always renders the key, with [] when unset
+env:
+{{- if .Values.manager.env }}
+  {{- toYaml .Values.manager.env | nindent 2 }}
+{{- else }}
+  []
+{{- end }}
+
+# Optional feature - strategy renders only when defined (uses 'with')
+{{- with .Values.manager.strategy }}
+strategy:
+  {{- toYaml . | nindent 6 }}
+{{- end }}
+
+# terminationGracePeriodSeconds renders when the key exists, even if set to 0
+{{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+{{- end }}
+```
+
+This means:
+- If you comment out an optional field in `values.yaml`, it won't appear in the deployed manifests
+- You can safely uncomment optional fields to enable Kubernetes features
+- Operator-specific fields (env, args) always render when present in templates
+- Zero values like `terminationGracePeriodSeconds: 0` work correctly with `hasKey`
+
+### Custom Labels and Annotations
+
+Add custom labels and annotations to the manager Deployment and Pod template:
+
+- **`manager.labels`**: Custom labels for the Deployment (e.g., team, environment)
+- **`manager.annotations`**: Custom annotations for the Deployment
+- **`manager.pod.labels`**: Custom labels for the Pod template
+- **`manager.pod.annotations`**: Custom annotations for the Pod template (e.g., Prometheus metrics)
+
+<aside class="note" role="note">
+<p class="note-title">Duplicate Key Filtering</p>
+
+Duplicate keys are automatically filtered - existing keys from the kustomize output (such as `control-plane`) are detected and excluded from your custom values to prevent conflicts.
+
+</aside>
+
 ### Installation
 
 The first time you run the plugin, it adds convenient Helm deployment targets to your `Makefile`:
@@ -348,8 +693,8 @@ The Makefile targets use sensible defaults extracted from your project configura
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
 | **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
 
-<aside class="note">
-<H1> Examples </H1>
+<aside class="note" role="note">
+<p class="note-title"> Examples </p>
 
 You can find example projects in [testdata/project-v4-with-plugins](https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins).
 

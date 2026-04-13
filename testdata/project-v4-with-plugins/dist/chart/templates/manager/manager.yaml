@@ -1,3 +1,4 @@
+{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,9 +8,21 @@ metadata:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     control-plane: controller-manager
+    {{- with .Values.manager.labels }}
+    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
   name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.manager.annotations }}
+  annotations:
+    {{- toYaml .Values.manager.annotations | nindent 4 }}
+  {{- end }}
 spec:
+  {{- with .Values.manager.strategy }}
+  strategy: {{ toYaml . | nindent 6 }}
+  {{- end }}
   replicas: {{ .Values.manager.replicas }}
   selector:
     matchLabels:
@@ -19,13 +32,33 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        {{- with .Values.manager.pod }}
+        {{- with .annotations }}
+        {{- with omit . "kubectl.kubernetes.io/default-container" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
       labels:
         app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
         helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         control-plane: controller-manager
+        {{- with .Values.manager.pod }}
+        {{- with .labels }}
+        {{- with omit . "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "app.kubernetes.io/managed-by" "control-plane" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
     spec:
+      {{- with .Values.manager.topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
       {{- with .Values.manager.tolerations }}
       tolerations: {{ toYaml . | nindent 10 }}
       {{- end }}
@@ -35,10 +68,17 @@ spec:
       {{- with .Values.manager.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 10 }}
       {{- end }}
+      {{- with .Values.manager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - args:
         {{- if .Values.metrics.enable }}
         - --metrics-bind-address=:{{ .Values.metrics.port }}
+        {{- if not .Values.metrics.secure }}
+        - --metrics-secure=false
+        {{- end }}
         {{- else }}
         # Bind to :0 to disable the controller-runtime managed metrics server
         - --metrics-bind-address=0
@@ -66,7 +106,7 @@ spec:
           {{- else }}
           []
           {{- end }}
-        image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+        image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
         livenessProbe:
           httpGet:
@@ -76,6 +116,9 @@ spec:
           periodSeconds: 20
         name: manager
         ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
         - containerPort: {{ .Values.webhook.port }}
           name: webhook-server
           protocol: TCP
@@ -98,6 +141,9 @@ spec:
           {}
           {{- end }}
         volumeMounts:
+          {{- if .Values.manager.extraVolumeMounts }}
+          {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
+          {{- end }}
         {{- if .Values.certManager.enable }}
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: webhook-certs
@@ -110,10 +156,16 @@ spec:
         {}
         {{- end }}
       serviceAccountName: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
-      terminationGracePeriodSeconds: 10
+      {{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+      {{- end }}
       volumes:
+        {{- if .Values.manager.extraVolumes }}
+        {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
+        {{- end }}
       {{- if .Values.certManager.enable }}
       - name: webhook-certs
         secret:
           secretName: webhook-server-cert
       {{- end }}
+{{- end }}

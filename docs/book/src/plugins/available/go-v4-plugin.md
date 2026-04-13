@@ -10,8 +10,8 @@ that helps in constructing sets of [controllers][controller-runtime].
 By following the [quickstart][quickstart] and creating any project,
 you will be using this plugin by default.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check samples using this plugin by looking at the `project-v4-<options>` projects under the [testdata][testdata]
 directory on the root directory of the Kubebuilder project.

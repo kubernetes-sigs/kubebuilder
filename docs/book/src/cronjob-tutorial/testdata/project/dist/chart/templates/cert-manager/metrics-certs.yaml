@@ -1,4 +1,4 @@
-{{- if and .Values.certManager.enable .Values.metrics.enable }}
+{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

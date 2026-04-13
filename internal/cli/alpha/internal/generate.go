@@ -33,14 +33,15 @@ import (
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
+	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha" //nolint:staticcheck // Deprecated
 	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 // Generate store the required info for the command
 type Generate struct {
-	InputDir  string
-	OutputDir string
+	InputDir           string
+	OutputDir          string
+	SkipGoVersionCheck bool
 }
 
 // Define a variable to allow overriding the behavior of getExecutablePath for testing.
@@ -51,6 +52,31 @@ func (opts *Generate) Generate() error {
 	projectConfig, err := common.LoadProjectConfig(opts.InputDir)
 	if err != nil {
 		return fmt.Errorf("error loading project config: %v", err)
+	}
+
+	// Save existing boilerplate before cleanup so we can restore it
+	var preservedBoilerplate []byte
+	var boilerplateFileExists bool
+	boilerplatePath := filepath.Join(opts.InputDir, "hack", "boilerplate.go.txt")
+	if _, statErr := os.Stat(boilerplatePath); statErr == nil {
+		boilerplateFileExists = true
+		preservedBoilerplate, err = os.ReadFile(boilerplatePath)
+		if err != nil {
+			return fmt.Errorf("failed to read existing boilerplate file %q: %w", boilerplatePath, err)
+		}
+
+		// Warn if boilerplate isn't a valid Go comment block, but don't fail
+		if len(preservedBoilerplate) > 0 {
+			content := strings.TrimSpace(string(preservedBoilerplate))
+			if !strings.HasPrefix(content, "/*") || !strings.HasSuffix(content, "*/") {
+				slog.Warn(
+					"Existing boilerplate file is not a valid Go comment block; preserving it as-is for regeneration",
+					"path", boilerplatePath,
+				)
+			}
+		}
+
+		slog.Info("Preserving existing license header file for regeneration")
 	}
 
 	if opts.OutputDir == "" {
@@ -95,7 +121,29 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error changing working directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err = kubebuilderInit(projectConfig); err != nil {
+	// Create temp file with preserved boilerplate to pass to init
+	var tempLicenseFile string
+	if boilerplateFileExists {
+		tempFile, createErr := os.CreateTemp("", "kubebuilder-license-*.txt")
+		if createErr != nil {
+			return fmt.Errorf("failed to create temporary license file: %w", createErr)
+		}
+		defer func() {
+			_ = os.Remove(tempFile.Name())
+		}()
+
+		if len(preservedBoilerplate) > 0 {
+			if _, writeErr := tempFile.Write(preservedBoilerplate); writeErr != nil {
+				return fmt.Errorf("failed to write temporary license file: %w", writeErr)
+			}
+		}
+		_ = tempFile.Close()
+
+		tempLicenseFile = tempFile.Name()
+		slog.Info("Created temporary license file for init", "path", tempLicenseFile)
+	}
+
+	if err = kubebuilderInit(projectConfig, opts, tempLicenseFile); err != nil {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
@@ -186,8 +234,8 @@ func changeWorkingDirectory(outputDir string) error {
 }
 
 // Initializes the project with Kubebuilder.
-func kubebuilderInit(s store.Store) error {
-	args := append([]string{"init"}, getInitArgs(s)...)
+func kubebuilderInit(s store.Store, opts *Generate, tempLicenseFile string) error {
+	args := append([]string{"init"}, getInitArgs(s, opts, tempLicenseFile)...)
 	execPath, err := getExecutablePathFunc()
 	if err != nil {
 		return err
@@ -206,15 +254,23 @@ func kubebuilderCreate(s store.Store) error {
 		return fmt.Errorf("failed to get resources: %w", err)
 	}
 
-	// First, scaffold all APIs
+	// Scaffold APIs first, as controllers and webhooks depend on them
 	for _, r := range resources {
 		if err = createAPI(r); err != nil {
 			return fmt.Errorf("failed to create API for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
 		}
 	}
 
-	// Then, scaffold all webhooks
-	// We cannot create a webhook for an API that does not exist
+	// Scaffold controllers on top of APIs
+	// Multiple controllers can be scaffolded for the same API
+	for _, r := range resources {
+		if err = createControllers(r); err != nil {
+			return fmt.Errorf("failed to create controllers for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
+		}
+	}
+
+	// Scaffold webhooks on top of APIs
+	// Webhooks require the API to exist
 	for _, r := range resources {
 		if err = createWebhook(r); err != nil {
 			return fmt.Errorf("failed to create webhook for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
@@ -387,8 +443,13 @@ func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) err
 }
 
 // Helper function to get Init arguments for Kubebuilder.
-func getInitArgs(s store.Store) []string {
+func getInitArgs(s store.Store, opts *Generate, tempLicenseFile string) []string {
 	var args []string
+
+	if opts.SkipGoVersionCheck {
+		args = append(args, "--skip-go-version-check")
+	}
+
 	plugins := s.Config().GetPluginChain()
 
 	// Define outdated plugin versions that need replacement
@@ -428,6 +489,13 @@ func getInitArgs(s store.Store) []string {
 	}
 	if s.Config().IsNamespaced() {
 		args = append(args, "--namespaced")
+	}
+
+	// Use preserved boilerplate if it existed, otherwise --license none
+	if tempLicenseFile != "" {
+		args = append(args, "--license-file", tempLicenseFile)
+	} else {
+		args = append(args, "--license", "none")
 	}
 	return args
 }
@@ -485,9 +553,59 @@ func getDeployImageOptions(resourceData deployimagev1alpha1.ResourceData) []stri
 }
 
 // Creates an API resource.
+// Controllers are scaffolded separately to support multiple controllers per API.
 func createAPI(res resource.Resource) error {
 	args := append([]string{"create", "api"}, getGVKFlags(res)...)
 	args = append(args, getAPIResourceFlags(res)...)
+
+	// Add the external API flags if the resource is external
+	if res.IsExternal() {
+		args = append(args, "--external-api-path", res.Path)
+		args = append(args, "--external-api-domain", res.Domain)
+		// Add module if specified
+		if res.Module != "" {
+			args = append(args, "--external-api-module", res.Module)
+		}
+	}
+
+	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+	}
+
+	return nil
+}
+
+// Creates controllers for a resource.
+// This function supports multiple controllers per resource (GVK).
+func createControllers(res resource.Resource) error {
+	if res.Controllers == nil || res.Controllers.IsEmpty() {
+		if !res.Controller {
+			return nil
+		}
+		return createControllerWithName(res, "")
+	}
+
+	for _, controller := range *res.Controllers {
+		if err := createControllerWithName(res, controller.Name); err != nil {
+			return fmt.Errorf("failed to create controller %q: %w", controller.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// Creates a single controller for a resource with a specific name.
+func createControllerWithName(res resource.Resource, controllerName string) error {
+	args := append([]string{"create", "api"}, getGVKFlags(res)...)
+
+	// Always set --resource=false since we're only creating the controller
+	args = append(args, "--resource=false")
+	args = append(args, "--controller=true")
+
+	// Add controller name if specified
+	if controllerName != "" {
+		args = append(args, "--controller-name", controllerName)
+	}
 
 	// Add the external API flags if the resource is external
 	if res.IsExternal() {
@@ -520,11 +638,11 @@ func getAPIResourceFlags(res resource.Resource) []string {
 			args = append(args, "--namespaced=false")
 		}
 	}
-	if res.Controller {
-		args = append(args, "--controller")
-	} else {
-		args = append(args, "--controller=false")
-	}
+
+	// Always disable controller creation in the API scaffolding step
+	// Controllers will be created separately in createControllers()
+	args = append(args, "--controller=false")
+
 	return args
 }
 

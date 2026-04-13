@@ -130,8 +130,8 @@ Template: corev1.PodTemplateSpec{
     },
 ```
 
-<aside class="note">
-<h1> Example(s) </h1>
+<aside class="note" role="note">
+<p class="note-title"> Example(s) </p>
 
 You can look for some code examples by checking the code which is generated via the Deploy
 Image plugin. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
@@ -176,8 +176,8 @@ Therefore, ensure that you uncomment the following code in the `config/manager/m
 #               - linux
 ```
 
-<aside class="note">
-<h1>Building images for releases</h1>
+<aside class="note" role="note">
+<p class="note-title">Building images for releases</p>
 
 You will probably want to automate the releases of your projects to ensure that the images are always built for the
 same platforms. Note that Goreleaser also supports [docker buildx][buildx]. See its [documentation][goreleaser-buildx] for more detail.
@@ -208,8 +208,8 @@ Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/
 an image will be built from the client host (local environment) and produce an image for
 the client os/arch, which is commonly linux/amd64 or linux/arm64.
 
-<aside class="note">
-<h1>Mac Os</h1>
+<aside class="note" role="note">
+<p class="note-title">Mac Os</p>
 
 If you are running from an Mac Os environment then, Docker also will consider it as linux/$arch. Be aware that
 when, for example, is running Kind on a Mac OS operational system the nodes will

@@ -49,25 +49,34 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 ## What to do before submitting a pull request
 
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
-1. Run `make test-unit test-e2e-local`
+1. Run `make verify` to run all verification checks (linting, testdata, docs, helm)
+1. Run `make test-unit test-e2e-local` for full testing
 
 - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a prerequisite to submit a PR.
 
+**TIP:** You can run `make verify` to check all verification steps that the CI will run. This includes linting, testdata verification, documentation checks, and Helm chart validation.
+
 Following the targets that can be used to test your changes locally.
 
-| Command             | Description                                                   | Is called in the CI? |
-| ------------------- | ------------------------------------------------------------- | -------------------- |
-| make test-unit      | Runs go tests                                                 | no                   |
-| make test           | Runs tests in shell (`./test.sh`)                             | yes                  |
-| make lint           | Run [golangci][golangci] lint checks                          | yes                  |
-| make lint-fix       | Run [golangci][golangci] to automatically perform fixes       | no                   |
-| make test-coverage  | Run coveralls to check the % of code covered by tests         | yes                  |
-| make check-testdata | Checks if the testdata dir is updated with the latest changes | yes                  |
-| make test-e2e-local | Runs the CI e2e tests locally                                 | no                   |
+| Command                      | Description                                                   | Is called in the CI? |
+| ---------------------------- | ------------------------------------------------------------- | -------------------- |
+| make verify                  | **Run all verification checks**                               | yes                  |
+| make verify-lint             | Run code linting (Go, YAML, linter config)                    | yes                  |
+| make verify-license          | Verify license headers                                        | yes                  |
+| make verify-sample-permissions | Verify sample file permissions                              | yes                  |
+| make verify-testdata         | Verify testdata is up to date                                 | yes                  |
+| make verify-docs             | Verify documentation (generation, accessibility, trailing spaces) | yes              |
+| make verify-helm             | Verify Helm charts (yamllint, helm lint)                      | yes                  |
+| make fix-docs        | Fix documentation note layout accessibility issues            | no                   |
+| make test-unit       | Runs go tests                                                 | no                   |
+| make test            | Runs tests in shell (`./test.sh`)                             | yes                  |
+| make lint-fix        | Run [golangci][golangci] to automatically perform fixes       | no                   |
+| make test-coverage   | Run coveralls to check the % of code covered by tests         | yes                  |
+| make test-e2e-local  | Runs the CI e2e tests locally                                 | no                   |
 
-**NOTE** `make lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
+**NOTE** `make verify-lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
 
 ### Running e2e tests locally
 
