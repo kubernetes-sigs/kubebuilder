@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4
 
-go 1.25.3
+go 1.25.7
 
 require (
 	github.com/cert-manager/cert-manager v1.20.1
