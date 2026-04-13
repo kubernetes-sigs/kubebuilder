@@ -81,7 +81,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 
 	// Controller Manager configuration
 	imageRepo := "controller"
-	imageTag := "latest"
+	imageTag := "" // Defaults to Chart.appVersion in template
 	imagePullPolicy := "IfNotPresent"
 	replicas := 1
 	if f.DeploymentConfig != nil {
