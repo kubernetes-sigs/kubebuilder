@@ -197,4 +197,3 @@ Note that we are granting permissions to `watch` the resources.
 [controller-gen]: ./../controller-gen.md
 [markers]:./../markers/rbac.md
 [update-patch-apply]: ../update-patch-apply.md
-[strict-field-validation]: ../strict-field-validation.md

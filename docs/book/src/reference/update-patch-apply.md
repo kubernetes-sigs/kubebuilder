@@ -101,8 +101,8 @@ behavior](https://kubernetes.io/docs/reference/using-api/server-side-apply/#merg
 JSON merge patch used by `client.MergeFrom(...)`.
 
 If you want `Create`, `Update`, and non-apply `Patch` requests to fail fast when they contain
-unknown fields, see [Strict Field Validation](./strict-field-validation.md). In controller-runtime,
-`Apply` requests are already strict.
+unknown fields, use strict field validation. In controller-runtime, `Apply` requests are already
+strict.
 
 ## `Apply`
 
@@ -139,9 +139,9 @@ When using SSA in a controller:
 - send the full intent for the fields your controller owns
 - force conflicts only for objects your controller truly owns and manages
 
-`Apply` and [strict field validation](./strict-field-validation.md) are still separate concepts, but
-controller-runtime does not expose a separate `fieldValidation` setting for `Apply`. `Apply`
-requests are already strict and fail if they contain unknown or duplicate fields.
+`Apply` and strict field validation are still separate concepts, but controller-runtime does not
+expose a separate `fieldValidation` setting for `Apply`. `Apply` requests are already strict and
+fail if they contain unknown or duplicate fields.
 
 <aside class="note">
 <h1>Unknown Fields and Version Skew</h1>
@@ -153,7 +153,6 @@ For controller-runtime, `Apply` already fails on unknown or duplicate fields, wh
 `Update`, and non-apply `Patch` can be configured to ignore, warn, or fail.
 For built-in resources, be more careful: strict validation can reduce compatibility across
 Kubernetes versions if your controller writes fields that do not exist on every target cluster.
-See [Strict Field Validation](./strict-field-validation.md).
 
 </aside>
 
@@ -176,7 +175,6 @@ For the underlying Kubernetes semantics, see:
 
 - [Kubernetes API Concepts][k8s-api-concepts]
 - [Server-Side Apply][k8s-ssa]
-- [Strict Field Validation](./strict-field-validation.md)
 - [controller-runtime client package][controller-runtime-client]
 
 [k8s-api-concepts]: https://kubernetes.io/docs/reference/using-api/api-concepts/
