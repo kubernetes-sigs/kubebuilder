@@ -17,7 +17,9 @@ manager:
 
   image:
     repository: controller
-    tag: latest
+    ## Defaults to Chart.appVersion
+    ##
+    # tag: ""
     pullPolicy: IfNotPresent
 
   ## Arguments
