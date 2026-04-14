@@ -137,7 +137,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 <aside class="note">
 <h1>Choosing the Write Method</h1>
 
-This example uses `Update` and `Status().Update` to keep the reconciliation flow readable. For
+This example uses `Update` and `Status().Update()` to keep the reconciliation flow readable. For
 production controllers, `Patch` with optimistic concurrency is usually safer when you only change a
 few fields, especially on shared objects. Use `Apply` when your controller declaratively owns fields
 on child resources. See [Choosing Between Update, Patch, and Apply][update-patch-apply].

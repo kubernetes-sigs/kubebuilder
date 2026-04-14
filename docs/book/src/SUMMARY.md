@@ -67,7 +67,7 @@
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
-  - [Choosing Update, Patch, or Apply](./reference/update-patch-apply.md)
+  - [Choosing Between Update, Patch, and Apply](./reference/update-patch-apply.md)
   - [License Header](./reference/license-header.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
