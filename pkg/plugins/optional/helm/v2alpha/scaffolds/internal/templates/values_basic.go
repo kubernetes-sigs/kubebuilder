@@ -89,7 +89,7 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 			if repo, ok := imgCfg["repository"].(string); ok && repo != "" {
 				imageRepo = repo
 			}
-			if tag, ok := imgCfg["tag"].(string); ok && tag != "" {
+			if tag, ok := imgCfg["tag"].(string); ok && tag != "" && tag != "latest" {
 				imageTag = tag
 			}
 			if policy, ok := imgCfg["pullPolicy"].(string); ok && policy != "" {
@@ -105,6 +105,21 @@ func (f *HelmValuesBasic) generateBasicValues() string {
 				replicas = int(rep64)
 			}
 		}
+	}
+
+	var imageSection string
+	if imageTag == "" {
+		imageSection = fmt.Sprintf(`  image:
+    repository: %s
+    ## Defaults to Chart.appVersion
+    ##
+    # tag: ""
+    pullPolicy: %s`, imageRepo, imagePullPolicy)
+	} else {
+		imageSection = fmt.Sprintf(`  image:
+    repository: %s
+    tag: %s
+    pullPolicy: %s`, imageRepo, imageTag, imagePullPolicy)
 	}
 
 	buf.WriteString(fmt.Sprintf(`## String to partially override chart.fullname template (will maintain the release name)
@@ -124,12 +139,9 @@ manager:
 
   replicas: %d
 
-  image:
-    repository: %s
-    tag: %s
-    pullPolicy: %s
+%s
 
-`, replicas, imageRepo, imageTag, imagePullPolicy))
+`, replicas, imageSection))
 
 	// Add extracted deployment configuration
 	f.addDeploymentConfig(&buf)
@@ -180,6 +192,28 @@ rbac:
     ## Install convenience admin/editor/viewer roles for CRDs
     ##
     enable: false
+
+`)
+
+	// ServiceAccount configuration
+	buf.WriteString(`## ServiceAccount configuration
+##
+serviceAccount:
+  # Install default ServiceAccount provided
+  enable: true
+
+  ## Existing ServiceAccount name (only when enable=false)
+  ## Note: When enable=true, respects nameOverride/fullnameOverride
+  ##
+  # name: ""
+
+  ## Custom ServiceAccount annotations
+  ##
+  # annotations: {}
+
+  ## Custom ServiceAccount labels
+  ##
+  # labels: {}
 
 `)
 

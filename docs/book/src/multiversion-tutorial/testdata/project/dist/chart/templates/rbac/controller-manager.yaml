@@ -1,3 +1,4 @@
+{{- if ne .Values.serviceAccount.enable false }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -6,5 +7,15 @@ metadata:
     app.kubernetes.io/name: {{ include "project.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+    {{- with .Values.serviceAccount.labels }}
+    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "project.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -14,5 +14,5 @@ roleRef:
   name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "manager-role" "context" $) }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  name: {{ include "project-v4-with-plugins.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}

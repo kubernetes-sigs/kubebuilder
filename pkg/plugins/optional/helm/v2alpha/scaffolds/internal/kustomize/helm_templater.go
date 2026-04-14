@@ -50,6 +50,12 @@ const (
 	// YAML keys
 	yamlKeyAnnotations = "annotations:"
 	yamlKeyLabels      = "labels:"
+
+	// Standard Kubernetes/Helm label keys
+	labelKeyAppName      = "app.kubernetes.io/name:"
+	labelKeyAppInstance  = "app.kubernetes.io/instance:"
+	labelKeyAppManagedBy = "app.kubernetes.io/managed-by:"
+	labelKeyHelmChart    = "helm.sh/chart:"
 )
 
 // HelmTemplater handles converting YAML content to Helm templates
@@ -124,6 +130,11 @@ func (t *HelmTemplater) ApplyHelmSubstitutions(yamlContent string, resource *uns
 
 	// Apply resource-specific substitutions
 	yamlContent = t.substituteRBACValues(yamlContent)
+
+	// Apply ServiceAccount-specific templating
+	if resource.GetKind() == kindServiceAccount {
+		yamlContent = t.templateServiceAccount(yamlContent)
+	}
 
 	// Apply deployment-specific templating
 	if resource.GetKind() == kindDeployment && isManagerDeployment(resource) {
@@ -374,17 +385,21 @@ func (t *HelmTemplater) substituteCertManagerReferences(
 	return yamlContent
 }
 
-// substituteResourceNamesWithPrefix templates ALL resource names using chart.serviceName helper.
+// substituteResourceNamesWithPrefix templates ALL resource names using the chart.resourceName helper.
 // Generic regex-based approach works for any resource type without hardcoding specific names.
-// Excludes container names since those are internal pod identifiers that don't need templating.
+// Excludes container names and ServiceAccount metadata.name (handled separately).
 //
 //nolint:goconst
-func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ *unstructured.Unstructured) string {
+func (t *HelmTemplater) substituteResourceNamesWithPrefix(
+	yamlContent string, resource *unstructured.Unstructured,
+) string {
 	namePattern := regexp.MustCompile(
 		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(t.detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
 
 	lines := strings.Split(yamlContent, "\n")
 	result := make([]string, 0, len(lines))
+
+	isServiceAccount := resource.GetKind() == kindServiceAccount
 
 	for i, line := range lines {
 		if !namePattern.MatchString(line) {
@@ -412,8 +427,41 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(yamlContent string, _ 
 			}
 		}
 
-		if isContainerName {
-			// Don't template container names - keep them as-is
+		// For ServiceAccount, skip metadata.name (handled by templateServiceAccountName)
+		// but still process other name fields like imagePullSecrets[].name or secrets[].name
+		isServiceAccountMetadataName := false
+		if isServiceAccount && strings.Contains(line, "name:") {
+			// Check if this is metadata.name by looking for "metadata:" with proper indentation
+			// metadata.name has 2-space indentation (one level under metadata:)
+			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
+
+			// Look backward for "metadata:" - it should be at currentIndent-2
+			for j := i - 1; j >= 0; j-- {
+				prevLine := lines[j]
+				trimmed := strings.TrimSpace(prevLine)
+
+				// Skip empty lines and comments
+				if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+					continue
+				}
+
+				prevIndent := len(prevLine) - len(strings.TrimLeft(prevLine, " \t"))
+
+				// If we find metadata: at the parent indentation level, this is metadata.name
+				if prevIndent == currentIndent-2 && trimmed == "metadata:" {
+					isServiceAccountMetadataName = true
+					break
+				}
+
+				// Stop if we hit a line at same or less indentation (different section)
+				if prevIndent <= currentIndent-2 && strings.HasSuffix(trimmed, ":") {
+					break
+				}
+			}
+		}
+
+		if isContainerName || isServiceAccountMetadataName {
+			// Don't template container names or SA metadata.name - keep them as-is
 			result = append(result, line)
 		} else {
 			// Template other resource names
@@ -458,8 +506,6 @@ func (t *HelmTemplater) addHelmLabelsAndAnnotations(
 
 // checkExistingLabels checks if standard Helm labels already exist in a labels section
 // by looking both backward and forward from the current position
-//
-//nolint:goconst
 func checkExistingLabels(lines []string, currentIndex int, indent string) (hasChart, hasInstance, hasManagedBy bool) {
 	// Look backward from current position (managed-by often appears before name in kustomize output)
 	for j := currentIndex - 1; j >= 0 && j >= currentIndex-10; j-- {
@@ -468,20 +514,20 @@ func checkExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 		backIndent, _ := leadingWhitespace(backLine)
 
 		// Stop if we've moved out of the labels section
-		if backTrimmed == "labels:" {
+		if backTrimmed == yamlKeyLabels {
 			break
 		}
 		if backTrimmed != "" && len(backIndent) < len(indent) {
 			break
 		}
 
-		if strings.Contains(backLine, "helm.sh/chart:") {
+		if strings.Contains(backLine, labelKeyHelmChart) {
 			hasChart = true
 		}
-		if strings.Contains(backLine, "app.kubernetes.io/instance:") {
+		if strings.Contains(backLine, labelKeyAppInstance) {
 			hasInstance = true
 		}
-		if strings.Contains(backLine, "app.kubernetes.io/managed-by:") {
+		if strings.Contains(backLine, labelKeyAppManagedBy) {
 			hasManagedBy = true
 		}
 	}
@@ -497,13 +543,13 @@ func checkExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 			break
 		}
 
-		if strings.Contains(nextLine, "helm.sh/chart:") {
+		if strings.Contains(nextLine, labelKeyHelmChart) {
 			hasChart = true
 		}
-		if strings.Contains(nextLine, "app.kubernetes.io/instance:") {
+		if strings.Contains(nextLine, labelKeyAppInstance) {
 			hasInstance = true
 		}
-		if strings.Contains(nextLine, "app.kubernetes.io/managed-by:") {
+		if strings.Contains(nextLine, labelKeyAppManagedBy) {
 			hasManagedBy = true
 		}
 	}
@@ -514,7 +560,7 @@ func checkExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 // addStandardHelmLabels adds standard Helm labels (helm.sh/chart, app.kubernetes.io/instance,
 // and app.kubernetes.io/managed-by) to all labels sections except selectors (which must be immutable)
 //
-//nolint:goconst
+
 func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) string {
 	lines := strings.Split(yamlContent, "\n")
 	result := make([]string, 0, len(lines)+10) // Pre-allocate with extra space for added labels
@@ -541,13 +587,13 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 
 		// Add standard Helm labels to any labels section (metadata.labels, template.metadata.labels)
 		// but NOT to selectors (which must remain immutable)
-		if !inSelector && strings.Contains(line, "app.kubernetes.io/name:") {
+		if !inSelector && strings.Contains(line, labelKeyAppName) {
 			indent, _ := leadingWhitespace(line)
 
 			// Check if we're in a labels section by looking backwards
 			isInLabelsSection := false
 			for j := i - 1; j >= 0 && j >= i-5; j-- {
-				if strings.TrimSpace(lines[j]) == "labels:" {
+				if strings.TrimSpace(lines[j]) == yamlKeyLabels {
 					isInLabelsSection = true
 					break
 				}
@@ -565,17 +611,17 @@ func (t *HelmTemplater) addStandardHelmLabels(yamlContent string, _ *unstructure
 
 			// Add helm.sh/chart if it doesn't exist
 			if !hasHelmChart {
-				result = append(result, indent+"helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}")
+				result = append(result, indent+labelKeyHelmChart+" {{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}")
 			}
 
 			// Add app.kubernetes.io/instance if it doesn't exist
 			if !hasInstance {
-				result = append(result, indent+"app.kubernetes.io/instance: {{ .Release.Name }}")
+				result = append(result, indent+labelKeyAppInstance+" {{ .Release.Name }}")
 			}
 
 			// Add app.kubernetes.io/managed-by if it doesn't exist (per Helm best practices)
 			if !hasManagedBy {
-				result = append(result, indent+"app.kubernetes.io/managed-by: {{ .Release.Service }}")
+				result = append(result, indent+labelKeyAppManagedBy+" {{ .Release.Service }}")
 			}
 		}
 	}
@@ -595,6 +641,55 @@ func (t *HelmTemplater) substituteRBACValues(yamlContent string) string {
 		`(?s)(roleRef:\s*\n(?:\s+\w+:.*\n)*?)(\s+)name:\s+manager-role`)
 	yamlContent = roleRefBlockPatternSimple.ReplaceAllString(
 		yamlContent, `${1}${2}name: `+t.resourceNameTemplate("manager-role"))
+
+	yamlContent = t.templateServiceAccountNameInBindings(yamlContent)
+
+	return yamlContent
+}
+
+// templateServiceAccountNameInBindings templates SA name in RoleBinding/ClusterRoleBinding subjects
+func (t *HelmTemplater) templateServiceAccountNameInBindings(yamlContent string) string {
+	replacement := `{{ include "` + t.chartName + `.serviceAccountName" . }}`
+
+	// Handle already-templated resourceName (from substituteResourceNamesWithPrefix)
+	templatedPattern := regexp.MustCompile(
+		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
+			regexp.QuoteMeta(`{{ include "`+t.chartName+`.resourceName" (dict "suffix" "controller-manager" "context" $) }}`))
+	yamlContent = templatedPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+	// Handle literal names with prefix
+	subjectPattern := regexp.MustCompile(
+		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
+			regexp.QuoteMeta(t.detectedPrefix) + `-controller-manager`)
+	yamlContent = subjectPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+	// Handle literal names without prefix
+	subjectPatternSimple := regexp.MustCompile(
+		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)controller-manager`)
+	yamlContent = subjectPatternSimple.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+	return yamlContent
+}
+
+// templateServiceAccountNameInDeployment templates serviceAccountName in Deployment spec
+func (t *HelmTemplater) templateServiceAccountNameInDeployment(yamlContent string) string {
+	replacement := `serviceAccountName: {{ include "` + t.chartName + `.serviceAccountName" . }}`
+
+	// Handle already-templated resourceName (from substituteResourceNamesWithPrefix)
+	templatedPattern := regexp.MustCompile(
+		`(?m)^(\s*)serviceAccountName:\s+` +
+			regexp.QuoteMeta(`{{ include "`+t.chartName+`.resourceName" (dict "suffix" "controller-manager" "context" $) }}`))
+	yamlContent = templatedPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+	// Handle literal names with prefix
+	serviceAccountPattern := regexp.MustCompile(
+		`(?m)^(\s*)serviceAccountName:\s+` + regexp.QuoteMeta(t.detectedPrefix) + `-controller-manager\s*$`)
+	yamlContent = serviceAccountPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+	// Handle literal names without prefix
+	serviceAccountPatternSimple := regexp.MustCompile(
+		`(?m)^(\s*)serviceAccountName:\s+controller-manager\s*$`)
+	yamlContent = serviceAccountPatternSimple.ReplaceAllString(yamlContent, `${1}`+replacement)
 
 	return yamlContent
 }
@@ -616,6 +711,7 @@ func (t *HelmTemplater) templateDeploymentFields(yamlContent string) string {
 	yamlContent = t.templateReplicas(yamlContent)
 	// Template configuration fields
 	yamlContent = t.templateImageReference(yamlContent)
+	yamlContent = t.templateServiceAccountNameInDeployment(yamlContent)
 	yamlContent = t.templateEnvironmentVariables(yamlContent)
 	yamlContent = t.templateImagePullSecrets(yamlContent)
 	yamlContent = t.templatePodSecurityContext(yamlContent)
@@ -2109,6 +2205,132 @@ func (t *HelmTemplater) addCustomLabelsAndAnnotations(yamlContent string) string
 	return strings.Join(result, "\n")
 }
 
+// templateServiceAccount templates ServiceAccount name, labels, annotations, and conditional rendering
+func (t *HelmTemplater) templateServiceAccount(yamlContent string) string {
+	yamlContent = t.addServiceAccountLabelsAndAnnotations(yamlContent)
+	yamlContent = t.templateServiceAccountName(yamlContent)
+	yamlContent = t.wrapServiceAccountWithEnableConditional(yamlContent)
+	return yamlContent
+}
+
+// templateServiceAccountName replaces SA name with serviceAccountName helper
+func (t *HelmTemplater) templateServiceAccountName(yamlContent string) string {
+	replacement := `${1}name: {{ include "` + t.chartName + `.serviceAccountName" . }}`
+
+	// Handle name with prefix
+	namePattern := regexp.MustCompile(
+		`(?m)^(\s*)name:\s+` + regexp.QuoteMeta(t.detectedPrefix) + `-controller-manager\s*$`)
+	yamlContent = namePattern.ReplaceAllString(yamlContent, replacement)
+
+	// Handle name without prefix
+	namePatternSimple := regexp.MustCompile(`(?m)^(\s*)name:\s+controller-manager\s*$`)
+	yamlContent = namePatternSimple.ReplaceAllString(yamlContent, replacement)
+
+	return yamlContent
+}
+
+// wrapServiceAccountWithEnableConditional wraps SA in serviceAccount.enable conditional
+func (t *HelmTemplater) wrapServiceAccountWithEnableConditional(yamlContent string) string {
+	// Ensure yamlContent ends with newline so {{- end }} is on its own line
+	if !strings.HasSuffix(yamlContent, "\n") {
+		yamlContent += "\n"
+	}
+	// Default to enabled, but allow an explicit false to disable ServiceAccount creation
+	return "{{- if ne .Values.serviceAccount.enable false }}\n" + yamlContent + "{{- end }}\n"
+}
+
+// addServiceAccountLabelsAndAnnotations adds custom labels/annotations with omit() filtering
+func (t *HelmTemplater) addServiceAccountLabelsAndAnnotations(yamlContent string) string {
+	lines := strings.Split(yamlContent, "\n")
+	result := make([]string, 0, len(lines))
+	addedCustomFields := false
+
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+
+		// Look for labels: in metadata
+		if strings.HasPrefix(trimmed, yamlKeyLabels) && !addedCustomFields {
+			result = append(result, line)
+			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
+
+			// Collect all existing label lines
+			labelsStart := len(result)
+			i++
+			for i < len(lines) {
+				nextLine := lines[i]
+				nextTrimmed := strings.TrimSpace(nextLine)
+				nextIndent := len(nextLine) - len(strings.TrimLeft(nextLine, " \t"))
+
+				// Stop when we hit a line at same or less indentation (not comment/empty)
+				if nextTrimmed != "" && !strings.HasPrefix(nextTrimmed, "#") && nextIndent <= currentIndent {
+					break
+				}
+				result = append(result, nextLine)
+				i++
+			}
+
+			// Extract existing label keys
+			existingKeys := t.extractKeysFromLines(result[labelsStart:])
+			childIndent := strings.Repeat(" ", currentIndent+2)
+
+			// Add custom labels
+			result = t.appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.labels", existingKeys)
+
+			// Merge into an existing annotations block when present; otherwise add one.
+			indent := strings.Repeat(" ", currentIndent)
+			if i < len(lines) {
+				nextLine := lines[i]
+				nextTrimmed := strings.TrimSpace(nextLine)
+				nextIndent := len(nextLine) - len(strings.TrimLeft(nextLine, " \t"))
+
+				if strings.HasPrefix(nextTrimmed, "annotations:") && nextIndent == currentIndent {
+					result = append(result, nextLine)
+					annotationsStart := len(result)
+					i++
+					for i < len(lines) {
+						annotationLine := lines[i]
+						annotationTrimmed := strings.TrimSpace(annotationLine)
+						annotationIndent := len(annotationLine) - len(strings.TrimLeft(annotationLine, " \t"))
+
+						// Stop when we hit a line at same or less indentation (not comment/empty)
+						if annotationTrimmed != "" && !strings.HasPrefix(annotationTrimmed, "#") && annotationIndent <= currentIndent {
+							break
+						}
+						result = append(result, annotationLine)
+						i++
+					}
+
+					existingAnnotationKeys := t.extractKeysFromLines(result[annotationsStart:])
+					result = t.appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.annotations", existingAnnotationKeys)
+				} else {
+					result = append(result,
+						indent+"{{- with .Values.serviceAccount.annotations }}",
+						indent+"annotations:",
+						childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
+						indent+"{{- end }}",
+					)
+				}
+			} else {
+				result = append(result,
+					indent+"{{- with .Values.serviceAccount.annotations }}",
+					indent+"annotations:",
+					childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
+					indent+"{{- end }}",
+				)
+			}
+
+			addedCustomFields = true
+			i-- // Adjust because outer loop will increment
+			continue
+		}
+
+		result = append(result, line)
+	}
+
+	return strings.Join(result, "\n")
+}
+
 // templateServiceMonitor templates ServiceMonitor scheme and port based on metrics.secure
 func (t *HelmTemplater) templateServiceMonitor(yamlContent string) string {
 	yamlContent = regexp.MustCompile(`(\s*)port:\s*https`).
@@ -2258,13 +2480,13 @@ func (t *HelmTemplater) handlePodAnnotations(
 		state.currentBlock = blockNone
 	}
 
-	if state.position == positionPodMetadata && !state.addedPodAnnotations && trimmed == "labels:" {
+	if state.position == positionPodMetadata && !state.addedPodAnnotations && trimmed == yamlKeyLabels {
 		result = result[:len(result)-1]
 		result = append(result, indent+"{{- if .Values.manager.pod.annotations }}")
 		result = append(result, indent+"annotations:")
 		result = t.addPodAnnotations(result, indent+"  ")
 		result = append(result, indent+"{{- end }}")
-		result = append(result, indent+"labels:")
+		result = append(result, indent+yamlKeyLabels)
 		state.addedPodAnnotations = true
 	}
 
