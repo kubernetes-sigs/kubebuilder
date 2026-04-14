@@ -1,5 +1,3 @@
-//go:build integration
-
 /*
 Copyright 2026 The Kubernetes Authors.
 
@@ -16,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffolds
+package extractor
 
 import (
 	"testing"
@@ -25,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestScaffolds(t *testing.T) {
+func TestExtractor(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Scaffolds Suite")
+	RunSpecs(t, "Extractor Suite")
 }

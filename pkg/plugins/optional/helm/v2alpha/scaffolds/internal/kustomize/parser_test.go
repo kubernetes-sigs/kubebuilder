@@ -24,6 +24,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
 
 var _ = Describe("Parser", func() {
@@ -320,7 +322,15 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(resources.EstimatePrefix("long-name")).To(Equal("ln"))
+			// Use the extractor to extract metadata from parsed resources
+			metadataExtractor := &extractor.MetadataExtractor{}
+			resourceSet := &extractor.ResourceSet{
+				Deployment: resources.Deployment,
+				Services:   resources.Services,
+			}
+			metadata := metadataExtractor.ExtractMetadata(resourceSet, "test-project")
+
+			Expect(metadata.DetectedPrefix).To(Equal("ln"))
 		})
 	})
 

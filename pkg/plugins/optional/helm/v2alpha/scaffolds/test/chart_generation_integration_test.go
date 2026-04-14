@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffolds
+package test
 
 import (
 	"os"
@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 var _ = Describe("Chart Generation Integration Tests", func() {
@@ -40,7 +42,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		manifestsFile  string
 		outputDir      string
 		projectConfig  config.Config
-		scaffolderBase *editKustomizeScaffolder
+		scaffolderBase plugins.Scaffolder
 	)
 
 	BeforeEach(func() {
@@ -75,12 +77,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
 			Expect(err).NotTo(HaveOccurred())
 
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -139,12 +137,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			projectConfig.SetProjectName("e2e-test")
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -202,12 +196,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			projectConfig.SetProjectName("test-project")
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -245,12 +235,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			projectConfig.SetProjectName("e2e-test")
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -354,12 +340,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			customOutputDir := "custom-charts"
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     customOutputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, customOutputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -384,12 +366,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
 			Expect(err).NotTo(HaveOccurred())
 
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
@@ -427,12 +405,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
 			Expect(err).NotTo(HaveOccurred())
 
-			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
-			}
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
 
 			err = scaffolderBase.Scaffold()
 			Expect(err).NotTo(HaveOccurred())

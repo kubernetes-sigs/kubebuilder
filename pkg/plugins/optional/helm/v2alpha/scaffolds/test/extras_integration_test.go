@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffolds
+package test
 
 import (
 	"os"
@@ -142,8 +142,10 @@ data:
 			Expect(resources.Other).To(HaveLen(2))
 
 			By("converting to Helm chart")
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying extras directory was created")
@@ -259,8 +261,10 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying custom Service is in extras directory")
@@ -321,8 +325,10 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying extras directory was NOT created")
@@ -450,8 +456,10 @@ spec:
 			Expect(resources.RoleBindings).To(HaveLen(1), "should have 1 RoleBinding")
 			Expect(resources.Other).To(HaveLen(1), "ConfigMap should be in Other")
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying rbac directory exists and contains all RBAC resources")
@@ -674,8 +682,10 @@ spec:
 			Expect(resources.RoleBindings).To(HaveLen(3), "should have 3 RoleBindings")
 
 			By("converting to Helm chart")
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying rbac directory was created")
@@ -921,8 +931,10 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying RoleBinding preserves all non-manager namespaces")
@@ -1075,8 +1087,10 @@ spec:
 			resources, err := parser.Parse()
 			Expect(err).NotTo(HaveOccurred())
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying CRD file has escaped Go template syntax")
@@ -1221,8 +1235,10 @@ spec:
 			Expect(cr.GetAPIVersion()).To(Equal("batch.tutorial.kubebuilder.io/v1"))
 			Expect(cr.GetName()).To(Equal("cronjob-sample"))
 
-			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
-			err = converter.WriteChartFiles(fs)
+			converter := kustomize.NewChartConverter(resources, "test-project", "test-project", "test-project-system", "dist", make(map[string]string))
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("verifying CR is NOT included in the chart (no samples directory)")
@@ -1409,8 +1425,10 @@ spec:
 			Expect(roleNamespaces).To(HaveKey("manager-rolebinding-users"))
 
 			By("converting to Helm chart with role-namespace mappings")
-			chartConverter := kustomize.NewChartConverter(resources, namePrefix, "test-project", "dist", roleNamespaces)
-			err = chartConverter.WriteChartFiles(fs)
+			chartConverter := kustomize.NewChartConverter(resources, namePrefix, "test-project", managerNamespace, "dist", roleNamespaces)
+			builders := chartConverter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err = scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("listing RBAC files for debugging")

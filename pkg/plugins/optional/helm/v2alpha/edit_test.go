@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 var _ = Describe("editSubcommand", func() {
@@ -90,7 +91,7 @@ version: "3"
 
 			outputFlag := flagSet.Lookup("output-dir")
 			Expect(outputFlag).NotTo(BeNil())
-			Expect(outputFlag.DefValue).To(Equal(DefaultOutputDir))
+			Expect(outputFlag.DefValue).To(Equal(common.DefaultOutputDir))
 
 			forceFlag := flagSet.Lookup("force")
 			Expect(forceFlag).NotTo(BeNil())
@@ -280,7 +281,7 @@ jobs:
 			err = os.Chdir(tmpDir)
 			Expect(err).NotTo(HaveOccurred())
 
-			editCmd.outputDir = DefaultOutputDir
+			editCmd.outputDir = common.DefaultOutputDir
 		})
 
 		AfterEach(func() {

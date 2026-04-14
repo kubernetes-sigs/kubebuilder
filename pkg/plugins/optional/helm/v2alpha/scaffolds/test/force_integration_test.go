@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffolds
+package test
 
 import (
 	"os"
@@ -29,16 +29,16 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 var _ = Describe("Force Flag Integration Test", func() {
 	var (
-		fs             machinery.Filesystem
-		tmpDir         string
-		manifestsFile  string
-		outputDir      string
-		projectConfig  config.Config
-		scaffolderBase *editKustomizeScaffolder
+		fs            machinery.Filesystem
+		tmpDir        string
+		manifestsFile string
+		outputDir     string
+		projectConfig config.Config
 	)
 
 	BeforeEach(func() {
@@ -127,13 +127,6 @@ spec:
 		Expect(err).NotTo(HaveOccurred())
 		err = os.WriteFile(manifestsFile, []byte(kustomizeYAML), 0o644)
 		Expect(err).NotTo(HaveOccurred())
-
-		scaffolderBase = &editKustomizeScaffolder{
-			config:        projectConfig,
-			fs:            fs,
-			manifestsFile: manifestsFile,
-			outputDir:     outputDir,
-		}
 	})
 
 	AfterEach(func() {
@@ -143,10 +136,11 @@ spec:
 	})
 
 	Context("when --force flag is NOT used", func() {
-		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, and test-chart.yml", func() {
+		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, and test-chart.yml", func() {
 			// First generation with force=false
-			scaffolderBase.force = false
-			err := scaffolderBase.Scaffold()
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Define file paths (absolute paths for OS filesystem)
@@ -154,6 +148,7 @@ spec:
 			valuesPath := filepath.Join(tmpDir, outputDir, "chart", "values.yaml")
 			helmignorePath := filepath.Join(tmpDir, outputDir, "chart", ".helmignore")
 			helpersPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "_helpers.tpl")
+			notesPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "NOTES.txt")
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
 			// Verify files exist
@@ -165,6 +160,8 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(helpersPath)
 			Expect(err).NotTo(HaveOccurred())
+			_, err = os.ReadFile(notesPath)
+			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -173,6 +170,7 @@ spec:
 			customValuesContent := "# CUSTOM VALUES YAML\ncustom: value\n"
 			customHelmignoreContent := "# CUSTOM HELMIGNORE\n*.custom\n"
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
+			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -183,11 +181,15 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(helpersPath, []byte(customHelpersContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Second generation with force=false
-			err = scaffolderBase.Scaffold()
+			scaffolder2 := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder2.InjectFS(fs)
+			err = scaffolder2.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify all protected files were NOT overwritten
@@ -207,6 +209,10 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(helpersContent)).To(Equal(customHelpersContent), "_helpers.tpl should not be overwritten without --force")
 
+			notesContent, err := os.ReadFile(notesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(notesContent)).To(Equal(customNotesContent), "NOTES.txt should not be overwritten without --force")
+
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(testChartContent)).To(Equal(customTestChartContent), "test-chart.yml should not be overwritten without --force")
@@ -216,8 +222,9 @@ spec:
 	Context("when --force flag IS used", func() {
 		It("should overwrite all files EXCEPT Chart.yaml (which is never overwritten)", func() {
 			// First generation with force=false
-			scaffolderBase.force = false
-			err := scaffolderBase.Scaffold()
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Define file paths (absolute paths for OS filesystem)
@@ -225,6 +232,7 @@ spec:
 			valuesPath := filepath.Join(tmpDir, outputDir, "chart", "values.yaml")
 			helmignorePath := filepath.Join(tmpDir, outputDir, "chart", ".helmignore")
 			helpersPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "_helpers.tpl")
+			notesPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "NOTES.txt")
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
 			// Modify all protected files with custom content
@@ -232,6 +240,7 @@ spec:
 			customValuesContent := "# CUSTOM VALUES YAML\ncustom: value\n"
 			customHelmignoreContent := "# CUSTOM HELMIGNORE\n*.custom\n"
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
+			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -242,12 +251,15 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(helpersPath, []byte(customHelpersContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Second generation with force=true
-			scaffolderBase.force = true
-			err = scaffolderBase.Scaffold()
+			scaffolder2 := scaffolds.NewChartScaffolder(projectConfig, true, manifestsFile, outputDir)
+			scaffolder2.InjectFS(fs)
+			err = scaffolder2.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify Chart.yaml was NOT overwritten (never overwritten, even with --force)
@@ -269,6 +281,11 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(helpersContent)).NotTo(Equal(customHelpersContent), "_helpers.tpl should be overwritten with --force")
 			Expect(string(helpersContent)).To(ContainSubstring("test-project.name"), "_helpers.tpl should contain template helpers")
+
+			notesContent, err := os.ReadFile(notesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(notesContent)).NotTo(Equal(customNotesContent), "NOTES.txt should be overwritten with --force")
+			Expect(string(notesContent)).To(ContainSubstring("installed"), "NOTES.txt should contain installation message")
 
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
@@ -293,8 +310,9 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 
 			// First generation with force=true should overwrite
-			scaffolderBase.force = true
-			err = scaffolderBase.Scaffold()
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, true, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			err = scaffolder.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify Chart.yaml was NOT overwritten (never overwritten, even on first run with force)
@@ -313,8 +331,9 @@ spec:
 	Context("when template files are modified", func() {
 		It("should verify template files exist in templates/ directory", func() {
 			// First generation
-			scaffolderBase.force = false
-			err := scaffolderBase.Scaffold()
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			err := scaffolder.Scaffold()
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify that template directory was created with files

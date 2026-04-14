@@ -20,9 +20,9 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
-
-const defaultOutputDir = "dist"
 
 var _ machinery.Template = &HelmChart{}
 
@@ -33,8 +33,8 @@ type HelmChart struct {
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
-	// Force if true allows overwriting the scaffolded file
-	Force bool
+	// ChartMetadata contains metadata extracted from kustomize resources (name, version)
+	ChartMetadata extractor.ChartMetadata
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -42,7 +42,7 @@ func (f *HelmChart) SetTemplateDefaults() error {
 	if f.Path == "" {
 		outputDir := f.OutputDir
 		if outputDir == "" {
-			outputDir = defaultOutputDir
+			outputDir = common.DefaultOutputDir
 		}
 		f.Path = filepath.Join(outputDir, "chart", "Chart.yaml")
 	}
@@ -56,12 +56,12 @@ func (f *HelmChart) SetTemplateDefaults() error {
 }
 
 const helmChartTemplate = `apiVersion: v2
-name: {{ .ProjectName }}
+name: {{ if .ChartMetadata.ChartName }}{{ .ChartMetadata.ChartName }}{{ else }}{{ .ProjectName }}{{ end }}
 description: A Helm chart to distribute {{ .ProjectName }}
 type: application
 
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "{{ if .ChartMetadata.ManagerVersion }}{{ .ChartMetadata.ManagerVersion }}{{ else }}0.1.0{{ end }}"
 
 keywords:
   - kubernetes
