@@ -42,12 +42,9 @@ See that in the [config/prometheus][kustomize-plugin] you will find the ServiceM
 
 ### Basic Usage
 
-The Grafana plugin is attached to the `init` subcommand and the `edit` subcommand:
+The Grafana plugin is attached to the `edit` subcommand:
 
 ```sh
-# Initialize a new project with grafana plugin
-kubebuilder init --plugins grafana.kubebuilder.io/v1-alpha
-
 # Enable grafana plugin to an existing project
 kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
 ```
