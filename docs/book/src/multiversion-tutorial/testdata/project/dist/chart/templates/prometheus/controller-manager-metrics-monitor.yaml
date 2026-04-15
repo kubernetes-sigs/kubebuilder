@@ -20,6 +20,7 @@ spec:
     scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
     {{- if .Values.metrics.secure }}
     tlsConfig:
+      {{- if .Values.certManager.enable }}
       ca:
         secret:
           key: ca.crt
@@ -33,6 +34,9 @@ spec:
         key: tls.key
         name: metrics-server-cert
       serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
+      {{- else }}
+      insecureSkipVerify: true
+      {{- end }}
     {{- end }}
   selector:
     matchLabels:
