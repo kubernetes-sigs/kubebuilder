@@ -920,6 +920,64 @@ metadata:
 			Expect(result).To(ContainSubstring(expected))
 			Expect(result).NotTo(ContainSubstring("name: test-project-controller-manager-metrics-monitor"))
 		})
+
+		It("should template secretRef name inside envFrom", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        envFrom:
+        - secretRef:
+            name: test-project-manager-secrets`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// secretRef.name inside envFrom must be templated, not left as a hardcoded string
+			expectedSecretRef := `name: {{ include "test-project.resourceName" ` +
+				`(dict "suffix" "manager-secrets" "context" $) }}`
+			Expect(result).To(ContainSubstring(expectedSecretRef))
+			Expect(result).NotTo(ContainSubstring("name: test-project-manager-secrets"))
+		})
+
+		It("should template configMapRef name inside envFrom", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        envFrom:
+        - configMapRef:
+            name: test-project-manager-config`
+
+			result := templater.ApplyHelmSubstitutions(content, deployment)
+
+			// configMapRef.name inside envFrom must be templated
+			expectedConfigMapRef := `name: {{ include "test-project.resourceName" ` +
+				`(dict "suffix" "manager-config" "context" $) }}`
+			Expect(result).To(ContainSubstring(expectedConfigMapRef))
+			Expect(result).NotTo(ContainSubstring("name: test-project-manager-config"))
+		})
 	})
 
 	Context("app.kubernetes.io/name label templating", func() {

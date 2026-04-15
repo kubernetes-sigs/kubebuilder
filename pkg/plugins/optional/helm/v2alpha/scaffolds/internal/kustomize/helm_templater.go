@@ -401,28 +401,23 @@ func (t *HelmTemplater) substituteResourceNamesWithPrefix(
 
 	isServiceAccount := resource.GetKind() == kindServiceAccount
 
+	// Extract actual container names from the structured object so
+	// they can be skipped without backward text-scanning.
+	containerNameSet := extractContainerNames(resource)
+
 	for i, line := range lines {
 		if !namePattern.MatchString(line) {
 			result = append(result, line)
 			continue
 		}
 
-		// Check if this is a container name by looking at surrounding context
-		// Container names appear after "containers:" and before other container fields (image, args, etc.)
 		isContainerName := false
-		if strings.Contains(line, "name:") {
-			// Look backward for "containers:" within ~20 lines
-			for j := i - 1; j >= 0 && j >= i-20; j-- {
-				trimmed := strings.TrimSpace(lines[j])
-				if trimmed == "containers:" {
+		if len(containerNameSet) > 0 && strings.Contains(line, "name:") {
+			parts := namePattern.FindStringSubmatch(line)
+			if len(parts) >= 4 {
+				candidateName := t.detectedPrefix + parts[3]
+				if containerNameSet[candidateName] {
 					isContainerName = true
-					break
-				}
-				// Stop if we hit a new top-level section
-				//nolint:goconst // YAML keywords used in different contexts
-				if strings.HasPrefix(lines[j], "  ") && strings.HasSuffix(trimmed, ":") &&
-					(trimmed == "spec:" || trimmed == "template:" || trimmed == "volumes:") {
-					break
 				}
 			}
 		}
@@ -1051,11 +1046,11 @@ func (t *HelmTemplater) templateImagePullSecrets(yamlContent string) string {
 	foundTemplate := false
 	for i := range lines {
 		trimmed := strings.TrimSpace(lines[i])
-		if trimmed == "template:" {
+		if trimmed == "template:" { //nolint:goconst
 			foundTemplate = true
 			continue
 		}
-		if foundTemplate && trimmed == "spec:" {
+		if foundTemplate && trimmed == "spec:" { //nolint:goconst
 			// Found pod spec, inject at next line
 			insertAt = i + 1
 			break
@@ -1214,6 +1209,35 @@ func leadingWhitespace(line string) (string, int) {
 	trimmed := strings.TrimLeft(line, " \t")
 	indentLen := len(line) - len(trimmed)
 	return line[:indentLen], indentLen
+}
+
+// extractContainerNames returns the set of container and initContainer names declared in a
+// Deployment (or any Pod-template-bearing resource).
+func extractContainerNames(resource *unstructured.Unstructured) map[string]bool {
+	names := map[string]bool{}
+	for _, fieldPath := range [][]string{
+		{"spec", "template", "spec", "containers"},
+		{"spec", "template", "spec", "initContainers"},
+	} {
+		val, found, err := unstructured.NestedFieldNoCopy(resource.Object, fieldPath...)
+		if err != nil || !found {
+			continue
+		}
+		containers, ok := val.([]any)
+		if !ok {
+			continue
+		}
+		for _, c := range containers {
+			container, ok := c.(map[string]any)
+			if !ok {
+				continue
+			}
+			if n, ok := container["name"].(string); ok && n != "" {
+				names[n] = true
+			}
+		}
+	}
+	return names
 }
 
 // isManagerDeployment checks if a Deployment is the controller manager.
