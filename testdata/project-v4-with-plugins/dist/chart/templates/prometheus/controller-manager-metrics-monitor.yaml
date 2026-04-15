@@ -4,11 +4,11 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "project.name" . }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     control-plane: controller-manager
-  name: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-monitor" "context" $) }}
+  name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-monitor" "context" $) }}
   namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
@@ -20,26 +20,25 @@ spec:
     scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
     {{- if .Values.metrics.secure }}
     tlsConfig:
+      serverName: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
       {{- if .Values.certManager.enable }}
       ca:
         secret:
-          key: ca.crt
           name: metrics-server-cert
+          key: ca.crt
       cert:
         secret:
-          key: tls.crt
           name: metrics-server-cert
-      insecureSkipVerify: false
+          key: tls.crt
       keySecret:
-        key: tls.key
         name: metrics-server-cert
-      serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
+        key: tls.key
       {{- else }}
       insecureSkipVerify: true
       {{- end }}
     {{- end }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "project.name" . }}
+      app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
       control-plane: controller-manager
 {{- end }}

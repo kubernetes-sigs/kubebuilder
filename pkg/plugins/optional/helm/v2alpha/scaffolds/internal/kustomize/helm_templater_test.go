@@ -601,6 +601,154 @@ spec:
 			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
 		})
 
+		It("should wrap ServiceMonitor with certManager.enable conditional when using default cert-manager secret", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      serverName: service.namespace.svc
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: metrics-server-cert
+          key: ca.crt
+      cert:
+        secret:
+          name: metrics-server-cert
+          key: tls.crt
+      keySecret:
+        name: metrics-server-cert
+        key: tls.key`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Should have cert-manager conditional (using default cert-manager secret)
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+
+			// Should preserve secret names
+			Expect(result).To(ContainSubstring("name: metrics-server-cert"))
+
+			// Should have else branch with insecureSkipVerify
+			Expect(result).To(ContainSubstring("{{- else }}"))
+			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
+		})
+
+		It("should preserve custom cert secrets without cert-manager conditional", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			// Custom certs from Vault/manual secrets - NOT cert-manager
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      serverName: custom-service.namespace.svc
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: vault-ca-secret
+          key: ca.crt
+      cert:
+        secret:
+          name: vault-client-cert
+          key: tls.crt
+      keySecret:
+        name: vault-client-key
+        key: tls.key`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Should NOT have cert-manager conditional (custom secrets)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).NotTo(ContainSubstring("{{- else }}"))
+
+			// Custom secret names should be preserved as-is
+			Expect(result).To(ContainSubstring("name: vault-ca-secret"))
+			Expect(result).To(ContainSubstring("name: vault-client-cert"))
+			Expect(result).To(ContainSubstring("name: vault-client-key"))
+			Expect(result).To(ContainSubstring("insecureSkipVerify: false"))
+
+			// Should still have metrics.secure wrapper
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+		})
+
+		It("should NOT add cert-manager conditional when ServiceMonitor only has insecureSkipVerify", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      insecureSkipVerify: true`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Should NOT have cert-manager conditional (no cert-manager fields detected)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+
+			// Should preserve insecureSkipVerify: true as-is
+			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
+
+			// Should still have metrics.secure wrapper
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.secure }}"))
+		})
+
+		It("should convert insecureSkipVerify: false to true when no cert-manager fields present", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			// Invalid config: insecureSkipVerify: false without certs
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-project-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			// Should convert to insecureSkipVerify: true (can't have false without certs)
+			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
+			Expect(result).NotTo(ContainSubstring("insecureSkipVerify: false"))
+
+			// Should NOT have cert-manager conditional (no cert-manager fields)
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+		})
+
 		It("should add metrics conditional for metrics services", func() {
 			serviceResource := &unstructured.Unstructured{}
 			serviceResource.SetAPIVersion("v1")

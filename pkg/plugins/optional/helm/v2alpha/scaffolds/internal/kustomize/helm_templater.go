@@ -2342,6 +2342,7 @@ func (t *HelmTemplater) templateServiceMonitor(yamlContent string) string {
 	// Make bearer token and TLS config conditional on metrics.secure
 	yamlContent = t.makeServiceMonitorBearerTokenConditional(yamlContent)
 	yamlContent = t.makeServiceMonitorTLSConditional(yamlContent)
+	yamlContent = t.makeServiceMonitorCertManagerConditional(yamlContent)
 
 	return yamlContent
 }
@@ -2388,6 +2389,119 @@ func (t *HelmTemplater) makeServiceMonitorTLSConditional(yamlContent string) str
 			result = append(result, fmt.Sprintf("%s{{- if .Values.metrics.secure }}", indentStr))
 			result = append(result, tlsBlock...)
 			result = append(result, fmt.Sprintf("%s{{- end }}", indentStr))
+		}
+	}
+
+	return strings.Join(result, "\n")
+}
+
+// makeServiceMonitorCertManagerConditional injects cert-manager conditional inside tlsConfig block.
+// Only wraps when DEFAULT cert-manager secret names (metrics-server-cert) are detected.
+// Custom cert secrets (from Vault, manual, etc.) are preserved as-is without conditional.
+func (t *HelmTemplater) makeServiceMonitorCertManagerConditional(yamlContent string) string {
+	lines := strings.Split(yamlContent, "\n")
+
+	// First pass: detect if cert-manager fields AND default cert-manager secret names are present
+	hasCertManagerFields := false
+	hasCertManagerSecrets := false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "serverName:") ||
+			strings.HasPrefix(trimmed, "ca:") ||
+			strings.HasPrefix(trimmed, "cert:") ||
+			strings.HasPrefix(trimmed, "keySecret:") {
+			hasCertManagerFields = true
+		}
+		// Check if using default cert-manager secret name
+		if strings.Contains(line, "name: metrics-server-cert") {
+			hasCertManagerSecrets = true
+		}
+	}
+
+	// If no cert-manager fields, fix any insecureSkipVerify: false to true
+	if !hasCertManagerFields {
+		yamlContent = strings.ReplaceAll(yamlContent, "insecureSkipVerify: false", "insecureSkipVerify: true")
+		return yamlContent
+	}
+
+	// If has cert fields but using CUSTOM secret names (not cert-manager), preserve as-is
+	// User is managing their own certs (Vault, manual secrets, etc.)
+	if hasCertManagerFields && !hasCertManagerSecrets {
+		return yamlContent
+	}
+
+	// Second pass: inject conditional around cert-manager fields
+	var result []string
+	inTLSConfig := false
+	tlsConfigIndent := 0
+	collectingCertManagerBlock := false
+	var certManagerBlock []string
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
+
+		// Detect tlsConfig block start
+		if strings.HasPrefix(trimmed, "tlsConfig:") {
+			inTLSConfig = true
+			tlsConfigIndent = currentIndent
+			result = append(result, line)
+			continue
+		}
+
+		if inTLSConfig {
+			// Check if we've exited tlsConfig block (back to parent level or closing conditional)
+			if trimmed != "" && !strings.HasPrefix(trimmed, "#") &&
+				(currentIndent <= tlsConfigIndent || strings.HasPrefix(trimmed, "{{-")) {
+				// Close any open cert-manager block before exiting
+				if collectingCertManagerBlock {
+					childIndent := strings.Repeat(" ", tlsConfigIndent+2)
+					result = append(result, certManagerBlock...)
+					result = append(result,
+						childIndent+"{{- else }}",
+						childIndent+"insecureSkipVerify: true",
+						childIndent+"{{- end }}",
+					)
+					collectingCertManagerBlock = false
+					certManagerBlock = nil
+				}
+				inTLSConfig = false
+				result = append(result, line)
+				continue
+			}
+
+			// Skip other Helm conditionals inside tlsConfig (but not closing ones, handled above)
+			if strings.HasPrefix(trimmed, "{{-") || strings.HasPrefix(trimmed, "{{") {
+				result = append(result, line)
+				continue
+			}
+
+			// Start collecting cert-manager block at first non-conditional field
+			if !collectingCertManagerBlock && trimmed != "" && currentIndent == tlsConfigIndent+2 {
+				childIndent := strings.Repeat(" ", tlsConfigIndent+2)
+				result = append(result, childIndent+"{{- if .Values.certManager.enable }}")
+				collectingCertManagerBlock = true
+				// Start collecting from this line
+				certManagerBlock = append(certManagerBlock, line)
+			} else if collectingCertManagerBlock {
+				// Continue collecting all lines while in cert-manager block
+				certManagerBlock = append(certManagerBlock, line)
+			} else {
+				result = append(result, line)
+			}
+		} else {
+			result = append(result, line)
+		}
+
+		// Handle EOF while collecting cert-manager block
+		if collectingCertManagerBlock && i == len(lines)-1 {
+			childIndent := strings.Repeat(" ", tlsConfigIndent+2)
+			result = append(result, certManagerBlock...)
+			result = append(result,
+				childIndent+"{{- else }}",
+				childIndent+"insecureSkipVerify: true",
+				childIndent+"{{- end }}",
+			)
 		}
 	}
 
