@@ -92,37 +92,41 @@ make generate will be run.
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	fs.BoolVar(&p.runMake, "make", true,
+		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
 
 	fs.BoolVar(&p.force, "force", false,
-		"attempt to create resource even if it already exists")
+		"If set, attempt to create resource even if it already exists")
 
 	p.options = &goPlugin.Options{}
 
-	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	fs.StringVar(&p.options.Plural, "plural", "",
+		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
-		"if set, generate the resource without prompting the user")
+		"Generate the resource without prompting the user (enabled by default; use --resource=false to disable)")
 	p.resourceFlag = fs.Lookup("resource")
-	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+	fs.BoolVar(&p.options.Namespaced, "namespaced", true,
+		"Resource is namespaced by default; use --namespaced=false to create a cluster-scoped resource")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
-		"if set, generate the controller without prompting the user")
+		"Prompt whether to generate the controller by default; "+
+			"use --controller=true or --controller=false to skip the prompt")
 	p.controllerFlag = fs.Lookup("controller")
 
 	fs.StringVar(&p.options.ControllerName, "controller-name", "",
-		"name of the controller to scaffold (allows multiple controllers per resource)")
+		"Name of the controller to scaffold (e.g., frigate-controller); allows multiple controllers per resource")
 
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
-		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
-			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
+		"Go package import path for the external API (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1). "+
+			"Used to scaffold controllers for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
-			"markers and permissions for the external resources (e.g., cert-manager.io).")
+		"Domain name for the external API (e.g., cert-manager.io). "+
+			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
-		"external API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
+		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

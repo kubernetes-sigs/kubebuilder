@@ -103,24 +103,29 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&p.image, "image", "", "inform the Operand image. "+
-		"The controller will be scaffolded with an example code to deploy and manage this image.")
+	fs.StringVar(&p.image, "image", "", "Operand image name (e.g., memcached:1.6.15-alpine). "+
+		"The controller will be scaffolded with example code to deploy and manage this image")
 
-	fs.StringVar(&p.imageContainerCommand, "image-container-command", "", "[Optional] if informed, "+
-		"will be used to scaffold the container command that should be used to init a container to run the image in "+
-		"the controller and its spec in the API (CRD/CR). (i.e. "+
-		"--image-container-command=\"memcached,--memory-limit=64,modern,-o,-v\")")
-	fs.StringVar(&p.imageContainerPort, "image-container-port", "", "[Optional] if informed, "+
-		"will be used to scaffold the container port that should be used by container image in "+
-		"the controller and its spec in the API (CRD/CR). (i.e --image-container-port=\"11211\") ")
-	fs.StringVar(&p.runAsUser, "run-as-user", "", "User-Id for the container formed will be set to this value")
+	fs.StringVar(&p.imageContainerCommand, "image-container-command", "",
+		"[Optional] Container command to use for image initialization "+
+			"(e.g., --image-container-command=\"memcached,--memory-limit=64,modern,-o,-v\"). "+
+			"Used to scaffold the container command in the controller and its spec in the API (CRD/CR)")
+	fs.StringVar(&p.imageContainerPort, "image-container-port", "",
+		"[Optional] Container port used by the container image "+
+			"(e.g., --image-container-port=\"11211\"). "+
+			"Used to scaffold the container port in the controller and its spec in the API (CRD/CR)")
+	fs.StringVar(&p.runAsUser, "run-as-user", "",
+		"User ID for the container (e.g., 1000); sets the securityContext.runAsUser field")
 
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
-	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
+	fs.BoolVar(&p.runMake, "make", true,
+		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
+	fs.BoolVar(&p.runManifests, "manifests", true,
+		"Run 'make manifests' after generating files (enabled by default; use --manifests=false to disable)")
 
 	p.options = &goPlugin.Options{}
 
-	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	fs.StringVar(&p.options.Plural, "plural", "",
+		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

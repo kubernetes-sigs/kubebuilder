@@ -101,10 +101,12 @@ The generated chart structure mirrors your config/ directory:
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+	fs.BoolVar(&p.force, "force", false, "If set, regenerate all files except Chart.yaml")
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
-		"path to the YAML file containing Kubernetes manifests from kustomize output")
-	fs.StringVar(&p.outputDir, "output-dir", common.DefaultOutputDir, "output directory for the generated Helm chart")
+		"Path to the YAML file containing Kubernetes manifests from kustomize output "+
+			"(e.g., dist/install.yaml). Defaults to dist/install.yaml if unset")
+	fs.StringVar(&p.outputDir, "output-dir", common.DefaultOutputDir,
+		"Output directory for the generated Helm chart (e.g., charts). Defaults to dist if unset")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
