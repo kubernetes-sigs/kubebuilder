@@ -40,8 +40,7 @@ $(ENVTEST): $(LOCALBIN)
 
 ## Installation in Air Gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
-[`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to
-the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
+[`setup-envtest`][setup-envtest] to download the required binaries locally. There are several ways to configure `setup-envtest` for [air-gapped environments](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
 The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
 
 ### Download the binaries
@@ -50,8 +49,7 @@ The examples below will show how to install the Kubernetes API binaries using mo
 make envtest
 ```
 
-Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them
-[here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries)
+The `setup-envtest` tool stores binaries in OS-specific locations. See [binary storage locations](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries) for details.
 ```sh
 ./bin/setup-envtest use 1.31.0
 ```
@@ -162,8 +160,7 @@ var _ = AfterSuite(func() {
 <aside class="note" role="note">
 <p class="note-title">ENV TEST Config Options</p>
 
-You can look at the controller-runtime docs to know more about its configuration options, see [here](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment). On top of that, if you are
-looking to use ENV TEST to test your webhooks then you might want to give a look at its install [options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
+See the [envtest Environment configuration](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment) for more options. If you are testing webhooks, also review the [webhook install options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
 
 </aside>
 

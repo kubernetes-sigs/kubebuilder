@@ -36,8 +36,8 @@ v1.17.2 cluster with 1 control-plane node and 3 worker nodes.
 kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 ```
 
-You can use `--image` flag to specify the cluster version you want, e.g.
-`--image=kindest/node:v1.17.2`. Supported versions are listed in the [kind node images](https://hub.docker.com/r/kindest/node/tags).
+You can use the `--image` flag to specify the cluster version you want, e.g.
+`--image=kindest/node:v1.17.2`. See the [kind node images](https://hub.docker.com/r/kindest/node/tags) for supported versions.
 
 ## Load Docker Image into the Cluster
 
