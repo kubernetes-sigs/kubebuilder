@@ -32,7 +32,7 @@ type createSubcommand struct {
 }
 
 func (p *createSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", false, "overwrite existing files")
+	fs.BoolVar(&p.force, "force", false, "If set, overwrite existing files")
 }
 
 func (p *createSubcommand) InjectConfig(c config.Config) error {

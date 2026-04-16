@@ -70,7 +70,7 @@ manifests in the chart align with the latest changes.
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+	fs.BoolVar(&p.force, "force", false, "If set, regenerate all files except Chart.yaml")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

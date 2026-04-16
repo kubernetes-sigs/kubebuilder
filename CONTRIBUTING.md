@@ -232,6 +232,69 @@ There are certain writing style guidelines for Kubernetes documentation, checkou
 
 Check the CI job after to do the Pull Request and then, click on in the `Details` of `netlify/kubebuilder/deploy-preview`
 
+## Contributing AI Agent Configurations
+
+Kubebuilder uses vendor-neutral standards to help AI coding agents understand the project and contribute effectively.
+
+### Agent Skills
+
+Agent Skills provide structured knowledge that helps AI agents perform specific tasks consistently. Skills are stored in `.agents/skills/` and follow the [agentskills.io][agentskills] specification.
+
+Each skill lives in its own directory with a required `SKILL.md` file:
+
+```
+.agents/skills/
+└── skill-name/
+    ├── SKILL.md          # Required: metadata + instructions
+    ├── scripts/          # Optional: executable code
+    ├── references/       # Optional: documentation
+    ├── assets/           # Optional: templates, resources
+    └── ...               # Any additional files or directories
+```
+
+To add a new skill:
+
+1. Create a directory under `.agents/skills/<category>-<what-does>/`
+   - Use the naming pattern: `<category>-<what-does>` (e.g., `cli-descriptions`, `plugin-testing`)
+   - Category describes the domain (cli, plugin, docs)
+   - What-does describes the action or focus area
+2. Add a `SKILL.md` file with frontmatter:
+
+```markdown
+---
+name: category-what-does
+description: What this skill does and when to use it.
+license: Apache-2.0
+metadata:
+  author: The Kubernetes Authors
+---
+
+Instructions for the skill...
+```
+
+3. Follow the [agentskills.io specification][agentskills]:
+   - Name must match the directory name (lowercase, hyphens only)
+   - Description should be 1-1024 characters
+   - Keep the main file under 500 lines
+   - Move detailed content to `references/` subdirectory
+
+See `.agents/skills/cli-descriptions/` for an example.
+
+### AGENTS.md
+
+The `AGENTS.md` file provides context to AI coding agents in a vendor-neutral format. It follows the [agents.md][agentsmd] standard and works with all AI tools.
+
+This file should be placed in the project root and can include:
+
+- Build and test commands
+- Code conventions and style guides
+- Setup and development procedures
+- Project-specific context that helps agents contribute
+
+Keep the content focused on what agents need to know. Reference existing documentation rather than duplicating it.
+
+**IMPORTANT:** Do not create vendor-specific configuration files. Use only the vendor-neutral standards (Agent Skills and AGENTS.md).
+
 ## Community, discussion and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
@@ -255,3 +318,5 @@ Participation in the Kubernetes community is governed by the [Kubernetes Code of
 [kind]: https://kind.sigs.k8s.io/#installation-and-usage
 [setup-envtest]: https://book.kubebuilder.io/reference/envtest
 [k8s-contrubutiong-guide]: https://www.kubernetes.dev/docs/guide/contributing/
+[agentskills]: https://agentskills.io/
+[agentsmd]: https://agents.md/

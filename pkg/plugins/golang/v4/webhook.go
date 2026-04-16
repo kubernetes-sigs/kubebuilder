@@ -89,45 +89,47 @@ validating and/or conversion webhooks.
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options = &goPlugin.Options{}
 
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	fs.BoolVar(&p.runMake, "make", true,
+		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
 
-	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	fs.StringVar(&p.options.Plural, "plural", "",
+		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
 
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
-		"if set, scaffold the defaulting webhook")
+		"If set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
-		"if set, scaffold the validating webhook")
+		"If set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
-		"if set, scaffold the conversion webhook")
+		"If set, scaffold the conversion webhook")
 
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
 		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
 
 	fs.StringVar(&p.options.DefaultingPath, "defaulting-path", "",
-		"Custom path for the defaulting/mutating webhook (only valid with --defaulting)")
+		"Custom path for the defaulting/mutating webhook (e.g., /my-custom-mutate-path); only valid with --defaulting")
 
 	fs.StringVar(&p.options.ValidationPath, "validation-path", "",
-		"Custom path for the validation webhook (only valid with --programmatic-validation)")
+		"Custom path for the validation webhook (e.g., /my-custom-validate-path); only valid with --programmatic-validation")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,
-		"[DEPRECATED] Attempts to create resource under the API directory (legacy path). "+
-			"This option will be removed in future versions.")
+		"[DEPRECATED] If set, attempts to create resource under the API directory (legacy path). "+
+			"This option will be removed in future versions")
 
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
-		"Specify the Go package import path for the external API. This is used to scaffold webhooks for resources "+
-			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
+		"Go package import path for the external API (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1). "+
+			"Used to scaffold webhooks for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
-			"markers and permissions for the external resources (e.g., cert-manager.io).")
+		"Domain name for the external API (e.g., cert-manager.io). "+
+			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
-		"external API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
+		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
 
 	fs.BoolVar(&p.force, "force", false,
-		"attempt to create resource even if it already exists")
+		"If set, attempt to create resource even if it already exists")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
