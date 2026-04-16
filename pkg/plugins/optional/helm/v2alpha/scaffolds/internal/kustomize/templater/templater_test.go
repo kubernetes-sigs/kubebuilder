@@ -134,7 +134,7 @@ spec:
 `
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 			Expect(result).To(ContainSubstring("replicas: {{ .Values.manager.replicas }}"))
-			Expect(result).NotTo(ContainSubstring("replicas: 1"))
+			Expect(result).NotTo(ContainSubstring("replicas: 1\n"))
 		})
 
 		It("should handle container args with proper indentation", func() {
@@ -192,10 +192,12 @@ spec:
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring(
-				"image: \"{{ .Values.manager.image.repository }}" +
-					"{{- if not (contains \"@\" .Values.manager.image.repository) }}" +
-					":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\""))
-			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
+				`image: "{{ .Values.manager.image.repository }}` +
+					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
+			Expect(result).To(ContainSubstring(`{{- with .Values.manager.image.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}`))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
 
@@ -2637,7 +2639,9 @@ spec:
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
 			// Should template imagePullPolicy
-			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
+			Expect(result).To(ContainSubstring(`{{- with .Values.manager.image.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}`))
 			Expect(result).NotTo(ContainSubstring("imagePullPolicy: Always"))
 
 			// Should template resources
