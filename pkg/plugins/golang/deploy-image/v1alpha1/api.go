@@ -118,15 +118,22 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.runAsUser, "run-as-user", "",
 		"User ID for the container (e.g., 1000); sets the securityContext.runAsUser field")
 
-	fs.BoolVar(&p.runMake, "make", true,
-		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
-	fs.BoolVar(&p.runManifests, "manifests", true,
-		"Run 'make manifests' after generating files (enabled by default; use --manifests=false to disable)")
+	// Bind make flags only if not already defined (defensive for plugin chaining)
+	if fs.Lookup("make") == nil {
+		fs.BoolVar(&p.runMake, "make", true,
+			"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
+	}
+	if fs.Lookup("manifests") == nil {
+		fs.BoolVar(&p.runManifests, "manifests", true,
+			"Run 'make manifests' after generating files (enabled by default; use --manifests=false to disable)")
+	}
 
 	p.options = &goPlugin.Options{}
 
-	fs.StringVar(&p.options.Plural, "plural", "",
-		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
+	if fs.Lookup("plural") == nil {
+		fs.StringVar(&p.options.Plural, "plural", "",
+			"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
+	}
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

@@ -82,9 +82,25 @@ export MEMCACHED_IMAGE="memcached:1.4.36-alpine"
 
 ## Subcommands
 
-The `deploy-image` plugin includes the following subcommand:
+The `deploy-image` plugin implements:
 
-- `create api`: Use this command to scaffold the API and controller code to manage the container image.
+- `create api` - Scaffolds the API and controller code to manage the container image
+
+### Deleting APIs Created with Deploy-Image
+
+To delete an API created with deploy-image, you **must** include the plugin flag:
+
+```sh
+kubebuilder delete api --group <group> --version <version> --kind <kind> \
+  --plugins=deploy-image/v1-alpha
+```
+
+If you forget the `--plugins` flag, you'll receive an error message showing the exact command to use.
+
+The delete operation removes:
+- API and controller files (via go/v4 plugin in the chain)
+- Deploy-image metadata from the PROJECT file
+- Kustomize manifests (samples, RBAC)
 
 ## Affected files
 

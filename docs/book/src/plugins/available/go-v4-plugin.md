@@ -32,6 +32,8 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 -  Edit -  `kubebuilder edit [OPTIONS]`
 -  Create API -  `kubebuilder create api [OPTIONS]`
 -  Create Webhook - `kubebuilder create webhook [OPTIONS]`
+-  Delete API - `kubebuilder delete api [OPTIONS]`
+-  Delete Webhook - `kubebuilder delete webhook [OPTIONS]`
 
 ## Further resources
 

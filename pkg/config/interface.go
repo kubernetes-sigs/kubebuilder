@@ -89,6 +89,11 @@ type Config interface {
 	AddResource(res resource.Resource) error
 	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present.
 	UpdateResource(res resource.Resource) error
+	// RemoveResource removes the resource matching the provided GVK from the config.
+	RemoveResource(gvk resource.GVK) error
+	// SetResourceWebhooks sets the webhook configuration for a resource, replacing existing configuration.
+	// Unlike UpdateResource which merges, this completely replaces the webhook config.
+	SetResourceWebhooks(gvk resource.GVK, webhooks *resource.Webhooks) error
 
 	// HasGroup checks if the provided group is the same as any of the tracked resources.
 	HasGroup(group string) bool
