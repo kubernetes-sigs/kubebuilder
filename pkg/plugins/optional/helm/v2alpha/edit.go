@@ -33,14 +33,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 const (
 	// DefaultManifestsFile is the default path for kustomize output manifests
 	DefaultManifestsFile = "dist/install.yaml"
-	// DefaultOutputDir is the default output directory for Helm charts
-	DefaultOutputDir = "dist"
 	// v1AlphaPluginKey is the deprecated v1-alpha plugin key
 	v1AlphaPluginKey = "helm.kubebuilder.io/v1-alpha"
 )
@@ -105,7 +104,7 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
 		"path to the YAML file containing Kubernetes manifests from kustomize output")
-	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
+	fs.StringVar(&p.outputDir, "output-dir", common.DefaultOutputDir, "output directory for the generated Helm chart")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -121,7 +120,7 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		}
 	}
 
-	scaffolder := scaffolds.NewKustomizeHelmScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
+	scaffolder := scaffolds.NewChartScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {

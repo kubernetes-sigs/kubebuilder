@@ -17,78 +17,78 @@ limitations under the License.
 package kustomize
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
+	"slices"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater"
 )
 
-// ChartConverter orchestrates the conversion of kustomize output to Helm chart templates
+// ChartConverter converts kustomize output to Helm chart templates.
+// It categorizes resources, applies templating, and generates machinery.Builders.
 type ChartConverter struct {
-	resources *ParsedResources
-	// The actual namePrefix detected from kustomize resources
+	resources      *ParsedResources
 	detectedPrefix string
-	// The chart name used for template namespacing
-	chartName string
-	outputDir string
+	chartName      string
+	outputDir      string
 
-	// Components for conversion
-	organizer *ResourceOrganizer
-	templater *HelmTemplater
-	writer    *ChartWriter
+	categorizer *ResourceCategorizer
+	templater   *templater.Templater
+	generator   *ChartGenerator
 }
 
-// NewChartConverter creates a new chart converter with all necessary components
+// NewChartConverter creates a new chart converter.
 func NewChartConverter(
-	resources *ParsedResources, detectedPrefix, chartName, outputDir string, roleNamespaces map[string]string,
+	resources *ParsedResources, detectedPrefix, chartName, managerNamespace, outputDir string,
+	roleNamespaces map[string]string,
 ) *ChartConverter {
-	// Extract manager namespace from Deployment, default to <prefix>-system
-	managerNamespace := detectedPrefix + "-system"
-	if resources.Deployment != nil {
-		if ns := resources.Deployment.GetNamespace(); ns != "" {
-			managerNamespace = ns
-		}
-	}
-
-	organizer := NewResourceOrganizer(resources)
-	templater := NewHelmTemplater(detectedPrefix, chartName, managerNamespace, roleNamespaces)
-	writer := NewChartWriter(templater, outputDir, managerNamespace)
+	categorizer := NewResourceCategorizer(resources)
+	t := templater.NewTemplater(detectedPrefix, chartName, managerNamespace, roleNamespaces)
+	chartGenerator := NewChartGenerator(t, detectedPrefix)
 
 	return &ChartConverter{
 		resources:      resources,
 		detectedPrefix: detectedPrefix,
 		chartName:      chartName,
 		outputDir:      outputDir,
-		organizer:      organizer,
-		templater:      templater,
-		writer:         writer,
+		categorizer:    categorizer,
+		templater:      t,
+		generator:      chartGenerator,
 	}
 }
 
-// WriteChartFiles converts all resources to Helm chart templates and writes them to the filesystem
-func (c *ChartConverter) WriteChartFiles(fs machinery.Filesystem) error {
-	// Organize resources by their logical function
-	resourceGroups := c.organizer.OrganizeByFunction()
+// GetChartBuilders converts resources to machinery.Builders for chart template files.
+func (c *ChartConverter) GetChartBuilders() []machinery.Builder {
+	resourceGroups := c.categorizer.CategorizeByFunction()
 
-	// Write each group to appropriate template files
 	for groupName, resources := range resourceGroups {
-		if len(resources) > 0 {
-			// De-duplicate exact resources by (apiVersion, kind, namespace, name)
-			deduped := dedupeResources(resources)
-			if err := c.writer.WriteResourceGroup(fs, groupName, deduped); err != nil {
-				return fmt.Errorf("failed to write %s resources: %w", groupName, err)
-			}
-		}
+		resourceGroups[groupName] = dedupeResources(resources)
 	}
 
-	return nil
+	chartFiles := c.generator.GenerateChart(resourceGroups)
+
+	// Sort filenames for deterministic order
+	filenames := make([]string, 0, len(chartFiles.TemplateFiles))
+	for filename := range chartFiles.TemplateFiles {
+		filenames = append(filenames, filename)
+	}
+	slices.Sort(filenames)
+
+	builders := make([]machinery.Builder, 0, len(filenames))
+	for _, filename := range filenames {
+		builders = append(builders, &DynamicTemplate{
+			RelativePath: filename,
+			Content:      chartFiles.TemplateFiles[filename],
+			OutputDir:    c.outputDir,
+		})
+	}
+
+	return builders
 }
 
-// dedupeResources removes exact duplicate resources by keying on
-// apiVersion, kind, namespace (optional), and name.
+// dedupeResources removes duplicate resources to prevent rendering the same resource multiple times.
 func dedupeResources(resources []*unstructured.Unstructured) []*unstructured.Unstructured {
 	seen := make(map[string]struct{})
 	out := make([]*unstructured.Unstructured, 0, len(resources))
@@ -106,464 +106,81 @@ func dedupeResources(resources []*unstructured.Unstructured) []*unstructured.Uns
 	return out
 }
 
-// ExtractDeploymentConfig extracts configuration values from the deployment for values.yaml
+// ExtractDeploymentConfig extracts configuration values from the deployment for values.yaml.
 func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
-	if c.resources.Deployment == nil {
-		return make(map[string]any)
-	}
+	deploymentExtractor := extractor.DeploymentExtractor{}
+	valuesConfig := deploymentExtractor.ExtractDeploymentConfig(c.resources.Deployment)
 
+	return convertValuesConfigToMap(valuesConfig)
+}
+
+// convertValuesConfigToMap converts ValuesConfig struct to map[string]any.
+func convertValuesConfigToMap(vc extractor.ValuesConfig) map[string]any {
 	config := make(map[string]any)
+	m := vc.Manager
 
-	// Extract deployment-level fields (always exposed)
-	extractDeploymentReplicas(c.resources.Deployment, config)
-	extractDeploymentStrategy(c.resources.Deployment, config)
-
-	specMap := extractDeploymentSpec(c.resources.Deployment)
-	if specMap == nil {
-		return config
+	if m.Replicas != nil {
+		config["replicas"] = *m.Replicas
+	}
+	if m.Image.Repository != "" || m.Image.Tag != "" || m.Image.PullPolicy != "" {
+		config["image"] = map[string]any{
+			"repository": m.Image.Repository,
+			"tag":        m.Image.Tag,
+			"pullPolicy": m.Image.PullPolicy,
+		}
+	}
+	if m.Resources != nil {
+		config["resources"] = m.Resources
+	}
+	if m.NodeSelector != nil {
+		config["podNodeSelector"] = m.NodeSelector
+	}
+	if m.Tolerations != nil {
+		config["podTolerations"] = m.Tolerations
+	}
+	if m.Affinity != nil {
+		config["podAffinity"] = m.Affinity
+	}
+	if m.Args != nil {
+		config["args"] = m.Args
+	}
+	if m.Env != nil {
+		config["env"] = m.Env
+	}
+	if m.SecurityContext != nil {
+		config["securityContext"] = m.SecurityContext
+	}
+	if m.PodSecurityContext != nil {
+		config["podSecurityContext"] = m.PodSecurityContext
+	}
+	if m.ImagePullSecrets != nil {
+		config["imagePullSecrets"] = m.ImagePullSecrets
+	}
+	if m.PriorityClassName != "" {
+		config["priorityClassName"] = m.PriorityClassName
+	}
+	if m.TopologySpreadConstraints != nil {
+		config["topologySpreadConstraints"] = m.TopologySpreadConstraints
+	}
+	if m.TerminationGracePeriodSeconds != nil {
+		config["terminationGracePeriodSeconds"] = *m.TerminationGracePeriodSeconds
+	}
+	if m.Strategy != nil {
+		config["strategy"] = m.Strategy
+	}
+	if m.ExtraVolumes != nil {
+		config["extraVolumes"] = m.ExtraVolumes
+	}
+	if m.ExtraVolumeMounts != nil {
+		config["extraVolumeMounts"] = m.ExtraVolumeMounts
 	}
 
-	// Extract optional Kubernetes features (commented in values.yaml unless found in kustomize)
-	extractPodSecurityContext(specMap, config)
-	extractImagePullSecrets(specMap, config)
-	extractPodNodeSelector(specMap, config)
-	extractPodTolerations(specMap, config)
-	extractPodAffinity(specMap, config)
-	extractPriorityClassName(specMap, config)
-	extractTopologySpreadConstraints(specMap, config)
-	extractTerminationGracePeriodSeconds(specMap, config)
-
-	container := firstManagerContainer(specMap)
-	if container == nil {
-		return config
+	if vc.WebhookPort > 0 {
+		config["webhookPort"] = vc.WebhookPort
 	}
-
-	// Extract operator-specific runtime configuration (only in values.yaml if found in kustomize)
-	extractContainerEnv(container, config)
-	extractContainerImage(container, config)
-	extractContainerArgs(container, config)
-	extractContainerPorts(container, config)
-	extractContainerResources(container, config)
-	extractContainerSecurityContext(container, config)
-
-	extractExtraVolumes(specMap, config)
-	extractExtraVolumeMounts(container, config)
+	if vc.MetricsPort > 0 {
+		config["metricsPort"] = vc.MetricsPort
+	}
 
 	return config
-}
-
-func extractDeploymentSpec(deployment *unstructured.Unstructured) map[string]any {
-	spec, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec")
-	if !found || err != nil {
-		return nil
-	}
-
-	specMap, ok := spec.(map[string]any)
-	if !ok {
-		return nil
-	}
-
-	return specMap
-}
-
-func extractImagePullSecrets(specMap map[string]any, config map[string]any) {
-	imagePullSecrets, found, err := unstructured.NestedFieldNoCopy(specMap, "imagePullSecrets")
-	if !found || err != nil {
-		return
-	}
-
-	imagePullSecretsList, ok := imagePullSecrets.([]any)
-	if !ok || len(imagePullSecretsList) == 0 {
-		return
-	}
-
-	config["imagePullSecrets"] = imagePullSecretsList
-}
-
-func extractPodSecurityContext(specMap map[string]any, config map[string]any) {
-	podSecurityContext, found, err := unstructured.NestedFieldNoCopy(specMap, "securityContext")
-	if !found || err != nil {
-		return
-	}
-
-	podSecMap, ok := podSecurityContext.(map[string]any)
-	if !ok || len(podSecMap) == 0 {
-		return
-	}
-
-	config["podSecurityContext"] = podSecurityContext
-}
-
-func extractPodNodeSelector(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "nodeSelector")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.(map[string]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podNodeSelector"] = result
-}
-
-func extractPodTolerations(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "tolerations")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.([]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podTolerations"] = result
-}
-
-func extractPodAffinity(specMap map[string]any, config map[string]any) {
-	raw, found, err := unstructured.NestedFieldNoCopy(specMap, "affinity")
-	if !found || err != nil {
-		return
-	}
-
-	result, ok := raw.(map[string]any)
-	if !ok || len(result) == 0 {
-		return
-	}
-
-	config["podAffinity"] = result
-}
-
-func firstManagerContainer(specMap map[string]any) map[string]any {
-	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
-	if !found || err != nil {
-		return nil
-	}
-
-	containersList, ok := containers.([]any)
-	if !ok || len(containersList) == 0 {
-		return nil
-	}
-
-	firstContainer, ok := containersList[0].(map[string]any)
-	if !ok {
-		return nil
-	}
-
-	return firstContainer
-}
-
-func extractContainerEnv(container map[string]any, config map[string]any) {
-	env, found, err := unstructured.NestedFieldNoCopy(container, "env")
-	if !found || err != nil {
-		return
-	}
-
-	envList, ok := env.([]any)
-	if !ok || len(envList) == 0 {
-		return
-	}
-
-	config["env"] = envList
-}
-
-func extractContainerImage(container map[string]any, config map[string]any) {
-	imageValue, found, err := unstructured.NestedString(container, "image")
-	if !found || err != nil || imageValue == "" {
-		return
-	}
-
-	repository := imageValue
-	tag := "latest"
-	lastColon := strings.LastIndex(imageValue, ":")
-	lastSlash := strings.LastIndex(imageValue, "/")
-	if lastColon != -1 && lastColon > lastSlash {
-		repository = imageValue[:lastColon]
-		if lastColon+1 < len(imageValue) {
-			tag = imageValue[lastColon+1:]
-		}
-	}
-
-	pullPolicy, _, err := unstructured.NestedString(container, "imagePullPolicy")
-	if err != nil || pullPolicy == "" {
-		pullPolicy = "IfNotPresent"
-	}
-
-	config["image"] = map[string]any{
-		"repository": repository,
-		"tag":        tag,
-		"pullPolicy": pullPolicy,
-	}
-}
-
-func extractContainerArgs(container map[string]any, config map[string]any) {
-	args, found, err := unstructured.NestedFieldNoCopy(container, "args")
-	if !found || err != nil {
-		return
-	}
-
-	argsList, ok := args.([]any)
-	if !ok || len(argsList) == 0 {
-		return
-	}
-
-	filteredArgs := make([]any, 0, len(argsList))
-	for _, rawArg := range argsList {
-		strArg, ok := rawArg.(string)
-		if !ok {
-			filteredArgs = append(filteredArgs, rawArg)
-			continue
-		}
-
-		// Extract port values from bind-address arguments and store them
-		// These arguments should not be exposed under args because they will be
-		// reconstructed from the port values in values.yaml
-		if strings.Contains(strArg, "--metrics-bind-address") {
-			if port := extractPortFromArg(strArg); port > 0 {
-				if _, exists := config["metricsPort"]; !exists {
-					config["metricsPort"] = port
-				}
-			}
-			continue
-		}
-		if strings.Contains(strArg, "--health-probe-bind-address") {
-			continue
-		}
-		if strings.Contains(strArg, "--webhook-cert-path") ||
-			strings.Contains(strArg, "--metrics-cert-path") {
-			continue
-		}
-		filteredArgs = append(filteredArgs, strArg)
-	}
-
-	if len(filteredArgs) > 0 {
-		config["args"] = filteredArgs
-	}
-}
-
-// extractPortFromArg extracts port number from arguments like "--metrics-bind-address=:8443"
-func extractPortFromArg(arg string) int {
-	// Handle formats: --flag=:8443, --flag=0.0.0.0:8443, etc.
-	parts := strings.Split(arg, "=")
-	if len(parts) != 2 {
-		return 0
-	}
-
-	portPart := parts[1]
-	// Remove leading : or host part
-	if idx := strings.LastIndex(portPart, ":"); idx != -1 {
-		portPart = portPart[idx+1:]
-	}
-
-	port, err := strconv.Atoi(portPart)
-	if err != nil || port <= 0 || port > 65535 {
-		return 0
-	}
-	return port
-}
-
-// extractContainerPorts extracts port configurations from container ports
-func extractContainerPorts(container map[string]any, config map[string]any) {
-	// Use NestedFieldNoCopy to avoid deep copy issues with int values
-	portsField, found, err := unstructured.NestedFieldNoCopy(container, "ports")
-	if !found || err != nil {
-		return
-	}
-
-	ports, ok := portsField.([]any)
-	if !ok {
-		return
-	}
-
-	for _, p := range ports {
-		portMap, ok := p.(map[string]any)
-		if !ok {
-			continue
-		}
-
-		name, _ := portMap["name"].(string)
-		var containerPort int
-
-		// Try int64 first (from YAML unmarshaling)
-		if cp, ok := portMap["containerPort"].(int64); ok {
-			containerPort = int(cp)
-		} else if cp, ok := portMap["containerPort"].(int); ok {
-			containerPort = cp
-		} else {
-			continue
-		}
-
-		// Look for webhook-server port
-		if name == "webhook-server" || strings.Contains(name, "webhook") {
-			if _, exists := config["webhookPort"]; !exists {
-				config["webhookPort"] = containerPort
-			}
-		}
-	}
-}
-
-func extractContainerResources(container map[string]any, config map[string]any) {
-	resources, found, err := unstructured.NestedFieldNoCopy(container, "resources")
-	if !found || err != nil {
-		return
-	}
-
-	resourcesMap, ok := resources.(map[string]any)
-	if !ok || len(resourcesMap) == 0 {
-		return
-	}
-
-	config["resources"] = resources
-}
-
-func extractContainerSecurityContext(container map[string]any, config map[string]any) {
-	securityContext, found, err := unstructured.NestedFieldNoCopy(container, "securityContext")
-	if !found || err != nil {
-		return
-	}
-
-	secMap, ok := securityContext.(map[string]any)
-	if !ok || len(secMap) == 0 {
-		return
-	}
-
-	config["securityContext"] = securityContext
-}
-
-// defaultWebhookMetricsVolumeNames are volume names from the Kustomize scaffold;
-// they are never added to extraVolumes (conditional in chart).
-var defaultWebhookMetricsVolumeNames = map[string]struct{}{
-	"webhook-certs": {},
-	"metrics-certs": {},
-}
-
-// extractExtraVolumes copies pod volumes into config["extraVolumes"], excluding
-// webhook-certs and metrics-certs. Only set when there is at least one extra volume.
-func extractExtraVolumes(specMap map[string]any, config map[string]any) {
-	volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes")
-	if !found || err != nil {
-		return
-	}
-	volumesList, ok := volumes.([]any)
-	if !ok || len(volumesList) == 0 {
-		return
-	}
-	extra := make([]any, 0, len(volumesList))
-	for _, v := range volumesList {
-		vm, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		name, _ := vm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
-		}
-		extra = append(extra, v)
-	}
-	if len(extra) > 0 {
-		config["extraVolumes"] = extra
-	}
-}
-
-// extractExtraVolumeMounts copies container volumeMounts into config["extraVolumeMounts"],
-// excluding webhook-certs and metrics-certs. Only set when there is at least one extra.
-func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
-	mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts")
-	if !found || err != nil {
-		return
-	}
-	mountsList, ok := mounts.([]any)
-	if !ok || len(mountsList) == 0 {
-		return
-	}
-	extra := make([]any, 0, len(mountsList))
-	for _, m := range mountsList {
-		mm, ok := m.(map[string]any)
-		if !ok {
-			continue
-		}
-		name, _ := mm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
-		}
-		extra = append(extra, m)
-	}
-	if len(extra) > 0 {
-		config["extraVolumeMounts"] = extra
-	}
-}
-
-// extractDeploymentReplicas extracts replicas from deployment spec
-func extractDeploymentReplicas(deployment *unstructured.Unstructured, config map[string]any) {
-	replicas, found, err := unstructured.NestedInt64(deployment.Object, "spec", "replicas")
-	if !found || err != nil {
-		return
-	}
-
-	// Store replicas including 0 (scale-to-zero is valid)
-	config["replicas"] = int(replicas)
-}
-
-// extractDeploymentStrategy extracts deployment strategy (e.g., RollingUpdate, Recreate)
-func extractDeploymentStrategy(deployment *unstructured.Unstructured, config map[string]any) {
-	strategy, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "strategy")
-	if !found || err != nil {
-		return
-	}
-
-	strategyMap, ok := strategy.(map[string]any)
-	if !ok || len(strategyMap) == 0 {
-		return
-	}
-
-	config["strategy"] = strategy
-}
-
-// extractPriorityClassName extracts priorityClassName from pod spec
-func extractPriorityClassName(specMap map[string]any, config map[string]any) {
-	priorityClassName, found, err := unstructured.NestedString(specMap, "priorityClassName")
-	if !found || err != nil || priorityClassName == "" {
-		return
-	}
-
-	config["priorityClassName"] = priorityClassName
-}
-
-// extractTopologySpreadConstraints extracts topologySpreadConstraints from pod spec
-func extractTopologySpreadConstraints(specMap map[string]any, config map[string]any) {
-	topologySpreadConstraints, found, err := unstructured.NestedFieldNoCopy(specMap, "topologySpreadConstraints")
-	if !found || err != nil {
-		return
-	}
-
-	tscList, ok := topologySpreadConstraints.([]any)
-	if !ok || len(tscList) == 0 {
-		return
-	}
-
-	config["topologySpreadConstraints"] = topologySpreadConstraints
-}
-
-// extractTerminationGracePeriodSeconds extracts terminationGracePeriodSeconds from pod spec
-func extractTerminationGracePeriodSeconds(specMap map[string]any, config map[string]any) {
-	terminationGracePeriodSeconds, found, err := unstructured.NestedInt64(specMap, "terminationGracePeriodSeconds")
-	if !found || err != nil {
-		// Also try as regular int (some YAML parsers may use int instead of int64)
-		if val, ok := specMap["terminationGracePeriodSeconds"]; ok {
-			if intVal, ok := val.(int); ok {
-				config["terminationGracePeriodSeconds"] = intVal
-				return
-			}
-			if int64Val, ok := val.(int64); ok {
-				config["terminationGracePeriodSeconds"] = int(int64Val)
-				return
-			}
-		}
-		return
-	}
-
-	// Store terminationGracePeriodSeconds including 0 (immediate termination is valid)
-	config["terminationGracePeriodSeconds"] = int(terminationGracePeriodSeconds)
 }

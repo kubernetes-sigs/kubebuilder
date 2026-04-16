@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffolds
+package test
 
 import (
 	"os"
@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 var _ = Describe("Chart.yaml Never Overwrite Test", func() {
@@ -93,13 +94,8 @@ spec:
 	})
 
 	It("should NEVER overwrite Chart.yaml even with --force=true", func() {
-		scaffolder := &editKustomizeScaffolder{
-			config:        projectConfig,
-			fs:            fs,
-			force:         false,
-			manifestsFile: manifestsFile,
-			outputDir:     outputDir,
-		}
+		scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+		scaffolder.InjectFS(fs)
 
 		// First scaffold
 		err := scaffolder.Scaffold()
@@ -129,7 +125,9 @@ maintainers:
 		Expect(err).NotTo(HaveOccurred())
 
 		// Scaffold again WITHOUT force
-		err = scaffolder.Scaffold()
+		scaffolder2 := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+		scaffolder2.InjectFS(fs)
+		err = scaffolder2.Scaffold()
 		Expect(err).NotTo(HaveOccurred())
 
 		// Verify Chart.yaml was NOT overwritten
@@ -140,8 +138,9 @@ maintainers:
 		Expect(string(content)).To(ContainSubstring("John Doe"))
 
 		// Scaffold again WITH force=true
-		scaffolder.force = true
-		err = scaffolder.Scaffold()
+		scaffolder3 := scaffolds.NewChartScaffolder(projectConfig, true, manifestsFile, outputDir)
+		scaffolder3.InjectFS(fs)
+		err = scaffolder3.Scaffold()
 		Expect(err).NotTo(HaveOccurred())
 
 		// Verify Chart.yaml STILL was NOT overwritten (never overwritten even with force)
@@ -167,13 +166,8 @@ version: 99.99.99
 		Expect(err).NotTo(HaveOccurred())
 
 		// First scaffold with force=true
-		scaffolder := &editKustomizeScaffolder{
-			config:        projectConfig,
-			fs:            fs,
-			force:         true,
-			manifestsFile: manifestsFile,
-			outputDir:     outputDir,
-		}
+		scaffolder := scaffolds.NewChartScaffolder(projectConfig, true, manifestsFile, outputDir)
+		scaffolder.InjectFS(fs)
 
 		err = scaffolder.Scaffold()
 		Expect(err).NotTo(HaveOccurred())

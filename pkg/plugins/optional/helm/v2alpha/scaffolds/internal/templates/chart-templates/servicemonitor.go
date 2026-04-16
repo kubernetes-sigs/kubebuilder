@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 var _ machinery.Template = &ServiceMonitor{}
@@ -44,7 +45,7 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	if f.Path == "" {
 		outputDir := f.OutputDir
 		if outputDir == "" {
-			outputDir = defaultOutputDir
+			outputDir = common.DefaultOutputDir
 		}
 		f.Path = filepath.Join(outputDir, "chart", "templates", "prometheus", "controller-manager-metrics-monitor.yaml")
 	}

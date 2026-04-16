@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kustomize
+package templater
 
 import (
 	"regexp"
@@ -30,11 +30,11 @@ const (
 	expectedIssuerName = `name: {{ include "test-project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}`
 )
 
-var _ = Describe("HelmTemplater", func() {
-	var templater *HelmTemplater
+var _ = Describe("Templater", func() {
+	var templater *Templater
 
 	BeforeEach(func() {
-		templater = &HelmTemplater{
+		templater = &Templater{
 			detectedPrefix:   "test-project",
 			chartName:        "test-project",
 			managerNamespace: "test-project-system",
@@ -191,8 +191,10 @@ spec:
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
-			Expect(result).To(ContainSubstring("image: " +
-				"\"{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}\""))
+			Expect(result).To(ContainSubstring(
+				"image: \"{{ .Values.manager.image.repository }}" +
+					"{{- if not (contains \"@\" .Values.manager.image.repository) }}" +
+					":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\""))
 			Expect(result).To(ContainSubstring("imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
 		})
@@ -1792,7 +1794,7 @@ subjects:
 			roleResource.SetName("manager-role")
 
 			// Scenario: manager namespace is "user", CRD resource is "users"
-			customTemplater := &HelmTemplater{
+			customTemplater := &Templater{
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "user", // Short namespace that appears as substring
@@ -1838,7 +1840,7 @@ rules:
 
 		It("should handle edge case where namespace is substring of multiple fields", func() {
 			// Test more edge cases: namespace "app" appears in "applications", "apps", etc.
-			customTemplater := &HelmTemplater{
+			customTemplater := &Templater{
 				detectedPrefix:   "test-project",
 				chartName:        "test-project",
 				managerNamespace: "app",
@@ -1941,7 +1943,7 @@ data:
 			configMapResource.SetName("edge-cases")
 
 			// Using "app" as namespace to test substring issues
-			customTemplater := &HelmTemplater{
+			customTemplater := &Templater{
 				detectedPrefix:   "test",
 				chartName:        "test",
 				managerNamespace: "app",
@@ -2518,7 +2520,7 @@ spec:
 		})
 
 		It("should handle custom kustomize prefix", func() {
-			customPrefixTemplater := &HelmTemplater{
+			customPrefixTemplater := &Templater{
 				detectedPrefix:   "ln",           // Custom short prefix from kustomize
 				chartName:        "test-project", // Chart/project name
 				managerNamespace: "ln-system",    // Manager namespace
@@ -2629,7 +2631,9 @@ spec:
 
 			// Should template image reference (not hardcoded)
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
+				`image: "{{ .Values.manager.image.repository }}` +
+					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
 			// Should template imagePullPolicy
@@ -2778,7 +2782,9 @@ spec:
 
 			// Should still template fields for "manager" container
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"`))
+				`image: "{{ .Values.manager.image.repository }}` +
+					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 		})
 
@@ -3795,7 +3801,7 @@ metadata:
 				"manager-role-users":          "users",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			// Role in infrastructure namespace
 			infraRole := &unstructured.Unstructured{}
@@ -3829,7 +3835,7 @@ rules:
 				"manager-rolebinding-users": "users",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			// RoleBinding in users namespace
 			usersBinding := &unstructured.Unstructured{}
@@ -3868,7 +3874,7 @@ subjects:
 				"manager-role-monitoring":     "monitoring",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			// Role in monitoring namespace
 			monitoringRole := &unstructured.Unstructured{}
@@ -3899,7 +3905,7 @@ rules:
 				"manager-role": "app-infrastructure",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			roleResource := &unstructured.Unstructured{}
 			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -3929,7 +3935,7 @@ rules:
 				"manager-role": "infrastructure",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			configMap := &unstructured.Unstructured{}
 			configMap.SetAPIVersion("v1")
@@ -3954,7 +3960,7 @@ data:
 				"manager-role": "infrastructure",
 			}
 
-			multiNsTemplater := NewHelmTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
 
 			// Role that has a reference to a resource in its namespace
 			role := &unstructured.Unstructured{}
@@ -3983,7 +3989,7 @@ rules: []`
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with enable flag", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4006,7 +4012,7 @@ metadata:
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4028,7 +4034,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4052,7 +4058,7 @@ metadata:
 			})
 
 			It("merges custom annotations with existing annotations without duplication", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4086,7 +4092,7 @@ metadata:
 
 		Context("when using default ServiceAccount with nameOverride/fullnameOverride", func() {
 			It("respects nameOverride and fullnameOverride for default ServiceAccount name", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4104,7 +4110,7 @@ metadata:
 			})
 
 			It("ensures ServiceAccount name matches across all resource references", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
@@ -4127,7 +4133,7 @@ spec:
 
 		Context("when binding RBAC permissions to ServiceAccount", func() {
 			It("references ServiceAccount consistently in RoleBinding subjects", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4154,7 +4160,7 @@ subjects:
 			})
 
 			It("references ServiceAccount consistently in ClusterRoleBinding subjects", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				clusterRoleBinding := &unstructured.Unstructured{}
 				clusterRoleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4183,7 +4189,7 @@ subjects:
 
 		Context("when handling project names with prefixes", func() {
 			It("templates ServiceAccount name correctly with project prefix", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4201,7 +4207,7 @@ metadata:
 			})
 
 			It("templates Deployment serviceAccountName field correctly with project prefix", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
@@ -4222,7 +4228,7 @@ spec:
 			})
 
 			It("templates RoleBinding subjects correctly with project prefix", func() {
-				templater := NewHelmTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
 
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4244,7 +4250,7 @@ subjects:
 
 		Context("when ensuring Kubernetes resource name limits", func() {
 			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
-				templater := NewHelmTemplater("very-long-project-name-that-needs-truncation",
+				templater := NewTemplater("very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation-system", nil)
 
