@@ -776,7 +776,9 @@ func templateImageReference(yamlContent string) string {
 		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository }}" +
 			"{{- if not (contains \"@\" .Values.manager.image.repository) }}" +
 			":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\""
-		pullPolicyLine := indentStr + "imagePullPolicy: {{ .Values.manager.image.pullPolicy }}"
+		pullPolicyLineStart := indentStr + "{{- with .Values.manager.image.pullPolicy }}"
+		pullPolicyLine := indentStr + "imagePullPolicy: {{ . }}"
+		pullPolicyLineEnd := indentStr + "{{- end }}"
 
 		remainder := lines[end:]
 		if len(remainder) > 0 && strings.HasPrefix(strings.TrimSpace(remainder[0]), "imagePullPolicy:") {
@@ -784,7 +786,7 @@ func templateImageReference(yamlContent string) string {
 		}
 
 		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, imageLine, pullPolicyLine)
+		newLines = append(newLines, imageLine, pullPolicyLineStart, pullPolicyLine, pullPolicyLineEnd)
 		newLines = append(newLines, remainder...)
 		return strings.Join(newLines, "\n")
 	}
