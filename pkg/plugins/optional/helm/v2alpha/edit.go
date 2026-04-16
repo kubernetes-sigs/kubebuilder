@@ -185,7 +185,6 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	return nil
 }
 
-// ensureManifestsExist runs make build-installer to generate the default manifests file
 func (p *editSubcommand) ensureManifestsExist() error {
 	slog.Info("Generating default manifests file", "file", p.manifestsFile)
 
@@ -206,7 +205,6 @@ func (p *editSubcommand) ensureManifestsExist() error {
 	return nil
 }
 
-// PostScaffold automatically uncomments cert-manager installation when webhooks are present
 func (p *editSubcommand) PostScaffold() error {
 	hasWebhooks := hasWebhooksWith(p.config)
 
@@ -244,7 +242,6 @@ func (p *editSubcommand) PostScaffold() error {
 	return nil
 }
 
-// addHelmMakefileTargets appends Helm deployment targets to the Makefile if they don't already exist
 func (p *editSubcommand) addHelmMakefileTargets(namespace string) error {
 	makefilePath := "Makefile"
 	if _, err := os.Stat(makefilePath); os.IsNotExist(err) {

@@ -85,7 +85,6 @@ func (c *ResourceCategorizer) CategorizeByFunction() map[string][]*unstructured.
 	return groups
 }
 
-// collectRBACResources gathers all RBAC-related resources.
 func (c *ResourceCategorizer) collectRBACResources() []*unstructured.Unstructured {
 	var rbacResources []*unstructured.Unstructured
 
@@ -101,7 +100,6 @@ func (c *ResourceCategorizer) collectRBACResources() []*unstructured.Unstructure
 	return rbacResources
 }
 
-// collectWebhookResources gathers webhook-related resources.
 func (c *ResourceCategorizer) collectWebhookResources() []*unstructured.Unstructured {
 	var webhookResources []*unstructured.Unstructured
 
@@ -129,7 +127,6 @@ func (c *ResourceCategorizer) collectCertManagerResources() []*unstructured.Unst
 	return certManagerResources
 }
 
-// collectMetricsResources gathers metrics-related resources.
 func (c *ResourceCategorizer) collectMetricsResources() []*unstructured.Unstructured {
 	var metricsResources []*unstructured.Unstructured
 
