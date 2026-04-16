@@ -32,12 +32,6 @@ changes aren't pushed or merged without proper review.
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
-- If you want to create a new project with the `autoupdate` plugin:
-
-```shell
-kubebuilder init --plugins=go/v4,autoupdate/v1-alpha
-```
-
 ### Optional: GitHub Models AI Summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.

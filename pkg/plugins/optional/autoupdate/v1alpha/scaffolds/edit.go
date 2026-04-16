@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha/scaffolds/internal/github"
 )
 
-var _ plugins.Scaffolder = &initScaffolder{}
+var _ plugins.Scaffolder = &editScaffolder{}
 
-type initScaffolder struct {
+type editScaffolder struct {
 	config config.Config
 
 	// fs is the filesystem that will be used by the scaffolder
@@ -40,18 +40,18 @@ type initScaffolder struct {
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
 func NewInitScaffolder(useGHModels bool) plugins.Scaffolder {
-	return &initScaffolder{
+	return &editScaffolder{
 		useGHModels: useGHModels,
 	}
 }
 
 // InjectFS implements cmdutil.Scaffolder
-func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
+func (s *editScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
 }
 
 // Scaffold implements cmdutil.Scaffolder
-func (s *initScaffolder) Scaffold() error {
+func (s *editScaffolder) Scaffold() error {
 	log.Info("Writing scaffold for you to edit...")
 
 	scaffold := machinery.NewScaffold(s.fs,
