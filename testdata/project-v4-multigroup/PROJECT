@@ -26,6 +26,16 @@ plugins:
         image: busybox:1.36.1
       version: v1alpha1
   grafana.kubebuilder.io/v1-alpha: {}
+  ssa.go.kubebuilder.io/v1-alpha:
+    resources:
+    - domain: testproject.org
+      group: sea-creatures
+      kind: Prawn
+      version: v1
+    - domain: testproject.org
+      group: example.com
+      kind: Application
+      version: v1
 projectName: project-v4-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 resources:
@@ -161,6 +171,15 @@ resources:
     namespaced: true
   controller: true
   domain: testproject.org
+  group: sea-creatures
+  kind: Prawn
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: example.com
   kind: Memcached
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1
@@ -199,4 +218,13 @@ resources:
   kind: Wordpress
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v2
   version: v2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Application
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1
+  version: v1
 version: "3"

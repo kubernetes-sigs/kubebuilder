@@ -16,6 +16,7 @@ limitations under the License.
 
 // Package v1 contains API Schema definitions for the example.com v1 API group.
 // +kubebuilder:object:generate=true
+// +kubebuilder:ac:generate=true
 // +groupName=example.com.testproject.org
 package v1
 

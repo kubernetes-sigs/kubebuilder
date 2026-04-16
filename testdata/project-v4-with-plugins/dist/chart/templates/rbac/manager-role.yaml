@@ -34,6 +34,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications
   - busyboxes
   - memcacheds
   - wordpresses
@@ -48,6 +49,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications/finalizers
   - busyboxes/finalizers
   - memcacheds/finalizers
   - wordpresses/finalizers
@@ -56,6 +58,7 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - applications/status
   - busyboxes/status
   - memcacheds/status
   - wordpresses/status

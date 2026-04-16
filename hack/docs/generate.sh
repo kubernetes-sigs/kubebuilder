@@ -21,6 +21,7 @@ build_kb
 # ensure that destroy succeed
 chmod -R +w docs/book/src/cronjob-tutorial/testdata/project/
 chmod -R +w docs/book/src/getting-started/testdata/project/
+chmod -R +w docs/book/src/getting-started-ssa/testdata/project/
 
 docs_gen_directory="$(dirname "$0")/../../hack/docs/generate_samples.go"
 go run ${docs_gen_directory}

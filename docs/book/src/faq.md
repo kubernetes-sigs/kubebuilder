@@ -105,9 +105,7 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
-
-Therefore, you have a few options to workround this scenario such as:
+You have a few options to work around this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
@@ -126,6 +124,14 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
 **By re-design your APIs:**
 
 You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
+
+**By using Server-Side Apply for CRD installation:**
+
+Since this issue happens when CRDs are installed with client-side apply, another option is to install or update the CRDs with Server-Side Apply instead, for example by using `kubectl apply --server-side -f ...`. This avoids storing the full manifest in the `kubectl.kubernetes.io/last-applied-configuration` annotation and can prevent the size-limit failure.
+
+If you are updating existing CRDs, `kubectl replace -f ...` may also help, depending on your workflow.
+
+Note that the [Server-Side Apply plugin][server-side-apply-plugin] is related to how controllers manage resources at runtime. It can be useful when a controller shares ownership of fields with users or other controllers, but it does not change how `make install` applies CRDs.
 
 ## How can I validate and parse fields in CRDs effectively?
 
@@ -168,4 +174,4 @@ type StructName struct {
 [permission-issue]: https://github.com/kubernetes/kubernetes/issues/82573
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
-[controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[server-side-apply-plugin]: ./plugins/available/ssa-v1-alpha.md
