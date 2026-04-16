@@ -76,10 +76,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()
@@ -140,10 +142,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 			projectConfig.SetProjectName("e2e-test")
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()
@@ -203,10 +207,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 			projectConfig.SetProjectName("test-project")
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()
@@ -246,10 +252,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 			projectConfig.SetProjectName("e2e-test")
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()
@@ -385,10 +393,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()
@@ -428,10 +438,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			scaffolderBase = &editKustomizeScaffolder{
-				config:        projectConfig,
-				fs:            fs,
-				manifestsFile: manifestsFile,
-				outputDir:     outputDir,
+				config:          projectConfig,
+				fs:              fs,
+				manifestsFile:   manifestsFile,
+				outputDir:       outputDir,
+				crdSubchart:     false,
+				samplesSubchart: false,
 			}
 
 			err = scaffolderBase.Scaffold()

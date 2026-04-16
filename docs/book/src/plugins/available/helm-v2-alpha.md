@@ -76,52 +76,68 @@ kubebuilder edit --plugins=helm/v2-alpha \
 
 ## Chart Structure
 
-The plugin creates a chart layout that matches your `config/`:
+The chart layout mirrors your `config/` directory:
 
-```shell
-<output-dir>/chart/
+```
+dist/chart/
 ├── Chart.yaml
 ├── values.yaml
-├── .helmignore
 └── templates/
-    ├── NOTES.txt
-    ├── _helpers.tpl
-    ├── rbac/                    # Individual RBAC files (examples)
-    │   ├── controller-manager.yaml
-    │   ├── leader-election-role.yaml
-    │   ├── leader-election-rolebinding.yaml
-    │   ├── manager-role.yaml
-    │   ├── manager-rolebinding.yaml
-    │   ├── metrics-auth-role.yaml
-    │   ├── metrics-auth-rolebinding.yaml
-    │   ├── metrics-reader.yaml
-    │   ├── memcached-admin-role.yaml
-    │   ├── memcached-editor-role.yaml
-    │   ├── memcached-viewer-role.yaml
-    │   ├── busybox-admin-role.yaml
-    │   ├── busybox-editor-role.yaml
-    │   ├── busybox-viewer-role.yaml
-    │   └── ...
-    ├── crd/                     # Individual CRD files (examples)
-    │   ├── busyboxes.example.com.testproject.org.yaml
-    │   └── ...
-    ├── cert-manager/
-    │   ├── metrics-certs.yaml
-    │   ├── selfsigned-issuer.yaml
-    │   └── serving-cert.yaml
+    ├── crd/              # CRDs (can be moved to sub-chart with --crd-subchart)
+    ├── rbac/
     ├── manager/
-    │   └── manager.yaml
     ├── metrics/
-    │   └── controller-manager-metrics-service.yaml
-    ├── webhook/
-    │   ├── validating-webhook-configuration.yaml
-    │   └── webhook-service.yaml
-    ├── monitoring/
-    │   └── servicemonitor.yaml
-    └── extras/                  # Custom resources (if any)
-        ├── my-service.yaml
-        └── my-config.yaml
+    └── webhook/
 ```
+
+<aside class="note" role="note">
+<p class="note-title">Why CRDs are in templates/ by default</p>
+
+Helm's `crds/` directory installs CRDs once but **skips upgrades**. This can leave clusters out of sync.
+
+Kubebuilder puts CRDs in `templates/crd` so they upgrade like other resources. Use `--crd-subchart` for separate CRD lifecycle management.
+</aside>
+
+## Sub-chart Options
+
+### CRD Sub-chart (`--crd-subchart`)
+
+Moves CRDs to a separate sub-chart:
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --crd-subchart
+```
+
+**Result**: CRDs in `crds/` sub-chart, main chart gets them via dependency. CR samples go to `templates/samples/` (conditional on `.Values.samples.install`).
+
+### Samples Sub-chart (`--samples-subchart`)
+
+Moves CR samples to a separate sub-chart:
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --samples-subchart
+```
+
+**Result**: CR samples in `samples/` sub-chart, installed after main chart.
+
+### Both Flags
+
+Use both for complete separation:
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --crd-subchart --samples-subchart
+```
+
+**Result**: CRDs and samples each in their own sub-chart.
+
+### Summary Table
+
+| Flags | CRD Location | Samples Location | Use When |
+|-------|--------------|------------------|----------|
+| (none) | templates/crd/ | Ignored | Simple setup, CRDs upgrade with chart |
+| --crd-subchart | crds/ sub-chart | templates/samples/ (conditional) | Independent CRD lifecycle |
+| --samples-subchart | templates/crd/ | samples/ sub-chart | Install samples separately |
+| Both | crds/ sub-chart | samples/ sub-chart | Maximum control |
 
 <aside class="note" role="note">
 <p class="note-title">Chart Structure</p>
@@ -134,31 +150,6 @@ The chart structure mirrors your project's resources:
 
 By default, `make build-installer` does not include samples in `dist/install.yaml`. If you manually add CR instances to your kustomize output, the Helm plugin will ignore them.
 
-</aside>
-
-<aside class="note" role="note">
-<p class="note-title"> Why CRDs are added under templates? </p>
-
-Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
-
-The rationale is tied to how Helm itself handles CRDs.
-By default, Helm will install CRDs once during the initial release,
-but it will **ignore CRD changes** on subsequent upgrades.
-
-This can lead to surprising behavior where chart upgrades silently
-skip CRD updates, leaving clusters out of sync.
-
-To avoid endorsing this behavior, the Kubebuilder plugin follows the approach of packaging
-CRDs inside `templates/`. In this mode, Helm treats CRDs like
-any other resource, ensuring they are applied and upgraded as expected.
-While this prevents mixing CRDs and CRs of the same type in a single chart (since Helm cannot wait between creation steps), it ensures predictable and explicit lifecycle management of CRDs.
-
-In short:
-- **Helm `crds/` directory**: one-time install only, no upgrades.
-- **Kubebuilder `templates/crd`**: CRDs managed like other manifests, upgrades included.
-
-This design choice prioritizes correctness and maintainability over Helm's default convention,
-while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
 </aside>
 
 ## Post-Install Notes
@@ -763,6 +754,121 @@ helm install my-release ./dist/chart \
 
 The Makefile targets use sensible defaults extracted from your project configuration (namespace from manifests, release name from project name, chart directory from `--output-dir` flag).
 
+## Sub-chart Options
+
+### Default Layout (no flags)
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha
+```
+
+**Structure:**
+```
+dist/chart/
+├── Chart.yaml
+├── values.yaml
+└── templates/
+    ├── crd/
+    ├── rbac/
+    ├── manager/
+    ├── metrics/
+    └── webhook/
+```
+
+**Behavior:** CR samples are ignored (not included in chart)
+
+### CRD Sub-chart (`--crd-subchart`)
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --crd-subchart
+```
+
+**Structure:**
+```
+dist/chart/
+├── Chart.yaml             # with crds dependency
+├── crds/                  # CRD sub-chart
+│   ├── Chart.yaml
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── samples/           # CR samples (conditional: {{ if .Values.samples.install }})
+    ├── rbac/
+    └── manager/
+```
+
+**Installation:**
+```bash
+helm install my-app ./dist/chart                          # CRDs installed via dependency
+helm install my-app ./dist/chart --set samples.install=true  # With samples
+```
+
+### Samples Sub-chart (`--samples-subchart`)
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --samples-subchart
+```
+
+**Structure:**
+```
+dist/chart/
+├── Chart.yaml
+├── samples/               # Samples sub-chart
+│   ├── Chart.yaml
+│   ├── README.md
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── crd/               # CRDs in main chart
+    ├── rbac/
+    └── manager/
+```
+
+**Installation:**
+```bash
+helm install my-app ./dist/chart
+helm install my-samples ./dist/chart/samples  # After manager is ready
+```
+
+### Both Sub-charts
+
+```shell
+kubebuilder edit --plugins=helm/v2-alpha --crd-subchart --samples-subchart
+```
+
+**Structure:**
+```
+dist/chart/
+├── Chart.yaml             # with crds dependency
+├── crds/                  # CRD sub-chart
+│   ├── Chart.yaml
+│   └── templates/
+│       └── *.yaml
+├── samples/               # Samples sub-chart
+│   ├── Chart.yaml
+│   ├── README.md
+│   └── templates/
+│       └── *.yaml
+└── templates/
+    ├── rbac/
+    └── manager/
+```
+
+**Installation:**
+```bash
+helm install my-app ./dist/chart                   # CRDs via dependency + manager
+helm install my-samples ./dist/chart/samples       # After manager is ready
+```
+
+### Summary
+
+| Flag Combination | CRD Location | Samples Location | Samples Installation |
+|-----------------|--------------|------------------|---------------------|
+| (none) | templates/crd/ | Ignored | N/A |
+| --crd-subchart | crds/ sub-chart | templates/samples/ | Conditional in main chart |
+| --samples-subchart | templates/crd/ | samples/ sub-chart | Separate after main |
+| Both flags | crds/ sub-chart | samples/ sub-chart | Separate after main |
+
 ## Flags
 
 | Flag                | Description                                                                 |
@@ -770,6 +876,8 @@ The Makefile targets use sensible defaults extracted from your project configura
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
 | **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
+| **--crd-subchart**  | Generate CRDs in a separate sub-chart for independent lifecycle management |
+| **--samples-subchart** | Generate CR samples (if any) in a separate sub-chart for independent installation |
 
 <aside class="note" role="note">
 <p class="note-title"> Examples </p>

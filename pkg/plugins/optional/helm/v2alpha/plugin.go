@@ -40,8 +40,10 @@ var _ plugin.Edit = Plugin{}
 
 // PluginConfig defines the structure that will be used to track the data
 type pluginConfig struct {
-	ManifestsFile string `json:"manifests,omitempty"`
-	OutputDir     string `json:"output,omitempty"`
+	ManifestsFile   string `json:"manifests,omitempty"`
+	OutputDir       string `json:"output,omitempty"`
+	CRDSubchart     bool   `json:"crdSubchart,omitempty"`
+	SamplesSubchart bool   `json:"samplesSubchart,omitempty"`
 }
 
 // Name returns the name of the plugin

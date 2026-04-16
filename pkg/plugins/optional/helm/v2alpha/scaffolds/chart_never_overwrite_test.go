@@ -94,11 +94,13 @@ spec:
 
 	It("should NEVER overwrite Chart.yaml even with --force=true", func() {
 		scaffolder := &editKustomizeScaffolder{
-			config:        projectConfig,
-			fs:            fs,
-			force:         false,
-			manifestsFile: manifestsFile,
-			outputDir:     outputDir,
+			config:          projectConfig,
+			fs:              fs,
+			force:           false,
+			manifestsFile:   manifestsFile,
+			outputDir:       outputDir,
+			crdSubchart:     false,
+			samplesSubchart: false,
 		}
 
 		// First scaffold

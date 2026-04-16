@@ -129,10 +129,12 @@ spec:
 		Expect(err).NotTo(HaveOccurred())
 
 		scaffolderBase = &editKustomizeScaffolder{
-			config:        projectConfig,
-			fs:            fs,
-			manifestsFile: manifestsFile,
-			outputDir:     outputDir,
+			config:          projectConfig,
+			fs:              fs,
+			manifestsFile:   manifestsFile,
+			outputDir:       outputDir,
+			crdSubchart:     false,
+			samplesSubchart: false,
 		}
 	})
 
