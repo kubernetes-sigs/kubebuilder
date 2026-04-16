@@ -109,7 +109,6 @@ func (g *TemplatesGenerator) Generate(
 	return templates
 }
 
-// templateResource converts a resource to YAML and applies Helm templating when available.
 func (g *TemplatesGenerator) templateResource(
 	resource *unstructured.Unstructured,
 	t *templater.Templater,
@@ -132,7 +131,6 @@ func (g *TemplatesGenerator) templateResource(
 	return t.ApplyHelmSubstitutions(yamlContent, resource)
 }
 
-// shouldSplitFiles determines if resources in a group should be written as individual files.
 func (g *TemplatesGenerator) shouldSplitFiles(groupName string) bool {
 	return groupName == "crd" || groupName == "cert-manager" || groupName == "webhook" ||
 		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics" ||

@@ -113,7 +113,6 @@ func (d *DeploymentExtractor) ExtractDeploymentConfig(deployment *unstructured.U
 	return config
 }
 
-// convertToManagerConfig converts the configuration map to a ManagerConfig struct.
 func convertToManagerConfig(configMap map[string]any) ManagerConfig {
 	mc := ManagerConfig{}
 
@@ -178,7 +177,6 @@ func convertToManagerConfig(configMap map[string]any) ManagerConfig {
 	return mc
 }
 
-// getStringValue safely gets a string value from a map.
 func getStringValue(m map[string]any, key string) string {
 	if v, ok := m[key].(string); ok {
 		return v
@@ -400,7 +398,6 @@ func ExtractPortFromArg(arg string) int {
 	return port
 }
 
-// extractContainerPorts extracts port configurations from container ports.
 func extractContainerPorts(container map[string]any, config map[string]any) {
 	portsField, found, err := unstructured.NestedFieldNoCopy(container, "ports")
 	if !found || err != nil {
