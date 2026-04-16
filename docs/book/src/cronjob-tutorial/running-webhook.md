@@ -2,7 +2,7 @@
 
 ## cert-manager
 
-You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
+Follow the [cert-manager installation guide](./cert-manager.md) to install the cert-manager bundle.
 
 ## Build your image
 

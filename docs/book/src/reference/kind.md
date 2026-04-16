@@ -12,8 +12,7 @@ This only cover the basics to use a kind cluster. You can find more details at
 
 ## Installation
 
-You can follow [this](https://kind.sigs.k8s.io/#installation-and-usage) to
-install `kind`.
+Follow the [kind installation instructions](https://kind.sigs.k8s.io/#installation-and-usage) to install `kind`.
 
 ## Create a Cluster
 
@@ -38,8 +37,7 @@ kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 ```
 
 You can use `--image` flag to specify the cluster version you want, e.g.
-`--image=kindest/node:v1.17.2`, the supported version are listed
-[here](https://hub.docker.com/r/kindest/node/tags).
+`--image=kindest/node:v1.17.2`. Supported versions are listed in the [kind node images](https://hub.docker.com/r/kindest/node/tags).
 
 ## Load Docker Image into the Cluster
 

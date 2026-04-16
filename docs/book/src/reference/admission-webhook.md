@@ -19,8 +19,7 @@ e.g. cross-field validation and pod image whitelisting.
 The apiserver by default doesn't authenticate itself to the webhooks. However,
 if you want to authenticate the clients, you can configure the apiserver to use
 basic auth, bearer token, or a cert to authenticate itself to the webhooks.
-You can find detailed steps
-[here](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers).
+You can find detailed steps in the [Kubernetes authentication documentation](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers).
 
 <aside class="note" role="note">
 <p class="note-title">Execution Order</p>
