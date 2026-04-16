@@ -21,6 +21,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -153,6 +154,28 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 	if len(p.image) == 0 {
 		return fmt.Errorf("you MUST inform the image that will be used in the reconciliation")
+	}
+
+	// Validate imageContainerPort is a valid integer if provided
+	if len(p.imageContainerPort) > 0 {
+		port, err := strconv.Atoi(p.imageContainerPort)
+		if err != nil {
+			return fmt.Errorf("--image-container-port must be a valid integer, got %q: %w", p.imageContainerPort, err)
+		}
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("--image-container-port must be between 1 and 65535, got %d", port)
+		}
+	}
+
+	// Validate runAsUser is a valid int64 if provided
+	if len(p.runAsUser) > 0 {
+		userID, err := strconv.ParseInt(p.runAsUser, 10, 64)
+		if err != nil {
+			return fmt.Errorf("--run-as-user must be a valid integer, got %q: %w", p.runAsUser, err)
+		}
+		if userID < 0 {
+			return fmt.Errorf("--run-as-user must be non-negative, got %d", userID)
+		}
 	}
 
 	isGoV3 := false
