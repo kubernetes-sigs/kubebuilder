@@ -30,10 +30,6 @@ runnable project lives in [project][tutorial-project-source], while
 intermediate files live directly under the [testdata][tutorial-source]
 directory.
 
-[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata
-
-[tutorial-project-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
-
 </aside>
 
 ## Scaffolding Out Our Project
@@ -73,5 +69,7 @@ Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the modul
 
 </aside>
 
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata
+[tutorial-project-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules

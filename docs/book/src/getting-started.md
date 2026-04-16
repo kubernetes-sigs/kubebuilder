@@ -24,8 +24,6 @@ Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
 [docs/book/src/getting-started/testdata/project][tutorial-source].
 
-[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
-
 </aside>
 
 ## Create a project
@@ -461,3 +459,4 @@ implemented for your controller.
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [autoupdate-plugin]: ./plugins/available/autoupdate-v1-alpha.md
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project

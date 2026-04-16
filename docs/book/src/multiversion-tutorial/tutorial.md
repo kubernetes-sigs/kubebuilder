@@ -19,8 +19,8 @@ Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
 [docs/book/src/multiversion-tutorial/testdata/project][tutorial-source].
 
-[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/multiversion-tutorial/testdata/project
-
 </aside>
 
 Next, let's figure out what changes we want to make...
+
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/multiversion-tutorial/testdata/project
