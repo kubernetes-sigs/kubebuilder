@@ -10,7 +10,7 @@ First up, basic infrastructure for building your project:
 <details><summary><code>go.mod</code>: A new Go module matching our project, with
 basic dependencies</summary>
 
-```go
+```text
 {{#include ./testdata/project/go.mod}}
 ```
 </details>

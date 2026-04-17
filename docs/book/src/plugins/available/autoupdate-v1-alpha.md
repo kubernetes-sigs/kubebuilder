@@ -122,7 +122,7 @@ Edit `.github/workflows/auto_update.yml`:
 #### If you get the 403 Forbidden Error
 
 **Error message:**
-```
+```text
 ERROR Update failed error=failed to open GitHub issue: gh models run failed: exit status 1
 Error: unexpected response from the server: 403 Forbidden
 ```

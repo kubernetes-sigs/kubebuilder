@@ -34,7 +34,7 @@ Before using these AI instructions:
 
 Copy and paste these instructions to your AI assistant:
 
-```
+```text
 Port custom code from Kubebuilder project backup to new scaffolded project.
 
 CONTEXT:

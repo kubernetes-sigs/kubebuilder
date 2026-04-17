@@ -67,7 +67,7 @@ Now that we have a base layout in place, we will enable you for multiple modules
 
 Your api go.mod file could now look like this:
 
-```go.mod
+```text
 module YOUR_GO_PATH/test-operator/api/v1alpha1
 
 go 1.21.0
@@ -123,7 +123,7 @@ You can do this with 2 different approaches: go modules and go workspaces.
 For go modules, you will edit the main `go.mod` file of your project and issue a replace directive.
 
 You can do this by editing the `go.mod` with
-``
+
 ```shell
 go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you didn't already resolve the module
 go mod edit -replace YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0=./api/v1alpha1

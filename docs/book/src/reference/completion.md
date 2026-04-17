@@ -55,6 +55,6 @@ Follow a similar protocol for `zsh` completion.
 
 ## Fish
 
-```
+```bash
 source (kubebuilder completion fish | psub)
 ```

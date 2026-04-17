@@ -67,7 +67,7 @@ However, before doing so, ensure that your client has the
 
 Kubebuilder scaffolds a `ClusterRole` with the necessary read permissions under:
 
-```
+```text
 config/rbac/metrics_reader_role.yaml
 ```
 
@@ -360,7 +360,7 @@ flow at the IP address or port level. However, it doesn't handle `authn/authz`.
 
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
-```
+```yaml
 # [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
 # Only Pod(s) running a namespace labeled with 'metrics: enabled' will be able to gather the metrics.
 # Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' will be able to work properly.
@@ -388,7 +388,7 @@ Note that, when you install your project in the cluster, it will create the
 `ServiceMonitor` to export the metrics. To check the ServiceMonitor,
 run `kubectl get ServiceMonitor -n <project>-system`. See an example:
 
-```
+```bash
 $ kubectl get ServiceMonitor -n monitor-system
 NAME                                         AGE
 monitor-controller-manager-metrics-monitor   2m8s

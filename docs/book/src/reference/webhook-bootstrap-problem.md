@@ -135,7 +135,7 @@ grep "  name: v" config/webhook/manifests.yaml  # Count validating webhooks
 
 **Example output:**
 
-```
+```text
   name: mpod-v1.kb.io         # Index 0
   name: mdeployment-v1.kb.io  # Index 1
 ```

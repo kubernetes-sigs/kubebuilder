@@ -16,7 +16,7 @@ After creating a project, usually you will want to extend the Kubernetes APIs an
 
 The domain is for the group suffix, to explicitly show the resource group category.
 For example, if set `--domain=example.com`:
-```
+```bash
 kubebuilder init --domain example.com --repo xxx --plugins=go/v4
 kubebuilder create api --group mygroup --version v1beta1 --kind Mykind
 ```
@@ -82,7 +82,7 @@ environment variables to only add this option for development purposes, such as:
 ## I am facing the error "open /var/run/secrets/kubernetes.io/serviceaccount/token: permission denied" when I deploy my project against Kubernetes old versions. How to sort it out?
 
 If you are facing the error:
-```
+```text
 1.6656687258729894e+09  ERROR   controller-runtime.client.config        unable to get kubeconfig        {"error": "open /var/run/secrets/kubernetes.io/serviceaccount/token: permission denied"}
 sigs.k8s.io/controller-runtime/pkg/client/config.GetConfigOrDie
         /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.13.0/pkg/client/config/config.go:153

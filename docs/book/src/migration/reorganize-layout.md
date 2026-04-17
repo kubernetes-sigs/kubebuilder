@@ -27,7 +27,7 @@ Always validate changes carefully.
 
 Copy and paste these instructions to your AI assistant:
 
-```
+```text
 Reorganize Kubebuilder project files to match new directory layout.
 
 CONTEXT:

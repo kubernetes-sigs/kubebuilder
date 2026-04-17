@@ -32,14 +32,14 @@ This migration involves repetitive file moving and import path updates. If you'r
 Here's what changes when you go from single-group to multi-group:
 
 **Single-group layout (default):**
-```
+```text
 api/<version>/*_types.go                  All your CRD schemas in one place
 internal/controller/*                     All your controllers together
 internal/webhook/<version>/*              Webhooks organized by version (if you have any)
 ```
 
 **Multi-group layout:**
-```
+```text
 api/<group>/<version>/*_types.go          CRD schemas organized by group
 internal/controller/<group>/*             Controllers organized by group
 internal/webhook/<group>/<version>/*      Webhooks organized by group and version (if you have any)
@@ -283,7 +283,7 @@ If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can a
 
 Give your AI assistant these instructions, replacing the values in the first two lines:
 
-```
+```text
 I need to migrate this Kubebuilder project to multi-group layout.
 
 Project details:

@@ -48,7 +48,7 @@ Projects with heavily customized layouts may require manual analysis.
 
 Copy and paste these instructions to your AI assistant (Cursor, Claude, GitHub Copilot, etc.):
 
-```
+```text
 Analyze this Kubebuilder project and generate all CLI commands to recreate it.
 
 CONTEXT:

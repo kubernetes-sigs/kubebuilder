@@ -298,7 +298,7 @@ If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can a
 
 **Instructions to provide to your AI assistant:**
 
-```
+```text
 I need to migrate this Kubebuilder project from cluster-scoped to namespace-scoped.
 
 First, get the namespace value:

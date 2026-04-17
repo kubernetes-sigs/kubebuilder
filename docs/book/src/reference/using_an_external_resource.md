@@ -60,7 +60,7 @@ See the RBAC [markers][markers-rbac] generated for this:
 
 Also, the RBAC role:
 
-```ymal
+```yaml
 - apiGroups:
   - cert-manager.io
   resources:

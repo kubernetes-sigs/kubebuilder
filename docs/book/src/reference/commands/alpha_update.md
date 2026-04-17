@@ -98,7 +98,7 @@ kubebuilder alpha update --force
 ```
 
 Keep full history instead of squashing:
-```
+```bash
 kubebuilder alpha update --from-version v4.5.0 --to-version v4.7.0 --force --show-commits
 ```
 
