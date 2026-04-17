@@ -65,7 +65,7 @@ See an example of how to use the plugin in your project:
    <img width="644" src="https://user-images.githubusercontent.com/18136486/176121955-1c4aec9c-0ba4-4271-9767-e8d1726d9d9a.png">
 4. Select the data source for Prometheus metrics
    <img width="633" src="https://user-images.githubusercontent.com/18136486/176122261-e3eab5b0-9fc4-45fc-a68c-d9ce1cfe96ee.png">
-5. Once the json is imported in Grafana, the dashboard is ready.
+5. Once the JSON is imported in Grafana, the dashboard is ready.
 
 ### Grafana dashboard
 
