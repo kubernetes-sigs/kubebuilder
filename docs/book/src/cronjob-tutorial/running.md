@@ -25,9 +25,9 @@ If you encounter errors when applying the CRDs, due to `metadata.annotations` ex
 
 </aside>
 
-Now that you've installed the CRDs, run the controller against the
+Now that you have installed the CRDs, run the controller against the
 cluster.  This uses whatever credentials you use to connect to the
-cluster, so you don't need to worry about RBAC just yet.
+cluster, so you do not need to worry about RBAC just yet.
 
 <aside class="note" role="note">
 
@@ -38,7 +38,7 @@ certificates for serving the webhooks, and place them in the right
 directory (`/tmp/k8s-webhook-server/serving-certs/tls.{crt,key}`, by
 default).
 
-If you're not running a local API server, you'll also need to figure out
+If you are not running a local API server, you will also need to figure out
 how to proxy traffic from the remote cluster to your local webhook server.
 For this reason, disable webhooks when doing
 your local code-run-test cycle, as shown below.
@@ -52,7 +52,7 @@ export ENABLE_WEBHOOKS=false
 make run
 ```
 
-You should see logs from the controller about starting up, but it won't do
+You should see logs from the controller about starting up, but it will not do
 anything just yet.
 
 At this point, you need a CronJob to test with.  Write a sample to
@@ -74,7 +74,7 @@ kubectl get cronjob.batch.tutorial.kubebuilder.io -o yaml
 kubectl get job
 ```
 
-Now that you know it's working, run it in the cluster. Stop the
+Now that you know it is working, run it in the cluster. Stop the
 `make run` invocation, and run
 
 ```bash
@@ -86,10 +86,10 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <p class="note-title">Registry Permission</p>
 
 You should publish this image to the personal registry you specified. You also need access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don't work.
+Make sure you have the proper permission to the registry if the above commands do not work.
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a Kind cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified Kind cluster:
 
 ```bash

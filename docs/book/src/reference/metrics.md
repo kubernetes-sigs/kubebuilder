@@ -355,7 +355,7 @@ project to use certificates managed by CertManager.
 ### **(Optional)** By using network policy (disabled by default)
 
 NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
-flow at the IP address or port level. However, it doesn't handle `authn/authz`.
+flow at the IP address or port level. However, it does not handle `authn/authz`.
 
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
@@ -372,7 +372,7 @@ Follow the steps below to export the metrics using the Prometheus Operator:
 
 1. Install Prometheus and Prometheus Operator.
    We recommend using [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)
-   in production if you don't have your own monitoring system.
+   in production if you do not have your own monitoring system.
    If you are just experimenting, you can only install Prometheus and Prometheus Operator.
 
 2. Uncomment the line `- ../prometheus` in the `config/default/kustomization.yaml`.

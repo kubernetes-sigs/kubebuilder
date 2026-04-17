@@ -18,7 +18,7 @@ bits disabled. To enable them:
 Additionally, if present in the Makefile, set the `CRD_OPTIONS` variable to just
 `"crd"`, removing the `trivialVersions` option (this ensures that it
 actually [generates validation for each version][ref-multiver], instead of
-telling Kubernetes that they're the same):
+telling Kubernetes that they are the same):
 
 ```makefile
 CRD_OPTIONS ?= "crd"
@@ -28,7 +28,7 @@ Now that all code changes and manifests are in place, deploy it to
 the cluster and test it out.
 
 You'll need [cert-manager](../cronjob-tutorial/cert-manager.md) installed
-(version `0.9.0+`) unless you've got some other certificate management
+(version `0.9.0+`) unless you have got some other certificate management
 solution.  The Kubebuilder team has tested the instructions in this tutorial
 with
 [0.9.0-alpha.0](https://github.com/cert-manager/cert-manager/releases/tag/v0.9.0-alpha.0)
@@ -55,7 +55,7 @@ Then, create it on the cluster:
 kubectl apply -f config/samples/batch_v2_cronjob.yaml
 ```
 
-If you've done everything correctly, it should create successfully,
+If you have done everything correctly, it should create successfully,
 and you should be able to fetch it using both the v2 resource
 
 ```shell

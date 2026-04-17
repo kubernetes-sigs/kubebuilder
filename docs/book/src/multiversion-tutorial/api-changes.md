@@ -9,8 +9,8 @@ this -- right now, in `v1`, our schedules look like
 schedule: "*/1 * * * *"
 ```
 
-That's a pretty textbook example of a special string format (it's also
-pretty unreadable unless you're a Unix sysadmin).
+That is a pretty textbook example of a special string format (it is also
+pretty unreadable unless you are a Unix sysadmin).
 
 Make it a bit more structured.  According to the [CronJob
 code][cronjob-sched-code], it supports "standard" Cron format.
@@ -21,7 +21,7 @@ then back to version 1, you must not lose information.  Thus, any change you
 make to your API must be compatible with whatever you supported in v1, and
 you also need to make sure anything you add in v2 is supported in v1.  In some
 cases, this means you need to add new fields to v1, but in this case, you
-won't have to, since you're not adding new functionality.
+will not have to, since you are not adding new functionality.
 
 Keeping all that in mind, convert the example above to be
 slightly more structured:

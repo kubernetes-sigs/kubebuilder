@@ -57,7 +57,7 @@ See an example of how to use the plugin in your project:
 
 ![output](https://user-images.githubusercontent.com/18136486/175382307-9a6c3b8b-6cc7-4339-b221-2539d0fec042.gif)
 
-#### Now, let's check how to use the Grafana dashboards
+#### Now, let us check how to use the Grafana dashboards
 
 1. Copy the JSON file
 2. Visit `<your-grafana-url>/dashboard/import` to [import a new dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard).
@@ -162,7 +162,7 @@ See an example of how to use the plugin in your project:
 - Query:
   - rate(workqueue_unfinished_work_seconds{job="$job", namespace="$namespace"}[5m])
 - Description
-  - How many seconds of work has done that is in progress and hasn't been observed by work_duration.
+  - How many seconds of work has done that is in progress and has not been observed by work_duration.
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/081727c0-9531-4f7a-9649-87723ebc773f">
 
 ### Visualize custom metrics

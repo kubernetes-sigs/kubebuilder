@@ -18,5 +18,5 @@ HorizontalPodAutoscaler).
 
 {{#literatego ./testdata/emptycontroller.go}}
 
-Now that you've seen the basic structure of a reconciler, fill out
+Now that you have seen the basic structure of a reconciler, fill out
 the logic for `CronJob`s.

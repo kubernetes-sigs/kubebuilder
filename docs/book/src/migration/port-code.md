@@ -120,7 +120,7 @@ PORT CUSTOM CODE (in this order):
    b. For packages in BOTH with different versions:
       - Keep the HIGHER (newer) version
       - If backup has newer version: go get <package>@<newer-version>
-      - If new scaffold has newer version: keep it (don't downgrade)
+      - If new scaffold has newer version: keep it (do not downgrade)
       - NOTE: Old projects can have newer versions than scaffold
 
    After ALL: run go mod tidy
@@ -197,7 +197,7 @@ PORT CUSTOM CODE (in this order):
 
    After: make build
 
-6. Port config settings (ADAPT, don't copy):
+6. Port config settings (ADAPT, do not copy):
 
    a. config/default/kustomization.yaml - Compare and adapt:
       - Uncomment webhook/certmanager if you have webhooks
@@ -224,7 +224,7 @@ PORT CUSTOM CODE (in this order):
    - Integration tests: Copy test/integration/* if exist
 
 9. Port additional files:
-   - README: Port custom sections (don't replace entire file)
+   - README: Port custom sections (do not replace entire file)
    - Additional dirs: Copy docs/, scripts/, examples/, charts/, testdata/ if exist
    - Root files: Copy .env, VERSION, CHANGELOG.md, CONTRIBUTING.md if exist
    - .github workflows: Copy custom workflows
@@ -251,7 +251,7 @@ IMPORTANT REMINDERS:
 - NEVER edit auto-generated files (already listed in CONTEXT above)
 - NEVER remove // +kubebuilder:scaffold:* comments
 - REMOVE "// TODO(user):" when replacing with custom code
-- ADAPT config YAML files, don't copy entire files
+- ADAPT config YAML files, do not copy entire files
 - Port EVERYTHING except: .git/, bin/, vendor/, dist/, zz_generated.*, go.sum
 - Follow make command sequence from CONTEXT above
 ```

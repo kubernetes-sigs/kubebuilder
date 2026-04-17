@@ -6,7 +6,7 @@ complicated stuff.  Instead, this tutorial should take you through (almost)
 the full gamut of complexity with Kubebuilder, starting off simple and
 building up to something pretty full-featured.
 
-Pretend (and sure, this is a teensy bit contrived) that you've
+Pretend (and sure, this is a teensy bit contrived) that you have
 finally gotten tired of the maintenance burden of the non-Kubebuilder
 implementation of the CronJob controller in Kubernetes, and you'd like to
 rewrite it using Kubebuilder.
@@ -35,7 +35,7 @@ directory.
 ## Scaffolding out our project
 
 As covered in the [quick start](../quick-start.md), scaffold
-out a new project.  Make sure you've [installed
+out a new project.  Make sure you have [installed
 Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 

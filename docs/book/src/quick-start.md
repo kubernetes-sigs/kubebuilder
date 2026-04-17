@@ -232,10 +232,10 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <p class="note-title">Registry Permission</p>
 
 You should publish this image to the personal registry you specified. You also need access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don't work.
+Make sure you have the proper permission to the registry if the above commands do not work.
 
 Consider incorporating [Kind][kind] into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a [Kind][kind] cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a [Kind][kind] cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified [Kind][kind] cluster:
 
 ```bash

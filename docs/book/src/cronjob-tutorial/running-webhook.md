@@ -16,7 +16,7 @@ make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 <p class="note-title"> Using Kind </p>
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a Kind cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified Kind cluster:
 
 ```bash

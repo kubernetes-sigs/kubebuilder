@@ -102,7 +102,7 @@ your controller can watch, reconcile, and manage changes to these resources as n
 
 ## Why does watching the secondary resources matter?
 
-When building a Kubernetes controller, it’s crucial to not only focus
+When building a Kubernetes controller, it is crucial to not only focus
 on **Primary Resources** but also to monitor **Secondary Resources**.
 Failing to track these resources can lead to inconsistencies in your
 controller's behavior and the overall cluster state.
@@ -110,7 +110,7 @@ controller's behavior and the overall cluster state.
 Secondary resources may not be directly managed by your controller,
 but changes to these resources can still significantly
 impact the primary resource and your controller's functionality.
-Here are the key reasons why it's important to watch them:
+Here are the key reasons why it is important to watch them:
 
 - **Ensuring Consistency**:
     - Secondary resources (e.g., child objects or external dependencies) may diverge from their desired state.

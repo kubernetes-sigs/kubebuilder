@@ -1,6 +1,6 @@
 # Using external resources
 
-In some cases, your project may need to work with resources that aren't defined by your own APIs.
+In some cases, your project may need to work with resources that are not defined by your own APIs.
 These external resources fall into two main categories:
 
 - **Core Types**: API types defined by Kubernetes itself, such as `Pods`, `Services`, and `Deployments`.
@@ -25,7 +25,7 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 - `--external-api-path`: Provide the Go import path where you define the external types.
 - `--external-api-domain`: Provide the domain for the external types. Kubebuilder uses this value to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
 
-For example, if you're managing Certificates from Cert Manager:
+For example, if you are managing Certificates from Cert Manager:
 
 ```shell
 kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io

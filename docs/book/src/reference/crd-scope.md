@@ -265,7 +265,7 @@ kubectl get memcacheds -n other-namespace  # Should not find it
 # Create cluster-scoped resource (no namespace)
 kubectl apply -f config/samples/infrastructure_v1_database.yaml
 
-# Verify it's cluster-wide
+# Verify it is cluster-wide
 kubectl get databases  # No namespace needed
 ```
 

@@ -168,20 +168,20 @@ Here's a pseudo-code example to illustrate this:
 reconcile App {
 
   // Check if a Deployment for the app exists, if not, create one
-  // If there's an error, then restart from the beginning of the reconcile
+  // If there is an error, then restart from the beginning of the reconcile
   if err != nil {
     return reconcile.Result{}, err
   }
 
   // Check if a Service for the app exists, if not, create one
-  // If there's an error, then restart from the beginning of the reconcile
+  // If there is an error, then restart from the beginning of the reconcile
   if err != nil {
     return reconcile.Result{}, err
   }
 
   // Look for Database CR/CRD
   // Check the Database Deployment's replicas size
-  // If deployment.replicas size doesn't match cr.size, then update it
+  // If deployment.replicas size does not match cr.size, then update it
   // Then, restart from the beginning of the reconcile. For example, by returning `reconcile.Result{Requeue: true}, nil`.
   if err != nil {
     return reconcile.Result{Requeue: true}, nil

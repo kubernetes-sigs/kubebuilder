@@ -47,13 +47,13 @@ kubebuilder create api \
 
 - This plugin is ideal for users who are just getting started with Kubernetes operators.
 - It helps users deploy and manage an image (Operand) using the [Operator pattern][operator-pattern].
-- If you're looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
+- If you are looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
 
 ## How to use it?
 
 1. **Initialize your project**:
    After creating a new project with `kubebuilder init`, you can use this
-   plugin to create APIs. Ensure that you've completed the
+   plugin to create APIs. Ensure that you have completed the
    [quick start][quick-start] guide before proceeding.
 
 2. **Create APIs**:

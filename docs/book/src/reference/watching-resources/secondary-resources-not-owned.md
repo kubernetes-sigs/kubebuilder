@@ -80,7 +80,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
                         },
                     }
                 }
-                // If the label is not present or doesn't match, don't trigger reconciliation
+                // If the label is not present or does not match, do not trigger reconciliation
                 return []reconcile.Request{}
             }),
         ).  // Trigger reconciliation when the labeled Busybox resource changes

@@ -43,7 +43,7 @@ Having one controller manage many Custom Resources (CRs) in an Operator can lead
 - **Error Isolation**: If one controller manages multiple CRs and an error occurs, it could potentially impact all the CRs it manages. Having a single controller per CR ensures that an issue with one controller or CR does not directly affect others.
 - **Concurrency and Synchronization**: A single controller managing multiple CRs could lead to race conditions and require complex synchronization, especially if the CRs have interdependencies.
 
-In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It's generally better to adhere to the single responsibility principle, where each CR is managed by its own controller.
+In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It is generally better to adhere to the single responsibility principle, where each CR is managed by its own controller.
 
 ## Why you should adopt status conditions
 
@@ -67,7 +67,7 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 
 ## You should adopt Kubernetes conventions for instrumentation and observability
 
-Proper logging is essential for observability in Kubernetes-native applications. However, it's important to understand which logging conventions to apply based on the context of your code.
+Proper logging is essential for observability in Kubernetes-native applications. However, it is important to understand which logging conventions to apply based on the context of your code.
 
 ### Understanding Go vs. Kubernetes logging conventions
 

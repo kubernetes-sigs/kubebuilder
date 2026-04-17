@@ -1,6 +1,6 @@
 # Using predicates to refine watches
 
-When working with controllers, it's often beneficial to use **Predicates** to
+When working with controllers, it is often beneficial to use **Predicates** to
 filter events and control when the reconciliation loop should be triggered.
 
 [Predicates][predicates-doc] allow you to define conditions based on events (such as create, update, or delete)
@@ -17,7 +17,7 @@ controller only reacts to relevant changes.
 
 **Predicates are useful when:**
 
-- You want to ignore certain changes, such as updates that don't impact the fields your controller is concerned with.
+- You want to ignore certain changes, such as updates that do not impact the fields your controller is concerned with.
 - You want to trigger reconciliation only for resources with specific labels or annotations.
 - You want to watch external resources and react only to specific changes.
 
@@ -30,7 +30,7 @@ the `spec.size` field changes, but should ignore all other changes (such as stat
 ### Defining a predicate
 
 In the following example, define a predicate that only
-allows reconciliation when there’s a meaningful update
+allows reconciliation when there is a meaningful update
 to the **`Busybox`** resource:
 
 ```go

@@ -65,7 +65,7 @@ test: manifests generate fmt vet
 
 NOTE: The `ENVTEST_K8S_VERSION` needs to match the `setup-envtest` you downloaded above. Otherwise, you will see an error like the below
 ```sh
-no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what's on disk
+no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what is on disk
 ```
 
 ## Writing tests
@@ -184,7 +184,7 @@ testEnv = &envtest.Environment{
 
 ## Testing considerations
 
-Unless you're using an existing cluster, keep in mind that no built-in controllers run in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might impact how you write tests. One common example is garbage collection; because no controllers monitor built-in resources, Kubernetes does not delete objects, even if you set up an `OwnerReference`.
+Unless you are using an existing cluster, keep in mind that no built-in controllers run in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might impact how you write tests. One common example is garbage collection; because no controllers monitor built-in resources, Kubernetes does not delete objects, even if you set up an `OwnerReference`.
 
 To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
 

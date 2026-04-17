@@ -14,7 +14,7 @@ This workflow by default **only** creates and pushes the merged files to a branc
 called `kubebuilder-update-from-<from-version>-to-<to-version>`.
 
 To keep your codebase safe, use branch protection rules to ensure that
-changes aren't pushed or merged without proper review.
+changes are not pushed or merged without proper review.
 
 </aside>
 

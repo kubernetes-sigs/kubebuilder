@@ -2,7 +2,7 @@
 
 ## Overview
 
-When using Kubebuilder as a library, you may need to scaffold files with extensions that aren't natively supported by Kubebuilder's marker system. This guide shows you how to create custom marker support for any file extension.
+When using Kubebuilder as a library, you may need to scaffold files with extensions that are not natively supported by Kubebuilder's marker system. This guide shows you how to create custom marker support for any file extension.
 
 ## When to Use Custom Markers
 
@@ -11,7 +11,7 @@ Custom markers are useful when:
 - You're building an external plugin for languages not natively supported by Kubebuilder
 - You want to scaffold files with custom extensions (`.rs`, `.java`, `.py`, `.tpl`, etc.)
 - You need scaffolding markers in non-Go files for your own use cases
-- Your file extensions aren't (and shouldn't be) part of the core `commentsByExt` map
+- Your file extensions are not (and should not be) part of the core `commentsByExt` map
 
 ## Understanding markers
 

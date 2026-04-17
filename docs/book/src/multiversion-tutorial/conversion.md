@@ -1,6 +1,6 @@
 # Implementing conversion
 
-With the model for conversion in place, it's time to actually implement
+With the model for conversion in place, it is time to actually implement
 the conversion functions.  Create a conversion webhook
 for the CronJob API version `v1` (Hub) to Spoke the CronJob API version
 `v2` see:
@@ -35,5 +35,5 @@ Then, implement the spoke, the v2 version:
 
 {{#literatego ./testdata/project/api/v2/cronjob_conversion.go}}
 
-Now that the conversions are in place, all that's needed is to
+Now that the conversions are in place, all that is needed is to
 wire up main to serve the webhook!

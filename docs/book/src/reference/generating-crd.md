@@ -24,9 +24,9 @@ CRDs support [declarative validation][kube-validation] using an [OpenAPI
 v3 schema][openapi-schema] in the `validation` section.
 
 In general, [validation markers](./markers/crd-validation.md) may be
-attached to fields or to types. If you're defining complex validation, if
+attached to fields or to types. If you are defining complex validation, if
 you need to re-use validation, or if you need to validate slice elements,
-it's often best to define a new type to describe your validation.
+it is often best to define a new type to describe your validation.
 
 For example:
 
@@ -173,10 +173,10 @@ should be used to store data by the API server.
 ## Under the hood
 
 Kubebuilder scaffolds out make rules to run `controller-gen`.  The rules
-will automatically install controller-gen if it's not on your path using
+will automatically install controller-gen if it is not on your path using
 `go install` with Go modules.
 
-You can also run `controller-gen` directly, if you want to see what it's
+You can also run `controller-gen` directly, if you want to see what it is
 doing.
 
 Each controller-gen "generator" is controlled by an option to

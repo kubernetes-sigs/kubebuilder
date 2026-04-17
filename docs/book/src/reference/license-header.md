@@ -153,7 +153,7 @@ kubebuilder create api --group myapp --version v1 --kind MyNewKind
 **Manual Updates:**
 For hand-written files, manually update headers using `hack/boilerplate.go.txt` as a reference.
 
-## How it's used
+## How it is used
 
 `hack/boilerplate.go.txt` is used when generating or regenerating files:
 

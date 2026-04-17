@@ -41,7 +41,7 @@ plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
 <p class="note-title">Default rules</p>
 
-When you don't manually specify a fallback rule, controller-gen uses a set of default
+When you do not manually specify a fallback rule, controller-gen uses a set of default
 per-generator rules which result in YAML going to
 `config/<generator>`, and code staying where it belongs.
 
@@ -49,14 +49,14 @@ The default rules are equivalent to
 `output:<generator>:artifacts:config=config/<generator>` for each
 generator.
 
-When a "fallback" rule is specified, that'll be used instead of the
+When a "fallback" rule is specified, that will be used instead of the
 default rules.
 
 For example, if you specify `crd rbac:roleName=controller-perms
-output:crd:stdout`, you'll get CRDs on standard out, and rbac in a file in
+output:crd:stdout`, you will get CRDs on standard out, and rbac in a file in
 `config/rbac`. If you were to add in a global rule instead, like `crd
-rbac:roleName=controller-perms output:crd:stdout output:none`, you'd get
-CRDs to standard out, and everything else to /dev/null, because we've
+rbac:roleName=controller-perms output:crd:stdout output:none`, you would get
+CRDs to standard out, and everything else to /dev/null, because we have
 explicitly specified a fallback.
 
 </aside>

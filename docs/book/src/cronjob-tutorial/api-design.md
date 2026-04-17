@@ -9,7 +9,7 @@ Fields may use most of the primitive types.  Numbers are the exception:
 for API compatibility purposes, accept three forms of numbers: `int32`
 and `int64` for integers, and `resource.Quantity` for decimals.
 
-<details><summary>Hold up, what's a Quantity?</summary>
+<details><summary>Hold up, what is a Quantity?</summary>
 
 Quantities are a special notation for decimal numbers that have an
 explicitly fixed representation that makes them more portable across
@@ -34,7 +34,7 @@ mebibytes](https://en.wikipedia.org/wiki/Binary_prefix).
 
 </details>
 
-There's one other special type to use: `metav1.Time`.  This functions
+There is one other special type to use: `metav1.Time`.  This functions
 identically to `time.Time`, except that it has a fixed, portable
 serialization format.
 

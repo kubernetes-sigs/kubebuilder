@@ -24,9 +24,9 @@ It has also added a file for the `CronJob` Kind,
 `api/v1/cronjob_types.go`.  Each time you call the command with a different
 kind, it adds a corresponding new file.
 
-Take a look at what you've been given out of the box, then
+Take a look at what you have been given out of the box, then
 move on to filling it out.
 
 {{#literatego ./testdata/emptyapi.go}}
 
-Now that you've seen the basic structure, fill it out!
+Now that you have seen the basic structure, fill it out!

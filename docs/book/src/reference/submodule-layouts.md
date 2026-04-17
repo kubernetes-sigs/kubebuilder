@@ -125,7 +125,7 @@ For go modules, you will edit the main `go.mod` file of your project and issue a
 You can do this by editing the `go.mod` with
 
 ```shell
-go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you didn't already resolve the module
+go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you did not already resolve the module
 go mod edit -replace YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0=./api/v1alpha1
 go mod tidy
 ```
@@ -190,8 +190,8 @@ COPY go.sum go.sum
 # Copy the Go Sub-Module manifests
 COPY api/v1alpha1/go.mod api/go.mod
 COPY api/v1alpha1/go.sum api/go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
+# cache deps before building and copying source so that we do not need to re-download as much
+# and so that source changes do not invalidate our downloaded layer
 RUN go mod download
 
 # Copy the go source
@@ -231,7 +231,7 @@ go mod edit -dropreplace YOUR_GO_PATH/test-operator/api/v1alpha1 # this will dro
 git push origin main v1.0.0 api/v1.0.0
 ```
 
-After this, your modules is available in VCS and you do not need a local replacement anymore. However if you're making local changes,
+After this, your modules is available in VCS and you do not need a local replacement anymore. However if you are making local changes,
 make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module

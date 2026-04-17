@@ -2,13 +2,13 @@
 
 Most projects start out with an alpha API that changes release to release.
 However, eventually, most projects needs to move to a more stable API.
-Once your API is stable though, you can't make breaking changes to it.
+Once your API is stable though, you cannot make breaking changes to it.
 That's where API versions come into play.
 
 Make some changes to the `CronJob` API spec and make sure all the
 different versions are supported by the CronJob project.
 
-If you haven't already, make sure you've gone through the base [CronJob
+If you have not already, make sure you have gone through the base [CronJob
 Tutorial](/cronjob-tutorial/cronjob-tutorial.md).
 
 <aside class="note" role="note">

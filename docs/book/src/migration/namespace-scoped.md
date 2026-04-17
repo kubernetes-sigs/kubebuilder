@@ -5,7 +5,7 @@ This guide covers converting **existing cluster-scoped projects** to namespace-s
 <aside class="note" role="note">
 <p class="note-title">Creating New Namespace-Scoped Projects</p>
 
-If you're creating a **new project**, simply use:
+If you are creating a **new project**, simply use:
 
 ```bash
 kubebuilder init --domain example.com --namespaced
@@ -31,7 +31,7 @@ By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage 
 <aside class="note" role="note">
 <p class="note-title">AI-Assisted Migration</p>
 
-This migration involves updating RBAC markers across multiple controller files. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
+This migration involves updating RBAC markers across multiple controller files. If you are using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
 </aside>
 
@@ -290,7 +290,7 @@ See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html)
 
 ## AI-Assisted Migration
 
-If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
+If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
 
 <aside class="note" role="note">
 
@@ -499,7 +499,7 @@ This command automatically:
    - Remove `setupCacheNamespaces()` function
    - Remove namespace retrieval and cache configuration
    - Remove added imports (`fmt`, `strings`, `cache`) if not used elsewhere
-4. If you didn't use `--force`, manually remove `WATCH_NAMESPACE` from `config/manager/manager.yaml`
+4. If you did not use `--force`, manually remove `WATCH_NAMESPACE` from `config/manager/manager.yaml`
 
 ## Important notes
 

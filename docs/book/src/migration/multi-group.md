@@ -1,6 +1,6 @@
 # Single group to multi-group
 
-Kubebuilder scaffolds single-group projects by default to keep things simple, as most projects don't require multiple API groups. However, you can convert an existing single-group project to use multi-group layout when needed. This reorganizes your APIs and controllers into group-specific directories.
+Kubebuilder scaffolds single-group projects by default to keep things simple, as most projects do not require multiple API groups. However, you can convert an existing single-group project to use multi-group layout when needed. This reorganizes your APIs and controllers into group-specific directories.
 
 See the [design doc][multigroup-design] for the rationale behind this design decision.
 
@@ -8,7 +8,7 @@ See the [design doc][multigroup-design] for the rationale behind this design dec
 
 <p class="note-title">What's a Multi-Group Project?</p>
 
-Multi-group layout is useful when you're building APIs for different purposes or domains. For example, you might have:
+Multi-group layout is useful when you are building APIs for different purposes or domains. For example, you might have:
 - A `batch` group for job-related resources (CronJob, Job)
 - An `apps` group for application resources (Deployment, StatefulSet)
 - A `crew` group for team management resources (Captain, Sailor)
@@ -23,7 +23,7 @@ See [Groups and Versions and Kinds, oh my!][gvks] to better understand API group
 
 <p class="note-title">AI-Assisted Migration</p>
 
-This migration involves repetitive file moving and import path updates. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
+This migration involves repetitive file moving and import path updates. If you are using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
 </aside>
 
@@ -45,7 +45,7 @@ internal/controller/<group>/*             Controllers organized by group
 internal/webhook/<group>/<version>/*      Webhooks organized by group and version (if you have any)
 ```
 
-You can tell which layout you're using by checking your `PROJECT` file for `multigroup: true`.
+You can tell which layout you are using by checking your `PROJECT` file for `multigroup: true`.
 
 ## Migration steps
 
@@ -54,7 +54,7 @@ The following steps migrate the [CronJob example][cronjob-tutorial] from single-
 <aside class="note" role="note">
 <p class="note-title">Starting new projects with multigroup</p>
 
-If you're starting a **new project** and already know you want multigroup layout, you can use the `--multigroup` flag during initialization:
+If you are starting a **new project** and already know you want multigroup layout, you can use the `--multigroup` flag during initialization:
 
 ```bash
 kubebuilder init --domain example.org --multigroup
@@ -136,7 +136,7 @@ mv internal/webhook/v1 internal/webhook/batch/
 mv internal/webhook/v2 internal/webhook/batch/  # if v2 exists
 ```
 
-If you don't have webhooks, skip this step.
+If you do not have webhooks, skip this step.
 
 ### Step 6: Update import paths
 
@@ -177,7 +177,7 @@ Tip: Use your IDE's "Find and Replace" feature across the project.
 
 ### Step 7: Update the PROJECT file
 
-The `kubebuilder edit --multigroup=true` command sets `multigroup: true` in your PROJECT file but doesn't update paths for existing APIs. You need to manually update the `path` field for each resource.
+The `kubebuilder edit --multigroup=true` command sets `multigroup: true` in your PROJECT file but does not update paths for existing APIs. You need to manually update the `path` field for each resource.
 
 **Verify your PROJECT file has these changes:**
 
@@ -269,7 +269,7 @@ make build          # Build the project
 
 ## AI-Assisted Migration
 
-If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate most of the migration steps.
+If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate most of the migration steps.
 
 <aside class="note" role="note">
 
@@ -321,7 +321,7 @@ Steps to execute:
    mv internal/controller/*.go internal/controller/batch/
 
 4. Move webhook version directories (ONLY if internal/webhook/ exists):
-   # Skip this step entirely if you don't have an internal/webhook/ directory
+   # Skip this step entirely if you do not have an internal/webhook/ directory
    if [ -d "internal/webhook" ]; then
      mkdir -p internal/webhook/batch
      mv internal/webhook/v1 internal/webhook/batch/ 2>/dev/null || true

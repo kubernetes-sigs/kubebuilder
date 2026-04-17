@@ -1,6 +1,6 @@
 # Setting up the webhooks
 
-Our conversion is in place, so all that's left is to tell
+Our conversion is in place, so all that is left is to tell
 controller-runtime about our conversion.
 
 ## Webhook setup for v1
@@ -24,5 +24,5 @@ Similarly, our existing main file is sufficient:
 
 {{#literatego ./testdata/project/cmd/main.go}}
 
-Everything's set up and ready to go!  All that's left now is to test out
+Everything is set up and ready to go!  All that is left now is to test out
 our webhooks.

@@ -8,14 +8,14 @@ The basic logic of the CronJob controller is this:
 
 3. Clean up old jobs according to the history limits
 
-4. Check if suspended (and don't do anything else if it is)
+4. Check if suspended (and do not do anything else if it is)
 
 5. Get the next scheduled run
 
-6. Run a new job if it's on schedule, not past the deadline, and not
+6. Run a new job if it is on schedule, not past the deadline, and not
    blocked by the concurrency policy
 
-7. Requeue when either seeing a running job (done automatically) or it's
+7. Requeue when either seeing a running job (done automatically) or it is
    time for the next scheduled run.
 
 {{#literatego ./testdata/project/internal/controller/cronjob_controller.go}}

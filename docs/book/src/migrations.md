@@ -101,7 +101,7 @@ regenerate your project after upgrading the Kubebuilder CLI version and then, ma
 apply in a new scaffold.
 
 This approach is useful for projects that heavily customize the scaffold or
-when other migration methods aren't available. You might need to use this method only once to
+when other migration methods are not available. You might need to use this method only once to
 establish a baseline for future automated updates.
 
 ```shell

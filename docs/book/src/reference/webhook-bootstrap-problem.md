@@ -15,7 +15,7 @@ kubebuilder create webhook --group core --version v1 --kind Pod --programmatic-v
 2. You deploy your controller (which runs in a Pod)
 3. Kubernetes tries to create your controller Pod
 4. Your webhook intercepts this Pod creation
-5. The webhook server isn't ready yet (it's inside the Pod being created)
+5. The webhook server is not ready yet (it is inside the Pod being created)
 6. The Pod creation hangs waiting for webhook validation
 7. The webhook never starts because the Pod is blocked
 

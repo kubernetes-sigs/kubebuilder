@@ -21,7 +21,7 @@ to better understand the project layouts and structure.
 
 Manual migration is more complex than automated methods but gives you complete control. Use manual migration when:
 - Your project has significant customizations
-- Automated tools aren't available for your version yet
+- Automated tools are not available for your version yet
 
 **Two-phase approach (recommended for legacy layouts):**
 1. **Reorganize layout** - Move files to new structure (controllers → internal/controller, webhooks → internal/webhook, main.go → cmd), update imports, test, commit
@@ -184,7 +184,7 @@ Look for the domain line:
 domain: tutorial.kubebuilder.io
 ```
 
-If you don't have a `PROJECT` file (versions < `v3.0.0`),
+If you do not have a `PROJECT` file (versions < `v3.0.0`),
 check your CRD files under `config/crd/bases/` or examine the API group names.
 The domain is the part after the group name in your API groups.
 
@@ -244,11 +244,11 @@ kubebuilder edit --multigroup=true
 <aside class="warning" role="note">
 <p class="note-title">Important</p>
 
-This must be done before creating any APIs to ensure they're scaffolded in the multi-group structure.
+This must be done before creating any APIs to ensure they are scaffolded in the multi-group structure.
 
 </aside>
 
-When following this guide, you'll get the new layout automatically since you're creating a fresh project with the latest version and porting your code into it.
+When following this guide, you will get the new layout automatically since you are creating a fresh project with the latest version and porting your code into it.
 
 ## Step 3: Re-scaffold APIs and Controllers
 
@@ -259,7 +259,7 @@ For each API resource in your original project, re-scaffold them in the new proj
 Review your backup project (`../migration-backup/`) to identify all APIs. **It's recommended to check the backup directory
 regardless of whether you have a `PROJECT` file**, as not all resources may have been created using the CLI.
 
-**Check the directory structure** in your backup to ensure you don't miss any manually created resources:
+**Check the directory structure** in your backup to ensure you do not miss any manually created resources:
 
 - Look in the `api/` directory (or `apis/` for projects generated with older Kubebuilder versions) for `*_types.go` files:
   - Single-group: `api/v1/cronjob_types.go` - extract: version `v1`, kind `CronJob`, group from imports
@@ -466,7 +466,7 @@ make manifests && make build
 
 If you used [Step 3: Port Custom Code](./port-code.md) AI migration helper, your code is already ported.
 
-You may skip to [Step 5](#step-5-test-and-verify). However, it's still recommended to at least review the following steps and do manual validation to ensure all code was properly ported.
+You may skip to [Step 5](#step-5-test-and-verify). However, it is still recommended to at least review the following steps and do manual validation to ensure all code was properly ported.
 
 </aside>
 
@@ -589,7 +589,7 @@ make build
 
 **File:** `cmd/main.go`
 
-Most projects don't need to customize `main.go` as Kubebuilder handles all the standard setup automatically
+Most projects do not need to customize `main.go` as Kubebuilder handles all the standard setup automatically
 (registering APIs, setting up controllers and webhooks, manager initialization, metrics, etc.).
 
 Only port customizations that are not part of the standard scaffold. Compare your backup `main.go` with the

@@ -18,13 +18,13 @@ Each API group-version contains one or more API types, called
 *Kinds*.  While a Kind may change forms between versions, each form must
 be able to store all the data of the other forms, somehow (you can store
 the data in fields, or in annotations).  This means that using an older
-API version won't cause newer data to be lost or corrupted.  See the
+API version will not cause newer data to be lost or corrupted.  See the
 [Kubernetes API
 guidelines](https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md)
 for more information.
 
 You'll also hear mention of *resources* on occasion.  A resource is simply
-a use of a Kind in the API.  Often, there's a one-to-one mapping between
+a use of a Kind in the API.  Often, there is a one-to-one mapping between
 Kinds and resources.  For instance, the `pods` resource corresponds to the
 `Pod` Kind.  However, sometimes, the same Kind may be returned by multiple
 resources.  For instance, the `Scale` Kind is returned by all scale
@@ -38,7 +38,7 @@ lowercase form of the Kind.
 
 ## So, how does that correspond to Go?
 
-When referring to a kind in a particular group version, it's called
+When referring to a kind in a particular group version, it is called
 a *GroupVersionKind*, or GVK for short.  Same with resources and GVR. As
 you'll see shortly, each GVK corresponds to a given root Go type in
 a package.
@@ -65,10 +65,10 @@ Think about the classic scenario where the goal is to have an application and it
 
 In this way, you can create the App CRD which has its controller and which would be responsible for things like creating Deployments that contain the App and creating Services to access it and etc. Similarly, you could create a CRD to represent the DB, and deploy a controller that would manage DB instances.
 
-## Err, but what's that Scheme thing?
+## Err, but what is that Scheme thing?
 
 The `Scheme` you saw before is simply a way to keep track of what Go type
-corresponds to a given GVK (don't be overwhelmed by its
+corresponds to a given GVK (do not be overwhelmed by its
 [godocs](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime?tab=doc#Scheme)).
 
 For instance, suppose you mark the

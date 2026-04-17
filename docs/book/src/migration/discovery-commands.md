@@ -11,7 +11,7 @@ Use AI to analyze your (now reorganized) Kubebuilder project and generate all CL
 The `alpha generate` command re-scaffolds everything tracked in your PROJECT file automatically. See the [alpha generate documentation](../reference/commands/alpha_generate.md) for details.
 
 **Use this AI discovery step if:**
-- You don't have a PROJECT file (Kubebuilder < v3.0.0)
+- You do not have a PROJECT file (Kubebuilder < v3.0.0)
 - You manually created some APIs, controllers, or webhooks (not tracked in PROJECT file)
 - You want to verify all resources are discovered
 
@@ -170,7 +170,7 @@ make manifests && make generate && make build
 RULES:
 - Combine ALL webhook types in ONE command: --defaulting --programmatic-validation together
 - Conversion webhooks: use hub version and list ALL spokes: --conversion --spoke v2,v3
-- List EVERY Kind found in source code, not just what's in PROJECT file
+- List EVERY Kind found in source code, not just what is in PROJECT file
 - External type controllers: use --controller=true --resource=false
 - Webhooks for external/core types: just create webhook (no create api needed)
 - Order: external controllers first, then your APIs, then all webhooks
