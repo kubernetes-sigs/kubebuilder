@@ -1,4 +1,4 @@
-# Using Finalizers
+# Using finalizers
 
 `Finalizers` allow controllers to implement asynchronous pre-delete hooks. Let's
 say you create an external resource (such as a storage bucket) for each object of

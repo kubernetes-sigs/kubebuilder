@@ -39,7 +39,7 @@ For further information on the project layout, see [What's in a basic project?][
 
 </aside>
 
-## Migration Options
+## Migration options
 
 
 > [!TIP]
@@ -121,7 +121,7 @@ kubebuilder alpha generate
 
 See the [`alpha generate` command reference](./reference/commands/alpha_generate.md) for details.
 
-### Fully Manual Migration
+### Fully manual migration
 
 For complete control, you can manually migrate by creating a new project with the latest Kubebuilder
 version and porting your code over.

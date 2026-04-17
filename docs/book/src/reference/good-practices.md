@@ -1,6 +1,6 @@
-# Good Practices
+# Good practices
 
-## What is "Reconciliation" in Operators?
+## What is "reconciliation" in operators?
 
 When you create a project using Kubebuilder, see the scaffolded code generated under `cmd/main.go`. This code initializes a [Manager][controller-runtime-manager], and the project relies on the [controller-runtime][controller-runtime] framework. The Manager manages [Controllers][controllers], which offer a reconcile function that synchronizes resources until the desired state is achieved within the cluster.
 
@@ -45,7 +45,7 @@ Having one controller manage many Custom Resources (CRs) in an Operator can lead
 
 In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It's generally better to adhere to the single responsibility principle, where each CR is managed by its own controller.
 
-## Why You Should Adopt Status Conditions
+## Why you should adopt status conditions
 
 We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-conventions] because:
 
@@ -65,11 +65,11 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 
 </aside>
 
-## You Should Adopt K8s Conventions for Instrumentation and Observability
+## You should adopt Kubernetes conventions for instrumentation and observability
 
 Proper logging is essential for observability in Kubernetes-native applications. However, it's important to understand which logging conventions to apply based on the context of your code.
 
-### Understanding Go vs. Kubernetes Logging Conventions
+### Understanding Go vs. Kubernetes logging conventions
 
 When developing with Go, you may be familiar with the [Go Code Review Comments][go-code-review] guidelines, which state that error strings should not be capitalized and should not end with punctuation. These conventions are designed for error messages that are often composed into larger contexts:
 
@@ -81,7 +81,7 @@ log.Printf("failed to connect: %v", err)     // lowercase
 
 **However**, when developing Kubernetes-native solutions (controllers, operators, webhooks) that run on the cluster, you should follow the [Kubernetes Logging Conventions][k8s-logging] for better observability and consistency with the Kubernetes ecosystem.
 
-### Kubernetes Logging Conventions
+### Kubernetes logging conventions
 
 For controllers, operators, and webhooks, follow these guidelines:
 
@@ -104,7 +104,7 @@ log.Info("Deployment could not create Pod", "deployment", name)  // Acting subje
 log.Info("Could not delete Pod", "name", name)                   // Subject is the program itself
 ```
 
-### Why Different Conventions?
+### Why different conventions?
 
 - **Go conventions** are optimized for error messages that get composed into larger contexts and displayed inline with other text
 - **Kubernetes conventions** are optimized for structured logging in distributed systems where logs are:

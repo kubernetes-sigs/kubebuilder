@@ -1,4 +1,4 @@
-# Versions Compatibility and Supportability
+# Versions compatibility and supportability
 
 Projects created by Kubebuilder contain a `Makefile` that installs tools at versions defined during project creation.
 The main tools included are:
@@ -27,7 +27,7 @@ You can refer to the samples in the testdata directory of the tag released [v4.1
 such as the [go.mod](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/go.mod#L3) file for `project-v4`. You can also check the tools versions supported and
 tested for this release by examining the [Makefile](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/Makefile#L160-L165).
 
-## Operating Systems Supported
+## Operating systems supported
 
 Kubebuilder officially supports macOS and Linux platforms. If you are using Windows, see the [Windows instructions](https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/windows.md).
 

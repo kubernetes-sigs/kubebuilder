@@ -1,4 +1,4 @@
-# Getting Started
+# Getting started
 
 We will create a sample project to let you know how it works. This sample will:
 
@@ -46,7 +46,7 @@ Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the modul
 
 </aside>
 
-## Create the Memcached API (CRD):
+## Create the Memcached API (CRD)
 
 Next, we'll create the API which will be responsible for deploying and
 managing Memcached(s) instances on the cluster.
@@ -73,7 +73,7 @@ To make it easier to understand, think of CRDs as the definition of our custom O
 
 ### Defining our API
 
-#### Defining the Specs
+#### Defining the specs
 
 Now, we will define the values that each instance of your Memcached resource on the cluster can assume. In this example,
 we will allow configuring the number of instances with the following:
@@ -87,7 +87,7 @@ type MemcachedSpec struct {
 }
 ```
 
-#### Creating Status definitions
+#### Creating status definitions
 
 We also want to track the status of our Operations which will be done to manage the Memcached CR(s).
 This allows us to verify the Custom Resource's description of our own API and determine if everything
@@ -144,7 +144,7 @@ Both commands use [controller-gen][controller-gen] with different flags for code
 
 </details>
 
-#### Sample of Custom Resources
+#### Sample of custom resources
 
 The manifests located under the `config/samples` directory serve as examples of Custom Resources that can be applied to the cluster.
 In this particular example, by applying the given resource to the cluster, we would generate
@@ -154,7 +154,7 @@ a Deployment with a single instance size (see `size: 1`).
 {{#include ./getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml}}
 ```
 
-### Reconciliation Process
+### Reconciliation process
 
 In a simplified way, Kubernetes works by allowing us to declare the desired state of our system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For our custom APIs and controllers, the process is similar. Remember, we are extending Kubernetes' behaviors and its APIs to fit our specific needs.
 
@@ -309,9 +309,9 @@ by the users.
 ```
 </details>
 
-### Diving Into the Controller Implementation
+### Diving into the controller implementation
 
-#### Setting Manager to Watching Resources
+#### Setting manager to watching resources
 
 The whole idea is to be Watching the resources that matter for the controller.
 When a resource that the controller is interested in changes, the Watch triggers the controller's
@@ -338,7 +338,7 @@ func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
     }
 ```
 
-#### But, How Does the Manager Know Which Resources Are Owned by It?
+#### But, how does the manager know which resources are owned by it?
 
 We do not want our Controller to watch any Deployment on the cluster and trigger our
 reconciliation loop. Instead, we only want to trigger reconciliation when the specific
@@ -370,7 +370,7 @@ For more information, see the Kubernetes documentation on [Owners and Dependents
 
 </aside>
 
-### Granting Permissions
+### Granting permissions
 
 It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
 the resources it manages.
@@ -422,13 +422,13 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 
 Inspect the file `.github/workflows/auto-update.yml` to see how it works.
 
-### Checking the Project running in the cluster
+### Checking the project running in the cluster
 
 At this point you can check the steps to validate the project
 on the cluster by looking the steps defined in the Quick Start,
 see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 
-## Next Steps
+## Next steps
 
 - To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.

@@ -1,4 +1,4 @@
-# Platforms Supported
+# Platforms supported
 
 Kubebuilder produces solutions that by default can work on multiple platforms or specific ones, depending on how you
 build and configure your workloads. This guide aims to help you properly configure your projects according to your needs.

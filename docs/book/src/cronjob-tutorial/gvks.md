@@ -1,4 +1,4 @@
-# Groups and Versions and Kinds, oh my!
+# Groups and versions and kinds, oh my!
 
 Before we get started with our API, we should talk about terminology
 a bit.
@@ -6,13 +6,13 @@ a bit.
 When we talk about APIs in Kubernetes, we often use 4 terms: *groups*,
 *versions*, *kinds*, and *resources*.
 
-## Groups and Versions
+## Groups and versions
 
 An *API Group* in Kubernetes is simply a collection of related
 functionality.  Each group has one or more *versions*, which, as the name
 suggests, allow us to change how an API works over time.
 
-## Kinds and Resources
+## Kinds and resources
 
 Each API group-version contains one or more API types, which we call
 *Kinds*.  While a Kind may change forms between versions, each form must

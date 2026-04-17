@@ -1,4 +1,4 @@
-# Sub-Module Layouts
+# Sub-module layouts
 
 This part describes how to modify a scaffolded project for use with multiple `go.mod` files for APIs and Controllers.
 
@@ -41,7 +41,7 @@ You may also lose the ability to use some of the CLI features and helpers. For f
 
 </aside>
 
-## Adjusting your Project
+## Adjusting your project
 
 For a proper Sub-Module layout, we will use the generated APIs as a starting point.
 

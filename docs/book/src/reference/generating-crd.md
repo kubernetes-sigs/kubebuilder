@@ -55,7 +55,7 @@ type Rank int32
 
 ```
 
-## Additional Printer Columns
+## Additional printer columns
 
 Starting with Kubernetes 1.11, `kubectl get` can ask the server what
 columns to display.  For CRDs, this can be used to provide useful,
@@ -149,7 +149,7 @@ type CustomSet struct {
 }
 ```
 
-## Multiple Versions
+## Multiple versions
 
 As of Kubernetes 1.13, you can have multiple versions of your Kind defined
 in your CRD, and use a webhook to convert between them.

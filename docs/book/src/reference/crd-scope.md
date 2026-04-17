@@ -1,4 +1,4 @@
-# CRD Scope
+# CRD scope
 
 This document explains CustomResourceDefinition (CRD) scope in Kubernetes: how CRDs can be defined as namespace-scoped or cluster-scoped resources.
 
@@ -17,7 +17,7 @@ CRD scope determines the visibility and availability of custom resources:
 | **Namespace-scoped** (default) | Resources exist within a specific namespace | Deployments, Services, ConfigMaps, Pods |
 | **Cluster-scoped** | Resources are global across the entire cluster | Nodes, ClusterRoles, Namespaces, PersistentVolumes |
 
-## Namespace-Scoped CRDs (Default)
+## Namespace-scoped CRDs (default)
 
 By default, Kubebuilder creates namespace-scoped CRDs:
 
@@ -60,11 +60,11 @@ kubectl get memcacheds -n my-namespace
 - Conversion webhooks must account for namespace scope
 - Facilitates controlled rollout within specific namespaces
 
-## Cluster-Scoped CRDs
+## Cluster-scoped CRDs
 
 Cluster-scoped CRDs create resources that are global across the entire cluster.
 
-### Creating Cluster-Scoped CRDs
+### Creating cluster-scoped CRDs
 
 When creating the API, use the `--namespaced=false` flag:
 
@@ -107,9 +107,9 @@ kubectl get databases  # No namespace needed
 - Global policies or quotas
 - Cross-namespace resource aggregation
 
-## Changing CRD Scope
+## Changing CRD scope
 
-### For Existing APIs
+### For existing APIs
 
 After creating an API, you can change its scope using the `+kubebuilder:resource:scope` marker:
 
@@ -164,9 +164,9 @@ Changing CRD scope from Namespaced to Cluster (or vice versa) is a **breaking ch
 Only change scope during initial development before any production usage.
 </aside>
 
-## RBAC for CRD Scope
+## RBAC for CRD scope
 
-### Namespace-Scoped CRDs
+### Namespace-scoped CRDs
 
 Controllers watching namespace-scoped CRDs use namespace-scoped RBAC:
 
@@ -203,7 +203,7 @@ rules:
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ```
 
-### Cluster-Scoped CRDs
+### Cluster-scoped CRDs
 
 Controllers watching cluster-scoped CRDs **must** use cluster-wide RBAC:
 
@@ -236,7 +236,7 @@ Manager scope and CRD scope are independent:
 - **CRD scope**: Controlled by the CRD's `scope` field (resource visibility)
 </aside>
 
-## Version Conversion and Webhooks
+## Version conversion and webhooks
 
 For namespace-scoped CRDs with multiple versions, conversion webhooks must account for namespace scope:
 
@@ -248,7 +248,7 @@ The webhook must handle conversion for resources in any namespace. See the [mult
 
 ## Testing
 
-### Testing Namespace-Scoped CRDs
+### Testing namespace-scoped CRDs
 
 ```bash
 # Create resource in namespace
@@ -259,7 +259,7 @@ kubectl get memcacheds -n test-namespace
 kubectl get memcacheds -n other-namespace  # Should not find it
 ```
 
-### Testing Cluster-Scoped CRDs
+### Testing cluster-scoped CRDs
 
 ```bash
 # Create cluster-scoped resource (no namespace)
@@ -269,7 +269,7 @@ kubectl apply -f config/samples/infrastructure_v1_database.yaml
 kubectl get databases  # No namespace needed
 ```
 
-## See Also
+## See also
 
 - [Manager Scope](./manager-scope.md) - Configuring manager watching scope
 - [Generating CRDs](./generating-crd.md) - CRD generation and markers

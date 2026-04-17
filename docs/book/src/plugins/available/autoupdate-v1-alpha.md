@@ -18,13 +18,13 @@ changes aren't pushed or merged without proper review.
 
 </aside>
 
-## When to Use It
+## When to use it
 
 
 - When you want to reduce the burden of keeping the project updated and well-maintained.
 - When you want guidance and help from AI to know what changes are needed to keep your project up to date and to solve conflicts (requires `--use-gh-models` flag and GitHub Models permissions).
 
-## How to Use It
+## How to use it
 
 - If you want to add the `autoupdate` plugin to your project:
 
@@ -32,7 +32,7 @@ changes aren't pushed or merged without proper review.
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
-### Optional: GitHub Models AI Summary
+### Optional: GitHub Models AI summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.
 If you want AI-generated summaries in your update issues:
@@ -60,7 +60,7 @@ Your organization or enterprise may have disabled it. Contact your administrator
 
 </aside>
 
-## How It Works
+## How it works
 
 The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder releases every week. When an update is available, it:
 
@@ -79,7 +79,7 @@ The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder r
 
 <img width="600" height="188" alt="Conflicts" src="https://github.com/user-attachments/assets/2142887a-730c-499a-94df-c717f09ab600" />
 
-## Customizing the Workflow
+## Customizing the workflow
 
 The generated workflow uses the `kubebuilder alpha update` command with default flags. You can customize the workflow by editing `.github/workflows/auto_update.yml` to add additional flags:
 

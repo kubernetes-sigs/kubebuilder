@@ -1,4 +1,4 @@
-# Write E2E Tests
+# Write E2E tests
 
 You can check the [Kubebuilder/v4/test/e2e/utils][utils-kb] package, which offers `TestContext` with rich methods:
 
@@ -32,7 +32,7 @@ Once defined, you can use `TestContext` to:
 - [kubebuilder e2e tests][kb-e2e-tests]
 
 
-## Generate Test Samples
+## Generate test samples
 
 It's straightforward to view the content of sample projects generated
 by your plugin.

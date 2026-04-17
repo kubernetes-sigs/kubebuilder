@@ -1,4 +1,4 @@
-# Manual Migration Process
+# Manual migration process
 
 Please ensure you have followed the [installation guide][quick-start]
 to install the required components and have the desired version of the
@@ -691,7 +691,7 @@ as before.
 
 </aside>
 
-## Additional Resources
+## Additional resources
 
 - [Migration Overview](../migrations.md) - Overview of all migration options
 - [PROJECT File Reference][project-config] - Understanding the PROJECT file

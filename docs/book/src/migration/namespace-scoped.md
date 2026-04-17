@@ -16,7 +16,7 @@ All files including `cmd/main.go` and RBAC configurations will be scaffolded cor
 
 By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage resources across all namespaces. This guide shows how to convert an existing cluster-scoped project to namespace-scoped deployment, limiting the manager to watch only specific namespace(s).
 
-## When to Use Namespace-Scoped
+## When to use namespace-scoped
 
 **Use namespace-scoped when:**
 - Building tenant-specific managers in multi-tenant clusters
@@ -35,7 +35,7 @@ This migration involves updating RBAC markers across multiple controller files. 
 
 </aside>
 
-## Migration Steps
+## Migration steps
 
 **Quick Summary:**
 1. Run `kubebuilder edit --namespaced --force` - scaffolds Role/RoleBinding and updates manager.yaml
@@ -56,7 +56,7 @@ You must manually update:
 **Note:** New controllers created after enabling namespaced mode will have correct RBAC markers automatically.
 </aside>
 
-## Detailed Steps:
+## Detailed steps
 
 ### 1. Enable namespace-scoped mode
 
@@ -465,7 +465,7 @@ Done! After this migration:
 </aside>
 
 
-## Multi-Namespace Support
+## Multi-namespace support
 
 The `WATCH_NAMESPACE` environment variable supports comma-separated values to watch multiple specific namespaces:
 
@@ -477,7 +477,7 @@ env:
 
 Note: You'll need to create Role/RoleBinding in each namespace for proper RBAC.
 
-## Reverting to Cluster-Scoped
+## Reverting to cluster-scoped
 
 To revert back to cluster-scoped:
 
@@ -501,7 +501,7 @@ This command automatically:
    - Remove added imports (`fmt`, `strings`, `cache`) if not used elsewhere
 4. If you didn't use `--force`, manually remove `WATCH_NAMESPACE` from `config/manager/manager.yaml`
 
-## Important Notes
+## Important notes
 
 - **Only controllers need RBAC updates**: Only update `+kubebuilder:rbac` markers in controller files (files with `Reconcile` function). Webhook files do NOT use RBAC markers - webhooks use certificate-based authentication with the API server.
 - **RBAC markers control scope**: The `namespace=` parameter in controller RBAC markers determines whether controller-gen generates `Role` (namespace-scoped) or `ClusterRole` (cluster-scoped). Without the `namespace=` parameter, controller-gen always generates `ClusterRole`.
@@ -510,7 +510,7 @@ This command automatically:
 - **Metrics auth role stays cluster-scoped**: The `metrics-auth-role` uses cluster-scoped APIs (TokenReview, SubjectAccessReview) and correctly remains a ClusterRole without namespace parameter.
 - **Webhooks require manual configuration**: Currently, controller-gen does not support `namespaceSelector` or `objectSelector` markers for webhooks. See the webhook section above for details.
 
-## See Also
+## See also
 
 - [Manager Scope](../reference/manager-scope.md) - Detailed explanation of manager scope concepts
 - [Project Config](../reference/project-config.md) - PROJECT file configuration reference

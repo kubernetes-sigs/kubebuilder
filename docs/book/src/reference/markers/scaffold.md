@@ -15,13 +15,13 @@ fail or behave unexpectedly.
 
 </aside>
 
-## How It Works
+## How it works
 
 When you scaffold a new resource using the Kubebuilder CLI (e.g., `kubebuilder create api`),
 the CLI identifies `+kubebuilder:scaffold` markers in key locations and uses them as placeholders
 to insert the required imports and registration code.
 
-## Example Usage in `main.go`
+## Example usage in `main.go`
 
 Here is how the `+kubebuilder:scaffold` marker is used in a typical `main.go` file. To illustrate how it works, consider the following command to create a new API:
 
@@ -29,7 +29,7 @@ Here is how the `+kubebuilder:scaffold` marker is used in a typical `main.go` fi
 kubebuilder create api --group crew --version v1 --kind Admiral --controller=true --resource=true
 ```
 
-### To Add New Imports
+### To add new imports
 
 The `+kubebuilder:scaffold:imports` marker allows the Kubebuilder CLI to inject additional imports,
 such as for new controllers or webhooks. When we create a new API, the CLI automatically adds the required import paths
@@ -53,7 +53,7 @@ import (
 )
 ```
 
-### To Register a New Scheme
+### To register a new scheme
 
 The `+kubebuilder:scaffold:scheme` marker is used to register newly created API versions with the runtime scheme,
 ensuring the API types are recognized by the manager.
@@ -70,7 +70,7 @@ func init() {
 }
 ```
 
-## To Set Up a Controller
+## To set up a controller
 
 When we create a new controller (e.g., for Admiral), the Kubebuilder CLI injects the controller
 setup code into the manager using the `+kubebuilder:scaffold:builder` marker. This marker indicates where

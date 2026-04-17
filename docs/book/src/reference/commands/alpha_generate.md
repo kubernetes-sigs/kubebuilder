@@ -19,7 +19,7 @@ When executed in-place, this command deletes all files except `.git` and `PROJEC
 Always back up your project or use version control before running this command.
 </aside>
 
-## When to Use It?
+## When to use it?
 
 You can use `kubebuilder alpha generate` to upgrade your project scaffold when new changes are introduced
 in Kubebuilder. This includes updates to plugins (for example, `go.kubebuilder.io/v3` → `go.kubebuilder.io/v4`)
@@ -50,7 +50,7 @@ or if you prefer to handle changes manually.
 
 </aside>
 
-## How to Use It?
+## How to use it?
 
 ### Upgrade your current project to CLI version installed (i.e. latest scaffold)
 
@@ -62,7 +62,7 @@ After running this command, your project will be re-scaffolded in place.
 You can then compare the local changes with your main branch to see what was updated,
 and re-apply your custom code on top as needed.
 
-### Generate Scaffold to a New Directory
+### Generate scaffold to a new directory
 
 Use the `--input-dir` and `--output-dir` flags to specify input and output paths.
 
@@ -84,7 +84,7 @@ After running the command, you can inspect the generated scaffold in the specifi
 | `-h, --help`     | Show help for this command.                                                 |
 
 
-## Further Resources
+## Further resources
 
 - [Video demo on how it works](https://youtu.be/7997RIbx8kw?si=ODYMud5lLycz7osp)
 - [Design proposal documentation](../../../../../designs/helper_to_upgrade_projects_by_rescaffolding.md)

@@ -1,4 +1,4 @@
-# Manager Scope
+# Manager scope
 
 Manager scope determines which namespace(s) your manager watches and manages resources in.
 
@@ -23,7 +23,7 @@ Manager scope is configured through:
 - Cache configuration in `cmd/main.go`
 - `WATCH_NAMESPACE` environment variable
 
-## Cluster-Scoped (Default)
+## Cluster-scoped (default)
 
 By default, Kubebuilder scaffolds cluster-scoped managers that watch all namespaces in the cluster.
 
@@ -41,7 +41,7 @@ kubebuilder init --domain example.com
 - Managing cluster-scoped resources (Nodes, ClusterRoles, Namespaces)
 - Simpler RBAC model when cluster-wide access is acceptable
 
-## Namespace-Scoped
+## Namespace-scoped
 
 Namespace-scoped managers watch only specific namespace(s), configured via the `WATCH_NAMESPACE` environment variable.
 
@@ -118,7 +118,7 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 
 This configuration works for both single namespace (`WATCH_NAMESPACE=my-namespace`) and multi-namespace (`WATCH_NAMESPACE=ns1,ns2,ns3`) scenarios.
 
-## Multi-Namespace
+## Multi-namespace
 
 Managers can watch multiple specific namespaces using comma-separated values in `WATCH_NAMESPACE`.
 
@@ -163,7 +163,7 @@ See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html)
 
 </aside>
 
-## See Also
+## See also
 
 - [Understanding Scopes](./scopes.md) - Overview of manager and CRD scopes
 - [CRD Scope](./crd-scope.md) - Configuring CustomResourceDefinition scope

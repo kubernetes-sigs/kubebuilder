@@ -75,9 +75,9 @@ This design choice prioritizes correctness and maintainability over Helm's defau
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
 </aside>
 
-## How to use it ?
+## How to use it?
 
-### Basic Usage
+### Basic usage
 
 The Helm plugin is attached to the `edit` subcommand as the `helm/v1-alpha` plugin
 relies on the Go project being scaffolded first.

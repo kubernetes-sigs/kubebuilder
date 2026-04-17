@@ -46,7 +46,7 @@ Now, let's copy over our existing types, and make the change:
 
 {{#literatego ./testdata/project/api/v2/cronjob_types.go}}
 
-## Storage Versions
+## Storage versions
 
 {{#literatego ./testdata/project/api/v1/cronjob_types.go}}
 

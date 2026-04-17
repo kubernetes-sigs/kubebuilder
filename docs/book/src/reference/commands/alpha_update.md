@@ -22,7 +22,7 @@ and how to solve conflicts if any are faced.
 
 </aside>
 
-## When to Use It
+## When to use it
 
 Use this command when you:
 
@@ -30,7 +30,7 @@ Use this command when you:
 - Want to review scaffold changes on a separate branch
 - Want to focus on resolving merge conflicts (not re-applying your custom code)
 
-## How It Works
+## How it works
 
 You tell the tool the **new version**, and which branch has your project.
 It rebuilds both scaffolds, merges your code into the new one with a **3-way merge**,
@@ -75,7 +75,7 @@ The command creates three temporary branches:
 - Once the output branch is ready, all the temporary working branches are deleted.
 - You are left with one clean branch you can test, review, and merge back into your main branch.
 
-## How to Use It (commands)
+## How to use it (commands)
 
 Run from your project root:
 
@@ -131,7 +131,7 @@ kubebuilder alpha update --force \
 --conflict-message "chore: upgrade with conflicts - manual review needed"
 ```
 
-## Handling Conflicts (`--force` vs default)
+## Handling conflicts (`--force` vs default)
 
 When you use `--force`, Git finishes the merge even if there are conflicts.
 The commit will include markers like:
@@ -193,7 +193,7 @@ and to suggest resolutions if conflicts are encountered, as in the following exa
 
 This integrates cleanly with automation. The [`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin can scaffold a GitHub Actions workflow that runs the command on a schedule (e.g., weekly). When a new Kubebuilder release is available, it opens an Issue with a compare link so you can create the PR and review it.
 
-## Changing Extra Git configs only during the run (does not change your ~/.gitconfig)_
+## Changing extra Git configs only during the run (does not change your ~/.gitconfig)
 
 By default, `kubebuilder alpha update` applies safe Git configs:
 `merge.renameLimit=999999`, `diff.renameLimit=999999`, `merge.conflictStyle=merge`
@@ -263,7 +263,7 @@ so the current behavior may differ slightly from what is shown in the demo.
 
 </aside>
 
-## Further Resources
+## Further resources
 
 - [AutoUpdate Plugin][autoupdate-plugin]
 - [Design proposal for update automation][design-proposal]

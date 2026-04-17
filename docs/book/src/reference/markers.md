@@ -1,4 +1,4 @@
-# Markers for Config/Code Generation
+# Markers for config/code generation
 
 Kubebuilder makes use of a tool called
 [controller-gen](/reference/controller-gen.md) for
@@ -31,7 +31,7 @@ The most reliable way in 1.x to get `+optional` is `omitempty`.
 See each subsection for information about different types of code and YAML
 generation.
 
-## Generating Code & Artifacts in Kubebuilder
+## Generating code & artifacts in Kubebuilder
 
 Kubebuilder projects have two `make` targets that make use of
 controller-gen:
@@ -46,7 +46,7 @@ controller-gen:
 
 See [Generating CRDs](./generating-crd.md) for a comprehensive overview.
 
-## Marker Syntax
+## Marker syntax
 
 Exact syntax is described in the [godocs for
 controller-tools](https://pkg.go.dev/sigs.k8s.io/controller-tools/pkg/markers?tab=doc).

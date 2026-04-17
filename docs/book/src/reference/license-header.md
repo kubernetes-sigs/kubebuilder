@@ -1,4 +1,4 @@
-# License Header
+# License header
 
 ## What is it?
 
@@ -23,9 +23,9 @@ By default, Kubebuilder uses the Apache 2.0 license.
 
 </aside>
 
-## How to Customize
+## How to customize
 
-### Option 1: Use Built-in Licenses
+### Option 1: Use built-in licenses
 
 Use the `--license` flag during initialization or to update an existing project:
 
@@ -42,7 +42,7 @@ Available license values:
 - `copyright` - Copyright notice only (no license text)
 - `none` - No license header
 
-### Option 2: Use a Custom License File
+### Option 2: Use a custom license file
 
 Provide your own license header from a file. Kubebuilder will read the content from your file and copy it to `hack/boilerplate.go.txt`:
 
@@ -70,7 +70,7 @@ Use this when you need:
 - A specific company license format
 - Custom copyright notices
 
-### Option 3: Edit the File Directly
+### Option 3: Edit the file directly
 
 After initialization, you can edit `hack/boilerplate.go.txt` directly:
 
@@ -78,7 +78,7 @@ After initialization, you can edit `hack/boilerplate.go.txt` directly:
 vim hack/boilerplate.go.txt
 ```
 
-## Custom License File Format
+## Custom license file format
 
 Your custom license file must include Go comment delimiters (`/*` and `*/`).
 
@@ -122,7 +122,7 @@ Both automatically use the current year, so your boilerplate stays up-to-date.
 
 </aside>
 
-## Applying License Changes to Existing Files
+## Applying license changes to existing files
 
 After updating `hack/boilerplate.go.txt`, choose how to apply the changes:
 
@@ -153,7 +153,7 @@ kubebuilder create api --group myapp --version v1 --kind MyNewKind
 **Manual Updates:**
 For hand-written files, manually update headers using `hack/boilerplate.go.txt` as a reference.
 
-## How It's Used
+## How it's used
 
 `hack/boilerplate.go.txt` is used when generating or regenerating files:
 

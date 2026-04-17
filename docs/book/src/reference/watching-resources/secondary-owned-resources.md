@@ -1,4 +1,4 @@
-# Watching Secondary Resources `Owned` by the Controller
+# Watching secondary resources `Owned` by the controller
 
 In Kubernetes controllers, it’s common to manage both **Primary Resources**
 and **Secondary Resources**. A **Primary Resource** is the main resource
@@ -12,7 +12,7 @@ which are `Owned` by the controller. This example shows how to:
 - Configure the controller to `Watch` the secondary resource using `Owns()` in `SetupWithManager()`. See that `Deployment` is owned by the `Busybox` controller because
 it will be created and managed by it.
 
-## Setting the Owner Reference
+## Setting the owner reference
 
 To link the lifecycle of the secondary resource (`Deployment`)
 to the primary resource (`Busybox`), we need to set
@@ -22,7 +22,7 @@ if the primary resource is deleted, the secondary resource will also be deleted.
 
 Controller-runtime provides the [controllerutil.SetControllerReference][cr-owner-ref-doc] function, which you can use to set this relationship between the resources.
 
-### Setting the Owner Reference
+### Setting the owner reference
 
 Below, we create the `Deployment` and set the Owner reference between the `Busybox` custom resource and the `Deployment` using `controllerutil.SetControllerReference()`.
 
@@ -134,7 +134,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 ```
 
-## Watching Secondary Resources
+## Watching secondary resources
 
 To ensure that changes to the secondary resource (such as the `Deployment`) trigger
 a reconciliation of the primary resource (`Busybox`), we configure the controller
@@ -145,7 +145,7 @@ that the controller should monitor. This way, the controller will
 automatically reconcile the primary resource whenever the secondary
 resource changes (e.g., is updated or deleted).
 
-### Example: Configuring `SetupWithManager` to Watch Secondary Resources
+### Example: Configuring `SetupWithManager` to watch secondary resources
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
@@ -158,7 +158,7 @@ func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
-## Ensuring the Right Permissions
+## Ensuring the right permissions
 
 Kubebuilder uses [markers][markers] to define RBAC permissions
 required by the controller. In order for the controller to
@@ -166,7 +166,7 @@ properly watch and manage both the primary (`Busybox`) and secondary (`Deploymen
 resources, it must have the appropriate permissions granted;
 i.e. to `watch`, `get`, `list`, `create`, `update`, and `delete` permissions for those resources.
 
-### Example: RBAC Markers
+### Example: RBAC markers
 
 Before the `Reconcile` method, we need to define the appropriate RBAC markers.
 These markers will be used by [controller-gen][controller-gen] to generate the necessary

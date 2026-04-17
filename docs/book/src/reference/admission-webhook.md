@@ -1,4 +1,4 @@
-# Admission Webhooks
+# Admission webhooks
 
 [Admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks) are HTTP callbacks that receive admission requests, process
 them and return admission responses.
@@ -29,7 +29,7 @@ object after your validation has accepted it.
 
 </aside>
 
-## Custom Webhook Paths
+## Custom webhook paths
 
 By default, Kubebuilder generates webhook paths based on the resource's group, version, and kind. For example:
 - Mutating webhook for `batch/v1/CronJob`: `/mutate-batch-v1-cronjob`
@@ -60,7 +60,7 @@ fixed pattern based on the resource's group, version, and kind, and cannot be cu
 </aside>
 
 
-## Handling Resource Status in Admission Webhooks
+## Handling resource status in admission webhooks
 
 <aside class="warning" role="note">
 <p class="note-title">Modify status</p>
@@ -70,9 +70,9 @@ Set initial status in your controller when you first see a new object.
 
 </aside>
 
-### Understanding Why:
+### Understanding why
 
-#### Mutating Admission Webhooks
+#### Mutating admission webhooks
 
 Mutating Admission Webhooks are primarily designed to intercept and modify requests concerning the creation,
 modification, or deletion of objects. Though they possess the capability to modify an object's specification,
@@ -87,7 +87,7 @@ type MutatingWebhookConfiguration struct {
 }
 ```
 
-#### Setting Initial Status
+#### Setting initial status
 
 For those diving into custom controllers for custom resources, it's imperative to grasp the concept of setting an
 initial status. This initialization typically takes place within the controller itself. The moment the controller
@@ -104,7 +104,7 @@ func (r *ReconcileMyResource) Reconcile(request reconcile.Request) (reconcile.Re
 }
 ```
 
-#### Status Subresource
+#### Status subresource
 
 Delving into Kubernetes custom resources, a clear demarcation exists between the spec (depicting the desired state)
 and the status (illustrating the observed state). Activating the /status subresource for a custom resource definition

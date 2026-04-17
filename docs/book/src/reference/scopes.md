@@ -1,4 +1,4 @@
-# Understanding Scopes in Kubebuilder
+# Understanding scopes in Kubebuilder
 
 In Kubernetes, **scope** defines the boundaries within which a resource or controller operates.
 
@@ -7,14 +7,14 @@ When building with Kubebuilder, you work with two independent scoping concepts:
 1. **[Manager Scope](./manager-scope.md)** - Determines which namespace(s) your manager watches and operates in
 2. **[CRD Scope](./crd-scope.md)** - Determines whether your custom resources are namespace-specific or cluster-wide
 
-## What is Scope?
+## What is scope?
 
 Scope defines the visibility and access boundaries in a Kubernetes cluster:
 
 - **Cluster-scoped**: Operates across the entire cluster with access to all namespaces
 - **Namespace-scoped**: Limited to specific namespace(s) for isolation and security
 
-## Manager Scope vs CRD Scope
+## Manager scope vs CRD scope
 
 These concepts are **independent** and configured separately:
 
@@ -23,7 +23,7 @@ These concepts are **independent** and configured separately:
 
 You can combine them in different ways - for example, a cluster-scoped manager can manage namespace-scoped CRDs (the default pattern).
 
-## Learn More
+## Learn more
 
 For detailed information, configuration steps, and code examples:
 

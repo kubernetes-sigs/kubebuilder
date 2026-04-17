@@ -1,4 +1,4 @@
-# Single Group to Multi-Group
+# Single group to multi-group
 
 Kubebuilder scaffolds single-group projects by default to keep things simple, as most projects don't require multiple API groups. However, you can convert an existing single-group project to use multi-group layout when needed. This reorganizes your APIs and controllers into group-specific directories.
 
@@ -47,7 +47,7 @@ internal/webhook/<group>/<version>/*      Webhooks organized by group and versio
 
 You can tell which layout you're using by checking your `PROJECT` file for `multigroup: true`.
 
-## Migration Steps
+## Migration steps
 
 The following steps migrate the [CronJob example][cronjob-tutorial] from single-group to multi-group layout.
 

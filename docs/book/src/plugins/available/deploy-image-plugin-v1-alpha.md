@@ -98,7 +98,7 @@ files are affected, in addition to the existing Kubebuilder scaffolding:
 - `main.go`: Updates the file to add the controller setup.
 - `config/manager/manager.yaml`: Updates to include environment variables for storing the image.
 
-## Further Resources:
+## Further resources
 
 - Check out this [video][video] to see how it works.
 

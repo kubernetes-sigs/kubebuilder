@@ -1,4 +1,4 @@
-# Deployment and Testing
+# Deployment and testing
 
 Before we can test out our conversion, we'll need to enable them in our CRD:
 

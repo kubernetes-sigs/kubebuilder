@@ -1,10 +1,10 @@
-# Multiple Controllers Per Resource
+# Multiple controllers per resource
 
 Kubebuilder supports multiple named controllers for the same API resource. This allows different reconciliation logic for the same resource type.
 
 ## Usage
 
-### Creating the First Controller
+### Creating the first controller
 
 ```bash
 kubebuilder create api --group crew --version v1 --kind Captain \
@@ -18,7 +18,7 @@ Creates:
 - Controller in `internal/controller/captain_controller.go` with struct `CaptainReconciler`
 - Registration in `cmd/main.go`
 
-### Adding Additional Controllers
+### Adding additional controllers
 
 ```bash
 kubebuilder create api --group crew --version v1 --kind Captain \
@@ -33,9 +33,9 @@ Creates:
 
 The API is only created once. Additional controllers reference the existing API.
 
-## PROJECT File Format
+## PROJECT file format
 
-### Legacy Format (Still Supported)
+### Legacy format (still supported)
 
 ```yaml
 resources:
@@ -47,7 +47,7 @@ resources:
   version: v1
 ```
 
-### Multiple Controllers Format
+### Multiple controllers format
 
 ```yaml
 resources:
@@ -63,12 +63,12 @@ resources:
 
 When both formats exist on the same resource (due to manual editing), the `controllers:` array takes precedence and `controller: true` is automatically cleared.
 
-## Controller Naming
+## Controller naming
 
 ### Storage
 Controller names are stored in the PROJECT file exactly as provided by the user.
 
-### Code Generation
+### Code generation
 Names are normalized for Go code:
 
 - **File name**: Replace hyphens with underscores: `captain-backup` → `captain_backup_controller.go`
@@ -76,13 +76,13 @@ Names are normalized for Go code:
 - **Runtime name**: Use exact name from PROJECT: `Named("captain-backup")`
 - **Multigroup**: Prefix with group name: `Named("crew-captain-backup")`
 
-### Validation Rules
+### Validation rules
 
 1. Names must be unique within a resource
 2. Names must be valid DNS labels: lowercase, alphanumeric, and hyphens only, max 63 characters
 3. Different names that normalize to the same identifier are rejected (e.g., `captain-backup` and `captainbackup`)
 
-## Controller Coordination
+## Controller coordination
 
 Multiple controllers for the same resource require coordination to avoid conflicts:
 
@@ -93,7 +93,7 @@ Multiple controllers for the same resource require coordination to avoid conflic
 
 Kubebuilder scaffolds the controllers but does not manage coordination between them.
 
-## Migration from Legacy Format
+## Migration from legacy format
 
 Existing projects with `controller: true` continue to work unchanged. When adding named controllers to a resource with `controller: true`, Kubebuilder automatically migrates the format:
 
@@ -131,7 +131,7 @@ resources:
 
 The original unnamed controller is assigned the name `captain` (lowercase kind) and the `controller: true` flag is automatically cleared. This maintains backward compatibility while enabling multiple controllers.
 
-## Common Errors
+## Common errors
 
 **"duplicate controller name"**: Two controllers have the same name. Use unique names.
 

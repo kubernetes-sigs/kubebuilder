@@ -78,7 +78,7 @@ kubebuilder edit --plugins=helm/v2-alpha \
 
 The plugin generates a chart layout that mirrors your `config/` directory:
 
-```bash
+```text
 <output-dir>/chart/
 ├── Chart.yaml
 ├── values.yaml
@@ -145,7 +145,7 @@ This design choice prioritizes correctness and maintainability over Helm's defau
 
 </aside>
 
-## Values Configuration
+## Values configuration
 
 The generated `values.yaml` provides configuration options extracted from your actual deployment.
 Namespace creation is not managed by the chart; use Helm's `--namespace` and `--create-namespace` flags when installing.

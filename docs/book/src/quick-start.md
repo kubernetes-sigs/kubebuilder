@@ -1,4 +1,4 @@
-# Quick Start
+# Quick start
 
 This Quick Start guide will cover:
 
@@ -46,7 +46,7 @@ Kubebuilder provides autocompletion support via the command `kubebuilder complet
 
 </aside>
 
-## Create a Project
+## Create a project
 
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
 
@@ -154,7 +154,7 @@ to inject code into existing files and simplify common tasks. See `cmd/main.go` 
 
 </aside>
 
-## Test It Out
+## Test it out
 
 You'll need a Kubernetes cluster to run against. You can use
 [KinD][kind] to get a local cluster for testing, or
@@ -181,7 +181,7 @@ terminal if you want to leave it running):
 make run
 ```
 
-## Install Instances of Custom Resources
+## Install instances of custom resources
 
 If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your
 `config/samples/` directory.
@@ -212,7 +212,7 @@ You can have a look at your applied resource now:
 kubectl get guestbooks.webapp.my.domain guestbook-sample -o yaml
 ```
 
-## Run It On the Cluster
+## Run it on the cluster
 
 When your controller is ready to be packaged and tested in other clusters.
 
@@ -267,7 +267,7 @@ Undeploy the controller to the cluster:
 ```bash
 make undeploy
 ```
-## Using Plugins
+## Using plugins
 
 Kubebuilder design is based on [Plugins][plugins] and you can use
 [available plugins][available-plugins] to add optional features to your project.
@@ -296,7 +296,7 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 
 </aside>
 
-## Next Steps
+## Next steps
 
 - [Getting Started Guide][getting-started] (~30 min) - build a solid foundation
 - [CronJob Tutorial][cronjob-tutorial] - learn by building a demo project

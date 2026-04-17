@@ -19,7 +19,7 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 
 This will scaffold the webhook functions and register your webhook with the manager in your `main.go` for you.
 
-## Custom Webhook Paths
+## Custom webhook paths
 
 You can specify custom HTTP paths for your webhooks using the `--defaulting-path` and `--validation-path` flags:
 

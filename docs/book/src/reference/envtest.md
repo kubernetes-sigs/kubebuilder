@@ -12,12 +12,12 @@ by default. `make test` is the one-stop shop for downloading the binaries, setti
 You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases.Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
-## Tool Binaries
+## Tool binaries
 ..
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 ...
 
-## Tool Versions
+## Tool versions
 ...
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
@@ -38,7 +38,7 @@ $(ENVTEST): $(LOCALBIN)
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 ```
 
-## Installation in Air Gapped/disconnected environments
+## Installation in air gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
 [`setup-envtest`][setup-envtest] to download the required binaries locally. There are several ways to configure `setup-envtest` for [air-gapped environments](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
 The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
@@ -118,7 +118,7 @@ Ie,
 
 You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.
 
-### Environment Variables
+### Environment variables
 
 | Variable name | Type | When to use |
 | --- | :--- | :---                                                                                                                                                                                                                                                    |
@@ -223,7 +223,7 @@ Whenever your tests create a new namespace, it can modify the value of reconcile
 For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
 </aside>
 
-## Cert-Manager and Prometheus options
+## Cert-manager and Prometheus options
 
 Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
 

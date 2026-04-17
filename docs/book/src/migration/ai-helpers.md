@@ -1,4 +1,4 @@
-# Using AI to Migrate Projects from Any Version to the Latest
+# Using AI to migrate projects from any version to the latest
 
 AI can assist manual migrations by reducing repetitive work and helping resolve breaking changes. It won't replace the [Manual Migration Process](./manual-process.md), but it can help reduce effort and accomplish the goal.
 
@@ -10,7 +10,7 @@ These AI instructions are provided as examples to help guide your migration. Alw
 
 </aside>
 
-## Workflow and AI-Assisted Steps
+## Workflow and AI-assisted steps
 
 **Step 1: Reorganize to New Layout** (required only for legacy layouts)
 

@@ -1,4 +1,4 @@
-# Watching Resources
+# Watching resources
 
 When extending the Kubernetes API, we aim to ensure that our solutions behave consistently with Kubernetes itself.
 For example, consider a `Deployment` resource, which is managed by a controller. This controller is responsible
@@ -11,7 +11,7 @@ loop to take appropriate actions and maintain consistency across the cluster.
 
 The [controller-runtime][controller-runtime] library provides several ways to watch and manage resources.
 
-## Primary Resources
+## Primary resources
 
 The **Primary Resource** is the resource that your controller is responsible
 for managing. For example, if you create a custom resource definition (CRD) for `MyApp`,
@@ -36,7 +36,7 @@ if err := ctrl.NewControllerManagedBy(mgr).
 }
 ```
 
-## Secondary Resources
+## Secondary resources
 
 Your controller will likely also need to manage **Secondary Resources**,
 which are the resources required on the cluster to support the **Primary Resource**.
@@ -44,7 +44,7 @@ which are the resources required on the cluster to support the **Primary Resourc
 Changes to these **Secondary Resources** can directly impact the **Primary Resource**,
 so the controller must watch and reconcile these resources accordingly.
 
-### Which are Owned by the Controller
+### Which are owned by the controller
 
 These **Secondary Resources**, such as `Services`, `ConfigMaps`, or `Deployments`,
 when `Owned` by the controllers, are created and managed by the specific controller
@@ -64,7 +64,7 @@ Additionally, if the **Primary Resource** is deleted, Kubernetes' garbage collec
 ensures that all associated **Secondary Resources** are automatically deleted in a
 cascading manner.
 
-### Which are NOT `Owned` by the Controller
+### Which are NOT `owned` by the controller
 
 Note that **Secondary Resources** can either be APIs/CRDs defined in your project or in other projects that are
 relevant to the **Primary Resources**, but which the specific controller is not responsible for creating or managing.
@@ -90,7 +90,7 @@ In this scenario, **Operator B** could define a `BackupConfig` CRD that relies o
 By treating `MyApp` as a **Secondary Resource**, **Operator B** can watch and reconcile changes in **Operator A**'s `MyApp`,
 ensuring that backup processes are initiated whenever `MyApp` is updated or scaled.
 
-## General Concept of Watching Resources
+## General concept of watching resources
 
 Whether a resource is defined within your project or comes from an external project, the concept of **Primary**
 and **Secondary Resources** remains the same:
@@ -149,7 +149,7 @@ delayed reactions. Therefore, it is essential to prioritize **event-driven recon
 your controller to **watch resources** whenever possible, and reserving `RequeueAfter` for situations
 where periodic checks are required.
 
-### When `RequeueAfter X` is Useful
+### When `RequeueAfter X` is useful
 
 While `RequeueAfter` is not the primary method for triggering reconciliations, there are specific cases where it is
 necessary, such as:
@@ -164,7 +164,7 @@ are performed on schedule, even when no other changes occur.
 `RequeueAfter` ensures the controller waits for a specified duration before checking the resource’s status again,
 avoiding constant reconciliation attempts.
 
-## Usage of Predicates
+## Usage of predicates
 
 For more complex use cases, [Predicates][cr-predicates] can be used to fine-tune
 when your controller should trigger reconciliation. Predicates allow you to filter

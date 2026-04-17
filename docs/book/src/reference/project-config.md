@@ -84,7 +84,7 @@ Additionally, another motivation for the PROJECT file is to help us to create a 
 
 The Project config is versioned according to its layout. For further information see [Versioning][versioning].
 
-## Layout Definition
+## Layout definition
 
 The `PROJECT` version `3` layout looks like:
 

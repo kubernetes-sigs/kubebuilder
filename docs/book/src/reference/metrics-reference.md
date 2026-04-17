@@ -1,4 +1,4 @@
-# Default Exported Metrics References
+# Default exported metrics references
 
 Following the metrics which are exported and provided by [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) by default:
 

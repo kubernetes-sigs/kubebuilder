@@ -176,7 +176,7 @@ RULES:
 - Order: external controllers first, then your APIs, then all webhooks
 ```
 
-## Understanding the Output
+## Understanding the output
 
 The AI will analyze your project and output a bash script. The script will contain commands in this order:
 
@@ -187,11 +187,11 @@ The AI will analyze your project and output a bash script. The script will conta
 5. `kubebuilder create webhook` - For all webhooks
 6. `make manifests && make generate && make build` - Verify
 
-## Example Outputs
+## Example outputs
 
 Here are real examples of what the AI instructions generate:
 
-### Example 1: Simple Multi-Group Project
+### Example 1: Simple multi-group project
 
 Analyzed: [kubernetes-sigs/scheduler-plugins](https://github.com/kubernetes-sigs/scheduler-plugins)
 
@@ -213,7 +213,7 @@ make manifests && make generate && make build
 
 **Discovered:** 2 APIs, multi-group, no webhooks
 
-### Example 2: Single-Group with Webhooks (go/v3 Migration)
+### Example 2: Single-group with webhooks (go/v3 migration)
 
 Analyzed: [project-v3](https://github.com/kubernetes-sigs/kubebuilder/tree/release-3.13/testdata/project-v3)
 
@@ -238,7 +238,7 @@ make manifests && make generate && make build
 
 **Discovered:** 3 APIs, single-group, webhooks with defaulting and validation
 
-### Example 3: Complex Multi-Group with External Types
+### Example 3: Complex multi-group with external types
 
 Analyzed: testdata/project-v4-multigroup
 
@@ -304,7 +304,7 @@ make manifests && make generate && make build
 
 **Discovered:** 12 APIs across 6 groups, conversion webhook, external controllers, external webhooks
 
-## What to Do Next
+## What to do next
 
 1. Review the generated script carefully and ensure it matches your project structure.
 2. Save it as `migration-commands.sh` and make it executable: `chmod +x migration-commands.sh`

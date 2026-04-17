@@ -45,12 +45,12 @@ The artefacts for [ENVTEST][env-test-doc] k8s `1.31` are exclusively available a
 You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
-## Tool Binaries
+## Tool binaries
 ..
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 ...
 
-## Tool Versions
+## Tool versions
 ...
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')

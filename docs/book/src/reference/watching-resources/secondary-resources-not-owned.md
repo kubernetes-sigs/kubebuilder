@@ -1,4 +1,4 @@
-# Watching Secondary Resources that are NOT `Owned`
+# Watching secondary resources that are NOT `Owned`
 
 In some scenarios, a controller may need to watch and respond to changes in
 resources that it does not `Own`, meaning those resources are created and managed by
@@ -27,7 +27,7 @@ feature enabled.
     - By watching `Busybox` instances with a specific label, the controller ensures that the necessary
     actions (e.g., backups) are triggered only for the relevant resources.
 
-### Configuration Example
+### Configuration example
 
 Here’s how to configure the `BackupBusyboxReconciler` to watch changes in the
 `Busybox` resource and trigger reconciliation for `BackupBusybox`:

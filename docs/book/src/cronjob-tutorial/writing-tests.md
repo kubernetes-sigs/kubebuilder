@@ -22,7 +22,7 @@ An example of this test can be found under the `testdata` directory in the Kubeb
 <a href="https://github.com/kubernetes-sigs/kubebuilder/blob/master/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go">testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go</a>.
 </aside>
 
-## Test Environment Setup
+## Test environment setup
 
 {{#literatego ../cronjob-tutorial/testdata/project/internal/controller/suite_test.go}}
 

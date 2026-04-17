@@ -1,17 +1,17 @@
-# Creating Events
+# Creating events
 
 It is often useful to publish *Event* objects from the controller Reconcile function as they allow users or any automated processes to see what is going on with a particular object and respond to them.
 
  Recent Events for an object can be viewed by running `$ kubectl describe <resource kind> <resource name>`. Also, they can be checked by running `$ kubectl get events`.
 
 <aside class="warning" role="note">
-<p class="note-title">Events should be raised in certain circumstances only</p>
+<parameter name="note-title">Events should be raised in certain circumstances only</p>
 
 Be aware that it is **not** recommended to emit Events for all operations. If authors raise too many events, it brings bad UX experiences for those consuming the solutions on the cluster, and they may find it difficult to filter an actionable event from the cluster. For more information, please take a look at the [Kubernetes APIs convention][Events].
 
 </aside>
 
-## Writing Events
+## Writing events
 
 Anatomy of an Event:
 
@@ -42,7 +42,7 @@ Following is an example of a code implementation that raises an Event.
 
 </aside>
 
-### How to be able to raise Events?
+### How to be able to raise events
 
 Following are the steps with examples to help you raise events in your controller's reconciliations.
 Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
@@ -60,7 +60,7 @@ which can be created for a Controller by calling `GetEventRecorder(name string)`
 	}
 ```
 
-### Allowing usage of EventRecorder on the Controller
+### Allowing usage of EventRecorder on the controller
 
 To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, firstly let's update the controller implementation:
 ```go
@@ -77,7 +77,7 @@ type MyKindReconciler struct {
 	Recorder events.EventRecorder
 }
 ```
-### Passing the EventRecorder to the Controller
+### Passing the EventRecorder to the controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
 which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:

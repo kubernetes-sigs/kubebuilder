@@ -28,7 +28,7 @@ To know more, see: [Using Kind For Development Purposes and CI](./../reference/k
 </aside>
 
 
-## Deploy Webhooks
+## Deploy webhooks
 
 You need to enable the webhook and cert manager configuration through kustomize.
 `config/default/kustomization.yaml` should have the following webhook-related sections uncommented:

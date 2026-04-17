@@ -31,7 +31,7 @@ generators may be used in a single invocation of `controller-gen`.
 
 {{#markerdocs CLI: generators}}
 
-## Output Rules
+## Output rules
 
 Output rules configure how a given generator outputs its results. There is
 always one global "fallback" output rule (specified as `output:<rule>`),
@@ -39,7 +39,7 @@ plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
 <aside class="note" role="note">
 
-<p class="note-title">Default Rules</p>
+<p class="note-title">Default rules</p>
 
 When no fallback rule is specified manually, a set of default
 per-generator rules are used which result in YAML going to
@@ -67,6 +67,6 @@ listed here.
 
 {{#markerdocs CLI: output rules (optionally as output:<generator>:...)}}
 
-## Other Options
+## Other options
 
 {{#markerdocs CLI: generic}}

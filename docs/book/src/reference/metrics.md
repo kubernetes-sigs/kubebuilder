@@ -25,7 +25,7 @@ your project to use the image from another source.
 
 </aside>
 
-## Metrics Configuration
+## Metrics configuration
 
 By looking at the file `config/default/kustomization.yaml` you can
 check the metrics are exposed by default:
@@ -55,7 +55,7 @@ Metrics: metricsserver.Options{
 },
 ```
 
-## Consuming Controller Metrics in Kubebuilder
+## Consuming controller metrics in Kubebuilder
 
 You can consume the metrics exposed by the controller using the `curl`
 command or any other HTTP client such as Prometheus.
@@ -63,7 +63,7 @@ command or any other HTTP client such as Prometheus.
 However, before doing so, ensure that your client has the
 **required RBAC permissions** to access the `/metrics` endpoint.
 
-### Granting Permissions to Access Metrics
+### Granting permissions to access metrics
 
 Kubebuilder scaffolds a `ClusterRole` with the necessary read permissions under:
 
@@ -122,7 +122,7 @@ Kubebuilder avoids scaffolding RoleBindings by default because it might:
     - This design provides safety and flexibility, but requires manual binding.
 </aside>
 
-### Testing the Metrics Endpoint (via Curl Pod)
+### Testing the metrics endpoint (via curl pod)
 
 If you'd like to manually test access to the metrics endpoint, follow these steps:
 
@@ -166,7 +166,7 @@ curl -v -k -H "Authorization: Bearer $TOKEN" \
 Check the options to protect your metrics endpoint in the next sections.
 </aside>
 
-## Metrics Protection and available options
+## Metrics protection and available options
 
 Unprotected metrics endpoints can expose valuable data to unauthorized users,
 such as system performance, application behavior, and potentially confidential
@@ -174,7 +174,7 @@ operational metrics. This exposure can lead to security vulnerabilities
 where an attacker could gain insights into the system's operation
 and exploit weaknesses.
 
-### By using authn/authz (Enabled by default)
+### By using authn/authz (enabled by default)
 
 To mitigate these risks, Kubebuilder projects utilize authentication (authn) and authorization (authz) to protect the
 metrics endpoint. This approach ensures that only authorized users and service accounts can access sensitive metrics
@@ -238,7 +238,7 @@ spec:
         done
 ```
 
-### **(Recommended)** Enabling certificates for Production (Disabled by default)
+### **(Recommended)** Enabling certificates for production (disabled by default)
 
 <aside class="warning" role="note">
 <p class="note-title">Why Is This Not Enabled by Default?</p>
@@ -353,7 +353,7 @@ project to use certificates managed by CertManager.
     integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
     in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
-### **(Optional)** By using Network Policy (Disabled by default)
+### **(Optional)** By using network policy (disabled by default)
 
 NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
 flow at the IP address or port level. However, it doesn't handle `authn/authz`.
@@ -367,7 +367,7 @@ Uncomment the following line in the `config/default/kustomization.yaml`:
 #- ../network-policy
 ```
 
-## Exporting Metrics for Prometheus
+## Exporting metrics for Prometheus
 
 Follow the steps below to export the metrics using the Prometheus Operator:
 
@@ -415,7 +415,7 @@ for the metrics exported from the namespace where the project is running
 
 <img width="1680" alt="Screenshot 2019-10-02 at 13 07 13" src="https://user-images.githubusercontent.com/7708031/66042888-a497da80-e515-11e9-9d77-d8a9fc1159a5.png">
 
-## Publishing Additional Metrics
+## Publishing additional metrics
 
 If you wish to publish additional metrics from your controllers, this
 can be easily achieved by using the global registry from

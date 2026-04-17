@@ -256,7 +256,7 @@ IMPORTANT REMINDERS:
 - Follow make command sequence from CONTEXT above
 ```
 
-## What AI Will Do
+## What AI will do
 
 The AI will:
 
@@ -271,7 +271,7 @@ The AI will:
 9. **Port additional files** - README, docs/, scripts/, .github/, any custom directories
 10. **Verify completely** - Run lint-fix, generate, manifests, build, test
 
-## After AI Completes
+## After AI completes
 
 **Critical: Review carefully!**
 
@@ -319,7 +319,7 @@ type CaptainSpec struct {
 }
 ```
 
-### Controller Reconcile Logic
+### Controller reconcile logic
 
 **From backup** (Reconcile function body):
 ```go
@@ -355,7 +355,7 @@ func (r *CaptainReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 ```
 
-### Webhook Adaptation (v3 to v4)
+### Webhook adaptation (v3 to v4)
 
 **From go/v3 backup**:
 ```go
@@ -378,7 +378,7 @@ func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj *crewv1.Captai
 }
 ```
 
-## Next Steps
+## Next steps
 
 After AI ports your code:
 

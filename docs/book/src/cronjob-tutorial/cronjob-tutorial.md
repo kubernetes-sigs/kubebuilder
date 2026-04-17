@@ -32,7 +32,7 @@ directory.
 
 </aside>
 
-## Scaffolding Out Our Project
+## Scaffolding out our project
 
 As covered in the [quick start](../quick-start.md), we'll need to scaffold
 out a new project.  Make sure you've [installed

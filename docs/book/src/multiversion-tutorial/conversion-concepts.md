@@ -42,7 +42,7 @@ to the hub version, and then to our desired version:
 This cuts down on the number of conversion functions that we have to
 define, and is modeled off of what Kubernetes does internally.
 
-## What does that have to do with Webhooks?
+## What does that have to do with webhooks?
 
 When API clients, like kubectl or your controller, request a particular
 version of your resource, the Kubernetes API server needs to return
