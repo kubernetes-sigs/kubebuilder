@@ -55,7 +55,7 @@ The goal of this command is to create a Custom Resource (CR) and Custom Resource
 
 ## But, why create APIs at all?
 
-New APIs are how you teach Kubernetes about your custom objects. The Go structs are used to generate a CRD which includes the schema for your data as well as tracking data like what the new type is called. You can then create instances of your custom objects which is managed by your [controllers][controllers].
+New APIs are how you teach Kubernetes about your custom objects. Controller-gen uses the Go structs to generate a CRD which includes the schema for your data as well as tracking data like what the new type is called. You can then create instances of your custom objects which your [controllers][controllers] manage.
 
 Your APIs and resources represent your solutions on the clusters. Basically, the CRDs are a definition of your customized Objects, and the CRs are an instance of it.
 

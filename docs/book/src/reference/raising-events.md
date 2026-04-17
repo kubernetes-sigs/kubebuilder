@@ -22,7 +22,7 @@ Eventf(regarding, related runtime.Object, eventtype, reason, action, message str
 - `regarding` is the object this event is about.
 - `related` is an optional secondary object related to this event (use `nil` if not applicable).
 - `eventtype` is this event type, and is either *Normal* or *Warning*. ([More info][Event-Example])
-- `reason` is the reason this event is generated. It should be short and unique with `UpperCamelCase` format. The value could appear in *switch* statements by automation. ([More info][Reason-Example])
+- `reason` is the reason the controller generates this event. It should be short and unique with `UpperCamelCase` format. The value could appear in *switch* statements by automation. ([More info][Reason-Example])
 - `action` is the action that was taken/failed regarding the object.
 - `message` is a human-readable description with optional format arguments.
 

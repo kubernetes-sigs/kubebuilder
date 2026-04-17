@@ -59,7 +59,7 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook
 <aside class="note" role="note">
 <p class="note-title">Developing in $GOPATH</p>
 
-If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+If you initialize your project within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
 Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
@@ -77,8 +77,8 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <aside class="note" role="note">
 <p class="note-title">Press Options</p>
 
-If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this creates the files `api/v1/guestbook_types.go` where the API is defined
-and the `internal/controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this creates the files `api/v1/guestbook_types.go` where you define the API
+and the `internal/controller/guestbook_controller.go` where you implement the reconciliation business logic for this Kind(CRD).
 
 </aside>
 
@@ -231,7 +231,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <aside class="note" role="note">
 <p class="note-title">Registry Permission</p>
 
-This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
+You should publish this image to the personal registry you specified. You also need access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
 
 Consider incorporating [Kind][kind] into your workflow for a faster, more efficient local development and CI experience.

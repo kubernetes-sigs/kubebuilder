@@ -66,7 +66,7 @@ $ docker manifest inspect myregistry/example/myimage:v0.0.1
 }
 ```
 
-### 2) (Recommended as a Best Practice) Ensure that node affinity expressions are set to match the supported platforms
+### 2) (Recommended as a Best Practice) Set node affinity expressions to match the supported platforms
 
 Kubernetes provides a mechanism called [nodeAffinity][node-affinity] which can be used to limit the possible node
 targets where a pod can be scheduled. This is especially important to ensure correct scheduling behavior in clusters
@@ -133,8 +133,8 @@ Template: corev1.PodTemplateSpec{
 <aside class="note" role="note">
 <p class="note-title"> Example(s) </p>
 
-You can look for some code examples by checking the code which is generated via the Deploy
-Image plugin. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
+You can look for some code examples by checking the code that the Deploy
+Image plugin generates. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
 
 </aside>
 
@@ -200,19 +200,19 @@ Projects created with the Kubebuilder CLI have two workloads which are:
 
 ### Manager
 
-The container to run the manager implementation is configured in the `config/manager/manager.yaml` file.
-This image is built with the Dockerfile file scaffolded by default and contains the binary of the project \
-which is built via the command `go build -a -o manager main.go`.
+The `config/manager/manager.yaml` file configures the container to run the manager implementation.
+The Dockerfile that Kubebuilder scaffolds by default builds this image and contains the project binary \
+that the command `go build -a -o manager main.go` builds.
 
 Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/myprojectname:<tag>`
-an image is built from the client host (local environment) and produces an image for
+Docker builds an image from the client host (local environment) and produces an image for
 the client os/arch, which is commonly linux/amd64 or linux/arm64.
 
 <aside class="note" role="note">
 <p class="note-title">Mac Os</p>
 
-If you are running from an Mac Os environment then, Docker also will consider it as linux/$arch. Be aware that
-when, for example, is running Kind on a Mac OS operational system the nodes will
+If you run from a Mac OS environment then, Docker also will consider it as linux/$arch. Be aware that
+when, for example, you run Kind on a Mac OS operational system the nodes will
 end up labeled with ` kubernetes.io/os=linux`
 
 </aside>

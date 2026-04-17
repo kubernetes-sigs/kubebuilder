@@ -62,7 +62,7 @@ Kubebuilder has scaffolded so far...
 
 <p class="note-title">Developing in <code>$GOPATH</code></p>
 
-If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+If you initialize your project within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
 Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.

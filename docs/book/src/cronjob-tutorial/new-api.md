@@ -13,9 +13,9 @@ Press `y` for "Create Resource" and "Create Controller".
 The first time you call this command for each group-version, it creates
 a directory for the new group-version.
 
-In this case, the
+In this case, the command creates the
 [`api/v1/`](https://sigs.k8s.io/kubebuilder/docs/book/src/cronjob-tutorial/testdata/project/api/v1)
-directory is created, corresponding to the
+directory, corresponding to the
 `batch.tutorial.kubebuilder.io/v1` (remember our [`--domain`
 setting](cronjob-tutorial.md#scaffolding-out-our-project) from the
 beginning?).

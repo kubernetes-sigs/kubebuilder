@@ -98,7 +98,7 @@ The `kubebuilder alpha generate` command re-scaffolds your entire project based 
 configuration. You can then manually compare and merge your custom code. For example, you can use it to
 regenerate your project after upgrading the Kubebuilder CLI version and then, manually use an IDE or
 `git diff` to compare and merge changes by hand into your existing codebase to ensure that all your changes
-are applied in a new scaffold.
+apply in a new scaffold.
 
 This approach is useful for projects that heavily customize the scaffold or
 when other migration methods aren't available. You might need to use this method only once to
@@ -112,7 +112,7 @@ kubebuilder alpha generate
 <p class="note-title">Requirements and Limitations</p>
 
 - Requires a `PROJECT` file (projects created with Kubebuilder **v3.0.0** or later)
-- Only re-scaffolds resources that were created using the CLI and tracked in the `PROJECT` file
+- Only re-scaffolds resources that the CLI created and tracks in the `PROJECT` file
 - Manually created APIs, controllers, or webhooks will not be regenerated
 - This may result in a partial re-scaffold if you have manually created resources
 - Requires manual comparison and merge of custom code after regeneration

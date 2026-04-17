@@ -44,8 +44,7 @@ patches:
         kind: Deployment
 ```
 
-Then, you can check in the `cmd/main.go` where metrics server
-is configured:
+Then, you can check in the `cmd/main.go` where you configure the metrics server:
 
 ```go
 // Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
@@ -161,7 +160,7 @@ curl -v -k -H "Authorization: Bearer $TOKEN" \
 <p class="note-title">Notes</p>
 
 - Replace `<project-name>`, `<namespace>`, and `<service-account-name>` accordingly.
-- Ensure TLS is enabled and certificates are valid if not skipping verification (`-k`).
+- Ensure you enable TLS and certificates are valid if not skipping verification (`-k`).
 
 Check the options to protect your metrics endpoint in the next sections.
 </aside>
@@ -244,7 +243,7 @@ spec:
 <p class="note-title">Why Is This Not Enabled by Default?</p>
 
 This option is not enabled by default because it introduces a dependency on CertManager.
-To keep the project as lightweight and beginner-friendly as possible, it is disabled by default.
+To keep the project as lightweight and beginner-friendly as possible, Kubebuilder disables it by default.
 
 </aside>
 
@@ -256,10 +255,10 @@ automatically generate a self-signed certificate to secure the metrics server.
 While this is convenient for development and testing, it is **not** recommended
 for production.
 
-Those certificates are used to secure the transport layer (TLS).
-The token authentication using `authn/authz`, which is enabled by default serves
+You use those certificates to secure the transport layer (TLS).
+The token authentication using `authn/authz`, which Kubebuilder enables by default, serves
 as the application-level credential. However, for example, when you enable
-the integration of your metrics with Prometheus, those certificates can be used
+the integration of your metrics with Prometheus, you can use those certificates
 to secure the communication.
 
 </aside>

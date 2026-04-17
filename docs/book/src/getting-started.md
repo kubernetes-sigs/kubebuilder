@@ -4,7 +4,7 @@ This guide creates a sample project to show you how it works. This sample:
 
 - Reconcile a Memcached CR - which represents an instance of a Memcached deployed/managed on cluster
 - Create a Deployment with the Memcached image
-- Not allow more instances than the size defined in the CR which is applied
+- Not allow more instances than the size you define in the CR
 - Update the Memcached CR status
 
 <aside class="note" role="note">
@@ -39,7 +39,7 @@ kubebuilder init --domain=example.com
 <aside class="note" role="note">
 <p class="note-title">Developing in $GOPATH</p>
 
-If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+If you initialize your project within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
 Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
@@ -189,7 +189,7 @@ reconcile App {
   ...
 
   // If at the end of the loop:
-  // Everything was executed successfully, and the reconcile can stop
+  // Everything executed successfully, and the reconcile can stop
   return reconcile.Result{}, nil
 
 }
@@ -227,8 +227,8 @@ return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
 
 #### In the context of our example
 
-When the sample Custom Resource (CR) is applied to the cluster (i.e. `kubectl apply -f config/sample/cache_v1alpha1_memcached.yaml`),
-ensure that a Deployment is created for the Memcached image and that it matches the number of replicas defined in the CR.
+When you apply the sample Custom Resource (CR) to the cluster (i.e. `kubectl apply -f config/sample/cache_v1alpha1_memcached.yaml`),
+ensure that the controller creates a Deployment for the Memcached image and that it matches the number of replicas you define in the CR.
 
 To achieve this, first implement an operation that checks whether the Deployment for the Memcached instance already exists on the cluster.
 If it does not, the controller creates the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
@@ -280,7 +280,7 @@ specifications, as demonstrated in the following example:
 Additionally, implement a mechanism to verify that the number of Memcached replicas
 on the cluster matches the desired count specified in the Custom Resource (CR). If there is a
 discrepancy, the reconciliation must update the cluster to ensure consistency. This means that
-whenever a CR of the Memcached Kind is created or updated on the cluster, the controller will
+whenever you create or update a CR of the Memcached Kind on the cluster, the controller will
 continuously reconcile the state until the actual number of replicas matches the desired count.
 The following example illustrates this process:
 
@@ -318,7 +318,7 @@ When a resource that the controller is interested in changes, the Watch triggers
 reconciliation loop, ensuring that the actual state of the resource matches the desired state
 as defined in the controller's logic.
 
-Notice how the Manager is configured to monitor events such as the creation, update, or deletion of a Custom Resource (CR) of the Memcached kind,
+Notice how you configure the Manager to monitor events such as the creation, update, or deletion of a Custom Resource (CR) of the Memcached kind,
 as well as any changes to the Deployment that the controller manages and owns:
 
 ```go
@@ -328,7 +328,7 @@ as well as any changes to the Deployment that the controller manages and owns:
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
 		// Watch the Memcached Custom Resource and trigger reconciliation whenever it
-		//is created, updated, or deleted
+		//when you create, update, or delete it
 		For(&cachev1alpha1.Memcached{}).
 		// Watch the Deployment managed by the Memcached controller. If any changes occur to the Deployment
         // owned and managed by this controller, it triggers reconciliation, ensuring that the cluster
@@ -346,7 +346,7 @@ Deployment running the Memcached instance is changed. For example,
 if someone accidentally deletes the Deployment or changes the number of replicas, trigger
 the reconciliation to ensure that it returns to the desired state.
 
-The Manager knows which Deployment to observe because the `ownerRef` (Owner Reference) is set:
+The Manager knows which Deployment to observe because you set the `ownerRef` (Owner Reference):
 
 ```go
 if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
@@ -362,7 +362,7 @@ The ownerRef is crucial not only for allowing the controller to observe changes 
 if you delete the Memcached Custom Resource (CR) from the cluster, all resources owned by it are automatically
 deleted as well, in a cascading event.
 
-This ensures that when the parent resource (Memcached CR) is removed, all associated resources
+This ensures that when you remove the parent resource (Memcached CR), Kubernetes also removes all associated resources
 (like Deployments, Services, etc.) are also cleaned up, maintaining
 a tidy and consistent cluster state.
 
@@ -375,9 +375,9 @@ For more information, see the Kubernetes documentation on [Owners and Dependents
 It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
 the resources it manages.
 
-The [RBAC permissions][k8s-rbac] are now configured via [RBAC markers][rbac-markers], which are used to generate and update the
-manifest files present in `config/rbac/`. These markers can be found (and should be defined) on the `Reconcile()` method of each controller, see
-how it is implemented in our example:
+You configure the [RBAC permissions][k8s-rbac] via [RBAC markers][rbac-markers], which [controller-gen][controller-gen] uses to generate and update the
+manifest files in `config/rbac/`. You can find these markers (and should define them) on the `Reconcile()` method of each controller, see
+how the example implements them:
 
 ```go
 // +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete

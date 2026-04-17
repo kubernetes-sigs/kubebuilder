@@ -1,7 +1,7 @@
 # Scaffold
 
 The `+kubebuilder:scaffold` marker is a key part of the Kubebuilder scaffolding system. It marks locations in generated
-files where additional code is injected as new resources (such as controllers, webhooks, or APIs) are scaffolded.
+files where Kubebuilder injects additional code as you scaffold new resources (such as controllers, webhooks, or APIs).
 This enables Kubebuilder to seamlessly integrate newly generated components into the project without affecting
 user-defined code.
 
@@ -23,7 +23,7 @@ to insert the required imports and registration code.
 
 ## Example usage in `main.go`
 
-Here is how the `+kubebuilder:scaffold` marker is used in a typical `main.go` file. To illustrate how it works, consider the following command to create a new API:
+Here is how you use the `+kubebuilder:scaffold` marker in a typical `main.go` file. To illustrate how it works, consider the following command to create a new API:
 
 ```shell
 kubebuilder create api --group crew --version v1 --kind Admiral --controller=true --resource=true
@@ -55,8 +55,8 @@ import (
 
 ### To register a new scheme
 
-The `+kubebuilder:scaffold:scheme` marker is used to register newly created API versions with the runtime scheme,
-ensuring the API types are recognized by the manager.
+Kubebuilder uses the `+kubebuilder:scaffold:scheme` marker to register newly created API versions with the runtime scheme,
+ensuring the manager recognizes the API types.
 
 For example, after creating the Admiral API, the CLI will inject the
 following code into the `init()` function to register the scheme:

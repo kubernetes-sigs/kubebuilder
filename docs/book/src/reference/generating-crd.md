@@ -99,8 +99,8 @@ Both subresources have a corresponding [marker][crd-markers].
 
 ### Status
 
-The status subresource is enabled via `+kubebuilder:subresource:status`.
-When enabled, updates at the main resource will not change status.
+You enable the status subresource via `+kubebuilder:subresource:status`.
+When you enable it, updates at the main resource will not change status.
 Similarly, updates to the status subresource cannot change anything but
 the status field.
 
@@ -119,10 +119,10 @@ type Toy struct {
 
 ### Scale
 
-The scale subresource is enabled via `+kubebuilder:subresource:scale`.
-When enabled, users are able to use `kubectl scale` with your
-resource.  If the `selectorpath` argument pointed to the string form of
-a label selector, the HorizontalPodAutoscaler is able to autoscale
+You enable the scale subresource via `+kubebuilder:subresource:scale`.
+When you enable it, users can use `kubectl scale` with your
+resource. If the `selectorpath` argument points to the string form of
+a label selector, the HorizontalPodAutoscaler can autoscale
 your resource.
 
 For example:

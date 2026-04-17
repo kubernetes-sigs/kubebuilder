@@ -85,7 +85,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <aside class="note" role="note">
 <p class="note-title">Registry Permission</p>
 
-This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
+You should publish this image to the personal registry you specified. You also need access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.

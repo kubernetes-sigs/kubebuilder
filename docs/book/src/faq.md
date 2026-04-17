@@ -12,7 +12,7 @@ the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-
 
 ## How does the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
 
-After creating a project, usually you want to extend the Kubernetes APIs and define new APIs which are owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and is used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
+After creating a project, you usually want to extend the Kubernetes APIs and define new APIs which your project owns. Therefore, Kubebuilder tracks the domain value in the [PROJECT][project-file-def] file which defines your project's config and uses it as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
 
 The domain is for the group suffix, to explicitly show the resource group category.
 For example, if set `--domain=example.com`:
@@ -46,7 +46,7 @@ with:
 
 You can enable the leader election. However, if you are testing the project locally using the `make run`
 target which runs the manager outside of the cluster then, you might also need to set the
-namespace the leader election resource is created, as follows:
+namespace where the manager creates the leader election resource, as follows:
 ```go
 mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -58,7 +58,7 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		LeaderElectionNamespace: "<project-name>-system",
 ```
 
-If you are running the project on the cluster with `make deploy` target
+If you run the project on the cluster with the `make deploy` target
 then, you might not want to add this option. So, you might want to customize this behaviour using
 environment variables to only add this option for development purposes, such as:
 
@@ -91,7 +91,7 @@ main.main
 runtime.main
         /usr/local/go/src/runtime/proc.go:250
 ```
-when you are running the project against a Kubernetes old version (maybe <= 1.21) , it might be caused by the [issue][permission-issue] , the reason is the mounted token file set to `0600`, see [solution][permission-PR] here. Then, the workaround is:
+when you run the project against a Kubernetes old version (maybe <= 1.21), it might be caused by the [issue][permission-issue]. The reason is that Kubernetes sets the mounted token file to `0600`, see [solution][permission-PR] here. Then, the workaround is:
 
 Add `fsGroup` in the manager.yaml
 ```yaml
@@ -111,7 +111,7 @@ Therefore, you have a few options to workround this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
-Your CRDs are generated using [controller-gen][controller-gen]. By using the option `maxDescLen=0` to remove the description, you may reduce the size, potentially resolving the issue. To do it you can update the Makefile as the following example and then, call the target `make manifest` to regenerate your CRDs without description, see:
+[Controller-gen][controller-gen] generates your CRDs. By using the option `maxDescLen=0` to remove the description, you may reduce the size, potentially resolving the issue. To do it you can update the Makefile as the following example and then, call the target `make manifest` to regenerate your CRDs without description, see:
 
 ```shell
 
@@ -119,7 +119,7 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
  manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
      # Note that the option maxDescLen=0 was added in the default scaffold in order to sort out the issue
      # Too long: must have at most 262144 bytes. By using kubectl apply to create / update resources an annotation
-     # is created by K8s API to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
+     # that the K8s API creates to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
      # However, it has a size limit and if the CRD is too big with so many long descriptions as this one it will cause the failure.
  	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```

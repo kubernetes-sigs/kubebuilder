@@ -16,8 +16,7 @@ See the `project-v4-with-plugins` directory under the [testdata][testdata]
 directory in the Kubebuilder project to check an example
 of scaffolding created using this plugin.
 
-The `Memcached` API and its controller was scaffolded
-using the command:
+The following command scaffolded the `Memcached` API and its controller:
 
 ```shell
 kubebuilder create api \
@@ -31,7 +30,7 @@ kubebuilder create api \
   --plugins="deploy-image/v1-alpha"
 ```
 
-The `Busybox` API was created with:
+The following command created the `Busybox` API:
 
 ```shell
 kubebuilder create api \

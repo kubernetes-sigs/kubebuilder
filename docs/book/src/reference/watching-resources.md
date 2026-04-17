@@ -1,8 +1,8 @@
 # Watching resources
 
 When extending the Kubernetes API, ensure that your solutions behave consistently with Kubernetes itself.
-For example, consider a `Deployment` resource, which is managed by a controller. This controller is responsible
-for responding to changes in the cluster—such as when a `Deployment` is created, updated, or deleted—by triggering
+For example, consider a `Deployment` resource, which a controller manages. This controller is responsible
+for responding to changes in the cluster—such as when you create, update, or delete a `Deployment`—by triggering
 reconciliation to ensure the resource’s state matches the desired state.
 
 Similarly, when developing controllers, watch for relevant changes in resources that are crucial
@@ -20,12 +20,12 @@ the corresponding controller is responsible for managing instances of `MyApp`.
 In this case, `MyApp` is the **Primary Resource** for that controller, and your controller’s
 reconciliation loop focuses on ensuring the desired state of these primary resources is maintained.
 
-When you create a new API using Kubebuilder, the following default code is scaffolded,
+When you create a new API using Kubebuilder, the CLI scaffolds the following default code,
 ensuring that the controller watches all relevant events—such as creations, updates, and
 deletions—for (`For()`) the new API.
 
-This setup guarantees that the reconciliation loop is triggered whenever an instance
-of the API is created, updated, or deleted:
+This setup guarantees that the system triggers the reconciliation loop whenever you create, update, or delete an instance
+of the API:
 
 ```go
 // Watches the primary resource (e.g., MyApp) for create, update, delete events
@@ -47,8 +47,8 @@ so the controller must watch and reconcile these resources accordingly.
 ### Which are owned by the controller
 
 These **Secondary Resources**, such as `Services`, `ConfigMaps`, or `Deployments`,
-when `Owned` by the controllers, are created and managed by the specific controller
-and are tied to the **Primary Resource** via [OwnerReferences][owner-ref-k8s-docs].
+when `Owned` by the controllers, the specific controller creates and manages them
+and ties them to the **Primary Resource** via [OwnerReferences][owner-ref-k8s-docs].
 
 For example, if you have a controller to manage your CR(s) of the Kind `MyApp`
 on the cluster, which represents your application solution, all resources required
@@ -58,9 +58,9 @@ and updating these resources is part of the `MyApp` Controller.
 Add the appropriate [OwnerReferences][owner-ref-k8s-docs]
 using the [controllerutil.SetControllerReference][cr-owner-ref-doc]
 function to indicate that these resources are owned by the same controller
-responsible for managing `MyApp` instances, which are reconciled by the `MyAppReconciler`.
+responsible for managing `MyApp` instances, which the `MyAppReconciler` reconciles.
 
-Additionally, if the **Primary Resource** is deleted, Kubernetes' garbage collection mechanism
+Additionally, if you delete the **Primary Resource**, Kubernetes' garbage collection mechanism
 ensures that all associated **Secondary Resources** are automatically deleted in a
 cascading manner.
 
@@ -88,16 +88,16 @@ to trigger backup operations based on changes in `MyApp`.
 
 In this scenario, **Operator B** could define a `BackupConfig` CRD that relies on the state of `MyApp`.
 By treating `MyApp` as a **Secondary Resource**, **Operator B** can watch and reconcile changes in **Operator A**'s `MyApp`,
-ensuring that backup processes are initiated whenever `MyApp` is updated or scaled.
+ensuring that the controller initiates backup processes whenever you update or scale `MyApp`.
 
 ## General concept of watching resources
 
-Whether a resource is defined within your project or comes from an external project, the concept of **Primary**
+Whether you define a resource within your project or it comes from an external project, the concept of **Primary**
 and **Secondary Resources** remains the same:
 - The **Primary Resource** is the resource the controller is primarily responsible for managing.
-- **Secondary Resources** are those that are required to ensure the primary resource works as desired.
+- **Secondary Resources** are those that you need to ensure the primary resource works as desired.
 
-Therefore, regardless of whether the resource was defined by your project or by another project,
+Therefore, regardless of whether your project or another project defined the resource,
 your controller can watch, reconcile, and manage changes to these resources as needed.
 
 ## Why does watching the secondary resources matter?
@@ -120,7 +120,7 @@ Here are the key reasons why it's important to watch them:
 
 - **Avoiding Random Self-Healing**:
     - Without watching secondary resources, the controller may "heal" itself only upon restart or when specific events
-    are triggered. This can cause unpredictable or delayed reactions to issues.
+    trigger. This can cause unpredictable or delayed reactions to issues.
     - Monitoring secondary resources ensures that inconsistencies are addressed promptly, rather than waiting for a
     controller restart or external event to trigger reconciliation.
 
@@ -147,7 +147,7 @@ systems that do not emit events or for handling resources that take time to conv
 Relying solely on `RequeueAfter` for all scenarios can lead to unnecessary overhead and
 delayed reactions. Therefore, it is essential to prioritize **event-driven reconciliation** by configuring
 your controller to **watch resources** whenever possible, and reserving `RequeueAfter` for situations
-where periodic checks are required.
+where you need periodic checks.
 
 ### When `RequeueAfter X` is useful
 

@@ -9,7 +9,7 @@ Installing the binaries is as a simple as running `make envtest`. `envtest` will
 by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
 
-You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases.Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, Kubebuilder configures it to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
 ## Tool binaries
@@ -55,7 +55,7 @@ The `setup-envtest` tool stores binaries in OS-specific locations. See [binary s
 ```
 
 ### Update the test make target
-Once these binaries are installed, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
+Once you install these binaries, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
 binaries and not reach out to remote resources. You could also set the `ENVTEST_INSTALLED_ONLY` env variable.
 
 ```makefile
@@ -98,7 +98,7 @@ Logs from the test runs are prefixed with `test-env`.
 
 You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
-Therefore, you can check that a test using ENV TEST is generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
+Therefore, you can check that the plugin generates a test using ENV TEST for the controller which ensures that the controller creates the Deployment successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
 
 </aside>
 
@@ -184,7 +184,7 @@ testEnv = &envtest.Environment{
 
 ## Testing considerations
 
-Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
+Unless you're using an existing cluster, keep in mind that no built-in controllers run in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might impact how you write tests. One common example is garbage collection; because no controllers monitor built-in resources, Kubernetes does not delete objects, even if you set up an `OwnerReference`.
 
 To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
 
@@ -202,7 +202,7 @@ Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerRef
 
 <p class="note-title">Namespace usage limitation</p>
 
-EnvTest does not support namespace deletion. Deleting a namespace seems to succeed, but the namespace is just put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace fails. This causes your reconciler to continue reconciling any objects left behind, unless they are deleted.
+EnvTest does not support namespace deletion. Deleting a namespace seems to succeed, but Kubernetes just puts the namespace in a Terminating state, and never actually reclaims it. Trying to recreate the namespace fails. This causes your reconciler to continue reconciling any objects left behind, unless you delete them.
 
 To overcome this limitation you can create a new namespace for each test. Even so, when one test completes (e.g. in "namespace-1") and another test starts (e.g. in "namespace-2"), the controller will still be reconciling any active objects from "namespace-1". This can be avoided by ensuring that all tests clean up after themselves as part of the test teardown.  If teardown of a namespace is difficult, it may be possible to wire the reconciler in such a way that it ignores reconcile requests that come from namespaces other than the one being tested:
 

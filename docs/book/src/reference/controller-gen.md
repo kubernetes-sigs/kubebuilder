@@ -6,11 +6,11 @@ for generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special ["marker
 comments"](/reference/markers.md) in Go code.
 
-controller-gen is built out of different "generators" (which specify what
+controller-gen builds out of different "generators" (which specify what
 to generate) and "output rules" (which specify how and where to write the
 results).
 
-Both are configured through command line options specified in [marker
+You configure both through command line options specified in [marker
 format](/reference/markers.md).
 
 For instance, the following command:
@@ -26,8 +26,8 @@ generates CRDs and RBAC, and specifically stores the generated CRD YAML in
 
 ## Generators
 
-Each different generator is configured through a CLI option.  Multiple
-generators may be used in a single invocation of `controller-gen`.
+You configure each different generator through a CLI option. You can use multiple
+generators in a single invocation of `controller-gen`.
 
 {{#markerdocs CLI: generators}}
 
@@ -41,8 +41,8 @@ plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
 <p class="note-title">Default rules</p>
 
-When no fallback rule is specified manually, a set of default
-per-generator rules are used which result in YAML going to
+When you don't manually specify a fallback rule, controller-gen uses a set of default
+per-generator rules which result in YAML going to
 `config/<generator>`, and code staying where it belongs.
 
 The default rules are equivalent to

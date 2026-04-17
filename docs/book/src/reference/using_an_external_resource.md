@@ -22,8 +22,8 @@ The command looks like this:
 kubebuilder create api --group <theirgroup> --version <theirversion> --kind <theirKind> --controller --resource=false --external-api-path=<their Golang path import> --external-api-domain=<theirdomain>
 ```
 
-- `--external-api-path`: Provide the Go import path where the external types are defined.
-- `--external-api-domain`:  Provide the domain for the external types. This value is used to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
+- `--external-api-path`: Provide the Go import path where you define the external types.
+- `--external-api-domain`: Provide the domain for the external types. Kubebuilder uses this value to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
 
 For example, if you're managing Certificates from Cert Manager:
 
@@ -90,7 +90,7 @@ Also, the RBAC role:
 ```
 
 This scaffolds a controller for the external type but skips creating new resource
-definitions since the type is defined in an external project.
+definitions since an external project defines the type.
 
 ### Creating a webhook to manage an external type
 
