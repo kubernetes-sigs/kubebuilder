@@ -454,7 +454,7 @@ implemented for your controller.
 [options-manager]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Options
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
-[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
+[cronjob-tutorial]: ./cronjob-tutorial/cronjob-tutorial.md
 [deploy-image]: ./plugins/available/deploy-image-plugin-v1-alpha.md
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules

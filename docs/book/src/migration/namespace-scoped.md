@@ -310,7 +310,7 @@ By default, Kubebuilder projects are cluster-scoped. Namespace-scoped projects w
 specific namespace(s) via the WATCH_NAMESPACE environment variable.
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io/reference/manager-scope.html
+- Kubebuilder Book: ../reference/manager-scope.md
 
 Steps to execute:
 

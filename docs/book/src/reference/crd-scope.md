@@ -244,7 +244,7 @@ For namespace-scoped CRDs with multiple versions, conversion webhooks must accou
 //+kubebuilder:webhook:path=/convert,mutating=false,failurePolicy=fail,groups=cache.example.com,resources=memcacheds,verbs=create;update,versions=v1;v1beta1,name=cmemcached.kb.io,sideEffects=None,admissionReviewVersions=v1
 ```
 
-The webhook must handle conversion for resources in any namespace. See the [multi-version tutorial](https://book.kubebuilder.io/multiversion-tutorial/tutorial) for details.
+The webhook must handle conversion for resources in any namespace. See the [multi-version tutorial](../multiversion-tutorial/tutorial.md) for details.
 
 ## Testing
 
@@ -273,5 +273,5 @@ kubectl get databases  # No namespace needed
 
 - [Manager Scope](./manager-scope.md) - Configuring manager watching scope
 - [Generating CRDs](./generating-crd.md) - CRD generation and markers
-- [Multi-Version Tutorial](https://book.kubebuilder.io/multiversion-tutorial/tutorial) - CRD versioning and conversion
+- [Multi-Version Tutorial](../multiversion-tutorial/tutorial.md) - CRD versioning and conversion
 - [Kubernetes CRD Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)

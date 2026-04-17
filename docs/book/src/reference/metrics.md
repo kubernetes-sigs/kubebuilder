@@ -38,7 +38,7 @@ check the metrics are exposed by default:
 ```yaml
 patches:
    # [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
-   # More info: https://book.kubebuilder.io/reference/metrics
+   # More info: ./metrics.md
    - path: manager_metrics_patch.yaml
      target:
         kind: Deployment

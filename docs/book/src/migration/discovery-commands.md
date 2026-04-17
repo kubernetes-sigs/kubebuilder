@@ -103,7 +103,7 @@ Files to IGNORE:
 - config/rbac/*.yaml (auto-generated from markers)
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io
+- Kubebuilder Book: ../introduction.md
 - controller-runtime: https://github.com/kubernetes-sigs/controller-runtime
 - controller-tools: https://github.com/kubernetes-sigs/controller-tools
 

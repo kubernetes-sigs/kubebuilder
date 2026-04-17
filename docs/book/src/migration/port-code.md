@@ -103,8 +103,8 @@ RBAC markers in controller files:
 - // +kubebuilder:rbac:groups=<group>,resources=<resource>/finalizers,verbs=update
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io
-- Markers Reference: https://book.kubebuilder.io/reference/markers.html
+- Kubebuilder Book: ../introduction.md
+- Markers Reference: ../reference/markers.md
 - controller-runtime: https://github.com/kubernetes-sigs/controller-runtime
 - controller-tools: https://github.com/kubernetes-sigs/controller-tools
 

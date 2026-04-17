@@ -303,7 +303,7 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 - [Groups, Versions, and Kinds][gkv-doc] - understand API design concepts
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
-[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
+[cronjob-tutorial]: ./cronjob-tutorial/cronjob-tutorial.md
 [GOPATH-golang-docs]: https://go.dev/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.go.dev/using-go-modules
 [architecture-concept-diagram]: architecture.md

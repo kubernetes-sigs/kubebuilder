@@ -304,7 +304,7 @@ Multi-group layout reorganizes these into group-specific directories:
 This keeps code organized as projects grow to support multiple API groups.
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io
+- Kubebuilder Book: ../introduction.md
 
 Steps to execute:
 

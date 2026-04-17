@@ -8,7 +8,7 @@ The page you are looking for could not be found. This might be because:
 
 Please try:
 
-- Going back to the [home page](https://book.kubebuilder.io/)
+- Going back to the [home page](./introduction.md)
 - Using the search function
 - Suggest an edit [documentation index](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src)
 
