@@ -234,6 +234,11 @@ func (sp *Sample) CodeGen() {
 	_, err := sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to pin google.golang.org/grpc for getting started tutorial", err)
 
+	// Pin go.opentelemetry.io/otel/sdk to the patched version (CVE-2026-39883)
+	cmd = exec.Command("go", "get", "go.opentelemetry.io/otel/sdk@v1.43.0")
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to pin go.opentelemetry.io/otel/sdk for cronjob tutorial", err)
+
 	cmd = exec.Command("go", "mod", "tidy")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run go mod tidy all for getting started tutorial", err)

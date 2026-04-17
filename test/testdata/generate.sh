@@ -141,6 +141,10 @@ function scaffold_test_project {
   rm -f go.sum
   # Pin google.golang.org/grpc to the patched version (CVE: SNYK-GOLANG-GOOGLEGOLANGORGGRPC-15691172)
   go get google.golang.org/grpc@v1.79.3
+  
+  # Pin go.opentelemetry.io/otel/sdk to the patched version (CVE-2026-39883)
+  go get go.opentelemetry.io/otel/sdk@v1.43.0
+  
   go mod tidy
   popd
 }
