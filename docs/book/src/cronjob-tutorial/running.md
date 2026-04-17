@@ -26,7 +26,7 @@ If you encounter errors when applying the CRDs, due to `metadata.annotations` ex
 </aside>
 
 Now that we've installed our CRDs, we can run the controller against our
-cluster.  This will use whatever credentials that we connect to the
+cluster.  This uses whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
 
 <aside class="note" role="note">

@@ -10,7 +10,7 @@ kubebuilder create api --group batch --version v1 --kind CronJob
 
 Press `y` for "Create Resource" and "Create Controller".
 
-The first time we call this command for each group-version, it will create
+The first time we call this command for each group-version, it creates
 a directory for the new group-version.
 
 In this case, the

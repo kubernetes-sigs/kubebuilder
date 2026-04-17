@@ -1,7 +1,7 @@
 # Tutorial: Multi-Version API
 
 Most projects start out with an alpha API that changes release to release.
-However, eventually, most projects will need to move to a more stable API.
+However, eventually, most projects needs to move to a more stable API.
 Once your API is stable though, you can't make breaking changes to it.
 That's where API versions come into play.
 

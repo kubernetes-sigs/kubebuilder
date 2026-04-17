@@ -46,7 +46,7 @@ Following is an example of a code implementation that raises an Event.
 
 Following are the steps with examples to help you raise events in your controller's reconciliations.
 Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
-which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
+which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
 	if err := (&controller.MyKindReconciler{
@@ -80,7 +80,7 @@ type MyKindReconciler struct {
 ### Passing the EventRecorder to the controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
-which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
+which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
 	if err := (&controller.MyKindReconciler{

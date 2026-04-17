@@ -120,9 +120,9 @@ type Toy struct {
 ### Scale
 
 The scale subresource is enabled via `+kubebuilder:subresource:scale`.
-When enabled, users will be able to use `kubectl scale` with your
+When enabled, users are able to use `kubectl scale` with your
 resource.  If the `selectorpath` argument pointed to the string form of
-a label selector, the HorizontalPodAutoscaler will be able to autoscale
+a label selector, the HorizontalPodAutoscaler is able to autoscale
 your resource.
 
 For example:

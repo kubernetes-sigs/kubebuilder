@@ -53,12 +53,12 @@ and are tied to the **Primary Resource** via [OwnerReferences][owner-ref-k8s-doc
 For example, if we have a controller to manage our CR(s) of the Kind `MyApp`
 on the cluster, which represents our application solution, all resources required
 to ensure that `MyApp` is up and running with the desired number of instances
-will be **Secondary Resources**. The code responsible for creating, deleting,
-and updating these resources will be part of the `MyApp` Controller.
+are **Secondary Resources**. The code responsible for creating, deleting,
+and updating these resources is part of the `MyApp` Controller.
 We would add the appropriate [OwnerReferences][owner-ref-k8s-docs]
 using the [controllerutil.SetControllerReference][cr-owner-ref-doc]
 function to indicate that these resources are owned by the same controller
-responsible for managing `MyApp` instances, which will be reconciled by the `MyAppReconciler`.
+responsible for managing `MyApp` instances, which are reconciled by the `MyAppReconciler`.
 
 Additionally, if the **Primary Resource** is deleted, Kubernetes' garbage collection mechanism
 ensures that all associated **Secondary Resources** are automatically deleted in a

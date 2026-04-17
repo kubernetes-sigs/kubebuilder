@@ -8,9 +8,9 @@ publishes [a collection of performance metrics](/reference/metrics-reference.md)
     <p class="note-title">IMPORTANT: If you are using `kube-rbac-proxy`</p>
 
 Please stop using the image `gcr.io/kubebuilder/kube-rbac-proxy` as soon as possible.
-Your projects will be affected and may fail to work if the image cannot be pulled.
+Your projects are affected and may fail to work if the image cannot be pulled.
 
-**Images provided under `gcr.io/kubebuilder/` will be unavailable from early 2025.**
+**Images provided under `gcr.io/kubebuilder/` are unavailable from early 2025.**
 
 - **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint.
 In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
@@ -37,7 +37,7 @@ check the metrics are exposed by default:
 
 ```yaml
 patches:
-   # [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
+   # [METRICS] The following patch enables the metrics endpoint using HTTPS and the port :8443.
    # More info: ./metrics.md
    - path: manager_metrics_patch.yaml
      target:
@@ -185,7 +185,7 @@ However, its usage has been discontinued in recent versions. Since the release o
 metrics endpoint enabled and protected by default using the [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/server)
 feature provided by controller-runtime.
 
-Therefore, you will find the following configuration:
+Therefore, you find the following configuration:
 
 - In the `cmd/main.go`:
 
@@ -348,8 +348,8 @@ project to use certificates managed by CertManager.
             kind: ServiceMonitor
       ```
 
-    > **NOTE** that the `ServiceMonitor` patch above will ensure that if you enable the Prometheus integration,
-    it will securely reference the certificates created and managed by CertManager. But it will **not** enable the
+    > **NOTE** that the `ServiceMonitor` patch above ensures that if you enable the Prometheus integration,
+    it securely references the certificates created and managed by CertManager. But it does **not** enable the
     integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
     in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
@@ -362,8 +362,8 @@ Uncomment the following line in the `config/default/kustomization.yaml`:
 
 ```yaml
 # [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' will be able to gather the metrics.
-# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' will be able to work properly.
+# Only Pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
+# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
 #- ../network-policy
 ```
 
@@ -384,7 +384,7 @@ Follow the steps below to export the metrics using the Prometheus Operator:
 - ../prometheus
 ```
 
-Note that, when you install your project in the cluster, it will create the
+Note that, when you install your project in the cluster, it creates the
 `ServiceMonitor` to export the metrics. To check the ServiceMonitor,
 run `kubectl get ServiceMonitor -n <project>-system`. See an example:
 
@@ -462,7 +462,7 @@ In order to publish metrics and view them on the Prometheus UI, the Prometheus i
 
 </aside>
 
-Those metrics will be available for prometheus or
+Those metrics are available for prometheus or
 other openmetrics systems to scrape.
 
 ![Screen Shot 2021-06-14 at 10 15 59 AM](https://user-images.githubusercontent.com/37827279/121932262-8843cd80-ccf9-11eb-9c8e-98d0eda80169.png)

@@ -47,7 +47,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
 4. **Visualizing the results on browser**
 
     ```bash
-    # Go tool will open a session on port 8080.
+    # Go tool opens a session on port 8080.
     # You can change this as per your own need.
     go tool pprof -http=:8080 ./cpu-profile.out
     ```

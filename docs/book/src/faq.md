@@ -12,7 +12,7 @@ the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-
 
 ## How does the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
 
-After creating a project, usually you will want to extend the Kubernetes APIs and define new APIs which will be owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and will be used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
+After creating a project, usually you want to extend the Kubernetes APIs and define new APIs which are owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and is used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
 
 The domain is for the group suffix, to explicitly show the resource group category.
 For example, if set `--domain=example.com`:
@@ -20,7 +20,7 @@ For example, if set `--domain=example.com`:
 kubebuilder init --domain example.com --repo xxx --plugins=go/v4
 kubebuilder create api --group mygroup --version v1beta1 --kind Mykind
 ```
-Then the result resource group will be `mygroup.example.com`.
+Then the result resource group is `mygroup.example.com`.
 
 > If domain field not set, the default value is `my.domain`.
 
@@ -45,8 +45,8 @@ with:
 ## After `make run`, I see errors like "unable to find leader election namespace: not running in-cluster..."
 
 You can enable the leader election. However, if you are testing the project locally using the `make run`
-target which will run the manager outside of the cluster then, you might also need to set the
-namespace the leader election resource will be created, as follows:
+target which runs the manager outside of the cluster then, you might also need to set the
+namespace the leader election resource is created, as follows:
 ```go
 mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,

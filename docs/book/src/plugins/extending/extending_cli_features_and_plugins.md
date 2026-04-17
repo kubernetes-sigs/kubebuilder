@@ -46,7 +46,7 @@ the `create api` and `create webhook` subcommands.
 
 ### Plugin subcommands
 
-Plugins are responsible for implementing the code that will be executed when the sub-commands are called.
+Plugins are responsible for implementing the code that is executed when the sub-commands are called.
 You can create a new plugin by implementing the [Plugin interface][plugin-interface].
 
 On top of being a `Base`, a plugin should also implement the [`SubcommandMetadata`][plugin-subc-metadata]
@@ -82,7 +82,7 @@ There are two ways to specify a plugin to run:
 
 - A `layout: <plugin key>` in the scaffolded [PROJECT configuration file][project-file-config]. Commands (except for `init`, which scaffolds this file) will look at this value before running to choose which plugin to run.
 
-By default, `<plugin key>` will be `go.kubebuilder.io/vX`, where `X` is some integer.
+By default, `<plugin key>` is `go.kubebuilder.io/vX`, where `X` is some integer.
 
 For a full implementation example, check out Kubebuilder's native [`go.kubebuilder.io`][kb-go-plugin] plugin.
 
@@ -137,7 +137,7 @@ execution of scaffold:
 func (s *initScaffolder) Scaffold() error {
 	log.Println("Writing scaffold for you to edit...")
 
-	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
+	// Initialize the machinery.Scaffold that writes the boilerplate file to disk
 	// The boilerplate file needs to be scaffolded as a separate step as it is going to
 	// be used by the rest of the files, even those scaffolded in this command call.
 	scaffold := machinery.NewScaffold(s.fs,
@@ -209,14 +209,14 @@ myPluginBundle, _ := plugin.NewBundle(
 )
 ```
 
-This bundle will execute the `init` subcommand for each
+This bundle executes the `init` subcommand for each
 plugin in the specified order:
 
 1. `pluginA`
 2. `pluginB`
 3. `pluginC`
 
-The following command will run the bundled plugins:
+The following command runs the bundled plugins:
 
 ```sh
 kubebuilder init --plugins=myplugin.example.com/v1
@@ -279,10 +279,10 @@ func GetPluginsCLI() (*cli.CLI) {
 			&deployimagev1alpha1.Plugin{},
 		),
 
-		// Defines what will be the default plugin used by your binary. It means that will be the plugin used if no info be provided such as when the user runs `kubebuilder init`
+		// Defines what is the default plugin used by your binary. It means that is the plugin used if no info be provided such as when the user runs `kubebuilder init`
 		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
 
-		// Define the default project configuration version which will be used by the CLI when none is informed by --project-version flag.
+		// Define the default project configuration version which is used by the CLI when none is informed by --project-version flag.
 		cli.WithDefaultProjectVersion(cfgv3.Version),
 
 		// Adds your own commands to the CLI

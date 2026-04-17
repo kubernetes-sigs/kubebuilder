@@ -1,7 +1,7 @@
 # Webhook
 
 Webhooks are requests for information sent in a blocking fashion. A web
-application implementing webhooks will send a HTTP request to other applications
+application implementing webhooks sends a HTTP request to other applications
 when a certain event happens.
 
 In the kubernetes world, there are 3 kinds of webhooks:

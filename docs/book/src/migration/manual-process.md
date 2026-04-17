@@ -211,7 +211,7 @@ Replace with your actual domain and repository (module path).
 <aside class="note" role="note">
 <p class="note-title">Understanding init options</p>
 
-- `--domain`: The domain for your API groups (e.g., `tutorial.kubebuilder.io`). Your full API groups will be `<group>.<domain>`.
+- `--domain`: The domain for your API groups (e.g., `tutorial.kubebuilder.io`). Your full API groups is `<group>.<domain>`.
 - `--repo`: Your Go module path (same as in `go.mod`)
 
 </aside>

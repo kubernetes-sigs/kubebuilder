@@ -49,7 +49,7 @@ The Grafana plugin is attached to the `edit` subcommand:
 kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
 ```
 
-The plugin will create a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
+The plugin creates a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
 
 #### Show case
 
@@ -186,7 +186,7 @@ customMetrics:
 
 You can enter multiple custom metrics in the file. For each element, you need to specify the `metric` and its `type`.
 The Grafana plugin can automatically generate `expr` for visualization.
-Alternatively, you can provide `expr` and the plugin will use the specified one directly.
+Alternatively, you can provide `expr` and the plugin uses the specified one directly.
 
 ```yaml
 ---
@@ -201,7 +201,7 @@ customMetrics:
 #### Scaffold manifest
 
 Once `config.yaml` is configured, you can run `kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha` again.
-This time, the plugin will generate `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
+This time, the plugin generates `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
 
 #### Show case
 
@@ -219,7 +219,7 @@ The Grafana plugin implements the following subcommands:
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 - `grafana/*.json`
 

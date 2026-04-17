@@ -44,7 +44,7 @@ Available license values:
 
 ### Option 2: Use a custom license file
 
-Provide your own license header from a file. Kubebuilder will read the content from your file and copy it to `hack/boilerplate.go.txt`:
+Provide your own license header from a file. Kubebuilder reads the content from your file and copies it to `hack/boilerplate.go.txt`:
 
 ```bash
 # During initialization
@@ -96,7 +96,7 @@ See LICENSE file in the project root for full license text.
 <aside class="warning" role="note">
 <p class="note-title">Automatic Year Updates</p>
 
-Use `YEAR` in your boilerplate and it will be automatically replaced with the current year:
+Use `YEAR` in your boilerplate and it is automatically replaced with the current year:
 
 ```go
 /*

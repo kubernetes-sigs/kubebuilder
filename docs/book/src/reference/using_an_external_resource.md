@@ -23,7 +23,7 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 ```
 
 - `--external-api-path`: Provide the Go import path where the external types are defined.
-- `--external-api-domain`:  Provide the domain for the external types. This value will be used to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
+- `--external-api-domain`:  Provide the domain for the external types. This value is used to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
 
 For example, if you're managing Certificates from Cert Manager:
 
@@ -202,7 +202,7 @@ definitions since the type is already defined in the Kubernetes API.
 
 ### Creating a webhook to manage a core type
 
-You will run the command with the Core Type data, just as you would for controllers.
+You run the command with the Core Type data, just as you would for controllers.
 See an example:
 
 ```go

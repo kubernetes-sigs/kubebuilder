@@ -55,7 +55,7 @@ The goal of this command is to create a Custom Resource (CR) and Custom Resource
 
 ## But, why create APIs at all?
 
-New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a CRD which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
+New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a CRD which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which is managed by our [controllers][controllers].
 
 Our APIs and resources represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
 
@@ -63,7 +63,7 @@ Our APIs and resources represent our solutions on the clusters. Basically, the C
 
 Let’s think about the classic scenario where the goal is to have an application and its database running on the platform with Kubernetes. Then, one CRD could represent the App, and another one could represent the DB. By having one CRD to describe the App and another one for the DB, we will not be hurting concepts such as encapsulation, the single responsibility principle, and cohesion. Damaging these concepts could cause unexpected side effects, such as difficulty in extending, reuse, or maintenance, just to mention a few.
 
-In this way, we can create the App CRD which will have its controller and which would be responsible for things like creating Deployments that contain the App and creating Services to access it and etc. Similarly, we could create a CRD to represent the DB, and deploy a controller that would manage DB instances.
+In this way, we can create the App CRD which has its controller and which would be responsible for things like creating Deployments that contain the App and creating Services to access it and etc. Similarly, we could create a CRD to represent the DB, and deploy a controller that would manage DB instances.
 
 ## Err, but what's that Scheme thing?
 

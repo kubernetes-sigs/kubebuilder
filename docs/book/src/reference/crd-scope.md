@@ -157,7 +157,7 @@ make manifests
 <p class="note-title">Scope Changes Are Breaking</p>
 
 Changing CRD scope from Namespaced to Cluster (or vice versa) is a **breaking change**:
-- Existing custom resources will become invalid
+- Existing custom resources become invalid
 - Users must migrate their resources manually
 - Consider creating a new CRD with a different version instead
 

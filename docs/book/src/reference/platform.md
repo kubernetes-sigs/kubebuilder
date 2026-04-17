@@ -16,7 +16,7 @@ The following covers what you need to do to provide the support for one or more 
 
 ### 1) Build workload images to provide the support for other platform(s)
 
-The images used in workloads such as in your Pods/Deployments will need to provide the support for this other platform.
+The images used in workloads such as in your Pods/Deployments need to provide the support for this other platform.
 You can inspect the images using a ManifestList of supported platforms using the command
 [`docker manifest inspect <image>`][docker-manifest], i.e.:
 
@@ -149,7 +149,7 @@ See that projects scaffold with the latest versions of Kubebuilder have the Make
 $ make docker-buildx IMG=myregistry/myoperator:v0.0.1
 ```
 
-Note that you need to ensure that all images and workloads required and used by your project will provide the same
+Note that you need to ensure that all images and workloads required and used by your project provide the same
 support as recommended above, and that you properly configure the [nodeAffinity][node-affinity] for all your workloads.
 Therefore, ensure that you uncomment the following code in the `config/manager/manager.yaml` file
 
@@ -202,10 +202,10 @@ Projects created with the Kubebuilder CLI have two workloads which are:
 
 The container to run the manager implementation is configured in the `config/manager/manager.yaml` file.
 This image is built with the Dockerfile file scaffolded by default and contains the binary of the project \
-which will be built via the command `go build -a -o manager main.go`.
+which is built via the command `go build -a -o manager main.go`.
 
 Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/myprojectname:<tag>`
-an image will be built from the client host (local environment) and produce an image for
+an image is built from the client host (local environment) and produces an image for
 the client os/arch, which is commonly linux/amd64 or linux/arm64.
 
 <aside class="note" role="note">

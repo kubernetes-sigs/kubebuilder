@@ -69,7 +69,7 @@ kubebuilder create api \
 <p class="note-title">Note on make run:</p>
 
 When running the project locally with `make run`, the Operand image
-provided will be stored as an environment variable in the
+provided is stored as an environment variable in the
 `config/manager/manager.yaml` file.
 
 Ensure you export the environment variable before running the project locally, such as:

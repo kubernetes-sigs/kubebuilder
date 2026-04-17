@@ -11,7 +11,7 @@ If you're creating a **new project**, simply use:
 kubebuilder init --domain example.com --namespaced
 ```
 
-All files including `cmd/main.go` and RBAC configurations will be scaffolded correctly. All controllers created with `kubebuilder create api` will automatically have the `namespace=` parameter in their RBAC markers. No manual changes or migration steps are needed.
+All files including `cmd/main.go` and RBAC configurations is scaffolded correctly. All controllers created with `kubebuilder create api` will automatically have the `namespace=` parameter in their RBAC markers. No manual changes or migration steps are needed.
 </aside>
 
 By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage resources across all namespaces. This guide shows how to convert an existing cluster-scoped project to namespace-scoped deployment, limiting the manager to watch only specific namespace(s).
@@ -53,7 +53,7 @@ You must manually update:
 - cmd/main.go namespace-scoped cache configuration
 - Existing controller RBAC markers
 
-**Note:** New controllers created after enabling namespaced mode will have correct RBAC markers automatically.
+**Note:** New controllers created after enabling namespaced mode has correct RBAC markers automatically.
 </aside>
 
 ## Detailed steps

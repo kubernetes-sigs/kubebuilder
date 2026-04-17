@@ -34,7 +34,7 @@ Here’s how to configure the `BackupBusyboxReconciler` to watch changes in the
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
@@ -61,7 +61,7 @@ for changes to only those `Busybox` resources that have the specific label:
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource, filtering by a label.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource, filtering by a label.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)

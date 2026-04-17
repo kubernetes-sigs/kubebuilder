@@ -17,7 +17,7 @@ You can reduce the burden of keeping your project up to date by using the
 automates the process of running `kubebuilder alpha update` on a schedule
 workflow when new Kubebuilder releases are available.
 
-Moreover, you will be able to get help from [AI models][ai-gh-models] to understand what changes are needed to keep your project up to date
+Moreover, you is able to get help from [AI models][ai-gh-models] to understand what changes are needed to keep your project up to date
 and how to solve conflicts if any are faced.
 
 </aside>

@@ -34,7 +34,7 @@ for users to upgrade their projects from `vX` to `v(X+1)-alpha`.
 
 Kubebuilder scaffolds projects with plugin `go.kubebuilder.io/v4` by default.
 
-You create a feature that adds a new marker to the file `main.go` scaffolded by `init` that `create api` will use to update that file.
+You create a feature that adds a new marker to the file `main.go` scaffolded by `init` that `create api` uses to update that file.
 The changes introduced in your feature would cause errors if used with projects built with
 plugins `go.kubebuilder.io/v4` without users manually updating their projects.
 

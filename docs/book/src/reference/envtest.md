@@ -41,10 +41,10 @@ $(ENVTEST): $(LOCALBIN)
 ## Installation in air gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
 [`setup-envtest`][setup-envtest] to download the required binaries locally. There are several ways to configure `setup-envtest` for [air-gapped environments](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
-The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
+The examples below show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
 
 ### Download the binaries
-`make envtest` will download the `setup-envtest` binary to `./bin/`.
+`make envtest` downloads the `setup-envtest` binary to `./bin/`.
 ```shell
 make envtest
 ```
@@ -98,7 +98,7 @@ Logs from the test runs are prefixed with `test-env`.
 
 You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
-Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
+Therefore, you can check that a test using ENV TEST is generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
 
 </aside>
 
@@ -106,7 +106,7 @@ Therefore, you can check that a test using ENV TEST will be generated for the co
 
 Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
 
-The `make test` command will install these binaries to the `bin/` directory and use them when running tests that use `envtest`.
+The `make test` command installs these binaries to the `bin/` directory and uses them when running tests that use `envtest`.
 Ie,
 ```shell
 ./bin/k8s/
@@ -125,10 +125,10 @@ You can use environment variables and/or flags to specify the `kubectl`,`api-ser
 | `USE_EXISTING_CLUSTER` | boolean | Instead of setting up a local control plane, point to the control plane of an existing cluster. |
 | `KUBEBUILDER_ASSETS` | path to directory | Point integration tests to a directory containing all binaries (api-server, etcd and kubectl).                                                                                                                                                          |
 | `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | paths to, respectively, api-server, etcd and kubectl binaries | Similar to `KUBEBUILDER_ASSETS`, but more granular. Point integration tests to use binaries other than the default ones. These environment variables can also be used to ensure specific tests run with expected versions of these binaries.            |
-| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail.                                                                                                      |
+| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them fails.                                                                                                      |
 | `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane.                                                        |
 
-See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
+See that the `test` makefile target ensures that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
 
 ```go
 var _ = BeforeSuite(func(done Done) {
@@ -184,7 +184,7 @@ testEnv = &envtest.Environment{
 
 ## Testing considerations
 
-Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane will behave differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
+Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
 
 To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
 
@@ -202,7 +202,7 @@ Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerRef
 
 <p class="note-title">Namespace usage limitation</p>
 
-EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
+EnvTest does not support namespace deletion. Deleting a namespace seems to succeed, but the namespace is just put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace fails. This causes your reconciler to continue reconciling any objects left behind, unless they are deleted.
 
 To overcome this limitation you can create a new namespace for each test. Even so, when one test completes (e.g. in "namespace-1") and another test starts (e.g. in "namespace-2"), the controller will still be reconciling any active objects from "namespace-1". This can be avoided by ensuring that all tests clean up after themselves as part of the test teardown.  If teardown of a namespace is difficult, it may be possible to wire the reconciler in such a way that it ignores reconcile requests that come from namespaces other than the one being tested:
 

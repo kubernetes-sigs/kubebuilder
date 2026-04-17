@@ -27,7 +27,7 @@ which automation tools (alpha update, alpha generate, autoupdate plugin) depend 
 After using the CLI to create your project, you are free to customize the business logic and add features as you see fit.
 However, it is not recommended to deviate from the proposed project layout unless you know what you are doing.
 
-For example, you should refrain from moving the scaffolded files, as doing so may will make it difficult to upgrade
+For example, you should refrain from moving the scaffolded files, as doing so may make it difficult to upgrade
 your project in the future. You may also lose the ability to use some of the CLI features and helpers.
 
 Projects that do not use the CLI to generate scaffolds, or that deviate heavily from the proposed layout,
@@ -126,7 +126,7 @@ See the [`alpha generate` command reference](./reference/commands/alpha_generate
 For complete control, you can manually migrate by creating a new project with the latest Kubebuilder
 version and porting your code over.
 
-In this process, you will run all commands from scratch to create a new project, APIs, controllers,
+In this process, you run all commands from scratch to create a new project, APIs, controllers,
 webhooks, and other resources. Then, manually copy your business logic and customizations from your old project to the new one.
 
 To streamline this one-time migration, [AI Migration Helpers](./migration/ai-helpers.md) have been added to automate repetitive tasks.

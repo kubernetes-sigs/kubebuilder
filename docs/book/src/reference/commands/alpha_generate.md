@@ -58,7 +58,7 @@ or if you prefer to handle changes manually.
 kubebuilder alpha generate
 ```
 
-After running this command, your project will be re-scaffolded in place.
+After running this command, your project is re-scaffolded in place.
 You can then compare the local changes with your main branch to see what was updated,
 and re-apply your custom code on top as needed.
 
@@ -79,7 +79,7 @@ After running the command, you can inspect the generated scaffold in the specifi
 | Flag            | Description                                                                 |
 |------------------|-----------------------------------------------------------------------------|
 | `--input-dir`    | Path to the directory containing the `PROJECT` file. Defaults to CWD. Deletes all files except `.git` and `PROJECT`. |
-| `--output-dir`   | Directory where the new scaffold will be written. If unset, re-scaffolds in-place. |
+| `--output-dir`   | Directory where the new scaffold is written. If unset, re-scaffolds in-place. |
 | `--plugins`      | Plugin keys to use for this generation.                                     |
 | `-h, --help`     | Show help for this command.                                                 |
 

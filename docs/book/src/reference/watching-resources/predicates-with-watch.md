@@ -70,7 +70,7 @@ updatePred := predicate.Funcs{
 ### Explanation
 
 In this example:
-- The **`UpdateFunc`** returns `true` only if the **`spec.size`** field has changed between the old and new objects, meaning that all other changes in the `spec`, like annotations or other fields, will be ignored.
+- The **`UpdateFunc`** returns `true` only if the **`spec.size`** field has changed between the old and new objects, meaning that all other changes in the `spec`, like annotations or other fields, are ignored.
 - **`CreateFunc`**, **`DeleteFunc`**, and **`GenericFunc`** return `true`, meaning that create, delete, and generic events are still processed, allowing reconciliation to happen for these event types.
 
 This ensures that the controller reconciles only when the specific field **`spec.size`** is modified, while ignoring any other modifications in the `spec` that are irrelevant to your logic.
@@ -82,7 +82,7 @@ the **`BackupBusyboxReconciler`** to trigger reconciliation only for relevant ev
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource, using predicates.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource, using predicates.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)

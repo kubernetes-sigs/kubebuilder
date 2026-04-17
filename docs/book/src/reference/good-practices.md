@@ -8,7 +8,7 @@ Reconciliation is an ongoing loop that executes necessary operations to maintain
 
 ## Why should reconciliations be idempotent?
 
-When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern] we create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions will allow the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic].
+When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern] we create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions allows the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic].
 
 Writing reconciliation logic according to specific events, breaks the recommendation of operator pattern and goes against the design principles of [controller-runtime][controller-runtime]. This may lead to unforeseen consequences, such as resources becoming stuck and requiring manual intervention.
 

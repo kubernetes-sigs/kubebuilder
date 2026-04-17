@@ -1,10 +1,10 @@
 # Getting started
 
-We will create a sample project to let you know how it works. This sample will:
+We create a sample project to let you know how it works. This sample:
 
 - Reconcile a Memcached CR - which represents an instance of a Memcached deployed/managed on cluster
 - Create a Deployment with the Memcached image
-- Not allow more instances than the size defined in the CR which will be applied
+- Not allow more instances than the size defined in the CR which is applied
 - Update the Memcached CR status
 
 <aside class="note" role="note">
@@ -48,7 +48,7 @@ Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the modul
 
 ## Create the Memcached API (CRD)
 
-Next, we'll create the API which will be responsible for deploying and
+Next, we create the API which is responsible for deploying and
 managing Memcached(s) instances on the cluster.
 
 ```shell
@@ -75,8 +75,8 @@ To make it easier to understand, think of CRDs as the definition of our custom O
 
 #### Defining the specs
 
-Now, we will define the values that each instance of your Memcached resource on the cluster can assume. In this example,
-we will allow configuring the number of instances with the following:
+Now, we define the values that each instance of your Memcached resource on the cluster can assume. In this example,
+we allow configuring the number of instances with the following:
 
 ```go
 type MemcachedSpec struct {
@@ -89,7 +89,7 @@ type MemcachedSpec struct {
 
 #### Creating status definitions
 
-We also want to track the status of our Operations which will be done to manage the Memcached CR(s).
+We also want to track the status of our Operations which are done to manage the Memcached CR(s).
 This allows us to verify the Custom Resource's description of our own API and determine if everything
 occurred successfully or if any errors were encountered,
 similar to how we do with any resource from the Kubernetes API.
@@ -119,7 +119,7 @@ Please ensure that you review: [Kubernetes API Conventions](https://github.com/k
 #### Markers and validations
 
 Furthermore, we want to validate the values added in our CustomResource
-to ensure that those are valid. To achieve this, we will use [markers][markers],
+to ensure that those are valid. To achieve this, we use [markers][markers],
 such as `+kubebuilder:validation:Minimum=1`.
 
 Now, see our example fully completed.
@@ -158,7 +158,7 @@ a Deployment with a single instance size (see `size: 1`).
 
 In a simplified way, Kubernetes works by allowing us to declare the desired state of our system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For our custom APIs and controllers, the process is similar. Remember, we are extending Kubernetes' behaviors and its APIs to fit our specific needs.
 
-In our controller, we will implement a reconciliation process.
+In our controller, we implement a reconciliation process.
 
 Essentially, the reconciliation process functions as a loop, continuously checking conditions and performing necessary actions until the desired state is achieved. This process will keep running until all conditions in the system align with the desired state defined in our implementation.
 
@@ -231,7 +231,7 @@ When our sample Custom Resource (CR) is applied to the cluster (i.e. `kubectl ap
 we want to ensure that a Deployment is created for our Memcached image and that it matches the number of replicas defined in the CR.
 
 To achieve this, we need to first implement an operation that checks whether the Deployment for our Memcached instance already exists on the cluster.
-If it does not, the controller will create the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
+If it does not, the controller creates the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
 this desired state is consistently maintained. This operation would involve:
 
 ```go
@@ -251,7 +251,7 @@ this desired state is consistently maintained. This operation would involve:
 	}
 ```
 
-Next, note that the `deploymentForMemcached()` function will need to define and return the Deployment that should be
+Next, note that the `deploymentForMemcached()` function needs to define and return the Deployment that should be
 created on the cluster. This function should construct the Deployment object with the necessary
 specifications, as demonstrated in the following example:
 
@@ -331,7 +331,7 @@ func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		//is created, updated, or deleted
 		For(&cachev1alpha1.Memcached{}).
 		// Watch the Deployment managed by the Memcached controller. If any changes occur to the Deployment
-        // owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
+        // owned and managed by this controller, it triggers reconciliation, ensuring that the cluster
         // state aligns with the desired state.
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
@@ -438,7 +438,7 @@ see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 
 Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
 This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.
-It will provide scaffolds similar to the ones in this guide, along with additional features such as tests
+It provides scaffolds similar to the ones in this guide, along with additional features such as tests
 implemented for your controller.
 
 </aside>

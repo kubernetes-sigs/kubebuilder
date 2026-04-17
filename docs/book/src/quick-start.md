@@ -77,7 +77,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <aside class="note" role="note">
 <p class="note-title">Press Options</p>
 
-If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
+If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this creates the files `api/v1/guestbook_types.go` where the API is defined
 and the `internal/controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
@@ -174,7 +174,7 @@ Install the CRDs into the cluster:
 make install
 ```
 
-For quick feedback and code-level debugging, run your controller (this will run in the foreground, so switch to a new
+For quick feedback and code-level debugging, run your controller (this runs in the foreground, so switch to a new
 terminal if you want to leave it running):
 
 ```bash

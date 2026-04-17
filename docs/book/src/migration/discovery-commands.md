@@ -311,5 +311,5 @@ make manifests && make generate && make build
 3. Follow the [Manual Migration Process](./manual-process.md) to:
    - Backup your project in another location
    - Execute the commands of this script in the root of your project when it is empty
-   - After you have the fully re-scaffolded project, you will need to add all your code back on top of it
+   - After you have the fully re-scaffolded project, you needs to add all your code back on top of it
    - Port your custom code

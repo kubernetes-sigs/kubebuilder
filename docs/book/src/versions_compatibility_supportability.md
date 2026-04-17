@@ -41,7 +41,7 @@ you see fit. Bear in mind, that it is not recommended to deviate from
 the proposed layout unless you know what you are doing.
 
 For example, you should refrain from moving the scaffolded files,
-doing so will make it difficult in upgrading your project in the future.
+doing so makes it difficult in upgrading your project in the future.
 You may also lose the ability to use some of the CLI features and helpers.
 For further information on the project layout, see the doc [What's in a basic project?][basic-project-doc]
 

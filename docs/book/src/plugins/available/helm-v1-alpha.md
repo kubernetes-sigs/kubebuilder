@@ -47,7 +47,7 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
   you must run the `edit` command with the `--force` flag to regenerate the Helm chart values based
   on the latest manifests (_after running `make manifests`_) to ensure that the HelmChart values are
   updated accordingly. In this case, if you have customized the files
-  under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you will need to manually reapply your customizations on top
+  under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you needs to manually reapply your customizations on top
   of the latest changes after regenerating the Helm chart.
 
 <aside class="note" role="note">
@@ -56,7 +56,7 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
 
 The rationale is tied to how Helm itself handles CRDs.
-By default, Helm will install CRDs once during the initial release,
+By default, Helm installs CRDs once during the initial release,
 but it will **ignore CRD changes** on subsequent upgrades.
 
 This can lead to surprising behavior where chart upgrades silently
@@ -121,7 +121,7 @@ The Helm plugin implements the following subcommands:
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 - `dist/chart/*`
 
