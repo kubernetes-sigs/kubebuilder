@@ -1,9 +1,9 @@
-# Using Finalizers
+# Using finalizers
 
-`Finalizers` allow controllers to implement asynchronous pre-delete hooks. Let's
-say you create an external resource (such as a storage bucket) for each object of
+`Finalizers` allow controllers to implement asynchronous pre-delete hooks. If
+you create an external resource (such as a storage bucket) for each object of
 your API type, and you want to delete the associated external resource
-on object's deletion from Kubernetes, you can use a finalizer to do that.
+on object's deletion from Kubernetes, use a finalizer to do that.
 
 You can read more about the finalizers in the [Kubernetes reference docs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers). The section below demonstrates how to register and trigger pre-delete hooks
 in the `Reconcile` method of a controller.

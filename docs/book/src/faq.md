@@ -5,22 +5,22 @@
 <p class="note-title"> Controller-Runtime FAQ </p>
 
 Kubebuilder is developed on top of the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)
-and [controller-tools](https://github.com/kubernetes-sigs/controller-tools) libraries. We recommend you also check
+and [controller-tools](https://github.com/kubernetes-sigs/controller-tools) libraries. Also check
 the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md).
 </aside>
 
 
 ## How does the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
 
-After creating a project, usually you will want to extend the Kubernetes APIs and define new APIs which will be owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and will be used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
+After creating a project, you usually want to extend the Kubernetes APIs and define new APIs which your project owns. Therefore, Kubebuilder tracks the domain value in the [PROJECT][project-file-def] file which defines your project's config and uses it as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
 
 The domain is for the group suffix, to explicitly show the resource group category.
 For example, if set `--domain=example.com`:
-```
+```bash
 kubebuilder init --domain example.com --repo xxx --plugins=go/v4
 kubebuilder create api --group mygroup --version v1beta1 --kind Mykind
 ```
-Then the result resource group will be `mygroup.example.com`.
+Then the result resource group is `mygroup.example.com`.
 
 > If domain field not set, the default value is `my.domain`.
 
@@ -45,8 +45,8 @@ with:
 ## After `make run`, I see errors like "unable to find leader election namespace: not running in-cluster..."
 
 You can enable the leader election. However, if you are testing the project locally using the `make run`
-target which will run the manager outside of the cluster then, you might also need to set the
-namespace the leader election resource will be created, as follows:
+target which runs the manager outside of the cluster then, you might also need to set the
+namespace where the manager creates the leader election resource, as follows:
 ```go
 mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -58,7 +58,7 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		LeaderElectionNamespace: "<project-name>-system",
 ```
 
-If you are running the project on the cluster with `make deploy` target
+If you run the project on the cluster with the `make deploy` target
 then, you might not want to add this option. So, you might want to customize this behaviour using
 environment variables to only add this option for development purposes, such as:
 
@@ -82,7 +82,7 @@ environment variables to only add this option for development purposes, such as:
 ## I am facing the error "open /var/run/secrets/kubernetes.io/serviceaccount/token: permission denied" when I deploy my project against Kubernetes old versions. How to sort it out?
 
 If you are facing the error:
-```
+```text
 1.6656687258729894e+09  ERROR   controller-runtime.client.config        unable to get kubeconfig        {"error": "open /var/run/secrets/kubernetes.io/serviceaccount/token: permission denied"}
 sigs.k8s.io/controller-runtime/pkg/client/config.GetConfigOrDie
         /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.13.0/pkg/client/config/config.go:153
@@ -91,7 +91,7 @@ main.main
 runtime.main
         /usr/local/go/src/runtime/proc.go:250
 ```
-when you are running the project against a Kubernetes old version (maybe <= 1.21) , it might be caused by the [issue][permission-issue] , the reason is the mounted token file set to `0600`, see [solution][permission-PR] here. Then, the workaround is:
+when you run the project against a Kubernetes old version (maybe <= 1.21), it might be caused by the [issue][permission-issue]. The reason is that Kubernetes sets the mounted token file to `0600`, see [solution][permission-PR] here. Then, the workaround is:
 
 Add `fsGroup` in the manager.yaml
 ```yaml
@@ -105,13 +105,13 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
+In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration does not have to be stored as an annotation (last-applied-configuration) on the server. However, it is worth noting that as of now, it is not supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
 
 Therefore, you have a few options to workround this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
-Your CRDs are generated using [controller-gen][controller-gen]. By using the option `maxDescLen=0` to remove the description, you may reduce the size, potentially resolving the issue. To do it you can update the Makefile as the following example and then, call the target `make manifest` to regenerate your CRDs without description, see:
+[Controller-gen][controller-gen] generates your CRDs. By using the option `maxDescLen=0` to remove the description, you may reduce the size, potentially resolving the issue. To do it you can update the Makefile as the following example and then, call the target `make manifest` to regenerate your CRDs without description, see:
 
 ```shell
 
@@ -119,7 +119,7 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
  manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
      # Note that the option maxDescLen=0 was added in the default scaffold in order to sort out the issue
      # Too long: must have at most 262144 bytes. By using kubectl apply to create / update resources an annotation
-     # is created by K8s API to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
+     # that the K8s API creates to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
      # However, it has a size limit and if the CRD is too big with so many long descriptions as this one it will cause the failure.
  	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```

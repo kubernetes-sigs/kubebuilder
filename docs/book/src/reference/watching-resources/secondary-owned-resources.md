@@ -1,30 +1,30 @@
-# Watching Secondary Resources `Owned` by the Controller
+# Watching secondary resources `Owned` by the controller
 
 In Kubernetes controllers, it’s common to manage both **Primary Resources**
 and **Secondary Resources**. A **Primary Resource** is the main resource
 that the controller is responsible for, while **Secondary Resources**
 are created and managed by the controller to support the **Primary Resource**.
 
-In this section, we will explain how to manage **Secondary Resources**
+This section explains how to manage **Secondary Resources**
 which are `Owned` by the controller. This example shows how to:
 
 - Set the [Owner Reference][cr-owner-ref-doc] between the primary resource (`Busybox`) and the secondary resource (`Deployment`) to ensure proper lifecycle management.
 - Configure the controller to `Watch` the secondary resource using `Owns()` in `SetupWithManager()`. See that `Deployment` is owned by the `Busybox` controller because
-it will be created and managed by it.
+it is created and managed by it.
 
-## Setting the Owner Reference
+## Setting the owner reference
 
 To link the lifecycle of the secondary resource (`Deployment`)
-to the primary resource (`Busybox`), we need to set
+to the primary resource (`Busybox`), set
 an [Owner Reference][cr-owner-ref-doc] on the secondary resource.
 This ensures that Kubernetes automatically handles cascading deletions:
-if the primary resource is deleted, the secondary resource will also be deleted.
+if the primary resource is deleted, the secondary resource is also deleted.
 
 Controller-runtime provides the [controllerutil.SetControllerReference][cr-owner-ref-doc] function, which you can use to set this relationship between the resources.
 
-### Setting the Owner Reference
+### Setting the owner reference
 
-Below, we create the `Deployment` and set the Owner reference between the `Busybox` custom resource and the `Deployment` using `controllerutil.SetControllerReference()`.
+Below, create the `Deployment` and set the Owner reference between the `Busybox` custom resource and the `Deployment` using `controllerutil.SetControllerReference()`.
 
 ```go
 // deploymentForBusybox returns a Deployment object for Busybox
@@ -58,7 +58,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(busybox *examplecomv1alpha1.Bus
     }
 
     // Set the ownerRef for the Deployment, ensuring that the Deployment
-    // will be deleted when the Busybox CR is deleted.
+    // is deleted when the Busybox CR is deleted.
     controllerutil.SetControllerReference(busybox, dep, r.Scheme)
     return dep
 }
@@ -72,7 +72,7 @@ and ensure that the desired state (such as the number of replicas) is maintained
 
 For example, if someone modifies the `Deployment` to change the replica count to 3,
 while the `Busybox` CR defines the desired state as 1 replica,
-the controller will reconcile this and ensure the `Deployment`
+the controller reconciles this and ensures the `Deployment`
 is scaled back to 1 replica.
 
 **Reconcile Function Example**
@@ -134,22 +134,22 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 ```
 
-## Watching Secondary Resources
+## Watching secondary resources
 
 To ensure that changes to the secondary resource (such as the `Deployment`) trigger
-a reconciliation of the primary resource (`Busybox`), we configure the controller
+a reconciliation of the primary resource (`Busybox`), configure the controller
 to watch both resources.
 
 The `Owns()` method allows you to specify secondary resources
-that the controller should monitor. This way, the controller will
-automatically reconcile the primary resource whenever the secondary
+that the controller should monitor. This way, the controller
+automatically reconciles the primary resource whenever the secondary
 resource changes (e.g., is updated or deleted).
 
-### Example: Configuring `SetupWithManager` to Watch Secondary Resources
+### Example: Configuring `SetupWithManager` to watch secondary resources
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the Busybox primary resource and the Deployment secondary resource.
+// The controller watches both the Busybox primary resource and the Deployment secondary resource.
 func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.Busybox{}).  // Watch the primary resource
@@ -158,7 +158,7 @@ func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
-## Ensuring the Right Permissions
+## Ensuring the right permissions
 
 Kubebuilder uses [markers][markers] to define RBAC permissions
 required by the controller. In order for the controller to
@@ -166,10 +166,10 @@ properly watch and manage both the primary (`Busybox`) and secondary (`Deploymen
 resources, it must have the appropriate permissions granted;
 i.e. to `watch`, `get`, `list`, `create`, `update`, and `delete` permissions for those resources.
 
-### Example: RBAC Markers
+### Example: RBAC markers
 
-Before the `Reconcile` method, we need to define the appropriate RBAC markers.
-These markers will be used by [controller-gen][controller-gen] to generate the necessary
+Before the `Reconcile` method, define the appropriate RBAC markers.
+These markers are used by [controller-gen][controller-gen] to generate the necessary
 roles and permissions when you run `make manifests`.
 
 ```go
@@ -180,7 +180,7 @@ roles and permissions when you run `make manifests`.
 - The first marker gives the controller permission to manage the `Busybox` custom resource (the primary resource).
 - The second marker grants the controller permission to manage `Deployment` resources (the secondary resource).
 
-Note that we are granting permissions to `watch` the resources.
+Note that this grants permissions to `watch` the resources.
 
 [owner-ref-k8s-docs]: https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/
 [cr-owner-ref-doc]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/controller/controllerutil#SetOwnerReference

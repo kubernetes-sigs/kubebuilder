@@ -1,6 +1,6 @@
-# Using Predicates to Refine Watches
+# Using predicates to refine watches
 
-When working with controllers, it's often beneficial to use **Predicates** to
+When working with controllers, it is often beneficial to use **Predicates** to
 filter events and control when the reconciliation loop should be triggered.
 
 [Predicates][predicates-doc] allow you to define conditions based on events (such as create, update, or delete)
@@ -13,24 +13,24 @@ changes in resources should trigger a reconciliation. By using predicates,
 you avoid unnecessary reconciliations and can ensure that the
 controller only reacts to relevant changes.
 
-## When to Use Predicates
+## When to use predicates
 
 **Predicates are useful when:**
 
-- You want to ignore certain changes, such as updates that don't impact the fields your controller is concerned with.
+- You want to ignore certain changes, such as updates that do not impact the fields your controller is concerned with.
 - You want to trigger reconciliation only for resources with specific labels or annotations.
 - You want to watch external resources and react only to specific changes.
 
-## Example: Using Predicates to Filter Update Events
+## Example: Using predicates to filter update events
 
-Let’s say that we only want our **`BackupBusybox`** controller to reconcile
+Suppose the **`BackupBusybox`** controller should reconcile only
 when certain fields of the **`Busybox`** resource change, for example, when
-the `spec.size` field changes, but we want to ignore all other changes (such as status updates).
+the `spec.size` field changes, but should ignore all other changes (such as status updates).
 
-### Defining a Predicate
+### Defining a predicate
 
-In the following example, we define a predicate that only
-allows reconciliation when there’s a meaningful update
+In the following example, define a predicate that only
+allows reconciliation when there is a meaningful update
 to the **`Busybox`** resource:
 
 ```go
@@ -70,19 +70,19 @@ updatePred := predicate.Funcs{
 ### Explanation
 
 In this example:
-- The **`UpdateFunc`** returns `true` only if the **`spec.size`** field has changed between the old and new objects, meaning that all other changes in the `spec`, like annotations or other fields, will be ignored.
+- The **`UpdateFunc`** returns `true` only if the **`spec.size`** field has changed between the old and new objects, meaning that all other changes in the `spec`, like annotations or other fields, are ignored.
 - **`CreateFunc`**, **`DeleteFunc`**, and **`GenericFunc`** return `true`, meaning that create, delete, and generic events are still processed, allowing reconciliation to happen for these event types.
 
 This ensures that the controller reconciles only when the specific field **`spec.size`** is modified, while ignoring any other modifications in the `spec` that are irrelevant to your logic.
 
-### Example: Using Predicates in `Watches`
+### Example: Using predicates in `Watches`
 
-Now, we apply this predicate in the **`Watches()`** method of
+Now, apply this predicate in the **`Watches()`** method of
 the **`BackupBusyboxReconciler`** to trigger reconciliation only for relevant events:
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource, using predicates.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource, using predicates.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)

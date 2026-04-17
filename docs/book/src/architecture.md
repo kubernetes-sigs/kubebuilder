@@ -1,4 +1,4 @@
-# Architecture Concept Diagram
+# Architecture concept diagram
 
 The following diagram will help you get a better idea over the Kubebuilder concepts and architecture.
 

@@ -7,8 +7,8 @@ generate the manifests like CRs or CRDs with
 make manifests
 ```
 
-To test out the controller, we can run it locally against the cluster.
-Before we do so, though, we'll need to install our CRDs, as per the [quick
+To test out the controller, run it locally against the cluster.
+Before doing so, install the CRDs, as per the [quick
 start](/quick-start.md).  This will automatically update the YAML
 manifests using controller-tools, if needed:
 
@@ -25,9 +25,9 @@ If you encounter errors when applying the CRDs, due to `metadata.annotations` ex
 
 </aside>
 
-Now that we've installed our CRDs, we can run the controller against our
-cluster.  This will use whatever credentials that we connect to the
-cluster with, so we don't need to worry about RBAC just yet.
+Now that you have installed the CRDs, run the controller against the
+cluster.  This uses whatever credentials you use to connect to the
+cluster, so you do not need to worry about RBAC just yet.
 
 <aside class="note" role="note">
 
@@ -38,10 +38,10 @@ certificates for serving the webhooks, and place them in the right
 directory (`/tmp/k8s-webhook-server/serving-certs/tls.{crt,key}`, by
 default).
 
-If you're not running a local API server, you'll also need to figure out
+If you are not running a local API server, you will also need to figure out
 how to proxy traffic from the remote cluster to your local webhook server.
-For this reason, we generally recommend disabling webhooks when doing
-your local code-run-test cycle, as we do below.
+For this reason, disable webhooks when doing
+your local code-run-test cycle, as shown below.
 
 </aside>
 
@@ -52,10 +52,10 @@ export ENABLE_WEBHOOKS=false
 make run
 ```
 
-You should see logs from the controller about starting up, but it won't do
+You should see logs from the controller about starting up, but it will not do
 anything just yet.
 
-At this point, we need a CronJob to test with.  Let's write a sample to
+At this point, you need a CronJob to test with.  Write a sample to
 `config/samples/batch_v1_cronjob.yaml`, and use that:
 
 ```yaml
@@ -74,7 +74,7 @@ kubectl get cronjob.batch.tutorial.kubebuilder.io -o yaml
 kubectl get job
 ```
 
-Now that we know it's working, we can run it in the cluster. Stop the
+Now that you know it is working, run it in the cluster. Stop the
 `make run` invocation, and run
 
 ```bash
@@ -85,11 +85,11 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <aside class="note" role="note">
 <p class="note-title">Registry Permission</p>
 
-This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don't work.
+You should publish this image to the personal registry you specified. You also need access to pull the image from the working environment.
+Make sure you have the proper permission to the registry if the above commands do not work.
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a Kind cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified Kind cluster:
 
 ```bash
@@ -105,7 +105,7 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 </aside>
 
-If we list cronjobs again like we did before, we should see the controller
+If you list cronjobs again like before, you should see the controller
 functioning again!
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap

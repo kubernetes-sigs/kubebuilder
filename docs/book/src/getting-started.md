@@ -1,10 +1,10 @@
-# Getting Started
+# Getting started
 
-We will create a sample project to let you know how it works. This sample will:
+This guide creates a sample project to show you how it works. This sample:
 
 - Reconcile a Memcached CR - which represents an instance of a Memcached deployed/managed on cluster
 - Create a Deployment with the Memcached image
-- Not allow more instances than the size defined in the CR which will be applied
+- Not allow more instances than the size you define in the CR
 - Update the Memcached CR status
 
 <aside class="note" role="note">
@@ -24,8 +24,6 @@ Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
 [docs/book/src/getting-started/testdata/project][tutorial-source].
 
-[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
-
 </aside>
 
 ## Create a project
@@ -41,16 +39,16 @@ kubebuilder init --domain=example.com
 <aside class="note" role="note">
 <p class="note-title">Developing in $GOPATH</p>
 
-If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+If you initialize your project within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
 Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
 
 </aside>
 
-## Create the Memcached API (CRD):
+## Create the Memcached API (CRD)
 
-Next, we'll create the API which will be responsible for deploying and
+Next, create the API which is responsible for deploying and
 managing Memcached(s) instances on the cluster.
 
 ```shell
@@ -61,9 +59,9 @@ kubebuilder create api --group cache --version v1alpha1 --kind Memcached
 
 This command's primary aim is to produce the Custom Resource (CR) and Custom Resource Definition (CRD) for the Memcached Kind.
 It creates the API with the group `cache.example.com` and version `v1alpha1`, uniquely identifying the new CRD of the Memcached Kind.
-By leveraging the Kubebuilder tool, we can define our APIs and objects representing our solutions for these platforms.
+By leveraging the Kubebuilder tool, you can define your APIs and objects representing your solutions for these platforms.
 
-While we've added only one Kind of resource in this example, we can have as many `Groups` and `Kinds` as necessary.
+While this example adds only one Kind of resource, you can have as many `Groups` and `Kinds` as necessary.
 To make it easier to understand, think of CRDs as the definition of our custom Objects, while CRs are instances of them.
 
 <aside class="note" role="note">
@@ -75,10 +73,10 @@ To make it easier to understand, think of CRDs as the definition of our custom O
 
 ### Defining our API
 
-#### Defining the Specs
+#### Defining the specs
 
-Now, we will define the values that each instance of your Memcached resource on the cluster can assume. In this example,
-we will allow configuring the number of instances with the following:
+Now, define the values that each instance of your Memcached resource on the cluster can assume. In this example,
+the configuration allows setting the number of instances with the following:
 
 ```go
 type MemcachedSpec struct {
@@ -89,12 +87,12 @@ type MemcachedSpec struct {
 }
 ```
 
-#### Creating Status definitions
+#### Creating status definitions
 
-We also want to track the status of our Operations which will be done to manage the Memcached CR(s).
-This allows us to verify the Custom Resource's description of our own API and determine if everything
+The controller also needs to track the status of operations done to manage the Memcached CR(s).
+This allows verification of the Custom Resource's description of your API and determines if everything
 occurred successfully or if any errors were encountered,
-similar to how we do with any resource from the Kubernetes API.
+similar to how you would with any resource from the Kubernetes API.
 
 ```go
 // MemcachedStatus defines the observed state of Memcached
@@ -109,8 +107,8 @@ type MemcachedStatus struct {
 <aside class="note" role="note">
 <p class="note-title"> Status Conditions </p>
 
-Kubernetes has established conventions, and because of this, we use
-Status Conditions here. We want our custom APIs and controllers to behave
+Kubernetes has established conventions, and because of this, use
+Status Conditions here. Your custom APIs and controllers should behave
 like Kubernetes resources and their controllers, following these standards
 to ensure a consistent and intuitive experience.
 
@@ -120,8 +118,8 @@ Please ensure that you review: [Kubernetes API Conventions](https://github.com/k
 
 #### Markers and validations
 
-Furthermore, we want to validate the values added in our CustomResource
-to ensure that those are valid. To achieve this, we will use [markers][markers],
+Furthermore, validate the values added in your CustomResource
+to ensure that those are valid. To achieve this, use [markers][markers],
 such as `+kubebuilder:validation:Minimum=1`.
 
 Now, see our example fully completed.
@@ -146,7 +144,7 @@ Both commands use [controller-gen][controller-gen] with different flags for code
 
 </details>
 
-#### Sample of Custom Resources
+#### Sample of custom resources
 
 The manifests located under the `config/samples` directory serve as examples of Custom Resources that can be applied to the cluster.
 In this particular example, by applying the given resource to the cluster, we would generate
@@ -156,11 +154,11 @@ a Deployment with a single instance size (see `size: 1`).
 {{#include ./getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml}}
 ```
 
-### Reconciliation Process
+### Reconciliation process
 
-In a simplified way, Kubernetes works by allowing us to declare the desired state of our system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For our custom APIs and controllers, the process is similar. Remember, we are extending Kubernetes' behaviors and its APIs to fit our specific needs.
+In a simplified way, Kubernetes works by allowing you to declare the desired state of your system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For your custom APIs and controllers, the process is similar. Remember, you are extending Kubernetes' behaviors and its APIs to fit your specific needs.
 
-In our controller, we will implement a reconciliation process.
+In our controller, we implement a reconciliation process.
 
 Essentially, the reconciliation process functions as a loop, continuously checking conditions and performing necessary actions until the desired state is achieved. This process will keep running until all conditions in the system align with the desired state defined in our implementation.
 
@@ -170,20 +168,20 @@ Here's a pseudo-code example to illustrate this:
 reconcile App {
 
   // Check if a Deployment for the app exists, if not, create one
-  // If there's an error, then restart from the beginning of the reconcile
+  // If there is an error, then restart from the beginning of the reconcile
   if err != nil {
     return reconcile.Result{}, err
   }
 
   // Check if a Service for the app exists, if not, create one
-  // If there's an error, then restart from the beginning of the reconcile
+  // If there is an error, then restart from the beginning of the reconcile
   if err != nil {
     return reconcile.Result{}, err
   }
 
   // Look for Database CR/CRD
   // Check the Database Deployment's replicas size
-  // If deployment.replicas size doesn't match cr.size, then update it
+  // If deployment.replicas size does not match cr.size, then update it
   // Then, restart from the beginning of the reconcile. For example, by returning `reconcile.Result{Requeue: true}, nil`.
   if err != nil {
     return reconcile.Result{Requeue: true}, nil
@@ -191,7 +189,7 @@ reconcile App {
   ...
 
   // If at the end of the loop:
-  // Everything was executed successfully, and the reconcile can stop
+  // Everything executed successfully, and the reconcile can stop
   return reconcile.Result{}, nil
 
 }
@@ -229,11 +227,11 @@ return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
 
 #### In the context of our example
 
-When our sample Custom Resource (CR) is applied to the cluster (i.e. `kubectl apply -f config/sample/cache_v1alpha1_memcached.yaml`),
-we want to ensure that a Deployment is created for our Memcached image and that it matches the number of replicas defined in the CR.
+When you apply the sample Custom Resource (CR) to the cluster (i.e. `kubectl apply -f config/sample/cache_v1alpha1_memcached.yaml`),
+ensure that the controller creates a Deployment for the Memcached image and that it matches the number of replicas you define in the CR.
 
-To achieve this, we need to first implement an operation that checks whether the Deployment for our Memcached instance already exists on the cluster.
-If it does not, the controller will create the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
+To achieve this, first implement an operation that checks whether the Deployment for the Memcached instance already exists on the cluster.
+If it does not, the controller creates the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
 this desired state is consistently maintained. This operation would involve:
 
 ```go
@@ -253,7 +251,7 @@ this desired state is consistently maintained. This operation would involve:
 	}
 ```
 
-Next, note that the `deploymentForMemcached()` function will need to define and return the Deployment that should be
+Next, note that the `deploymentForMemcached()` function needs to define and return the Deployment that should be
 created on the cluster. This function should construct the Deployment object with the necessary
 specifications, as demonstrated in the following example:
 
@@ -279,10 +277,10 @@ specifications, as demonstrated in the following example:
 	}
 ```
 
-Additionally, we need to implement a mechanism to verify that the number of Memcached replicas
+Additionally, implement a mechanism to verify that the number of Memcached replicas
 on the cluster matches the desired count specified in the Custom Resource (CR). If there is a
 discrepancy, the reconciliation must update the cluster to ensure consistency. This means that
-whenever a CR of the Memcached Kind is created or updated on the cluster, the controller will
+whenever you create or update a CR of the Memcached Kind on the cluster, the controller will
 continuously reconcile the state until the actual number of replicas matches the desired count.
 The following example illustrates this process:
 
@@ -311,16 +309,16 @@ by the users.
 ```
 </details>
 
-### Diving Into the Controller Implementation
+### Diving into the controller implementation
 
-#### Setting Manager to Watching Resources
+#### Setting manager to watching resources
 
 The whole idea is to be Watching the resources that matter for the controller.
 When a resource that the controller is interested in changes, the Watch triggers the controller's
 reconciliation loop, ensuring that the actual state of the resource matches the desired state
 as defined in the controller's logic.
 
-Notice how we configured the Manager to monitor events such as the creation, update, or deletion of a Custom Resource (CR) of the Memcached kind,
+Notice how you configure the Manager to monitor events such as the creation, update, or deletion of a Custom Resource (CR) of the Memcached kind,
 as well as any changes to the Deployment that the controller manages and owns:
 
 ```go
@@ -330,25 +328,25 @@ as well as any changes to the Deployment that the controller manages and owns:
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
 		// Watch the Memcached Custom Resource and trigger reconciliation whenever it
-		//is created, updated, or deleted
+		//when you create, update, or delete it
 		For(&cachev1alpha1.Memcached{}).
 		// Watch the Deployment managed by the Memcached controller. If any changes occur to the Deployment
-        // owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
+        // owned and managed by this controller, it triggers reconciliation, ensuring that the cluster
         // state aligns with the desired state.
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
     }
 ```
 
-#### But, How Does the Manager Know Which Resources Are Owned by It?
+#### But, how does the manager know which resources are owned by it?
 
-We do not want our Controller to watch any Deployment on the cluster and trigger our
-reconciliation loop. Instead, we only want to trigger reconciliation when the specific
-Deployment running our Memcached instance is changed. For example,
-if someone accidentally deletes our Deployment or changes the number of replicas, we want
-to trigger the reconciliation to ensure that it returns to the desired state.
+The Controller should not watch any Deployment on the cluster and trigger the
+reconciliation loop. Instead, trigger reconciliation only when the specific
+Deployment running the Memcached instance is changed. For example,
+if someone accidentally deletes the Deployment or changes the number of replicas, trigger
+the reconciliation to ensure that it returns to the desired state.
 
-The Manager knows which Deployment to observe because we set the `ownerRef` (Owner Reference):
+The Manager knows which Deployment to observe because you set the `ownerRef` (Owner Reference):
 
 ```go
 if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
@@ -360,11 +358,11 @@ if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
 
 <p class="note-title"><code>ownerRef</code> and Cascading Events</p>
 
-The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
-if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
+The ownerRef is crucial not only for allowing the controller to observe changes on the specific resource but also because,
+if you delete the Memcached Custom Resource (CR) from the cluster, all resources owned by it are automatically
 deleted as well, in a cascading event.
 
-This ensures that when the parent resource (Memcached CR) is removed, all associated resources
+This ensures that when you remove the parent resource (Memcached CR), Kubernetes also removes all associated resources
 (like Deployments, Services, etc.) are also cleaned up, maintaining
 a tidy and consistent cluster state.
 
@@ -372,14 +370,14 @@ For more information, see the Kubernetes documentation on [Owners and Dependents
 
 </aside>
 
-### Granting Permissions
+### Granting permissions
 
 It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
 the resources it manages.
 
-The [RBAC permissions][k8s-rbac] are now configured via [RBAC markers][rbac-markers], which are used to generate and update the
-manifest files present in `config/rbac/`. These markers can be found (and should be defined) on the `Reconcile()` method of each controller, see
-how it is implemented in our example:
+You configure the [RBAC permissions][k8s-rbac] via [RBAC markers][rbac-markers], which [controller-gen][controller-gen] uses to generate and update the
+manifest files in `config/rbac/`. You can find these markers (and should define them) on the `Reconcile()` method of each controller, see
+how the example implements them:
 
 ```go
 // +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
@@ -424,13 +422,13 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 
 Inspect the file `.github/workflows/auto-update.yml` to see how it works.
 
-### Checking the Project running in the cluster
+### Checking the project running in the cluster
 
 At this point you can check the steps to validate the project
 on the cluster by looking the steps defined in the Quick Start,
 see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 
-## Next Steps
+## Next steps
 
 - To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
@@ -440,7 +438,7 @@ see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 
 Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
 This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.
-It will provide scaffolds similar to the ones in this guide, along with additional features such as tests
+It provides scaffolds similar to the ones in this guide, along with additional features such as tests
 implemented for your controller.
 
 </aside>
@@ -456,8 +454,9 @@ implemented for your controller.
 [options-manager]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Options
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
-[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
+[cronjob-tutorial]: ./cronjob-tutorial/cronjob-tutorial.md
 [deploy-image]: ./plugins/available/deploy-image-plugin-v1-alpha.md
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [autoupdate-plugin]: ./plugins/available/autoupdate-v1-alpha.md
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project

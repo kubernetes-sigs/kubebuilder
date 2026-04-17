@@ -1,4 +1,4 @@
-# Sub-Module Layouts
+# Sub-module layouts
 
 This part describes how to modify a scaffolded project for use with multiple `go.mod` files for APIs and Controllers.
 
@@ -34,18 +34,18 @@ They introduce however multiple caveats into typical projects which is one of th
 
 When deciding to deviate from the standard kubebuilder `PROJECT` setup or the extended layouts offered by its plugins, it can result in increased maintenance overhead as there can be breaking changes in upstream that could break with the custom module structure described here.
 
-Splitting your codebase to multiple repos and/or multiple modules incurs costs that will grow over time. You'll need to define clear version dependencies between your own modules, do phased upgrades carefully, etc. Especially for small-to-medium projects, one repo and one module is the best way to go.
+Splitting your codebase to multiple repos and/or multiple modules incurs costs that grow over time. You need to define clear version dependencies between your own modules, do phased upgrades carefully, etc. Especially for small-to-medium projects, one repo and one module is the best way to go.
 
 Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
 You may also lose the ability to use some of the CLI features and helpers. For further information on the project layout, see the doc [What's in a basic project?][basic-project-doc]
 
 </aside>
 
-## Adjusting your Project
+## Adjusting your project
 
-For a proper Sub-Module layout, we will use the generated APIs as a starting point.
+For a proper Sub-Module layout, use the generated APIs as a starting point.
 
-For the steps below, we will assume you created your project in your `GOPATH` with
+For the steps below, assume you created your project in your `GOPATH` with
 
 ```shell
 kubebuilder init
@@ -59,7 +59,7 @@ kubebuilder create api --group operator --version v1alpha1 --kind Sample --resou
 
 ### Creating a second module for your API
 
-Now that we have a base layout in place, we will enable you for multiple modules.
+Now that you have a base layout in place, enable it for multiple modules.
 
 1. Navigate to `api/v1alpha1`
 2. Run `go mod init` to create a new submodule
@@ -67,7 +67,7 @@ Now that we have a base layout in place, we will enable you for multiple modules
 
 Your api go.mod file could now look like this:
 
-```go.mod
+```text
 module YOUR_GO_PATH/test-operator/api/v1alpha1
 
 go 1.21.0
@@ -111,10 +111,10 @@ YOUR_GO_PATH/test-operator imports
 	fatal: repository 'https://YOUR_GO_PATH/test-operator/' not found
 ```
 
-The reason for this is that you may have not pushed your modules into the VCS yet and resolving the main module will fail as it can no longer
+The reason for this is that you may have not pushed your modules into the VCS yet and resolving the main module fails as it can no longer
 directly access the API types as a package but only as a module.
 
-To solve this issue, we will have to tell the go tooling to properly `replace` the API module with a local reference to your path.
+To solve this issue, tell the go tooling to properly `replace` the API module with a local reference to your path.
 
 You can do this with 2 different approaches: go modules and go workspaces.
 
@@ -123,14 +123,14 @@ You can do this with 2 different approaches: go modules and go workspaces.
 For go modules, you will edit the main `go.mod` file of your project and issue a replace directive.
 
 You can do this by editing the `go.mod` with
-``
+
 ```shell
-go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you didn't already resolve the module
+go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you did not already resolve the module
 go mod edit -replace YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0=./api/v1alpha1
 go mod tidy
 ```
 
-Note that we used the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
+Note that this example uses the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
 you can use the real version as well. However this will only work if the API Module is already available in the VCS.
 
 <aside class="warning" role="note">
@@ -152,7 +152,7 @@ For go workspaces, you will not edit the `go.mod` files yourself, but rely on th
 
 To initialize a workspace for your project, run `go work init` in the project root.
 
-Now let us include both modules in our workspace:
+Now include both modules in the workspace:
 ```shell
 go work use . # This includes the main module with the controller
 go work use api/v1alpha1 # This is the API submodule
@@ -161,7 +161,7 @@ go work sync
 
 This will lead to commands such as `go run` or `go build` to respect the workspace and make sure that local resolution is used.
 
-You will be able to work with this locally without having to build your module.
+You are able to work with this locally without having to build your module.
 
 When using `go.work` files, it is recommended to not commit them into the repository and add them to `.gitignore`.
 
@@ -175,7 +175,7 @@ When releasing with a present `go.work` file, make sure to set the environment v
 #### Adjusting the Dockerfile
 
 When building your controller image, kubebuilder by default is not able to work with multiple modules.
-You will have to manually add the new API module into the download of dependencies:
+You have to manually add the new API module into the download of dependencies:
 
 ```dockerfile
 # Build the manager binary
@@ -190,8 +190,8 @@ COPY go.sum go.sum
 # Copy the Go Sub-Module manifests
 COPY api/v1alpha1/go.mod api/go.mod
 COPY api/v1alpha1/go.sum api/go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
+# cache deps before building and copying source so that we do not need to re-download as much
+# and so that source changes do not invalidate our downloaded layer
 RUN go mod download
 
 # Copy the go source
@@ -201,9 +201,9 @@ COPY internal/controller/ internal/controller/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
-# was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
-# the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
-# by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
+# was called. For example, if you call make docker-build in a local env which has the Apple Silicon M1 SO
+# the docker BUILDPLATFORM arg is linux/arm64 when for Apple x86 it is linux/amd64. Therefore,
+# by leaving it empty you can ensure that the container and binary shipped on it has the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
 # Use distroless as minimal base image to package the manager binary
@@ -227,16 +227,16 @@ git commit
 git tag v1.0.0 # this is your main module release
 git tag api/v1.0.0 # this is your api release
 go mod edit -require YOUR_GO_PATH/test-operator/api@v1.0.0 # now we depend on the api module in the main module
-go mod edit -dropreplace YOUR_GO_PATH/test-operator/api/v1alpha1 # this will drop the replace directive for local development in case you use go modules, meaning the sources from the VCS will be used instead of the ones in your monorepo checked out locally.
+go mod edit -dropreplace YOUR_GO_PATH/test-operator/api/v1alpha1 # this will drop the replace directive for local development in case you use go modules, meaning the sources from the VCS is used instead of the ones in your monorepo checked out locally.
 git push origin main v1.0.0 api/v1.0.0
 ```
 
-After this, your modules will be available in VCS and you do not need a local replacement anymore. However if you're making local changes,
+After this, your modules is available in VCS and you do not need a local replacement anymore. However if you are making local changes,
 make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
 
-Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_resource.md).
+Whenever you want to reuse your API module with a separate kubebuilder, follow the guide for [using an external Type](/reference/using_an_external_resource.md).
 When you get to the step `Edit the API files` simply import the dependency with
 
 ```shell

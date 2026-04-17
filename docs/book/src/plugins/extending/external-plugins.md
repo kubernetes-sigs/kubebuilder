@@ -1,4 +1,4 @@
-# Creating External Plugins for Kubebuilder
+# Creating external plugins for Kubebuilder
 
 ## Overview
 
@@ -7,7 +7,7 @@ These plugins are executables (written in any language) that follow an
 execution pattern recognized by Kubebuilder. Kubebuilder interacts with
 these plugins via `stdin` and `stdout`, enabling seamless communication.
 
-## Why Use External Plugins?
+## Why use external plugins?
 
 External plugins enable third-party solution maintainers to integrate their tools with Kubebuilder.
 Much like Kubebuilder's own plugins, these can be opt-in, offering users
@@ -127,7 +127,7 @@ Since communication between Kubebuilder and the plugin occurs through
 
 **Example:** For a plugin `foo.acme.io` version `v2` on Linux, the path would be `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/foo.acme.io`.
 
-### Available Subcommands
+### Available subcommands
 
 External plugins can support the following Kubebuilder subcommands:
 - `init`: Project initialization
@@ -147,7 +147,7 @@ If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all
 
 </aside>
 
-### Configuring Plugin Path
+### Configuring plugin path
 
 Set the environment variable `$EXTERNAL_PLUGINS_PATH`
 to specify a custom plugin binary path:
@@ -158,7 +158,7 @@ export EXTERNAL_PLUGINS_PATH=<custom-path>
 
 Otherwise, Kubebuilder would search for the plugins in a default path based on your OS.
 
-### Example CLI Commands
+### Example CLI commands
 
 You can now use it by calling the CLI commands:
 

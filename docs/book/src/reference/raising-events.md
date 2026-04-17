@@ -1,17 +1,17 @@
-# Creating Events
+# Creating events
 
 It is often useful to publish *Event* objects from the controller Reconcile function as they allow users or any automated processes to see what is going on with a particular object and respond to them.
 
  Recent Events for an object can be viewed by running `$ kubectl describe <resource kind> <resource name>`. Also, they can be checked by running `$ kubectl get events`.
 
 <aside class="warning" role="note">
-<p class="note-title">Events should be raised in certain circumstances only</p>
+<parameter name="note-title">Events should be raised in certain circumstances only</p>
 
 Be aware that it is **not** recommended to emit Events for all operations. If authors raise too many events, it brings bad UX experiences for those consuming the solutions on the cluster, and they may find it difficult to filter an actionable event from the cluster. For more information, please take a look at the [Kubernetes APIs convention][Events].
 
 </aside>
 
-## Writing Events
+## Writing events
 
 Anatomy of an Event:
 
@@ -22,7 +22,7 @@ Eventf(regarding, related runtime.Object, eventtype, reason, action, message str
 - `regarding` is the object this event is about.
 - `related` is an optional secondary object related to this event (use `nil` if not applicable).
 - `eventtype` is this event type, and is either *Normal* or *Warning*. ([More info][Event-Example])
-- `reason` is the reason this event is generated. It should be short and unique with `UpperCamelCase` format. The value could appear in *switch* statements by automation. ([More info][Reason-Example])
+- `reason` is the reason the controller generates this event. It should be short and unique with `UpperCamelCase` format. The value could appear in *switch* statements by automation. ([More info][Reason-Example])
 - `action` is the action that was taken/failed regarding the object.
 - `message` is a human-readable description with optional format arguments.
 
@@ -42,11 +42,11 @@ Following is an example of a code implementation that raises an Event.
 
 </aside>
 
-### How to be able to raise Events?
+### How to be able to raise events
 
 Following are the steps with examples to help you raise events in your controller's reconciliations.
 Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
-which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
+which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
 	if err := (&controller.MyKindReconciler{
@@ -60,9 +60,9 @@ which can be created for a Controller by calling `GetEventRecorder(name string)`
 	}
 ```
 
-### Allowing usage of EventRecorder on the Controller
+### Allowing usage of EventRecorder on the controller
 
-To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, firstly let's update the controller implementation:
+To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, first update the controller implementation:
 ```go
 import (
 	...
@@ -77,10 +77,10 @@ type MyKindReconciler struct {
 	Recorder events.EventRecorder
 }
 ```
-### Passing the EventRecorder to the Controller
+### Passing the EventRecorder to the controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
-which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
+which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
 	if err := (&controller.MyKindReconciler{

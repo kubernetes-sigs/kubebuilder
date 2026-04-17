@@ -1,4 +1,4 @@
-# Markers for Config/Code Generation
+# Markers for config/code generation
 
 Kubebuilder makes use of a tool called
 [controller-gen](/reference/controller-gen.md) for
@@ -22,7 +22,7 @@ Controller-gen supports both (see the output of `controller-gen crd -www`). `+ku
 
 But `+kubebuilder:validation:Optional` can also be applied at the package level such that it applies to every field in the package.
 
-If you're using controller-gen only then they're redundant, but if you're using other generators or you want developers that need to  build their own clients for your API, you'll want to also include `+optional`.
+If you are using controller-gen only then they are redundant, but if you are using other generators or you want developers that need to  build their own clients for your API, you will want to also include `+optional`.
 
 The most reliable way in 1.x to get `+optional` is `omitempty`.
 
@@ -31,7 +31,7 @@ The most reliable way in 1.x to get `+optional` is `omitempty`.
 See each subsection for information about different types of code and YAML
 generation.
 
-## Generating Code & Artifacts in Kubebuilder
+## Generating code & artifacts in Kubebuilder
 
 Kubebuilder projects have two `make` targets that make use of
 controller-gen:
@@ -46,7 +46,7 @@ controller-gen:
 
 See [Generating CRDs](./generating-crd.md) for a comprehensive overview.
 
-## Marker Syntax
+## Marker syntax
 
 Exact syntax is described in the [godocs for
 controller-tools](https://pkg.go.dev/sigs.k8s.io/controller-tools/pkg/markers?tab=doc).
@@ -63,7 +63,7 @@ In general, markers may either be:
   (`+kubebuilder:printcolumn:JSONPath=".status.replicas",name=Replicas,type=string`): multi-option
   markers take one or more named arguments.  The first argument is
   separated from the name by a colon, and latter arguments are
-  comma-separated.  Order of arguments doesn't matter.  Some arguments may
+  comma-separated.  Order of arguments does not matter.  Some arguments may
   be optional.
 
 Marker arguments may be strings, ints, bools, slices, or maps thereof.

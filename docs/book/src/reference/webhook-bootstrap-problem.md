@@ -1,6 +1,6 @@
-# Webhook Bootstrap Problem
+# Webhook bootstrap problem
 
-## The Problem
+## The problem
 
 When you create a webhook for a **core Kubernetes type** (Pod, Deployment, Job, etc.), the webhook can block its own controller Pod from starting, causing a deployment deadlock.
 
@@ -15,15 +15,15 @@ kubebuilder create webhook --group core --version v1 --kind Pod --programmatic-v
 2. You deploy your controller (which runs in a Pod)
 3. Kubernetes tries to create your controller Pod
 4. Your webhook intercepts this Pod creation
-5. The webhook server isn't ready yet (it's inside the Pod being created)
+5. The webhook server is not ready yet (it is inside the Pod being created)
 6. The Pod creation hangs waiting for webhook validation
 7. The webhook never starts because the Pod is blocked
 
 **Result:** Deadlock. Your deployment fails.
 
-## When Does This Occur?
+## When does this occur?
 
-### Core Kubernetes Types
+### Core Kubernetes types
 
 The bootstrap problem occurs when creating webhooks for built-in Kubernetes resources:
 
@@ -43,11 +43,11 @@ The bootstrap problem **does not occur** with custom resource webhooks:
 - Pods and MyResources are different types
 - No circular dependency
 
-## How to Fix
+## How to fix
 
 Configure your webhook to **skip validating its own resources** using either `namespaceSelector` or `objectSelector`.
 
-### Option 1: namespaceSelector (Recommended)
+### Option 1: namespaceSelector (recommended)
 
 Exclude the entire namespace where your webhook runs.
 
@@ -121,7 +121,7 @@ spec:
 
 **Step 2-4:** Same as Option 1, but use `objectSelector` instead of `namespaceSelector` in the patch file.
 
-### Multiple Webhooks
+### Multiple webhooks
 
 If you created webhooks for multiple core types (e.g., Pod and Deployment), you'll have multiple webhook entries.
 
@@ -135,7 +135,7 @@ grep "  name: v" config/webhook/manifests.yaml  # Count validating webhooks
 
 **Example output:**
 
-```
+```text
   name: mpod-v1.kb.io         # Index 0
   name: mdeployment-v1.kb.io  # Index 1
 ```
@@ -157,7 +157,7 @@ grep "  name: v" config/webhook/manifests.yaml  # Count validating webhooks
       operator: DoesNotExist
 ```
 
-### Mixed Webhooks (CRD + Core Types)
+### Mixed webhooks (CRD + core types)
 
 If you have both custom CRD webhooks and core type webhooks:
 
@@ -176,7 +176,7 @@ If you have both custom CRD webhooks and core type webhooks:
       operator: DoesNotExist
 ```
 
-## Choosing Between namespaceSelector and objectSelector
+## Choosing between namespaceSelector and objectSelector
 
 | Feature | namespaceSelector | objectSelector |
 |---------|-------------------|----------------|

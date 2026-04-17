@@ -13,13 +13,13 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 
 </aside>
 
-## When to use it ?
+## When to use it?
 
 - If you are looking to observe the metrics
 exported by [controller metrics][controller-metrics] and
 collected by Prometheus via [Grafana][grafana].
 
-## How to use it ?
+## How to use it?
 
 ### Prerequisites:
 
@@ -40,7 +40,7 @@ See that in the [config/prometheus][kustomize-plugin] you will find the ServiceM
 
 </aside>
 
-### Basic Usage
+### Basic usage
 
 The Grafana plugin is attached to the `edit` subcommand:
 
@@ -49,15 +49,15 @@ The Grafana plugin is attached to the `edit` subcommand:
 kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
 ```
 
-The plugin will create a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
+The plugin creates a new directory and scaffold the JSON files under it (i.e. `grafana/controller-runtime-metrics.json`).
 
-#### Show case:
+#### Show case
 
 See an example of how to use the plugin in your project:
 
 ![output](https://user-images.githubusercontent.com/18136486/175382307-9a6c3b8b-6cc7-4339-b221-2539d0fec042.gif)
 
-#### Now, let's check how to use the Grafana dashboards
+#### Now, let us check how to use the Grafana dashboards
 
 1. Copy the JSON file
 2. Visit `<your-grafana-url>/dashboard/import` to [import a new dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard).
@@ -65,11 +65,11 @@ See an example of how to use the plugin in your project:
    <img width="644" src="https://user-images.githubusercontent.com/18136486/176121955-1c4aec9c-0ba4-4271-9767-e8d1726d9d9a.png">
 4. Select the data source for Prometheus metrics
    <img width="633" src="https://user-images.githubusercontent.com/18136486/176122261-e3eab5b0-9fc4-45fc-a68c-d9ce1cfe96ee.png">
-5. Once the json is imported in Grafana, the dashboard is ready.
+5. Once the JSON is imported in Grafana, the dashboard is ready.
 
-### Grafana Dashboard
+### Grafana dashboard
 
-#### Controller Runtime Reconciliation total & errors
+#### Controller runtime reconciliation total & errors
 
 - Metrics:
   - controller_runtime_reconcile_total
@@ -82,7 +82,7 @@ See an example of how to use the plugin in your project:
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
 
-#### Controller CPU & Memory Usage
+#### Controller CPU & memory usage
 
 - Metrics:
   - process_cpu_seconds_total
@@ -95,7 +95,7 @@ See an example of how to use the plugin in your project:
   - Allocated Memory for the running controller
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
 
-#### Seconds of P50/90/99 Items Stay in Work Queue
+#### Seconds of P50/90/99 items stay in work queue
 
 - Metrics
   - workqueue_queue_duration_seconds_bucket
@@ -105,7 +105,7 @@ See an example of how to use the plugin in your project:
   - Seconds an item stays in workqueue before being requested.
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180359126-452b2a0f-a511-4ae3-844f-231d13cd27f8.png">
 
-#### Seconds of P50/90/99 Items Processed in Work Queue
+#### Seconds of P50/90/99 items processed in work queue
 
 - Metrics
   - workqueue_work_duration_seconds_bucket
@@ -115,7 +115,7 @@ See an example of how to use the plugin in your project:
   - Seconds of processing an item from workqueue takes.
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180359617-b7a59552-1e40-44f9-999f-4feb2584b2dd.png">
 
-#### Add Rate in Work Queue
+#### Add rate in work queue
 
 - Metrics
   - workqueue_adds_total
@@ -125,7 +125,7 @@ See an example of how to use the plugin in your project:
   - Per-second rate of items added to work queue
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180360073-698b6f77-a2c4-4a95-8313-fd8745ad472f.png">
 
-#### Retries Rate in Work Queue
+#### Retries rate in work queue
 
 - Metrics
   - workqueue_retries_total
@@ -135,7 +135,7 @@ See an example of how to use the plugin in your project:
   - Per-second rate of retries handled by workqueue
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180360101-411c81e9-d54e-4b21-bbb0-e3f94fcf48cb.png">
 
-#### Number of Workers in Use
+#### Number of workers in use
 
 - Metrics
   - controller_runtime_active_workers
@@ -145,7 +145,7 @@ See an example of how to use the plugin in your project:
   - The number of active controller workers
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/288db1b5-e2d8-48ea-9aae-30de7eeca277">
 
-#### WorkQueue Depth
+#### WorkQueue depth
 
 - Metrics
   - workqueue_depth
@@ -155,21 +155,21 @@ See an example of how to use the plugin in your project:
   - Current depth of workqueue
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/34f14df4-0428-460e-9658-01dd3d34aade">
 
-#### Unfinished Seconds
+#### Unfinished seconds
 
 - Metrics
   - workqueue_unfinished_work_seconds
 - Query:
   - rate(workqueue_unfinished_work_seconds{job="$job", namespace="$namespace"}[5m])
 - Description
-  - How many seconds of work has done that is in progress and hasn't been observed by work_duration.
+  - How many seconds of work has done that is in progress and has not been observed by work_duration.
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/081727c0-9531-4f7a-9649-87723ebc773f">
 
-### Visualize Custom Metrics
+### Visualize custom metrics
 
 The Grafana plugin supports scaffolding manifests for custom metrics.
 
-#### Generate Config Template
+#### Generate config template
 
 When the plugin is triggered for the first time, `grafana/custom-metrics/config.yaml` is generated.
 
@@ -182,11 +182,11 @@ customMetrics:
 #    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
 ```
 
-#### Add Custom Metrics to Config
+#### Add custom metrics to config
 
 You can enter multiple custom metrics in the file. For each element, you need to specify the `metric` and its `type`.
 The Grafana plugin can automatically generate `expr` for visualization.
-Alternatively, you can provide `expr` and the plugin will use the specified one directly.
+Alternatively, you can provide `expr` and the plugin uses the specified one directly.
 
 ```yaml
 ---
@@ -198,12 +198,12 @@ customMetrics:
     type: histogram
 ```
 
-#### Scaffold Manifest
+#### Scaffold manifest
 
 Once `config.yaml` is configured, you can run `kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha` again.
-This time, the plugin will generate `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
+This time, the plugin generates `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
 
-#### Show case:
+#### Show case
 
 See an example of how to visualize your custom metrics:
 
@@ -219,7 +219,7 @@ The Grafana plugin implements the following subcommands:
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 - `grafana/*.json`
 

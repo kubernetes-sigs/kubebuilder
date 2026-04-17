@@ -7,8 +7,8 @@ Note that projects such as [Operator-sdk][sdk] consume the Kubebuilder project a
 like Ansible and Helm. The kustomize plugin allows them to easily keep a maintained configuration and ensure that all languages have
 the same configuration. It is also helpful if you are looking to provide nice plugins which will perform changes on top of
 what is scaffolded by default. With this approach we do not need to keep manually updating this configuration in all possible language plugins
-which uses the same and we are also
-able to create "helper" plugins which can work with many projects and languages.
+which uses the same, and this approach makes it possible to
+create "helper" plugins which can work with many projects and languages.
 
 <aside class="note" role="note">
 <p class="note-title">Examples</p>
@@ -23,7 +23,7 @@ directory of the Kubebuilder project.
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
 - If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
 - If you are looking for to begin to try out the new syntax and features provide by kustomize v4 [(More info)][release-notes-v4] and v5 [(More info)][release-notes-v5]
-- If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
+- If you are NOT looking to build projects which is used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
 - If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
 
@@ -83,7 +83,7 @@ The kustomize plugin implements the following subcommands:
 <aside class="note" role="note">
 <p class="note-title">Create API and Webhook</p>
 
-Its implementation for the subcommand create api will scaffold the kustomize manifests
+Its implementation for the subcommand create api scaffolds the kustomize manifests
 which are specific for each API, see [here][kustomize-create-api]. The same applies
 to its implementation for create webhook.
 
@@ -91,7 +91,7 @@ to its implementation for create webhook.
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 * `config/*`
 
