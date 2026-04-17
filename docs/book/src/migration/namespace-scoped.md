@@ -180,7 +180,7 @@ In `internal/controller/cronjob_controller.go`:
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop
+// Reconcile is part of the main Kubernetes reconciliation loop
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
 
@@ -190,7 +190,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,namespace=<project-name>-system,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,namespace=<project-name>-system,resources=cronjobs/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop
+// Reconcile is part of the main Kubernetes reconciliation loop
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
 
