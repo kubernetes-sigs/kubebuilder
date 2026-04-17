@@ -6,9 +6,9 @@ complicated stuff.  Instead, this tutorial should take you through (almost)
 the full gamut of complexity with Kubebuilder, starting off simple and
 building up to something pretty full-featured.
 
-Let's pretend (and sure, this is a teensy bit contrived) that we've
+Pretend (and sure, this is a teensy bit contrived) that you've
 finally gotten tired of the maintenance burden of the non-Kubebuilder
-implementation of the CronJob controller in Kubernetes, and we'd like to
+implementation of the CronJob controller in Kubernetes, and you'd like to
 rewrite it using Kubebuilder.
 
 The job (no pun intended) of the *CronJob* controller is to run one-off
@@ -16,8 +16,8 @@ tasks on the Kubernetes cluster at regular intervals.  It does this by
 building on top of the *Job* controller, whose task is to run one-off tasks
 once, seeing them to completion.
 
-Instead of trying to tackle rewriting the Job controller as well, we'll
-use this as an opportunity to see how to interact with external types.
+Instead of trying to tackle rewriting the Job controller as well, use
+this as an opportunity to see how to interact with external types.
 
 <aside class="note" role="note">
 
@@ -34,7 +34,7 @@ directory.
 
 ## Scaffolding out our project
 
-As covered in the [quick start](../quick-start.md), we'll need to scaffold
+As covered in the [quick start](../quick-start.md), scaffold
 out a new project.  Make sure you've [installed
 Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
@@ -43,7 +43,7 @@ project:
 # create a project directory, and then run the init command.
 mkdir project
 cd project
-# we'll use a domain of tutorial.kubebuilder.io,
+# This example uses a domain of tutorial.kubebuilder.io,
 # so all API groups is <group>.tutorial.kubebuilder.io.
 kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
@@ -55,8 +55,8 @@ You can pass `--project-name=<dns1123-label-string>` to set a different project 
 
 </aside>
 
-Now that we've got a project in place, let's take a look at what
-Kubebuilder has scaffolded for us so far...
+Now that you have a project in place, take a look at what
+Kubebuilder has scaffolded so far...
 
 <aside class="note" role="note">
 

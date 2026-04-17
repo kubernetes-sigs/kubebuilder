@@ -7,8 +7,8 @@ generate the manifests like CRs or CRDs with
 make manifests
 ```
 
-To test out the controller, we can run it locally against the cluster.
-Before we do so, though, we'll need to install our CRDs, as per the [quick
+To test out the controller, run it locally against the cluster.
+Before doing so, install the CRDs, as per the [quick
 start](/quick-start.md).  This will automatically update the YAML
 manifests using controller-tools, if needed:
 
@@ -25,9 +25,9 @@ If you encounter errors when applying the CRDs, due to `metadata.annotations` ex
 
 </aside>
 
-Now that we've installed our CRDs, we can run the controller against our
-cluster.  This uses whatever credentials that we connect to the
-cluster with, so we don't need to worry about RBAC just yet.
+Now that you've installed the CRDs, run the controller against the
+cluster.  This uses whatever credentials you use to connect to the
+cluster, so you don't need to worry about RBAC just yet.
 
 <aside class="note" role="note">
 
@@ -40,8 +40,8 @@ default).
 
 If you're not running a local API server, you'll also need to figure out
 how to proxy traffic from the remote cluster to your local webhook server.
-For this reason, we generally recommend disabling webhooks when doing
-your local code-run-test cycle, as we do below.
+For this reason, disable webhooks when doing
+your local code-run-test cycle, as shown below.
 
 </aside>
 
@@ -55,7 +55,7 @@ make run
 You should see logs from the controller about starting up, but it won't do
 anything just yet.
 
-At this point, we need a CronJob to test with.  Let's write a sample to
+At this point, you need a CronJob to test with.  Write a sample to
 `config/samples/batch_v1_cronjob.yaml`, and use that:
 
 ```yaml
@@ -74,7 +74,7 @@ kubectl get cronjob.batch.tutorial.kubebuilder.io -o yaml
 kubectl get job
 ```
 
-Now that we know it's working, we can run it in the cluster. Stop the
+Now that you know it's working, run it in the cluster. Stop the
 `make run` invocation, and run
 
 ```bash
@@ -105,7 +105,7 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 </aside>
 
-If we list cronjobs again like we did before, we should see the controller
+If you list cronjobs again like before, you should see the controller
 functioning again!
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap

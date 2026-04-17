@@ -5,8 +5,8 @@ However, eventually, most projects needs to move to a more stable API.
 Once your API is stable though, you can't make breaking changes to it.
 That's where API versions come into play.
 
-Let's make some changes to the `CronJob` API spec and make sure all the
-different versions are supported by our CronJob project.
+Make some changes to the `CronJob` API spec and make sure all the
+different versions are supported by the CronJob project.
 
 If you haven't already, make sure you've gone through the base [CronJob
 Tutorial](/cronjob-tutorial/cronjob-tutorial.md).
@@ -21,6 +21,6 @@ form a runnable project, and live in the book source directory:
 
 </aside>
 
-Next, let's figure out what changes we want to make...
+Next, figure out what changes to make...
 
 [tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/multiversion-tutorial/testdata/project

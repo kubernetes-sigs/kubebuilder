@@ -1,9 +1,9 @@
 # You said something about main?
 
-But first, remember how we said we'd [come back to `main.go`
-again](/cronjob-tutorial/empty-main.md)? Let's take a look and see what's
-changed, and what we need to add.
+But first, remember how the guide said to [come back to `main.go`
+again](/cronjob-tutorial/empty-main.md)? Take a look and see what's
+changed, and what to add.
 
 {{#literatego ./testdata/project/cmd/main.go}}
 
-*Now* we can implement our controller.
+*Now* implement the controller.

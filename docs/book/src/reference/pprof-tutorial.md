@@ -39,7 +39,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
     Using `curl`, export the profiling statistics to a file like this:
 
     ```bash
-    # Note that we are using the bind host and port configured via the
+    # Note that this uses the bind host and port configured via the
     # Manager Options in the cmd/main.go
     curl -s "http://127.0.0.1:8082/debug/pprof/profile" > ./cpu-profile.out
     ```

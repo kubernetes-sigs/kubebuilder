@@ -225,7 +225,7 @@ For further information see the issue raised in the controller-runtime [controll
 
 ## Cert-manager and Prometheus options
 
-Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
+Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when using ENV TEST, you are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
 
 Therefore, to test a reconciliation in common cases you do not need to care about these options. However, if you would like to do tests with the Prometheus and the Cert-manager installed you can add the required steps to install them before running the tests.
 Following an example.

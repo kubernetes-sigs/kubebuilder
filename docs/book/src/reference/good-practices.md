@@ -8,7 +8,7 @@ Reconciliation is an ongoing loop that executes necessary operations to maintain
 
 ## Why should reconciliations be idempotent?
 
-When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern] we create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions allows the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic].
+When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern], you create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions allows the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic].
 
 Writing reconciliation logic according to specific events, breaks the recommendation of operator pattern and goes against the design principles of [controller-runtime][controller-runtime]. This may lead to unforeseen consequences, such as resources becoming stuck and requiring manual intervention.
 
@@ -16,7 +16,7 @@ Writing reconciliation logic according to specific events, breaks the recommenda
 
 Building your operator commonly involves extending the Kubernetes API itself. It is helpful to understand precisely how Custom Resource Definitions (CRDs) interact with the Kubernetes API. Also, the [Kubebuilder documentation][docs] on Groups and Versions and Kinds may be helpful to understand these concepts better as they relate to operators.
 
-Additionally, we recommend checking the documentation on [Operator patterns][operator-pattern] from Kubernetes to better understand the purpose of the standard solutions built with KubeBuilder.
+Additionally, check the documentation on [Operator patterns][operator-pattern] from Kubernetes to better understand the purpose of the standard solutions built with KubeBuilder.
 
 ## Why you should adhere to the Kubernetes API conventions and standards
 
@@ -47,7 +47,7 @@ In conclusion, while it might seem efficient to have a single controller manage 
 
 ## Why you should adopt status conditions
 
-We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-conventions] because:
+Manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-conventions] because:
 
 - **Standardization**: Conditions provide a standardized way to represent the state of an Operator's custom resources, making it easier for users and tools to understand and interpret the resource's status.
 - **Readability**: Conditions can clearly express complex states by using a combination of multiple conditions, making it easier for users to understand the current state and progress of the resource.

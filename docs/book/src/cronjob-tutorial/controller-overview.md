@@ -8,15 +8,15 @@ like running containers for Kubelet or loadbalancers for a cloud provider)
 matches the desired state in the object.  Each controller focuses on one
 *root* Kind, but may interact with other Kinds.
 
-We call this process *reconciling*.
+This process is called *reconciling*.
 
 In controller-runtime, the logic that implements the reconciling for
 a specific kind is called a [*Reconciler*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc).  A reconciler
-takes the name of an object, and returns whether or not we need to try
+takes the name of an object, and returns whether or not to try
 again (e.g. in case of errors or periodic controllers, like the
 HorizontalPodAutoscaler).
 
 {{#literatego ./testdata/emptycontroller.go}}
 
-Now that we've seen the basic structure of a reconciler, let's fill out
+Now that you've seen the basic structure of a reconciler, fill out
 the logic for `CronJob`s.

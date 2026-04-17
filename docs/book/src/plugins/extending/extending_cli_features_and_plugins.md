@@ -158,7 +158,7 @@ func (s *initScaffolder) Scaffold() error {
 
 #### Example: Overwriting a File in a Plugin
 
-Let's imagine that when a subcommand is called, you want
+Imagine that when a subcommand is called, you want
 to overwrite an existing file.
 
 For example, to modify the `Makefile` and add custom build steps,

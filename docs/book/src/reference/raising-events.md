@@ -62,7 +62,7 @@ which can be created for a Controller by calling `GetEventRecorder(name string)`
 
 ### Allowing usage of EventRecorder on the controller
 
-To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, firstly let's update the controller implementation:
+To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, first update the controller implementation:
 ```go
 import (
 	...

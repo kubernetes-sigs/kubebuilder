@@ -43,9 +43,9 @@ You may also lose the ability to use some of the CLI features and helpers. For f
 
 ## Adjusting your project
 
-For a proper Sub-Module layout, we use the generated APIs as a starting point.
+For a proper Sub-Module layout, use the generated APIs as a starting point.
 
-For the steps below, we will assume you created your project in your `GOPATH` with
+For the steps below, assume you created your project in your `GOPATH` with
 
 ```shell
 kubebuilder init
@@ -59,7 +59,7 @@ kubebuilder create api --group operator --version v1alpha1 --kind Sample --resou
 
 ### Creating a second module for your API
 
-Now that we have a base layout in place, we enable you for multiple modules.
+Now that you have a base layout in place, enable it for multiple modules.
 
 1. Navigate to `api/v1alpha1`
 2. Run `go mod init` to create a new submodule
@@ -114,7 +114,7 @@ YOUR_GO_PATH/test-operator imports
 The reason for this is that you may have not pushed your modules into the VCS yet and resolving the main module fails as it can no longer
 directly access the API types as a package but only as a module.
 
-To solve this issue, we have to tell the go tooling to properly `replace` the API module with a local reference to your path.
+To solve this issue, tell the go tooling to properly `replace` the API module with a local reference to your path.
 
 You can do this with 2 different approaches: go modules and go workspaces.
 
@@ -130,7 +130,7 @@ go mod edit -replace YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0=./api/v1alph
 go mod tidy
 ```
 
-Note that we used the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
+Note that this example uses the placeholder version `v0.0.0` of the API Module. In case you already released your API module once,
 you can use the real version as well. However this will only work if the API Module is already available in the VCS.
 
 <aside class="warning" role="note">
@@ -152,7 +152,7 @@ For go workspaces, you will not edit the `go.mod` files yourself, but rely on th
 
 To initialize a workspace for your project, run `go work init` in the project root.
 
-Now let us include both modules in our workspace:
+Now include both modules in the workspace:
 ```shell
 go work use . # This includes the main module with the controller
 go work use api/v1alpha1 # This is the API submodule
@@ -201,9 +201,9 @@ COPY internal/controller/ internal/controller/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
-# was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
+# was called. For example, if you call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg is linux/arm64 when for Apple x86 it is linux/amd64. Therefore,
-# by leaving it empty we can ensure that the container and binary shipped on it has the same platform.
+# by leaving it empty you can ensure that the container and binary shipped on it has the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
 # Use distroless as minimal base image to package the manager binary
@@ -236,7 +236,7 @@ make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
 
-Whenever you want to reuse your API module with a separate kubebuilder, we will assume you follow the guide for [using an external Type](/reference/using_an_external_resource.md).
+Whenever you want to reuse your API module with a separate kubebuilder, follow the guide for [using an external Type](/reference/using_an_external_resource.md).
 When you get to the step `Edit the API files` simply import the dependency with
 
 ```shell

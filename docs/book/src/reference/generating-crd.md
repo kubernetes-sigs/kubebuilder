@@ -68,7 +68,7 @@ CRD, which is controlled by the
 [`+kubebuilder:printcolumn`][crd-markers] marker on the Go type for
 your CRD.
 
-For instance, in the following example, we add fields to display
+For instance, in the following example, add fields to display
 information about the knights, rank, and alias fields from the validation
 example:
 

@@ -32,7 +32,7 @@ kubebuilder create api --group crew --version v1 --kind Admiral --controller=tru
 ### To add new imports
 
 The `+kubebuilder:scaffold:imports` marker allows the Kubebuilder CLI to inject additional imports,
-such as for new controllers or webhooks. When we create a new API, the CLI automatically adds the required import paths
+such as for new controllers or webhooks. When you create a new API, the CLI automatically adds the required import paths
 in this section.
 
 For example, after creating the `Admiral` API in a single-group layout,
@@ -72,7 +72,7 @@ func init() {
 
 ## To set up a controller
 
-When we create a new controller (e.g., for Admiral), the Kubebuilder CLI injects the controller
+When you create a new controller (e.g., for Admiral), the Kubebuilder CLI injects the controller
 setup code into the manager using the `+kubebuilder:scaffold:builder` marker. This marker indicates where
 the setup code for new controllers should be added.
 

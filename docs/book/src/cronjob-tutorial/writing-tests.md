@@ -3,7 +3,7 @@
 Testing Kubernetes controllers is a big subject, and the boilerplate testing
 files generated for you by kubebuilder are fairly minimal.
 
-To walk you through integration testing patterns for Kubebuilder-generated controllers, we will revisit the CronJob we built in our first tutorial and write a simple test for it.
+To walk you through integration testing patterns for Kubebuilder-generated controllers, this guide revisits the CronJob built in the first tutorial and writes a simple test for it.
 
 The basic approach is that, in your generated `suite_test.go` file, you uses envtest to create a local Kubernetes API server, instantiate and run your controllers, and then write additional `*_test.go` files to test it using [Ginkgo](http://onsi.github.io/ginkgo).
 

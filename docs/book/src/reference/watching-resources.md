@@ -1,12 +1,12 @@
 # Watching resources
 
-When extending the Kubernetes API, we aim to ensure that our solutions behave consistently with Kubernetes itself.
+When extending the Kubernetes API, ensure that your solutions behave consistently with Kubernetes itself.
 For example, consider a `Deployment` resource, which is managed by a controller. This controller is responsible
 for responding to changes in the cluster—such as when a `Deployment` is created, updated, or deleted—by triggering
 reconciliation to ensure the resource’s state matches the desired state.
 
-Similarly, when developing our controllers, we want to watch for relevant changes in resources that are crucial
-to our solution. These changes—whether creations, updates, or deletions—should trigger the reconciliation
+Similarly, when developing controllers, watch for relevant changes in resources that are crucial
+to your solution. These changes—whether creations, updates, or deletions—should trigger the reconciliation
 loop to take appropriate actions and maintain consistency across the cluster.
 
 The [controller-runtime][controller-runtime] library provides several ways to watch and manage resources.
@@ -50,12 +50,12 @@ These **Secondary Resources**, such as `Services`, `ConfigMaps`, or `Deployments
 when `Owned` by the controllers, are created and managed by the specific controller
 and are tied to the **Primary Resource** via [OwnerReferences][owner-ref-k8s-docs].
 
-For example, if we have a controller to manage our CR(s) of the Kind `MyApp`
-on the cluster, which represents our application solution, all resources required
+For example, if you have a controller to manage your CR(s) of the Kind `MyApp`
+on the cluster, which represents your application solution, all resources required
 to ensure that `MyApp` is up and running with the desired number of instances
 are **Secondary Resources**. The code responsible for creating, deleting,
 and updating these resources is part of the `MyApp` Controller.
-We would add the appropriate [OwnerReferences][owner-ref-k8s-docs]
+Add the appropriate [OwnerReferences][owner-ref-k8s-docs]
 using the [controllerutil.SetControllerReference][cr-owner-ref-doc]
 function to indicate that these resources are owned by the same controller
 responsible for managing `MyApp` instances, which are reconciled by the `MyAppReconciler`.
@@ -69,7 +69,7 @@ cascading manner.
 Note that **Secondary Resources** can either be APIs/CRDs defined in your project or in other projects that are
 relevant to the **Primary Resources**, but which the specific controller is not responsible for creating or managing.
 
-For example, if we have a CRD that represents a backup solution (i.e. `MyBackup`) for our `MyApp`,
+For example, if you have a CRD that represents a backup solution (i.e. `MyBackup`) for your `MyApp`,
 it might need to watch changes in the `MyApp` resource to trigger reconciliation in `MyBackup`
 to ensure the desired state. Similarly, `MyApp`'s behavior might also be impacted by
 CRDs/APIs defined in other projects.

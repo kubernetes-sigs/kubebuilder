@@ -69,7 +69,7 @@ resources:
     version: v1
 version: "3"
 ```
-## Why do we need to store the plugins and data used?
+## Why store the plugins and data used?
 
 Following some examples of motivations to track the input used:
 - check if a plugin can or cannot be scaffolded on top of an existing plugin (i.e.) plugin compatibility while chaining multiple of them together.

@@ -2,4 +2,4 @@
 
 {{#literatego ./testdata/emptymain.go}}
 
-With that out of the way, we can get on to scaffolding our API!
+With that out of the way, get on to scaffolding the API!

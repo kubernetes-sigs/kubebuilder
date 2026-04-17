@@ -10,14 +10,14 @@ including **Core Types** or **Custom Resources** managed by other controllers or
 and reconciled in separate processes.
 
 For instance, consider two custom resources—`Busybox` and `BackupBusybox`.
-If changes to `Busybox` should trigger reconciliation in the `BackupBusybox` controller, we
-can configure the `BackupBusybox` controller to watch for updates in `Busybox`.
+If changes to `Busybox` should trigger reconciliation in the `BackupBusybox` controller,
+configure the `BackupBusybox` controller to watch for updates in `Busybox`.
 
 ### Example: Watching a Non-Owned Busybox Resource to Reconcile BackupBusybox
 
 Consider a controller that manages a custom resource `BackupBusybox`
 but also needs to monitor changes to `Busybox` resources across the cluster.
-We only want to trigger reconciliation when `Busybox` instances have the Backup
+Trigger reconciliation only when `Busybox` instances have the Backup
 feature enabled.
 
 - **Why Watch Secondary Resources?**
@@ -56,7 +56,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
-Here’s how we can configure the controller to filter and watch
+Here’s how to configure the controller to filter and watch
 for changes to only those `Busybox` resources that have the specific label:
 
 ```go

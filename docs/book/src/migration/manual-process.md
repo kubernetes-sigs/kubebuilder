@@ -403,7 +403,7 @@ The hub implements `Hub()` marker interface, while spokes implement `ConvertTo()
 
 Create the conversion webhook for the **hub** version, with spoke versions specified using the `--spoke` flag.
 
-**Note:** In the examples below, we use `v1` as the hub for illustration. Choose the version in your project that should be the central conversion point—typically your most feature-complete and stable storage version, not necessarily the oldest or newest.
+**Note:** In the examples below, `v1` is used as the hub for illustration. Choose the version in your project that should be the central conversion point—typically your most feature-complete and stable storage version, not necessarily the oldest or newest.
 
 ```bash
 kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2

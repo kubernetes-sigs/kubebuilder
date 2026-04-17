@@ -7,8 +7,8 @@ Note that projects such as [Operator-sdk][sdk] consume the Kubebuilder project a
 like Ansible and Helm. The kustomize plugin allows them to easily keep a maintained configuration and ensure that all languages have
 the same configuration. It is also helpful if you are looking to provide nice plugins which will perform changes on top of
 what is scaffolded by default. With this approach we do not need to keep manually updating this configuration in all possible language plugins
-which uses the same and we are also
-able to create "helper" plugins which can work with many projects and languages.
+which uses the same, and this approach makes it possible to
+create "helper" plugins which can work with many projects and languages.
 
 <aside class="note" role="note">
 <p class="note-title">Examples</p>

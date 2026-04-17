@@ -23,13 +23,13 @@ controller only reacts to relevant changes.
 
 ## Example: Using predicates to filter update events
 
-Let’s say that we only want our **`BackupBusybox`** controller to reconcile
+Suppose the **`BackupBusybox`** controller should reconcile only
 when certain fields of the **`Busybox`** resource change, for example, when
-the `spec.size` field changes, but we want to ignore all other changes (such as status updates).
+the `spec.size` field changes, but should ignore all other changes (such as status updates).
 
 ### Defining a predicate
 
-In the following example, we define a predicate that only
+In the following example, define a predicate that only
 allows reconciliation when there’s a meaningful update
 to the **`Busybox`** resource:
 
@@ -77,7 +77,7 @@ This ensures that the controller reconciles only when the specific field **`spec
 
 ### Example: Using predicates in `Watches`
 
-Now, we apply this predicate in the **`Watches()`** method of
+Now, apply this predicate in the **`Watches()`** method of
 the **`BackupBusyboxReconciler`** to trigger reconciliation only for relevant events:
 
 ```go

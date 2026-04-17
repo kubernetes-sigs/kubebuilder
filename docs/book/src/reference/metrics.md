@@ -231,7 +231,7 @@ spec:
       - >
         while true;
         do
-          # Note here that we are passing the token obtained from the ServiceAccount to curl the metrics endpoint
+          # Note here that this passes the token obtained from the ServiceAccount to curl the metrics endpoint
           curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
           https://controller-manager-metrics-service.system.svc.cluster.local:8443/metrics;
           sleep 60;

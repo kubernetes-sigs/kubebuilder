@@ -5,7 +5,7 @@ and **Secondary Resources**. A **Primary Resource** is the main resource
 that the controller is responsible for, while **Secondary Resources**
 are created and managed by the controller to support the **Primary Resource**.
 
-In this section, we will explain how to manage **Secondary Resources**
+This section explains how to manage **Secondary Resources**
 which are `Owned` by the controller. This example shows how to:
 
 - Set the [Owner Reference][cr-owner-ref-doc] between the primary resource (`Busybox`) and the secondary resource (`Deployment`) to ensure proper lifecycle management.
@@ -15,7 +15,7 @@ it is created and managed by it.
 ## Setting the owner reference
 
 To link the lifecycle of the secondary resource (`Deployment`)
-to the primary resource (`Busybox`), we need to set
+to the primary resource (`Busybox`), set
 an [Owner Reference][cr-owner-ref-doc] on the secondary resource.
 This ensures that Kubernetes automatically handles cascading deletions:
 if the primary resource is deleted, the secondary resource is also deleted.
@@ -24,7 +24,7 @@ Controller-runtime provides the [controllerutil.SetControllerReference][cr-owner
 
 ### Setting the owner reference
 
-Below, we create the `Deployment` and set the Owner reference between the `Busybox` custom resource and the `Deployment` using `controllerutil.SetControllerReference()`.
+Below, create the `Deployment` and set the Owner reference between the `Busybox` custom resource and the `Deployment` using `controllerutil.SetControllerReference()`.
 
 ```go
 // deploymentForBusybox returns a Deployment object for Busybox
@@ -137,7 +137,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 ## Watching secondary resources
 
 To ensure that changes to the secondary resource (such as the `Deployment`) trigger
-a reconciliation of the primary resource (`Busybox`), we configure the controller
+a reconciliation of the primary resource (`Busybox`), configure the controller
 to watch both resources.
 
 The `Owns()` method allows you to specify secondary resources
@@ -168,7 +168,7 @@ i.e. to `watch`, `get`, `list`, `create`, `update`, and `delete` permissions for
 
 ### Example: RBAC markers
 
-Before the `Reconcile` method, we need to define the appropriate RBAC markers.
+Before the `Reconcile` method, define the appropriate RBAC markers.
 These markers are used by [controller-gen][controller-gen] to generate the necessary
 roles and permissions when you run `make manifests`.
 
@@ -180,7 +180,7 @@ roles and permissions when you run `make manifests`.
 - The first marker gives the controller permission to manage the `Busybox` custom resource (the primary resource).
 - The second marker grants the controller permission to manage `Deployment` resources (the secondary resource).
 
-Note that we are granting permissions to `watch` the resources.
+Note that this grants permissions to `watch` the resources.
 
 [owner-ref-k8s-docs]: https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/
 [cr-owner-ref-doc]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/controller/controllerutil#SetOwnerReference

@@ -227,7 +227,7 @@ If yours is older, first run `kubebuilder alpha generate` once to modernize the 
 After that, you can use `kubebuilder alpha update` for future upgrades.
 
 Projects created with **Kubebuilder v4.6.0+** include `cliVersion` in the `PROJECT` file.
-We use that value to pick the correct CLI for re-scaffolding.
+The command uses that value to pick the correct CLI for re-scaffolding.
 
 </aside>
 
