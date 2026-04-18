@@ -70,16 +70,17 @@ If no output directory is provided, the current working directory will be cleane
 	}
 
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
-		"Path to the directory containing the PROJECT file. "+
-			"Defaults to the current working directory. WARNING: delete existing files (except .git and PROJECT).")
+		"Path to the directory containing the PROJECT file (e.g., ./my-project). "+
+			"Defaults to the current working directory if unset. "+
+			"WARNING: deletes existing files except .git and PROJECT")
 
 	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
 		"Directory where the new project scaffold will be written. "+
-			"If unset, re-scaffolding occurs in-place "+
-			"and will delete existing files (except .git and PROJECT).")
+			"If unset, re-scaffolding occurs in-place and deletes existing files except .git and PROJECT")
 
 	scaffoldCmd.Flags().BoolVar(&opts.SkipGoVersionCheck, "skip-go-version-check", true,
-		"skip the Go version check during project generation")
+		"Skip the Go version check during project generation "+
+			"(enabled by default; use --skip-go-version-check=false to enforce)")
 
 	return scaffoldCmd
 }
