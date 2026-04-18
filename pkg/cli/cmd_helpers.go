@@ -157,6 +157,7 @@ func (c *CLI) applySubcommandHooks(
 		store:               yamlstore.New(c.fs),
 		subcommands:         subcommands,
 		errorMessage:        errorMessage,
+		projectFile:         c.projectFile,
 		projectVersion:      c.projectVersion,
 		pluginChain:         pluginChain,
 		cliVersion:          c.cliVersion,
@@ -296,6 +297,8 @@ type executionHooksFactory struct {
 	subcommands []keySubcommandTuple
 	// errorMessage is prepended to returned errors.
 	errorMessage string
+	// projectFile is the path to the project configuration file (empty means use default: PROJECT).
+	projectFile string
 	// projectVersion is the project version that will be used to create new project configurations.
 	// It is only used for initialization.
 	projectVersion config.Version
@@ -407,7 +410,13 @@ func (factory *executionHooksFactory) preRunEFunc(
 		}
 		if createConfig {
 			// Check if a project configuration is already present.
-			if err := factory.store.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
+			var err error
+			if factory.projectFile != "" {
+				err = factory.store.LoadFrom(factory.projectFile)
+			} else {
+				err = factory.store.Load()
+			}
+			if err == nil || !errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("%s: already initialized", factory.errorMessage)
 			}
 
@@ -417,7 +426,13 @@ func (factory *executionHooksFactory) preRunEFunc(
 			}
 		} else {
 			// Load the project configuration.
-			if err := factory.store.Load(); os.IsNotExist(err) {
+			var err error
+			if factory.projectFile != "" {
+				err = factory.store.LoadFrom(factory.projectFile)
+			} else {
+				err = factory.store.Load()
+			}
+			if os.IsNotExist(err) {
 				return fmt.Errorf("%s: failed to find configuration file, project must be initialized",
 					factory.errorMessage)
 			} else if err != nil {
@@ -507,7 +522,13 @@ func (factory *executionHooksFactory) runEFunc() func(*cobra.Command, []string) 
 // and executes the post-scaffold hook.
 func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
-		if err := factory.store.Save(); err != nil {
+		var err error
+		if factory.projectFile != "" {
+			err = factory.store.SaveTo(factory.projectFile)
+		} else {
+			err = factory.store.Save()
+		}
+		if err != nil {
 			return fmt.Errorf("%s: failed to save configuration file: %w", factory.errorMessage, err)
 		}
 

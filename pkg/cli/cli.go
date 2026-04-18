@@ -40,6 +40,7 @@ const (
 
 	pluginsFlag        = "plugins"
 	projectVersionFlag = "project-version"
+	projectFileFlag    = "project-file"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
@@ -73,6 +74,8 @@ type CLI struct {
 	pluginKeys []string
 	// Project version to scaffold.
 	projectVersion config.Version
+	// Project file path to use instead of default PROJECT file.
+	projectFile string
 
 	// A filtered set of plugins that should be used by command constructors.
 	resolvedPlugins []plugin.Plugin
@@ -211,6 +214,12 @@ func (c *CLI) getInfoFromConfigFile() error {
 	// Read the project configuration file
 	cfg := yamlstore.New(c.fs)
 
+	// Determine which project file to use.
+	projectPath := yamlstore.DefaultPath
+	if c.projectFile != "" {
+		projectPath = c.projectFile
+	}
+
 	// Workaround for https://github.com/kubernetes-sigs/kubebuilder/issues/4433
 	//
 	// This allows the `kubebuilder alpha generate` command to work with old projects
@@ -222,12 +231,12 @@ func (c *CLI) getInfoFromConfigFile() error {
 
 	if isAlphaGenerateCommand(os.Args[1:]) {
 		// Patch raw file bytes before unmarshalling
-		if err := patchProjectFileInMemoryIfNeeded(c.fs.FS, yamlstore.DefaultPath); err != nil {
+		if err := patchProjectFileInMemoryIfNeeded(c.fs.FS, projectPath); err != nil {
 			return err
 		}
 	}
 
-	if err := cfg.Load(); err != nil {
+	if err := cfg.LoadFrom(projectPath); err != nil {
 		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
@@ -416,6 +425,13 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 		if err := c.projectVersion.Parse(projectVersionStr); err != nil {
 			return fmt.Errorf("invalid project version flag: %w", err)
 		}
+	}
+
+	// Extract the project-file flag if provided.
+	if projectFile, err := fs.GetString(projectFileFlag); err != nil {
+		return fmt.Errorf("invalid flag %q: %w", projectFileFlag, err)
+	} else if projectFile != "" {
+		c.projectFile = projectFile
 	}
 
 	return nil
