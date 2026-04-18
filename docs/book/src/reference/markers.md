@@ -1,10 +1,10 @@
 # Markers for config/code generation
 
 Kubebuilder makes use of a tool called
-[controller-gen](/reference/controller-gen.md) for
-generating utility code and Kubernetes YAML.  This code and config
-generation is controlled by the presence of special "marker comments" in
-Go code.
+[controller-gen](controller-gen.md) for
+generating utility code and Kubernetes YAML.  The presence of special "marker comments" in
+Go code controls this code and config
+generation.
 
 Markers are single-line comments that start with a plus, followed by
 a marker name, optionally followed by some marker specific configuration:

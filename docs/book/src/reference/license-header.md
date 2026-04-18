@@ -25,7 +25,7 @@ By default, Kubebuilder uses the Apache 2.0 license.
 
 ## How to customize
 
-### Option 1: Use built-in licenses
+### Option 1: use built-in licenses
 
 Use the `--license` flag during initialization or to update an existing project:
 
@@ -42,7 +42,7 @@ Available license values:
 - `copyright` - Copyright notice only (no license text)
 - `none` - No license header
 
-### Option 2: Use a custom license file
+### Option 2: use a custom license file
 
 Provide your own license header from a file. Kubebuilder reads the content from your file and copies it to `hack/boilerplate.go.txt`:
 
@@ -70,7 +70,7 @@ Use this when you need:
 - A specific company license format
 - Custom copyright notices
 
-### Option 3: Edit the file directly
+### Option 3: edit the file directly
 
 After initialization, you can edit `hack/boilerplate.go.txt` directly:
 
@@ -166,7 +166,7 @@ All tools automatically reference `hack/boilerplate.go.txt`. The Makefile is alr
 
 ## Examples
 
-### Example 1: Apache 2.0 License (Default)
+### Example 1: apache 2.0 license (default)
 
 Use the built-in Apache 2.0 license:
 
@@ -194,7 +194,7 @@ limitations under the License.
 */
 ```
 
-### Example 2: Copyright Only
+### Example 2: copyright only
 
 Use the built-in `copyright` license for just a copyright notice:
 
@@ -210,7 +210,7 @@ Copyright YEAR Your Company.
 */
 ```
 
-### Example 3: Custom License (MIT)
+### Example 3: custom license (mit)
 
 For licenses not built-in, create a custom file `mit-header.txt`:
 

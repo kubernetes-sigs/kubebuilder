@@ -26,7 +26,7 @@ An example of this test can be found under the `testdata` directory in the Kubeb
 
 {{#literatego ../cronjob-tutorial/testdata/project/internal/controller/suite_test.go}}
 
-## Testing your Controller's Behavior
+## Testing your controller's behavior
 
 {{#literatego ../cronjob-tutorial/testdata/project/internal/controller/cronjob_controller_test.go}}
 

@@ -1,8 +1,8 @@
-# Kubebuilder Annotation
+# Kubebuilder annotation
 
 If you have been using Kubebuilder, you must have seen comments such as `// +kubebuilder:rbac: ....` , `// +kubebuilder:resource:...` in the scaffolder Go files. These special comments are used by kubebuilder tools (controller tools) to generate CRD, RBAC, and webhook manifests. In kubebuilder, these special comments are `Kubebuilder Annotation`, a.k.a `annotation`. It is designed for this kind of use case: To use kubebuilder tools, all you have to do is focus on writing your code, and put instructions with parameters as annotations along with your code, so that everything will be handled based on these annotations instructions by kubebuilder. This document illustrates the syntax of these annotations.
 
-## Kubebuilder Annotation Syntax
+## Kubebuilder annotation syntax
 
 Kubebuilder Annotation has a series of tokens separated by colons into groups from left to right. Each **Token** is a string identifier in an annotation instance. It has meaning by its position in a token slice, in the form of
 **+[header]:[module]:[submodule]:[key-value elements]**
@@ -60,7 +60,7 @@ Delimiter symbols are distinguished to work in different levels from top-down fo
 2. For each submodule, all key values should put in the same comment line.
 3. using `|` for splitting key value of `lables`
 
-#### RBAC Annotation examples
+#### RBAC annotation examples
 
 **[header]** is `kubebuilder`
 **[module]** is `rbac`

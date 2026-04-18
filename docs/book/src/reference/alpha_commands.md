@@ -1,4 +1,4 @@
-# Alpha Commands
+# Alpha commands
 
 Kubebuilder provides experimental **alpha commands** to assist with advanced operations such as
 project migration and scaffold regeneration.

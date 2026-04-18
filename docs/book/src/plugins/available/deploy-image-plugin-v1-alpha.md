@@ -1,8 +1,8 @@
-# Deploy Image Plugin (deploy-image/v1-alpha)
+# Deploy image plugin (deploy-image/v1-alpha)
 
 The `deploy-image` plugin allows users to create [controllers][controller-runtime] and custom resources that deploy and manage container images on the cluster, following Kubernetes best practices. It simplifies the complexities of deploying images while allowing users to customize their projects as needed.
 
-By using this plugin, you will get:
+By using this plugin, you get:
 
 - A controller implementation to deploy and manage an Operand (image) on the cluster.
 - Tests to verify the reconciliation logic, using [ENVTEST][envtest].

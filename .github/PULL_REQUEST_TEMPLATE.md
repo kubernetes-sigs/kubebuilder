@@ -11,7 +11,7 @@ Both the description and motivation may reference other issues and PRs,
 but should be mostly understandable without following the links (e.g. when
 reading the git commit log).
 
-Please don't @-mention people in PR or commit messages (do so in an
+Please do not @-mention people in PR or commit messages (do so in an
 additional comment).
 
 please add an icon to the title of this PR depending on the type:

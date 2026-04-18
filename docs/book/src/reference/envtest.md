@@ -50,7 +50,7 @@ make envtest
 ```
 
 The `setup-envtest` tool stores binaries in OS-specific locations. See [binary storage locations](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries) for details.
-```sh
+```bash
 ./bin/setup-envtest use 1.31.0
 ```
 
@@ -64,7 +64,7 @@ test: manifests generate fmt vet
 ```
 
 NOTE: The `ENVTEST_K8S_VERSION` needs to match the `setup-envtest` you downloaded above. Otherwise, you will see an error like the below
-```sh
+```bash
 no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what is on disk
 ```
 

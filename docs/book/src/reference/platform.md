@@ -14,7 +14,7 @@ on any Kubernetes cluster regardless of the underlying operating system and arch
 
 The following covers what you need to do to provide the support for one or more platforms or architectures.
 
-### 1) Build workload images to provide the support for other platform(s)
+### 1) build workload images to provide the support for other platform(s)
 
 The images used in workloads such as in your Pods/Deployments need to provide the support for this other platform.
 You can inspect the images using a ManifestList of supported platforms using the command
@@ -66,7 +66,7 @@ $ docker manifest inspect myregistry/example/myimage:v0.0.1
 }
 ```
 
-### 2) (Recommended as a Best Practice) Set node affinity expressions to match the supported platforms
+### 2) (recommended as a best practice) set node affinity expressions to match the supported platforms
 
 Kubernetes provides a mechanism called [nodeAffinity][node-affinity] which can be used to limit the possible node
 targets where a pod can be scheduled. This is especially important to ensure correct scheduling behavior in clusters

@@ -36,7 +36,7 @@ See [AI Migration Helpers](./ai-helpers.md) for AI instructions that automate bo
 </aside>
 
 
-## Phase 1: Reorganize to New Layout (Required only for Legacy Layouts)
+## Phase 1: reorganize to new layout (required only for legacy layouts)
 
 **Only needed if ANY of these are true:**
 - Controllers are NOT in `internal/controller/`
@@ -45,13 +45,13 @@ See [AI Migration Helpers](./ai-helpers.md) for AI instructions that automate bo
 
 **Skip this phase if** your project already uses `internal/controller/`, `internal/webhook/`, and `cmd/main.go`.
 
-### 1.1 Create a reorganization branch
+### 1.1 create a reorganization branch
 
 ```bash
 git checkout -b reorganize
 ```
 
-### 1.2 Reorganize file locations
+### 1.2 reorganize file locations
 
 <aside class="note" role="note">
 
@@ -69,7 +69,7 @@ mkdir -p internal/controller
 mv controllers/* internal/controller/
 rmdir controllers
 
-# OR if you have pkg/controllers/ directory
+# Or if you have pkg/controllers/ directory
 mkdir -p internal/controller
 mv pkg/controllers/* internal/controller/
 
@@ -82,7 +82,7 @@ mkdir -p cmd
 mv main.go cmd/
 ```
 
-### 1.3 Update package declarations
+### 1.3 update package declarations
 
 After moving files, update package declarations:
 
@@ -90,7 +90,7 @@ After moving files, update package declarations:
 
 **Webhooks:** Keep version as package name (e.g., `package v1` stays `package v1` in `internal/webhook/v1/`).
 
-### 1.4 Update import paths
+### 1.4 update import paths
 
 Find and update all imports:
 
@@ -102,11 +102,11 @@ In each file found, update:
 - Imports: `<module>/controllers` or `<module>/pkg/controllers` → `<module>/internal/controller`
 - References: `controllers.TypeName` → `controller.TypeName`
 
-### 1.5 Update Dockerfile (if needed)
+### 1.5 update Dockerfile (if needed)
 
 If your Dockerfile has explicit COPY statements for moved paths, update them to reflect the new structure, or simplify to `COPY . .` and use `.dockerignore` to exclude unnecessary files.
 
-### 1.6 Verify and commit
+### 1.6 verify and commit
 
 Build and test the reorganized project:
 
@@ -117,11 +117,11 @@ make build && make test
 
 If successful, commit the layout changes. Your project now uses the new layout. Proceed to Phase 2.
 
-## Phase 2: Migrate to Latest Version
+## Phase 2: migrate to latest version
 
-### Step 1: Prepare Your Current Project
+### Step 1: prepare your current project
 
-### 1.1 Create a migration branch
+### 1.1 create a migration branch
 
 Create a branch from your current codebase:
 
@@ -129,14 +129,14 @@ Create a branch from your current codebase:
 git checkout -b migration
 ```
 
-### 1.2 Create a backup
+### 1.2 create a backup
 
 ```bash
 mkdir ../migration-backup
 cp -r . ../migration-backup/
 ```
 
-### 1.3 Clean your project directory
+### 1.3 clean your project directory
 
 Remove all files except `.git`:
 
@@ -144,13 +144,13 @@ Remove all files except `.git`:
 find . -not -path './.git*' -not -name '.' -not -name '..' -delete
 ```
 
-## Step 2: Initialize the New Project
+## Step 2: initialize the new project
 
 **About the PROJECT file:** From v3.0.0+, the `PROJECT` file tracks all scaffolding metadata. If you have one and used CLI for all resources, try `kubebuilder alpha generate` first. Otherwise, follow the manual steps below to identify and re-scaffold all resources.
 
-### 2.1 Identify your module and domain
+### 2.1 identify your module and domain
 
-Identify the information you'll need for initialization from your backup.
+Identify the information you need for initialization from your backup.
 
 <aside class="note" role="note">
 
@@ -188,7 +188,7 @@ If you do not have a `PROJECT` file (versions < `v3.0.0`),
 check your CRD files under `config/crd/bases/` or examine the API group names.
 The domain is the part after the group name in your API groups.
 
-### 2.2 Initialize the Go module
+### 2.2 initialize the Go module
 
 Initialize a new Go module using the same module path from your original project:
 
@@ -198,7 +198,7 @@ go mod init tutorial.kubebuilder.io/migration-project
 
 Replace `tutorial.kubebuilder.io/migration-project` with your actual module path.
 
-### 2.3 Initialize Kubebuilder project
+### 2.3 initialize Kubebuilder project
 
 Initialize the project with Kubebuilder:
 
@@ -216,7 +216,7 @@ Replace with your actual domain and repository (module path).
 
 </aside>
 
-### 2.4 Enable multi-group support (if needed)
+### 2.4 enable multi-group support (if needed)
 
 Multi-group projects organize APIs into different groups, with each group in its own directory.
 This is useful when you have APIs for different purposes or domains.
@@ -250,11 +250,11 @@ This must be done before creating any APIs to ensure they are scaffolded in the 
 
 When following this guide, you will get the new layout automatically since you are creating a fresh project with the latest version and porting your code into it.
 
-## Step 3: Re-scaffold APIs and Controllers
+## Step 3: re-scaffold APIs and controllers
 
 For each API resource in your original project, re-scaffold them in the new project.
 
-### 3.1 Identify all your APIs
+### 3.1 identify all your APIs
 
 Review your backup project (`../migration-backup/`) to identify all APIs. **It's recommended to check the backup directory
 regardless of whether you have a `PROJECT` file**, as not all resources may have been created using the CLI.
@@ -286,11 +286,11 @@ resources:
 <p class="note-title">Tip</p>
 
 Make a list of all APIs with their group, version, kind, and whether they have a controller.
-This will help you systematically re-scaffold everything.
+This helps you systematically re-scaffold everything.
 
 </aside>
 
-### 3.2 Create each API and Controller
+### 3.2 create each API and controller
 
 For each API identified in step 3.1, re-scaffold it:
 
@@ -348,7 +348,7 @@ make manifests
 make generate
 ```
 
-### 3.3 Re-scaffold webhooks (if applicable)
+### 3.3 re-scaffold webhooks (if applicable)
 
 If your original project has webhooks, you need to re-scaffold them.
 
@@ -384,7 +384,7 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 - `--programmatic-validation` - creates a validation webhook (validates create/update/delete operations)
 - `--conversion` - creates a conversion webhook (for multi-version APIs, see next section)
 
-### 3.4 Re-scaffold conversion webhooks (if applicable)
+### 3.4 re-scaffold conversion webhooks (if applicable)
 
 If your project has multi-version APIs with conversion webhooks, you need to set up the hub-spoke conversion pattern.
 
@@ -458,7 +458,7 @@ After scaffolding all webhooks, verify everything compiles:
 make manifests && make build
 ```
 
-## Step 4: Port Your Custom Code
+## Step 4: port your custom code
 
 <aside class="note" role="note">
 
@@ -480,7 +480,7 @@ Most modern IDEs support directory-level comparison which makes this process muc
 
 </aside>
 
-### 4.1 Port API definitions
+### 4.1 port API definitions
 
 Compare and merge your custom API fields and markers from your backup project.
 
@@ -515,7 +515,7 @@ make generate   # Generate DeepCopy methods
 
 This ensures your API types and CRD manifests are properly generated before moving forward.
 
-### 4.2 Port controller logic
+### 4.2 port controller logic
 
 **Files to compare:**
 
@@ -541,7 +541,7 @@ make manifests
 make build
 ```
 
-### 4.3 Port webhook implementations
+### 4.3 port webhook implementations
 
 Webhooks have changed location between Kubebuilder versions. Be aware of the path differences:
 
@@ -585,7 +585,7 @@ make manifests
 make build
 ```
 
-### 4.4 Port main.go customizations (if any)
+### 4.4 port main.go customizations (if any)
 
 **File:** `cmd/main.go`
 
@@ -595,7 +595,7 @@ Most projects do not need to customize `main.go` as Kubebuilder handles all the 
 Only port customizations that are not part of the standard scaffold. Compare your backup `main.go` with the
 new scaffolded one to identify any custom logic you added.
 
-### 4.5 Configure Kustomize manifests
+### 4.5 configure Kustomize manifests
 
 The `config/` directory contains Kustomize manifests for deploying your operator. Compare with your backup to ensure all configurations are properly set up.
 
@@ -628,7 +628,7 @@ make all
 make build-installer
 ```
 
-### 4.6 Port additional customizations
+### 4.6 port additional customizations
 
 Port any additional packages, dependencies, and customizations from your backup:
 
@@ -660,7 +660,7 @@ After porting all customizations, verify everything builds:
 make all
 ```
 
-## Step 5: Test and Verify
+## Step 5: test and verify
 
 Compare against the backup to ensure all customizations were correctly ported, such as:
 

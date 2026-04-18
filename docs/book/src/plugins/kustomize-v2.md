@@ -1,4 +1,4 @@
-# [Default Scaffold] Kustomize v2
+# [default scaffold] Kustomize v2
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v4`.
 This plugin is used to generate the manifest under `config/` directory for the projects build within the go/v4 plugin (default scaffold).
@@ -53,7 +53,7 @@ import (
 
 Also, with Kubebuilder, you can use kustomize/v2 alone via:
 
-```sh
+```bash
 kubebuilder init --plugins=kustomize/v2
 $ ls -la
 total 24
@@ -67,7 +67,7 @@ drwx------   6 camilamacedo86  staff  192 31 Mar 09:56 config
 
 Or combined with the base language plugins:
 
-```sh
+```bash
 # Provides the same scaffold of go/v4 plugin which is composition but with kustomize/v2
 kubebuilder init --plugins=kustomize/v2,base.go.kubebuilder.io/v4 --domain example.org --repo example.org/guestbook-operator
 ```

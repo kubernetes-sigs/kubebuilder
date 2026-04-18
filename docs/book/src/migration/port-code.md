@@ -1,4 +1,4 @@
-# Step 3: Port Custom Code
+# Step 3: port custom code
 
 After reorganizing your project (Step 1) and executing scaffolding commands from discovery (Step 2), use AI to port your custom code to the new project.
 
@@ -30,7 +30,7 @@ Before using these AI instructions:
 
 </aside>
 
-## Instructions to provide to your AI assistant
+## Instructions to provide to your ai assistant
 
 Copy and paste these instructions to your AI assistant:
 
@@ -256,7 +256,7 @@ IMPORTANT REMINDERS:
 - Follow make command sequence from CONTEXT above
 ```
 
-## What AI will do
+## What ai will do
 
 The AI will:
 
@@ -271,7 +271,7 @@ The AI will:
 9. **Port additional files** - README, docs/, scripts/, .github/, any custom directories
 10. **Verify completely** - Run lint-fix, generate, manifests, build, test
 
-## After AI completes
+## After ai completes
 
 **Critical: Review carefully!**
 
@@ -291,9 +291,9 @@ AI can make mistakes. You are responsible for ensuring correctness.
 
 </aside>
 
-## Example: What Gets Ported
+## Example: what gets ported
 
-### API Custom Fields
+### API custom fields
 
 **From backup** (`api/v1/captain_types.go`):
 ```go

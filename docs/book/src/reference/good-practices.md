@@ -32,7 +32,7 @@ Lastly, embracing these standards future-proofs your native solutions. By aligni
 
 In summary, by adhering to the Kubernetes API conventions and standards, you unlock the potential for seamless integration, simplified maintenance, optimal performance, and future-readiness, all contributing to the success of your applications and deployments.
 
-## Why should one avoid a system design where a single controller is responsible for managing multiple CRDs (Custom Resource Definitions)(for example, an _'install_all_controller.go'_)?
+## Why should one avoid a system design where a single controller is responsible for managing multiple CRDs (custom resource definitions)(for example, an _'install_all_controller.go'_)?
 
 Avoid a design solution where the same controller reconciles more than one Kind. Having many Kinds (such as CRDs), that are all managed by the same controller, usually goes against the design proposed by controller-runtime. Furthermore, this might hurt concepts such as encapsulation, the Single Responsibility Principle, and Cohesion. Damaging these concepts may cause unexpected side effects and increase the difficulty of extending, reusing, or maintaining the operator.
 Having one controller manage many Custom Resources (CRs) in an Operator can lead to several issues:
@@ -43,7 +43,7 @@ Having one controller manage many Custom Resources (CRs) in an Operator can lead
 - **Error Isolation**: If one controller manages multiple CRs and an error occurs, it could potentially impact all the CRs it manages. Having a single controller per CR ensures that an issue with one controller or CR does not directly affect others.
 - **Concurrency and Synchronization**: A single controller managing multiple CRs could lead to race conditions and require complex synchronization, especially if the CRs have interdependencies.
 
-In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It is generally better to adhere to the single responsibility principle, where each CR is managed by its own controller.
+In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It is generally better to adhere to the single responsibility principle, where its own controller manages each CR.
 
 ## Why you should adopt status conditions
 

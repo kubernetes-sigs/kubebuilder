@@ -1,10 +1,10 @@
-# CRD Validation
+# CRD validation
 
 These markers modify how the CRD validation schema is produced for the
 types and fields they modify.  Each corresponds roughly to an OpenAPI/JSON
 schema option.
 
-See [Generating CRDs](/reference/generating-crd.md) for examples.
+See [Generating CRDs](../generating-crd.md) for examples.
 
 <aside class="note" role="note">
 <p class="note-title">Understanding Marker Grouping in Documentation</p>

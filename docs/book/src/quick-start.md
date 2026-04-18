@@ -1,6 +1,6 @@
 # Quick start
 
-This Quick Start guide will cover:
+This Quick Start guide covers:
 
 - [Creating a project](#create-a-project)
 - [Creating an API](#create-an-api)
@@ -26,7 +26,7 @@ Please, ensure that you see the [guidance](./versions_compatibility_supportabili
 Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
-# download kubebuilder and install locally.
+# Download kubebuilder and install locally.
 curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
 chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
 ```
@@ -83,7 +83,7 @@ and the `internal/controller/guestbook_controller.go` where you implement the re
 </aside>
 
 **OPTIONAL:** Edit the API definition and the reconciliation business
-logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
+logic. For more info see [Designing an API](cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
 If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Definitions (CRDs) using
@@ -92,7 +92,7 @@ If you are editing the API definitions, generate the manifests such as Custom Re
 make manifests
 ```
 
-<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
+<details><summary>Guestbook API example <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go
@@ -156,14 +156,14 @@ to inject code into existing files and simplify common tasks. See `cmd/main.go` 
 
 ## Test it out
 
-You'll need a Kubernetes cluster to run against. You can use
+You need a Kubernetes cluster to run against. You can use
 [KinD][kind] to get a local cluster for testing, or
 run against a remote cluster.
 
 <aside class="note" role="note">
 <p class="note-title">Context Used</p>
 
-Your controller will automatically use the current context in your
+Your controller automatically uses the current context in your
 kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 </aside>

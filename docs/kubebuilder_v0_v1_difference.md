@@ -29,12 +29,12 @@ Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different va
   make run
 ```
 
-  In a v1 project, there is no generate command. When the resource or controller is updated, users don't need to regenerate the project.
+  In a v1 project, there is no generate command. When the resource or controller is updated, users do not need to regenerate the project.
 
 ## Scaffolding difference
 
-- v0 project contains a directory `pkg/client` while v1 project doesn't
-- v0 project contains a directory `inject` while v1 project doesn't
+- v0 project contains a directory `pkg/client` while v1 project does not
+- v0 project contains a directory `inject` while v1 project does not
 - v0 project layout follows predefined directory layout `pkg/apis` and `pkg/controller` while v1 project accepts user-specified path
 - In v1 project, there is a `init()` function for every api and controller.
 
@@ -53,4 +53,4 @@ Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different va
 ## Wiring difference
 Wiring refers to the mechanics of integrating controllers into controller-managers and injecting the dependencies in them.
   - v0 projects have an `inject` package and it provides functions for adding the controller to controller-manager as well as registering CRDs.
-  - v1 projects don't have a `inject` package, the controller is added to controller-manager by a `init` function inside add_<type>.go file inside the controller directory. The types are registered by an `init` function inside <type>_types.go file inside the apis directory.
+  - v1 projects do not have a `inject` package, the controller is added to controller-manager by a `init` function inside add_<type>.go file inside the controller directory. The types are registered by an `init` function inside <type>_types.go file inside the apis directory.

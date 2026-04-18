@@ -85,12 +85,12 @@ pods, err := bc.KubernetesInformers.Core().V1().Pods().Lister().Pods(mc.Namespac
 pods := &v1.PodList{}
 err = r.Client.List(context.TODO(), &client.ListOptions{LabelSelector: labelSelector}, pods)
 ```
-- add library imports used in the v0 project to v1 project such as log, fmt or k8s libraries. Note that libraries from kubebuilder or from the old project's client package shouldn't be added.
+- add library imports used in the v0 project to v1 project such as log, fmt or k8s libraries. Note that libraries from kubebuilder or from the old project's client package should not be added.
 
 
 ### update add function
 
-In a v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 projects, the corresponding function is `add`. For this part, you don't need to copy any code from the v0 project to v1 project. You need to add some watchers in the v1 project's `add` function based on what `watch` functions are called in the v0 project's `ProvideController` function.
+In a v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 projects, the corresponding function is `add`. For this part, you do not need to copy any code from the v0 project to v1 project. You need to add some watchers in the v1 project's `add` function based on what `watch` functions are called in the v0 project's `ProvideController` function.
 
 Here are several examples:
 

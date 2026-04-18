@@ -20,13 +20,13 @@ Plugins offer several key advantages:
 
 **For example, to initialize a project with multiple global plugins:**
 
-```sh
+```bash
 kubebuilder init --plugins=pluginA,pluginB,pluginC
 ```
 
 **For example, to apply custom scaffolding using specific plugins:**
 
-```sh
+```bash
 kubebuilder create api --plugins=pluginA,pluginB,pluginC
 OR
 kubebuilder create webhook --plugins=pluginA,pluginB,pluginC

@@ -29,7 +29,7 @@ First, implement the hub.  Choose the v1 version as the hub:
 
 {{#literatego ./testdata/project/api/v1/cronjob_conversion.go}}
 
-## ... and Spokes
+## ... and spokes
 
 Then, implement the spoke, the v2 version:
 

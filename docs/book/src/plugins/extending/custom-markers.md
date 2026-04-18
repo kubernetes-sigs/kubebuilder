@@ -4,7 +4,7 @@
 
 When using Kubebuilder as a library, you may need to scaffold files with extensions that are not natively supported by Kubebuilder's marker system. This guide shows you how to create custom marker support for any file extension.
 
-## When to Use Custom Markers
+## When to use custom markers
 
 Custom markers are useful when:
 
@@ -85,7 +85,7 @@ The `formatPrefix` implementation shown above is adapted from Kubebuilder's inte
 
 </aside>
 
-### Use in Template Generation
+### Use in template generation
 
 ```go
 package templates
@@ -126,7 +126,7 @@ edition = "2021"
 }
 ```
 
-### Integrate with External Plugin
+### Integrate with external plugin
 
 ```go
 package main
@@ -227,7 +227,7 @@ func returnError(err error) {
 }
 ```
 
-## Adapting for Other Languages
+## Adapting for other languages
 
 To support other file extensions, modify the marker implementation by changing:
 

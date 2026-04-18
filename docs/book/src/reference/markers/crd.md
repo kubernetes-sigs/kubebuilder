@@ -1,4 +1,4 @@
-# CRD Generation
+# CRD generation
 
 These markers describe how to construct a custom resource definition from
 a series of Go types and packages.  Generation of the actual validation

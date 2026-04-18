@@ -1,4 +1,4 @@
-# Update Your Project with (`alpha update`)
+# Update your project with (`alpha update`)
 
 ## Overview
 
@@ -37,19 +37,19 @@ It rebuilds both scaffolds, merges your code into the new one with a **3-way mer
 and gives you an output branch you can review and merge safely.
 You decide if you want one clean commit, the full history, or an auto-push to remote.
 
-### Step 1: Detect versions
+### Step 1: detect versions
 - It looks at your `PROJECT` file or the flags you pass.
 - Decides which **old version** you are coming from by reading the `cliVersion` field in the `PROJECT` file (if available).
 - Figures out which **new version** you want (defaults to the latest release).
 - Chooses which branch has your current code (defaults to `main`).
 
-### Step 2: Create scaffolds
+### Step 2: create scaffolds
 The command creates three temporary branches:
 - **Ancestor**: a clean project scaffold from the **old version**.
 - **Original**: a snapshot of your **current code**.
 - **Upgrade**: a clean scaffold from the **new version**.
 
-### Step 3: Do a 3-way merge
+### Step 3: do a 3-way merge
 - Merges **Original** (your code) into **Upgrade** (the new scaffold) using Git’s **3-way merge**.
 - This keeps your customizations while pulling in upstream changes.
 - If conflicts happen:
@@ -57,7 +57,7 @@ The command creates three temporary branches:
     - **With `--force`** → continue and commit even with conflict markers. **(ideal for automation)**
 - Runs `make manifests generate fmt vet lint-fix` to tidy things up.
 
-### Step 4: Write the output branch
+### Step 4: write the output branch
 - By default, everything is **squashed into one commit** on a safe output branch:
   `kubebuilder-update-from-<from-version>-to-<to-version>`.
 - You can change the behavior:
@@ -71,7 +71,7 @@ The command creates three temporary branches:
     - `--open-gh-issue`: create a GitHub issue with a checklist and compare link (requires `gh`).
     - `--use-gh-models`: add an AI overview **comment** to that issue using `gh models`
 
-### Step 5: Cleanup
+### Step 5: cleanup
 - Once the output branch is ready, all the temporary working branches are deleted.
 - You are left with one clean branch you can test, review, and merge back into your main branch.
 
@@ -134,7 +134,7 @@ kubebuilder alpha update --force \
 ## Handling conflicts (`--force` vs default)
 
 When you use `--force`, Git finishes the merge even if there are conflicts.
-The commit will include markers like:
+The commit includes markers like:
 
 ```shell
 <<<<<<< HEAD
@@ -153,11 +153,11 @@ After you fix conflicts, always run:
 
 ```shell
 make manifests generate fmt vet lint-fix
-# or
+# Or
 make all
 ```
 
-## Using with GitHub Issues (`--open-gh-issue`) and AI (`--use-gh-models`) assistance
+## Using with GitHub issues (`--open-gh-issue`) and ai (`--use-gh-models`) assistance
 
 Pass `--open-gh-issue` to have the command create a GitHub **Issue** in your repository
 to assist with the update. Also, if you also pass `--use-gh-models`, the tool posts a follow-up comment
@@ -193,7 +193,7 @@ and to suggest resolutions if conflicts are encountered, as in the following exa
 
 This integrates cleanly with automation. The [`autoupdate.kubebuilder.io/v1-alpha`][autoupdate-plugin] plugin can scaffold a GitHub Actions workflow that runs the command on a schedule (e.g., weekly). When a new Kubebuilder release is available, it opens an Issue with a compare link so you can create the PR and review it.
 
-## Changing extra Git configs only during the run (does not change your ~/.gitconfig)
+## Changing extra git configs only during the run (does not change your ~/.gitconfig)
 
 By default, `kubebuilder alpha update` applies safe Git configs:
 `merge.renameLimit=999999`, `diff.renameLimit=999999`, `merge.conflictStyle=merge`

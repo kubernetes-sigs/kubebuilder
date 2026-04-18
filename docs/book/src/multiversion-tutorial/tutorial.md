@@ -1,4 +1,4 @@
-# Tutorial: Multi-Version API
+# Tutorial: multi-version API
 
 Most projects start out with an alpha API that changes release to release.
 However, eventually, most projects needs to move to a more stable API.
@@ -9,7 +9,7 @@ Make some changes to the `CronJob` API spec and make sure all the
 different versions are supported by the CronJob project.
 
 If you have not already, make sure you have gone through the base [CronJob
-Tutorial](/cronjob-tutorial/cronjob-tutorial.md).
+Tutorial](../cronjob-tutorial/cronjob-tutorial.md).
 
 <aside class="note" role="note">
 

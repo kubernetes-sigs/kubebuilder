@@ -25,7 +25,7 @@ Instead, we've enhanced Kubebuilder as a library, enabling any project to create
 This approach delegates maintenance to those with the deepest understanding of their projects, fostering higher
 quality and community contributions.
 
-We're here to support you in developing your own Kubebuilder plugins.
+We are here to support you in developing your own Kubebuilder plugins.
 For guidance on [Creating Your own plugins](https://kubebuilder.io/plugins/creating-plugins).
 
 This strategy empowers our users and contributors to innovate,

@@ -1,11 +1,11 @@
 Contributing Roles
 ==================
 
-## Direct Code-Related Roles
+## Direct code-related roles
 
 While anyone (who's signed the [CLA and follows the code of
 conduct](../CONTRIBUTING.md)) is welcome to contribute to the Kubebuilder
-project, we've got two "formal" roles that carry additional privileges and
+project, we have got two "formal" roles that carry additional privileges and
 responsibilities: *reviewer* and *approver*.
 
 In a nutshell, reviewers and approvers are officially recognized to make
@@ -16,11 +16,11 @@ slightly looser requirements.
 
 As much as possible, we want people to help take on responsibility for the
 project -- these guidelines are attempts to make it *easier* for this to
-happen, *not harder*.  If you've got any questions, just reach out on
+happen, *not harder*.  If you have got any questions, just reach out on
 Slack to one of the [subproject leads][kb-leads] (called
 kubebuilder-admins in the `OWNERS_ALIASES` file).
 
-## Prerequisite: Member
+## Prerequisite: member
 
 Anyone who wants to become a reviewer or approver must first be a [member
 of the Kubernetes project][kube-member].  The aforementioned doc has more
@@ -28,14 +28,14 @@ details, but the gist is that you must have made a couple of contributions to
 some part of the Kubernetes project -- *this includes Kubebuilder and
 related repos*.  Then, you need two existing members to sponsor you.
 
-**If you've contributed a few times to Kubebuilder, we'll be happy to
+**If you have contributed a few times to Kubebuilder, we will be happy to
 sponsor you, just ping us on Slack :-)**
 
 ## Reviewers
 
 Reviewers are recognized as able to provide code reviews for parts of the
 codebase and are entered into the `reviewers` section of one or more
-`OWNERS` files.  You'll get auto-assigned reviews for your area of the
+`OWNERS` files.  You will get auto-assigned reviews for your area of the
 codebase and are generally expected to review for correctness,
 testing, general code organization, etc.  Reviewers may review for design
 as well, but approvers have the final say on that.
@@ -52,7 +52,7 @@ Things to look for:
 Reviewers' `/lgtm` marks are generally trusted by approvers to means that
 the code is ready for one last look-over before merging.
 
-### Becoming a Reviewer
+### Becoming a reviewer
 
 The criteria for becoming a reviewer are:
 
@@ -60,8 +60,8 @@ The criteria for becoming a reviewer are:
 - Contribute or review 3-5 PRs substantially (i.e. take on the role of the
   defacto "main" reviewer for the PR, contribute a bugfix or feature, etc)
 
-Usually, this will need to occur within a single repository, but if you've
-worked on a cross-cutting feature, it's ok to count PRs across
+Usually, this need to occur within a single repository, but if you have
+worked on a cross-cutting feature, it is ok to count PRs across
 repositories.
 
 Once you meet those criteria, submit yourself as a reviewer in the
@@ -91,7 +91,7 @@ consensus**.  With the power to approve such changes comes the
 responsibility of ensuring that the project as a whole has time to discuss
 them.
 
-### Becoming an Approver
+### Becoming an approver
 
 All approvers need to start as reviewers.  The criteria for becoming
 an approver is:
@@ -101,16 +101,16 @@ an approver is:
   features, etc) PRs where approvers did not need to leave substantial
   additional comments (i.e. where you were acting as a defacto approver).
 
-Once you've met those criteria, you can submit yourself as an approver
+Once you have met those criteria, you can submit yourself as an approver
 using a PR that edits the relevant `OWNERS` files appropriately.  The
 existing approvers will then approve the change with lazy consensus.  If
 you feel more comfortable asking before submitting the PR, feel free to
 ping one of the [subproject leads][kb-leads] (called kubebuilder-admins in
 the `OWNERS_ALIASES` file) on Slack.
 
-## Indirectly Code-Related/Non-Code Roles
+## Indirectly code-related/non-code roles
 
-We're always looking for help with other areas of the project as well, such
+We are always looking for help with other areas of the project as well, such
 as:
 
 ### Docs

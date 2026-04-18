@@ -1,4 +1,4 @@
-# Tutorial: Building CronJob
+# Tutorial: building CronJob
 
 Too many tutorials start out with some really contrived setup, or some toy
 application that gets the basics across, and then stalls out on the more
@@ -40,11 +40,11 @@ Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 
 ```bash
-# create a project directory, and then run the init command.
+# Create a project directory, and then run the init command.
 mkdir project
 cd project
 # This example uses a domain of tutorial.kubebuilder.io,
-# so all API groups is <group>.tutorial.kubebuilder.io.
+# So all API groups is <group>.tutorial.kubebuilder.io.
 kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
 

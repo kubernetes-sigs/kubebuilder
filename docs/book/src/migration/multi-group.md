@@ -27,19 +27,19 @@ This migration involves repetitive file moving and import path updates. If you a
 
 </aside>
 
-## Understanding the Layouts
+## Understanding the layouts
 
 Here's what changes when you go from single-group to multi-group:
 
 **Single-group layout (default):**
-```text
+```
 api/<version>/*_types.go                  All your CRD schemas in one place
 internal/controller/*                     All your controllers together
 internal/webhook/<version>/*              Webhooks organized by version (if you have any)
 ```
 
 **Multi-group layout:**
-```text
+```
 api/<group>/<version>/*_types.go          CRD schemas organized by group
 internal/controller/<group>/*             Controllers organized by group
 internal/webhook/<group>/<version>/*      Webhooks organized by group and version (if you have any)
@@ -56,7 +56,7 @@ The following steps migrate the [CronJob example][cronjob-tutorial] from single-
 
 If you are starting a **new project** and already know you want multigroup layout, you can use the `--multigroup` flag during initialization:
 
-```bash
+```
 kubebuilder init --domain example.org --multigroup
 ```
 
@@ -64,11 +64,11 @@ This guide is for **existing projects** that need to be migrated from single-gro
 
 </aside>
 
-### Step 1: Enable multi-group mode
+### Step 1: enable multi-group mode
 
 First, tell Kubebuilder you want to use multi-group layout:
 
-```bash
+```
 kubebuilder edit --multigroup=true
 ```
 
@@ -81,7 +81,7 @@ This command updates your `PROJECT` file by adding `multigroup: true`. After thi
 
 The command adds or updates this line in your PROJECT file:
 
-```yaml
+```
 multigroup: true
 ```
 
@@ -89,48 +89,48 @@ This setting tells Kubebuilder to use group-based directories for all future sca
 
 </aside>
 
-### Step 2: Identify your group name
+### Step 2: identify your group name
 
 Check `api/v1/groupversion_info.go` to find your group name:
 
-```go
+```
 // +groupName=batch.tutorial.kubebuilder.io
 package v1
 ```
 
 The group name is the first part before the dot (`batch` in this example).
 
-### Step 3: Move your APIs
+### Step 3: move your APIs
 
 Create a directory for your group and move your version directories:
 
-```bash
+```
 mkdir -p api/batch
 mv api/v1 api/batch/
 ```
 
 If you have multiple versions (like `v1`, `v2`, etc.), move them all:
 
-```bash
+```
 mv api/v2 api/batch/
 ```
 
-### Step 4: Move your controllers
+### Step 4: move your controllers
 
 Create a group directory and move all controller files:
 
-```bash
+```
 mkdir -p internal/controller/batch
 mv internal/controller/*.go internal/controller/batch/
 ```
 
 This will move all your controller files, including `suite_test.go`, into the group directory. Each group needs its own test suite.
 
-### Step 5: Move your webhooks (if you have any)
+### Step 5: move your webhooks (if you have any)
 
 If your project has webhooks (check for an `internal/webhook/` directory), add the group directory:
 
-```bash
+```
 mkdir -p internal/webhook/batch
 mv internal/webhook/v1 internal/webhook/batch/
 mv internal/webhook/v2 internal/webhook/batch/  # if v2 exists
@@ -138,12 +138,12 @@ mv internal/webhook/v2 internal/webhook/batch/  # if v2 exists
 
 If you do not have webhooks, skip this step.
 
-### Step 6: Update import paths
+### Step 6: update import paths
 
 Update all import statements to point to the new locations.
 
 **What used to look like this:**
-```go
+```
 import (
     batchv1 "tutorial.kubebuilder.io/project/api/v1"
     "tutorial.kubebuilder.io/project/internal/controller"
@@ -151,7 +151,7 @@ import (
 ```
 
 **Should now look like this:**
-```go
+```
 import (
     batchv1 "tutorial.kubebuilder.io/project/api/batch/v1"
     batchcontroller "tutorial.kubebuilder.io/project/internal/controller/batch"
@@ -159,7 +159,7 @@ import (
 ```
 
 **If you have webhooks, you'll also need to update those imports:**
-```go
+```
 // Before
 webhookv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
 
@@ -175,7 +175,7 @@ Files to check and update:
 
 Tip: Use your IDE's "Find and Replace" feature across the project.
 
-### Step 7: Update the PROJECT file
+### Step 7: update the project file
 
 The `kubebuilder edit --multigroup=true` command sets `multigroup: true` in your PROJECT file but does not update paths for existing APIs. You need to manually update the `path` field for each resource.
 
@@ -183,7 +183,7 @@ The `kubebuilder edit --multigroup=true` command sets `multigroup: true` in your
 
 1. **Check that `multigroup: true` is set** (at the top level):
 
-```yaml
+```
 layout:
 - go.kubebuilder.io/v4
 multigroup: true  # Must be true
@@ -193,7 +193,7 @@ projectName: project
 2. **Update the `path` field for each resource**:
 
 **Before:**
-```yaml
+```
 resources:
 - api:
     crdVersion: v1
@@ -206,7 +206,7 @@ resources:
 ```
 
 **After:**
-```yaml
+```
 resources:
 - api:
     crdVersion: v1
@@ -220,21 +220,21 @@ resources:
 
 Repeat this for **all resources** in your PROJECT file.
 
-### Step 8: Update test suite CRD paths
+### Step 8: update test suite CRD paths
 
 Update the CRD directory path in test suites. Since files moved one level deeper, add one more `".."` to the path.
 
 **In `internal/controller/batch/suite_test.go`:**
 
 **Before (was at `internal/controller/suite_test.go`):**
-```go
+```
 testEnv = &envtest.Environment{
     CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 }
 ```
 
 **After (now at `internal/controller/batch/suite_test.go`):**
-```go
+```
 testEnv = &envtest.Environment{
     CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 }
@@ -243,31 +243,31 @@ testEnv = &envtest.Environment{
 **If you have webhooks, update `internal/webhook/batch/v1/webhook_suite_test.go`:**
 
 **Before (was at `internal/webhook/v1/webhook_suite_test.go`):**
-```go
+```
 testEnv = &envtest.Environment{
     CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 }
 ```
 
 **After (now at `internal/webhook/batch/v1/webhook_suite_test.go`):**
-```go
+```
 testEnv = &envtest.Environment{
     CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
 }
 ```
 
-### Step 9: Verify the migration
+### Step 9: verify the migration
 
 Run the following commands to verify everything works:
 
-```bash
+```
 make manifests      # Regenerate CRDs and RBAC
 make generate       # Regenerate code
 make test           # Run tests
 make build          # Build the project
 ```
 
-## AI-Assisted Migration
+## Ai-assisted migration
 
 If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate most of the migration steps.
 
@@ -283,7 +283,7 @@ If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can 
 
 Give your AI assistant these instructions, replacing the values in the first two lines:
 
-```text
+```
 I need to migrate this Kubebuilder project to multi-group layout.
 
 Project details:
@@ -343,7 +343,7 @@ Steps to execute:
    - From: tutorial.kubebuilder.io/project/api/v1
    - To: tutorial.kubebuilder.io/project/api/batch/v1
    - Example:
-     ```yaml
+     ```
      layout:
      - go.kubebuilder.io/v4
      multigroup: true  # This must be true

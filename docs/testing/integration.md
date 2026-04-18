@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 	g.Eventually(func() error { return c.Get(context.TODO(), childKey, child) }, timeout).
 		Should(gomega.Succeed())
 
-	// Manually delete Child since GC isn't enabled in the test control plane.
+	// Manually delete Child since GC is not enabled in the test control plane.
 	g.Expect(c.Delete(context.TODO(), child)).To(gomega.Succeed())
 }
 ```

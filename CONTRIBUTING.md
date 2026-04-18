@@ -19,7 +19,7 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 ## Contributing steps
 
 1. Submit an issue describing your proposed change to the repo in question.
-1. The [repo owners](OWNERS) will respond to your issue promptly.
+1. The [repo owners](OWNERS) respond to your issue promptly.
 1. If your proposed change is accepted, and you haven't already done so, sign a Contributor License Agreement (see details above).
 1. Fork the desired repo, develop and test your code changes.
 1. Submit a pull request.
@@ -56,7 +56,7 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a prerequisite to submit a PR.
 
-**TIP:** You can run `make verify` to check all verification steps that the CI will run. This includes linting, testdata verification, documentation checks, and Helm chart validation.
+**TIP:** You can run `make verify` to check all verification steps that the CI runs. This includes linting, testdata verification, documentation checks, and Helm chart validation.
 
 Following the targets that can be used to test your changes locally.
 
@@ -86,7 +86,7 @@ you can for example via your IDEA debug the e2e tests.
 
 To manually setup run:
 
-```shell
+```
 # To generate an Kubebuilder local binary with your changes
 make install
 # To create the cluster
@@ -97,7 +97,7 @@ Now, you can for example, run in debug mode the `test/e2e/all/e2e_suite_test.go`
 
 ![example](https://github.com/kubernetes-sigs/kubebuilder/assets/7708031/277d26d5-c94d-41f0-8f02-1381458ef750)
 
-### Test Plugin
+### Test plugin
 
 If your intended PR creates a new plugin, make sure the PR also provides test cases. Testing should include:
 
@@ -123,7 +123,7 @@ To fully test the proposed plugin:
    - 4.1. Setup testing environment, e.g:
 
      - Cleanup environment, create temp dir. See [Prepare](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L97)
-     - If your test will cover the provided features then, ensure that you install prerequisites CRDs: See [InstallCertManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L138), [InstallPrometheusManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L171)
+     - If your test covers the provided features then, ensure that you install prerequisites CRDs: See [InstallCertManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L138), [InstallPrometheusManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L171)
 
    - 4.2. Run the function from `generate_test.go`.
 
@@ -139,7 +139,7 @@ To fully test the proposed plugin:
 
 5. Add the command in [test/e2e/plugin](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/setup.sh#L65) to run your testing code:
 
-```shell
+```
 go test $(dirname "$0")/<your-plugin-test-folder> $flags -timeout 30m
 ```
 
@@ -179,7 +179,7 @@ PR titles use **emojis** (appear in release notes). Format: `:emoji: (plugin/ver
 🌱 Add new GitHub action to test out doc samples
 ```
 
-### Commit Message Format
+### Commit message format
 
 Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
 
@@ -236,7 +236,7 @@ Check the CI job after to do the Pull Request and then, click on in the `Details
 
 Kubebuilder uses vendor-neutral standards to help AI coding agents understand the project and contribute effectively.
 
-### Agent Skills
+### Agent skills
 
 Agent Skills provide structured knowledge that helps AI agents perform specific tasks consistently. Skills are stored in `.agents/skills/` and follow the [agentskills.io][agentskills] specification.
 
@@ -260,7 +260,7 @@ To add a new skill:
    - What-does describes the action or focus area
 2. Add a `SKILL.md` file with frontmatter:
 
-```markdown
+```
 ---
 name: category-what-does
 description: What this skill does and when to use it.

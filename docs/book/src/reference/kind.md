@@ -29,7 +29,7 @@ For example, the following is a sample `kind` configuration.
 {{#include ./kind-config.yaml}}
 ```
 
-Using the configuration above, run the following command will give you a k8s
+Using the configuration above, the following command gives you a k8s
 v1.17.2 cluster with 1 control-plane node and 3 worker nodes.
 
 ```bash

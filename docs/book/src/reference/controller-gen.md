@@ -1,10 +1,10 @@
-# controller-gen CLI
+# Controller-gen CLI
 
 Kubebuilder makes use of a tool called
 [controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
-for generating utility code and Kubernetes YAML.  This code and config
-generation is controlled by the presence of special ["marker
-comments"](/reference/markers.md) in Go code.
+for generating utility code and Kubernetes YAML.  The presence of special ["marker
+comments"](markers.md) in Go code controls this code and config
+generation.
 
 controller-gen builds out of different "generators" (which specify what
 to generate) and "output rules" (which specify how and where to write the
@@ -49,11 +49,11 @@ The default rules are equivalent to
 `output:<generator>:artifacts:config=config/<generator>` for each
 generator.
 
-When a "fallback" rule is specified, that will be used instead of the
+When a "fallback" rule is specified, that is used instead of the
 default rules.
 
 For example, if you specify `crd rbac:roleName=controller-perms
-output:crd:stdout`, you will get CRDs on standard out, and rbac in a file in
+output:crd:stdout`, you get CRDs on standard out, and rbac in a file in
 `config/rbac`. If you were to add in a global rule instead, like `crd
 rbac:roleName=controller-perms output:crd:stdout output:none`, you would get
 CRDs to standard out, and everything else to /dev/null, because we have

@@ -64,7 +64,7 @@ Additionally, if you delete the **Primary Resource**, Kubernetes' garbage collec
 ensures that all associated **Secondary Resources** are automatically deleted in a
 cascading manner.
 
-### Which are NOT `owned` by the controller
+### Which are not `owned` by the controller
 
 Note that **Secondary Resources** can either be APIs/CRDs defined in your project or in other projects that are
 relevant to the **Primary Resources**, but which the specific controller is not responsible for creating or managing.
@@ -132,7 +132,7 @@ Here are the key reasons why it is important to watch them:
 
 See [Watching Secondary Resources That Are Not Owned](./watching-resources/secondary-resources-not-owned.md#configuration-example) for an example.
 
-## Why not use `RequeueAfter X` for all scenarios instead of watching resources?
+## Why not use `requeueafter x` for all scenarios instead of watching resources?
 
 Kubernetes controllers are fundamentally **event-driven**. When creating a controller,
 the **Reconciliation Loop** is typically triggered by **events** such as `create`, `update`, or
@@ -149,7 +149,7 @@ delayed reactions. Therefore, it is essential to prioritize **event-driven recon
 your controller to **watch resources** whenever possible, and reserving `RequeueAfter` for situations
 where you need periodic checks.
 
-### When `RequeueAfter X` is useful
+### When `requeueafter x` is useful
 
 While `RequeueAfter` is not the primary method for triggering reconciliations, there are specific cases where it is
 necessary, such as:

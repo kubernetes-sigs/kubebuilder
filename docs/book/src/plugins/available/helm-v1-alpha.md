@@ -1,4 +1,4 @@
-# Helm Plugin (`helm/v1-alpha`) - **DEPRECATED**
+# Helm plugin (`helm/v1-alpha`) - **deprecated**
 
 <aside class="warning" role="note">
 <p class="note-title"> Deprecated Plugin</p>
@@ -82,12 +82,12 @@ while leaving room for future improvements (such as scaffolding separate charts 
 The Helm plugin is attached to the `edit` subcommand as the `helm/v1-alpha` plugin
 relies on the Go project being scaffolded first.
 
-```sh
+```bash
 
 # Initialize a new project
 kubebuilder init
 
-# Enable or Update the helm chart via the helm plugin to an existing project
+# Enable or update the helm chart via the helm plugin to an existing project
 # Before run the edit command, run `make manifests` to generate the manifest under `config/`
 make manifests
 kubebuilder edit --plugins=helm/v1-alpha

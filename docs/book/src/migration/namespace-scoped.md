@@ -1,4 +1,4 @@
-# Migrating to Namespace-Scoped Manager
+# Migrating to namespace-scoped manager
 
 This guide covers converting **existing cluster-scoped projects** to namespace-scoped deployment.
 
@@ -58,7 +58,7 @@ You must manually update:
 
 ## Detailed steps
 
-### 1. Enable namespace-scoped mode
+### 1. enable namespace-scoped mode
 
 ```bash
 kubebuilder edit --namespaced --force
@@ -73,7 +73,7 @@ This command automatically:
 
 **Note:** The `--force` flag regenerates config/manager/manager.yaml. Without `--force`, you must manually add WATCH_NAMESPACE (see below).
 
-### 2. Update cmd/main.go (Required Manual Step)
+### 2. update cmd/main.go (required manual step)
 
 The edit command cannot update cmd/main.go automatically. You must manually add namespace-scoped configuration.
 
@@ -164,7 +164,7 @@ spec:
 With `--force`, this is done automatically. Skip if you used `--force`.
 </aside>
 
-### 3. Update RBAC markers in existing controllers
+### 3. update RBAC markers in existing controllers
 
 For each **existing controller file**, add the `namespace=` parameter to RBAC markers.
 
@@ -213,7 +213,7 @@ Generated controller will include:
 Only existing controllers need manual updates!
 </aside>
 
-### 4. Regenerate RBAC manifests
+### 4. regenerate RBAC manifests
 
 After updating RBAC markers in Step 3, regenerate the RBAC manifests:
 
@@ -246,7 +246,7 @@ The `config/rbac/metrics_auth_role.yaml` will remain `kind: ClusterRole` - this 
 
 </aside>
 
-### 5. Verify and deploy
+### 5. verify and deploy
 
 Run tests to verify everything works:
 
@@ -263,10 +263,10 @@ make deploy IMG=<your-image>
 # Verify RBAC is namespace-scoped (not cluster-scoped)
 kubectl get role,rolebinding -n <manager-namespace>
 
-# Test: Create a resource in the manager's namespace - should be reconciled
+# Test: create a resource in the manager's namespace - should be reconciled
 kubectl apply -f config/samples/ -n <manager-namespace>
 
-# Test: Create a resource in a different namespace - should NOT be reconciled
+# Test: create a resource in a different namespace - should not be reconciled
 kubectl apply -f config/samples/ -n other-namespace
 ```
 
@@ -288,7 +288,7 @@ See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html)
 
 </aside>
 
-## AI-Assisted Migration
+## Ai-assisted migration
 
 If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
 

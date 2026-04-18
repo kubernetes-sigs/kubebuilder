@@ -1,9 +1,9 @@
-# Release Process
+# Release process
 
 The Kubebuilder Project is released on an as-needed basis. The process is as follows:
 
 **Note:** Releases are done from the `release-MAJOR.MINOR` branches. For PATCH releases it is not required
-to create a new branch. Instead, you will just need to ensure that all major fixes are cherry-picked into the respective
+to create a new branch. Instead, you need to ensure that all major fixes are cherry-picked into the respective
 `release-MAJOR.MINOR` branch. To know more about versioning, check https://semver.org/.
 
 **Note:** Before `3.5.*` release this project was released based on `MAJOR`. A change to the
@@ -20,10 +20,10 @@ process was done to ensure that we have an aligned process under the org (simila
 ### Now, let's generate the changelog
 
 1. Create the changelog from the new branch `release-<MAJOR.MINOR>` (`git checkout release-<MAJOR.MINOR>`).
-   You will need to use the [kubebuilder-release-tools][kubebuilder-release-tools] to generate release notes. See [here][release-notes-generation]
+   You need to use the [kubebuilder-release-tools][kubebuilder-release-tools] to generate release notes. See [here][release-notes-generation]
 
 > **Note**
-> - You will need to have checkout locally from the remote repository the previous branch
+> - You need to have checkout locally from the remote repository the previous branch
 > - Also, ensure that you fetch all tags from the remote `git fetch --all --tags`
 > - Also, if you face issues to generate the release notes you might want to able to sort it out by running i.e.:
 > `go run sigs.k8s.io/kubebuilder-release-tools/notes --use-upstream=false --from=v3.11.0 --branch=release-X`
@@ -44,12 +44,12 @@ process was done to ensure that we have an aligned process under the org (simila
 
 1. Announce the new release on the Slack channel, i.e:
 
-````
+````yaml
 :announce: Kubebuilder v3.5.0 has been released!
 This release includes a Kubernetes dependency bump to v1.24.
 For more info, see the release page: https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.5.0
  :tada:  Thanks to all our contributors!
-````
+```
 
 2. Announce the new release via email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] Kubebuilder $VERSION is released`
 
@@ -68,7 +68,7 @@ The releases occur in an account in the Google Cloud (See [here](https://console
 ### To build the Kubebuilder CLI binaries:
 
 A trigger GitHub action [release](.github/workflows/release.yml) is trigged when a new tag is pushed.
-This action will call the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
+This action calls the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
 
 ###  (Deprecated) - To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
 
@@ -78,7 +78,7 @@ see: https://github.com/kubernetes-sigs/kubebuilder/discussions/4082
 Kubebuilder projects requires artifacts which are used to do test with ENV TEST (when we call `make test` target)
 These artifacts can be checked in the service page: https://storage.googleapis.com/kubebuilder-tools
 
-The build is made from the branch [tools-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases) and the trigger will call the `build/cloudbuild_tools.yaml` passing
+The build is made from the branch [tools-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases) and the trigger calls the `build/cloudbuild_tools.yaml` passing
 as argument the architecture and the OS that should be used, e.g:
 
 <img width="553" alt="Screenshot 2022-04-30 at 10 15 41" src="https://user-images.githubusercontent.com/7708031/166099666-ae9cd2df-73fe-47f6-a987-464f63df9a19.png">
@@ -99,7 +99,7 @@ The project `kube-rbac-proxy` is in the process to be donated to the k8s org. Ho
 we have no ETA for that to occur. When that occurs we can automate this process. But until there we need to generate these images
 by bumping the versions/tags released by `kube-rbac-proxy` on the branch
 [kube-rbac-proxy-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/kube-rbac-proxy-releases)
-then the `build/cloudbuild_kube-rbac-proxy.yaml` will generate the images.
+then the `build/cloudbuild_kube-rbac-proxy.yaml` generates the images.
 
 To check an example, see the pull request [#2578](https://github.com/kubernetes-sigs/kubebuilder/pull/2578).
 

@@ -147,7 +147,7 @@ Both commands use [controller-gen][controller-gen] with different flags for code
 #### Sample of custom resources
 
 The manifests located under the `config/samples` directory serve as examples of Custom Resources that can be applied to the cluster.
-In this particular example, by applying the given resource to the cluster, we would generate
+In this particular example, applying the given resource to the cluster generates
 a Deployment with a single instance size (see `size: 1`).
 
 ```yaml
@@ -158,7 +158,7 @@ a Deployment with a single instance size (see `size: 1`).
 
 In a simplified way, Kubernetes works by allowing you to declare the desired state of your system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For your custom APIs and controllers, the process is similar. Remember, you are extending Kubernetes' behaviors and its APIs to fit your specific needs.
 
-In our controller, we implement a reconciliation process.
+The controller implements a reconciliation process.
 
 Essentially, the reconciliation process functions as a loop, continuously checking conditions and performing necessary actions until the desired state is achieved. This process will keep running until all conditions in the system align with the desired state defined in our implementation.
 
@@ -388,7 +388,7 @@ how the example implements them:
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 ```
 
-After making changes to the controller, run the make manifests command. This will prompt [controller-gen][controller-gen]
+After making changes to the controller, run the make manifests command. This prompts [controller-gen][controller-gen]
 to refresh the files located under `config/rbac`.
 
 <details><summary><code>config/rbac/role.yaml</code>: Our RBAC Role generated </summary>

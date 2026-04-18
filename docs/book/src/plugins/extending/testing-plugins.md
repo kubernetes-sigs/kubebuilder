@@ -1,4 +1,4 @@
-# Write E2E tests
+# Write e2e tests
 
 You can check the [Kubebuilder/v4/test/e2e/utils][utils-kb] package, which offers `TestContext` with rich methods:
 

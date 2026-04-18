@@ -154,7 +154,7 @@ kubebuilder create api --group core --version v1 --kind Pod --controller=true --
 
 For instance, to create a controller to manage Deployment the command would be like:
 
-```sh
+```shell
 create api --group apps --version v1 --kind Deployment --controller=true --resource=false
 ```
 
@@ -205,7 +205,7 @@ definitions since the type is already defined in the Kubernetes API.
 You run the command with the Core Type data, just as you would for controllers.
 See an example:
 
-```go
+```shell
 kubebuilder create webhook --group core --version v1 --kind Pod --programmatic-validation
 ```
 [markers-rbac]: ./markers/rbac.md

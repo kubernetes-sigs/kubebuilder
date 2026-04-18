@@ -8,7 +8,7 @@ Sub-Module Layouts (in a way you could call them a special form of [Monorepo's][
 <p class="note-title">Using External Resources/APIs</p>
 
 If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project
-or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_resource.md)
+or By Kubernetes API then, please see [Using an external Resources/API](using_an_external_resource.md)
 for more info.
 
 </aside>
@@ -184,14 +184,14 @@ ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
-# Copy the Go Modules manifests
+# Copy the Go modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-# Copy the Go Sub-Module manifests
+# Copy the Go sub-module manifests
 COPY api/v1alpha1/go.mod api/go.mod
 COPY api/v1alpha1/go.sum api/go.sum
-# cache deps before building and copying source so that we do not need to re-download as much
-# and so that source changes do not invalidate our downloaded layer
+# Cache deps before building and copying source so that we do not need to re-download as much
+# And so that source changes do not invalidate our downloaded layer
 RUN go mod download
 
 # Copy the go source
@@ -200,14 +200,14 @@ COPY api/ api/
 COPY internal/controller/ internal/controller/
 
 # Build
-# the GOARCH has not a default value to allow the binary be built according to the host where the command
-# was called. For example, if you call make docker-build in a local env which has the Apple Silicon M1 SO
-# the docker BUILDPLATFORM arg is linux/arm64 when for Apple x86 it is linux/amd64. Therefore,
-# by leaving it empty you can ensure that the container and binary shipped on it has the same platform.
+# The goarch has not a default value to allow the binary be built according to the host where the command
+# Was called. for example, if you call make docker-build in a local env which has the apple silicon m1 so
+# The docker buildplatform arg is linux/arm64 when for apple x86 it is linux/amd64. therefore,
+# By leaving it empty you can ensure that the container and binary shipped on it has the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
 # Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
+# Refer to https://github.com/googlecontainertools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
@@ -222,7 +222,7 @@ Because you adjusted the default layout, before releasing your first version of 
 
 Assuming a single API was created, the release process could look like this:
 
-```sh
+```bash
 git commit
 git tag v1.0.0 # this is your main module release
 git tag api/v1.0.0 # this is your api release
@@ -236,7 +236,7 @@ make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
 
-Whenever you want to reuse your API module with a separate kubebuilder, follow the guide for [using an external Type](/reference/using_an_external_resource.md).
+Whenever you want to reuse your API module with a separate kubebuilder, follow the guide for [using an external Type](using_an_external_resource.md).
 When you get to the step `Edit the API files` simply import the dependency with
 
 ```shell

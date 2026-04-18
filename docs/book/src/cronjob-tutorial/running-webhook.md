@@ -1,6 +1,6 @@
-# Deploying Admission Webhooks
+# Deploying admission webhooks
 
-## cert-manager
+## Cert-manager
 
 Follow the [cert-manager installation guide](./cert-manager.md) to install the cert-manager bundle.
 
@@ -76,7 +76,7 @@ schedule field). You should see a creation failure with a validation error.
 <aside class="warning" role="note">
 <p class="note-title">The Bootstrapping Problem</p>
 
-When you deploy a webhook into the same cluster that it will validate, you can run into a *bootstrapping issue*:
+When you deploy a webhook into the same cluster that it validates, you can run into a *bootstrapping issue*:
 the webhook may try to validate the creation of its own Pod before it’s actually running.
 This can block the webhook from ever starting.
 

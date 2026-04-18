@@ -47,7 +47,7 @@ The bootstrap problem **does not occur** with custom resource webhooks:
 
 Configure your webhook to **skip validating its own resources** using either `namespaceSelector` or `objectSelector`.
 
-### Option 1: namespaceSelector (recommended)
+### Option 1: namespaceselector (recommended)
 
 Exclude the entire namespace where your webhook runs.
 
@@ -101,7 +101,7 @@ patches:
 make deploy IMG=<your-image>
 ```
 
-### Option 2: objectSelector
+### Option 2: objectselector
 
 Exclude specific labeled Pods from webhook validation.
 
@@ -123,7 +123,7 @@ spec:
 
 ### Multiple webhooks
 
-If you created webhooks for multiple core types (e.g., Pod and Deployment), you'll have multiple webhook entries.
+If you created webhooks for multiple core types (e.g., Pod and Deployment), you will have multiple webhook entries.
 
 **Check webhook count:**
 
@@ -157,7 +157,7 @@ grep "  name: v" config/webhook/manifests.yaml  # Count validating webhooks
       operator: DoesNotExist
 ```
 
-### Mixed webhooks (CRD + core types)
+### Mixed webhooks (crd + core types)
 
 If you have both custom CRD webhooks and core type webhooks:
 
@@ -176,7 +176,7 @@ If you have both custom CRD webhooks and core type webhooks:
       operator: DoesNotExist
 ```
 
-## Choosing between namespaceSelector and objectSelector
+## Choosing between namespaceselector and objectselector
 
 | Feature | namespaceSelector | objectSelector |
 |---------|-------------------|----------------|

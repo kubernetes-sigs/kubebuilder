@@ -38,7 +38,7 @@ To learn more see [how to create your own plugins][your-own-plugins].
 It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
 Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installation) to install Kubebuilder.
 
-## Getting Started
+## Getting started
 
 See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
 
@@ -99,7 +99,7 @@ Provide clean library abstractions with clear and well-exampled go docs.
   - Protect developers from breaking changes in low-level libraries
   - Start minimal and provide progressive discovery of functionality
   - Provide sane defaults and allow users to override when they exist
-- Provide code generators to maintain common boilerplate that can't be addressed by interfaces
+- Provide code generators to maintain common boilerplate that cannot be addressed by interfaces
   - Driven off of `// +` comments
 - Provide bootstrapping commands to initialize new packages
 
@@ -122,13 +122,13 @@ Contributions are greatly appreciated. The maintainers actively manage the issue
 The project follows the typical GitHub pull request model. See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 Before starting any work, please either comment on an existing issue or file a new one.
 
-## Operating Systems Supported
+## Operating systems supported
 
 Currently, Kubebuilder officially supports macOS and Linux platforms. If you are using a Windows OS, we recommend you read the instructions in [here](docs/windows.md).
 
 Contributions towards supporting Windows are not planned.
 
-## Versions Compatibility and Supportability
+## Versions compatibility and supportability
 
 Projects created by Kubebuilder contain a `Makefile` that installs tools at versions defined during project creation. The main tools included are:
 
@@ -156,7 +156,7 @@ You can refer to the samples in the testdata directory of the tag released [v4.1
 such as the [go.mod](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/go.mod#L3) file for `project-v4`. You can also check the versions of the tools supported and
 tested for this release by examining the [Makefile](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/Makefile#L160-L165).
 
-## Community Meetings
+## Community meetings
 
 The following meetings happen biweekly:
 

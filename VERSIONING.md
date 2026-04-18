@@ -19,7 +19,7 @@ changes -- see [below](#understanding-the-versions) for more details.
 
 ## Releasing
 
-When releasing, you'll need to:
+When releasing, you will need to:
 
 - to update references in [the build directory](build/) to the latest
   version of the [envtest tools](#tools-releases) **before tagging the
@@ -37,7 +37,7 @@ The book's main version (https://book.kubebuilder.io) is published off of
 the [book-v3][book-branch] (a version built off the main branch can be
 found at https://master.book.kubebuilder.io).
 
-Docs changes that aren't specific to a new feature should be
+Docs changes that are not specific to a new feature should be
 cherry-picked to the aforementioned branch to get them to be published.
 The cherry-picks will automatically be published to the book once their PR
 merges.
@@ -50,7 +50,7 @@ describes the latest changes in the new release.
 
 ## Tools Releases
 
-In order to update the [envtest tools][envtest-ref], you'll need to do an
+In order to update the [envtest tools][envtest-ref], you will need to do an
 update to the [tools-releases branch][tools-branch].  Simply submit a PR
 against that branch that changes all references to the current version to
 the desired next version.  Once the PR is merged, Google Cloud Build will

@@ -23,7 +23,7 @@ API version will not cause newer data to be lost or corrupted.  See the
 guidelines](https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md)
 for more information.
 
-You'll also hear mention of *resources* on occasion.  A resource is simply
+You will also hear mention of *resources* on occasion.  A resource is simply
 a use of a Kind in the API.  Often, there is a one-to-one mapping between
 Kinds and resources.  For instance, the `pods` resource corresponds to the
 `Pod` Kind.  However, sometimes, the same Kind may be returned by multiple
@@ -40,7 +40,7 @@ lowercase form of the Kind.
 
 When referring to a kind in a particular group version, it is called
 a *GroupVersionKind*, or GVK for short.  Same with resources and GVR. As
-you'll see shortly, each GVK corresponds to a given root Go type in
+you will see shortly, each GVK corresponds to a given root Go type in
 a package.
 
 Now that the terminology is clear, *actually* create the
@@ -65,7 +65,7 @@ Think about the classic scenario where the goal is to have an application and it
 
 In this way, you can create the App CRD which has its controller and which would be responsible for things like creating Deployments that contain the App and creating Services to access it and etc. Similarly, you could create a CRD to represent the DB, and deploy a controller that would manage DB instances.
 
-## Err, but what is that Scheme thing?
+## Err, but what is that scheme thing?
 
 The `Scheme` you saw before is simply a way to keep track of what Go type
 corresponds to a given GVK (do not be overwhelmed by its

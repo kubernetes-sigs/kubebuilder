@@ -9,7 +9,7 @@ make manifests
 
 To test out the controller, run it locally against the cluster.
 Before doing so, install the CRDs, as per the [quick
-start](/quick-start.md).  This will automatically update the YAML
+start](../quick-start.md).  This automatically updates the YAML
 manifests using controller-tools, if needed:
 
 ```bash
@@ -21,7 +21,7 @@ make install
 <p class="note-title">Too long annotations error</p>
 
 If you encounter errors when applying the CRDs, due to `metadata.annotations` exceeding the
-262144 bytes limit, please refer to the specific entry in the [FAQ section](/faq#the-error-too-long-must-have-at-most-262144-bytes-is-faced-when-i-run-make-install-to-apply-the-crd-manifests-how-to-solve-it-why-this-error-is-faced).
+262144 bytes limit, please refer to the specific entry in the [FAQ section](../faq.md#the-error-too-long-must-have-at-most-262144-bytes-is-faced-when-i-run-make-install-to-apply-the-crd-manifests-how-to-solve-it-why-this-error-is-faced).
 
 </aside>
 

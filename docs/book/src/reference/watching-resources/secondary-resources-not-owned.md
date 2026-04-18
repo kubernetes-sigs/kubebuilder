@@ -1,4 +1,4 @@
-# Watching secondary resources that are NOT `Owned`
+# Watching secondary resources that are not `owned`
 
 In some scenarios, a controller may need to watch and respond to changes in
 resources that it does not `Own`, meaning those resources are created and managed by
@@ -13,7 +13,7 @@ For instance, consider two custom resources—`Busybox` and `BackupBusybox`.
 If changes to `Busybox` should trigger reconciliation in the `BackupBusybox` controller,
 configure the `BackupBusybox` controller to watch for updates in `Busybox`.
 
-### Example: Watching a Non-Owned Busybox Resource to Reconcile BackupBusybox
+### Example: watching a non-owned busybox resource to reconcile backupbusybox
 
 Consider a controller that manages a custom resource `BackupBusybox`
 but also needs to monitor changes to `Busybox` resources across the cluster.

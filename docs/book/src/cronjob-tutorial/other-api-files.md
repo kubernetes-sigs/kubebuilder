@@ -1,4 +1,4 @@
-# A Brief Aside: What's the rest of this stuff?
+# A brief aside: what's the rest of this stuff?
 
 If you have taken a peek at the rest of the files in the
 [`api/v1/`](https://sigs.k8s.io/kubebuilder/docs/book/src/cronjob-tutorial/testdata/project/api/v1)

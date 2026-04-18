@@ -54,7 +54,7 @@ or if you prefer to handle changes manually.
 
 ### Upgrade your current project to CLI version installed (i.e. latest scaffold)
 
-```sh
+```bash
 kubebuilder alpha generate
 ```
 
@@ -66,7 +66,7 @@ and re-apply your custom code on top as needed.
 
 Use the `--input-dir` and `--output-dir` flags to specify input and output paths.
 
-```sh
+```bash
 kubebuilder alpha generate \
   --input-dir=/path/to/existing/project \
   --output-dir=/path/to/new/project

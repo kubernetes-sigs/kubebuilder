@@ -26,7 +26,7 @@ And then, you will also be able to use custom plugins and options currently or i
 
 </aside>
 
-## Options to Extend
+## Options to extend
 
 Extending Kubebuilder can be achieved in two main ways:
 

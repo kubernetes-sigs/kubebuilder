@@ -220,7 +220,7 @@ Examples should:
 
 Example:
 
-```go
+```
 subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project
   %[1]s init --domain example.org
 

@@ -1,6 +1,6 @@
-# Monitoring performance with Pprof
+# Monitoring performance with pprof
 
-[Pprof][github], a Go profiling tool, helps identify performance bottlenecks in areas like CPU and memory usage. It's integrated with the controller-runtime library's HTTP server, enabling profiling via HTTP endpoints. You can visualize the data using go tool pprof. Since [Pprof][github] is built into controller-runtime, no separate installation is needed. [Manager options][manager-options-doc] make it easy to enable pprof and gather runtime metrics to optimize controller performance.
+[Pprof][github], a Go profiling tool, helps identify performance bottlenecks in areas like CPU and memory usage. It is integrated with the controller-runtime library's HTTP server, enabling profiling via HTTP endpoints. You can visualize the data using go tool pprof. Since [Pprof][github] is built into controller-runtime, no separate installation is needed. [Manager options][manager-options-doc] make it easy to enable pprof and gather runtime metrics to optimize controller performance.
 
 <aside class="warning" role="note">
     <p class="note-title">Not Recommended for Production</p>
@@ -12,7 +12,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
 
 </aside>
 
-## How to use Pprof
+## How to use pprof
 
 1. **Enabling Pprof**
 
@@ -53,7 +53,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
     ```
 
     Visualization results will vary depending on the deployed workload, and the Controller's behavior.
-    However, you'll see the result on your browser similar to this one:
+    However, you will see the result on your browser similar to this one:
 
     ![pprof-result-visualization](./images/pprof-result-visualization.png)
 

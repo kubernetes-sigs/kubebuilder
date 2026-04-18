@@ -1,7 +1,7 @@
 # Metrics
 
 By default, controller-runtime builds a global prometheus registry and
-publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
+publishes [a collection of performance metrics](metrics-reference.md) for each controller.
 
 
 <aside class="warning" role="note">
@@ -31,7 +31,7 @@ By looking at the file `config/default/kustomization.yaml` you can
 check the metrics are exposed by default:
 
 ```yaml
-# [METRICS] Expose the controller manager metrics service.
+# [metrics] expose the controller manager metrics service.
 - metrics_service.yaml
 ```
 
@@ -202,9 +202,9 @@ By using this method, you ensure that the endpoint is accessible only to those w
 
 ```yaml
 # The following RBAC configurations are used to protect
-# the metrics endpoint with authn/authz. These configurations
-# ensure that only authorized users and service accounts
-# can access the metrics endpoint.
+# The metrics endpoint with authn/authz. these configurations
+# Ensure that only authorized users and service accounts
+# Can access the metrics endpoint.
 - metrics_auth_role.yaml
 - metrics_auth_role_binding.yaml
 - metrics_reader_role.yaml
@@ -237,7 +237,7 @@ spec:
         done
 ```
 
-### **(Recommended)** Enabling certificates for production (disabled by default)
+### (recommended) enabling certificates for production (disabled by default)
 
 <aside class="warning" role="note">
 <p class="note-title">Why Is This Not Enabled by Default?</p>
@@ -352,7 +352,7 @@ project to use certificates managed by CertManager.
     integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
     in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
-### **(Optional)** By using network policy (disabled by default)
+### (optional) by using network policy (disabled by default)
 
 NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
 flow at the IP address or port level. However, it does not handle `authn/authz`.
@@ -360,9 +360,9 @@ flow at the IP address or port level. However, it does not handle `authn/authz`.
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
 ```yaml
-# [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
-# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
+# [network policy] protect the /metrics endpoint and Webhook server with networkpolicy.
+# Only pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
+# Only cr(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
 #- ../network-policy
 ```
 
@@ -379,7 +379,7 @@ Follow the steps below to export the metrics using the Prometheus Operator:
    It creates the `ServiceMonitor` resource which enables exporting the metrics.
 
 ```yaml
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+# [prometheus] to enable prometheus monitor, uncomment all sections with 'prometheus'.
 - ../prometheus
 ```
 

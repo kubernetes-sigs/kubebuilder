@@ -8,9 +8,9 @@
 
 #### Users of Kubernetes
 
-Users of Kubernetes will develop a deeper understanding of Kubernetes through learning
+Users of Kubernetes develop a deeper understanding of Kubernetes through learning
 the fundamental concepts behind how APIs are designed and implemented.  This book
-will teach readers how to develop their own Kubernetes APIs and the
+teaches readers how to develop their own Kubernetes APIs and the
 principles from which the core Kubernetes APIs are designed.
 
 Including:
@@ -25,7 +25,7 @@ Including:
 
 #### Kubernetes API extension developers
 
-API extension developers will learn the principles and concepts behind implementing canonical
+API extension developers learn the principles and concepts behind implementing canonical
 Kubernetes APIs, as well as simple tools and libraries for rapid execution.  This
 book covers pitfalls and misconceptions that extension developers commonly encounter.
 

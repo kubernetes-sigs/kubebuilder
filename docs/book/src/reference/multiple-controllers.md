@@ -33,7 +33,7 @@ Creates:
 
 The API is only created once. Additional controllers reference the existing API.
 
-## PROJECT file format
+## Project file format
 
 ### Legacy format (still supported)
 

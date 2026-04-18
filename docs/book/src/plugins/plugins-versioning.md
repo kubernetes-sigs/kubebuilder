@@ -1,4 +1,4 @@
-# Plugins Versioning
+# Plugins versioning
 
 | Name | Example                                 | Description |
 |----------|-----------------------------------------|--------|

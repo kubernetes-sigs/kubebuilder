@@ -42,8 +42,8 @@ and losing their existing customizations on top.
 
 ### Context
 A new plugin to help users scaffold a Helm chart to distribute their solutions is implemented as an experimental
-feature on the `master` branch and is currently under development. It's initial version will be released in
-the next major version of Kubebuilder.
+feature on the `master` branch and is currently under development. Its initial version is released in
+Kubebuilder v4.10.0.
 
 ### Objective
 The objective of this effort is to ensure that the Helm chart plugin addresses user needs effectively while
@@ -52,7 +52,7 @@ providing a seamless and intuitive experience.
 ### Goals
 - Prevent exposure of webhooks data in the Helm chart values.
 - Determine whether and how to include sample files and CR configurations in the Helm chart.
-- Enable users to specify the path where the Helm chart will be scaffolded.
+- Enable users to specify the path where the Helm chart is scaffolded.
 
 ### References
 - [Milestone Helm](https://github.com/kubernetes-sigs/kubebuilder/milestone/39)

@@ -64,9 +64,9 @@ provided for built-in types.
 
 The information that gets displayed can be controlled with the
 [additionalPrinterColumns field][kube-additional-printer-columns] on your
-CRD, which is controlled by the
+CRD. The
 [`+kubebuilder:printcolumn`][crd-markers] marker on the Go type for
-your CRD.
+your CRD controls this field.
 
 For instance, in the following example, add fields to display
 information about the knights, rank, and alias fields from the validation
@@ -155,7 +155,7 @@ As of Kubernetes 1.13, you can have multiple versions of your Kind defined
 in your CRD, and use a webhook to convert between them.
 
 For more details on this process, see the [multiversion
-tutorial](/multiversion-tutorial/tutorial.md).
+tutorial](../multiversion-tutorial/tutorial.md).
 
 By default, Kubebuilder disables generating different validation for
 different versions of the Kind in your CRD, to be compatible with older
@@ -167,7 +167,7 @@ to `CRD_OPTIONS ?= crd:preserveUnknownFields=false` if using v1beta CRDs,
 and `CRD_OPTIONS ?= crd` if using v1 (recommended).
 
 Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
-to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
+to indicate the [GVK](../cronjob-tutorial/gvks.md "Group-Version-Kind") that
 should be used to store data by the API server.
 
 ## Under the hood
@@ -179,8 +179,8 @@ will automatically install controller-gen if it is not on your path using
 You can also run `controller-gen` directly, if you want to see what it is
 doing.
 
-Each controller-gen "generator" is controlled by an option to
-controller-gen, using the same syntax as markers. controller-gen
+An option to
+controller-gen controls each controller-gen "generator", using the same syntax as markers. controller-gen
 also supports different output "rules" to control how and where output goes.
 Notice the `manifests` make rule (condensed slightly to only generate CRDs):
 

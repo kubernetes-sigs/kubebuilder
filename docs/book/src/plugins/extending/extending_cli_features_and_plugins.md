@@ -4,7 +4,7 @@ Kubebuilder provides an extensible architecture to scaffold
 projects using plugins. These plugins allow you to customize the CLI
 behavior or integrate new features.
 
-In this guide, we’ll explore how to extend CLI features,
+This guide explores how to extend CLI features,
 create custom plugins, and bundle multiple plugins.
 
 ## Creating custom plugins
@@ -16,7 +16,7 @@ This interface allows your plugin to hook into Kubebuilder’s
 commands (`init`, `create api`, `create webhook`, etc.)
 and add custom logic.
 
-### Example of a Custom Plugin
+### Example of a custom plugin
 
 You can create a plugin that generates both
 language-specific scaffolds and the necessary configuration files,
@@ -66,7 +66,7 @@ of the following CLI commands:
 
 Here’s an example of using the `init` subcommand with a custom plugin:
 
-```sh
+```bash
 kubebuilder init --plugins=mylanguage.kubebuilder.io/v1
 ```
 
@@ -120,7 +120,7 @@ This library allows you to:
 - Add [markers][markers-scaffold] to the scaffolded files.
 - Specify templates for your scaffolds.
 
-#### Example: Boilerplate
+#### Example: boilerplate
 
 For instance, the go/v4 scaffolds the `go.mod` file by defining an object that [implements the machinery interface][machinery].
 The raw template is set to the `TemplateBody` field on the `Template.SetTemplateDefaults` method:
@@ -156,7 +156,7 @@ func (s *initScaffolder) Scaffold() error {
 }
 ```
 
-#### Example: Overwriting a File in a Plugin
+#### Example: overwriting a file in a plugin
 
 Imagine that when a subcommand is called, you want
 to overwrite an existing file.
@@ -218,7 +218,7 @@ plugin in the specified order:
 
 The following command runs the bundled plugins:
 
-```sh
+```bash
 kubebuilder init --plugins=myplugin.example.com/v1
 ```
 
@@ -311,29 +311,29 @@ This program can then be built and run in the following ways:
 
 Default behavior:
 
-```sh
-# Initialize a project with the default Init plugin, "go.example.com/v1".
-# This key is automatically written to a PROJECT config file.
+```bash
+# Initialize a project with the default init plugin, "go.example.com/v1".
+# This key is automatically written to a project config file.
 $ my-bin-builder init
-# Create an API and webhook with "go.example.com/v1" CreateAPI and
-# CreateWebhook plugin methods. This key was read from the config file.
+# Create an API and webhook with "go.example.com/v1" createapi and
+# Createwebhook plugin methods. this key was read from the config file.
 $ my-bin-builder create api [flags]
 $ my-bin-builder create webhook [flags]
 ```
 
 Selecting a plugin using `--plugins`:
 
-```sh
-# Initialize a project with the "ansible.example.com/v1" Init plugin.
+```bash
+# Initialize a project with the "ansible.example.com/v1" init plugin.
 # Like above, this key is written to a config file.
 $ my-bin-builder init --plugins ansible
-# Create an API and webhook with "ansible.example.com/v1" CreateAPI
-# and CreateWebhook plugin methods. This key was read from the config file.
+# Create an API and webhook with "ansible.example.com/v1" createapi
+# And createwebhook plugin methods. this key was read from the config file.
 $ my-bin-builder create api [flags]
 $ my-bin-builder create webhook [flags]
 ```
 
-### Inputs should be tracked in the PROJECT file
+### Inputs should be tracked in the project file
 
 The CLI is responsible for managing the [PROJECT file configuration][project-file-config],
 which represents the configuration of the projects scaffolded by the
@@ -357,7 +357,7 @@ By running the following command to use the
 [Deploy Image][deploy-image] plugin to scaffold
 an API and its controller:
 
-```sh
+```bash
 kubebyilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,--memory-limit=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
 ```
 

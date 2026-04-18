@@ -1,4 +1,4 @@
-# Grafana Plugin (`grafana/v1-alpha`)
+# Grafana plugin (`grafana/v1-alpha`)
 
 The Grafana plugin is an optional plugin that can be used to
 scaffold Grafana Dashboards to allow you to check out the
@@ -44,7 +44,7 @@ See that in the [config/prometheus][kustomize-plugin] you will find the ServiceM
 
 The Grafana plugin is attached to the `edit` subcommand:
 
-```sh
+```bash
 # Enable grafana plugin to an existing project
 kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha
 ```
@@ -82,7 +82,7 @@ See an example of how to use the plugin in your project:
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
 
-#### Controller CPU & memory usage
+#### Controller cpu & memory usage
 
 - Metrics:
   - process_cpu_seconds_total
@@ -95,7 +95,7 @@ See an example of how to use the plugin in your project:
   - Allocated Memory for the running controller
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
 
-#### Seconds of P50/90/99 items stay in work queue
+#### Seconds of p50/90/99 items stay in work queue
 
 - Metrics
   - workqueue_queue_duration_seconds_bucket
@@ -105,7 +105,7 @@ See an example of how to use the plugin in your project:
   - Seconds an item stays in workqueue before being requested.
 - Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180359126-452b2a0f-a511-4ae3-844f-231d13cd27f8.png">
 
-#### Seconds of P50/90/99 items processed in work queue
+#### Seconds of p50/90/99 items processed in work queue
 
 - Metrics
   - workqueue_work_duration_seconds_bucket
@@ -145,7 +145,7 @@ See an example of how to use the plugin in your project:
   - The number of active controller workers
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/288db1b5-e2d8-48ea-9aae-30de7eeca277">
 
-#### WorkQueue depth
+#### Workqueue depth
 
 - Metrics
   - workqueue_depth
@@ -176,10 +176,10 @@ When the plugin is triggered for the first time, `grafana/custom-metrics/config.
 ```yaml
 ---
 customMetrics:
-#  - metric: # Raw custom metric (required)
-#    type:   # Metric type: counter/gauge/histogram (required)
-#    expr:   # Prom_ql for the metric (optional)
-#    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
+# - metric: # raw custom metric (required)
+# Type: # metric type: counter/gauge/histogram (required)
+# Expr: # prom_ql for the metric (optional)
+# Unit: # unit of measurement, examples: s,none,bytes,percent,etc. (optional)
 ```
 
 #### Add custom metrics to config

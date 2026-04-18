@@ -60,7 +60,7 @@ which can be created for a Controller by calling `GetEventRecorder(name string)`
 	}
 ```
 
-### Allowing usage of EventRecorder on the controller
+### Allowing usage of eventrecorder on the controller
 
 To raise an event, you must have access to `events.EventRecorder` in the Controller.  Therefore, first update the controller implementation:
 ```go
@@ -77,7 +77,7 @@ type MyKindReconciler struct {
 	Recorder events.EventRecorder
 }
 ```
-### Passing the EventRecorder to the controller
+### Passing the eventrecorder to the controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
 which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:

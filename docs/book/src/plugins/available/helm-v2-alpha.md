@@ -1,4 +1,4 @@
-# Helm Plugin `(helm/v2-alpha)`
+# Helm plugin `(helm/v2-alpha)`
 
 The `helm/v2-alpha` plugin generates Helm charts from your project’s kustomize output, letting you distribute your operator as either a bundle or a Helm chart.
 
@@ -260,7 +260,7 @@ This controls RBAC permissions only. To control watch scope, use `WATCH_NAMESPAC
 
 </aside>
 
-#### `rbac.roleNamespaces`
+#### `rbac.rolenamespaces`
 
 When your kustomize output includes Roles and RoleBindings for specific namespaces (other than the manager namespace), the plugin automatically detects them and creates `roleNamespaces` entries.
 
@@ -297,7 +297,7 @@ rbac:
 Override namespaces at deployment using a values file:
 
 ```yaml
-# custom-values.yaml
+# Custom-values.yaml
 rbac:
   roleNamespaces:
     "manager-role-infrastructure": "prod-infra"

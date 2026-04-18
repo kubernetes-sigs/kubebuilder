@@ -21,7 +21,7 @@ controller only reacts to relevant changes.
 - You want to trigger reconciliation only for resources with specific labels or annotations.
 - You want to watch external resources and react only to specific changes.
 
-## Example: Using predicates to filter update events
+## Example: using predicates to filter update events
 
 Suppose the **`BackupBusybox`** controller should reconcile only
 when certain fields of the **`Busybox`** resource change, for example, when
@@ -75,7 +75,7 @@ In this example:
 
 This ensures that the controller reconciles only when the specific field **`spec.size`** is modified, while ignoring any other modifications in the `spec` that are irrelevant to your logic.
 
-### Example: Using predicates in `Watches`
+### Example: using predicates in `watches`
 
 Now, apply this predicate in the **`Watches()`** method of
 the **`BackupBusyboxReconciler`** to trigger reconciliation only for relevant events:

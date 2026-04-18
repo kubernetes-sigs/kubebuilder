@@ -42,7 +42,7 @@ and allow easy integrations with common applications used by administrators.
   - https://kubernetes.slack.com/archives/C02MRBMN00Z/p1712457941924299
   - https://kubernetes.slack.com/archives/CCK68P2Q2/p1713174342482079
   - Also, see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
-  - It will be available from the next release v0.19.
+  - It is available from release v0.19.
 - **PR Check image:**  🙌 Seeking Contributions to do the required changes - See that the images used to check the PR titles are also build and promoted by the Kubebuilder project in GCP but are from the project: https://github.com/kubernetes-sigs/kubebuilder-release-tools. The plan in this case is to use the e2e shared infrastructure. [More info](https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864)
 
 **Objective:** Shift Kubernetes (k8s) project infrastructure from GCP to shared infrastructures.
@@ -118,7 +118,7 @@ burden on Kubebuilder maintainers.
 
 - **Resolution**: As of release ([v3.14.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.14.0)), Kubebuilder includes enhanced support for project distribution. Users can now scaffold projects with a `build-installer` makefile target. This improvement enables the straightforward deployment of solutions directly to Kubernetes clusters. Users can deploy their projects using commands like:
 
-```shell
+```bash
 kubectl apply -f https://raw.githubusercontent.com/<org>/my-project/<tag or branch>/dist/install.yaml
 ```
 This enhancement streamlines the process of getting Kubebuilder projects running on clusters, providing a seamless deployment experience.

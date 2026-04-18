@@ -8,7 +8,7 @@ like running containers for Kubelet or loadbalancers for a cloud provider)
 matches the desired state in the object.  Each controller focuses on one
 *root* Kind, but may interact with other Kinds.
 
-We call this process *reconciling*.
+This process is called *reconciling*.
 
 In controller-runtime, the logic that implements the reconciling for
 a specific kind is a [*Reconciler*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc). A reconciler

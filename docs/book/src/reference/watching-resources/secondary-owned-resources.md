@@ -1,4 +1,4 @@
-# Watching secondary resources `Owned` by the controller
+# Watching secondary resources `owned` by the controller
 
 In Kubernetes controllers, it’s common to manage both **Primary Resources**
 and **Secondary Resources**. A **Primary Resource** is the main resource
@@ -9,7 +9,7 @@ This section explains how to manage **Secondary Resources**
 which are `Owned` by the controller. This example shows how to:
 
 - Set the [Owner Reference][cr-owner-ref-doc] between the primary resource (`Busybox`) and the secondary resource (`Deployment`) to ensure proper lifecycle management.
-- Configure the controller to `Watch` the secondary resource using `Owns()` in `SetupWithManager()`. See that `Deployment` is owned by the `Busybox` controller because
+- Configure the controller to `Watch` the secondary resource using `Owns()` in `SetupWithManager()`. See that the `Busybox` controller owns `Deployment` because
 it is created and managed by it.
 
 ## Setting the owner reference
@@ -145,7 +145,7 @@ that the controller should monitor. This way, the controller
 automatically reconciles the primary resource whenever the secondary
 resource changes (e.g., is updated or deleted).
 
-### Example: Configuring `SetupWithManager` to watch secondary resources
+### Example: configuring `setupwithmanager` to watch secondary resources
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
@@ -169,7 +169,7 @@ i.e. to `watch`, `get`, `list`, `create`, `update`, and `delete` permissions for
 ### Example: RBAC markers
 
 Before the `Reconcile` method, define the appropriate RBAC markers.
-These markers are used by [controller-gen][controller-gen] to generate the necessary
+[controller-gen][controller-gen] uses these markers to generate the necessary
 roles and permissions when you run `make manifests`.
 
 ```go

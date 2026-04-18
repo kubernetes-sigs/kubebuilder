@@ -45,7 +45,7 @@ For further information on the project layout, see [What's in a basic project?][
 > [!TIP]
 > **Recommended:** Enable the [AutoUpdate Plugin][autoupdate-v1-alpha] (GitHub Actions) to reduce effort. You can also run [alpha update](./reference/commands/alpha_update.md) locally—both use the same update logic. Use the other options mainly for older projects that do not have `cliVersion` in the `PROJECT` file as a one-time step to reach a supported version; after that, use these workflows for future updates (older versions cannot use these automation features).
 
-###  **(Recommended)** AutoUpdate/GitHub Action: Get Notified of New Kubebuilder Releases via Issues with a PR Link to Review and Upgrade
+### (Recommended) AutoUpdate/GitHub Action: Get notified of new Kubebuilder releases via issues with a PR link to review and upgrade
 
 The [AutoUpdate Plugin][autoupdate-v1-alpha] scaffolds an action that automatically monitors for new Kubebuilder releases and
 opens a GitHub Issue with a Pull Request compare link when updates are available. This is ideal for
@@ -69,7 +69,7 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 
 See the [AutoUpdate Plugin documentation][autoupdate-v1-alpha] for complete details.
 
-### **(Recommended)** Use `alpha update` to Upgrade Without Losing Customisations (Logic Behind AutoUpdate/GitHub Action)
+### (Recommended) Use `alpha update` to upgrade without losing customisations (logic behind AutoUpdate/GitHub Action)
 
 If you prefer to run updates locally instead of relying on GitHub Actions, you can use the same logic
 as the [AutoUpdate Plugin][autoupdate-v1-alpha] directly from your command line.
@@ -92,7 +92,7 @@ resolve any conflicts if needed, and then push a Pull Request from your local en
 
 See the [`alpha update` command reference](./reference/commands/alpha_update.md) for all options and flags.
 
-### Regenerate with Help and Merge Manually
+### Regenerate with help and merge manually
 
 The `kubebuilder alpha generate` command re-scaffolds your entire project based on your `PROJECT` file
 configuration. You can then manually compare and merge your custom code. For example, you can use it to

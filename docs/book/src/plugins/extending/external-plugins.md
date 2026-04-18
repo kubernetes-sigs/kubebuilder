@@ -19,7 +19,7 @@ If you are interested in this type of integration, collaborating with the
 maintainers of the third-party solution is recommended. Kubebuilder's maintainers
 are always willing to provide support in extending its capabilities.
 
-## How to Write an External Plugin
+## How to write an external plugin
 
 Communication between Kubebuilder and an external plugin occurs via
 standard I/O. Any language can be used to create the plugin, as long
@@ -82,7 +82,7 @@ structures.
 }
 ```
 
-### PluginResponse
+### Pluginresponse
 
 `PluginResponse` contains the modifications made by the plugin to the project. This data is serialized as JSON and returned to Kubebuilder through `stdout`.
 
@@ -115,7 +115,7 @@ Since communication between Kubebuilder and the plugin occurs through
 
 </aside>
 
-## How to Use an External Plugin
+## How to use an external plugin
 
 ### Prerequisites
 
@@ -152,7 +152,7 @@ If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all
 Set the environment variable `$EXTERNAL_PLUGINS_PATH`
 to specify a custom plugin binary path:
 
-```sh
+```bash
 export EXTERNAL_PLUGINS_PATH=<custom-path>
 ```
 
@@ -162,7 +162,7 @@ Otherwise, Kubebuilder would search for the plugins in a default path based on y
 
 You can now use it by calling the CLI commands:
 
-```sh
+```bash
 # Add Prometheus monitoring to an existing project
 kubebuilder edit --plugins sampleexternalplugin/v1
 
@@ -175,7 +175,7 @@ kubebuilder init --plugins sampleexternalplugin/v1 --help
 # Display help information for the edit subcommand
 kubebuilder edit --plugins sampleexternalplugin/v1 --help
 
-# Plugin chaining example: Use go/v4 plugin first, then apply external plugin
+# Plugin chaining example: use go/v4 plugin first, then apply external plugin
 kubebuilder edit --plugins go/v4,sampleexternalplugin/v1
 ```
 

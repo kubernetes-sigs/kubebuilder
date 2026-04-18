@@ -100,7 +100,7 @@ After making changes, run the appropriate commands based on what you modified:
 - After editing `*.md` → `make remove-spaces`
 
 **Always Run Before PR:**
-```bash
+```
 make lint-fix    # Auto-fix Go code style
 make test-unit   # Verify unit tests pass
 ```
@@ -110,19 +110,19 @@ make test-unit   # Verify unit tests pass
 ## Development Workflow
 
 ### Build & Install
-```bash
+```
 make build    # Build to ./bin/kubebuilder
 make install  # Copy to $(go env GOBIN)
 ```
 
 ### Lint & Format
-```bash
+```
 make lint       # Check only (golangci-lint + yamllint)
 make lint-fix   # Auto-fix Go code
 ```
 
 ### Testing
-```bash
+```
 make test-unit         # Fast unit tests (./pkg/..., ./test/e2e/utils/...)
 make test-integration  # Integration tests (may create temp dirs, download binaries)
 make test-testdata     # Test all testdata projects
@@ -251,7 +251,7 @@ Controllers implement `Reconcile(ctx, req) (ctrl.Result, error)`:
 ### Testing Pattern
 E2E tests use `utils.TestContext` from `test/e2e/utils/test_context.go`:
 
-```go
+```
 ctx := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 ctx.Init("--domain", "example.com", "--repo", "example.com/project")
 ctx.CreateAPI("--group", "crew", "--version", "v1", "--kind", "Captain")
@@ -263,7 +263,7 @@ ctx.LoadImageToKindCluster()
 
 After `make install`:
 
-```bash
+```
 kubebuilder init --domain example.com --repo github.com/example/myproject
 kubebuilder create api --group batch --version v1 --kind CronJob
 kubebuilder create webhook --group batch --version v1 --kind CronJob
@@ -292,7 +292,7 @@ This is the Kubebuilder tool itself. Follow Go logging conventions for CLI tools
 - **No ending punctuation** (but use periods between sentences)
 - **Error strings lowercase**: `fmt.Errorf("something bad")`
 
-```go
+```
 log.Info("writing scaffold for you to edit")
 log.Warn("unable to find boilerplate file. This file is used to generate the license header")
 log.Error("failed to read file", "file", path)
@@ -307,10 +307,10 @@ Templates produce controller code that runs in Kubernetes clusters. The GENERATE
 - **Start with capital letter**: `"Starting reconciliation"`
 - **No ending period** (but use periods between sentences)
 - **Past tense**: `"Failed to create Pod"` not `"Cannot create Pod"`
-- **Active voice**: specify subject or omit when it's the program itself
+- **Active voice**: specify subject or omit when it is the program itself
 - **Specify object type**: `"Created Deployment"` not `"Created"`
 
-```go
+```
 // In template files that generate controller code:
 log.Info("Starting reconciliation")
 log.Info("Created Deployment", "name", deploy.Name)
@@ -347,7 +347,7 @@ log.Error(err, "Failed to create Pod", "name", name)
 
 ## Search Tips
 
-```bash
+```
 rg "\\+kubebuilder:scaffold" --type go  # Find markers
 rg "type.*Plugin struct" pkg/plugins/   # Plugin implementations
 rg "PluginBundle" pkg/cli/              # Plugin registration

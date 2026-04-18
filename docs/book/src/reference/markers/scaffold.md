@@ -93,7 +93,7 @@ if err = (&crewv1.AdmiralReconciler{
 The `+kubebuilder:scaffold:builder` marker ensures that newly scaffolded controllers are
 properly registered with the manager, so that the controller can reconcile the resource.
 
-## List of `+kubebuilder:scaffold` Markers
+## List of `+kubebuilder:scaffold` markers
 
 | Marker                                                                         | Usual Location               | Function                                                                        |
 |--------------------------------------------------------------------------------|------------------------------|---------------------------------------------------------------------------------|

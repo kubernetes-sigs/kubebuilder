@@ -1,4 +1,4 @@
-# Step 2: Discovery CLI Commands
+# Step 2: discovery CLI commands
 
 Use AI to analyze your (now reorganized) Kubebuilder project and generate all CLI commands needed to recreate it with the latest version.
 
@@ -31,7 +31,7 @@ AI scans your entire codebase to discover everything, ensuring nothing is missed
 
 </aside>
 
-## Instructions to provide to your AI assistant
+## Instructions to provide to your ai assistant
 
 <aside class="warning" role="note">
 
@@ -191,7 +191,7 @@ The AI will analyze your project and output a bash script. The script will conta
 
 Here are real examples of what the AI instructions generate:
 
-### Example 1: Simple multi-group project
+### Example 1: simple multi-group project
 
 Analyzed: [kubernetes-sigs/scheduler-plugins](https://github.com/kubernetes-sigs/scheduler-plugins)
 
@@ -199,7 +199,7 @@ Analyzed: [kubernetes-sigs/scheduler-plugins](https://github.com/kubernetes-sigs
 #!/bin/bash
 # Module: sigs.k8s.io/scheduler-plugins
 # Domain: scheduling.x-k8s.io
-# Multi-group: YES
+# Multi-group: yes
 
 set -e
 kubebuilder init --domain scheduling.x-k8s.io --repo sigs.k8s.io/scheduler-plugins
@@ -213,7 +213,7 @@ make manifests && make generate && make build
 
 **Discovered:** 2 APIs, multi-group, no webhooks
 
-### Example 2: Single-group with webhooks (go/v3 migration)
+### Example 2: single-group with webhooks (go/v3 migration)
 
 Analyzed: [project-v3](https://github.com/kubernetes-sigs/kubebuilder/tree/release-3.13/testdata/project-v3)
 
@@ -221,7 +221,7 @@ Analyzed: [project-v3](https://github.com/kubernetes-sigs/kubebuilder/tree/relea
 #!/bin/bash
 # Module: sigs.k8s.io/kubebuilder/testdata/project-v3
 # Domain: testproject.org
-# Multi-group: NO
+# Multi-group: no
 
 set -e
 kubebuilder init --domain testproject.org --repo sigs.k8s.io/kubebuilder/testdata/project-v3
@@ -238,7 +238,7 @@ make manifests && make generate && make build
 
 **Discovered:** 3 APIs, single-group, webhooks with defaulting and validation
 
-### Example 3: Complex multi-group with external types
+### Example 3: complex multi-group with external types
 
 Analyzed: testdata/project-v4-multigroup
 
@@ -246,7 +246,7 @@ Analyzed: testdata/project-v4-multigroup
 #!/bin/bash
 # Module: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 # Domain: testproject.org
-# Multi-group: YES
+# Multi-group: yes
 
 set -e
 kubebuilder init --domain testproject.org --repo sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
@@ -260,28 +260,28 @@ kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
 kubebuilder create api --group apps --version v1 --kind Deployment --controller=true --resource=false
 
-# APIs - Group: crew
+# APIs - group: crew
 kubebuilder create api --group crew --version v1 --kind Captain --controller=true --resource=true
 
-# APIs - Group: ship
+# APIs - group: ship
 kubebuilder create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true
 kubebuilder create api --group ship --version v1 --kind Destroyer --controller=true --resource=true
 kubebuilder create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true
 
-# APIs - Group: sea-creatures
+# APIs - group: sea-creatures
 kubebuilder create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true
 kubebuilder create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true
 
-# APIs - Group: foo.policy
+# APIs - group: foo.policy
 kubebuilder create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true
 
-# APIs - Group: foo
+# APIs - group: foo
 kubebuilder create api --group foo --version v1 --kind Bar --controller=true --resource=true
 
-# APIs - Group: fiz
+# APIs - group: fiz
 kubebuilder create api --group fiz --version v1 --kind Bar --controller=true --resource=true
 
-# APIs - Group: example.com
+# APIs - group: example.com
 kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --controller=true --resource=true
 kubebuilder create api --group example.com --version v1alpha1 --kind Busybox --controller=true --resource=true
 kubebuilder create api --group example.com --version v1 --kind Wordpress --controller=true --resource=true

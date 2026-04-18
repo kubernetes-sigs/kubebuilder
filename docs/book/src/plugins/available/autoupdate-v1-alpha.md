@@ -1,4 +1,4 @@
-# AutoUpdate (`autoupdate/v1-alpha`)
+# Autoupdate (`autoupdate/v1-alpha`)
 
 Keeping your Kubebuilder project up to date with the latest improvements shouldn’t be a chore.
 With a small amount of setup, you can receive **automatic Pull Request** suggestions whenever a new
@@ -32,7 +32,7 @@ changes are not pushed or merged without proper review.
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
-### Optional: GitHub Models AI summary
+### Optional: GitHub models ai summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.
 If you want AI-generated summaries in your update issues:
@@ -119,7 +119,7 @@ Edit `.github/workflows/auto_update.yml`:
 
 ## Troubleshooting
 
-#### If you get the 403 Forbidden Error
+#### If you get the 403 forbidden error
 
 **Error message:**
 ```text

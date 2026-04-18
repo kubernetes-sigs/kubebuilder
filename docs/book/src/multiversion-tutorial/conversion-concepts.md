@@ -4,8 +4,8 @@ Since there are now two different versions, and users can request either
 version, define a way to convert between versions. For
 CRDs, this is done using a webhook, similar to the defaulting and
 validating webhooks [defined in the base
-tutorial](/cronjob-tutorial/webhook-implementation.md).  Like before,
-controller-runtime will help wire together the nitty-gritty bits, you
+tutorial](../cronjob-tutorial/webhook-implementation.md).  Like before,
+controller-runtime helps wire together the nitty-gritty bits, you
 just have to implement the actual conversion.
 
 Before doing that, understand how controller-runtime
@@ -52,8 +52,8 @@ the version stored by the API server.
 In that case, the API server needs to know how to convert between the
 desired version and the stored version.  Since the conversions are not
 built in for CRDs, the Kubernetes API server calls out to a webhook to do
-the conversion instead.  For Kubebuilder, this webhook is implemented by
-controller-runtime, and performs the hub-and-spoke conversions
+the conversion instead.  For Kubebuilder, controller-runtime implements
+this webhook, and performs the hub-and-spoke conversions
 discussed above.
 
 Now that the model for conversion is clear, actually

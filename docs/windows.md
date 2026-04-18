@@ -1,4 +1,4 @@
-# Windows Support
+# Windows support
 
 Since no efforts have been made to add support for Windows in the past couple of years, we have decided not to pursue native Windows support at this time, considering both the additional maintenance overhead it adds to the project and the limited community contributions in that area.
 

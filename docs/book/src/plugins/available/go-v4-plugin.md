@@ -1,4 +1,4 @@
-# go/v4 (go.kubebuilder.io/v4)
+# Go/v4 (go.kubebuilder.io/v4)
 
 **(Default Scaffold)**
 
@@ -22,7 +22,7 @@ directory on the root directory of the Kubebuilder project.
 
 To create a new project with the `go/v4` plugin the following command can be used:
 
-```sh
+```bash
 kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project --plugins=go/v4
 ```
 

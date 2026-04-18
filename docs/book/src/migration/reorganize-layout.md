@@ -1,4 +1,4 @@
-# Step 1: Reorganize to New Layout (Required only for Legacy Layouts)
+# Step 1: reorganize to new layout (required only for legacy layouts)
 
 **If your project was built with Kubebuilder prior to v3.0.0**, you will probably need this step.
 
@@ -23,7 +23,7 @@ Always validate changes carefully.
 
 </aside>
 
-## Instructions to provide to your AI assistant
+## Instructions to provide to your ai assistant
 
 Copy and paste these instructions to your AI assistant:
 
