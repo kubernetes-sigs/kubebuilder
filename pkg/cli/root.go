@@ -103,6 +103,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 
 	// Global flags for all subcommands.
 	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
+	cobra.CheckErr(cmd.RegisterFlagCompletionFunc(pluginsFlag, c.completionPluginsFlag))
 
 	// Register --project-version on the root command so that it shows up in help.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
@@ -251,4 +252,49 @@ func (c CLI) getPluginTableFilteredWithOptions(filter func(plugin.Plugin) bool, 
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// completionPluginsFlag implements cobra.CompletionFunc and is registered
+// as the flag completion function for --plugins
+// We should note that flag completion does not work for comma-chained values
+// but works fine when repeating the flag
+func (c CLI) completionPluginsFlag(
+	cmd *cobra.Command,
+	_ []string,
+	_ string,
+) ([]string, cobra.ShellCompDirective) {
+	// We filter strings that the user already passed to --plugins,
+	// in case the user chains the --plugins flag multiple times,
+	alreadyEntered, err := cmd.Flags().GetStringSlice(pluginsFlag)
+	if err != nil {
+		cobra.CheckErr(err)
+	}
+
+	comps := make([]string, 0, len(c.plugins))
+
+	for pluginKey, p := range c.plugins {
+		if slices.Contains(alreadyEntered, pluginKey) {
+			continue
+		}
+
+		// We also omit deprecated plugins from completion
+		if deprecated, ok := p.(plugin.Deprecated); ok {
+			if deprecated.DeprecationWarning() != "" {
+				continue
+			}
+		}
+
+		// If the plugin provides a description, we show that
+		// otherwise, we show the default description
+		desc := ""
+		if describable, ok := p.(plugin.Describable); ok {
+			desc = describable.Description()
+		} else {
+			desc = getPluginDescription(pluginKey)
+		}
+
+		comps = append(comps, cobra.CompletionWithDesc(pluginKey, desc))
+	}
+
+	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }

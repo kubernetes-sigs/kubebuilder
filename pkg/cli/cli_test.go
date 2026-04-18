@@ -231,6 +231,34 @@ var _ = Describe("CLI", func() {
 		})
 	})
 
+	Describe("completionPluginsFlag", func() {
+		It("should suggest available plugins and filter out entered/deprecated ones", func() {
+			p1 := newMockPlugin("p1.io", "v1", projectVersion)
+			p2 := newMockPlugin("p2.io", "v1", projectVersion)
+			p3 := newMockDeprecatedPlugin("p3.io", "v1-alpha", "deprecated", projectVersion)
+
+			c.plugins = makeMapFor(p1, p2, p3)
+
+			k1 := plugin.KeyFor(p1)
+			k2 := plugin.KeyFor(p2)
+
+			c.cmd = c.newRootCmd()
+			c.cmd.Flags().StringSlice(pluginsFlag, []string{}, "test usage")
+
+			err := c.cmd.Flags().Set(pluginsFlag, k1)
+			Expect(err).NotTo(HaveOccurred())
+
+			got, directive := c.completionPluginsFlag(c.cmd, []string{}, "")
+
+			Expect(directive).To(Equal(cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace))
+
+			expected := fmt.Sprintf("%s\tExternal or custom plugin", k2)
+
+			Expect(got).To(HaveLen(1))
+			Expect(got).To(ContainElement(expected))
+		})
+	})
+
 	Context("buildCmd", func() {
 		var projectFile string
 
