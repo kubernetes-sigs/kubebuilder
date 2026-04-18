@@ -211,11 +211,9 @@ See an example of how to visualize your custom metrics:
 
 ## Subcommands
 
-The Grafana plugin implements the following subcommands:
+The Grafana plugin implements the following subcommand:
 
 - edit (`$ kubebuilder edit [OPTIONS]`)
-
-- init (`$ kubebuilder init [OPTIONS]`)
 
 ## Affected files
 
