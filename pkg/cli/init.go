@@ -42,6 +42,20 @@ For further help about a specific plugin, set --plugins.
 		Run:     func(_ *cobra.Command, _ []string) {},
 	}
 
+	// Show hint message on how to list flags instead of showing file completion for
+	// commands that don't take files as arguments
+	cmd.ValidArgsFunction = func(
+		_ *cobra.Command,
+		args []string,
+		toComplete string,
+	) ([]cobra.Completion, cobra.ShellCompDirective) {
+		completions := []cobra.Completion{}
+		if len(args) == 0 && toComplete == "" {
+			completions = cobra.AppendActiveHelp(completions, "Type '--' and press TAB to list flags")
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),

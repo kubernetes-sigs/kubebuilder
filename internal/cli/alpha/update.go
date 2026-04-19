@@ -144,6 +144,20 @@ Defaults:
 		},
 	}
 
+	// Show hint message on how to list flags instead of showing file completion for
+	// commands that don't take files as arguments
+	updateCmd.ValidArgsFunction = func(
+		_ *cobra.Command,
+		args []string,
+		toComplete string,
+	) ([]cobra.Completion, cobra.ShellCompDirective) {
+		completions := []cobra.Completion{}
+		if len(args) == 0 && toComplete == "" {
+			completions = cobra.AppendActiveHelp(completions, "Type '--' and press TAB to list flags")
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
 	updateCmd.Flags().StringVar(&opts.FromVersion, "from-version", "",
 		"Kubebuilder release version to upgrade from (e.g., v4.6.0); should match the version used "+
 			"to init the project. Defaults to the version in the PROJECT file if unset")
