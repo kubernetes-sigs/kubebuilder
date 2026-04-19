@@ -238,13 +238,17 @@ Use these standard descriptions when applicable:
 
 - `--domain`: `Domain for your APIs (e.g., example.org creates crew.example.org for API groups)`
 - `--repo`: `Go module name (e.g., github.com/user/repo); auto-detected from current directory if not provided`
-- `--plugins`: `Comma-separated list of plugins to use (default: go/v4)`
+- `--plugins`: `Comma-separated list of plugin keys to use (e.g., go/v4, helm/v2-alpha). Defaults to the built-in go/v4 bundle if unset`
 - `--multigroup`:
   - In `init`: `If set, enable multigroup layout (organize APIs by group)`
   - In `edit`: `Enable or disable multigroup layout (organize APIs by group); use --multigroup=false to disable`
-- `--skip-go-version-check`: `If set, skip Go version check`
+- `--skip-go-version-check`:
+  - When default is `false`: `If set, skip Go version check`
+  - When default is `true`: `Skip the Go version check (enabled by default; use --skip-go-version-check=false to enforce)`
 - `--force`: `If set, attempt to create resource even if it already exists` (or `If set, regenerate all files except Chart.yaml` for helm plugins)
-- `--license`: `License header to use for boilerplate (e.g., apache2, none). Defaults to apache2 if unset`
+- `--license`:
+  - In `init`: `License header to use for boilerplate (e.g., apache2, none). Defaults to apache2 if unset`
+  - In `edit`: `License header to use for boilerplate (e.g., apache2, none). If unset, preserves the existing boilerplate`
 - `--owner`: `Owner name for copyright license headers`
 - `--namespaced`:
   - In `api`: `Resource is namespaced by default; use --namespaced=false to create a cluster-scoped resource`
@@ -287,7 +291,8 @@ Example:
 
 - Apply these standards across all Kubebuilder plugins.
 - Prefer consistency across the codebase over one-off wording choices.
-- When the same flag appears in multiple plugins (e.g., `--force`, `--make`), use identical descriptions across all plugins.
+- When the same flag appears with equivalent semantics across plugins, use identical descriptions. When semantics differ (e.g., `--force` in `create`/`api`/`edit`, or `--license` in `init`/`edit`), document the per-command variant explicitly.
+- Flag descriptions should not end with a period (matches the `--help` convention used by cobra and the rest of Kubebuilder).
 - For multi-line flag descriptions in code, use string concatenation with `+` and break at natural boundaries (70-80 characters per line).
 - When in doubt, choose the wording that is clearest in `--help` output.
 - See [references/REFERENCE.md](references/REFERENCE.md) for technical references and industry standards that inform these guidelines.
