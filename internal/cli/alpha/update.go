@@ -145,44 +145,47 @@ Defaults:
 	}
 
 	updateCmd.Flags().StringVar(&opts.FromVersion, "from-version", "",
-		"binary release version to upgrade from. Should match the version used to init the project and be "+
-			"a valid release version, e.g., v4.6.0. If not set, it defaults to the version specified in the PROJECT file.")
+		"Kubebuilder release version to upgrade from (e.g., v4.6.0); should match the version used "+
+			"to init the project. Defaults to the version in the PROJECT file if unset")
 	updateCmd.Flags().StringVar(&opts.ToVersion, "to-version", "",
-		"binary release version to upgrade to. Should be a valid release version, e.g., v4.7.0. "+
-			"If not set, it defaults to the latest release version available in the project repository.")
+		"Kubebuilder release version to upgrade to (e.g., v4.7.0). "+
+			"Defaults to the latest release available if unset")
 	updateCmd.Flags().StringVar(&opts.FromBranch, "from-branch", "",
-		"Git branch to use as current state of the project for the update.")
+		"Git branch to use as the current state of the project for the update")
 	updateCmd.Flags().BoolVar(&opts.Force, "force", false,
-		"Force the update even if conflicts occur. Conflicted files will include conflict markers, and a "+
-			"commit will be created automatically. Ideal for automation (e.g., cronjobs, CI).")
+		"If set, force the update even if conflicts occur; conflicted files include conflict markers "+
+			"and a commit is created automatically (ideal for automation, e.g., cronjobs, CI)")
 	updateCmd.Flags().BoolVar(&opts.ShowCommits, "show-commits", false,
-		"If set, the update will keep the full history instead of squashing into a single commit.")
+		"If set, keep the full history instead of squashing into a single commit")
 	updateCmd.Flags().StringArrayVar(&opts.RestorePath, "restore-path", nil,
-		"Paths to preserve from the base branch (repeatable). Not supported with --show-commits.")
+		"Paths to preserve from the base branch (repeatable; not supported with --show-commits)")
 	updateCmd.Flags().StringVar(&opts.OutputBranch, "output-branch", "",
-		"Override the default output branch name (default: kubebuilder-update-from-<from-version>-to-<to-version>).")
+		"Override the default output branch name. "+
+			"Defaults to kubebuilder-update-from-<from-version>-to-<to-version> if unset")
 	updateCmd.Flags().BoolVar(&opts.Push, "push", false,
-		"Push the output branch to the remote repository after the update.")
+		"If set, push the output branch to the remote repository after the update")
 	updateCmd.Flags().StringVar(&opts.CommitMessage, "merge-message", "",
 		"Custom commit message for successful merges (no conflicts). "+
-			"Defaults to 'chore(kubebuilder): update scaffold <from> -> <to>'.")
+			"Defaults to 'chore(kubebuilder): update scaffold <from> -> <to>' if unset")
 	updateCmd.Flags().StringVar(&opts.CommitMessageConflict, "conflict-message", "",
-		"Custom commit message for merges with conflicts. "+
-			"Defaults to 'chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold <from> -> <to>'.")
+		"Custom commit message for merges with conflicts. Defaults to "+
+			"'chore(kubebuilder): (:warning: manual conflict resolution required) update scaffold <from> -> <to>' "+
+			"if unset")
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
-		"Create a GitHub issue with a pre-filled checklist and compare link after the update completes (requires `gh`).")
+		"If set, create a GitHub issue with a pre-filled checklist and compare link after the update "+
+			"completes (requires `gh`)")
 	updateCmd.Flags().BoolVar(
 		&opts.UseGhModels,
 		"use-gh-models",
 		false,
-		"Generate and post an AI summary comment to the GitHub Issue using `gh models run`. "+
-			"Requires --open-gh-issue and GitHub CLI (`gh`) with the `gh-models` extension.")
+		"If set, generate and post an AI summary comment to the GitHub Issue using `gh models run` "+
+			"(requires --open-gh-issue and GitHub CLI with the `gh-models` extension)")
 	updateCmd.Flags().StringArrayVar(
 		&gitCfg,
 		"git-config",
 		nil,
-		"Per-invocation Git config (repeatable). "+
-			"Defaults: -c merge.renameLimit=999999 -c diff.renameLimit=999999 -c merge.conflictStyle=merge. "+
-			"Your configs are applied on top. To disable defaults, include `--git-config disable`")
+		"Per-invocation Git config (repeatable). Defaults to "+
+			"'-c merge.renameLimit=999999 -c diff.renameLimit=999999 -c merge.conflictStyle=merge' if unset; "+
+			"your configs are applied on top. To disable defaults, include '--git-config disable'")
 	return updateCmd
 }
