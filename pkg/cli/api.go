@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:dupl
 package cli
 
 import (
@@ -35,6 +34,19 @@ func (c CLI) newCreateAPICmd() *cobra.Command {
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),
+	}
+
+	// Show hint message on how to list flags instead of showing file completion
+	cmd.ValidArgsFunction = func(
+		_ *cobra.Command,
+		args []string,
+		toComplete string,
+	) ([]cobra.Completion, cobra.ShellCompDirective) {
+		completions := []cobra.Completion{}
+		if len(args) == 0 && toComplete == "" {
+			completions = cobra.AppendActiveHelp(completions, "Type '--' and press TAB to list more flags")
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
