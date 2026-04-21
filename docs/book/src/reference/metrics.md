@@ -8,9 +8,9 @@ publishes [a collection of performance metrics](/reference/metrics-reference.md)
     <p class="note-title">IMPORTANT: If you are using `kube-rbac-proxy`</p>
 
 Please stop using the image `gcr.io/kubebuilder/kube-rbac-proxy` as soon as possible.
-Your projects will be affected and may fail to work if the image cannot be pulled.
+Your projects are affected and may fail to work if the image cannot be pulled.
 
-**Images provided under `gcr.io/kubebuilder/` will be unavailable from early 2025.**
+**Images provided under `gcr.io/kubebuilder/` are unavailable from early 2025.**
 
 - **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint.
 In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
@@ -25,7 +25,7 @@ your project to use the image from another source.
 
 </aside>
 
-## Metrics Configuration
+## Metrics configuration
 
 By looking at the file `config/default/kustomization.yaml` you can
 check the metrics are exposed by default:
@@ -37,15 +37,14 @@ check the metrics are exposed by default:
 
 ```yaml
 patches:
-   # [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
-   # More info: https://book.kubebuilder.io/reference/metrics
+   # [METRICS] The following patch enables the metrics endpoint using HTTPS and the port :8443.
+   # More info: ./metrics.md
    - path: manager_metrics_patch.yaml
      target:
         kind: Deployment
 ```
 
-Then, you can check in the `cmd/main.go` where metrics server
-is configured:
+Then, you can check in the `cmd/main.go` where you configure the metrics server:
 
 ```go
 // Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
@@ -55,7 +54,7 @@ Metrics: metricsserver.Options{
 },
 ```
 
-## Consuming Controller Metrics in Kubebuilder
+## Consuming controller metrics in Kubebuilder
 
 You can consume the metrics exposed by the controller using the `curl`
 command or any other HTTP client such as Prometheus.
@@ -63,11 +62,11 @@ command or any other HTTP client such as Prometheus.
 However, before doing so, ensure that your client has the
 **required RBAC permissions** to access the `/metrics` endpoint.
 
-### Granting Permissions to Access Metrics
+### Granting permissions to access metrics
 
 Kubebuilder scaffolds a `ClusterRole` with the necessary read permissions under:
 
-```
+```text
 config/rbac/metrics_reader_role.yaml
 ```
 
@@ -122,7 +121,7 @@ Kubebuilder avoids scaffolding RoleBindings by default because it might:
     - This design provides safety and flexibility, but requires manual binding.
 </aside>
 
-### Testing the Metrics Endpoint (via Curl Pod)
+### Testing the metrics endpoint (via curl pod)
 
 If you'd like to manually test access to the metrics endpoint, follow these steps:
 
@@ -161,12 +160,12 @@ curl -v -k -H "Authorization: Bearer $TOKEN" \
 <p class="note-title">Notes</p>
 
 - Replace `<project-name>`, `<namespace>`, and `<service-account-name>` accordingly.
-- Ensure TLS is enabled and certificates are valid if not skipping verification (`-k`).
+- Ensure you enable TLS and certificates are valid if not skipping verification (`-k`).
 
 Check the options to protect your metrics endpoint in the next sections.
 </aside>
 
-## Metrics Protection and available options
+## Metrics protection and available options
 
 Unprotected metrics endpoints can expose valuable data to unauthorized users,
 such as system performance, application behavior, and potentially confidential
@@ -174,7 +173,7 @@ operational metrics. This exposure can lead to security vulnerabilities
 where an attacker could gain insights into the system's operation
 and exploit weaknesses.
 
-### By using authn/authz (Enabled by default)
+### By using authn/authz (enabled by default)
 
 To mitigate these risks, Kubebuilder projects utilize authentication (authn) and authorization (authz) to protect the
 metrics endpoint. This approach ensures that only authorized users and service accounts can access sensitive metrics
@@ -185,7 +184,7 @@ However, its usage has been discontinued in recent versions. Since the release o
 metrics endpoint enabled and protected by default using the [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/server)
 feature provided by controller-runtime.
 
-Therefore, you will find the following configuration:
+Therefore, you find the following configuration:
 
 - In the `cmd/main.go`:
 
@@ -231,20 +230,20 @@ spec:
       - >
         while true;
         do
-          # Note here that we are passing the token obtained from the ServiceAccount to curl the metrics endpoint
+          # Note here that this passes the token obtained from the ServiceAccount to curl the metrics endpoint
           curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
           https://controller-manager-metrics-service.system.svc.cluster.local:8443/metrics;
           sleep 60;
         done
 ```
 
-### **(Recommended)** Enabling certificates for Production (Disabled by default)
+### **(Recommended)** Enabling certificates for production (disabled by default)
 
 <aside class="warning" role="note">
 <p class="note-title">Why Is This Not Enabled by Default?</p>
 
 This option is not enabled by default because it introduces a dependency on CertManager.
-To keep the project as lightweight and beginner-friendly as possible, it is disabled by default.
+To keep the project as lightweight and beginner-friendly as possible, Kubebuilder disables it by default.
 
 </aside>
 
@@ -256,10 +255,10 @@ automatically generate a self-signed certificate to secure the metrics server.
 While this is convenient for development and testing, it is **not** recommended
 for production.
 
-Those certificates are used to secure the transport layer (TLS).
-The token authentication using `authn/authz`, which is enabled by default serves
+You use those certificates to secure the transport layer (TLS).
+The token authentication using `authn/authz`, which Kubebuilder enables by default, serves
 as the application-level credential. However, for example, when you enable
-the integration of your metrics with Prometheus, those certificates can be used
+the integration of your metrics with Prometheus, you can use those certificates
 to secure the communication.
 
 </aside>
@@ -348,32 +347,32 @@ project to use certificates managed by CertManager.
             kind: ServiceMonitor
       ```
 
-    > **NOTE** that the `ServiceMonitor` patch above will ensure that if you enable the Prometheus integration,
-    it will securely reference the certificates created and managed by CertManager. But it will **not** enable the
+    > **NOTE** that the `ServiceMonitor` patch above ensures that if you enable the Prometheus integration,
+    it securely references the certificates created and managed by CertManager. But it does **not** enable the
     integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
     in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
-### **(Optional)** By using Network Policy (Disabled by default)
+### **(Optional)** By using network policy (disabled by default)
 
 NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
-flow at the IP address or port level. However, it doesn't handle `authn/authz`.
+flow at the IP address or port level. However, it does not handle `authn/authz`.
 
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
-```
+```yaml
 # [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' will be able to gather the metrics.
-# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' will be able to work properly.
+# Only Pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
+# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
 #- ../network-policy
 ```
 
-## Exporting Metrics for Prometheus
+## Exporting metrics for Prometheus
 
 Follow the steps below to export the metrics using the Prometheus Operator:
 
 1. Install Prometheus and Prometheus Operator.
    We recommend using [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)
-   in production if you don't have your own monitoring system.
+   in production if you do not have your own monitoring system.
    If you are just experimenting, you can only install Prometheus and Prometheus Operator.
 
 2. Uncomment the line `- ../prometheus` in the `config/default/kustomization.yaml`.
@@ -384,11 +383,11 @@ Follow the steps below to export the metrics using the Prometheus Operator:
 - ../prometheus
 ```
 
-Note that, when you install your project in the cluster, it will create the
+Note that, when you install your project in the cluster, it creates the
 `ServiceMonitor` to export the metrics. To check the ServiceMonitor,
 run `kubectl get ServiceMonitor -n <project>-system`. See an example:
 
-```
+```bash
 $ kubectl get ServiceMonitor -n monitor-system
 NAME                                         AGE
 monitor-controller-manager-metrics-monitor   2m8s
@@ -415,7 +414,7 @@ for the metrics exported from the namespace where the project is running
 
 <img width="1680" alt="Screenshot 2019-10-02 at 13 07 13" src="https://user-images.githubusercontent.com/7708031/66042888-a497da80-e515-11e9-9d77-d8a9fc1159a5.png">
 
-## Publishing Additional Metrics
+## Publishing additional metrics
 
 If you wish to publish additional metrics from your controllers, this
 can be easily achieved by using the global registry from
@@ -462,7 +461,7 @@ In order to publish metrics and view them on the Prometheus UI, the Prometheus i
 
 </aside>
 
-Those metrics will be available for prometheus or
+Those metrics are available for prometheus or
 other openmetrics systems to scrape.
 
 ![Screen Shot 2021-06-14 at 10 15 59 AM](https://user-images.githubusercontent.com/37827279/121932262-8843cd80-ccf9-11eb-9c8e-98d0eda80169.png)

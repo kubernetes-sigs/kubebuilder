@@ -1,8 +1,8 @@
-# Creating Custom Markers
+# Creating custom markers
 
 ## Overview
 
-When using Kubebuilder as a library, you may need to scaffold files with extensions that aren't natively supported by Kubebuilder's marker system. This guide shows you how to create custom marker support for any file extension.
+When using Kubebuilder as a library, you may need to scaffold files with extensions that are not natively supported by Kubebuilder's marker system. This guide shows you how to create custom marker support for any file extension.
 
 ## When to Use Custom Markers
 
@@ -11,9 +11,9 @@ Custom markers are useful when:
 - You're building an external plugin for languages not natively supported by Kubebuilder
 - You want to scaffold files with custom extensions (`.rs`, `.java`, `.py`, `.tpl`, etc.)
 - You need scaffolding markers in non-Go files for your own use cases
-- Your file extensions aren't (and shouldn't be) part of the core `commentsByExt` map
+- Your file extensions are not (and should not be) part of the core `commentsByExt` map
 
-## Understanding Markers
+## Understanding markers
 
 Markers are special comments used by Kubebuilder for scaffolding purposes. They indicate where code can be inserted or modified. The core Kubebuilder marker system only supports `.go`, `.yaml`, and `.yml` files by default.
 
@@ -22,11 +22,11 @@ Example of a marker in a Go file:
 // +kubebuilder:scaffold:imports
 ```
 
-## Implementation Example
+## Implementation example
 
 Here's how to implement custom markers for Rust files (`.rs`). This same pattern can be applied to any file extension.
 
-### Define Your Marker Type
+### Define your marker type
 
 ```go
 // pkg/markers/rust.go

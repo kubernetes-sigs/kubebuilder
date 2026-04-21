@@ -18,7 +18,7 @@ for more details on plugin versioning.
 ## Introducing changes to plugins
 
 Changes made to plugins only require a plugin version increase if and only if a change is made to a plugin
-that breaks projects scaffolded with the previous plugin version. Once a plugin version `vX` is stabilized (it doesn't
+that breaks projects scaffolded with the previous plugin version. Once a plugin version `vX` is stabilized (it does not
 have an "alpha" or "beta" suffix), a new plugin package should be created containing a new plugin with version
 `v(X+1)-alpha`. Typically this is done by (semantically) `cp -r pkg/plugins/golang/vX pkg/plugins/golang/v(X+1)` then updating
 version numbers and paths. All further breaking changes to the plugin should be made in this package; the `vX`
@@ -34,7 +34,7 @@ for users to upgrade their projects from `vX` to `v(X+1)-alpha`.
 
 Kubebuilder scaffolds projects with plugin `go.kubebuilder.io/v4` by default.
 
-You create a feature that adds a new marker to the file `main.go` scaffolded by `init` that `create api` will use to update that file.
+You create a feature that adds a new marker to the file `main.go` scaffolded by `init` that `create api` uses to update that file.
 The changes introduced in your feature would cause errors if used with projects built with
 plugins `go.kubebuilder.io/v4` without users manually updating their projects.
 

@@ -16,8 +16,7 @@ See the `project-v4-with-plugins` directory under the [testdata][testdata]
 directory in the Kubebuilder project to check an example
 of scaffolding created using this plugin.
 
-The `Memcached` API and its controller was scaffolded
-using the command:
+The following command scaffolded the `Memcached` API and its controller:
 
 ```shell
 kubebuilder create api \
@@ -31,7 +30,7 @@ kubebuilder create api \
   --plugins="deploy-image/v1-alpha"
 ```
 
-The `Busybox` API was created with:
+The following command created the `Busybox` API:
 
 ```shell
 kubebuilder create api \
@@ -48,13 +47,13 @@ kubebuilder create api \
 
 - This plugin is ideal for users who are just getting started with Kubernetes operators.
 - It helps users deploy and manage an image (Operand) using the [Operator pattern][operator-pattern].
-- If you're looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
+- If you are looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
 
 ## How to use it?
 
 1. **Initialize your project**:
    After creating a new project with `kubebuilder init`, you can use this
-   plugin to create APIs. Ensure that you've completed the
+   plugin to create APIs. Ensure that you have completed the
    [quick start][quick-start] guide before proceeding.
 
 2. **Create APIs**:
@@ -69,7 +68,7 @@ kubebuilder create api \
 <p class="note-title">Note on make run:</p>
 
 When running the project locally with `make run`, the Operand image
-provided will be stored as an environment variable in the
+provided is stored as an environment variable in the
 `config/manager/manager.yaml` file.
 
 Ensure you export the environment variable before running the project locally, such as:
@@ -98,7 +97,7 @@ files are affected, in addition to the existing Kubebuilder scaffolding:
 - `main.go`: Updates the file to add the controller setup.
 - `config/manager/manager.yaml`: Updates to include environment variables for storing the image.
 
-## Further Resources:
+## Further resources
 
 - Check out this [video][video] to see how it works.
 

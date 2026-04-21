@@ -130,26 +130,27 @@ Note: Layout settings can be changed later with 'kubebuilder edit'.
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.skipGoVersionCheck, "skip-go-version-check",
-		false, "skip Go version check")
+		false, "If set, skip Go version check")
 
 	// dependency args
-	fs.BoolVar(&p.fetchDeps, "fetch-deps", true, "download dependencies after scaffolding")
+	fs.BoolVar(&p.fetchDeps, "fetch-deps", true,
+		"Download dependencies after scaffolding (enabled by default; use --fetch-deps=false to disable)")
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
-		"license header to use for boilerplate "+
+		"License header to use for boilerplate (e.g., apache2, none). Defaults to apache2 if unset "+
 			"(see: https://book.kubebuilder.io/reference/license-header)")
-	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.StringVar(&p.owner, "owner", "", "Owner name for copyright license headers")
 	fs.StringVar(&p.licenseFile, "license-file", "",
-		"path to custom license file; content copied to hack/boilerplate.go.txt (overrides --license)")
+		"Path to custom license file; content copied to hack/boilerplate.go.txt (overrides --license)")
 
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "Go module name (e.g., github.com/user/repo); "+
 		"auto-detected from current directory if not provided")
 	fs.BoolVar(&p.multigroup, "multigroup", false,
-		"enable multigroup layout (organize APIs by group)")
+		"If set, enable multigroup layout (organize APIs by group)")
 	fs.BoolVar(&p.namespaced, "namespaced", false,
-		"enable namespace-scoped deployment (default: cluster-scoped)")
+		"If set, enable namespace-scoped deployment (default: cluster-scoped)")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {

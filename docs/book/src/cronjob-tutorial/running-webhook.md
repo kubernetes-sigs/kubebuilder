@@ -2,7 +2,7 @@
 
 ## cert-manager
 
-You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
+Follow the [cert-manager installation guide](./cert-manager.md) to install the cert-manager bundle.
 
 ## Build your image
 
@@ -16,7 +16,7 @@ make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 <p class="note-title"> Using Kind </p>
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a Kind cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified Kind cluster:
 
 ```bash
@@ -28,7 +28,7 @@ To know more, see: [Using Kind For Development Purposes and CI](./../reference/k
 </aside>
 
 
-## Deploy Webhooks
+## Deploy webhooks
 
 You need to enable the webhook and cert manager configuration through kustomize.
 `config/default/kustomization.yaml` should have the following webhook-related sections uncommented:

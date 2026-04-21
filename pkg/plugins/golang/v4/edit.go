@@ -102,15 +102,17 @@ Note: To add optional plugins after initialization, use 'kubebuilder edit --plug
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.fs = fs
-	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
-	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespace-scoped deployment")
-	fs.BoolVar(&p.force, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
+	fs.BoolVar(&p.multigroup, "multigroup", false,
+		"Enable or disable multigroup layout (organize APIs by group); use --multigroup=false to disable")
+	fs.BoolVar(&p.namespaced, "namespaced", false,
+		"Enable or disable namespace-scoped deployment (default: cluster-scoped); use --namespaced=false to disable")
+	fs.BoolVar(&p.force, "force", false, "If set, overwrite scaffolded files to apply changes (manual edits may be lost)")
 	fs.StringVar(&p.licenseFile, "license-file", "",
-		"path to custom license file; content copied to hack/boilerplate.go.txt")
+		"Path to custom license file; content copied to hack/boilerplate.go.txt")
 	fs.StringVar(&p.license, "license", "",
-		"license header to use for boilerplate "+
+		"License header to use for boilerplate (e.g., apache2, none) "+
 			"(see: https://book.kubebuilder.io/reference/license-header)")
-	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.StringVar(&p.owner, "owner", "", "Owner name for copyright license headers")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

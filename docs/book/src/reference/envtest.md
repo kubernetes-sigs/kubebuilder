@@ -9,15 +9,15 @@ Installing the binaries is as a simple as running `make envtest`. `envtest` will
 by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
 
-You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases.Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, Kubebuilder configures it to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
-## Tool Binaries
+## Tool binaries
 ..
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 ...
 
-## Tool Versions
+## Tool versions
 ...
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
@@ -38,26 +38,24 @@ $(ENVTEST): $(LOCALBIN)
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 ```
 
-## Installation in Air Gapped/disconnected environments
+## Installation in air gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
-[`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to
-the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
-The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
+[`setup-envtest`][setup-envtest] to download the required binaries locally. There are several ways to configure `setup-envtest` for [air-gapped environments](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
+The examples below show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
 
 ### Download the binaries
-`make envtest` will download the `setup-envtest` binary to `./bin/`.
+`make envtest` downloads the `setup-envtest` binary to `./bin/`.
 ```shell
 make envtest
 ```
 
-Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them
-[here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries)
+The `setup-envtest` tool stores binaries in OS-specific locations. See [binary storage locations](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries) for details.
 ```sh
 ./bin/setup-envtest use 1.31.0
 ```
 
 ### Update the test make target
-Once these binaries are installed, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
+Once you install these binaries, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
 binaries and not reach out to remote resources. You could also set the `ENVTEST_INSTALLED_ONLY` env variable.
 
 ```makefile
@@ -67,7 +65,7 @@ test: manifests generate fmt vet
 
 NOTE: The `ENVTEST_K8S_VERSION` needs to match the `setup-envtest` you downloaded above. Otherwise, you will see an error like the below
 ```sh
-no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what's on disk
+no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what is on disk
 ```
 
 ## Writing tests
@@ -100,7 +98,7 @@ Logs from the test runs are prefixed with `test-env`.
 
 You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
-Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
+Therefore, you can check that the plugin generates a test using ENV TEST for the controller which ensures that the controller creates the Deployment successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) [samples here](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.6.0/testdata/project-v4-with-plugins/internal/controller/busybox_controller_test.go).
 
 </aside>
 
@@ -108,7 +106,7 @@ Therefore, you can check that a test using ENV TEST will be generated for the co
 
 Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
 
-The `make test` command will install these binaries to the `bin/` directory and use them when running tests that use `envtest`.
+The `make test` command installs these binaries to the `bin/` directory and uses them when running tests that use `envtest`.
 Ie,
 ```shell
 ./bin/k8s/
@@ -120,17 +118,17 @@ Ie,
 
 You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.
 
-### Environment Variables
+### Environment variables
 
 | Variable name | Type | When to use |
 | --- | :--- | :---                                                                                                                                                                                                                                                    |
 | `USE_EXISTING_CLUSTER` | boolean | Instead of setting up a local control plane, point to the control plane of an existing cluster. |
 | `KUBEBUILDER_ASSETS` | path to directory | Point integration tests to a directory containing all binaries (api-server, etcd and kubectl).                                                                                                                                                          |
 | `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | paths to, respectively, api-server, etcd and kubectl binaries | Similar to `KUBEBUILDER_ASSETS`, but more granular. Point integration tests to use binaries other than the default ones. These environment variables can also be used to ensure specific tests run with expected versions of these binaries.            |
-| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail.                                                                                                      |
+| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them fails.                                                                                                      |
 | `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane.                                                        |
 
-See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
+See that the `test` makefile target ensures that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
 
 ```go
 var _ = BeforeSuite(func(done Done) {
@@ -162,8 +160,7 @@ var _ = AfterSuite(func() {
 <aside class="note" role="note">
 <p class="note-title">ENV TEST Config Options</p>
 
-You can look at the controller-runtime docs to know more about its configuration options, see [here](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment). On top of that, if you are
-looking to use ENV TEST to test your webhooks then you might want to give a look at its install [options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
+See the [envtest Environment configuration](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment) for more options. If you are testing webhooks, also review the [webhook install options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
 
 </aside>
 
@@ -187,7 +184,7 @@ testEnv = &envtest.Environment{
 
 ## Testing considerations
 
-Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane will behave differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
+Unless you are using an existing cluster, keep in mind that no built-in controllers run in the test context. In some ways, the test control plane behaves differently from "real" clusters, and that might impact how you write tests. One common example is garbage collection; because no controllers monitor built-in resources, Kubernetes does not delete objects, even if you set up an `OwnerReference`.
 
 To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
 
@@ -205,7 +202,7 @@ Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerRef
 
 <p class="note-title">Namespace usage limitation</p>
 
-EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
+EnvTest does not support namespace deletion. Deleting a namespace seems to succeed, but Kubernetes just puts the namespace in a Terminating state, and never actually reclaims it. Trying to recreate the namespace fails. This causes your reconciler to continue reconciling any objects left behind, unless you delete them.
 
 To overcome this limitation you can create a new namespace for each test. Even so, when one test completes (e.g. in "namespace-1") and another test starts (e.g. in "namespace-2"), the controller will still be reconciling any active objects from "namespace-1". This can be avoided by ensuring that all tests clean up after themselves as part of the test teardown.  If teardown of a namespace is difficult, it may be possible to wire the reconciler in such a way that it ignores reconcile requests that come from namespaces other than the one being tested:
 
@@ -226,9 +223,9 @@ Whenever your tests create a new namespace, it can modify the value of reconcile
 For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
 </aside>
 
-## Cert-Manager and Prometheus options
+## Cert-manager and Prometheus options
 
-Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
+Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when using ENV TEST, you are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
 
 Therefore, to test a reconciliation in common cases you do not need to care about these options. However, if you would like to do tests with the Prometheus and the Cert-manager installed you can add the required steps to install them before running the tests.
 Following an example.
@@ -349,10 +346,10 @@ of the projects build with Kubebuilder see the [README][readme]
 of its tooling.
 </aside>
 
-[metrics]: https://book.kubebuilder.io/reference/metrics.html
+[metrics]: ./metrics.md
 [envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
-[cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
+[cert-manager]: ../cronjob-tutorial/cert-manager.md
 [sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v4/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk
 [readme]: https://github.com/kubernetes-sigs/controller-runtime/blob/main/tools/setup-envtest/README.md

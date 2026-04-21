@@ -83,7 +83,7 @@ The same applies to `create webhook`.
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 * `config/*`
 

@@ -33,11 +33,10 @@ var (
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
-	initSubcommand
 	editSubcommand
 }
 
-var _ plugin.Init = Plugin{}
+var _ plugin.Edit = Plugin{}
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
@@ -47,9 +46,6 @@ func (Plugin) Version() plugin.Version { return pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
 func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
-
-// GetInitSubcommand will return the subcommand which is responsible for initializing and scaffolding grafana manifests
-func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
 
 // GetEditSubcommand will return the subcommand which is responsible for adding grafana manifests
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }

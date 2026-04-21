@@ -48,7 +48,7 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.useGHModels, "use-gh-models", false,
-		"enable GitHub Models AI summary in the scaffolded workflow (requires GitHub Models permissions)")
+		"If set, enable GitHub Models AI summary in the scaffolded workflow (requires GitHub Models permissions)")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

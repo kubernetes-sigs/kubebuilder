@@ -24,9 +24,9 @@ CRDs support [declarative validation][kube-validation] using an [OpenAPI
 v3 schema][openapi-schema] in the `validation` section.
 
 In general, [validation markers](./markers/crd-validation.md) may be
-attached to fields or to types. If you're defining complex validation, if
+attached to fields or to types. If you are defining complex validation, if
 you need to re-use validation, or if you need to validate slice elements,
-it's often best to define a new type to describe your validation.
+it is often best to define a new type to describe your validation.
 
 For example:
 
@@ -55,7 +55,7 @@ type Rank int32
 
 ```
 
-## Additional Printer Columns
+## Additional printer columns
 
 Starting with Kubernetes 1.11, `kubectl get` can ask the server what
 columns to display.  For CRDs, this can be used to provide useful,
@@ -68,7 +68,7 @@ CRD, which is controlled by the
 [`+kubebuilder:printcolumn`][crd-markers] marker on the Go type for
 your CRD.
 
-For instance, in the following example, we add fields to display
+For instance, in the following example, add fields to display
 information about the knights, rank, and alias fields from the validation
 example:
 
@@ -99,8 +99,8 @@ Both subresources have a corresponding [marker][crd-markers].
 
 ### Status
 
-The status subresource is enabled via `+kubebuilder:subresource:status`.
-When enabled, updates at the main resource will not change status.
+You enable the status subresource via `+kubebuilder:subresource:status`.
+When you enable it, updates at the main resource will not change status.
 Similarly, updates to the status subresource cannot change anything but
 the status field.
 
@@ -119,10 +119,10 @@ type Toy struct {
 
 ### Scale
 
-The scale subresource is enabled via `+kubebuilder:subresource:scale`.
-When enabled, users will be able to use `kubectl scale` with your
-resource.  If the `selectorpath` argument pointed to the string form of
-a label selector, the HorizontalPodAutoscaler will be able to autoscale
+You enable the scale subresource via `+kubebuilder:subresource:scale`.
+When you enable it, users can use `kubectl scale` with your
+resource. If the `selectorpath` argument points to the string form of
+a label selector, the HorizontalPodAutoscaler can autoscale
 your resource.
 
 For example:
@@ -149,7 +149,7 @@ type CustomSet struct {
 }
 ```
 
-## Multiple Versions
+## Multiple versions
 
 As of Kubernetes 1.13, you can have multiple versions of your Kind defined
 in your CRD, and use a webhook to convert between them.
@@ -173,10 +173,10 @@ should be used to store data by the API server.
 ## Under the hood
 
 Kubebuilder scaffolds out make rules to run `controller-gen`.  The rules
-will automatically install controller-gen if it's not on your path using
+will automatically install controller-gen if it is not on your path using
 `go install` with Go modules.
 
-You can also run `controller-gen` directly, if you want to see what it's
+You can also run `controller-gen` directly, if you want to see what it is
 doing.
 
 Each controller-gen "generator" is controlled by an option to

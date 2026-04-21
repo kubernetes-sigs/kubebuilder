@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
 
 var _ = Describe("ChartConverter", func() {
@@ -55,7 +56,9 @@ var _ = Describe("ChartConverter", func() {
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 
 		// Create converter
-		converter = NewChartConverter(resources, "test-project", "test-project", "dist", make(map[string]string))
+		converter = NewChartConverter(
+			resources, "test-project", "test-project", "test-system", "dist", make(map[string]string),
+		)
 	})
 
 	Context("NewChartConverter", func() {
@@ -83,7 +86,9 @@ var _ = Describe("ChartConverter", func() {
 			clusterRole.SetName("test-role")
 			resources.ClusterRoles = []*unstructured.Unstructured{clusterRole}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			exists, err := afero.Exists(fs.FS, "dist/chart/templates/manager")
@@ -113,7 +118,9 @@ var _ = Describe("ChartConverter", func() {
 			resources.Services = append(resources.Services, metricsSvc1, metricsSvc2)
 
 			// Write chart files
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Expect only one file to be written for the metrics service after de-duplication
@@ -504,38 +511,38 @@ var _ = Describe("ChartConverter", func() {
 		})
 	})
 
-	Context("extractPortFromArg", func() {
+	Context("ExtractPortFromArg", func() {
 		It("should extract port from :PORT format", func() {
-			port := extractPortFromArg("--metrics-bind-address=:8443")
+			port := extractor.ExtractPortFromArg("--metrics-bind-address=:8443")
 			Expect(port).To(Equal(8443))
 		})
 
 		It("should extract port from 0.0.0.0:PORT format", func() {
-			port := extractPortFromArg("--metrics-bind-address=0.0.0.0:8443")
+			port := extractor.ExtractPortFromArg("--metrics-bind-address=0.0.0.0:8443")
 			Expect(port).To(Equal(8443))
 		})
 
 		It("should extract port from HOST:PORT format", func() {
-			port := extractPortFromArg("--health-probe-bind-address=localhost:8081")
+			port := extractor.ExtractPortFromArg("--health-probe-bind-address=localhost:8081")
 			Expect(port).To(Equal(8081))
 		})
 
 		It("should return 0 for invalid formats", func() {
-			port := extractPortFromArg("--invalid-arg")
+			port := extractor.ExtractPortFromArg("--invalid-arg")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--no-equals:8443")
+			port = extractor.ExtractPortFromArg("--no-equals:8443")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--port=invalid")
+			port = extractor.ExtractPortFromArg("--port=invalid")
 			Expect(port).To(Equal(0))
 		})
 
 		It("should return 0 for out-of-range ports", func() {
-			port := extractPortFromArg("--port=:0")
+			port := extractor.ExtractPortFromArg("--port=:0")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--port=:99999")
+			port = extractor.ExtractPortFromArg("--port=:99999")
 			Expect(port).To(Equal(0))
 		})
 	})
@@ -562,7 +569,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{configMap}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -613,7 +622,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Services = []*unstructured.Unstructured{customService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -649,7 +660,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{secret}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -707,7 +720,9 @@ var _ = Describe("ChartConverter", func() {
 			resources.Other = []*unstructured.Unstructured{configMap, secret}
 			resources.Services = []*unstructured.Unstructured{customService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify all three files were created
@@ -734,7 +749,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{configMap}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Read the ConfigMap file
@@ -779,7 +796,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Services = []*unstructured.Unstructured{webhookService, metricsService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was not created (webhook/metrics go to their own dirs)

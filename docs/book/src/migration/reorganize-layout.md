@@ -27,7 +27,7 @@ Always validate changes carefully.
 
 Copy and paste these instructions to your AI assistant:
 
-```
+```text
 Reorganize Kubebuilder project files to match new directory layout.
 
 CONTEXT:
@@ -127,7 +127,7 @@ If errors, fix import paths.
 Success: new layout, make build succeeds, make test passes, project functional
 ```
 
-## What This Does
+## What this does
 
 The AI will:
 
@@ -137,7 +137,7 @@ The AI will:
 
 After this step, your project uses the new layout (same code, new locations), making migration much simpler!
 
-## Next Steps
+## Next steps
 
 After AI reorganizes:
 

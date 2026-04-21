@@ -39,9 +39,9 @@ type resourceOptions struct {
 func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
 	options := &resourceOptions{}
 
-	fs.StringVar(&options.Group, "group", "", "resource Group")
-	fs.StringVar(&options.Version, "version", "", "resource Version")
-	fs.StringVar(&options.Kind, "kind", "", "resource Kind")
+	fs.StringVar(&options.Group, "group", "", "Resource Group (e.g., batch, apps)")
+	fs.StringVar(&options.Version, "version", "", "Resource Version (e.g., v1, v1beta1)")
+	fs.StringVar(&options.Kind, "kind", "", "Resource Kind (e.g., CronJob, Deployment)")
 
 	return options
 }

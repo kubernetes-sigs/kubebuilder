@@ -1,4 +1,4 @@
-# Platforms Supported
+# Platforms supported
 
 Kubebuilder produces solutions that by default can work on multiple platforms or specific ones, depending on how you
 build and configure your workloads. This guide aims to help you properly configure your projects according to your needs.
@@ -16,7 +16,7 @@ The following covers what you need to do to provide the support for one or more 
 
 ### 1) Build workload images to provide the support for other platform(s)
 
-The images used in workloads such as in your Pods/Deployments will need to provide the support for this other platform.
+The images used in workloads such as in your Pods/Deployments need to provide the support for this other platform.
 You can inspect the images using a ManifestList of supported platforms using the command
 [`docker manifest inspect <image>`][docker-manifest], i.e.:
 
@@ -66,7 +66,7 @@ $ docker manifest inspect myregistry/example/myimage:v0.0.1
 }
 ```
 
-### 2) (Recommended as a Best Practice) Ensure that node affinity expressions are set to match the supported platforms
+### 2) (Recommended as a Best Practice) Set node affinity expressions to match the supported platforms
 
 Kubernetes provides a mechanism called [nodeAffinity][node-affinity] which can be used to limit the possible node
 targets where a pod can be scheduled. This is especially important to ensure correct scheduling behavior in clusters
@@ -133,8 +133,8 @@ Template: corev1.PodTemplateSpec{
 <aside class="note" role="note">
 <p class="note-title"> Example(s) </p>
 
-You can look for some code examples by checking the code which is generated via the Deploy
-Image plugin. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
+You can look for some code examples by checking the code that the Deploy
+Image plugin generates. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
 
 </aside>
 
@@ -149,7 +149,7 @@ See that projects scaffold with the latest versions of Kubebuilder have the Make
 $ make docker-buildx IMG=myregistry/myoperator:v0.0.1
 ```
 
-Note that you need to ensure that all images and workloads required and used by your project will provide the same
+Note that you need to ensure that all images and workloads required and used by your project provide the same
 support as recommended above, and that you properly configure the [nodeAffinity][node-affinity] for all your workloads.
 Therefore, ensure that you uncomment the following code in the `config/manager/manager.yaml` file
 
@@ -200,19 +200,19 @@ Projects created with the Kubebuilder CLI have two workloads which are:
 
 ### Manager
 
-The container to run the manager implementation is configured in the `config/manager/manager.yaml` file.
-This image is built with the Dockerfile file scaffolded by default and contains the binary of the project \
-which will be built via the command `go build -a -o manager main.go`.
+The `config/manager/manager.yaml` file configures the container to run the manager implementation.
+The Dockerfile that Kubebuilder scaffolds by default builds this image and contains the project binary \
+that the command `go build -a -o manager main.go` builds.
 
 Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/myprojectname:<tag>`
-an image will be built from the client host (local environment) and produce an image for
+Docker builds an image from the client host (local environment) and produces an image for
 the client os/arch, which is commonly linux/amd64 or linux/arm64.
 
 <aside class="note" role="note">
 <p class="note-title">Mac Os</p>
 
-If you are running from an Mac Os environment then, Docker also will consider it as linux/$arch. Be aware that
-when, for example, is running Kind on a Mac OS operational system the nodes will
+If you run from a Mac OS environment then, Docker also will consider it as linux/$arch. Be aware that
+when, for example, you run Kind on a Mac OS operational system the nodes will
 end up labeled with ` kubernetes.io/os=linux`
 
 </aside>

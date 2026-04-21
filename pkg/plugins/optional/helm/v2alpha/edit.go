@@ -33,14 +33,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds"
 )
 
 const (
 	// DefaultManifestsFile is the default path for kustomize output manifests
 	DefaultManifestsFile = "dist/install.yaml"
-	// DefaultOutputDir is the default output directory for Helm charts
-	DefaultOutputDir = "dist"
 	// v1AlphaPluginKey is the deprecated v1-alpha plugin key
 	v1AlphaPluginKey = "helm.kubebuilder.io/v1-alpha"
 )
@@ -102,10 +101,12 @@ The generated chart structure mirrors your config/ directory:
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+	fs.BoolVar(&p.force, "force", false, "If set, regenerate all files except Chart.yaml")
 	fs.StringVar(&p.manifestsFile, "manifests", DefaultManifestsFile,
-		"path to the YAML file containing Kubernetes manifests from kustomize output")
-	fs.StringVar(&p.outputDir, "output-dir", DefaultOutputDir, "output directory for the generated Helm chart")
+		"Path to the YAML file containing Kubernetes manifests from kustomize output "+
+			"(e.g., dist/install.yaml). Defaults to dist/install.yaml if unset")
+	fs.StringVar(&p.outputDir, "output-dir", common.DefaultOutputDir,
+		"Output directory for the generated Helm chart (e.g., charts). Defaults to dist if unset")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -121,7 +122,7 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		}
 	}
 
-	scaffolder := scaffolds.NewKustomizeHelmScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
+	scaffolder := scaffolds.NewChartScaffolder(p.config, p.force, p.manifestsFile, p.outputDir)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
@@ -184,7 +185,6 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	return nil
 }
 
-// ensureManifestsExist runs make build-installer to generate the default manifests file
 func (p *editSubcommand) ensureManifestsExist() error {
 	slog.Info("Generating default manifests file", "file", p.manifestsFile)
 
@@ -205,7 +205,6 @@ func (p *editSubcommand) ensureManifestsExist() error {
 	return nil
 }
 
-// PostScaffold automatically uncomments cert-manager installation when webhooks are present
 func (p *editSubcommand) PostScaffold() error {
 	hasWebhooks := hasWebhooksWith(p.config)
 
@@ -243,7 +242,6 @@ func (p *editSubcommand) PostScaffold() error {
 	return nil
 }
 
-// addHelmMakefileTargets appends Helm deployment targets to the Makefile if they don't already exist
 func (p *editSubcommand) addHelmMakefileTargets(namespace string) error {
 	makefilePath := "Makefile"
 	if _, err := os.Stat(makefilePath); os.IsNotExist(err) {

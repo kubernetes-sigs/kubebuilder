@@ -299,17 +299,6 @@ The following example illustrates this process:
     ...
 ```
 
-<aside class="note">
-<h1>Choosing the Write Method</h1>
-
-This example uses `Update` to keep the first controller easy to read. In production controllers, do
-not treat `Update` as the default answer. It writes the full object and conflicts more often. When
-you only need to change a few fields, `Patch` with optimistic concurrency is usually the safer
-choice. For a practical decision guide, see [Choosing Between Update, Patch, and
-Apply](./reference/update-patch-apply).
-
-</aside>
-
 Now, you can review the complete controller responsible for managing Custom Resources of the
 Memcached Kind. This controller ensures that the desired state is maintained in the cluster,
 making sure that our Memcached instance continues running with the number of replicas specified

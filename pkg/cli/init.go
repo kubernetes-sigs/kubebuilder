@@ -44,7 +44,8 @@ For further help about a specific plugin, set --plugins.
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
+		"Project version (e.g., 3). Defaults to CLI version if unset")
 
 	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
 	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.

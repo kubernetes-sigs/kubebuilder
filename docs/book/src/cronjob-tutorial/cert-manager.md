@@ -1,6 +1,6 @@
 # Deploying cert-manager
 
-We suggest using [cert-manager](https://github.com/cert-manager/cert-manager) for
+Use [cert-manager](https://github.com/cert-manager/cert-manager) for
 provisioning the certificates for the webhook server. Other solutions should
 also work as long as they put the certificates in the desired location.
 
@@ -20,7 +20,7 @@ in the [`MutatingWebhookConfiguration`](https://pkg.go.dev/k8s.io/api/admissionr
 The value of the annotation should point to an existing [certificate request instance](https://cert-manager.io/docs/concepts/certificaterequest/)
 in the format of `<certificate-namespace>/<certificate-name>`.
 
-This is the [kustomize](https://github.com/kubernetes-sigs/kustomize) patch we
+This is the [kustomize](https://github.com/kubernetes-sigs/kustomize) patch
 used for annotating the [`MutatingWebhookConfiguration`](https://pkg.go.dev/k8s.io/api/admissionregistration/v1#MutatingWebhookConfiguration)
 / [`ValidatingWebhookConfiguration`](https://pkg.go.dev/k8s.io/api/admissionregistration/v1#ValidatingWebhookConfiguration) objects.
 
