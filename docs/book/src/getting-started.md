@@ -328,7 +328,7 @@ as well as any changes to the Deployment that the controller manages and owns:
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
 		// Watch the Memcached Custom Resource and trigger reconciliation whenever it
-		// is created, updated, or deleted
+		//when you create, update, or delete it
 		For(&cachev1alpha1.Memcached{}).
 		// Watch the Deployment managed by the Memcached controller. If any changes occur to the Deployment
         // owned and managed by this controller, it triggers reconciliation, ensuring that the cluster
@@ -459,4 +459,4 @@ implemented for your controller.
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [autoupdate-plugin]: ./plugins/available/autoupdate-v1-alpha.md
-[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
