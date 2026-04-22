@@ -422,7 +422,7 @@ git checkout -b merge
 git merge upgrade
 git add .
 git commit -m "Merge with upgrade with conflict markers"
-## Now that we have performed the three way merge and commited the conflict markers, we can open a PR against main.
+## Now that we have performed the three way merge and committed the conflict markers, we can open a PR against main.
 ```
 
 As the script:
