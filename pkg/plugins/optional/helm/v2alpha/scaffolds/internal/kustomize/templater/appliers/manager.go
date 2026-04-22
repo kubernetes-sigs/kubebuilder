@@ -1454,11 +1454,11 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 
 				// Reconstruct the block with conditional wrapper
 				var result strings.Builder
-				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
 				for _, line := range lines {
 					result.WriteString(line + "\n")
 				}
-				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				fmt.Fprintf(&result, "%s{{- end }}", indent)
 				return result.String()
 			}
 			return match
@@ -1493,11 +1493,11 @@ func MakeMetricsVolumeMountsConditional(yamlContent string) string {
 
 				// Reconstruct the block with conditional wrapper
 				var result strings.Builder
-				result.WriteString(fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent))
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
 				for _, line := range lines {
 					result.WriteString(line + "\n")
 				}
-				result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+				fmt.Fprintf(&result, "%s{{- end }}", indent)
 				return result.String()
 			}
 			return match

@@ -75,11 +75,11 @@ func MakeYamlContent(match string) string {
 
 		// Reconstruct the block with conditional wrapper
 		var result strings.Builder
-		result.WriteString(fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n", indent))
+		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enable }}\n", indent)
 		for _, line := range lines {
 			result.WriteString(line + "\n")
 		}
-		result.WriteString(fmt.Sprintf("%s{{- end }}", indent))
+		fmt.Fprintf(&result, "%s{{- end }}", indent)
 		return result.String()
 	}
 	return match

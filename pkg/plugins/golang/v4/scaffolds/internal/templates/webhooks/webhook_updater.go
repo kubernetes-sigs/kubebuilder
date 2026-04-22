@@ -278,8 +278,7 @@ func (f *WebhookUpdater) generateDefaultingWebhookCode() string {
 	}
 
 	//nolint:lll
-	code.WriteString(fmt.Sprintf(
-		`
+	fmt.Fprintf(&code, `
 // +kubebuilder:webhook:path=%s,mutating=true,failurePolicy=fail,sideEffects=None,groups=%s,resources=%s,verbs=create;update,versions=%s,name=m%s-%s.kb.io,admissionReviewVersions=%s
 
 // %sCustomDefaulter struct is responsible for setting default values on the custom resource of the
@@ -295,13 +294,12 @@ type %sCustomDefaulter struct {
 		defaultingPath, f.getGroupValue(), f.Resource.Plural, f.Resource.Version,
 		strings.ToLower(f.Resource.Kind), f.Resource.Version,
 		f.AdmissionReviewVersions,
-		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind)
 
 	// Default method
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
-	code.WriteString(fmt.Sprintf(
-		`// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind %s.
+	fmt.Fprintf(&code, `// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind %s.
 func (d *%sCustomDefaulter) Default(_ context.Context, obj *%s) error {
 	%slog.Info("Defaulting for %s", "name", obj.GetName())
 
@@ -311,7 +309,7 @@ func (d *%sCustomDefaulter) Default(_ context.Context, obj *%s) error {
 }
 `,
 		f.Resource.Kind, f.Resource.Kind, objType,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind))
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind)
 
 	return code.String()
 }
@@ -337,8 +335,7 @@ func (f *WebhookUpdater) generateValidationWebhookCode() string {
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 `)
 	//nolint:lll
-	code.WriteString(fmt.Sprintf(
-		`// +kubebuilder:webhook:path=%s,mutating=false,failurePolicy=fail,sideEffects=None,groups=%s,resources=%s,verbs=create;update,versions=%s,name=v%s-%s.kb.io,admissionReviewVersions=%s
+	fmt.Fprintf(&code, `// +kubebuilder:webhook:path=%s,mutating=false,failurePolicy=fail,sideEffects=None,groups=%s,resources=%s,verbs=create;update,versions=%s,name=v%s-%s.kb.io,admissionReviewVersions=%s
 
 // %sCustomValidator struct is responsible for validating the %s resource
 // when it is created, updated, or deleted.
@@ -352,13 +349,12 @@ type %sCustomValidator struct{
 `,
 		validationPath, f.getGroupValue(), f.Resource.Plural, f.Resource.Version,
 		strings.ToLower(f.Resource.Kind), f.Resource.Version, f.AdmissionReviewVersions,
-		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		f.Resource.Kind, f.Resource.Kind, f.Resource.Kind)
 
 	// Validation methods
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
-	code.WriteString(fmt.Sprintf(
-		`// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
+	fmt.Fprintf(&code, `// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
 func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj *%s) (admission.Warnings, error) {
 	%slog.Info("Validation for %s upon creation", "name", obj.GetName())
 
@@ -390,7 +386,7 @@ func (v *%sCustomValidator) ValidateDelete(_ context.Context, obj *%s) (admissio
 		f.Resource.Kind, f.Resource.Kind, objType,
 		strings.ToLower(f.Resource.Kind), f.Resource.Kind,
 		f.Resource.Kind, f.Resource.Kind, objType,
-		strings.ToLower(f.Resource.Kind), f.Resource.Kind))
+		strings.ToLower(f.Resource.Kind), f.Resource.Kind)
 
 	return code.String()
 }
