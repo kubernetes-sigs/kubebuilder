@@ -94,7 +94,7 @@ manager:
 		// Use extracted value (supports scale-to-zero: replicas can be 0)
 		replicas = *f.Extraction.Values.Manager.Replicas
 	}
-	buf.WriteString(fmt.Sprintf("  replicas: %d\n\n", replicas))
+	fmt.Fprintf(&buf, "  replicas: %d\n\n", replicas)
 
 	// Image configuration
 	f.addImageSection(&buf)
