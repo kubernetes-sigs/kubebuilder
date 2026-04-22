@@ -354,7 +354,8 @@ type %sCustomValidator struct{
 	// Validation methods
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
-	fmt.Fprintf(&code, `// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
+	fmt.Fprintf(&code,
+		`// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
 func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj *%s) (admission.Warnings, error) {
 	%slog.Info("Validation for %s upon creation", "name", obj.GetName())
 

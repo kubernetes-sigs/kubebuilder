@@ -1440,12 +1440,12 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 		yamlContent = volumePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 			lines := strings.Split(match, "\n")
 			if len(lines) > 0 {
-				indent := ""
+				var indent strings.Builder
 				if len(lines[0]) > 0 && lines[0][0] == ' ' {
 					// Count leading spaces
 					for _, char := range lines[0] {
 						if char == ' ' {
-							indent += " "
+							indent.WriteString(" ")
 						} else {
 							break
 						}
@@ -1454,11 +1454,11 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 
 				// Reconstruct the block with conditional wrapper
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
 				for _, line := range lines {
 					result.WriteString(line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent)
+				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
 				return result.String()
 			}
 			return match
@@ -1479,12 +1479,12 @@ func MakeMetricsVolumeMountsConditional(yamlContent string) string {
 		yamlContent = mountPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 			lines := strings.Split(match, "\n")
 			if len(lines) > 0 {
-				indent := ""
+				var indent strings.Builder
 				if len(lines[0]) > 0 && lines[0][0] == ' ' {
 					// Count leading spaces
 					for _, char := range lines[0] {
 						if char == ' ' {
-							indent += " "
+							indent.WriteString(" ")
 						} else {
 							break
 						}
@@ -1493,11 +1493,11 @@ func MakeMetricsVolumeMountsConditional(yamlContent string) string {
 
 				// Reconstruct the block with conditional wrapper
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent)
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
 				for _, line := range lines {
 					result.WriteString(line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent)
+				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
 				return result.String()
 			}
 			return match
