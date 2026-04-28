@@ -5,6 +5,9 @@
     Finalizers are a mechanism to
     execute any custom logic related to a resource before it gets deleted from
     Kubernetes cluster.
+  - [Choosing Between Update, Patch, and Apply](update-patch-apply.md)
+    Compare the tradeoffs between `Update`, `Patch`, and server-side `Apply`
+    when writing reconcilers.
   - [Watching Resources](watching-resources.md)
     Watch resources in the Kubernetes cluster to be informed and take actions on changes.
       - [Watching Secondary Resources that are `Owned` ](watching-resources/secondary-owned-resources.md)
