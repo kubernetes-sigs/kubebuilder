@@ -29,8 +29,8 @@ const apiErrorMsg = "failed to create API"
 func (c CLI) newCreateAPICmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
-		Short: "Scaffold a Kubernetes API",
-		Long:  `Scaffold a Kubernetes API.`,
+		Short: "Create a Kubernetes API",
+		Long:  `Create a Kubernetes API by writing a Resource definition and/or a Controller.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),

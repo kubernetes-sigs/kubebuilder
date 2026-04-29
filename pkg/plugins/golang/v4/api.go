@@ -59,19 +59,29 @@ type createAPISubcommand struct {
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `Scaffold a Kubernetes API by writing a Resource definition and/or a Controller.
+	subcmdMeta.Description = `Create a Kubernetes API by writing a Resource definition and/or a Controller.
 
-If information about whether the resource and controller should be scaffolded
+If information about whether the resource and controller should be created
 was not explicitly provided, it will prompt the user if they should be.
 
-After the scaffold is written, the dependencies will be updated and
+After the files are created, the dependencies will be updated and
 make generate will be run.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
   %[1]s create api --group ship --version v1beta1 --kind Frigate
 
-  # Edit the API Scheme
+  # Add a controller for an existing resource (e.g., an additional reconciler)
+  %[1]s create api --group ship --version v1beta1 --kind Frigate \
+      --resource=false --controller-name frigate-status
 
+  # Scaffold a controller for an external API (e.g., cert-manager)
+  %[1]s create api --group certmanager --version v1 --kind Certificate \
+      --resource=false --controller \
+      --external-api-path github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
+      --external-api-domain cert-manager.io \
+      --external-api-module github.com/cert-manager/cert-manager@v1.18.2
+
+  # Edit the API Scheme
   nano api/v1beta1/frigate_types.go
 
   # Edit the Controller
@@ -93,10 +103,11 @@ make generate will be run.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true,
-		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
+		"If set, run 'make generate' after creating files. Default: true. "+
+			"Use --make=false to skip running make generate")
 
 	fs.BoolVar(&p.force, "force", false,
-		"If set, attempt to create resource even if it already exists")
+		"If set, attempt to create the resource even if it already exists")
 
 	p.options = &goPlugin.Options{}
 
@@ -104,14 +115,16 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
-		"Generate the resource without prompting the user (enabled by default; use --resource=false to disable)")
+		"If set, create the resource without prompting. Default: true. "+
+			"Use --resource=false to skip resource creation (e.g., when adding a controller for an existing or external API)")
 	p.resourceFlag = fs.Lookup("resource")
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true,
-		"Resource is namespaced by default; use --namespaced=false to create a cluster-scoped resource")
+		"If set, create a namespaced resource. Default: true. "+
+			"Use --namespaced=false to create a cluster-scoped resource")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
-		"Prompt whether to generate the controller by default; "+
-			"use --controller=true or --controller=false to skip the prompt")
+		"If set, create the controller. Default: true. "+
+			"Use --controller=false to skip controller creation")
 	p.controllerFlag = fs.Lookup("controller")
 
 	fs.StringVar(&p.options.ControllerName, "controller-name", "",
