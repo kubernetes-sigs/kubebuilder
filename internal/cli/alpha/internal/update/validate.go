@@ -50,10 +50,39 @@ func (opts *Update) Validate() error {
 		return fmt.Errorf("unable to find release %s: %w", opts.ToVersion, err)
 	}
 
-	if opts.OpenGhIssue {
+	// AI summaries only work with PR descriptions
+	if opts.UseGhModels && !opts.OpenGhPR {
+		return fmt.Errorf(
+			"the --use-gh-models flag requires --open-gh-pr " +
+				"(AI summaries work in PR descriptions)")
+	}
+
+	if opts.OpenGhIssue || opts.OpenGhPR {
+		flag := "--open-gh-issue"
+		if opts.OpenGhPR {
+			flag = "--open-gh-pr"
+		}
+
+		// Check if gh is installed
 		if err := exec.Command("gh", "--version").Run(); err != nil {
-			return fmt.Errorf("`gh` CLI not found or not authenticated. "+
-				"You must have gh instaled to use the --open-gh-issue option: %s", err)
+			return fmt.Errorf("`gh` CLI not found. "+
+				"Install gh to use %s: https://cli.github.com/ (error: %v)", flag, err)
+		}
+
+		// Check if gh is authenticated
+		if err := exec.Command("gh", "auth", "status").Run(); err != nil {
+			return fmt.Errorf("`gh` CLI is not authenticated. "+
+				"Run 'gh auth login' to authenticate before using %s", flag)
+		}
+	}
+
+	// Validate branch name for --open-gh-pr (security requirement)
+	if opts.OpenGhPR {
+		branchName := opts.getOutputBranchName()
+		if !strings.HasPrefix(branchName, "kubebuilder-update-from-") {
+			return fmt.Errorf(
+				"security: --open-gh-pr requires output branch to start with 'kubebuilder-update-from-', got: %s. "+
+					"Use --output-branch to specify a branch name with the required prefix", branchName)
 		}
 	}
 

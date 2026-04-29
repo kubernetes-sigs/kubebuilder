@@ -209,7 +209,7 @@ exit 0`
 			opts.FromVersion = "v4.5.1"
 			opts.ToVersion = "v4.8.0"
 
-			err = opts.openGitHubIssue(false)
+			err = opts.openGitHubIssue(false, "")
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, readErr := os.ReadFile(logFile)
@@ -219,25 +219,31 @@ exit 0`
 			Expect(s).To(ContainSubstring("repo view --json nameWithOwner --jq .nameWithOwner"))
 			Expect(s).To(ContainSubstring("issue create"))
 
-			expURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1",
-				"acme/repo", opts.FromBranch, opts.getOutputBranchName())
-			Expect(s).To(ContainSubstring(expURL))
+			// Verify new issue body format without PR link
+			Expect(s).To(ContainSubstring("Run the command `kubebuilder alpha update` locally"))
 			Expect(s).To(ContainSubstring(opts.ToVersion))
 			Expect(s).To(ContainSubstring(opts.FromVersion))
+			Expect(s).To(ContainSubstring("https://kubebuilder.io/reference/commands/alpha_update"))
+
+			// Should NOT contain the PR compare URL in the body anymore
+			expURL := fmt.Sprintf("https://github.com/%s/compare/%s...%s?expand=1",
+				"acme/repo", opts.FromBranch, opts.getOutputBranchName())
+			Expect(s).ToNot(ContainSubstring(expURL))
 		})
 
-		It("creates issue with conflicts template", func() {
+		It("creates issue with conflicts", func() {
 			opts.FromBranch = defaultBranch
 			opts.FromVersion = "v4.5.2"
 			opts.ToVersion = "v4.10.0"
 
-			err = opts.openGitHubIssue(true)
+			err = opts.openGitHubIssue(true, "")
 			Expect(err).ToNot(HaveOccurred())
 
 			logs, _ := os.ReadFile(logFile)
 			s := string(logs)
-			Expect(s).To(ContainSubstring("Resolve conflicts"))
-			Expect(s).To(ContainSubstring("make manifests generate fmt vet lint-fix"))
+			Expect(s).To(ContainSubstring("Run the command `kubebuilder alpha update` locally"))
+			Expect(s).To(ContainSubstring("https://kubebuilder.io/reference/commands/alpha_update"))
+			Expect(s).To(ContainSubstring("Conflicts were detected"))
 		})
 
 		It("fails when repo detection fails", func() {
@@ -249,7 +255,7 @@ fi
 exit 0`
 			Expect(mockBinResponse(failRepo, mockGh)).To(Succeed())
 
-			err = opts.openGitHubIssue(false)
+			err = opts.openGitHubIssue(false, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
 		})
@@ -271,7 +277,7 @@ exit 0`
 			opts.FromVersion = testFromVersion
 			opts.ToVersion = testToVersion
 
-			err = opts.openGitHubIssue(false)
+			err = opts.openGitHubIssue(false, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to create GitHub issue: exit status 1"))
 		})
@@ -331,7 +337,7 @@ fi
 exit 0`
 			Expect(mockBinResponse(noGh, mockGh)).To(Succeed())
 
-			err = opts.openGitHubIssue(false)
+			err = opts.openGitHubIssue(false, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
 		})
@@ -346,7 +352,7 @@ fi
 exit 0`
 			Expect(mockBinResponse(authFailGh, mockGh)).To(Succeed())
 
-			err = opts.openGitHubIssue(false)
+			err = opts.openGitHubIssue(false, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to detect GitHub repository"))
 		})

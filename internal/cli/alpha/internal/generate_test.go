@@ -15,6 +15,7 @@ limitations under the License.
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -77,6 +78,12 @@ func (f *fakeConfig) DecodePluginConfig(key string, dst any) error {
 		case *autoupdatev1alpha.PluginConfig:
 			if v, ok := val.(autoupdatev1alpha.PluginConfig); ok {
 				*d = v
+			} else {
+				// Handle different struct types via JSON (simulates YAML decoder)
+				jsonData, err := json.Marshal(val)
+				if err == nil {
+					_ = json.Unmarshal(jsonData, d)
+				}
 			}
 		case *deployimagev1alpha1.PluginConfig:
 			if v, ok := val.(deployimagev1alpha1.PluginConfig); ok {
@@ -994,23 +1001,91 @@ var _ = Describe("generate: migrate-plugins", func() {
 			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
 		})
 
-		It("migrates Auto Update plugin successfully without UseGHModels", func() {
+		It("migrates Auto Update plugin successfully with defaults", func() {
 			cfg := &fakeConfig{
 				plugins: map[string]any{
-					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{UseGHModels: false},
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{
+						UseGHModels: false,
+						OpenGHIssue: true,
+						OpenGHPR:    true,
+					},
 				},
 			}
 			store := &fakeStore{cfg: cfg}
 			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
 		})
 
-		It("migrates Auto Update plugin successfully with UseGHModels enabled", func() {
+		It("migrates Auto Update plugin successfully with all features enabled", func() {
 			cfg := &fakeConfig{
 				plugins: map[string]any{
-					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{UseGHModels: true},
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{
+						UseGHModels: true,
+						OpenGHIssue: true,
+						OpenGHPR:    true,
+					},
 				},
 			}
 			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+
+		It("migrates Auto Update plugin with only issues enabled", func() {
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{
+						UseGHModels: false,
+						OpenGHIssue: true,
+						OpenGHPR:    false,
+					},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+
+		It("migrates Auto Update plugin with only PRs enabled", func() {
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{
+						UseGHModels: false,
+						OpenGHIssue: false,
+						OpenGHPR:    true,
+					},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+
+		It("migrates Auto Update plugin with all features disabled", func() {
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": autoupdatev1alpha.PluginConfig{
+						UseGHModels: false,
+						OpenGHIssue: false,
+						OpenGHPR:    false,
+					},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
+		})
+
+		It("auto-fixes invalid config (models without PR)", func() {
+			type partialAutoUpdatePluginConfig struct {
+				UseGHModels bool `json:"useGHModels,omitempty"`
+			}
+
+			cfg := &fakeConfig{
+				plugins: map[string]any{
+					"autoupdate.kubebuilder.io/v1-alpha": partialAutoUpdatePluginConfig{
+						UseGHModels: true,
+					},
+				},
+			}
+			store := &fakeStore{cfg: cfg}
+
+			// Auto-fixes: --use-gh-models requires --open-gh-pr, so both are passed.
 			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
 		})
 	})

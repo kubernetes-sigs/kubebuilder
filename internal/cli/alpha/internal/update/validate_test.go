@@ -168,4 +168,94 @@ var _ = Describe("Prepare for internal update", func() {
 			Expect(err.Error()).To(ContainSubstring("unexpected response"))
 		})
 	})
+
+	Context("Validate flag combinations", func() {
+		var (
+			tmpBinDir  string
+			mockGh     string
+			oldPathEnv string
+		)
+
+		BeforeEach(func() {
+			// Create temporary directory for mock gh binary
+			tmpBinDir, err = os.MkdirTemp("", "validate-test-bin")
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create fake gh executable
+			mockGh = filepath.Join(tmpBinDir, "gh")
+
+			// Stub gh to return success for --version, auth status, and extension list
+			script := `#!/bin/bash
+if [[ "$1" == "--version" ]]; then
+    echo "gh version 2.0.0 (2023-01-01)"
+elif [[ "$1" == "auth" && "$2" == "status" ]]; then
+    exit 0
+elif [[ "$1" == "extension" && "$2" == "list" ]]; then
+    echo "gh models"
+fi
+exit 0`
+			err = os.WriteFile(mockGh, []byte(script), 0o755)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Prepend temp bin directory to PATH
+			oldPathEnv = os.Getenv("PATH")
+			Expect(os.Setenv("PATH", tmpBinDir+string(os.PathListSeparator)+oldPathEnv)).To(Succeed())
+
+			// Reset flags for each test
+			opts.OpenGhPR = false
+			opts.OpenGhIssue = false
+			opts.UseGhModels = false
+		})
+
+		AfterEach(func() {
+			_ = os.RemoveAll(tmpBinDir)
+			_ = os.Setenv("PATH", oldPathEnv)
+		})
+
+		It("Should succeed when both --open-gh-pr and --open-gh-issue are set", func() {
+			opts.OpenGhPR = true
+			opts.OpenGhIssue = true
+			err := opts.Validate()
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("Should fail when --use-gh-models is set without --open-gh-pr", func() {
+			opts.UseGhModels = true
+			opts.OpenGhPR = false
+			err := opts.Validate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("requires --open-gh-pr"))
+		})
+
+		It("Should succeed when --use-gh-models is set with --open-gh-pr", func() {
+			opts.UseGhModels = true
+			opts.OpenGhPR = true
+			err := opts.Validate()
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("Validate branch name for --open-gh-pr (security)", func() {
+		It("Should fail when branch name does not start with 'kubebuilder-update-from-'", func() {
+			opts.OutputBranch = "my-custom-branch"
+			opts.OpenGhPR = true
+
+			// This validation happens in Validate() before openGitHubPR is called
+			err := opts.Validate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("security"))
+			Expect(err.Error()).To(ContainSubstring("kubebuilder-update-from-"))
+		})
+
+		It("Should use default branch name with correct prefix", func() {
+			opts.FromVersion = "v1.0.0"
+			opts.ToVersion = "v2.0.0"
+			opts.OutputBranch = ""
+			opts.OpenGhPR = true
+
+			// Default branch name should follow the pattern
+			branchName := opts.getOutputBranchName()
+			Expect(branchName).To(HavePrefix("kubebuilder-update-from-"))
+		})
+	})
 })

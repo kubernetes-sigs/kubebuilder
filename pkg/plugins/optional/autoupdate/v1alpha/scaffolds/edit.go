@@ -36,12 +36,20 @@ type editScaffolder struct {
 
 	// useGHModels determines if GitHub Models AI summary should be enabled
 	useGHModels bool
+
+	// openGHIssue determines if the workflow should create GitHub Issues
+	openGHIssue bool
+
+	// openGHPR determines if the workflow should create GitHub Pull Requests
+	openGHPR bool
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(useGHModels bool) plugins.Scaffolder {
+func NewInitScaffolder(useGHModels, openGHIssue, openGHPR bool) plugins.Scaffolder {
 	return &editScaffolder{
 		useGHModels: useGHModels,
+		openGHIssue: openGHIssue,
+		openGHPR:    openGHPR,
 	}
 }
 
@@ -59,7 +67,11 @@ func (s *editScaffolder) Scaffold() error {
 	)
 
 	err := scaffold.Execute(
-		&github.AutoUpdate{UseGHModels: s.useGHModels},
+		&github.AutoUpdate{
+			UseGHModels: s.useGHModels,
+			OpenGHIssue: s.openGHIssue,
+			OpenGHPR:    s.openGHPR,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to execute init scaffold: %w", err)

@@ -5,7 +5,7 @@ With a small amount of setup, you can receive **automatic Pull Request** suggest
 Kubebuilder release is available — keeping your project **maintained, secure, and aligned with ecosystem changes**.
 
 This automation uses the [`kubebuilder alpha update`][alpha-update-command] command with a **3-way merge strategy** to
-refresh your project scaffold, and wraps it in a GitHub Actions workflow that opens an **Issue** with a **Pull Request compare link** so you can create the PR and review it.
+refresh your project scaffold, and wraps it in a GitHub Actions workflow that **creates both GitHub Issues and Pull Requests** by default.
 
 <aside class="warning" role="note">
 <p class="note-title">Protect your branches</p>
@@ -35,11 +35,13 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 ### Optional: GitHub Models AI summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.
-If you want AI-generated summaries in your update issues:
+If you want AI-generated summaries in your update Pull Requests:
 
 ```shell
 kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
 ```
+
+**Note:** AI summaries only work with Pull Requests. To use `--use-gh-models`, ensure `--open-gh-pr=true` (which is the default).
 
 <aside class="note" role="note">
 <p class="note-title">Permissions required to use GitHub Models in GitHub Actions</p>
@@ -65,13 +67,12 @@ Your organization or enterprise may have disabled it. Contact your administrator
 The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder releases every week. When an update is available, it:
 
 1. Creates a new branch with the merged changes
-2. Opens a GitHub Issue with a PR compare link
+2. Opens a GitHub Issue to notify about the update
+3. Opens a Pull Request with the changes for review
 
-**Example Issue:**
+You can customize which notifications to receive by disabling either `--open-gh-issue` or `--open-gh-pr` when scaffolding the workflow.
 
-<img width="638" height="482" alt="Example Issue" src="https://github.com/user-attachments/assets/589fd16b-7709-4cd5-b169-fd53d69790d4" />
-
-**With GitHub Models enabled** (optional), you also get AI-generated summaries:
+**With GitHub Models enabled** (optional), you get AI-generated summaries in the PR description:
 
 <img width="582" height="646" alt="AI Summary" src="https://github.com/user-attachments/assets/d460a5af-5ca4-4dd5-afb8-7330dd6de148" />
 
@@ -87,8 +88,13 @@ The generated workflow uses the `kubebuilder alpha update` command with default 
 - `--force` - Continue even if conflicts occur (automation-friendly)
 - `--push` - Automatically push the output branch to remote
 - `--restore-path .github/workflows` - Preserve CI workflows from base branch
-- `--open-gh-issue` - Create a GitHub Issue with PR compare link
-- `--use-gh-models` - (optional) Add AI summary to the issue
+- `--open-gh-issue` - Create a GitHub Issue notification (enabled by default)
+- `--open-gh-pr` - Create a GitHub Pull Request for review (enabled by default)
+- `--use-gh-models` - (optional) Add AI summary to the PR description
+
+**Customization options:**
+- `--open-gh-issue=false` - Disable issue notifications (only create PRs)
+- `--open-gh-pr=false` - Disable PRs (only create issue notifications)
 
 **Additional available flags:**
 - `--merge-message` - Custom commit message for clean merges
@@ -113,8 +119,23 @@ Edit `.github/workflows/auto_update.yml`:
       --push \
       --restore-path .github/workflows \
       --open-gh-issue \
+      --open-gh-pr \
       --merge-message "chore: update kubebuilder scaffold" \
       --conflict-message "chore: update with conflicts - review needed"
+```
+
+**Example: Customize notifications**
+
+If you prefer to receive only Issues (without creating PRs):
+
+```shell
+kubebuilder edit --plugins="autoupdate/v1-alpha" --open-gh-pr=false
+```
+
+Or to create only PRs (without issue notifications):
+
+```shell
+kubebuilder edit --plugins="autoupdate/v1-alpha" --open-gh-issue=false
 ```
 
 ## Troubleshooting
@@ -138,7 +159,7 @@ This regenerates the workflow without GitHub Models:
 ```yaml
 permissions:
   contents: write
-  issues: write
+  pull-requests: write
   # No models: read permission
 
 steps:
@@ -156,7 +177,7 @@ steps:
         --force \
         --push \
         --restore-path .github/workflows \
-        --open-gh-issue
+        --open-gh-pr
 ```
 
 The workflow continues to work—just without AI summaries.
@@ -176,7 +197,7 @@ This regenerates the workflow WITH GitHub Models:
 ```yaml
 permissions:
   contents: write
-  issues: write
+  pull-requests: write
   models: read  # Added for GitHub Models
 
 steps:
@@ -190,14 +211,13 @@ steps:
       gh models --help >/dev/null
 
   - name: Run kubebuilder alpha update
-    # --use-gh-models: Adds an AI-generated comment to the Issue with
-    #   a summary of scaffold changes and conflict-resolution guidance (if any).
+    # --use-gh-models: Adds an AI summary to the PR description.
     run: |
       kubebuilder alpha update \
         --force \
         --push \
         --restore-path .github/workflows \
-        --open-gh-issue \
+        --open-gh-pr \
         --use-gh-models
 ```
 
