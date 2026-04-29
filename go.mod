@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/v4
 
-go 1.25.7
+go 1.26.0
 
 retract v4.10.0 // invalid filename causes go get/install failure (#5211)
 
@@ -17,7 +17,7 @@ require (
 	golang.org/x/text v0.36.0
 	golang.org/x/tools v0.44.0
 	helm.sh/helm/v3 v3.20.2
-	k8s.io/apimachinery v0.35.4
+	k8s.io/apimachinery v0.36.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
