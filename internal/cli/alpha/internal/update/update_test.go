@@ -585,4 +585,80 @@ exit 1`
 			Expect(msg).To(Equal(helpers.ConflictCommitMessage(opts.FromVersion, opts.ToVersion)))
 		})
 	})
+
+	Context("Boilerplate preservation", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "boilerplate-test")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chdir(tmpDir)).To(Succeed())
+		})
+
+		AfterEach(func() {
+			_ = os.Chdir("/")
+			_ = os.RemoveAll(tmpDir)
+		})
+
+		It("preserves and restores boilerplate file", func() {
+			// Create boilerplate file
+			boilerplateContent := []byte(`/*
+Copyright 2025 Test.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+*/`)
+			err := os.MkdirAll("hack", 0755)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(filepath.Join("hack", "boilerplate.go.txt"), boilerplateContent, 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Preserve the boilerplate
+			preserved := preserveBoilerplate()
+			Expect(preserved).NotTo(BeNil())
+			Expect(preserved).To(Equal(boilerplateContent))
+
+			// Simulate cleanup (remove the file)
+			err = os.RemoveAll("hack")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Restore the boilerplate
+			err = restoreBoilerplate(preserved)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify it was restored
+			restored, err := os.ReadFile(filepath.Join("hack", "boilerplate.go.txt"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(restored).To(Equal(boilerplateContent))
+		})
+
+		It("returns nil when boilerplate file doesn't exist", func() {
+			// No boilerplate file exists
+			preserved := preserveBoilerplate()
+			Expect(preserved).To(BeNil())
+		})
+
+		It("handles nil content gracefully in restore", func() {
+			// Restoring nil should be a no-op
+			err := restoreBoilerplate(nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify no file was created
+			_, err = os.Stat(filepath.Join("hack", "boilerplate.go.txt"))
+			Expect(os.IsNotExist(err)).To(BeTrue())
+		})
+
+		It("creates hack directory if it doesn't exist during restore", func() {
+			boilerplateContent := []byte("/* Test */")
+
+			// Restore without hack directory existing
+			err := restoreBoilerplate(boilerplateContent)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify directory and file were created
+			restored, err := os.ReadFile(filepath.Join("hack", "boilerplate.go.txt"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(restored).To(Equal(boilerplateContent))
+		})
+	})
 })
