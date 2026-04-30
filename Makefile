@@ -85,6 +85,7 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 .PHONY: generate-docs
 generate-docs: ## Update/generate the docs
 	./hack/docs/generate.sh
+	$(MAKE) fix-docs
 
 .PHONY: generate-charts
 generate-charts: build ## Re-generate the helm chart testdata and docs samples
@@ -99,21 +100,16 @@ generate-charts: build ## Re-generate the helm chart testdata and docs samples
 	(cd docs/book/src/cronjob-tutorial/testdata/project && make build-installer && ../../../../../../bin/kubebuilder edit --plugins=helm/v2-alpha)
 	(cd docs/book/src/multiversion-tutorial/testdata/project && make build-installer && ../../../../../../bin/kubebuilder edit --plugins=helm/v2-alpha)
 
-.PHONY: check-docs
-check-docs: ## Run the script to ensure that the docs are updated
-	./hack/docs/check.sh
-
-.PHONY: lint
-lint: golangci-lint yamllint check-sample-permissions ## Run golangci-lint linter, yamllint & sample permissions check
-	$(GOLANGCI_LINT) run
+.PHONY: fix-docs
+fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
+	./hack/docs/fix_note_accessibility.sh
+	@echo "Removing trailing spaces from markdown files..."
+	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
-.PHONY: lint-config
-lint-config: golangci-lint ## Verify golangci-lint linter configuration
-	$(GOLANGCI_LINT) config verify
 
 # Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
 # Repo YAML uses .yamllint; Helm output uses .yamllint-helm.
@@ -138,14 +134,6 @@ SAMPLE_ROOTS := testdata \
 	docs/book/src/cronjob-tutorial/testdata \
 	docs/book/src/multiversion-tutorial/testdata
 
-.PHONY: check-sample-permissions
-check-sample-permissions: ## Fail if any file/dir under testdata or docs samples has wrong permissions (expect 0644/0755). bin/ excluded.
-	@for d in $(SAMPLE_ROOTS); do \
-		test -d "$$d" || continue; \
-		bad=$$(find "$$d" -path '*/bin' -prune -o \( \( -type f ! -perm 0644 \) -o \( -type d ! -perm 0755 \) \) -print 2>/dev/null); \
-		if [ -n "$$bad" ]; then echo "Invalid permissions under $$d (expect 0644/0755):"; echo "$$bad"; exit 1; fi; \
-	done
-
 .PHONY: golangci-lint
 golangci-lint:
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,${GOLANGCI_LINT_VERSION})
@@ -161,7 +149,7 @@ go-apidiff:
 ##@ Tests
 
 .PHONY: test
-test: test-unit test-integration test-testdata test-book test-license test-gomod ## Run the unit and integration tests (used in the CI)
+test: test-unit test-integration test-testdata test-book verify-license test-gomod ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
 TEST_PKGS := ./pkg/... ./test/e2e/utils/...
@@ -194,10 +182,6 @@ test-coverage: ## Run unit and integration tests with coverage report
 ./pkg/plugins/optional/helm/v2alpha/..." \
 		$(TEST_PKGS)
 
-.PHONY: check-testdata
-check-testdata: ## Run the script to ensure that the testdata is updated
-	./test/testdata/check.sh
-
 .PHONY: test-testdata
 test-testdata: ## Run the tests of the testdata directory
 	./test/testdata/test.sh
@@ -217,10 +201,6 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 	cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
 	cd ./docs/book/src/getting-started/testdata/project && make test
 
-.PHONY: test-license
-test-license:  ## Run the license check
-	./test/check-license.sh
-
 .PHONY: test-gomod
 test-gomod:  ## Run the Go module compatibility check
 	go run ./hack/test/check_go_module.go
@@ -229,10 +209,6 @@ test-gomod:  ## Run the Go module compatibility check
 test-external-plugin: install  ## Run tests for external plugin
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 test-plugin
-
-.PHONY: test-spaces
-test-spaces:  ## Run the trailing spaces check
-	./test/check_spaces.sh
 
 ## TODO: Remove me when go/v4 plugin be removed
 ## Deprecated
@@ -243,19 +219,73 @@ test-legacy:  ## Run the tests to validate legacy path for webhooks
 
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm locally
-	@curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+	@command -v helm >/dev/null 2>&1 || curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+
+.PHONY: install-kube-linter
+install-kube-linter: ## Install kube-linter locally if necessary
+	@mkdir -p $(LOCALBIN)
+	$(call go-install-tool,$(KUBE_LINTER),golang.stackrox.io/kube-linter/cmd/kube-linter,$(KUBE_LINTER_VERSION))
 
 .PHONY: helm-lint
-helm-lint: install-helm ## Lint the Helm chart in testdata
-	helm lint testdata/project-v4-with-plugins/dist/chart
+helm-lint: install-helm ## Lint all Helm charts in testdata and docs
+	@for chart in $(HELM_CHARTS); do \
+		echo "Linting $$chart..."; \
+		helm lint $$chart || exit 1; \
+	done
+
+.PHONY: kube-linter
+kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-linter
+	@for chart in $(HELM_CHARTS); do \
+		echo "Validating $$chart with kube-linter..."; \
+		helm template $$chart | $(KUBE_LINTER) lint - || exit 1; \
+	done
+
+##@ Verification
+
+.PHONY: verify
+verify: verify-lint verify-license verify-sample-permissions verify-testdata verify-docs verify-helm ## Run all verification checks
+
+.PHONY: verify-lint
+verify-lint: verify-lint-config yamllint-yaml ## Run linting checks (config, YAML). Note: golangci-lint run is done via CI action for PR comments
+
+.PHONY: verify-lint-config
+verify-lint-config: golangci-lint ## Verify golangci-lint linter configuration
+	$(GOLANGCI_LINT) config verify
+
+.PHONY: verify-license
+verify-license: ## Verify license headers
+	./test/check-license.sh
+
+.PHONY: verify-sample-permissions
+verify-sample-permissions: ## Verify sample file permissions (0644 for files, 0755 for dirs)
+	@for d in $(SAMPLE_ROOTS); do \
+		test -d "$$d" || continue; \
+		bad=$$(find "$$d" -path '*/bin' -prune -o \( \( -type f ! -perm 0644 \) -o \( -type d ! -perm 0755 \) \) -print 2>/dev/null); \
+		if [ -n "$$bad" ]; then echo "Invalid permissions under $$d (expect 0644/0755):"; echo "$$bad"; exit 1; fi; \
+	done
+
+.PHONY: verify-testdata
+verify-testdata: ## Verify testdata is up to date
+	./test/testdata/check.sh
+
+.PHONY: verify-docs
+verify-docs: ## Verify documentation (generation, accessibility, trailing spaces)
+	./hack/docs/check.sh
+	./test/check_docs_accessibility.sh
+	./test/check_spaces.sh
+
+.PHONY: verify-helm
+verify-helm: yamllint-helm helm-lint kube-linter ## Verify Helm charts (yamllint + helm lint + kube-linter)
 
 ## Tool Binaries
 GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
-GOLANGCI_LINT_VERSION ?= v2.8.0
+GOLANGCI_LINT_VERSION ?= v2.11.4
+KUBE_LINTER_VERSION ?= v0.8.3
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

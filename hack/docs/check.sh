@@ -36,3 +36,8 @@ if [[ $(git status ${check_directory} --porcelain) ]]; then
 else
   echo "Generate Docs passed!"
 fi
+
+# Check documentation accessibility
+echo ""
+echo "Checking documentation accessibility..."
+$(dirname "$0")/../../test/check_docs_accessibility.sh

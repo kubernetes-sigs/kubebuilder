@@ -12,6 +12,9 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
     commit-message:
       prefix: ":seedling:"
     labels:
@@ -22,6 +25,9 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
     commit-message:
       prefix: ":seedling:"
     labels:
@@ -32,6 +38,9 @@ updates:
     directory: "/testdata/project-v4"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
     commit-message:
       prefix: ":seedling:"
     labels:
@@ -42,6 +51,9 @@ updates:
     directory: "testdata/project-v4"
     schedule:
       interval: daily
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
     commit-message:
       prefix: ":seedling:"
 
@@ -50,6 +62,9 @@ updates:
     directory: "docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
     commit-message:
       prefix: ":book:"
     labels:

@@ -39,7 +39,7 @@ import (
 
 const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
-	GolangciLintVersion = "v2.8.0"
+	GolangciLintVersion = "v2.11.4"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.23.3"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
@@ -57,6 +57,7 @@ type initScaffolder struct {
 	boilerplatePath string
 	license         string
 	owner           string
+	licenseFile     string
 	commandName     string
 
 	// fs is the filesystem that will be used by the scaffolder
@@ -64,12 +65,13 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(cfg config.Config, license, owner, commandName string) plugins.Scaffolder {
+func NewInitScaffolder(cfg config.Config, license, owner, licenseFile, commandName string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          cfg,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
+		licenseFile:     licenseFile,
 		commandName:     commandName,
 	}
 }
@@ -104,14 +106,32 @@ func (s *initScaffolder) Scaffold() error {
 		machinery.WithConfig(s.config),
 	)
 
-	if s.license != "none" {
+	// Create boilerplate unless --license none
+	if s.licenseFile != "" || s.license != "none" {
 		bpFile := &hack.Boilerplate{
 			License: s.license,
 			Owner:   s.owner,
 		}
+
+		// Use custom license file content if provided
+		if s.licenseFile != "" {
+			content, err := afero.ReadFile(afero.NewOsFs(), s.licenseFile)
+			if err != nil {
+				return fmt.Errorf("failed to read license file %q: %w", s.licenseFile, err)
+			}
+			bpFile.CustomBoilerplateContent = string(content)
+			bpFile.HasCustomBoilerplate = true
+			log.Info("Using custom license header file", "file", s.licenseFile)
+		}
+
 		bpFile.Path = s.boilerplatePath
 		if err := scaffold.Execute(bpFile); err != nil {
 			return fmt.Errorf("failed to execute boilerplate: %w", err)
+		}
+
+		if s.licenseFile != "" {
+			log.Info("Copied custom license file to boilerplate",
+				"file", s.licenseFile, "boilerplate", s.boilerplatePath)
 		}
 
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)

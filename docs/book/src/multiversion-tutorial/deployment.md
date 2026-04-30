@@ -1,9 +1,9 @@
-# Deployment and Testing
+# Deployment and testing
 
-Before we can test out our conversion, we'll need to enable them in our CRD:
+Before testing out the conversion, enable them in the CRD:
 
 Kubebuilder generates Kubernetes manifests under the `config` directory with webhook
-bits disabled. To enable them, we need to:
+bits disabled. To enable them:
 
 - Enable `patches/webhook_in_<kind>.yaml` and
   `patches/cainjection_in_<kind>.yaml` in
@@ -15,48 +15,48 @@ bits disabled. To enable them, we need to:
 - Enable all the vars under the `CERTMANAGER` section in
   `config/default/kustomization.yaml` file.
 
-Additionally, if present in our Makefile, we'll need to set the `CRD_OPTIONS` variable to just
-`"crd"`, removing the `trivialVersions` option (this ensures that we
-actually [generate validation for each version][ref-multiver], instead of
-telling Kubernetes that they're the same):
+Additionally, if present in the Makefile, set the `CRD_OPTIONS` variable to just
+`"crd"`, removing the `trivialVersions` option (this ensures that it
+actually [generates validation for each version][ref-multiver], instead of
+telling Kubernetes that they are the same):
 
 ```makefile
 CRD_OPTIONS ?= "crd"
 ```
 
-Now we have all our code changes and manifests in place, so let's deploy it to
+Now that all code changes and manifests are in place, deploy it to
 the cluster and test it out.
 
 You'll need [cert-manager](../cronjob-tutorial/cert-manager.md) installed
-(version `0.9.0+`) unless you've got some other certificate management
+(version `0.9.0+`) unless you have got some other certificate management
 solution.  The Kubebuilder team has tested the instructions in this tutorial
 with
 [0.9.0-alpha.0](https://github.com/cert-manager/cert-manager/releases/tag/v0.9.0-alpha.0)
 release.
 
-Once all our ducks are in a row with certificates, we can run `make
+Once all ducks are in a row with certificates, run `make
 install deploy` (as normal) to deploy all the bits (CRD,
 controller-manager deployment) onto the cluster.
 
 ## Testing
 
-Once all of the bits are up and running on the cluster with conversion enabled, we can test out our
+Once all of the bits are up and running on the cluster with conversion enabled, test out the
 conversion by requesting different versions.
 
-We'll make a v2 version based on our v1 version (put it under `config/samples`)
+Make a v2 version based on the v1 version (put it under `config/samples`)
 
 ```yaml
 {{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
 ```
 
-Then, we can create it on the cluster:
+Then, create it on the cluster:
 
 ```shell
 kubectl apply -f config/samples/batch_v2_cronjob.yaml
 ```
 
-If we've done everything correctly, it should create successfully,
-and we should be able to fetch it using both the v2 resource
+If you have done everything correctly, it should create successfully,
+and you should be able to fetch it using both the v2 resource
 
 ```shell
 kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
@@ -75,34 +75,34 @@ kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 {{#include ./testdata/project/config/samples/batch_v1_cronjob.yaml}}
 ```
 
-Both should be filled out, and look equivalent to our v2 and v1 samples,
+Both should be filled out, and look equivalent to the v2 and v1 samples,
 respectively.  Notice that each has a different API version.
 
-Finally, if we wait a bit, we should notice that our CronJob continues to
-reconcile, even though our controller is written against our v1 API version.
+Finally, if you wait a bit, you should notice that the CronJob continues to
+reconcile, even though the controller is written against the v1 API version.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>kubectl and Preferred Versions</h1>
+<p class="note-title">kubectl and Preferred Versions</p>
 
-When we access our API types from Go code, we ask for a specific version
+When accessing API types from Go code, you ask for a specific version
 by using that version's Go type (e.g. `batchv2.CronJob`).
 
 You might've noticed that the above invocations of kubectl looked
-a little different from what we usually do -- namely, they specify
+a little different from the usual approach -- namely, they specify
 a *group-version-resource*, instead of just a resource.
 
-When we write `kubectl get cronjob`, kubectl needs to figure out which
+When you write `kubectl get cronjob`, kubectl needs to figure out which
 group-version-resource that maps to.  To do this, it uses the *discovery
 API* to figure out the preferred version of the `cronjob` resource.  For
 CRDs, this is more-or-less the latest stable version (see the [CRD
 docs][CRD-version-pref] for specific details).
 
-With our updates to CronJob, this means that `kubectl get cronjob` fetches
+With the updates to CronJob, this means that `kubectl get cronjob` fetches
 the `batch/v2` group-version.
 
-If we want to specify an exact version, we can use `kubectl get
-resource.version.group`, as we do above.
+To specify an exact version, use `kubectl get
+resource.version.group`, as shown above.
 
 ***You should always use fully-qualified group-version-resource syntax in
 scripts***.  `kubectl get resource` is for humans, self-aware robots, and

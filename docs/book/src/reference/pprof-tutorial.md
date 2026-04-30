@@ -1,9 +1,9 @@
-# Monitoring Performance with Pprof
+# Monitoring performance with Pprof
 
 [Pprof][github], a Go profiling tool, helps identify performance bottlenecks in areas like CPU and memory usage. It's integrated with the controller-runtime library's HTTP server, enabling profiling via HTTP endpoints. You can visualize the data using go tool pprof. Since [Pprof][github] is built into controller-runtime, no separate installation is needed. [Manager options][manager-options-doc] make it easy to enable pprof and gather runtime metrics to optimize controller performance.
 
-<aside class="warning">
-    <h3>Not Recommended for Production</h3>
+<aside class="warning" role="note">
+    <p class="note-title">Not Recommended for Production</p>
 
 While [Pprof][github] is an excellent tool for profiling and debugging, it is not recommended to leave it enabled in production environments. The primary reasons are:
 
@@ -12,7 +12,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
 
 </aside>
 
-## How to use Pprof?
+## How to use Pprof
 
 1. **Enabling Pprof**
 
@@ -28,7 +28,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
     })
     ```
 
-2. **Test It Out**
+2. **Test it out**
 
     After enabling [Pprof][github], you need to build and deploy your controller to test it out. Follow the steps in the [Quick Start guide][quick-start-run-it] to run your project locally or on a cluster.
 
@@ -39,15 +39,15 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
     Using `curl`, export the profiling statistics to a file like this:
 
     ```bash
-    # Note that we are using the bind host and port configured via the
+    # Note that this uses the bind host and port configured via the
     # Manager Options in the cmd/main.go
     curl -s "http://127.0.0.1:8082/debug/pprof/profile" > ./cpu-profile.out
     ```
 
-4. **Visualizing the results on Browser**
+4. **Visualizing the results on browser**
 
     ```bash
-    # Go tool will open a session on port 8080.
+    # Go tool opens a session on port 8080.
     # You can change this as per your own need.
     go tool pprof -http=:8080 ./cpu-profile.out
     ```

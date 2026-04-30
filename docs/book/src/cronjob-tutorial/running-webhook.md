@@ -2,7 +2,7 @@
 
 ## cert-manager
 
-You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
+Follow the [cert-manager installation guide](./cert-manager.md) to install the cert-manager bundle.
 
 ## Build your image
 
@@ -12,11 +12,11 @@ Run the following command to build your image locally.
 make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
-<aside class="note">
-<h1> Using Kind </h1>
+<aside class="note" role="note">
+<p class="note-title"> Using Kind </p>
 
 Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
-Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+Note that, if you are using a Kind cluster, there is no need to push your image to a remote container registry.
 You can directly load your local image into your specified Kind cluster:
 
 ```bash
@@ -28,7 +28,7 @@ To know more, see: [Using Kind For Development Purposes and CI](./../reference/k
 </aside>
 
 
-## Deploy Webhooks
+## Deploy webhooks
 
 You need to enable the webhook and cert manager configuration through kustomize.
 `config/default/kustomization.yaml` should have the following webhook-related sections uncommented:
@@ -73,8 +73,8 @@ kubectl create -f config/samples/batch_v1_cronjob.yaml
 You can also try to create an invalid CronJob (e.g. use an ill-formatted
 schedule field). You should see a creation failure with a validation error.
 
-<aside class="warning">
-<h3>The Bootstrapping Problem</h3>
+<aside class="warning" role="note">
+<p class="note-title">The Bootstrapping Problem</p>
 
 When you deploy a webhook into the same cluster that it will validate, you can run into a *bootstrapping issue*:
 the webhook may try to validate the creation of its own Pod before it’s actually running.

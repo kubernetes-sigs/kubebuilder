@@ -95,7 +95,7 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateWebhookTests()
 	// 4. update makefile
 	sp.updateMakefile()
-	// 5. generate extra files
+
 	cmd := exec.Command("go", "mod", "tidy")
 	_, err := sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
@@ -363,7 +363,7 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`setupLog.Error(err, "Failed to create controller", "controller", "CronJob")
+		`setupLog.Error(err, "Failed to create controller", "controller", "cronjob")
 		os.Exit(1)
 	}`, mainEnableWebhook)
 	hackutils.CheckError("fixing main.go", err)

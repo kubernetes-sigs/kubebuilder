@@ -2,21 +2,21 @@
 
 This guide covers converting **existing cluster-scoped projects** to namespace-scoped deployment.
 
-<aside class="note">
-<h1>Creating New Namespace-Scoped Projects</h1>
+<aside class="note" role="note">
+<p class="note-title">Creating New Namespace-Scoped Projects</p>
 
-If you're creating a **new project**, simply use:
+If you are creating a **new project**, simply use:
 
 ```bash
 kubebuilder init --domain example.com --namespaced
 ```
 
-All files including `cmd/main.go` and RBAC configurations will be scaffolded correctly. All controllers created with `kubebuilder create api` will automatically have the `namespace=` parameter in their RBAC markers. No manual changes or migration steps are needed.
+All files including `cmd/main.go` and RBAC configurations is scaffolded correctly. All controllers created with `kubebuilder create api` will automatically have the `namespace=` parameter in their RBAC markers. No manual changes or migration steps are needed.
 </aside>
 
 By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage resources across all namespaces. This guide shows how to convert an existing cluster-scoped project to namespace-scoped deployment, limiting the manager to watch only specific namespace(s).
 
-## When to Use Namespace-Scoped
+## When to use namespace-scoped
 
 **Use namespace-scoped when:**
 - Building tenant-specific managers in multi-tenant clusters
@@ -28,14 +28,14 @@ By default, Kubebuilder scaffolds cluster-scoped managers that watch and manage 
 - Managing cluster-scoped resources (Nodes, ClusterRoles, Namespaces, etc.)
 - Single manager instance managing resources across all namespaces
 
-<aside class="note">
-<h1>AI-Assisted Migration</h1>
+<aside class="note" role="note">
+<p class="note-title">AI-Assisted Migration</p>
 
-This migration involves updating RBAC markers across multiple controller files. If you're using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
+This migration involves updating RBAC markers across multiple controller files. If you are using an AI coding assistant, see the [AI-Assisted Migration](#ai-assisted-migration) section for ready-to-use instructions.
 
 </aside>
 
-## Migration Steps
+## Migration steps
 
 **Quick Summary:**
 1. Run `kubebuilder edit --namespaced --force` - scaffolds Role/RoleBinding and updates manager.yaml
@@ -44,8 +44,8 @@ This migration involves updating RBAC markers across multiple controller files. 
 4. Run `make manifests` - regenerate RBAC from updated markers
 5. Verify and deploy
 
-<aside class="warning">
-<h2>Manual Steps Required</h2>
+<aside class="warning" role="note">
+<p class="note-title">Manual Steps Required</p>
 
 The `edit` command scaffolds RBAC files and updates manager.yaml automatically (with `--force`), but **cannot** update existing controller files or cmd/main.go.
 
@@ -53,10 +53,10 @@ You must manually update:
 - cmd/main.go namespace-scoped cache configuration
 - Existing controller RBAC markers
 
-**Note:** New controllers created after enabling namespaced mode will have correct RBAC markers automatically.
+**Note:** New controllers created after enabling namespaced mode has correct RBAC markers automatically.
 </aside>
 
-## Detailed Steps:
+## Detailed steps
 
 ### 1. Enable namespace-scoped mode
 
@@ -143,8 +143,8 @@ if err != nil {
 }
 ```
 
-<aside class="note">
-<h1>If You Didn't Use --force</h1>
+<aside class="note" role="note">
+<p class="note-title">If You Didn't Use --force</p>
 
 If you ran `kubebuilder edit --namespaced` without `--force`, manually add WATCH_NAMESPACE to `config/manager/manager.yaml`:
 
@@ -180,7 +180,7 @@ In `internal/controller/cronjob_controller.go`:
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop
+// Reconcile is part of the main Kubernetes reconciliation loop
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
 
@@ -190,14 +190,14 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,namespace=<project-name>-system,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,namespace=<project-name>-system,resources=cronjobs/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop
+// Reconcile is part of the main Kubernetes reconciliation loop
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
 
 Replace `project-system` with your namespace (found in `config/default/kustomization.yaml` under the `namespace:` field).
 
-<aside class="note">
-<h1>New Controllers Get This Automatically</h1>
+<aside class="note" role="note">
+<p class="note-title">New Controllers Get This Automatically</p>
 
 After running `kubebuilder edit --namespaced --force`, any new controllers created will automatically have the `namespace=` parameter:
 
@@ -239,8 +239,8 @@ metadata:
   # Note: namespace is added by kustomize during build, not in source
 ```
 
-<aside class="note">
-<h1>Metrics Auth Role Stays Cluster-Scoped</h1>
+<aside class="note" role="note">
+<p class="note-title">Metrics Auth Role Stays Cluster-Scoped</p>
 
 The `config/rbac/metrics_auth_role.yaml` will remain `kind: ClusterRole` - this is correct. The metrics authentication uses cluster-scoped APIs (TokenReview, SubjectAccessReview) and must stay cluster-scoped even in namespace-scoped projects.
 
@@ -270,9 +270,9 @@ kubectl apply -f config/samples/ -n <manager-namespace>
 kubectl apply -f config/samples/ -n other-namespace
 ```
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Webhooks and Namespace-Scoped Mode</h1>
+<p class="note-title">Webhooks and Namespace-Scoped Mode</p>
 
 If your project has webhooks, the manager cache is restricted to `WATCH_NAMESPACE`, but webhooks receive requests from all namespaces by default.
 
@@ -290,15 +290,15 @@ See the [Webhook Bootstrap Problem](../reference/webhook-bootstrap-problem.html)
 
 ## AI-Assisted Migration
 
-If you're using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
+If you are using an AI coding assistant (Cursor, GitHub Copilot, etc.), you can automate the manual migration steps.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>AI Migration Instructions</h1>
+<p class="note-title">AI Migration Instructions</p>
 
 **Instructions to provide to your AI assistant:**
 
-```
+```text
 I need to migrate this Kubebuilder project from cluster-scoped to namespace-scoped.
 
 First, get the namespace value:
@@ -310,7 +310,7 @@ By default, Kubebuilder projects are cluster-scoped. Namespace-scoped projects w
 specific namespace(s) via the WATCH_NAMESPACE environment variable.
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io/reference/manager-scope.html
+- Kubebuilder Book: ../reference/manager-scope.md
 
 Steps to execute:
 
@@ -465,7 +465,7 @@ Done! After this migration:
 </aside>
 
 
-## Multi-Namespace Support
+## Multi-namespace support
 
 The `WATCH_NAMESPACE` environment variable supports comma-separated values to watch multiple specific namespaces:
 
@@ -477,7 +477,7 @@ env:
 
 Note: You'll need to create Role/RoleBinding in each namespace for proper RBAC.
 
-## Reverting to Cluster-Scoped
+## Reverting to cluster-scoped
 
 To revert back to cluster-scoped:
 
@@ -499,9 +499,9 @@ This command automatically:
    - Remove `setupCacheNamespaces()` function
    - Remove namespace retrieval and cache configuration
    - Remove added imports (`fmt`, `strings`, `cache`) if not used elsewhere
-4. If you didn't use `--force`, manually remove `WATCH_NAMESPACE` from `config/manager/manager.yaml`
+4. If you did not use `--force`, manually remove `WATCH_NAMESPACE` from `config/manager/manager.yaml`
 
-## Important Notes
+## Important notes
 
 - **Only controllers need RBAC updates**: Only update `+kubebuilder:rbac` markers in controller files (files with `Reconcile` function). Webhook files do NOT use RBAC markers - webhooks use certificate-based authentication with the API server.
 - **RBAC markers control scope**: The `namespace=` parameter in controller RBAC markers determines whether controller-gen generates `Role` (namespace-scoped) or `ClusterRole` (cluster-scoped). Without the `namespace=` parameter, controller-gen always generates `ClusterRole`.
@@ -510,7 +510,7 @@ This command automatically:
 - **Metrics auth role stays cluster-scoped**: The `metrics-auth-role` uses cluster-scoped APIs (TokenReview, SubjectAccessReview) and correctly remains a ClusterRole without namespace parameter.
 - **Webhooks require manual configuration**: Currently, controller-gen does not support `namespaceSelector` or `objectSelector` markers for webhooks. See the webhook section above for details.
 
-## See Also
+## See also
 
 - [Manager Scope](../reference/manager-scope.md) - Detailed explanation of manager scope concepts
 - [Project Config](../reference/project-config.md) - PROJECT file configuration reference

@@ -1,14 +1,14 @@
-# Using External Resources
+# Using external resources
 
-In some cases, your project may need to work with resources that aren't defined by your own APIs.
+In some cases, your project may need to work with resources that are not defined by your own APIs.
 These external resources fall into two main categories:
 
 - **Core Types**: API types defined by Kubernetes itself, such as `Pods`, `Services`, and `Deployments`.
 - **External Types**: API types defined in other projects, such as CRDs defined by another solution.
 
-## Managing External Types
+## Managing external types
 
-### Creating a Controller for External Types
+### Creating a controller for external types
 
 To create a controller for an external type without scaffolding a resource,
 use the `create api` command with the `--resource=false` option and specify the path to the
@@ -22,17 +22,17 @@ The command looks like this:
 kubebuilder create api --group <theirgroup> --version <theirversion> --kind <theirKind> --controller --resource=false --external-api-path=<their Golang path import> --external-api-domain=<theirdomain>
 ```
 
-- `--external-api-path`: Provide the Go import path where the external types are defined.
-- `--external-api-domain`:  Provide the domain for the external types. This value will be used to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
+- `--external-api-path`: Provide the Go import path where you define the external types.
+- `--external-api-domain`: Provide the domain for the external types. Kubebuilder uses this value to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
 
-For example, if you're managing Certificates from Cert Manager:
+For example, if you are managing Certificates from Cert Manager:
 
 ```shell
 kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
-<aside class="note">
-<h1>Pinning External API Versions</h1>
+<aside class="note" role="note">
+<p class="note-title">Pinning External API Versions</p>
 
 You can pin a specific version of the external API dependency using the `--external-api-module` flag:
 
@@ -60,7 +60,7 @@ See the RBAC [markers][markers-rbac] generated for this:
 
 Also, the RBAC role:
 
-```ymal
+```yaml
 - apiGroups:
   - cert-manager.io
   resources:
@@ -90,9 +90,9 @@ Also, the RBAC role:
 ```
 
 This scaffolds a controller for the external type but skips creating new resource
-definitions since the type is defined in an external project.
+definitions since an external project defines the type.
 
-### Creating a Webhook to Manage an External Type
+### Creating a webhook to manage an external type
 
 You can create webhooks for external types by providing the external API path, domain, and optionally the module:
 
@@ -113,7 +113,7 @@ kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
   --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
 
-## Managing Core Types
+## Managing core types
 
 Core Kubernetes API types, such as `Pods`, `Services`, and `Deployments`, are predefined by Kubernetes.
 To create a controller for these core types without scaffolding the resource,
@@ -200,9 +200,9 @@ Also, the RBAC for the above [markers][markers-rbac]:
 This scaffolds a controller for the Core type `corev1.Pod` but skips creating new resource
 definitions since the type is already defined in the Kubernetes API.
 
-### Creating a Webhook to Manage a Core Type
+### Creating a webhook to manage a core type
 
-You will run the command with the Core Type data, just as you would for controllers.
+You run the command with the Core Type data, just as you would for controllers.
 See an example:
 
 ```go

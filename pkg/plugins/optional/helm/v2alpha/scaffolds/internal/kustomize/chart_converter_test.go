@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
 
 var _ = Describe("ChartConverter", func() {
@@ -55,7 +56,9 @@ var _ = Describe("ChartConverter", func() {
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 
 		// Create converter
-		converter = NewChartConverter(resources, "test-project", "test-project", "dist")
+		converter = NewChartConverter(
+			resources, "test-project", "test-project", "test-system", "dist", make(map[string]string),
+		)
 	})
 
 	Context("NewChartConverter", func() {
@@ -83,7 +86,9 @@ var _ = Describe("ChartConverter", func() {
 			clusterRole.SetName("test-role")
 			resources.ClusterRoles = []*unstructured.Unstructured{clusterRole}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			exists, err := afero.Exists(fs.FS, "dist/chart/templates/manager")
@@ -113,7 +118,9 @@ var _ = Describe("ChartConverter", func() {
 			resources.Services = append(resources.Services, metricsSvc1, metricsSvc2)
 
 			// Write chart files
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Expect only one file to be written for the metrics service after de-duplication
@@ -309,42 +316,233 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should handle deployment without containers", func() {
 			config := converter.ExtractDeploymentConfig()
-			Expect(config).To(BeEmpty())
+			// Should still extract deployment-level fields (replicas, strategy) even without containers
+			Expect(config).To(HaveKey("replicas"))
+			Expect(config["replicas"]).To(Equal(1))
+
+			// But should not have container-level fields (env, args, resources, etc.)
+			Expect(config).NotTo(HaveKey("env"))
+			Expect(config).NotTo(HaveKey("args"))
+			Expect(config).NotTo(HaveKey("resources"))
+			Expect(config).NotTo(HaveKey("image"))
+		})
+
+		It("should extract extraVolumes and extraVolumeMounts excluding webhook and metrics", func() {
+			volumes := []any{
+				map[string]any{
+					"name":   "webhook-certs",
+					"secret": map[string]any{"secretName": "webhook-server-cert"},
+				},
+				map[string]any{
+					"name":   "custom-volume",
+					"secret": map[string]any{"secretName": "my-secret"},
+				},
+			}
+			volumeMounts := []any{
+				map[string]any{
+					"name":      "webhook-certs",
+					"mountPath": "/tmp/k8s-webhook-server/serving-certs",
+					"readOnly":  true,
+				},
+				map[string]any{
+					"name":      "custom-volume",
+					"mountPath": "/etc/my-secrets",
+					"readOnly":  true,
+				},
+			}
+			containers := []any{
+				map[string]any{
+					"name":         "manager",
+					"image":        "controller:latest",
+					"volumeMounts": volumeMounts,
+				},
+			}
+			err := unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				volumes,
+				"spec", "template", "spec", "volumes",
+			)
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object,
+				containers,
+				"spec", "template", "spec", "containers",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("extraVolumes"))
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "custom-volume"))
+
+			Expect(config).To(HaveKey("extraVolumeMounts"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("mountPath", "/etc/my-secrets"))
+		})
+
+		It("should not add webhook-certs or metrics-certs to extraVolumes or extraVolumeMounts", func() {
+			volumes := []any{
+				map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+				map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+				map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "app-secret"}},
+			}
+			volumeMounts := []any{
+				map[string]any{"name": "webhook-certs", "mountPath": "/tmp/webhook", "readOnly": true},
+				map[string]any{"name": "metrics-certs", "mountPath": "/tmp/metrics", "readOnly": true},
+				map[string]any{"name": "app-secret", "mountPath": "/etc/app", "readOnly": true},
+			}
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest", "volumeMounts": volumeMounts},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, volumes, "spec", "template", "spec", "volumes")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			extraVols, ok := config["extraVolumes"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraVols).To(HaveLen(1))
+			Expect(extraVols[0]).To(HaveKeyWithValue("name", "app-secret"))
+			extraMounts, ok := config["extraVolumeMounts"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(extraMounts).To(HaveLen(1))
+			Expect(extraMounts[0]).To(HaveKeyWithValue("name", "app-secret"))
+		})
+
+		It("should extract deployment replicas", func() {
+			// replicas is set in BeforeEach to 1
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("replicas"))
+			Expect(config["replicas"]).To(Equal(1))
+		})
+
+		It("should extract deployment strategy", func() {
+			// Set up deployment with strategy
+			strategy := map[string]any{
+				"type": "RollingUpdate",
+				"rollingUpdate": map[string]any{
+					"maxSurge":       "25%",
+					"maxUnavailable": "25%",
+				},
+			}
+			err := unstructured.SetNestedField(resources.Deployment.Object, strategy, "spec", "strategy")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("strategy"))
+			strategyConfig, ok := config["strategy"].(map[string]any)
+			Expect(ok).To(BeTrue())
+			Expect(strategyConfig["type"]).To(Equal("RollingUpdate"))
+		})
+
+		It("should extract priorityClassName from pod spec", func() {
+			// Set up deployment with priorityClassName
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedField(
+				resources.Deployment.Object, "high-priority", "spec", "template", "spec", "priorityClassName")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("priorityClassName"))
+			Expect(config["priorityClassName"]).To(Equal("high-priority"))
+		})
+
+		It("should extract topologySpreadConstraints from pod spec", func() {
+			// Set up deployment with topologySpreadConstraints
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			topologySpreadConstraints := []any{
+				map[string]any{
+					"maxSkew":           int64(1),
+					"topologyKey":       "kubernetes.io/hostname",
+					"whenUnsatisfiable": "DoNotSchedule",
+					"labelSelector": map[string]any{
+						"matchLabels": map[string]any{
+							"app": "manager",
+						},
+					},
+				},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedSlice(
+				resources.Deployment.Object, topologySpreadConstraints,
+				"spec", "template", "spec", "topologySpreadConstraints")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("topologySpreadConstraints"))
+			tsc, ok := config["topologySpreadConstraints"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(tsc).To(HaveLen(1))
+		})
+
+		It("should extract terminationGracePeriodSeconds from pod spec", func() {
+			// Set up deployment with terminationGracePeriodSeconds
+			containers := []any{
+				map[string]any{"name": "manager", "image": "controller:latest"},
+			}
+			err := unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
+			Expect(err).NotTo(HaveOccurred())
+			err = unstructured.SetNestedField(
+				resources.Deployment.Object, int64(30), "spec", "template", "spec", "terminationGracePeriodSeconds")
+			Expect(err).NotTo(HaveOccurred())
+
+			config := converter.ExtractDeploymentConfig()
+
+			Expect(config).To(HaveKey("terminationGracePeriodSeconds"))
+			Expect(config["terminationGracePeriodSeconds"]).To(Equal(30))
 		})
 	})
 
-	Context("extractPortFromArg", func() {
+	Context("ExtractPortFromArg", func() {
 		It("should extract port from :PORT format", func() {
-			port := extractPortFromArg("--metrics-bind-address=:8443")
+			port := extractor.ExtractPortFromArg("--metrics-bind-address=:8443")
 			Expect(port).To(Equal(8443))
 		})
 
 		It("should extract port from 0.0.0.0:PORT format", func() {
-			port := extractPortFromArg("--metrics-bind-address=0.0.0.0:8443")
+			port := extractor.ExtractPortFromArg("--metrics-bind-address=0.0.0.0:8443")
 			Expect(port).To(Equal(8443))
 		})
 
 		It("should extract port from HOST:PORT format", func() {
-			port := extractPortFromArg("--health-probe-bind-address=localhost:8081")
+			port := extractor.ExtractPortFromArg("--health-probe-bind-address=localhost:8081")
 			Expect(port).To(Equal(8081))
 		})
 
 		It("should return 0 for invalid formats", func() {
-			port := extractPortFromArg("--invalid-arg")
+			port := extractor.ExtractPortFromArg("--invalid-arg")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--no-equals:8443")
+			port = extractor.ExtractPortFromArg("--no-equals:8443")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--port=invalid")
+			port = extractor.ExtractPortFromArg("--port=invalid")
 			Expect(port).To(Equal(0))
 		})
 
 		It("should return 0 for out-of-range ports", func() {
-			port := extractPortFromArg("--port=:0")
+			port := extractor.ExtractPortFromArg("--port=:0")
 			Expect(port).To(Equal(0))
 
-			port = extractPortFromArg("--port=:99999")
+			port = extractor.ExtractPortFromArg("--port=:99999")
 			Expect(port).To(Equal(0))
 		})
 	})
@@ -371,7 +569,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{configMap}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -422,7 +622,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Services = []*unstructured.Unstructured{customService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -458,7 +660,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{secret}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was created
@@ -516,7 +720,9 @@ var _ = Describe("ChartConverter", func() {
 			resources.Other = []*unstructured.Unstructured{configMap, secret}
 			resources.Services = []*unstructured.Unstructured{customService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify all three files were created
@@ -543,7 +749,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Other = []*unstructured.Unstructured{configMap}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Read the ConfigMap file
@@ -588,7 +796,9 @@ var _ = Describe("ChartConverter", func() {
 
 			resources.Services = []*unstructured.Unstructured{webhookService, metricsService}
 
-			err := converter.WriteChartFiles(fs)
+			builders := converter.GetChartBuilders()
+			scaffold := machinery.NewScaffold(fs)
+			err := scaffold.Execute(builders...)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify extras directory was not created (webhook/metrics go to their own dirs)

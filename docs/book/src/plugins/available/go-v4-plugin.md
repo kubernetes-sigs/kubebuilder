@@ -2,16 +2,16 @@
 
 **(Default Scaffold)**
 
-Kubebuilder will scaffold using the `go/v4` plugin only if specified when initializing the project.
+Kubebuilder scaffolds using the `go/v4` plugin only if specified when initializing the project.
 This plugin is a composition of the `kustomize.common.kubebuilder.io/v2` and `base.go.kubebuilder.io/v4` plugins
 using the [Bundle Plugin][bundle]. It scaffolds a project template
 that helps in constructing sets of [controllers][controller-runtime].
 
 By following the [quickstart][quickstart] and creating any project,
-you will be using this plugin by default.
+you is using this plugin by default.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check samples using this plugin by looking at the `project-v4-<options>` projects under the [testdata][testdata]
 directory on the root directory of the Kubebuilder project.

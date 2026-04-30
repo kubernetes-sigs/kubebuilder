@@ -47,7 +47,7 @@ objects adhering to a consistent and rich structure.
 This approach has fostered a rich ecosystem of tools and libraries for working
 with Kubernetes APIs.
 
-Users work with the APIs through declaring objects as *yaml* or *json* config, and using
+Users work with the APIs through declaring objects as *YAML* or *JSON* config, and using
 common tooling to manage the objects.
 
 Building services as Kubernetes APIs provides many advantages to plain old REST, including:

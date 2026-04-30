@@ -6,11 +6,11 @@ for generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special ["marker
 comments"](/reference/markers.md) in Go code.
 
-controller-gen is built out of different "generators" (which specify what
+controller-gen builds out of different "generators" (which specify what
 to generate) and "output rules" (which specify how and where to write the
 results).
 
-Both are configured through command line options specified in [marker
+You configure both through command line options specified in [marker
 format](/reference/markers.md).
 
 For instance, the following command:
@@ -26,37 +26,37 @@ generates CRDs and RBAC, and specifically stores the generated CRD YAML in
 
 ## Generators
 
-Each different generator is configured through a CLI option.  Multiple
-generators may be used in a single invocation of `controller-gen`.
+You configure each different generator through a CLI option. You can use multiple
+generators in a single invocation of `controller-gen`.
 
 {{#markerdocs CLI: generators}}
 
-## Output Rules
+## Output rules
 
 Output rules configure how a given generator outputs its results. There is
 always one global "fallback" output rule (specified as `output:<rule>`),
 plus per-generator overrides (specified as `output:<generator>:<rule>`).
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>Default Rules</h1>
+<p class="note-title">Default rules</p>
 
-When no fallback rule is specified manually, a set of default
-per-generator rules are used which result in YAML going to
+When you do not manually specify a fallback rule, controller-gen uses a set of default
+per-generator rules which result in YAML going to
 `config/<generator>`, and code staying where it belongs.
 
 The default rules are equivalent to
 `output:<generator>:artifacts:config=config/<generator>` for each
 generator.
 
-When a "fallback" rule is specified, that'll be used instead of the
+When a "fallback" rule is specified, that will be used instead of the
 default rules.
 
 For example, if you specify `crd rbac:roleName=controller-perms
-output:crd:stdout`, you'll get CRDs on standard out, and rbac in a file in
+output:crd:stdout`, you will get CRDs on standard out, and rbac in a file in
 `config/rbac`. If you were to add in a global rule instead, like `crd
-rbac:roleName=controller-perms output:crd:stdout output:none`, you'd get
-CRDs to standard out, and everything else to /dev/null, because we've
+rbac:roleName=controller-perms output:crd:stdout output:none`, you would get
+CRDs to standard out, and everything else to /dev/null, because we have
 explicitly specified a fallback.
 
 </aside>
@@ -67,6 +67,6 @@ listed here.
 
 {{#markerdocs CLI: output rules (optionally as output:<generator>:...)}}
 
-## Other Options
+## Other options
 
 {{#markerdocs CLI: generic}}

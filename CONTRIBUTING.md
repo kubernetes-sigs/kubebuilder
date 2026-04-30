@@ -49,25 +49,34 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 ## What to do before submitting a pull request
 
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
-1. Run `make test-unit test-e2e-local`
+1. Run `make verify` to run all verification checks (linting, testdata, docs, helm)
+1. Run `make test-unit test-e2e-local` for full testing
 
 - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a prerequisite to submit a PR.
 
+**TIP:** You can run `make verify` to check all verification steps that the CI will run. This includes linting, testdata verification, documentation checks, and Helm chart validation.
+
 Following the targets that can be used to test your changes locally.
 
-| Command             | Description                                                   | Is called in the CI? |
-| ------------------- | ------------------------------------------------------------- | -------------------- |
-| make test-unit      | Runs go tests                                                 | no                   |
-| make test           | Runs tests in shell (`./test.sh`)                             | yes                  |
-| make lint           | Run [golangci][golangci] lint checks                          | yes                  |
-| make lint-fix       | Run [golangci][golangci] to automatically perform fixes       | no                   |
-| make test-coverage  | Run coveralls to check the % of code covered by tests         | yes                  |
-| make check-testdata | Checks if the testdata dir is updated with the latest changes | yes                  |
-| make test-e2e-local | Runs the CI e2e tests locally                                 | no                   |
+| Command                      | Description                                                   | Is called in the CI? |
+| ---------------------------- | ------------------------------------------------------------- | -------------------- |
+| make verify                  | **Run all verification checks**                               | yes                  |
+| make verify-lint             | Run code linting (Go, YAML, linter config)                    | yes                  |
+| make verify-license          | Verify license headers                                        | yes                  |
+| make verify-sample-permissions | Verify sample file permissions                              | yes                  |
+| make verify-testdata         | Verify testdata is up to date                                 | yes                  |
+| make verify-docs             | Verify documentation (generation, accessibility, trailing spaces) | yes              |
+| make verify-helm             | Verify Helm charts (yamllint, helm lint)                      | yes                  |
+| make fix-docs        | Fix documentation note layout accessibility issues            | no                   |
+| make test-unit       | Runs go tests                                                 | no                   |
+| make test            | Runs tests in shell (`./test.sh`)                             | yes                  |
+| make lint-fix        | Run [golangci][golangci] to automatically perform fixes       | no                   |
+| make test-coverage   | Run coveralls to check the % of code covered by tests         | yes                  |
+| make test-e2e-local  | Runs the CI e2e tests locally                                 | no                   |
 
-**NOTE** `make lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
+**NOTE** `make verify-lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
 
 ### Running e2e tests locally
 
@@ -223,6 +232,69 @@ There are certain writing style guidelines for Kubernetes documentation, checkou
 
 Check the CI job after to do the Pull Request and then, click on in the `Details` of `netlify/kubebuilder/deploy-preview`
 
+## Contributing AI Agent Configurations
+
+Kubebuilder uses vendor-neutral standards to help AI coding agents understand the project and contribute effectively.
+
+### Agent Skills
+
+Agent Skills provide structured knowledge that helps AI agents perform specific tasks consistently. Skills are stored in `.agents/skills/` and follow the [agentskills.io][agentskills] specification.
+
+Each skill lives in its own directory with a required `SKILL.md` file:
+
+```
+.agents/skills/
+└── skill-name/
+    ├── SKILL.md          # Required: metadata + instructions
+    ├── scripts/          # Optional: executable code
+    ├── references/       # Optional: documentation
+    ├── assets/           # Optional: templates, resources
+    └── ...               # Any additional files or directories
+```
+
+To add a new skill:
+
+1. Create a directory under `.agents/skills/<category>-<what-does>/`
+   - Use the naming pattern: `<category>-<what-does>` (e.g., `cli-descriptions`, `plugin-testing`)
+   - Category describes the domain (cli, plugin, docs)
+   - What-does describes the action or focus area
+2. Add a `SKILL.md` file with frontmatter:
+
+```markdown
+---
+name: category-what-does
+description: What this skill does and when to use it.
+license: Apache-2.0
+metadata:
+  author: The Kubernetes Authors
+---
+
+Instructions for the skill...
+```
+
+3. Follow the [agentskills.io specification][agentskills]:
+   - Name must match the directory name (lowercase, hyphens only)
+   - Description should be 1-1024 characters
+   - Keep the main file under 500 lines
+   - Move detailed content to `references/` subdirectory
+
+See `.agents/skills/cli-descriptions/` for an example.
+
+### AGENTS.md
+
+The `AGENTS.md` file provides context to AI coding agents in a vendor-neutral format. It follows the [agents.md][agentsmd] standard and works with all AI tools.
+
+This file should be placed in the project root and can include:
+
+- Build and test commands
+- Code conventions and style guides
+- Setup and development procedures
+- Project-specific context that helps agents contribute
+
+Keep the content focused on what agents need to know. Reference existing documentation rather than duplicating it.
+
+**IMPORTANT:** Do not create vendor-specific configuration files. Use only the vendor-neutral standards (Agent Skills and AGENTS.md).
+
 ## Community, discussion and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
@@ -246,3 +318,5 @@ Participation in the Kubernetes community is governed by the [Kubernetes Code of
 [kind]: https://kind.sigs.k8s.io/#installation-and-usage
 [setup-envtest]: https://book.kubebuilder.io/reference/envtest
 [k8s-contrubutiong-guide]: https://www.kubernetes.dev/docs/guide/contributing/
+[agentskills]: https://agentskills.io/
+[agentsmd]: https://agents.md/

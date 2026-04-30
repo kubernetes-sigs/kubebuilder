@@ -17,7 +17,9 @@ limitations under the License.
 package golang
 
 import (
+	log "log/slog"
 	"path"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -75,6 +77,11 @@ type Options struct {
 	DoValidation bool
 	DoConversion bool
 
+	// ControllerName is the name of the controller to scaffold.
+	// This is used when creating multiple controllers for the same resource (GVK).
+	// If not provided, a default name based on the resource kind will be used.
+	ControllerName string
+
 	// Spoke versions for conversion webhook
 	Spoke []string
 
@@ -101,7 +108,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoController {
-		res.Controller = true
+		opts.updateControllers(res)
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
@@ -161,4 +168,38 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			}
 		}
 	}
+}
+
+// updateControllers applies controller-related options to the resource.
+// It handles both legacy (--controller) and new (--controller-name) controller creation.
+func (opts Options) updateControllers(res *resource.Resource) {
+	if opts.ControllerName == "" {
+		// No controller name specified: use legacy mode
+		if res.Controllers == nil || res.Controllers.IsEmpty() {
+			res.Controller = true
+		} else {
+			// Warn when trying to use legacy mode on a resource with named controllers
+			log.Warn("resource already has named controllers; use --controller-name to add another controller")
+		}
+		return
+	}
+
+	// Controller name specified: migrate from legacy format if needed
+	if res.Controller {
+		if res.Controllers == nil {
+			res.Controllers = &resource.Controllers{}
+		}
+		// Convert the legacy controller: true to a named controller
+		defaultName := strings.ToLower(res.Kind)
+		_ = res.Controllers.AddController(defaultName)
+		res.Controller = false
+	}
+
+	// Initialize controllers array if not yet created
+	if res.Controllers == nil {
+		res.Controllers = &resource.Controllers{}
+	}
+
+	// Add the new named controller (AddController validates and checks for duplicates)
+	_ = res.Controllers.AddController(opts.ControllerName)
 }

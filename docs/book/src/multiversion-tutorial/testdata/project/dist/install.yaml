@@ -8430,6 +8430,9 @@ spec:
           periodSeconds: 20
         name: manager
         ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
         - containerPort: 9443
           name: webhook-server
           protocol: TCP

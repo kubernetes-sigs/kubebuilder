@@ -102,10 +102,13 @@ func (c CLI) newRootCmd() *cobra.Command {
 	}
 
 	// Global flags for all subcommands.
-	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
+	cmd.PersistentFlags().StringSlice(pluginsFlag, nil,
+		"Comma-separated list of plugin keys to use (e.g., go/v4, helm/v2-alpha). "+
+			"Defaults to the built-in go/v4 bundle if unset")
 
 	// Register --project-version on the root command so that it shows up in help.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
+		"Project version (e.g., 3). Defaults to CLI version if unset")
 
 	// As the root command will be used to shot the help message under some error conditions,
 	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.

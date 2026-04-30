@@ -38,8 +38,10 @@ function scaffold_test_project {
 
   if [ $project == "project-v4" ] ; then
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --controller-name=captain
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
+    # Create a second controller for the Captain resource to test multiple controllers per API
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=false --make=false --controller-name=captain-backup
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false
     $kb create webhook --group crew --version v1 --kind Captain --programmatic-validation --make=false
 
@@ -58,9 +60,9 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --programmatic-validation --validation-path=/custom-validate-admiral --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.0
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.2
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.0
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.2
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --defaulting
     # Webhook for kubernetes Core type that is part of an api group - test incremental
@@ -70,7 +72,9 @@ function scaffold_test_project {
 
   if [[ $project =~ multigroup ]]; then
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --controller-name=captain
+    # Create a second controller for the Captain resource to test multiple controllers per API
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=false --make=false --controller-name=captain-backup
     # Test incremental webhook additions
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false
     $kb create webhook --group crew --version v1 --kind Captain --programmatic-validation --make=false
@@ -89,9 +93,9 @@ function scaffold_test_project {
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
     # Controller for External types
-    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.0
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.2
     # Webhook for External types
-    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.0
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.20.2
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --programmatic-validation --make=false
     # Webhook for kubernetes Core type that is part of an api group - test incremental

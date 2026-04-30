@@ -9,15 +9,14 @@ By using this plugin, you will get:
 - Custom resource samples updated with the necessary specifications.
 - Environment variable support for managing the Operand (image) within the manager.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 See the `project-v4-with-plugins` directory under the [testdata][testdata]
 directory in the Kubebuilder project to check an example
 of scaffolding created using this plugin.
 
-The `Memcached` API and its controller was scaffolded
-using the command:
+The following command scaffolded the `Memcached` API and its controller:
 
 ```shell
 kubebuilder create api \
@@ -31,7 +30,7 @@ kubebuilder create api \
   --plugins="deploy-image/v1-alpha"
 ```
 
-The `Busybox` API was created with:
+The following command created the `Busybox` API:
 
 ```shell
 kubebuilder create api \
@@ -48,13 +47,13 @@ kubebuilder create api \
 
 - This plugin is ideal for users who are just getting started with Kubernetes operators.
 - It helps users deploy and manage an image (Operand) using the [Operator pattern][operator-pattern].
-- If you're looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
+- If you are looking for a quick and efficient way to set up a custom controller and manage a container image, this plugin is a great choice.
 
 ## How to use it?
 
 1. **Initialize your project**:
    After creating a new project with `kubebuilder init`, you can use this
-   plugin to create APIs. Ensure that you've completed the
+   plugin to create APIs. Ensure that you have completed the
    [quick start][quick-start] guide before proceeding.
 
 2. **Create APIs**:
@@ -65,11 +64,11 @@ kubebuilder create api \
    kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,--memory-limit=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
    ```
 
-<aside class="warning">
-<h1>Note on make run:</h1>
+<aside class="warning" role="note">
+<p class="note-title">Note on make run:</p>
 
 When running the project locally with `make run`, the Operand image
-provided will be stored as an environment variable in the
+provided is stored as an environment variable in the
 `config/manager/manager.yaml` file.
 
 Ensure you export the environment variable before running the project locally, such as:
@@ -98,7 +97,7 @@ files are affected, in addition to the existing Kubebuilder scaffolding:
 - `main.go`: Updates the file to add the controller setup.
 - `config/manager/manager.yaml`: Updates to include environment variables for storing the image.
 
-## Further Resources:
+## Further resources
 
 - Check out this [video][video] to see how it works.
 

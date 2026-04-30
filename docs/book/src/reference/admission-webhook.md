@@ -1,4 +1,4 @@
-# Admission Webhooks
+# Admission webhooks
 
 [Admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks) are HTTP callbacks that receive admission requests, process
 them and return admission responses.
@@ -6,31 +6,30 @@ them and return admission responses.
 Kubernetes provides the following types of admission webhooks:
 
 - **Mutating Admission Webhook**:
-These can mutate the object while it's being created or updated, before it gets
+These can mutate the object while it is being created or updated, before it gets
 stored. It can be used to default fields in a resource requests, e.g. fields in
 Deployment that are not specified by the user. It can be used to inject sidecar
 containers.
 
 - **Validating Admission Webhook**:
-These can validate the object while it's being created or updated, before it gets
+These can validate the object while it is being created or updated, before it gets
 stored. It allows more complex validation than pure schema-based validation.
 e.g. cross-field validation and pod image whitelisting.
 
-The apiserver by default doesn't authenticate itself to the webhooks. However,
+The apiserver by default does not authenticate itself to the webhooks. However,
 if you want to authenticate the clients, you can configure the apiserver to use
 basic auth, bearer token, or a cert to authenticate itself to the webhooks.
-You can find detailed steps
-[here](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers).
+See the [Kubernetes authentication documentation](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers) for detailed steps.
 
-<aside class="note">
-<H1>Execution Order</H1>
+<aside class="note" role="note">
+<p class="note-title">Execution Order</p>
 
-**Validating webhooks run after all mutating webhooks**, so you don't need to worry about another webhook changing an
+**Validating webhooks run after all mutating webhooks**, so you do not need to worry about another webhook changing an
 object after your validation has accepted it.
 
 </aside>
 
-## Custom Webhook Paths
+## Custom webhook paths
 
 By default, Kubebuilder generates webhook paths based on the resource's group, version, and kind. For example:
 - Mutating webhook for `batch/v1/CronJob`: `/mutate-batch-v1-cronjob`
@@ -53,31 +52,31 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob \
   --defaulting-path=/custom-mutate --validation-path=/custom-validate
 ```
 
-<aside class="note">
-<h1>Version Requirements</h1>
+<aside class="note" role="note">
+<p class="note-title">Version Requirements</p>
 
 Custom webhook paths require **controller-runtime v0.21+**. In earlier versions (< `v0.21`), the webhook path follows a
 fixed pattern based on the resource's group, version, and kind, and cannot be customized.
 </aside>
 
 
-## Handling Resource Status in Admission Webhooks
+## Handling resource status in admission webhooks
 
-<aside class="warning">
-<H1>Modify status</H1>
+<aside class="warning" role="note">
+<p class="note-title">Modify status</p>
 
 **You cannot modify or default the status of a resource using a mutating admission webhook**.
 Set initial status in your controller when you first see a new object.
 
 </aside>
 
-### Understanding Why:
+### Understanding why
 
-#### Mutating Admission Webhooks
+#### Mutating admission webhooks
 
 Mutating Admission Webhooks are primarily designed to intercept and modify requests concerning the creation,
 modification, or deletion of objects. Though they possess the capability to modify an object's specification,
-directly altering its status isn't deemed a standard practice,
+directly altering its status is not deemed a standard practice,
 often leading to unintended results.
 
 ```go
@@ -88,9 +87,9 @@ type MutatingWebhookConfiguration struct {
 }
 ```
 
-#### Setting Initial Status
+#### Setting initial status
 
-For those diving into custom controllers for custom resources, it's imperative to grasp the concept of setting an
+For those diving into custom controllers for custom resources, it is imperative to grasp the concept of setting an
 initial status. This initialization typically takes place within the controller itself. The moment the controller
 identifies a new instance of its managed resource, primarily through a watch mechanism, it holds the authority
 to assign an initial status to that resource.
@@ -105,7 +104,7 @@ func (r *ReconcileMyResource) Reconcile(request reconcile.Request) (reconcile.Re
 }
 ```
 
-#### Status Subresource
+#### Status subresource
 
 Delving into Kubernetes custom resources, a clear demarcation exists between the spec (depicting the desired state)
 and the status (illustrating the observed state). Activating the /status subresource for a custom resource definition
@@ -127,6 +126,6 @@ spec:
 
 #### Conclusion
 
-While certain edge scenarios might allow a mutating webhook to seamlessly modify the status, treading this path isn't a
+While certain edge scenarios might allow a mutating webhook to seamlessly modify the status, treading this path is not a
 universally acclaimed or recommended strategy. Entrusting the controller logic with status updates remains the
 most advocated approach.

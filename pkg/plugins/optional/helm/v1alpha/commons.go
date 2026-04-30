@@ -14,6 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v1alpha implements the Helm chart scaffolding plugin for Kubebuilder.
+//
+// Deprecated: The helm/v1alpha package is deprecated. Use [helm/v2alpha] instead.
+// The new helm/v2-alpha plugin replaces the deprecated helm/v1-alpha and brings major improvements in
+// flexibility and maintainability, championing changes driven by community feedback. Chart values are
+// now better exposed, enabling easier customization and addressing long-standing issues.
+// See [Helm Plugin (helm/v2-alpha)].
+//
+// This package is kept for compatibility and will eventually be removed.
+//
+// [helm/v2alpha]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha
+// [Helm Plugin (helm/v2-alpha)]: https://book.kubebuilder.io/plugins/available/helm-v2-alpha
 package v1alpha
 
 import (

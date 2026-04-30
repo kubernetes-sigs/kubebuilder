@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 var _ machinery.Template = &HelmHelpers{}
@@ -41,7 +42,7 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 	if f.Path == "" {
 		outputDir := f.OutputDir
 		if outputDir == "" {
-			outputDir = "dist"
+			outputDir = common.DefaultOutputDir
 		}
 		f.Path = filepath.Join(outputDir, "chart", "templates", "_helpers.tpl")
 	}
@@ -64,7 +65,7 @@ func (f *HelmHelpers) generateHelpersTemplate() string {
 	// preventing collisions when chart is used as a Helm dependency
 	prefix := f.ProjectName
 
-	return fmt.Sprintf(helmHelpersTemplate, prefix, prefix, prefix, prefix, prefix)
+	return fmt.Sprintf(helmHelpersTemplate, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
 }
 
 const helmHelpersTemplate = `{{` + "`" + `{{/*
@@ -116,6 +117,19 @@ Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 	`| trunc 63 | trimSuffix "-" }}` + "`" + `}}
 {{` + "`" + `{{- else }}` + "`" + `}}
 {{` + "`" + `{{- printf "%%s-%%s" $fullname $suffix | trunc 63 | trimSuffix "-" }}` + "`" + `}}
+{{` + "`" + `{{- end }}` + "`" + `}}
+{{` + "`" + `{{- end }}` + "`" + `}}
+
+{{` + "`" + `{{/*
+ServiceAccount name to use.
+If serviceAccount.enable is false and serviceAccount.name is set, use that name.
+Otherwise, use the standard resourceName helper with "controller-manager" suffix.
+*/}}` + "`" + `}}
+{{` + "`" + `{{- define "%s.serviceAccountName" -}}` + "`" + `}}
+{{` + "`" + `{{- if and (not (.Values.serviceAccount.enable | default true)) .Values.serviceAccount.name }}` + "`" + `}}
+{{` + "`" + `{{- .Values.serviceAccount.name }}` + "`" + `}}
+{{` + "`" + `{{- else }}` + "`" + `}}
+{{` + "`" + `{{- include "%s.resourceName" (dict "suffix" "controller-manager" "context" .) }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 `

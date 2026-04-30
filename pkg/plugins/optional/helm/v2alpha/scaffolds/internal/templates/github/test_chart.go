@@ -56,16 +56,24 @@ on:
   push:
   pull_request:
 
+permissions: {}
+
 jobs:
   test-e2e:
+    permissions:
+      contents: read
     name: Run on Ubuntu
     runs-on: ubuntu-latest
+    env:
+      IMG: controller:latest
     steps:
       - name: Clone the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version-file: go.mod
 
@@ -84,8 +92,8 @@ jobs:
       - name: Prepare {{ .ProjectName }}
         run: |
           go mod tidy
-          make docker-build IMG=controller:latest
-          kind load docker-image controller:latest
+          make docker-build
+          kind load docker-image $IMG
 
       - name: Install Helm
         run: make install-helm
@@ -115,7 +123,7 @@ jobs:
 
       - name: Deploy manager via Helm
         run: |
-          make helm-deploy IMG={{ .ProjectName }}:v0.1.0
+          make helm-deploy
 
       - name: Check Helm release status
         run: |

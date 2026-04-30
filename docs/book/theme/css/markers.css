@@ -325,33 +325,48 @@ details.collapse-code > summary::-webkit-details-marker {
     stroke: none;
 }
 
-/* notes */
-aside.note {
-    border: 1px solid var(--searchbar-border-color);
+/* notes - base styles for both info and warning */
+aside.note,
+aside.warning {
+    border: 1px solid var(--searchbar-border-color) !important;
+    border-left: 1px solid var(--searchbar-border-color) !important;
     border-radius: 3px;
     margin-top: 1em;
+    padding: 0 !important;
+    background: transparent !important;
 }
 
-aside.note > * {
+/* Hide mdBook's default callout icons that appear outside the box */
+aside.note::before,
+aside.warning::before {
+    display: none !important;
+    content: none !important;
+}
+
+aside.note > *,
+aside.warning > * {
     margin-left: 1em;
     margin-right: 1em;
 }
 
-/* note title */
-aside.note > h1 {
+/* note title - default styling (info/regular notes) */
+aside.note > .note-title,
+aside.warning > .note-title {
     border-bottom: 1px solid var(--searchbar-border-color);
-    margin: 0;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     padding: 0.5em 1em;
     font-size: 100%;
     font-weight: normal;
     background: var(--quote-bg);
 }
 
-/* warning notes */
-aside.note.warning > h1 {
+/* warning notes - orange styling with icon */
+aside.warning > .note-title {
     background: var(--warning-note-background-color, #fcf8f2);
 }
-aside.note.warning > h1::before {
+aside.warning > .note-title::before {
     /* TODO(directxman12): fill in these colors in theme.
      * If you're good with colors, feel free to play around with this
      * in dark mode. */

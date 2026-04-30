@@ -1,4 +1,4 @@
-# Watching Secondary Resources that are NOT `Owned`
+# Watching secondary resources that are NOT `Owned`
 
 In some scenarios, a controller may need to watch and respond to changes in
 resources that it does not `Own`, meaning those resources are created and managed by
@@ -10,14 +10,14 @@ including **Core Types** or **Custom Resources** managed by other controllers or
 and reconciled in separate processes.
 
 For instance, consider two custom resources—`Busybox` and `BackupBusybox`.
-If changes to `Busybox` should trigger reconciliation in the `BackupBusybox` controller, we
-can configure the `BackupBusybox` controller to watch for updates in `Busybox`.
+If changes to `Busybox` should trigger reconciliation in the `BackupBusybox` controller,
+configure the `BackupBusybox` controller to watch for updates in `Busybox`.
 
 ### Example: Watching a Non-Owned Busybox Resource to Reconcile BackupBusybox
 
 Consider a controller that manages a custom resource `BackupBusybox`
 but also needs to monitor changes to `Busybox` resources across the cluster.
-We only want to trigger reconciliation when `Busybox` instances have the Backup
+Trigger reconciliation only when `Busybox` instances have the Backup
 feature enabled.
 
 - **Why Watch Secondary Resources?**
@@ -27,14 +27,14 @@ feature enabled.
     - By watching `Busybox` instances with a specific label, the controller ensures that the necessary
     actions (e.g., backups) are triggered only for the relevant resources.
 
-### Configuration Example
+### Configuration example
 
 Here’s how to configure the `BackupBusyboxReconciler` to watch changes in the
 `Busybox` resource and trigger reconciliation for `BackupBusybox`:
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
@@ -56,12 +56,12 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
-Here’s how we can configure the controller to filter and watch
+Here’s how to configure the controller to filter and watch
 for changes to only those `Busybox` resources that have the specific label:
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// The controller will watch both the BackupBusybox primary resource and the Busybox resource, filtering by a label.
+// The controller watches both the BackupBusybox primary resource and the Busybox resource, filtering by a label.
 func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
@@ -80,7 +80,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
                         },
                     }
                 }
-                // If the label is not present or doesn't match, don't trigger reconciliation
+                // If the label is not present or does not match, do not trigger reconciliation
                 return []reconcile.Request{}
             }),
         ).  // Trigger reconciliation when the labeled Busybox resource changes

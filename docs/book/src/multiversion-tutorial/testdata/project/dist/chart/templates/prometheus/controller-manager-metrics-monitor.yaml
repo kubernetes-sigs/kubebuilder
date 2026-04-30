@@ -12,11 +12,16 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - {{- if .Values.metrics.secure }}
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- end }}
     path: /metrics
-    port: https
-    scheme: https
+    port: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
+    scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
+    {{- if .Values.metrics.secure }}
     tlsConfig:
+      serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
+      {{- if .Values.certManager.enable }}
       ca:
         secret:
           key: ca.crt
@@ -25,11 +30,14 @@ spec:
         secret:
           key: tls.crt
           name: metrics-server-cert
-      insecureSkipVerify: false
       keySecret:
         key: tls.key
         name: metrics-server-cert
-      serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
+      insecureSkipVerify: false
+      {{- else }}
+      insecureSkipVerify: true
+      {{- end }}
+    {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "project.name" . }}

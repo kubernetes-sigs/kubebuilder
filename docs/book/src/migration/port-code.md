@@ -2,9 +2,9 @@
 
 After reorganizing your project (Step 1) and executing scaffolding commands from discovery (Step 2), use AI to port your custom code to the new project.
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Important: Best Effort Only</h1>
+<p class="note-title">Important: Best Effort Only</p>
 
 The AI instructions below are provided as an **example** to help you get started. Due to the complexity and variety of Kubebuilder projects, we **cannot guarantee** it will work perfectly for all projects or be 100% accurate.
 
@@ -18,9 +18,9 @@ The instructions may help you understand how to approach certain migration scena
 
 </aside>
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Prerequisites</h1>
+<p class="note-title">Prerequisites</p>
 
 Before using these AI instructions:
 1. You've reorganized your project using Step 1 (`make build` succeeds)
@@ -34,7 +34,7 @@ Before using these AI instructions:
 
 Copy and paste these instructions to your AI assistant:
 
-```
+```text
 Port custom code from Kubebuilder project backup to new scaffolded project.
 
 CONTEXT:
@@ -103,8 +103,8 @@ RBAC markers in controller files:
 - // +kubebuilder:rbac:groups=<group>,resources=<resource>/finalizers,verbs=update
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io
-- Markers Reference: https://book.kubebuilder.io/reference/markers.html
+- Kubebuilder Book: ../introduction.md
+- Markers Reference: ../reference/markers.md
 - controller-runtime: https://github.com/kubernetes-sigs/controller-runtime
 - controller-tools: https://github.com/kubernetes-sigs/controller-tools
 
@@ -120,7 +120,7 @@ PORT CUSTOM CODE (in this order):
    b. For packages in BOTH with different versions:
       - Keep the HIGHER (newer) version
       - If backup has newer version: go get <package>@<newer-version>
-      - If new scaffold has newer version: keep it (don't downgrade)
+      - If new scaffold has newer version: keep it (do not downgrade)
       - NOTE: Old projects can have newer versions than scaffold
 
    After ALL: run go mod tidy
@@ -197,7 +197,7 @@ PORT CUSTOM CODE (in this order):
 
    After: make build
 
-6. Port config settings (ADAPT, don't copy):
+6. Port config settings (ADAPT, do not copy):
 
    a. config/default/kustomization.yaml - Compare and adapt:
       - Uncomment webhook/certmanager if you have webhooks
@@ -224,7 +224,7 @@ PORT CUSTOM CODE (in this order):
    - Integration tests: Copy test/integration/* if exist
 
 9. Port additional files:
-   - README: Port custom sections (don't replace entire file)
+   - README: Port custom sections (do not replace entire file)
    - Additional dirs: Copy docs/, scripts/, examples/, charts/, testdata/ if exist
    - Root files: Copy .env, VERSION, CHANGELOG.md, CONTRIBUTING.md if exist
    - .github workflows: Copy custom workflows
@@ -251,12 +251,12 @@ IMPORTANT REMINDERS:
 - NEVER edit auto-generated files (already listed in CONTEXT above)
 - NEVER remove // +kubebuilder:scaffold:* comments
 - REMOVE "// TODO(user):" when replacing with custom code
-- ADAPT config YAML files, don't copy entire files
+- ADAPT config YAML files, do not copy entire files
 - Port EVERYTHING except: .git/, bin/, vendor/, dist/, zz_generated.*, go.sum
 - Follow make command sequence from CONTEXT above
 ```
 
-## What AI Will Do
+## What AI will do
 
 The AI will:
 
@@ -271,13 +271,13 @@ The AI will:
 9. **Port additional files** - README, docs/, scripts/, .github/, any custom directories
 10. **Verify completely** - Run lint-fix, generate, manifests, build, test
 
-## After AI Completes
+## After AI completes
 
 **Critical: Review carefully!**
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Manual Review Required</h1>
+<p class="note-title">Manual Review Required</p>
 
 After AI ports the code:
 
@@ -319,7 +319,7 @@ type CaptainSpec struct {
 }
 ```
 
-### Controller Reconcile Logic
+### Controller reconcile logic
 
 **From backup** (Reconcile function body):
 ```go
@@ -355,7 +355,7 @@ func (r *CaptainReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 ```
 
-### Webhook Adaptation (v3 to v4)
+### Webhook adaptation (v3 to v4)
 
 **From go/v3 backup**:
 ```go
@@ -378,16 +378,16 @@ func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj *crewv1.Captai
 }
 ```
 
-## Next Steps
+## Next steps
 
 After AI ports your code:
 
 1. Check if nothing is missed, broken or wrongly ported
 2. Deploy to test cluster - Verify behavior
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>If You Have a Helm Chart</h1>
+<p class="note-title">If You Have a Helm Chart</p>
 
 If you had a Helm chart to distribute your project, you may want to consider regenerate with the [helm/v2-alpha plugin](../plugins/available/helm-v2-alpha.md)
 and then applying your customizations on top.

@@ -17,6 +17,8 @@ package machinery
 import (
 	"errors"
 	"os"
+	"strconv"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -103,6 +105,19 @@ var _ = Describe("Scaffold", func() {
 			Expect(s.injector.boilerplate).To(Equal(""))
 			Expect(s.injector.resource).NotTo(BeNil())
 			Expect(s.injector.resource.GVK.IsEqualTo(res.GVK)).To(BeTrue())
+		})
+	})
+
+	Describe("SubstituteYear", func() {
+		It("should replace YEAR with the current UTC year", func() {
+			currentYear := strconv.Itoa(time.Now().UTC().Year())
+			Expect(SubstituteYear("Copyright YEAR The Authors.")).
+				To(Equal("Copyright " + currentYear + " The Authors."))
+		})
+
+		It("should leave strings without YEAR unchanged", func() {
+			Expect(SubstituteYear("Copyright 2024 The Authors.")).
+				To(Equal("Copyright 2024 The Authors."))
 		})
 	})
 

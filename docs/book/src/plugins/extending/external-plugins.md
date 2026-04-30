@@ -1,4 +1,4 @@
-# Creating External Plugins for Kubebuilder
+# Creating external plugins for Kubebuilder
 
 ## Overview
 
@@ -7,7 +7,7 @@ These plugins are executables (written in any language) that follow an
 execution pattern recognized by Kubebuilder. Kubebuilder interacts with
 these plugins via `stdin` and `stdout`, enabling seamless communication.
 
-## Why Use External Plugins?
+## Why use external plugins?
 
 External plugins enable third-party solution maintainers to integrate their tools with Kubebuilder.
 Much like Kubebuilder's own plugins, these can be opt-in, offering users
@@ -106,7 +106,7 @@ structures.
 ```
 
 <aside>
-<H1> </H1>
+<p class="note-title"> </p>
 
 Avoid printing directly to `stdout` in your external plugin.
 Since communication between Kubebuilder and the plugin occurs through
@@ -127,7 +127,7 @@ Since communication between Kubebuilder and the plugin occurs through
 
 **Example:** For a plugin `foo.acme.io` version `v2` on Linux, the path would be `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/foo.acme.io`.
 
-### Available Subcommands
+### Available subcommands
 
 External plugins can support the following Kubebuilder subcommands:
 - `init`: Project initialization
@@ -139,15 +139,15 @@ External plugins can support the following Kubebuilder subcommands:
 - `metadata`: Provide plugin descriptions and examples with the `--help` flag.
 - `flags`: Inform Kubebuilder of supported flags, enabling early error detection.
 
-<aside class="note">
-<h1>More about `flags` subcommand</h1>
+<aside class="note" role="note">
+<p class="note-title">More about `flags` subcommand</p>
 
 The `flags` subcommand in an external plugin allows for early error detection by informing Kubebuilder about the flags the plugin supports. If an unsupported flag is identified, Kubebuilder can issue an error before the plugin is called to execute.
 If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all flags to the plugin, making it the external plugin's responsibility to handle any invalid flags.
 
 </aside>
 
-### Configuring Plugin Path
+### Configuring plugin path
 
 Set the environment variable `$EXTERNAL_PLUGINS_PATH`
 to specify a custom plugin binary path:
@@ -158,7 +158,7 @@ export EXTERNAL_PLUGINS_PATH=<custom-path>
 
 Otherwise, Kubebuilder would search for the plugins in a default path based on your OS.
 
-### Example CLI Commands
+### Example CLI commands
 
 You can now use it by calling the CLI commands:
 

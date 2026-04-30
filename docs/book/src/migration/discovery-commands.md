@@ -2,24 +2,24 @@
 
 Use AI to analyze your (now reorganized) Kubebuilder project and generate all CLI commands needed to recreate it with the latest version.
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>You May Not Need This</h1>
+<p class="note-title">You May Not Need This</p>
 
 **If you have a PROJECT file** and used Kubebuilder CLI to scaffold **all** resources (APIs, controllers, webhooks), you can use `kubebuilder alpha generate` instead.
 
 The `alpha generate` command re-scaffolds everything tracked in your PROJECT file automatically. See the [alpha generate documentation](../reference/commands/alpha_generate.md) for details.
 
 **Use this AI discovery step if:**
-- You don't have a PROJECT file (Kubebuilder < v3.0.0)
+- You do not have a PROJECT file (Kubebuilder < v3.0.0)
 - You manually created some APIs, controllers, or webhooks (not tracked in PROJECT file)
 - You want to verify all resources are discovered
 
 </aside>
 
-<aside class="note">
+<aside class="note" role="note">
 
-<h1>When to Use This</h1>
+<p class="note-title">When to Use This</p>
 
 Use AI discovery if your project has:
 - APIs not tracked in the PROJECT file (manually created)
@@ -33,9 +33,9 @@ AI scans your entire codebase to discover everything, ensuring nothing is missed
 
 ## Instructions to provide to your AI assistant
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Standard Kubebuilder Layout Only</h1>
+<p class="note-title">Standard Kubebuilder Layout Only</p>
 
 These instructions work for projects using **standard Kubebuilder directory layout**:
 - API types in `api/` directory (some projects use `apis/`)
@@ -48,7 +48,7 @@ Projects with heavily customized layouts may require manual analysis.
 
 Copy and paste these instructions to your AI assistant (Cursor, Claude, GitHub Copilot, etc.):
 
-```
+```text
 Analyze this Kubebuilder project and generate all CLI commands to recreate it.
 
 CONTEXT:
@@ -103,7 +103,7 @@ Files to IGNORE:
 - config/rbac/*.yaml (auto-generated from markers)
 
 References:
-- Kubebuilder Book: https://book.kubebuilder.io
+- Kubebuilder Book: ../introduction.md
 - controller-runtime: https://github.com/kubernetes-sigs/controller-runtime
 - controller-tools: https://github.com/kubernetes-sigs/controller-tools
 
@@ -170,13 +170,13 @@ make manifests && make generate && make build
 RULES:
 - Combine ALL webhook types in ONE command: --defaulting --programmatic-validation together
 - Conversion webhooks: use hub version and list ALL spokes: --conversion --spoke v2,v3
-- List EVERY Kind found in source code, not just what's in PROJECT file
+- List EVERY Kind found in source code, not just what is in PROJECT file
 - External type controllers: use --controller=true --resource=false
 - Webhooks for external/core types: just create webhook (no create api needed)
 - Order: external controllers first, then your APIs, then all webhooks
 ```
 
-## Understanding the Output
+## Understanding the output
 
 The AI will analyze your project and output a bash script. The script will contain commands in this order:
 
@@ -187,11 +187,11 @@ The AI will analyze your project and output a bash script. The script will conta
 5. `kubebuilder create webhook` - For all webhooks
 6. `make manifests && make generate && make build` - Verify
 
-## Example Outputs
+## Example outputs
 
 Here are real examples of what the AI instructions generate:
 
-### Example 1: Simple Multi-Group Project
+### Example 1: Simple multi-group project
 
 Analyzed: [kubernetes-sigs/scheduler-plugins](https://github.com/kubernetes-sigs/scheduler-plugins)
 
@@ -213,7 +213,7 @@ make manifests && make generate && make build
 
 **Discovered:** 2 APIs, multi-group, no webhooks
 
-### Example 2: Single-Group with Webhooks (go/v3 Migration)
+### Example 2: Single-group with webhooks (go/v3 migration)
 
 Analyzed: [project-v3](https://github.com/kubernetes-sigs/kubebuilder/tree/release-3.13/testdata/project-v3)
 
@@ -238,7 +238,7 @@ make manifests && make generate && make build
 
 **Discovered:** 3 APIs, single-group, webhooks with defaulting and validation
 
-### Example 3: Complex Multi-Group with External Types
+### Example 3: Complex multi-group with external types
 
 Analyzed: testdata/project-v4-multigroup
 
@@ -304,12 +304,12 @@ make manifests && make generate && make build
 
 **Discovered:** 12 APIs across 6 groups, conversion webhook, external controllers, external webhooks
 
-## What to Do Next
+## What to do next
 
 1. Review the generated script carefully and ensure it matches your project structure.
 2. Save it as `migration-commands.sh` and make it executable: `chmod +x migration-commands.sh`
 3. Follow the [Manual Migration Process](./manual-process.md) to:
    - Backup your project in another location
    - Execute the commands of this script in the root of your project when it is empty
-   - After you have the fully re-scaffolded project, you will need to add all your code back on top of it
+   - After you have the fully re-scaffolded project, you needs to add all your code back on top of it
    - Port your custom code

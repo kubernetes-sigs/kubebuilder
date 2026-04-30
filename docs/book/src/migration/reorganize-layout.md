@@ -11,9 +11,9 @@ Reorganize files to match the new directory layout.
 
 **If ALL are already in the new layout**, skip to [Step 2](./discovery-commands.md)
 
-<aside class="warning">
+<aside class="warning" role="note">
 
-<h1>Important: Best Effort Only</h1>
+<p class="note-title">Important: Best Effort Only</p>
 
 These AI instructions work for projects using **standard Kubebuilder directory layout**. Projects with heavily customized structures may require manual reorganization.
 
@@ -27,7 +27,7 @@ Always validate changes carefully.
 
 Copy and paste these instructions to your AI assistant:
 
-```
+```text
 Reorganize Kubebuilder project files to match new directory layout.
 
 CONTEXT:
@@ -127,7 +127,7 @@ If errors, fix import paths.
 Success: new layout, make build succeeds, make test passes, project functional
 ```
 
-## What This Does
+## What this does
 
 The AI will:
 
@@ -137,7 +137,7 @@ The AI will:
 
 After this step, your project uses the new layout (same code, new locations), making migration much simpler!
 
-## Next Steps
+## Next steps
 
 After AI reorganizes:
 

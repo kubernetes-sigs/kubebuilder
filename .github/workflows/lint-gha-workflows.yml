@@ -1,0 +1,53 @@
+name: Lint GitHub Actions Workflows
+on:
+  pull_request:
+    paths: 
+     - '**/workflows/*.yml'
+
+permissions: {}
+
+jobs:
+  zizmor:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor on kubebuilder GitHub Actions workflows
+        uses: zizmorcore/zizmor-action@b1d7e1fb5de872772f31590499237e7cce841e8e # v0.5.3
+        with:
+          advanced-security: false
+  
+  pinact:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.26'
+
+      - name: Install pinact
+        run: |
+          go install github.com/suzuki-shunsuke/pinact/v3/cmd/pinact@v3.5.0
+
+      - name: Display changed workflows in PR
+        run: |
+          git diff --name-only --diff-filter=d origin/${GITHUB_BASE_REF} HEAD
+
+      - name: Run pinact on changed workflow files
+        run: |
+          git diff --name-only --diff-filter=d origin/${GITHUB_BASE_REF} HEAD \
+          | grep -E 'workflows/.*\.ya?ml$' \
+          | xargs -r pinact run --diff --check --verify              

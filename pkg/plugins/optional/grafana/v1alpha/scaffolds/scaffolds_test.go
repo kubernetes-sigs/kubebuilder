@@ -34,7 +34,7 @@ import (
 var _ = Describe("Base Scaffolds (Init & Edit)", func() {
 	var (
 		fs         machinery.Filesystem
-		scaffolder *initScaffolder
+		scaffolder *editScaffolder
 		tmpDir     string
 	)
 
@@ -50,7 +50,7 @@ var _ = Describe("Base Scaffolds (Init & Edit)", func() {
 		fs = machinery.Filesystem{
 			FS: afero.NewBasePathFs(afero.NewOsFs(), tmpDir),
 		}
-		scaffolder = &initScaffolder{}
+		scaffolder = &editScaffolder{}
 		scaffolder.InjectFS(fs)
 	})
 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -91,34 +92,41 @@ make generate will be run.
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	fs.BoolVar(&p.runMake, "make", true,
+		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
 
 	fs.BoolVar(&p.force, "force", false,
-		"attempt to create resource even if it already exists")
+		"If set, attempt to create resource even if it already exists")
 
 	p.options = &goPlugin.Options{}
 
-	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	fs.StringVar(&p.options.Plural, "plural", "",
+		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
-		"if set, generate the resource without prompting the user")
+		"Generate the resource without prompting the user (enabled by default; use --resource=false to disable)")
 	p.resourceFlag = fs.Lookup("resource")
-	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+	fs.BoolVar(&p.options.Namespaced, "namespaced", true,
+		"Resource is namespaced by default; use --namespaced=false to create a cluster-scoped resource")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
-		"if set, generate the controller without prompting the user")
+		"Prompt whether to generate the controller by default; "+
+			"use --controller=true or --controller=false to skip the prompt")
 	p.controllerFlag = fs.Lookup("controller")
 
+	fs.StringVar(&p.options.ControllerName, "controller-name", "",
+		"Name of the controller to scaffold (e.g., frigate-controller); allows multiple controllers per resource")
+
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
-		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
-			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
+		"Go package import path for the external API (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1). "+
+			"Used to scaffold controllers for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
-			"markers and permissions for the external resources (e.g., cert-manager.io).")
+		"Domain name for the external API (e.g., cert-manager.io). "+
+			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
-		"external API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
+		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
@@ -139,14 +147,29 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	// Ensure that external API options cannot be used when creating an API in the project.
-	if p.options.DoAPI {
-		if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 ||
-			len(p.options.ExternalAPIModule) != 0 {
-			return errors.New("cannot use '--external-api-path', '--external-api-domain', or '--external-api-module' " +
-				"when creating an API in the project with '--resource=true'. " +
-				"Use '--resource=false' when referencing an external API")
+	// When scaffolding a controller without an API (--resource=false), copy essential
+	// fields from the existing resource in the PROJECT file, such as Path and Plural.
+	// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
+	if !p.options.DoAPI {
+		if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+			p.resource.Path = existingRes.Path
+			p.resource.Plural = existingRes.Plural
+			p.resource.External = existingRes.External
+			p.resource.Core = existingRes.Core
+			p.resource.Module = existingRes.Module
 		}
+	}
+
+	// Ensure that external API options cannot be used when creating an API in the project.
+	if p.options.DoAPI &&
+		(len(p.options.ExternalAPIPath) != 0 ||
+			len(p.options.ExternalAPIDomain) != 0 ||
+			len(p.options.ExternalAPIModule) != 0) {
+		return errors.New(
+			"cannot use '--external-api-path', '--external-api-domain', or '--external-api-module' " +
+				"when creating an API in the project with '--resource=true'. " +
+				"Use '--resource=false' when referencing an external API",
+		)
 	}
 
 	// Validate that --external-api-module requires --external-api-path
@@ -160,21 +183,111 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		return fmt.Errorf("error validating resource: %w", err)
 	}
 
-	// In case we want to scaffold a resource API we need to do some checks
-	if p.options.DoAPI {
-		// Check that resource doesn't have the API scaffolded or flag force was set
-		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() && !p.force {
-			return errors.New("API resource already exists")
-		}
+	if err := p.validateAPI(); err != nil {
+		return err
+	}
 
-		// Check that the provided group can be added to the project
-		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
-			return fmt.Errorf("multiple groups are not allowed by default, " +
-				"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html")
-		}
+	return p.validateController()
+}
+
+func (p *createAPISubcommand) validateAPI() error {
+	if !p.options.DoAPI {
+		return nil
+	}
+
+	// Check that resource doesn't have the API scaffolded or flag force was set
+	if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() && !p.force {
+		return errors.New("API resource already exists")
+	}
+
+	// Check that the provided group can be added to the project
+	if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
+		return fmt.Errorf(
+			"multiple groups are not allowed by default, " +
+				"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html",
+		)
 	}
 
 	return nil
+}
+
+func (p *createAPISubcommand) validateController() error {
+	if !p.options.DoController {
+		return nil
+	}
+
+	existingRes, err := p.config.GetResource(p.resource.GVK)
+	if err != nil {
+		// Resource does not exist yet, no validation needed
+		return nil
+	}
+
+	// Require --controller-name when adding a controller to a resource that already has controllers.
+	// Exception: if --resource=true (creating/recreating API), allow --controller=true without
+	// a name for backward compatibility.
+	if p.options.ControllerName == "" && !p.options.DoAPI &&
+		existingRes.Controllers != nil && !existingRes.Controllers.IsEmpty() {
+		return errors.New(
+			"resource already has controllers defined; please specify '--controller-name' " +
+				"to add another controller, or use '--controller=false' to skip controller scaffolding",
+		)
+	}
+
+	// No controller name specified: using legacy mode, no further validation needed
+	if p.options.ControllerName == "" {
+		return nil
+	}
+
+	// Check that the controller name does not already exist
+	if existingRes.Controllers != nil && existingRes.Controllers.HasController(p.options.ControllerName) {
+		return fmt.Errorf(
+			"controller with name %q already exists for resource %s/%s/%s",
+			p.options.ControllerName,
+			p.resource.Group,
+			p.resource.Version,
+			p.resource.Kind,
+		)
+	}
+
+	// Check for name collisions after normalization (e.g., "foo-bar" vs "foobar")
+	if existingRes.Controllers != nil {
+		newNormalized := normalizeForCollisionCheck(p.options.ControllerName)
+		for _, existing := range *existingRes.Controllers {
+			if newNormalized == normalizeForCollisionCheck(existing.Name) {
+				return fmt.Errorf(
+					"controller name %q conflicts with existing controller %q: "+
+						"both would generate the same reconciler struct name",
+					p.options.ControllerName,
+					existing.Name,
+				)
+			}
+		}
+	}
+
+	// Also check legacy controller: true case
+	if existingRes.Controller && p.options.ControllerName == strings.ToLower(p.resource.Kind) {
+		return fmt.Errorf(
+			"controller with name %q already exists for resource %s/%s/%s",
+			p.options.ControllerName,
+			p.resource.Group,
+			p.resource.Version,
+			p.resource.Kind,
+		)
+	}
+
+	return nil
+}
+
+// normalizeForCollisionCheck normalizes a controller name to detect potential collisions.
+// Different names that normalize to the same value would generate conflicting code.
+func normalizeForCollisionCheck(name string) string {
+	var result strings.Builder
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			result.WriteRune(r)
+		}
+	}
+	return strings.ToLower(result.String())
 }
 
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {

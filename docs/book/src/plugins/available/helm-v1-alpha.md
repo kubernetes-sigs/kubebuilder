@@ -1,7 +1,7 @@
 # Helm Plugin (`helm/v1-alpha`) - **DEPRECATED**
 
-<aside class="warning">
-<h1> Deprecated Plugin</h1>
+<aside class="warning" role="note">
+<p class="note-title"> Deprecated Plugin</p>
 
 The `helm/v1-alpha` plugin is **deprecated**. Please use [`helm/v2-alpha`](./helm-v2-alpha.md) instead.
 
@@ -30,8 +30,8 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/project-v4/<tag or bran
 However, in many scenarios, you might prefer to provide a Helm chart to package your solution.
 If so, you can use this plugin to generate the Helm chart under the `dist` directory.
 
-<aside class="note">
-<h1>Examples</h1>
+<aside class="note" role="note">
+<p class="note-title">Examples</p>
 
 You can check the plugin usage by looking at `project-v4-with-plugins` samples
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
@@ -47,16 +47,16 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
   you must run the `edit` command with the `--force` flag to regenerate the Helm chart values based
   on the latest manifests (_after running `make manifests`_) to ensure that the HelmChart values are
   updated accordingly. In this case, if you have customized the files
-  under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you will need to manually reapply your customizations on top
+  under `dist/chart/values.yaml`, and the `templates/manager/manager.yaml`, you needs to manually reapply your customizations on top
   of the latest changes after regenerating the Helm chart.
 
-<aside class="note">
-<H1> Why CRDs are added under templates? </H1>
+<aside class="note" role="note">
+<p class="note-title"> Why CRDs are added under templates? </p>
 
 Although [Helm best practices](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you) recommend placing CRDs under a top-level `crds/` directory, the Kubebuilder Helm plugin intentionally places them under `templates/crd`.
 
 The rationale is tied to how Helm itself handles CRDs.
-By default, Helm will install CRDs once during the initial release,
+By default, Helm installs CRDs once during the initial release,
 but it will **ignore CRD changes** on subsequent upgrades.
 
 This can lead to surprising behavior where chart upgrades silently
@@ -75,9 +75,9 @@ This design choice prioritizes correctness and maintainability over Helm's defau
 while leaving room for future improvements (such as scaffolding separate charts for APIs and controllers).
 </aside>
 
-## How to use it ?
+## How to use it?
 
-### Basic Usage
+### Basic usage
 
 The Helm plugin is attached to the `edit` subcommand as the `helm/v1-alpha` plugin
 relies on the Go project being scaffolded first.
@@ -92,8 +92,8 @@ kubebuilder init
 make manifests
 kubebuilder edit --plugins=helm/v1-alpha
 ```
-<aside class="note">
-  <h1>Use the edit command to update the Helm Chart with the latest changes</h1>
+<aside class="note" role="note">
+  <p class="note-title">Use the edit command to update the Helm Chart with the latest changes</p>
 
   After making changes to your project, ensure that you run `make manifests` and then
   use the command `kubebuilder edit --plugins=helm/v1-alpha` to update the Helm Chart.
@@ -121,7 +121,7 @@ The Helm plugin implements the following subcommands:
 
 ## Affected files
 
-The following scaffolds will be created or updated by this plugin:
+The following scaffolds is created or updated by this plugin:
 
 - `dist/chart/*`
 

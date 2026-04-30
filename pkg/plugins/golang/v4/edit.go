@@ -18,6 +18,8 @@ package v4
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -32,9 +34,12 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	config config.Config
 
-	multigroup bool
-	namespaced bool
-	force      bool
+	multigroup  bool
+	namespaced  bool
+	force       bool
+	licenseFile string
+	license     string
+	owner       string
 
 	// fs stores the FlagSet to check if flags were explicitly set
 	fs *pflag.FlagSet
@@ -86,14 +91,28 @@ Note: To add optional plugins after initialization, use 'kubebuilder edit --plug
 
   # Enable/disable multiple settings
   %[1]s edit --multigroup --namespaced --force
+
+  # Update license header from custom file
+  %[1]s edit --license-file ./my-header.txt
+
+  # Update license header to built-in apache2
+  %[1]s edit --license apache2 --owner "Your Company"
 `, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.fs = fs
-	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
-	fs.BoolVar(&p.namespaced, "namespaced", false, "enable or disable namespace-scoped deployment")
-	fs.BoolVar(&p.force, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
+	fs.BoolVar(&p.multigroup, "multigroup", false,
+		"Enable or disable multigroup layout (organize APIs by group); use --multigroup=false to disable")
+	fs.BoolVar(&p.namespaced, "namespaced", false,
+		"Enable or disable namespace-scoped deployment (default: cluster-scoped); use --namespaced=false to disable")
+	fs.BoolVar(&p.force, "force", false, "If set, overwrite scaffolded files to apply changes (manual edits may be lost)")
+	fs.StringVar(&p.licenseFile, "license-file", "",
+		"Path to custom license file; content copied to hack/boilerplate.go.txt")
+	fs.StringVar(&p.license, "license", "",
+		"License header to use for boilerplate (e.g., apache2, none) "+
+			"(see: https://book.kubebuilder.io/reference/license-header)")
+	fs.StringVar(&p.owner, "owner", "", "Owner name for copyright license headers")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
@@ -103,20 +122,51 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *editSubcommand) PreScaffold(machinery.Filesystem) error {
+	// Trim whitespace from license file path
+	p.licenseFile = strings.TrimSpace(p.licenseFile)
+
+	// Validate license file before scaffolding to prevent errors mid-operation
+	if p.licenseFile != "" {
+		if _, err := os.Stat(p.licenseFile); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("license file %q does not exist", p.licenseFile)
+			}
+			return fmt.Errorf("failed to access license file %q: %w", p.licenseFile, err)
+		}
+
+		// Check that the license file is a valid Go comment block
+		content, err := os.ReadFile(p.licenseFile)
+		if err != nil {
+			return fmt.Errorf("failed to read license file %q: %w", p.licenseFile, err)
+		}
+
+		// Empty files are allowed, only validate format if file has content
+		if len(content) > 0 {
+			contentStr := strings.TrimSpace(string(content))
+			if !strings.HasPrefix(contentStr, "/*") || !strings.HasSuffix(contentStr, "*/") {
+				return fmt.Errorf("license file %q must be a valid Go comment block (start with /* and end with */)", p.licenseFile)
+			}
+		}
+	}
+
 	// If flags were not explicitly set, preserve existing PROJECT file values
 	// This prevents one flag from clearing another when using default values
-	if !p.fs.Changed("multigroup") {
-		p.multigroup = p.config.IsMultiGroup()
-	}
-	if !p.fs.Changed("namespaced") {
-		p.namespaced = p.config.IsNamespaced()
+	// Only when FlagSet was bound (e.g. from CLI); tests may call PreScaffold without BindFlags
+	if p.fs != nil {
+		if !p.fs.Changed("multigroup") {
+			p.multigroup = p.config.IsMultiGroup()
+		}
+		if !p.fs.Changed("namespaced") {
+			p.namespaced = p.config.IsNamespaced()
+		}
 	}
 
 	return nil
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced, p.force)
+	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup, p.namespaced, p.force,
+		p.license, p.owner, p.licenseFile)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to edit scaffold: %w", err)

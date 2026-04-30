@@ -11,12 +11,12 @@ matches the desired state in the object.  Each controller focuses on one
 We call this process *reconciling*.
 
 In controller-runtime, the logic that implements the reconciling for
-a specific kind is called a [*Reconciler*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc).  A reconciler
-takes the name of an object, and returns whether or not we need to try
+a specific kind is a [*Reconciler*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc). A reconciler
+takes the name of an object, and returns whether or not to try
 again (e.g. in case of errors or periodic controllers, like the
 HorizontalPodAutoscaler).
 
 {{#literatego ./testdata/emptycontroller.go}}
 
-Now that we've seen the basic structure of a reconciler, let's fill out
+Now that you have seen the basic structure of a reconciler, fill out
 the logic for `CronJob`s.

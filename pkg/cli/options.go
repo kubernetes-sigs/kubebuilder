@@ -320,7 +320,7 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 						return nil, fmt.Errorf("error parsing external plugin version %q: %w", version.Name(), err)
 					}
 
-					slog.Info("Adding external plugin", "plugin name", ep.Name())
+					slog.Debug("Adding external plugin", "plugin name", ep.Name())
 
 					ps = append(ps, ep)
 				}

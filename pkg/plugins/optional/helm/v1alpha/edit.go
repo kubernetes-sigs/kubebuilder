@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds" //nolint:staticcheck // Deprecated
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -70,7 +70,7 @@ manifests in the chart align with the latest changes.
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
+	fs.BoolVar(&p.force, "force", false, "If set, regenerate all files except Chart.yaml")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {

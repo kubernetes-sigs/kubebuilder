@@ -1,0 +1,134 @@
+name: Verify All
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions: {}
+
+jobs:
+  verify-lint:
+    name: Lint verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run lint verification checks
+        run: make verify-lint
+
+      - name: Run golangci-lint with PR comments
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        with:
+          version: v2.11.4
+
+  verify-license:
+    name: License verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Verify license headers
+        run: make verify-license
+
+  verify-sample-permissions:
+    name: Sample permissions verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Verify sample file permissions
+        run: make verify-sample-permissions
+
+  verify-testdata:
+    name: Testdata verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Remove pre-installed kustomize
+        # This step is needed as the following one tries to remove
+        # kustomize for each test but has no permission to do so
+        run: sudo rm -f /usr/local/bin/kustomize
+
+      - name: Verify testdata
+        run: make verify-testdata
+
+  verify-docs:
+    name: Documentation verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Verify documentation
+        run: make verify-docs
+
+  verify-helm:
+    name: Helm verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install Helm
+        run: make install-helm
+
+      - name: Verify Helm charts
+        run: make verify-helm

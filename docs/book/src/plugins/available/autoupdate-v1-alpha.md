@@ -7,24 +7,24 @@ Kubebuilder release is available — keeping your project **maintained, secure, 
 This automation uses the [`kubebuilder alpha update`][alpha-update-command] command with a **3-way merge strategy** to
 refresh your project scaffold, and wraps it in a GitHub Actions workflow that opens an **Issue** with a **Pull Request compare link** so you can create the PR and review it.
 
-<aside class="warning">
-<h3>Protect your branches</h3>
+<aside class="warning" role="note">
+<p class="note-title">Protect your branches</p>
 
 This workflow by default **only** creates and pushes the merged files to a branch
 called `kubebuilder-update-from-<from-version>-to-<to-version>`.
 
 To keep your codebase safe, use branch protection rules to ensure that
-changes aren't pushed or merged without proper review.
+changes are not pushed or merged without proper review.
 
 </aside>
 
-## When to Use It
+## When to use it
 
 
 - When you want to reduce the burden of keeping the project updated and well-maintained.
 - When you want guidance and help from AI to know what changes are needed to keep your project up to date and to solve conflicts (requires `--use-gh-models` flag and GitHub Models permissions).
 
-## How to Use It
+## How to use it
 
 - If you want to add the `autoupdate` plugin to your project:
 
@@ -32,13 +32,7 @@ changes aren't pushed or merged without proper review.
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
-- If you want to create a new project with the `autoupdate` plugin:
-
-```shell
-kubebuilder init --plugins=go/v4,autoupdate/v1-alpha
-```
-
-### Optional: GitHub Models AI Summary
+### Optional: GitHub Models AI summary
 
 By default, the workflow works without GitHub Models to avoid permission errors.
 If you want AI-generated summaries in your update issues:
@@ -47,8 +41,8 @@ If you want AI-generated summaries in your update issues:
 kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models
 ```
 
-<aside class="note">
-<h1>Permissions required to use GitHub Models in GitHub Actions</h1>
+<aside class="note" role="note">
+<p class="note-title">Permissions required to use GitHub Models in GitHub Actions</p>
 
 To use GitHub Models in your workflows, organization and repository administrators must grant this permission.
 
@@ -66,7 +60,7 @@ Your organization or enterprise may have disabled it. Contact your administrator
 
 </aside>
 
-## How It Works
+## How it works
 
 The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder releases every week. When an update is available, it:
 
@@ -85,7 +79,7 @@ The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder r
 
 <img width="600" height="188" alt="Conflicts" src="https://github.com/user-attachments/assets/2142887a-730c-499a-94df-c717f09ab600" />
 
-## Customizing the Workflow
+## Customizing the workflow
 
 The generated workflow uses the `kubebuilder alpha update` command with default flags. You can customize the workflow by editing `.github/workflows/auto_update.yml` to add additional flags:
 
@@ -128,7 +122,7 @@ Edit `.github/workflows/auto_update.yml`:
 #### If you get the 403 Forbidden Error
 
 **Error message:**
-```
+```text
 ERROR Update failed error=failed to open GitHub issue: gh models run failed: exit status 1
 Error: unexpected response from the server: 403 Forbidden
 ```

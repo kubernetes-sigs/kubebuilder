@@ -1,12 +1,12 @@
 # Scaffold
 
 The `+kubebuilder:scaffold` marker is a key part of the Kubebuilder scaffolding system. It marks locations in generated
-files where additional code will be injected as new resources (such as controllers, webhooks, or APIs) are scaffolded.
+files where Kubebuilder injects additional code as you scaffold new resources (such as controllers, webhooks, or APIs).
 This enables Kubebuilder to seamlessly integrate newly generated components into the project without affecting
 user-defined code.
 
-<aside class="warning">
-    <h3>If you delete or change the `+kubebuilder:scaffold` markers</h3>
+<aside class="warning" role="note">
+    <p class="note-title">If you delete or change the `+kubebuilder:scaffold` markers</p>
 
 The Kubebuilder CLI specifically looks for these markers in expected
 files during code generation. If the marker is moved or removed, the CLI will
@@ -15,28 +15,28 @@ fail or behave unexpectedly.
 
 </aside>
 
-## How It Works
+## How it works
 
 When you scaffold a new resource using the Kubebuilder CLI (e.g., `kubebuilder create api`),
 the CLI identifies `+kubebuilder:scaffold` markers in key locations and uses them as placeholders
 to insert the required imports and registration code.
 
-## Example Usage in `main.go`
+## Example usage in `main.go`
 
-Here is how the `+kubebuilder:scaffold` marker is used in a typical `main.go` file. To illustrate how it works, consider the following command to create a new API:
+Here is how you use the `+kubebuilder:scaffold` marker in a typical `main.go` file. To illustrate how it works, consider the following command to create a new API:
 
 ```shell
 kubebuilder create api --group crew --version v1 --kind Admiral --controller=true --resource=true
 ```
 
-### To Add New Imports
+### To add new imports
 
 The `+kubebuilder:scaffold:imports` marker allows the Kubebuilder CLI to inject additional imports,
-such as for new controllers or webhooks. When we create a new API, the CLI automatically adds the required import paths
+such as for new controllers or webhooks. When you create a new API, the CLI automatically adds the required import paths
 in this section.
 
 For example, after creating the `Admiral` API in a single-group layout,
-the CLI will add `crewv1 "<repo-path>/api/v1"` to the imports:
+the CLI adds `crewv1 "<repo-path>/api/v1"` to the imports:
 
 ```go
 import (
@@ -53,10 +53,10 @@ import (
 )
 ```
 
-### To Register a New Scheme
+### To register a new scheme
 
-The `+kubebuilder:scaffold:scheme` marker is used to register newly created API versions with the runtime scheme,
-ensuring the API types are recognized by the manager.
+Kubebuilder uses the `+kubebuilder:scaffold:scheme` marker to register newly created API versions with the runtime scheme,
+ensuring the manager recognizes the API types.
 
 For example, after creating the Admiral API, the CLI will inject the
 following code into the `init()` function to register the scheme:
@@ -70,13 +70,13 @@ func init() {
 }
 ```
 
-## To Set Up a Controller
+## To set up a controller
 
-When we create a new controller (e.g., for Admiral), the Kubebuilder CLI injects the controller
+When you create a new controller (e.g., for Admiral), the Kubebuilder CLI injects the controller
 setup code into the manager using the `+kubebuilder:scaffold:builder` marker. This marker indicates where
 the setup code for new controllers should be added.
 
-For example, after creating the `AdmiralReconciler`, the CLI will add the following code
+For example, after creating the `AdmiralReconciler`, the CLI adds the following code
 to register the controller with the manager:
 
 ```go
@@ -109,8 +109,8 @@ properly registered with the manager, so that the controller can reconcile the r
 | `+kubebuilder:scaffold:manifestskustomizesamples`                              | `config/samples`             | Marks where Kustomize sample manifests are injected.                            |
 | `+kubebuilder:scaffold:e2e-webhooks-checks`                                    | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
 | `+kubebuilder:scaffold:e2e-metrics-webhooks-readiness`                         | `test/e2e`                   | Adds readiness logic so metrics e2e tests wait for webhook service endpoints before creating pods. |
-<aside class="warning">
-    <h3> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </h3>
+<aside class="warning" role="note">
+    <p class="note-title"> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </p>
 
 If you find this marker in your code please:
 
@@ -164,8 +164,8 @@ For further guidance, you can refer to examples in the `testdata/` directory in 
 
 </aside>
 
-<aside class="note">
-<h1>Creating Your Own Markers</h1>
+<aside class="note" role="note">
+<p class="note-title">Creating Your Own Markers</p>
 
 If you are using Kubebuilder as a library to create [your own plugins](./../../plugins/creating-plugins.md) and extend its CLI functionalities,
 you have the flexibility to define and use your own markers. To implement your own markers, refer to the [kubebuilder/v4/pkg/machinery](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/machinery),

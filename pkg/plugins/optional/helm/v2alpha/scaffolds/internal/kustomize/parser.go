@@ -19,6 +19,7 @@ package kustomize
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -26,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// ParsedResources holds Kubernetes resources organized by type for Helm chart generation
+// ParsedResources holds Kubernetes resources organized by type for Helm chart generation.
 type ParsedResources struct {
 	// Core Kubernetes resources
 	Namespace  *unstructured.Unstructured
@@ -43,10 +44,7 @@ type ParsedResources struct {
 	// CRD and API resources
 	CustomResourceDefinitions []*unstructured.Unstructured
 	WebhookConfigurations     []*unstructured.Unstructured
-
-	// Custom Resource instances (samples) - instances of the CRDs defined in this project
-	// These should go to samples/ directory for manual post-install, not be installed by Helm
-	CustomResources []*unstructured.Unstructured
+	CustomResources           []*unstructured.Unstructured
 
 	// Cert-manager resources
 	Certificates []*unstructured.Unstructured
@@ -59,30 +57,32 @@ type ParsedResources struct {
 	Other []*unstructured.Unstructured
 }
 
-// Parser parses kustomize output and extracts resources by type
+// Parser parses kustomize output and extracts resources by type.
 type Parser struct {
 	filePath string
 }
 
-// NewParser creates a new parser for the given kustomize output file
+// NewParser creates a new parser for the given kustomize output file.
 func NewParser(filePath string) *Parser {
 	return &Parser{filePath: filePath}
 }
 
-// Parse reads and parses the kustomize output file into organized resource groups
+// Parse reads and parses the kustomize output file into organized resource groups.
 func (p *Parser) Parse() (*ParsedResources, error) {
 	file, err := os.Open(p.filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %w", p.filePath, err)
 	}
 	defer func() {
-		_ = file.Close()
+		if err := file.Close(); err != nil {
+			slog.Warn("Failed to close file", "path", p.filePath, "error", err)
+		}
 	}()
 
 	return p.ParseFromReader(file)
 }
 
-// ParseFromReader parses multi-document YAML from a reader and categorizes resources by type
+// ParseFromReader parses multi-document YAML from a reader and categorizes resources by type.
 func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	decoder := yaml.NewDecoder(reader)
 	resources := &ParsedResources{
@@ -124,7 +124,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	return resources, nil
 }
 
-// categorizeResource sorts a Kubernetes resource into the appropriate category based on kind and API version
+// categorizeResource sorts a Kubernetes resource into the appropriate category based on kind and API version.
 func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *ParsedResources) {
 	kind := obj.GetKind()
 	apiVersion := obj.GetAPIVersion()
@@ -161,12 +161,10 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	}
 }
 
-// identifyCustomResources moves resources from Other to CustomResources if they are instances of project CRDs
+// identifyCustomResources moves resources from Other to CustomResources if they are instances of project CRDs.
 func (p *Parser) identifyCustomResources(resources *ParsedResources) {
-	// Build a set of API groups from the CRDs defined in this project
 	crdAPIGroups := make(map[string]bool)
 	for _, crd := range resources.CustomResourceDefinitions {
-		// Extract the group from the CRD spec
 		group, found, err := unstructured.NestedString(crd.Object, "spec", "group")
 		if found && err == nil && group != "" {
 			crdAPIGroups[group] = true
@@ -200,7 +198,7 @@ func (p *Parser) identifyCustomResources(resources *ParsedResources) {
 	resources.Other = remainingOther
 }
 
-// GetIgnoredCustomResources returns the list of Custom Resource instances that will be ignored
+// GetIgnoredCustomResources returns the list of Custom Resource instances that will be ignored.
 func (pr *ParsedResources) GetIgnoredCustomResources() []*unstructured.Unstructured {
 	return pr.CustomResources
 }
@@ -215,28 +213,5 @@ func extractAPIGroup(apiVersion string) string {
 	if len(parts) == 2 {
 		return parts[0]
 	}
-	return "" // Core API group (v1)
-}
-
-func (pr *ParsedResources) EstimatePrefix(projectName string) string {
-	prefix := projectName
-	if pr.Deployment != nil {
-		if name := pr.Deployment.GetName(); name != "" {
-			deploymentPrefix, found := strings.CutSuffix(name, "-controller-manager")
-			if found {
-				prefix = deploymentPrefix
-			}
-		}
-	}
-	// Double check that the prefix is also the prefix for the service names
-	for _, svc := range pr.Services {
-		if name := svc.GetName(); name != "" {
-			if !strings.HasPrefix(name, prefix) {
-				// If not, fallback to just project name
-				prefix = projectName
-				break
-			}
-		}
-	}
-	return prefix
+	return ""
 }
