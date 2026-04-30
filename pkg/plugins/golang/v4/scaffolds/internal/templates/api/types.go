@@ -67,6 +67,7 @@ const typesTemplate = `{{ .Boilerplate }}
 package {{ .Resource.Version }}
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -145,6 +146,9 @@ type {{ .Resource.Kind }}List struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&{{ .Resource.Kind }}{}, &{{ .Resource.Kind }}List{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &{{ .Resource.Kind }}{}, &{{ .Resource.Kind }}List{})
+		return nil
+	})
 }
 `

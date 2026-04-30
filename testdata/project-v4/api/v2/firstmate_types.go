@@ -18,6 +18,7 @@ package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -88,5 +89,8 @@ type FirstMateList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&FirstMate{}, &FirstMateList{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &FirstMate{}, &FirstMateList{})
+		return nil
+	})
 }
