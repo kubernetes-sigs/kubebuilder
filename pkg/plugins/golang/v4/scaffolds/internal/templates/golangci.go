@@ -78,6 +78,7 @@ linters:
     modernize:
       disable:
         - omitzero
+        - newexpr
   exclusions:
     generated: lax
     rules:

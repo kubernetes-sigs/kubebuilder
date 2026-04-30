@@ -66,6 +66,9 @@ linters:
       # Disable this check for now since it introduces too many changes in our existing codebase.
       # See https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#hdr-Analyzer_omitzero for more details.
         - omitzero
+      # Suggest replacing ptr.To(x) with new(x), but this is semantically incorrect.
+      # ptr.To(true) creates a pointer to true, while new(bool) creates a pointer to false.
+        - newexpr
     nolintlint:
       allow-unused: false
     revive:
