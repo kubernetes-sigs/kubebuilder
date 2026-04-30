@@ -1,6 +1,6 @@
 module v1
 
-go 1.25.7
+go 1.26.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.3
