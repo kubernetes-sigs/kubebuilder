@@ -70,6 +70,9 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
+	// SSA is true if Server-Side Apply should be enabled for the API.
+	SSA bool
+
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
 	DoController bool
@@ -104,6 +107,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.API = &resource.API{
 			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
+			SSA:        opts.SSA,
 		}
 	}
 

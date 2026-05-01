@@ -189,6 +189,7 @@ rules:
   resources:
   - krakens
   - leviathans
+  - prawns
   verbs:
   - create
   - delete
@@ -202,6 +203,7 @@ rules:
   resources:
   - krakens/finalizers
   - leviathans/finalizers
+  - prawns/finalizers
   verbs:
   - update
 - apiGroups:
@@ -209,6 +211,7 @@ rules:
   resources:
   - krakens/status
   - leviathans/status
+  - prawns/status
   verbs:
   - get
   - patch

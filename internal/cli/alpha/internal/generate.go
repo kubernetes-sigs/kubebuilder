@@ -637,6 +637,10 @@ func getAPIResourceFlags(res resource.Resource) []string {
 		} else {
 			args = append(args, "--namespaced=false")
 		}
+		// Add --ssa flag if Server-Side Apply is enabled
+		if res.API.SSA {
+			args = append(args, "--ssa")
+		}
 	}
 
 	// Always disable controller creation in the API scaffolding step

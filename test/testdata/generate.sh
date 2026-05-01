@@ -68,6 +68,9 @@ function scaffold_test_project {
     # Webhook for kubernetes Core type that is part of an api group - test incremental
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation
+
+    # Creating API with Server-Side Apply (SSA) - use same group as other APIs
+    $kb create api --group crew --version v1 --kind Navigator --controller=true --resource=true --ssa --make=false
   fi
 
   if [[ $project =~ multigroup ]]; then
@@ -101,6 +104,9 @@ function scaffold_test_project {
     # Webhook for kubernetes Core type that is part of an api group - test incremental
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting --make=false
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
+
+    # Creating API with Server-Side Apply (SSA)
+    $kb create api --group sea-creatures --version v1 --kind Prawn --controller=true --resource=true --ssa --make=false
   fi
 
   if [[ $project =~ with-plugins ]] ; then

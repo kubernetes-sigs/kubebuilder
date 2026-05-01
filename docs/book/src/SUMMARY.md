@@ -67,6 +67,7 @@
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
+  - [Server-Side Apply](./reference/server-side-apply.md)
   - [License Header](./reference/license-header.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)

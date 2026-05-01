@@ -109,6 +109,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true,
 		"Resource is namespaced by default; use --namespaced=false to create a cluster-scoped resource")
 
+	fs.BoolVar(&p.options.SSA, "ssa", false,
+		"if set, scaffold this API with Server-Side Apply support (adds +genclient and applyconfiguration generation)")
+
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"Prompt whether to generate the controller by default; "+
 			"use --controller=true or --controller=false to skip the prompt")
@@ -175,6 +178,11 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	// Validate that --external-api-module requires --external-api-path
 	if len(p.options.ExternalAPIModule) != 0 && len(p.options.ExternalAPIPath) == 0 {
 		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
+	}
+
+	// Validate that --ssa requires --resource=true
+	if p.options.SSA && !p.options.DoAPI {
+		return errors.New("'--ssa' can only be used when creating an API resource ('--resource=true')")
 	}
 
 	p.options.UpdateResource(p.resource, p.config)

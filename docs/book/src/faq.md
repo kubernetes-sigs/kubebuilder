@@ -105,9 +105,7 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration does not have to be stored as an annotation (last-applied-configuration) on the server. However, it is worth noting that as of now, it is not supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
-
-Therefore, you have a few options to workround this scenario such as:
+You have a few options to work around this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
@@ -126,6 +124,24 @@ Therefore, you have a few options to workround this scenario such as:
 **By re-design your APIs:**
 
 You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
+
+**By using Server-Side Apply for CRD installation:**
+
+Since this issue happens when CRDs are installed with client-side apply, another option is to install or update the CRDs with Server-Side Apply instead, for example by using `kubectl apply --server-side -f ...`. This avoids storing the full manifest in the `kubectl.kubernetes.io/last-applied-configuration` annotation and can prevent the size-limit failure.
+
+If you are updating existing CRDs, `kubectl replace -f ...` may also help, depending on your workflow.
+
+<aside class="note warning" role="note">
+<p class="note-title">Server-Side Apply Flag vs kubectl Server-Side Apply</p>
+
+Don't confuse the `kubectl apply --server-side` command mentioned above with the `--ssa` flag in Kubebuilder. They are different concepts:
+
+- **`kubectl apply --server-side`** (discussed above): A kubectl flag that changes how CRDs are installed to avoid the annotation size limit. This is about CRD installation only.
+
+- **`--ssa` flag**: A Kubebuilder flag (e.g., `kubebuilder create api --ssa`) that scaffolds controllers with runtime behavior for managing resource fields using Server-Side Apply patterns. This is about controller runtime behavior, specifically for scenarios where your controller shares field ownership with users or other controllers. It does NOT change how `make install` applies CRDs.
+
+See the [Kubernetes Server-Side Apply documentation][k8s-ssa-docs] to learn more about the Server-Side Apply concept in general.
+</aside>
 
 ## How can I validate and parse fields in CRDs effectively?
 
@@ -168,4 +184,4 @@ type StructName struct {
 [permission-issue]: https://github.com/kubernetes/kubernetes/issues/82573
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
-[controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[k8s-ssa-docs]: https://kubernetes.io/docs/reference/using-api/server-side-apply/
