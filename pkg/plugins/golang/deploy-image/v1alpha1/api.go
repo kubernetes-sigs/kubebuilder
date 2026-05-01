@@ -103,6 +103,11 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
+// The --ssa flag is intentionally not bound here, so using it with this plugin
+// fails with "unknown flag".
+// TODO: Add support for Server-Side Apply (--ssa): scaffold the controller code
+// using SSA to deploy and manage the image, reaching the same goal as the
+// current example.
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.image, "image", "", "Operand image name (e.g., memcached:1.6.15-alpine). "+
 		"The controller will be scaffolded with example code to deploy and manage this image")

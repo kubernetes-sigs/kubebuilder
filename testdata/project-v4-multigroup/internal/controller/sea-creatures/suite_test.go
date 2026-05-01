@@ -33,6 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	seacreaturesv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1"
 	seacreaturesv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1beta1"
 	seacreaturesv1beta2 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1beta2"
 	// +kubebuilder:scaffold:imports
@@ -65,6 +66,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = seacreaturesv1beta2.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = seacreaturesv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

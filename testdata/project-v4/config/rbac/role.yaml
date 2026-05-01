@@ -36,6 +36,7 @@ rules:
   - admirales
   - captains
   - firstmates
+  - navigators
   - sailors
   verbs:
   - create
@@ -51,6 +52,7 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
+  - navigators/finalizers
   - sailors/finalizers
   verbs:
   - update
@@ -60,6 +62,7 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
+  - navigators/status
   - sailors/status
   verbs:
   - get

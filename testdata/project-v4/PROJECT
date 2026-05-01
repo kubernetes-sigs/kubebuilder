@@ -110,4 +110,14 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+    ssa: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Navigator
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
+  version: v1
 version: "3"
