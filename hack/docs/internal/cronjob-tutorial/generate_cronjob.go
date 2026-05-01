@@ -212,7 +212,10 @@ func (sp *Sample) updateSpec() {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`SchemeBuilder.Register(&CronJob{}, &CronJobList{})
+		`SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &CronJob{}, &CronJobList{})
+		return nil
+	})
 }`, `
 // +kubebuilder:docs-gen:collapse=Root Object Definitions`)
 	hackutils.CheckError("fixing builder for cronjob_types.go", err)
@@ -246,7 +249,7 @@ func (sp *Sample) updateAPIStuff() {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/groupversion_info.go"),
-		`	"sigs.k8s.io/controller-runtime/pkg/scheme"
+		`	"k8s.io/apimachinery/pkg/runtime/schema"
 )`, groupVersionSchema)
 	hackutils.CheckError("fixing groupversion_info.go", err)
 }
