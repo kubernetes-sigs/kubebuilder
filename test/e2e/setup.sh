@@ -18,6 +18,33 @@ build_kb
 fetch_tools
 install_kind
 
+# Ensures a kindest/node image is available for the given k8s version.
+# Tries to pull a pre-built image first; if unavailable, builds it
+# locally using `kind build node-image` (downloads release artifacts,
+# does not compile Kubernetes from source).
+#
+# Usage:
+#   ensure_node_image <k8s version>
+function ensure_node_image {
+  local version=$1
+  local node_image="kindest/node:${version}"
+
+  if docker image inspect "${node_image}" &>/dev/null; then
+    echo "Node image ${node_image} already available locally"
+    return 0
+  fi
+
+  echo "Attempting to pull ${node_image}..."
+  if docker pull "${node_image}" 2>/dev/null; then
+    echo "Successfully pulled ${node_image}"
+    return 0
+  fi
+
+  echo "Pre-built ${node_image} not available, building node image from release artifacts..."
+  kind build node-image --image "${node_image}" "${version}"
+  echo "Successfully built ${node_image}"
+}
+
 # Creates a named kind cluster given a k8s version.
 # The KIND_CLUSTER variable defines the cluster name and
 # is expected to be defined in the calling environment.
@@ -37,6 +64,7 @@ function create_cluster {
     if test -f $(dirname "$0")/kind-config-${version_prefix}.yaml; then
       kind_config=$(dirname "$0")/kind-config-${version_prefix}.yaml
     fi
+    ensure_node_image $1
     echo "Creating cluster..."
     kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=5m --config ${kind_config} --image=kindest/node:$1
     
