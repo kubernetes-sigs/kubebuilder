@@ -16,6 +16,7 @@ limitations under the License.
 
 // Package v1 contains API Schema definitions for the crew v1 API group.
 // +kubebuilder:object:generate=true
+// +kubebuilder:ac:generate=true
 // +groupName=crew.testproject.org
 package v1
 

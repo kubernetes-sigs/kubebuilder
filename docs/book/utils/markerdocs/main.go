@@ -256,7 +256,7 @@ func main() {
 	if err := plugin.Run(MarkerDocs{
 		Args: map[string][]string{
 			// marker args
-			"": {"-wwww", "crd", "webhook", "rbac:roleName=cheddar" /* role name doesn't mean anything here */, "object", "schemapatch:manifests=."},
+			"": {"-wwww", "crd", "webhook", "rbac:roleName=cheddar" /* role name doesn't mean anything here */, "object", "schemapatch:manifests=.", "applyconfiguration"},
 			// cli options args
 			"CLI: ": {"-hhhh"},
 		},

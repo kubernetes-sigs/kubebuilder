@@ -60,6 +60,7 @@ type FirstMateStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:ac:generate=false
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 

@@ -42,7 +42,8 @@ controller-gen:
   roles](./markers/rbac.md).
 
 - `make generate` generates code, like [runtime.Object/DeepCopy
-  implementations](./markers/object.md).
+  implementations](./markers/object.md) and, when Server-Side Apply is
+  enabled, [ApplyConfiguration types](./markers/applyconfiguration.md).
 
 See [Generating CRDs](./generating-crd.md) for a comprehensive overview.
 
