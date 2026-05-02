@@ -240,6 +240,46 @@ func GenerateV4WithCustomWebhookPath(kbc *utils.TestContext) {
 	Expect(err.Error()).To(ContainSubstring("--validation-path can only be used with --programmatic-validation"))
 }
 
+// GenerateV4WithSSA implements a go/v4 plugin project with Server-Side Apply enabled.
+func GenerateV4WithSSA(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+
+	By("creating API with Server-Side Apply (--ssa)")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--ssa",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API with SSA")
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+`, kbc.Kind),
+		`	// +optional
+Count int `+"`"+`json:"count,omitempty"`+"`"+`
+`)).Should(Succeed())
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
+		monitorTLSPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertReplaces, "#")).To(Succeed())
+}
+
 func creatingAPI(kbc *utils.TestContext) {
 	By("creating API definition")
 	err := kbc.CreateAPI(

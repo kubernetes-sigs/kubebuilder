@@ -27,6 +27,11 @@ type API struct {
 
 	// Namespaced is true if the API is namespaced.
 	Namespaced bool `json:"namespaced,omitempty"`
+
+	// SSA is true if the API should use Server-Side Apply.
+	// When enabled, the API is scaffolded with +genclient and +kubebuilder:ac:generate=true markers
+	// for applyconfiguration generation.
+	SSA bool `json:"ssa,omitempty"`
 }
 
 // Validate checks that the API is valid.
@@ -65,10 +70,13 @@ func (api *API) Update(other *API) error {
 	// Update the namespace.
 	api.Namespaced = api.Namespaced || other.Namespaced
 
+	// Update SSA.
+	api.SSA = api.SSA || other.SSA
+
 	return nil
 }
 
 // IsEmpty returns if the API's fields all contain zero-values.
 func (api API) IsEmpty() bool {
-	return api.CRDVersion == "" && !api.Namespaced
+	return api.CRDVersion == "" && !api.Namespaced && !api.SSA
 }

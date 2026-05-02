@@ -132,5 +132,15 @@ var _ = Describe("kubebuilder", func() {
 				InstallMethod:      helpers.InstallMethodKustomize,
 			})
 		})
+
+		It("should generate a runnable project with Server-Side Apply (--ssa)", func() {
+			helpers.GenerateV4WithSSA(kbc)
+			helpers.Run(kbc, helpers.RunOptions{
+				HasWebhook:         false,
+				HasMetrics:         true,
+				HasNetworkPolicies: false,
+				InstallMethod:      helpers.InstallMethodKustomize,
+			})
+		})
 	})
 })

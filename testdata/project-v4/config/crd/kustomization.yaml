@@ -6,6 +6,7 @@ resources:
 - bases/crew.testproject.org_firstmates.yaml
 - bases/crew.testproject.org_sailors.yaml
 - bases/crew.testproject.org_admirales.yaml
+- bases/crew.testproject.org_navigators.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

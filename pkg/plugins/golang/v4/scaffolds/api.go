@@ -20,12 +20,14 @@ import (
 	"errors"
 	"fmt"
 	log "log/slog"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
@@ -103,6 +105,18 @@ func (s *apiScaffolder) Scaffold() error {
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
+
+		// If SSA is enabled and groupversion_info.go already exists, we need to inject the marker
+		// (the template only runs when creating a new version package)
+		if s.resource.API != nil && s.resource.API.SSA {
+			if err := s.updateGroupVersionInfo(); err != nil {
+				return fmt.Errorf("error adding ac:generate marker: %w", err)
+			}
+			// Update Makefile if this is the first SSA API in the project
+			if s.isFirstSSAAPI() {
+				s.updateMakefile()
+			}
+		}
 	}
 
 	if doController {
@@ -150,4 +164,118 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// updateGroupVersionInfo adds the applyconfiguration generation marker
+// when groupversion_info.go already exists (e.g., adding a second API to an existing version)
+func (s *apiScaffolder) updateGroupVersionInfo() error {
+	var groupVersionPath string
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		groupVersionPath = filepath.Join("api", s.resource.Group, s.resource.Version, "groupversion_info.go")
+	} else {
+		groupVersionPath = filepath.Join("api", s.resource.Version, "groupversion_info.go")
+	}
+
+	// Check if marker already exists to avoid duplicates when using --force or multiple kinds
+	hasMarker, err := util.HasFileContentWith(groupVersionPath, "+kubebuilder:ac:generate=true")
+	if err != nil {
+		return fmt.Errorf("error checking for existing ac:generate marker: %w", err)
+	}
+	if hasMarker {
+		return nil
+	}
+
+	// Add the marker after the object:generate marker
+	marker := `// +kubebuilder:object:generate=true`
+	insert := `
+// +kubebuilder:ac:generate=true`
+	if err := util.InsertCode(groupVersionPath, marker, insert); err != nil {
+		return fmt.Errorf("error adding ac:generate marker: %w", err)
+	}
+
+	return nil
+}
+
+// Makefile injection constants
+const (
+	makefileApplyConfigurationMarker = "applyconfiguration"
+
+	// Patterns to match and replace in Makefile
+	//nolint:lll
+	makefileOldObjectGenWithBoilerplateAndYear = "\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR) " +
+		"paths=\"./...\""
+	//nolint:lll
+	makefileNewObjectGenWithBoilerplateAndYear = "\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR) " +
+		"applyconfiguration:headerFile=\"hack/boilerplate.go.txt\" paths=\"./...\""
+
+	makefileOldObjectGenWithBoilerplate = "\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\" " +
+		"paths=\"./...\""
+	makefileNewObjectGenWithBoilerplate = "\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\" " +
+		"applyconfiguration:headerFile=\"hack/boilerplate.go.txt\" paths=\"./...\""
+
+	makefileOldObjectGenNoBoilerplate = "\"$(CONTROLLER_GEN)\" object paths=\"./...\""
+	makefileNewObjectGenNoBoilerplate = "\"$(CONTROLLER_GEN)\" object applyconfiguration paths=\"./...\""
+)
+
+// isFirstSSAAPI checks if this is the first API with SSA enabled in the project.
+// Returns true if there are no other resources with SSA enabled.
+func (s *apiScaffolder) isFirstSSAAPI() bool {
+	// Get all resources in the project
+	resources, err := s.config.GetResources()
+	if err != nil {
+		// If we can't get resources, assume this is the first
+		return true
+	}
+
+	// Count resources with SSA enabled (excluding the current one)
+	for _, res := range resources {
+		// Skip the current resource
+		if res.GVK == s.resource.GVK {
+			continue
+		}
+		// Check if this resource has SSA enabled
+		if res.API != nil && res.API.SSA {
+			return false
+		}
+	}
+	return true
+}
+
+// updateMakefile modifies the existing controller-gen object generator line to also run
+// applyconfiguration generation. Only runs when the first SSA API is created.
+// On failure, logs a warning and does not stop scaffolding.
+func (s *apiScaffolder) updateMakefile() {
+	makefilePath := "Makefile"
+
+	// Skip if already updated
+	hasMarker, err := util.HasFileContentWith(makefilePath, makefileApplyConfigurationMarker)
+	if err != nil {
+		log.Warn("unable to read Makefile. Add applyconfiguration generation manually for SSA",
+			"path", makefilePath, "error", err)
+		return
+	}
+	if hasMarker {
+		return
+	}
+
+	// Try multiple patterns to handle different Makefile formats
+	// 1. Try with boilerplate and YEAR variable (current default)
+	//nolint:lll
+	err = util.ReplaceInFile(makefilePath, makefileOldObjectGenWithBoilerplateAndYear, makefileNewObjectGenWithBoilerplateAndYear)
+	if err != nil {
+		// 2. Try with boilerplate but without YEAR (legacy)
+		err = util.ReplaceInFile(makefilePath, makefileOldObjectGenWithBoilerplate, makefileNewObjectGenWithBoilerplate)
+		if err != nil {
+			// 3. Try without boilerplate
+			err = util.ReplaceInFile(makefilePath, makefileOldObjectGenNoBoilerplate, makefileNewObjectGenNoBoilerplate)
+			if err != nil {
+				log.Warn("unable to find standard controller-gen object generator line in Makefile. "+
+					"Add applyconfiguration generation manually",
+					"error", err)
+				return
+			}
+		}
+	}
+
+	log.Info("applyconfiguration generation added to Makefile generate target")
 }

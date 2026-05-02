@@ -109,6 +109,12 @@ type {{ .Resource.Kind }}Status struct {
 	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty"` + "`" + `
 }
 
+{{- if .Resource.API.SSA }}
+// +genclient
+{{- if not .Resource.API.Namespaced }}
+// +genclient:nonNamespaced
+{{- end }}
+{{- end }}
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 {{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
