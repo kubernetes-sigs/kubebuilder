@@ -25,6 +25,7 @@ import (
 	log "log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -446,12 +447,23 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := helpers.GitCmd(opts.GitConfig, "checkout", "-b", opts.AncestorBranch, opts.FromBranch).Run(); err != nil {
 		return fmt.Errorf("failed to create %s from %s: %w", opts.AncestorBranch, opts.FromBranch, err)
 	}
+
+	// Preserve boilerplate before cleanup
+	boilerplate := preserveBoilerplate()
+
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s : %w", opts.AncestorBranch, err)
 	}
+
+	// Restore boilerplate before regeneration so alpha generate can use it
+	if err := restoreBoilerplate(boilerplate); err != nil {
+		log.Warn("failed to restore boilerplate file", "error", err)
+	}
+
 	if err := regenerateProjectWithVersion(opts.FromVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with fromVersion %s: %w", opts.FromVersion, err)
 	}
+
 	gitCmd := helpers.GitCmd(opts.GitConfig, "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.AncestorBranch, err)
@@ -475,6 +487,43 @@ func cleanupBranch() error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to clean up files: %w", err)
 	}
+	return nil
+}
+
+// preserveBoilerplate reads and returns the content of the boilerplate file if it exists.
+// This is used to preserve the license header across regeneration cycles.
+func preserveBoilerplate() []byte {
+	boilerplatePath := filepath.Join("hack", "boilerplate.go.txt")
+	content, err := os.ReadFile(boilerplatePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		log.Warn("failed to read boilerplate file for preservation", "path", boilerplatePath, "error", err)
+		return nil
+	}
+	log.Info("Preserving existing license header file for regeneration")
+	return content
+}
+
+// restoreBoilerplate writes the boilerplate content back to the filesystem.
+// This ensures the license header is preserved even when using release binaries
+// that don't have boilerplate preservation logic.
+func restoreBoilerplate(content []byte) error {
+	if content == nil {
+		return nil
+	}
+
+	boilerplatePath := filepath.Join("hack", "boilerplate.go.txt")
+	if err := os.MkdirAll("hack", 0o755); err != nil {
+		return fmt.Errorf("failed to create hack directory: %w", err)
+	}
+
+	if err := os.WriteFile(boilerplatePath, content, 0o644); err != nil {
+		return fmt.Errorf("failed to write boilerplate file: %w", err)
+	}
+
+	log.Info("Restored license header file after regeneration")
 	return nil
 }
 
@@ -654,12 +703,22 @@ func (opts *Update) prepareUpgradeBranch() error {
 		return fmt.Errorf("failed to checkout base branch %s: %w", opts.UpgradeBranch, err)
 	}
 
+	// Preserve boilerplate before cleanup
+	boilerplate := preserveBoilerplate()
+
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s branch: %w", opts.UpgradeBranch, err)
 	}
+
+	// Restore boilerplate before regeneration so alpha generate can use it
+	if err := restoreBoilerplate(boilerplate); err != nil {
+		log.Warn("failed to restore boilerplate file", "error", err)
+	}
+
 	if err := regenerateProjectWithVersion(opts.ToVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with version %s: %w", opts.ToVersion, err)
 	}
+
 	gitCmd = helpers.GitCmd(opts.GitConfig, "add", "--all")
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to stage changes in %s: %w", opts.UpgradeBranch, err)
