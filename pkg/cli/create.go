@@ -28,8 +28,8 @@ func (c CLI) newCreateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:        "create",
 		SuggestFor: []string{"new"},
-		Short:      "Scaffold a Kubernetes API or webhook",
-		Long: fmt.Sprintf(`Scaffold a Kubernetes API or webhook.
+		Short:      "Create a Kubernetes API or webhook",
+		Long: fmt.Sprintf(`Create a Kubernetes API or webhook.
 
 Available plugins that support 'create' subcommands:
 
