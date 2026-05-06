@@ -19,6 +19,7 @@ package appliers
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -1340,8 +1341,8 @@ func detectChildIndent(lines []string, parentIndent string) string {
 	// Scan backwards to find the first child entry with indentation > parent
 	parentIndentLen := len(parentIndent)
 
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
+	for _, v := range slices.Backward(lines) {
+		line := v
 		trimmed := strings.TrimSpace(line)
 
 		// Skip empty lines and Helm template directives

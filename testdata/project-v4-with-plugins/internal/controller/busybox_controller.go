@@ -100,6 +100,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if len(busybox.Status.Conditions) == 0 {
+		//nolint:goconst
 		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update Busybox status")

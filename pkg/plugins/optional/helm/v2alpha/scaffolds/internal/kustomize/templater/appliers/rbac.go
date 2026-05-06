@@ -18,6 +18,7 @@ package appliers
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -256,8 +257,8 @@ func extractKeysFromLines(lines []string) []string {
 
 	// Find section start by scanning backwards to the nearest header
 	sectionStart := 0
-	for i := len(lines) - 1; i >= 0; i-- {
-		trimmed := strings.TrimSpace(lines[i])
+	for i, v := range slices.Backward(lines) {
+		trimmed := strings.TrimSpace(v)
 		// Stop at section headers - this is where our current section began
 		if trimmed == common.YamlKeyLabels || trimmed == common.YamlKeyAnnotations {
 			sectionStart = i + 1 // Start extracting from the line after the header

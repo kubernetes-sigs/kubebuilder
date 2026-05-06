@@ -295,7 +295,7 @@ func importantFile(p string) bool {
 	}
 
 	// Critical Kubebuilder files
-	//nolint:goconst
+
 	if p == "go.mod" || p == "Makefile" || p == "Dockerfile" {
 		return true
 	}

@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -155,8 +156,8 @@ func (f *WebhookTestUpdater) addVariableToBlock(content, varName, typeName strin
 // detectIndentationInBlock extracts indentation from existing code
 func (f *WebhookTestUpdater) detectIndentationInBlock(blockContent string) string {
 	lines := strings.Split(blockContent, "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
+	for _, v := range slices.Backward(lines) {
+		line := v
 		trimmed := strings.TrimSpace(line)
 		if trimmed != "" && trimmed != "var" && trimmed != "(" {
 			trimmedLeft := strings.TrimLeft(line, " \t")

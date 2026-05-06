@@ -284,7 +284,7 @@ KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
-GOLANGCI_LINT_VERSION ?= v2.11.4
+GOLANGCI_LINT_VERSION ?= v2.12.1
 KUBE_LINTER_VERSION ?= v0.8.3
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist

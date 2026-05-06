@@ -3,7 +3,7 @@
 # with all the plugins listed below.
 #
 # See: https://golangci-lint.run/plugins/module-plugins/
-version: v2.11.4
+version: v2.12.1
 plugins:
   # logcheck validates structured logging calls and parameters (e.g., balanced key-value pairs)
   - module: "sigs.k8s.io/logtools"
