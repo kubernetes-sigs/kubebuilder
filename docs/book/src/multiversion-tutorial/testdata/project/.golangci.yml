@@ -28,6 +28,9 @@ linters:
       logcheck:
         type: "module"
         description: Checks Go logging calls for Kubernetes logging conventions.
+    goconst:
+      ignore-tests: true
+      min-occurrences: 5
     revive:
       rules:
         - name: comment-spacings
