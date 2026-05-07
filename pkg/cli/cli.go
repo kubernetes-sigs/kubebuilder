@@ -283,7 +283,7 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 		Old string
 		New string
 	}
-
+	//nolint:goconst
 	replacements := []pluginReplacement{
 		{"go.kubebuilder.io/v2", "go.kubebuilder.io/v4"},
 		{"go.kubebuilder.io/v3", "go.kubebuilder.io/v4"},
