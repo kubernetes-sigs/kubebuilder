@@ -539,7 +539,7 @@ func (s Scaffold) writeFile(f *File) error {
 	}
 	defer func() {
 		if closeErr := writer.Close(); err == nil && closeErr != nil {
-			err = CloseFileError{err}
+			err = CloseFileError{closeErr}
 		}
 	}()
 
