@@ -42,7 +42,7 @@ Please ensure you use `setup-envtest` from the controller-runtime `release v0.19
 
 The artefacts for [ENVTEST][env-test-doc] k8s `1.31` are exclusively available at: [Controller Tools Releases][controller-gen].
 
-You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. It is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
 ## Tool binaries
@@ -52,8 +52,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool versions
 ...
-#ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
-ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+#ENVTEST_VERSION is the controller-runtime version to use for setup-envtest, derived from go.mod
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime)
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 ...
