@@ -200,14 +200,12 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 			return fmt.Errorf("error creating file %q: %w", file, createErr)
 		}
 
-		defer func() {
-			if err = f.Close(); err != nil {
-				return
-			}
-		}()
-
 		if _, err = f.Write([]byte(data)); err != nil {
+			_ = f.Close()
 			return fmt.Errorf("error writing file %q: %w", file, err)
+		}
+		if err = f.Close(); err != nil {
+			return fmt.Errorf("error closing file %q: %w", file, err)
 		}
 	}
 
