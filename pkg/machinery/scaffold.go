@@ -231,7 +231,7 @@ func doTemplate(t Template) ([]byte, error) {
 
 	// TODO(adirio): move go-formatting to write step
 	// gofmt the imports
-	if filepath.Ext(t.GetPath()) == ".go" {
+	if filepath.Ext(t.GetPath()) == goExt {
 		var err error
 		if b, err = imports.Process(t.GetPath(), b, &options); err != nil {
 			return nil, fmt.Errorf("failed to process template: %w", err)
@@ -285,7 +285,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 
 	// TODO(adirio): move go-formatting to write step
 	formattedContent := content
-	if ext := filepath.Ext(i.GetPath()); ext == ".go" {
+	if ext := filepath.Ext(i.GetPath()); ext == goExt {
 		formattedContent, err = imports.Process(i.GetPath(), content, nil)
 		if err != nil {
 			return fmt.Errorf("failed to process formatted content: %w", err)

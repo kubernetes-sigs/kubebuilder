@@ -25,30 +25,32 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
+const k8sGroup = "k8s.io"
+
 var coreGroups = map[string]string{
-	"admission":             "k8s.io",
-	"admissionregistration": "k8s.io",
+	"admission":             k8sGroup,
+	"admissionregistration": k8sGroup,
 	"apps":                  "",
-	"auditregistration":     "k8s.io",
-	"apiextensions":         "k8s.io",
-	"authentication":        "k8s.io",
-	"authorization":         "k8s.io",
+	"auditregistration":     k8sGroup,
+	"apiextensions":         k8sGroup,
+	"authentication":        k8sGroup,
+	"authorization":         k8sGroup,
 	"autoscaling":           "",
 	"batch":                 "",
-	"certificates":          "k8s.io",
-	"coordination":          "k8s.io",
+	"certificates":          k8sGroup,
+	"coordination":          k8sGroup,
 	"core":                  "",
-	"events":                "k8s.io",
+	"events":                k8sGroup,
 	"extensions":            "",
-	"imagepolicy":           "k8s.io",
-	"networking":            "k8s.io",
-	"node":                  "k8s.io",
-	"metrics":               "k8s.io",
+	"imagepolicy":           k8sGroup,
+	"networking":            k8sGroup,
+	"node":                  k8sGroup,
+	"metrics":               k8sGroup,
 	"policy":                "",
-	"rbac.authorization":    "k8s.io",
-	"scheduling":            "k8s.io",
-	"setting":               "k8s.io",
-	"storage":               "k8s.io",
+	"rbac.authorization":    k8sGroup,
+	"scheduling":            k8sGroup,
+	"setting":               k8sGroup,
+	"storage":               k8sGroup,
 }
 
 // Options contains the information required to build a new resource.Resource.

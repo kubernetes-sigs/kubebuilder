@@ -40,6 +40,10 @@ const (
 
 	pluginsFlag        = "plugins"
 	projectVersionFlag = "project-version"
+	goPluginV4         = "go.kubebuilder.io/v4"
+	goPluginV3         = "go.kubebuilder.io/v3"
+	goPluginV3Alpha    = "go.kubebuilder.io/v3-alpha"
+	goPluginV2         = "go.kubebuilder.io/v2"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
@@ -284,9 +288,9 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 		New string
 	}
 	replacements := []pluginReplacement{
-		{"go.kubebuilder.io/v2", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3-alpha", "go.kubebuilder.io/v4"},
+		{goPluginV2, goPluginV4},
+		{goPluginV3, goPluginV4},
+		{goPluginV3Alpha, goPluginV4},
 	}
 
 	content, err := afero.ReadFile(fs, path)

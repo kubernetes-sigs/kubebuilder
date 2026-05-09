@@ -24,6 +24,12 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// Pod template field paths for Deployment-like resources (dot-separated, split at use).
+var podTemplatePaths = []string{
+	"spec.template.spec.containers",
+	"spec.template.spec.initContainers",
+}
+
 // GetDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
 // This allows the Helm plugin to work with any container name, not just "manager".
 // If the annotation is not found, it falls back to "manager" for backward compatibility.
@@ -89,11 +95,8 @@ func MakeYamlContent(match string) string {
 // Deployment (or any Pod-template-bearing resource).
 func ExtractContainerNames(resource *unstructured.Unstructured) map[string]bool {
 	names := map[string]bool{}
-	for _, fieldPath := range [][]string{
-		{"spec", "template", "spec", "containers"},
-		{"spec", "template", "spec", "initContainers"},
-	} {
-		val, found, err := unstructured.NestedFieldNoCopy(resource.Object, fieldPath...)
+	for _, fieldPath := range podTemplatePaths {
+		val, found, err := unstructured.NestedFieldNoCopy(resource.Object, strings.Split(fieldPath, ".")...)
 		if err != nil || !found {
 			continue
 		}

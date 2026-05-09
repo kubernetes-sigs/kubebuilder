@@ -31,6 +31,8 @@ var (
 	supportedPlatforms = []string{"darwin", "linux"}
 	// errHelpDisplayed is returned when help is displayed to prevent command execution
 	errHelpDisplayed = errors.New("help displayed")
+
+	kustomizeCommonPluginV2 = "kustomize.common.kubebuilder.io/v2"
 )
 
 // isHelpFlag checks if the given string is a help flag
@@ -195,8 +197,8 @@ func (c CLI) getPluginTableFilteredWithOptions(filter func(plugin.Plugin) bool, 
 
 		// For subcommands, skip default scaffold and its component plugins
 		if excludeDefaultScaffold {
-			if pluginKey == "go.kubebuilder.io/v4" ||
-				pluginKey == "kustomize.common.kubebuilder.io/v2" {
+			if pluginKey == goPluginV4 ||
+				pluginKey == kustomizeCommonPluginV2 {
 				continue
 			}
 		}

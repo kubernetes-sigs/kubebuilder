@@ -56,6 +56,12 @@ import (
 
 var _ plugins.Scaffolder = &editScaffolder{}
 
+const (
+	rbacSubDir          = "rbac"
+	crdSubDir           = "crd"
+	networkPolicySubDir = "networkPolicy"
+)
+
 type editScaffolder struct {
 	config config.Config
 
@@ -266,9 +272,9 @@ func (s *editScaffolder) copyConfigFiles() error {
 		DestDir string
 		SubDir  string
 	}{
-		{"config/rbac", "dist/chart/templates/rbac", "rbac"},
-		{"config/crd/bases", "dist/chart/templates/crd", "crd"},
-		{"config/network-policy", "dist/chart/templates/network-policy", "networkPolicy"},
+		{"config/rbac", "dist/chart/templates/rbac", rbacSubDir},
+		{"config/crd/bases", "dist/chart/templates/crd", crdSubDir},
+		{"config/network-policy", "dist/chart/templates/network-policy", networkPolicySubDir},
 	}
 
 	for _, dir := range configDirs {
@@ -343,7 +349,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 	}
 
 	// Apply RBAC-specific replacements
-	if subDir == "rbac" {
+	if subDir == rbacSubDir {
 		contentStr = strings.ReplaceAll(contentStr,
 			"name: controller-manager",
 			"name: {{ .Values.controllerManager.serviceAccountName }}")
@@ -568,7 +574,7 @@ func injectAnnotations(contentStr string, hasWebhookPatch bool) string {
 // isMetricRBACFile checks if the file is in the "rbac"
 // subdirectory and matches one of the metric-related RBAC filenames
 func isMetricRBACFile(subDir, srcFile string) bool {
-	return subDir == "rbac" && (strings.HasSuffix(srcFile, "metrics_auth_role.yaml") ||
+	return subDir == rbacSubDir && (strings.HasSuffix(srcFile, "metrics_auth_role.yaml") ||
 		strings.HasSuffix(srcFile, "metrics_auth_role_binding.yaml") ||
 		strings.HasSuffix(srcFile, "metrics_reader_role.yaml"))
 }

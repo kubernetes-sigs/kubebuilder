@@ -22,10 +22,13 @@ import (
 	"strings"
 )
 
-const kbPrefix = "+kubebuilder:scaffold:"
+const (
+	kbPrefix = "+kubebuilder:scaffold:"
+	goExt    = ".go"
+)
 
 var commentsByExt = map[string]string{
-	".go":   "//",
+	goExt:   "//",
 	".yaml": "#",
 	".yml":  "#",
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
