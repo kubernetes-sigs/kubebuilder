@@ -103,6 +103,12 @@ const (
 	typeAvailable{{ .Resource.Kind }} = "Available"
 	// typeDegraded{{ .Resource.Kind }} represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegraded{{ .Resource.Kind }} = "Degraded"
+	// reasonReconciling{{ .Resource.Kind }} represents the reason for condition when reconciliation is in progress.
+	reasonReconciling{{ .Resource.Kind }} = "Reconciling"
+	// reasonFinalizing{{ .Resource.Kind }} represents the reason for condition when finalizer operations are in progress.
+	reasonFinalizing{{ .Resource.Kind }} = "Finalizing"
+	// reasonResizing{{ .Resource.Kind }} represents the reason for condition when resizing is in progress.
+	reasonResizing{{ .Resource.Kind }} = "Resizing"
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
@@ -164,7 +170,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	}
 	
 	if len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
-		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: reasonReconciling{{ .Resource.Kind }}, Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 			log.Error(err, "Failed to update {{ .Resource.Kind }} status")
 			return ctrl.Result{}, err
@@ -202,7 +208,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
-				Status: metav1.ConditionUnknown, Reason: "Finalizing",
+				Status: metav1.ConditionUnknown, Reason: reasonFinalizing{{ .Resource.Kind }},
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", {{ lower .Resource.Kind }}.Name)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -228,7 +234,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			}
 
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
-				Status: metav1.ConditionTrue, Reason: "Finalizing",
+				Status: metav1.ConditionTrue, Reason: reasonFinalizing{{ .Resource.Kind }},
 				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", {{ lower .Resource.Kind }}.Name)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -262,7 +268,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-				Status: metav1.ConditionFalse, Reason: "Reconciling",
+				Status: metav1.ConditionFalse, Reason: reasonReconciling{{ .Resource.Kind }},
 				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", {{ lower .Resource.Kind }}.Name, err)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -318,7 +324,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-				Status: metav1.ConditionFalse, Reason: "Resizing",
+				Status: metav1.ConditionFalse, Reason: reasonResizing{{ .Resource.Kind }},
 				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", {{ lower .Resource.Kind }}.Name, err)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -337,7 +343,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 	// The following implementation will update the status
 	meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Status: metav1.ConditionTrue, Reason: reasonReconciling{{ .Resource.Kind }},
 		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {

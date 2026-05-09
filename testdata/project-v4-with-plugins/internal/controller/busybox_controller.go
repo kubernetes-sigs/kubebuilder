@@ -48,6 +48,12 @@ const (
 	typeAvailableBusybox = "Available"
 	// typeDegradedBusybox represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegradedBusybox = "Degraded"
+	// reasonReconcilingBusybox represents the reason for condition when reconciliation is in progress.
+	reasonReconcilingBusybox = "Reconciling"
+	// reasonFinalizingBusybox represents the reason for condition when finalizer operations are in progress.
+	reasonFinalizingBusybox = "Finalizing"
+	// reasonResizingBusybox represents the reason for condition when resizing is in progress.
+	reasonResizingBusybox = "Resizing"
 )
 
 // BusyboxReconciler reconciles a Busybox object
@@ -100,7 +106,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if len(busybox.Status.Conditions) == 0 {
-		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: reasonReconcilingBusybox, Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update Busybox status")
 			return ctrl.Result{}, err
@@ -138,7 +144,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
-				Status: metav1.ConditionUnknown, Reason: "Finalizing",
+				Status: metav1.ConditionUnknown, Reason: reasonFinalizingBusybox,
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", busybox.Name)})
 
 			if err := r.Status().Update(ctx, busybox); err != nil {
@@ -164,7 +170,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
-				Status: metav1.ConditionTrue, Reason: "Finalizing",
+				Status: metav1.ConditionTrue, Reason: reasonFinalizingBusybox,
 				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", busybox.Name)})
 
 			if err := r.Status().Update(ctx, busybox); err != nil {
@@ -198,7 +204,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
-				Status: metav1.ConditionFalse, Reason: "Reconciling",
+				Status: metav1.ConditionFalse, Reason: reasonReconcilingBusybox,
 				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", busybox.Name, err)})
 
 			if err := r.Status().Update(ctx, busybox); err != nil {
@@ -254,7 +260,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
-				Status: metav1.ConditionFalse, Reason: "Resizing",
+				Status: metav1.ConditionFalse, Reason: reasonResizingBusybox,
 				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", busybox.Name, err)})
 
 			if err := r.Status().Update(ctx, busybox); err != nil {
@@ -273,7 +279,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// The following implementation will update the status
 	meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
-		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Status: metav1.ConditionTrue, Reason: reasonReconcilingBusybox,
 		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, busybox); err != nil {
