@@ -370,7 +370,6 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 		slog.Info("Auto Update plugin not found, skipping migration")
 		return nil
 	}
-	//nolint:goconst
 	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
 	if autoUpdatePlugin.UseGHModels {
 		args = append(args, "--use-gh-models")
@@ -433,7 +432,6 @@ func migrateDeployImagePlugin(s store.Store) error {
 
 // Creates an API with Deploy Image plugin.
 func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) error {
-	//nolint:goconst
 	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
 	args = append(args, getDeployImageOptions(resourceData)...)
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
@@ -455,7 +453,6 @@ func getInitArgs(s store.Store, opts *Generate, tempLicenseFile string) []string
 
 	// Define outdated plugin versions that need replacement
 	outdatedPlugins := map[string]string{
-		//nolint:goconst
 		"go.kubebuilder.io/v3":         "go.kubebuilder.io/v4",
 		"go.kubebuilder.io/v3-alpha":   "go.kubebuilder.io/v4",
 		"go.kubebuilder.io/v2":         "go.kubebuilder.io/v4",

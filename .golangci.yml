@@ -39,8 +39,6 @@ linters:
     ginkgolinter:
       forbid-focus-container: true
       forbid-spec-pollution: true
-    goconst:
-      ignore-tests: true
     govet:
       disable:
         - fieldalignment

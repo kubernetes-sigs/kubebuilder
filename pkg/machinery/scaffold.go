@@ -231,7 +231,6 @@ func doTemplate(t Template) ([]byte, error) {
 
 	// TODO(adirio): move go-formatting to write step
 	// gofmt the imports
-	//nolint:goconst
 	if filepath.Ext(t.GetPath()) == ".go" {
 		var err error
 		if b, err = imports.Process(t.GetPath(), b, &options); err != nil {

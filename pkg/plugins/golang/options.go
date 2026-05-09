@@ -26,7 +26,6 @@ import (
 )
 
 var coreGroups = map[string]string{
-	//nolint:goconst
 	"admission":             "k8s.io",
 	"admissionregistration": "k8s.io",
 	"apps":                  "",

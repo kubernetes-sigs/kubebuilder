@@ -261,7 +261,6 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 
 // Helper function to copy files from config/ to dist/chart/templates/
 func (s *editScaffolder) copyConfigFiles() error {
-	//nolint:goconst
 	configDirs := []struct {
 		SrcDir  string
 		DestDir string

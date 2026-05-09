@@ -24,7 +24,6 @@ import (
 
 const kbPrefix = "+kubebuilder:scaffold:"
 
-//nolint:goconst
 var commentsByExt = map[string]string{
 	".go":   "//",
 	".yaml": "#",

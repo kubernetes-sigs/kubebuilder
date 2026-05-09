@@ -194,7 +194,6 @@ func (c CLI) getPluginTableFilteredWithOptions(filter func(plugin.Plugin) bool, 
 		}
 
 		// For subcommands, skip default scaffold and its component plugins
-		//nolint:goconst
 		if excludeDefaultScaffold {
 			if pluginKey == "go.kubebuilder.io/v4" ||
 				pluginKey == "kustomize.common.kubebuilder.io/v2" {

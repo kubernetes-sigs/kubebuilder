@@ -33,6 +33,13 @@ const (
 	selectedDiffLinesGoMod   = 240      // allow more for go.mod
 )
 
+// Critical scaffold filenames.
+const (
+	goModName      = "go.mod"
+	dockerfileName = "Dockerfile"
+	makefileName   = "Makefile"
+)
+
 // IssueTitleTmpl is the title template for the GitHub issue.
 const IssueTitleTmpl = "[Action Required] Upgrade the Scaffold: %[2]s -> %[1]s"
 
@@ -295,8 +302,7 @@ func importantFile(p string) bool {
 	}
 
 	// Critical Kubebuilder files
-	//nolint:goconst
-	if p == "go.mod" || p == "Makefile" || p == "Dockerfile" {
+	if p == goModName || p == makefileName || p == dockerfileName {
 		return true
 	}
 
@@ -344,11 +350,11 @@ func importantFile(p string) bool {
 // 9: fallback
 func filePriority(p string) int {
 	switch {
-	case p == "go.mod":
+	case p == goModName:
 		return 0
-	case p == "Makefile":
+	case p == makefileName:
 		return 1
-	case p == "Dockerfile":
+	case p == dockerfileName:
 		return 2
 	case strings.HasPrefix(p, "cmd/"),
 		strings.HasPrefix(p, "controllers/"),
@@ -422,7 +428,7 @@ func interestingLine(path, line string) bool {
 		return reYAMLKey.MatchString(line) || reFlags.MatchString(line) || reKubebuilder.MatchString(line)
 	case path == "Makefile":
 		return reMakeLine.MatchString(line) || reKubebuilder.MatchString(line)
-	case path == "Dockerfile":
+	case path == dockerfileName:
 		return reDocker.MatchString(line)
 	case strings.HasSuffix(path, "kustomization.yaml"):
 		// Kustomization files are critical for Kubebuilder config
@@ -446,7 +452,7 @@ func selectedDiff(base, head, path string, maxLines int) string {
 	lines := 0
 	var b strings.Builder
 
-	if path == "go.mod" {
+	if path == goModName {
 		for sc.Scan() {
 			s := sc.Text()
 			if strings.HasPrefix(s, "@@") {
@@ -515,7 +521,7 @@ func concatSelectedDiffs(base, head string, files []string, perFileLineCap, tota
 		if perCap <= 0 {
 			perCap = selectedDiffLinesPerFile
 		}
-		if p == "go.mod" && perCap < selectedDiffLinesGoMod {
+		if p == goModName && perCap < selectedDiffLinesGoMod {
 			perCap = selectedDiffLinesGoMod
 		}
 

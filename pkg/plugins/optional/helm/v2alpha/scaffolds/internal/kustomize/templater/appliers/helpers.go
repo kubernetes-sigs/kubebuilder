@@ -89,7 +89,6 @@ func MakeYamlContent(match string) string {
 // Deployment (or any Pod-template-bearing resource).
 func ExtractContainerNames(resource *unstructured.Unstructured) map[string]bool {
 	names := map[string]bool{}
-	//nolint:goconst
 	for _, fieldPath := range [][]string{
 		{"spec", "template", "spec", "containers"},
 		{"spec", "template", "spec", "initContainers"},
