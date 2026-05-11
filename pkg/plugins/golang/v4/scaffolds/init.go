@@ -43,7 +43,7 @@ const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.24.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.20.1"
+	ControllerToolsVersion = "v0.21.0"
 
 	imageName = "controller:latest"
 )
