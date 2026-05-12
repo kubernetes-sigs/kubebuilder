@@ -66,14 +66,11 @@ func loadConfig(configPath string) ([]templates.CustomMetricItem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin config: %w", err)
 	}
+	defer f.Close() //nolint:errcheck // read-only file; close error is not actionable
 
 	items, err := configReader(f)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config.yaml: %w", err)
-	}
-
-	if err = f.Close(); err != nil {
-		return nil, fmt.Errorf("could not close config.yaml: %w", err)
 	}
 
 	return items, nil
