@@ -1452,13 +1452,15 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 					}
 				}
 
-				// Reconstruct the block with conditional wrapper
+				childIndent := indent.String() + "  "
+
+				// Reconstruct the block with conditional wrapper at child indent
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", childIndent)
 				for _, line := range lines {
-					result.WriteString(line + "\n")
+					result.WriteString("  " + line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
+				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
 				return result.String()
 			}
 			return match
@@ -1491,13 +1493,15 @@ func MakeMetricsVolumeMountsConditional(yamlContent string) string {
 					}
 				}
 
-				// Reconstruct the block with conditional wrapper
+				childIndent := indent.String() + "  "
+
+				// Reconstruct the block with conditional wrapper at child indent
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", childIndent)
 				for _, line := range lines {
-					result.WriteString(line + "\n")
+					result.WriteString("  " + line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
+				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
 				return result.String()
 			}
 			return match

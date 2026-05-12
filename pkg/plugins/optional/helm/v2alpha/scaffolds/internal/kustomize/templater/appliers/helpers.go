@@ -58,6 +58,8 @@ func IsManagerDeployment(resource *unstructured.Unstructured) bool {
 
 // MakeYamlContent wraps YAML content with conditional cert-manager wrappers.
 // This function is used as a callback for regexp.ReplaceAllStringFunc.
+// It shifts the block by 2 additional spaces so that items align with the
+// child indent used by appendToListFromValues for extraVolumes/extraVolumeMounts.
 func MakeYamlContent(match string) string {
 	lines := strings.Split(match, "\n")
 	if len(lines) > 0 {
@@ -73,13 +75,15 @@ func MakeYamlContent(match string) string {
 			}
 		}
 
-		// Reconstruct the block with conditional wrapper
+		childIndent := indent.String() + "  "
+
+		// Reconstruct the block with conditional wrapper at child indent
 		var result strings.Builder
-		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enable }}\n", indent.String())
+		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enable }}\n", childIndent)
 		for _, line := range lines {
-			result.WriteString(line + "\n")
+			result.WriteString("  " + line + "\n")
 		}
-		fmt.Fprintf(&result, "%s{{- end }}", indent.String())
+		fmt.Fprintf(&result, "%s{{- end }}", childIndent)
 		return result.String()
 	}
 	return match
