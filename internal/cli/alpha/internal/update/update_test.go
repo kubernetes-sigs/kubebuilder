@@ -167,6 +167,37 @@ exit 1`
 				fmt.Sprintf("checkout %s", opts.FromBranch),
 			))
 		})
+
+		It("pushes the output branch when Push is enabled", func() {
+			opts.Push = true
+			err = opts.Update()
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, readErr := os.ReadFile(logFile)
+			Expect(readErr).ToNot(HaveOccurred())
+			s := string(logs)
+
+			out := opts.getOutputBranchName()
+			Expect(s).To(ContainSubstring(
+				fmt.Sprintf("push -u origin %s", out),
+			))
+		})
+
+		It("returns error when checkout fails before push", func() {
+			opts.Push = true
+			out := opts.getOutputBranchName()
+			failOnPushCheckout := fmt.Sprintf(`#!/bin/bash
+echo "$@" >> "%s"
+if [[ "$1" == "checkout" && "$2" == "%s" ]]; then exit 1; fi
+exit 0`, logFile, out)
+			Expect(mockBinResponse(failOnPushCheckout, mockGit)).To(Succeed())
+
+			err = opts.Update()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(
+				fmt.Sprintf("failed to checkout %s", out),
+			))
+		})
 	})
 
 	Context("RegenerateProjectWithVersion", func() {
