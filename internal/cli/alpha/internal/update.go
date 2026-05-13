@@ -17,6 +17,7 @@ limitations under the License.
 package internal
 
 import (
+	"context"
 	"fmt"
 	"io"
 	log "log/slog"
@@ -25,6 +26,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/mod/semver"
@@ -130,7 +132,15 @@ func (opts *Update) downloadKubebuilderBinary() (string, error) {
 	}()
 
 	// Download the binary from GitHub releases
-	response, err := http.Get(url)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to build download request: %w", err)
+	}
+
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to download the binary: %w", err)
 	}
@@ -475,7 +485,15 @@ func (opts *Update) validateBinaryAvailability() error {
 	opts.BinaryURL = fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/download/%s/kubebuilder_%s_%s",
 		opts.CliVersion, runtime.GOOS, runtime.GOARCH)
 
-	resp, err := http.Head(opts.BinaryURL)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, opts.BinaryURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build binary availability request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to check binary availability: %w", err)
 	}
