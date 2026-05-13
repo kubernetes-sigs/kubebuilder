@@ -31,9 +31,9 @@ var (
 	supportedPlatforms = []string{"darwin", "linux"}
 	// errHelpDisplayed is returned when help is displayed to prevent command execution
 	errHelpDisplayed = errors.New("help displayed")
-
-	kustomizeCommonPluginV2 = "kustomize.common.kubebuilder.io/v2"
 )
+
+const kustomizeCommonPluginV2 = "kustomize.common.kubebuilder.io/v2"
 
 // isHelpFlag checks if the given string is a help flag
 func isHelpFlag(s string) bool {
