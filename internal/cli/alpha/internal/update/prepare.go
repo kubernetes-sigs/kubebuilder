@@ -17,11 +17,13 @@ limitations under the License.
 package update
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	log "log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
@@ -92,7 +94,16 @@ func (opts *Update) defineToVersion() string {
 }
 
 func fetchLatestRelease() (string, error) {
-	resp, err := http.Get("https://api.github.com/repos/kubernetes-sigs/kubebuilder/releases/latest")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		"https://api.github.com/repos/kubernetes-sigs/kubebuilder/releases/latest", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to build release request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch latest release: %w", err)
 	}
