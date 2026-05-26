@@ -526,6 +526,66 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
+		It("should add networkPolicy conditional for NetworkPolicy resources", func() {
+			networkPolicyResource := &unstructured.Unstructured{}
+			networkPolicyResource.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicyResource.SetKind("NetworkPolicy")
+			networkPolicyResource.SetName("allow-metrics-traffic")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-traffic
+  namespace: test-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
+
+			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should add webhook conditional for webhook NetworkPolicy resources", func() {
+			networkPolicyResource := &unstructured.Unstructured{}
+			networkPolicyResource.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicyResource.SetKind("NetworkPolicy")
+			networkPolicyResource.SetName("allow-webhook-traffic")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-webhook-traffic
+  namespace: test-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager`
+
+			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
+
+			Expect(result).To(ContainSubstring("{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should not wrap NetworkPolicy with wrong apiVersion", func() {
+			networkPolicyResource := &unstructured.Unstructured{}
+			networkPolicyResource.SetAPIVersion("acme.io/v1")
+			networkPolicyResource.SetKind("NetworkPolicy")
+			networkPolicyResource.SetName("custom-policy")
+
+			content := `apiVersion: acme.io/v1
+kind: NetworkPolicy
+metadata:
+  name: custom-policy`
+
+			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
+
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+		})
+
 		It("should template ServiceMonitor port and scheme based on metrics.secure", func() {
 			serviceMonitorResource := &unstructured.Unstructured{}
 			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
@@ -2429,6 +2489,72 @@ spec:
 			// Should not template regular service ports
 			Expect(result).To(ContainSubstring("port: 8080"))
 			Expect(result).To(ContainSubstring("targetPort: 8080"))
+			Expect(result).NotTo(ContainSubstring("{{ .Values"))
+		})
+
+		It("should template metrics NetworkPolicy ports", func() {
+			networkPolicy := &unstructured.Unstructured{}
+			networkPolicy.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicy.SetKind("NetworkPolicy")
+			networkPolicy.SetName("test-project-allow-metrics-traffic")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-project-allow-metrics-traffic
+spec:
+  ingress:
+  - ports:
+    - port: 8443
+      protocol: TCP`
+
+			result := templater.templatePorts(content, networkPolicy)
+
+			Expect(result).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
+			Expect(result).NotTo(ContainSubstring("port: 8443"))
+		})
+
+		It("should template webhook NetworkPolicy ports", func() {
+			networkPolicy := &unstructured.Unstructured{}
+			networkPolicy.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicy.SetKind("NetworkPolicy")
+			networkPolicy.SetName("test-project-allow-webhook-traffic")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-project-allow-webhook-traffic
+spec:
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP`
+
+			result := templater.templatePorts(content, networkPolicy)
+
+			Expect(result).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
+			Expect(result).NotTo(ContainSubstring("port: 443"))
+		})
+
+		It("should not template custom NetworkPolicy ports", func() {
+			networkPolicy := &unstructured.Unstructured{}
+			networkPolicy.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicy.SetKind("NetworkPolicy")
+			networkPolicy.SetName("test-project-custom-policy")
+
+			content := `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-project-custom-policy
+spec:
+  ingress:
+  - ports:
+    - port: 8080
+      protocol: TCP`
+
+			result := templater.templatePorts(content, networkPolicy)
+
+			Expect(result).To(ContainSubstring("port: 8080"))
 			Expect(result).NotTo(ContainSubstring("{{ .Values"))
 		})
 	})

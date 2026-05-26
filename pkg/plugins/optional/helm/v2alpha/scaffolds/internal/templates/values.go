@@ -160,6 +160,16 @@ prometheus:
 
 `)
 
+	// NetworkPolicy configuration (always present, enabled when NetworkPolicy resources exist)
+	networkPolicyEnabled := f.Extraction != nil && f.Extraction.Features.HasNetworkPolicy
+
+	buf.WriteString(`## Network policies for controlling traffic flow.
+## Enable to restrict ingress to the controller manager.
+##
+networkPolicy:
+`)
+	fmt.Fprintf(&buf, "  enable: %t\n\n", networkPolicyEnabled)
+
 	return buf.String()
 }
 

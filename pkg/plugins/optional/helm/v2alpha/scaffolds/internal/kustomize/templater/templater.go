@@ -85,7 +85,9 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 		yamlContent = appliers.MakeMetricsVolumeMountsConditional(yamlContent)
 		yamlContent = appliers.MakeMetricsVolumesConditional(yamlContent)
 	}
-	if resource.GetKind() == common.KindService || resource.GetKind() == common.KindDeployment {
+	if resource.GetKind() == common.KindService ||
+		resource.GetKind() == common.KindDeployment ||
+		resource.GetKind() == common.KindNetworkPolicy {
 		yamlContent = appliers.TemplatePorts(yamlContent, resource)
 	}
 	if resource.GetKind() == common.KindServiceMonitor {

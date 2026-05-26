@@ -26,18 +26,22 @@ import (
 type FeaturesExtractor struct{}
 
 // FeatureSet represents detected features in the resources.
-// It includes flags for CRDs, webhooks, metrics, Prometheus, cert-manager, and cluster-scoped RBAC.
+// It includes flags for CRDs, webhooks, metrics, Prometheus, cert-manager,
+// NetworkPolicies, NetworkPolicy traffic paths, and cluster-scoped RBAC.
 // It also includes port configurations and multi-namespace RBAC mappings.
 type FeatureSet struct {
-	HasCRDs              bool
-	HasWebhooks          bool
-	HasMetrics           bool
-	HasPrometheus        bool
-	HasCertManager       bool
-	HasClusterScopedRBAC bool
-	WebhookPort          int
-	MetricsPort          int
-	RoleNamespaces       map[string]string
+	HasCRDs                 bool
+	HasWebhooks             bool
+	HasMetrics              bool
+	HasPrometheus           bool
+	HasCertManager          bool
+	HasNetworkPolicy        bool
+	HasMetricsNetworkPolicy bool
+	HasWebhookNetworkPolicy bool
+	HasClusterScopedRBAC    bool
+	WebhookPort             int
+	MetricsPort             int
+	RoleNamespaces          map[string]string
 }
 
 // DetectFeatures detects features from parsed resources.
@@ -61,6 +65,16 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	}
 
 	features.HasPrometheus = len(resources.ServiceMonitors) > 0
+	features.HasNetworkPolicy = len(resources.NetworkPolicies) > 0
+	for _, policy := range resources.NetworkPolicies {
+		name := policy.GetName()
+		if strings.HasSuffix(name, "allow-metrics-traffic") {
+			features.HasMetricsNetworkPolicy = true
+		}
+		if strings.HasSuffix(name, "allow-webhook-traffic") {
+			features.HasWebhookNetworkPolicy = true
+		}
+	}
 
 	for _, svc := range resources.Services {
 		name := svc.GetName()

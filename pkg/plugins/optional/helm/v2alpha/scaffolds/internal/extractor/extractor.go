@@ -70,6 +70,7 @@ type ResourceSet struct {
 	Certificates              []*unstructured.Unstructured
 	Issuer                    *unstructured.Unstructured
 	ServiceMonitors           []*unstructured.Unstructured
+	NetworkPolicies           []*unstructured.Unstructured
 	Other                     []*unstructured.Unstructured
 }
 

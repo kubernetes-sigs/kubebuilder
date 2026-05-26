@@ -170,3 +170,9 @@ certManager:
 prometheus:
   enable: false
 
+## Network policies for controlling traffic flow.
+## Enable to restrict ingress to the controller manager.
+##
+networkPolicy:
+  enable: false
+
