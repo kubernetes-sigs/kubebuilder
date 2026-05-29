@@ -231,7 +231,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 								},
 							},
 						},`, fmt.Sprintf(commandTemplate, res)); err != nil {
-			return fmt.Errorf("error scaffolding command in the  controller path %q: %w",
+			return fmt.Errorf("error scaffolding command in the controller path %q: %w",
 				controller.Path, err)
 		}
 	}
