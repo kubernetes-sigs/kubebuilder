@@ -97,6 +97,8 @@ import (
 
 const {{ lower .Resource.Kind }}Finalizer = "{{ .Resource.Group }}.{{ .Resource.Domain }}/finalizer"
 
+const {{ lower .Resource.Kind }}ContainerName = "{{ lower .Resource.Kind }}"
+
 // Definitions to manage status conditions
 const (
 	// typeAvailable{{ .Resource.Kind }} represents the status of the Deployment reconciliation

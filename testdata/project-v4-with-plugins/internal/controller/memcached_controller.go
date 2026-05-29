@@ -42,6 +42,8 @@ import (
 
 const memcachedFinalizer = "example.com.testproject.org/finalizer"
 
+const memcachedContainerName = "memcached"
+
 // Definitions to manage status conditions
 const (
 	// typeAvailableMemcached represents the status of the Deployment reconciliation
@@ -369,7 +371,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 					},
 					Containers: []corev1.Container{{
 						Image:           image,
-						Name:            "memcached",
+						Name:            memcachedContainerName,
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
@@ -385,7 +387,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 						},
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: memcached.Spec.ContainerPort,
-							Name:          "memcached",
+							Name:          memcachedContainerName,
 						}},
 						Command: []string{"memcached", "--memory-limit=64", "-o", "modern", "-v"},
 					}},

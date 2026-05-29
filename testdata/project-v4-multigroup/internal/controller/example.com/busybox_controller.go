@@ -42,6 +42,8 @@ import (
 
 const busyboxFinalizer = "example.com.testproject.org/finalizer"
 
+const busyboxContainerName = "busybox"
+
 // Definitions to manage status conditions
 const (
 	// typeAvailableBusybox represents the status of the Deployment reconciliation
@@ -369,7 +371,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(
 					},
 					Containers: []corev1.Container{{
 						Image:           image,
-						Name:            "busybox",
+						Name:            busyboxContainerName,
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
