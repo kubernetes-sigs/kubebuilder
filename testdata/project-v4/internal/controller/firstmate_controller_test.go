@@ -32,13 +32,16 @@ import (
 
 var _ = Describe("FirstMate Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
+		const (
+			resourceName      = "test-resource"
+			resourceNamespace = "default"
+		)
 
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Namespace: resourceNamespace,
 		}
 		firstmate := &crewv1.FirstMate{}
 
@@ -49,7 +52,7 @@ var _ = Describe("FirstMate Controller", func() {
 				resource := &crewv1.FirstMate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "default",
+						Namespace: resourceNamespace,
 					},
 					// TODO(user): Specify other spec details if needed.
 				}
