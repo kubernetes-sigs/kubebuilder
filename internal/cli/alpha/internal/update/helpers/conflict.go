@@ -237,18 +237,26 @@ func hasGoConflictInFiles(conflicts map[string]bool) bool {
 	return false
 }
 
+const (
+	makeTargetManifests = "manifests"
+	makeTargetGenerate  = "generate"
+	makeTargetFmt       = "fmt"
+	makeTargetVet       = "vet"
+	makeTargetLintFix   = "lint-fix"
+)
+
 // DecideMakeTargets applies simple policy over the summary.
 func DecideMakeTargets(cs ConflictSummary) []string {
-	all := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
+	all := []string{makeTargetManifests, makeTargetGenerate, makeTargetFmt, makeTargetVet, makeTargetLintFix}
 	if cs.Makefile {
 		return nil
 	}
 	keep := make([]string, 0, len(all))
 	for _, t := range all {
-		if cs.API && (t == "manifests" || t == "generate") {
+		if cs.API && (t == makeTargetManifests || t == makeTargetGenerate) {
 			continue
 		}
-		if cs.AnyGo && (t == "fmt" || t == "vet" || t == "lint-fix") {
+		if cs.AnyGo && (t == makeTargetFmt || t == makeTargetVet || t == makeTargetLintFix) {
 			continue
 		}
 		keep = append(keep, t)

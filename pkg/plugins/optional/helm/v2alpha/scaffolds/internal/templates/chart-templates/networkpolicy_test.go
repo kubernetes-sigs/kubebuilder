@@ -25,13 +25,15 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
+const helmChartOutputDir = "dist"
+
 var _ = Describe("NetworkPolicy", func() {
 	Context("SetTemplateDefaults", func() {
 		var networkPolicy *NetworkPolicy
 
 		BeforeEach(func() {
 			networkPolicy = &NetworkPolicy{
-				OutputDir: "dist",
+				OutputDir: helmChartOutputDir,
 				Force:     true,
 			}
 			networkPolicy.InjectProjectName("test-project")
@@ -101,10 +103,10 @@ var _ = Describe("NetworkPolicy", func() {
 			fs := afero.NewMemMapFs()
 			scaffold := machinery.NewScaffold(machinery.Filesystem{FS: fs}, machinery.WithConfig(cfg))
 			err := scaffold.Execute(&NetworkPolicy{
-				OutputDir: "dist",
+				OutputDir: helmChartOutputDir,
 			}, &NetworkPolicy{
 				Webhook:   true,
-				OutputDir: "dist",
+				OutputDir: helmChartOutputDir,
 			})
 			Expect(err).NotTo(HaveOccurred())
 

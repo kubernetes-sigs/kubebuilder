@@ -30,6 +30,13 @@ import (
 )
 
 var _ = Describe("cmd_helpers", func() {
+	const (
+		flagKey1      = "key1"
+		flagKey2      = "key2"
+		flagKey3      = "key3"
+		flagValueTrue = "true"
+		flagForce     = "--force"
+	)
 	Context("error types", func() {
 		It("noResolvedPluginError should return correct message", func() {
 			err := noResolvedPluginError{}
@@ -38,8 +45,8 @@ var _ = Describe("cmd_helpers", func() {
 		})
 
 		It("noAvailablePluginError should return correct message with subcommand", func() {
-			err := noAvailablePluginError{subcommand: "init"}
-			Expect(err.Error()).To(ContainSubstring("init"))
+			err := noAvailablePluginError{subcommand: kubebuilderSubcommandInit}
+			Expect(err.Error()).To(ContainSubstring(kubebuilderSubcommandInit))
 			Expect(err.Error()).To(ContainSubstring("do not provide any"))
 		})
 	})
@@ -77,38 +84,38 @@ var _ = Describe("cmd_helpers", func() {
 
 	Context("moveKeyToFront", func() {
 		It("should handle empty chain", func() {
-			result := moveKeyToFront([]string{}, "key1")
-			Expect(result).To(Equal([]string{"key1"}))
+			result := moveKeyToFront([]string{}, flagKey1)
+			Expect(result).To(Equal([]string{flagKey1}))
 		})
 
 		It("should not change chain when key is already at front", func() {
-			chain := []string{"key1", "key2", "key3"}
-			result := moveKeyToFront(chain, "key1")
+			chain := []string{flagKey1, flagKey2, flagKey3}
+			result := moveKeyToFront(chain, flagKey1)
 			Expect(result).To(Equal(chain))
 		})
 
 		It("should move key to front when it exists in chain", func() {
-			chain := []string{"key1", "key2", "key3"}
-			result := moveKeyToFront(chain, "key2")
-			Expect(result).To(Equal([]string{"key2", "key1", "key3"}))
+			chain := []string{flagKey1, flagKey2, flagKey3}
+			result := moveKeyToFront(chain, flagKey2)
+			Expect(result).To(Equal([]string{flagKey2, flagKey1, flagKey3}))
 		})
 
 		It("should move key to front from end of chain", func() {
-			chain := []string{"key1", "key2", "key3"}
-			result := moveKeyToFront(chain, "key3")
-			Expect(result).To(Equal([]string{"key3", "key1", "key2"}))
+			chain := []string{flagKey1, flagKey2, flagKey3}
+			result := moveKeyToFront(chain, flagKey3)
+			Expect(result).To(Equal([]string{flagKey3, flagKey1, flagKey2}))
 		})
 
 		It("should add key to front when not in chain", func() {
-			chain := []string{"key1", "key2"}
-			result := moveKeyToFront(chain, "key3")
-			Expect(result).To(Equal([]string{"key3", "key1", "key2"}))
+			chain := []string{flagKey1, flagKey2}
+			result := moveKeyToFront(chain, flagKey3)
+			Expect(result).To(Equal([]string{flagKey3, flagKey1, flagKey2}))
 		})
 
 		It("should remove duplicate when moving key to front", func() {
-			chain := []string{"key1", "key2", "key2"}
-			result := moveKeyToFront(chain, "key2")
-			Expect(result).To(Equal([]string{"key2", "key1"}))
+			chain := []string{flagKey1, flagKey2, flagKey2}
+			result := moveKeyToFront(chain, flagKey2)
+			Expect(result).To(Equal([]string{flagKey2, flagKey1}))
 		})
 	})
 
@@ -375,7 +382,7 @@ var _ = Describe("cmd_helpers", func() {
 				"force": {tmpFS.Lookup("force").Value},
 			}
 
-			Expect(flags.Parse([]string{"--force", "true"})).NotTo(HaveOccurred())
+			Expect(flags.Parse([]string{flagForce, flagValueTrue})).NotTo(HaveOccurred())
 			Expect(mainVal).To(BeTrue())
 			Expect(dupVal).To(BeFalse())
 
@@ -396,7 +403,7 @@ var _ = Describe("cmd_helpers", func() {
 			Expect(mergeFlagSetInto(cmdFlags, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag)).NotTo(HaveOccurred())
 			Expect(mergeFlagSetInto(cmdFlags, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag)).NotTo(HaveOccurred())
 
-			Expect(cmdFlags.Parse([]string{"--force", "true"})).NotTo(HaveOccurred())
+			Expect(cmdFlags.Parse([]string{flagForce, flagValueTrue})).NotTo(HaveOccurred())
 			syncDuplicateFlags(cmdFlags, duplicateValues)
 			Expect(forceA).To(BeTrue(), "plugin A must receive the value passed by the user")
 			Expect(forceB).To(BeTrue(), "plugin B must receive the same value as the command")
@@ -431,7 +438,7 @@ var _ = Describe("cmd_helpers", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.duplicateFlagValues["force"]).To(HaveLen(1), "second plugin's Value recorded as duplicate")
 
-			Expect(cmd.ParseFlags([]string{"--force", "true"})).NotTo(HaveOccurred())
+			Expect(cmd.ParseFlags([]string{flagForce, flagValueTrue})).NotTo(HaveOccurred())
 			syncDuplicateFlags(cmd.Flags(), result.duplicateFlagValues)
 			Expect(pluginA.Force).To(BeTrue(), "first plugin (flag on command) receives value")
 			Expect(pluginB.Force).To(BeTrue(), "second plugin (duplicate) receives same value after sync")

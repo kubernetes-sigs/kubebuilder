@@ -31,7 +31,7 @@ var _ = Describe("init", func() {
 			plugin2 := newMockPlugin("another.plugin", "3", config.Version{Number: 3}, config.Version{Number: 4})
 
 			cli := CLI{
-				commandName: "kubebuilder",
+				commandName: kubebuilderCommandName,
 				plugins: map[string]plugin.Plugin{
 					plugin.KeyFor(plugin1): plugin1,
 					plugin.KeyFor(plugin2): plugin2,
@@ -65,7 +65,7 @@ var _ = Describe("init", func() {
 
 		It("should return empty string when no plugins", func() {
 			cli := CLI{
-				commandName: "kubebuilder",
+				commandName: kubebuilderCommandName,
 				plugins:     map[string]plugin.Plugin{},
 			}
 

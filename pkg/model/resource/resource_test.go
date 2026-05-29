@@ -25,12 +25,12 @@ import (
 
 var _ = Describe("Resource", func() {
 	const (
-		group   = "group"
-		domain  = "test.io"
-		version = "v1"
-		kind    = "Kind"
-		plural  = "kinds"
-		v1beta1 = "v1beta1"
+		group         = "group"
+		domain        = "test.io"
+		version       = "v1"
+		kind          = "Kind"
+		plural        = "kinds"
+		invalidPlural = "plural"
 	)
 
 	var (
@@ -96,10 +96,10 @@ var _ = Describe("Resource", func() {
 		DescribeTable("should fail for invalid Resources",
 			func(res Resource) { Expect(res.Validate()).NotTo(Succeed()) },
 			// Ensure that the rest of the fields are valid to check each part
-			Entry("invalid GVK", Resource{GVK: GVK{}, Plural: "plural"}),
+			Entry("invalid GVK", Resource{GVK: GVK{}, Plural: invalidPlural}),
 			Entry("invalid Plural", Resource{GVK: gvk, Plural: "Plural"}),
-			Entry("invalid API", Resource{GVK: gvk, Plural: "plural", API: &API{CRDVersion: "1"}}),
-			Entry("invalid Webhooks", Resource{GVK: gvk, Plural: "plural", Webhooks: &Webhooks{WebhookVersion: "1"}}),
+			Entry("invalid API", Resource{GVK: gvk, Plural: invalidPlural, API: &API{CRDVersion: "1"}}),
+			Entry("invalid Webhooks", Resource{GVK: gvk, Plural: invalidPlural, Webhooks: &Webhooks{WebhookVersion: "1"}}),
 		)
 	})
 

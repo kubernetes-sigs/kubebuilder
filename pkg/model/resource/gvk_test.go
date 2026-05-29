@@ -30,6 +30,7 @@ var _ = Describe("GVK", func() {
 		version         = "v1"
 		kind            = "Kind"
 		internalVersion = "__internal"
+		invalidGVKChars = "_*?"
 	)
 
 	var gvk GVK
@@ -53,9 +54,9 @@ var _ = Describe("GVK", func() {
 			func(gvk GVK) { Expect(gvk.Validate()).NotTo(Succeed()) },
 			// Ensure that the rest of the fields are valid to check each part
 			Entry("Group (uppercase)", GVK{Group: "Group", Domain: domain, Version: version, Kind: kind}),
-			Entry("Group (non-alpha characters)", GVK{Group: "_*?", Domain: domain, Version: version, Kind: kind}),
+			Entry("Group (non-alpha characters)", GVK{Group: invalidGVKChars, Domain: domain, Version: version, Kind: kind}),
 			Entry("Domain (uppercase)", GVK{Group: group, Domain: "Domain", Version: version, Kind: kind}),
-			Entry("Domain (non-alpha characters)", GVK{Group: group, Domain: "_*?", Version: version, Kind: kind}),
+			Entry("Domain (non-alpha characters)", GVK{Group: group, Domain: invalidGVKChars, Version: version, Kind: kind}),
 			Entry("Group and Domain (empty)", GVK{Group: "", Domain: "", Version: version, Kind: kind}),
 			Entry("Version (empty)", GVK{Group: group, Domain: domain, Version: "", Kind: kind}),
 			Entry("Version (wrong prefix)", GVK{Group: group, Domain: domain, Version: "-example.com", Kind: kind}),
@@ -68,7 +69,7 @@ var _ = Describe("GVK", func() {
 			Entry("Kind (lowercase)", GVK{Group: group, Domain: domain, Version: version, Kind: "kind"}),
 			Entry("Kind (starts with number)", GVK{Group: group, Domain: domain, Version: version, Kind: "1Kind"}),
 			Entry("Kind (ends with `-`)", GVK{Group: group, Domain: domain, Version: version, Kind: "Kind-"}),
-			Entry("Kind (non-alpha characters)", GVK{Group: group, Domain: domain, Version: version, Kind: "_*?"}),
+			Entry("Kind (non-alpha characters)", GVK{Group: group, Domain: domain, Version: version, Kind: invalidGVKChars}),
 			Entry("Kind (too long)",
 				GVK{Group: group, Domain: domain, Version: version, Kind: strings.Repeat("a", 64)}),
 		)

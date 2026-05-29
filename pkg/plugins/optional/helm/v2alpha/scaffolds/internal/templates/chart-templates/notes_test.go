@@ -31,7 +31,7 @@ var _ = Describe("Notes", func() {
 
 		BeforeEach(func() {
 			notes = &Notes{
-				OutputDir: "dist",
+				OutputDir: helmChartOutputDir,
 				Force:     true,
 			}
 			notes.InjectProjectName("test-project")

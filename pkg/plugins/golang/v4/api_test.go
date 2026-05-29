@@ -27,6 +27,15 @@ import (
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
 
+const (
+	crewGroup   = "crew"
+	testIO      = "test.io"
+	captainKind = "Captain"
+	captains    = "captains"
+	shipGroup   = "ship"
+	frigateKind = "Frigate"
+)
+
 var _ = Describe("createAPISubcommand", func() {
 	var (
 		subCmd *createAPISubcommand
@@ -45,12 +54,12 @@ var _ = Describe("createAPISubcommand", func() {
 
 		res = &resource.Resource{
 			GVK: resource.GVK{
-				Group:   "crew",
-				Domain:  "test.io",
+				Group:   crewGroup,
+				Domain:  testIO,
 				Version: "v1",
-				Kind:    "Captain",
+				Kind:    captainKind,
 			},
-			Plural:   "captains",
+			Plural:   captains,
 			API:      &resource.API{},
 			Webhooks: &resource.Webhooks{},
 		}
@@ -114,18 +123,18 @@ var _ = Describe("createAPISubcommand", func() {
 
 		firstRes := resource.Resource{
 			GVK: resource.GVK{
-				Group:   "ship",
-				Domain:  "test.io",
+				Group:   shipGroup,
+				Domain:  testIO,
 				Version: "v1",
-				Kind:    "Frigate",
+				Kind:    frigateKind,
 			},
 			Plural: "frigates",
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
 
-		res.Group = "crew"
-		res.Plural = "captains"
+		res.Group = crewGroup
+		res.Plural = captains
 
 		err := subCmd.InjectResource(res)
 
@@ -141,17 +150,17 @@ var _ = Describe("createAPISubcommand", func() {
 
 		firstRes := resource.Resource{
 			GVK: resource.GVK{
-				Group:   "ship",
-				Domain:  "test.io",
+				Group:   shipGroup,
+				Domain:  testIO,
 				Version: "v1",
-				Kind:    "Frigate",
+				Kind:    frigateKind,
 			},
 			Plural: "frigates",
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
 
-		res.Group = "crew"
+		res.Group = crewGroup
 
 		Expect(subCmd.InjectResource(res)).To(Succeed())
 	})

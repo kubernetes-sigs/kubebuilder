@@ -40,6 +40,10 @@ const (
 
 	pluginsFlag        = "plugins"
 	projectVersionFlag = "project-version"
+
+	kubebuilderCommandName = "kubebuilder"
+	pluginGoKubebuilderV4  = "go.kubebuilder.io/v4"
+	pluginGoKubebuilderV2  = "go.kubebuilder.io/v2"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
@@ -126,7 +130,7 @@ func New(options ...Option) (*CLI, error) {
 func newCLI(options ...Option) (*CLI, error) {
 	// Default CLI options.
 	c := &CLI{
-		commandName: "kubebuilder",
+		commandName: kubebuilderCommandName,
 		description: `CLI tool for building Kubernetes extensions and tools.
 `,
 		plugins:        make(map[string]plugin.Plugin),
@@ -285,9 +289,9 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	}
 
 	replacements := []pluginReplacement{
-		{"go.kubebuilder.io/v2", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3-alpha", "go.kubebuilder.io/v4"},
+		{pluginGoKubebuilderV2, pluginGoKubebuilderV4},
+		{"go.kubebuilder.io/v3", pluginGoKubebuilderV4},
+		{"go.kubebuilder.io/v3-alpha", pluginGoKubebuilderV4},
 	}
 
 	content, err := afero.ReadFile(fs, path)

@@ -39,6 +39,17 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
+const (
+	flagTypeBool   = "bool"
+	flagTypeString = "string"
+	flagTypeFloat  = "float"
+
+	flagNameGroup   = "group"
+	flagNameVersion = "version"
+	flagNameKind    = "kind"
+	flagNameHelp    = "help"
+)
+
 var outputGetter ExecOutputGetter = &execOutputGetter{}
 
 const defaultMetadataTemplate = `
@@ -256,13 +267,13 @@ func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
 	// Only bind flags returned by the external plugin
 	for _, flag := range flags {
 		switch flag.Type {
-		case "bool":
+		case flagTypeBool:
 			defaultValue, _ := strconv.ParseBool(flag.Default)
 			_ = fs.Bool(flag.Name, defaultValue, flag.Usage)
 		case "int":
 			defaultValue, _ := strconv.Atoi(flag.Default)
 			_ = fs.Int(flag.Name, defaultValue, flag.Usage)
-		case "float":
+		case flagTypeFloat:
 			defaultValue, _ := strconv.ParseFloat(flag.Default, 64)
 			_ = fs.Float64(flag.Name, defaultValue, flag.Usage)
 		default:
@@ -320,7 +331,7 @@ var (
 	gvkArgFilter = func(arg string) bool {
 		arg = strings.Replace(arg, "--", "", 1)
 		return !slices.Contains([]string{
-			"group", "version", "kind",
+			flagNameGroup, flagNameVersion, flagNameKind,
 		}, arg)
 	}
 
@@ -331,7 +342,7 @@ var (
 	// helpArgFilter filters out any flag named "help" as its already bound
 	helpArgFilter = func(arg string) bool {
 		arg = strings.Replace(arg, "--", "", 1)
-		return arg != "help"
+		return arg != flagNameHelp
 	}
 )
 

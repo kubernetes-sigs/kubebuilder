@@ -190,11 +190,22 @@ func (m *mockValidMEOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, err
 }
 
 const (
-	externalPlugin = "myexternalplugin.sh"
-	floatVal       = "float"
+	argDomain               = "--domain"
+	pluginScriptPath        = "test.sh"
+	universeFileName        = "file"
+	pluginGoKubebuilderV4   = "go.kubebuilder.io/v4"
+	pluginGoKubebuilderV3   = "go.kubebuilder.io/v3"
+	pluginDeclarativeGoV1   = "declarative.go.kubebuilder.io/v1"
+	pluginKustomizeCommonV2 = "kustomize.common.kubebuilder.io/v2"
+	pluginCLI               = "cli.plugin/v1"
+	kindMyKind              = "MyKind"
+	exampleDomain           = "example.com"
+	apiGroupApps            = "apps"
 )
 
 var _ = Describe("Run external plugin using Scaffold", func() {
+	const externalPlugin = "myexternalplugin.sh"
+
 	Context("with valid mock values", func() {
 		const filePerm os.FileMode = 755
 		var (
@@ -226,7 +237,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			_, err = fs.FS.Stat(pluginFilePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			args = []string{"--domain", "example.com"}
+			args = []string{argDomain, exampleDomain}
 		})
 
 		AfterEach(func() {
@@ -293,7 +304,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			pluginFileName = externalPlugin
-			args = []string{"--domain", "example.com"}
+			args = []string{argDomain, exampleDomain}
 		})
 
 		It("should return error upon running init subcommand on the external plugin", func() {
@@ -397,7 +408,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				for _, flag := range flags {
 					Expect(flagset.Lookup(flag.Name)).NotTo(BeNil())
 					// we parse floats as float64 Go type so this check will account for that
-					if flag.Type != floatVal {
+					if flag.Type != flagTypeFloat {
 						Expect(flagset.Lookup(flag.Name).Value.Type()).To(Equal(flag.Type))
 					} else {
 						Expect(flagset.Lookup(flag.Name).Value.Type()).To(Equal("float64"))
@@ -533,7 +544,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 	Context("Flag Parsing Filter Functions", func() {
 		It("gvk(Arg/Flag)Filter should filter out (--)group, (--)version, (--)kind", func() {
 			for _, toBeFiltered := range []string{
-				"group", "version", "kind",
+				flagNameGroup, flagNameVersion, flagNameKind,
 			} {
 				Expect(gvkArgFilter("--" + toBeFiltered)).To(BeFalse())
 				Expect(gvkArgFilter(toBeFiltered)).To(BeFalse())
@@ -545,11 +556,11 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 		})
 
 		It("helpArgFilter should filter out (--)help", func() {
-			Expect(helpArgFilter("--help")).To(BeFalse())
-			Expect(helpArgFilter("help")).To(BeFalse())
+			Expect(helpArgFilter(argHelp)).To(BeFalse())
+			Expect(helpArgFilter(flagNameHelp)).To(BeFalse())
 			Expect(helpArgFilter("somerandomflag")).To(BeTrue())
-			Expect(helpFlagFilter(external.Flag{Name: "--help"})).To(BeFalse())
-			Expect(helpFlagFilter(external.Flag{Name: "help"})).To(BeFalse())
+			Expect(helpFlagFilter(external.Flag{Name: argHelp})).To(BeFalse())
+			Expect(helpFlagFilter(external.Flag{Name: flagNameHelp})).To(BeFalse())
 			Expect(helpFlagFilter(external.Flag{Name: "somerandomflag"})).To(BeTrue())
 		})
 	})
@@ -566,16 +577,16 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 		BeforeEach(func() {
 			args = []string{
-				"--domain", "something.com",
+				argDomain, "something.com",
 				"--boolean",
 				"--another", "flag",
-				"--help",
-				"--group", "somegroup",
-				"--kind", "somekind",
-				"--version", "someversion",
+				argHelp,
+				argGroup, "somegroup",
+				argKind, "somekind",
+				argVersion, "someversion",
 			}
 			forbidden = []string{
-				"help", "group", "kind", "version",
+				flagNameHelp, flagNameGroup, flagNameKind, flagNameVersion,
 			}
 
 			fs = pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -632,7 +643,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			for _, flag := range filteredFlags {
 				Expect(fs.Lookup(flag.Name)).NotTo(BeNil())
 				// we parse floats as float64 Go type so this check will account for that
-				if flag.Type != floatVal {
+				if flag.Type != flagTypeFloat {
 					Expect(fs.Lookup(flag.Name).Value.Type()).To(Equal(flag.Type))
 				} else {
 					Expect(fs.Lookup(flag.Name).Value.Type()).To(Equal("float64"))
@@ -792,17 +803,17 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}{
 				{
 					path:    "./",
-					name:    "file",
+					name:    universeFileName,
 					content: "level 0 file",
 				},
 				{
 					path:    "dir/",
-					name:    "file",
+					name:    universeFileName,
 					content: "level 1 file",
 				},
 				{
 					path:    "dir/subdir",
-					name:    "file",
+					name:    universeFileName,
 					content: "level 2 file",
 				},
 			}
@@ -841,15 +852,15 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				It("keeps the CLI-provided chain when config omits pluginChain", func() {
 					sub := caseData.new()
 
-					cliChain := []string{"cli.plugin/v1"}
+					cliChain := []string{pluginCLI}
 					sub.SetPluginChain(cliChain)
 
 					cliChain[0] = "mutated"
-					Expect(caseData.get(sub)).To(Equal([]string{"cli.plugin/v1"}))
+					Expect(caseData.get(sub)).To(Equal([]string{pluginCLI}))
 
 					cfg := v3.New()
 					Expect(sub.InjectConfig(cfg)).To(Succeed())
-					Expect(caseData.get(sub)).To(Equal([]string{"cli.plugin/v1"}))
+					Expect(caseData.get(sub)).To(Equal([]string{pluginCLI}))
 
 					sub.SetPluginChain(nil)
 					Expect(caseData.get(sub)).To(BeNil())
@@ -857,7 +868,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 				It("prefers the config plugin chain when present", func() {
 					sub := caseData.new()
-					sub.SetPluginChain([]string{"cli.plugin/v1"})
+					sub.SetPluginChain([]string{pluginCLI})
 
 					cfg := v3.New()
 					expected := []string{"config.plugin/v2"}
@@ -890,14 +901,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			i := initSubcommand{
-				Path:        "test.sh",
-				Args:        []string{"--domain", "example.com"},
-				pluginChain: []string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"},
+				Path:        pluginScriptPath,
+				Args:        []string{argDomain, exampleDomain},
+				pluginChain: []string{pluginGoKubebuilderV4, pluginKustomizeCommonV2},
 			}
 
 			err := i.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4, pluginKustomizeCommonV2}))
 		})
 
 		It("should pass plugin chain to create api subcommand", func() {
@@ -906,14 +917,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			c := createAPISubcommand{
-				Path:        "test.sh",
-				Args:        []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
-				pluginChain: []string{"go.kubebuilder.io/v4"},
+				Path:        pluginScriptPath,
+				Args:        []string{argGroup, apiGroupApps, argVersion, "v1", argKind, kindMyKind},
+				pluginChain: []string{pluginGoKubebuilderV4},
 			}
 
 			err := c.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4}))
 		})
 
 		It("should pass plugin chain to create webhook subcommand", func() {
@@ -922,14 +933,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			w := createWebhookSubcommand{
-				Path:        "test.sh",
-				Args:        []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
-				pluginChain: []string{"go.kubebuilder.io/v3"},
+				Path:        pluginScriptPath,
+				Args:        []string{argGroup, apiGroupApps, argVersion, "v1", argKind, kindMyKind},
+				pluginChain: []string{pluginGoKubebuilderV3},
 			}
 
 			err := w.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v3"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV3}))
 		})
 
 		It("should pass plugin chain to edit subcommand", func() {
@@ -938,14 +949,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			e := editSubcommand{
-				Path:        "test.sh",
+				Path:        pluginScriptPath,
 				Args:        []string{"--multigroup"},
-				pluginChain: []string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"},
+				pluginChain: []string{pluginGoKubebuilderV4, pluginDeclarativeGoV1},
 			}
 
 			err := e.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4, pluginDeclarativeGoV1}))
 		})
 	})
 
@@ -984,7 +995,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			_, err = fs.FS.Stat(pluginFilePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			args = []string{"--domain", "example.com"}
+			args = []string{argDomain, exampleDomain}
 
 			cfg = &v3.Cfg{
 				Version:    v3.Version,
@@ -993,7 +1004,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				Name:       "test-project",
 			}
 
-			expectedChain = []string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}
+			expectedChain = []string{pluginGoKubebuilderV4, pluginKustomizeCommonV2}
 			Expect(cfg.SetPluginChain(expectedChain)).To(Succeed())
 		})
 
@@ -1105,18 +1116,18 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			cfg := &v3.Cfg{Version: v3.Version}
-			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"})).To(Succeed())
+			Expect(cfg.SetPluginChain([]string{pluginGoKubebuilderV4, pluginKustomizeCommonV2})).To(Succeed())
 
 			i := initSubcommand{
-				Path: "test.sh",
-				Args: []string{"--domain", "example.com"},
+				Path: pluginScriptPath,
+				Args: []string{argDomain, exampleDomain},
 			}
 
 			Expect(i.InjectConfig(cfg)).To(Succeed())
 
 			err := i.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "kustomize.common.kubebuilder.io/v2"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4, pluginKustomizeCommonV2}))
 		})
 
 		It("should pass plugin chain to create api subcommand", func() {
@@ -1125,18 +1136,18 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			cfg := &v3.Cfg{Version: v3.Version}
-			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4"})).To(Succeed())
+			Expect(cfg.SetPluginChain([]string{pluginGoKubebuilderV4})).To(Succeed())
 
 			c := createAPISubcommand{
-				Path: "test.sh",
-				Args: []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+				Path: pluginScriptPath,
+				Args: []string{argGroup, apiGroupApps, argVersion, "v1", argKind, kindMyKind},
 			}
 
 			Expect(c.InjectConfig(cfg)).To(Succeed())
 
 			err := c.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4}))
 		})
 
 		It("should pass plugin chain to create webhook subcommand", func() {
@@ -1145,18 +1156,18 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			cfg := &v3.Cfg{Version: v3.Version}
-			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v3"})).To(Succeed())
+			Expect(cfg.SetPluginChain([]string{pluginGoKubebuilderV3})).To(Succeed())
 
 			w := createWebhookSubcommand{
-				Path: "test.sh",
-				Args: []string{"--group", "apps", "--version", "v1", "--kind", "MyKind"},
+				Path: pluginScriptPath,
+				Args: []string{argGroup, apiGroupApps, argVersion, "v1", argKind, kindMyKind},
 			}
 
 			Expect(w.InjectConfig(cfg)).To(Succeed())
 
 			err := w.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v3"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV3}))
 		})
 
 		It("should pass plugin chain to edit subcommand", func() {
@@ -1165,10 +1176,10 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			cfg := &v3.Cfg{Version: v3.Version}
-			Expect(cfg.SetPluginChain([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"})).To(Succeed())
+			Expect(cfg.SetPluginChain([]string{pluginGoKubebuilderV4, pluginDeclarativeGoV1})).To(Succeed())
 
 			e := editSubcommand{
-				Path: "test.sh",
+				Path: pluginScriptPath,
 				Args: []string{"--multigroup"},
 			}
 
@@ -1176,7 +1187,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 			err := e.Scaffold(fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pluginChainCaptured).To(Equal([]string{"go.kubebuilder.io/v4", "declarative.go.kubebuilder.io/v1"}))
+			Expect(pluginChainCaptured).To(Equal([]string{pluginGoKubebuilderV4, pluginDeclarativeGoV1}))
 		})
 	})
 })
@@ -1185,13 +1196,13 @@ func getFlags() []external.Flag {
 	return []external.Flag{
 		{
 			Name:    "captain",
-			Type:    "string",
+			Type:    flagTypeString,
 			Usage:   "specify the ship captain",
 			Default: "jack-sparrow",
 		},
 		{
 			Name:    "sail",
-			Type:    "bool",
+			Type:    flagTypeBool,
 			Usage:   "deploy the sail",
 			Default: "false",
 		},
@@ -1228,7 +1239,7 @@ var _ = Describe("Plugin", func() {
 				{Number: 3},
 			},
 			Path: "/path/to/plugin",
-			Args: []string{"--flag", "value"},
+			Args: []string{argFlag, argValue},
 		}
 	})
 
@@ -1250,7 +1261,7 @@ var _ = Describe("Plugin", func() {
 		initSub, ok := sub.(*initSubcommand)
 		Expect(ok).To(BeTrue())
 		Expect(initSub.Path).To(Equal("/path/to/plugin"))
-		Expect(initSub.Args).To(Equal([]string{"--flag", "value"}))
+		Expect(initSub.Args).To(Equal([]string{argFlag, argValue}))
 	})
 
 	It("should return create API subcommand", func() {
@@ -1259,7 +1270,7 @@ var _ = Describe("Plugin", func() {
 		apiSub, ok := sub.(*createAPISubcommand)
 		Expect(ok).To(BeTrue())
 		Expect(apiSub.Path).To(Equal("/path/to/plugin"))
-		Expect(apiSub.Args).To(Equal([]string{"--flag", "value"}))
+		Expect(apiSub.Args).To(Equal([]string{argFlag, argValue}))
 	})
 
 	It("should return create webhook subcommand", func() {
@@ -1268,7 +1279,7 @@ var _ = Describe("Plugin", func() {
 		webhookSub, ok := sub.(*createWebhookSubcommand)
 		Expect(ok).To(BeTrue())
 		Expect(webhookSub.Path).To(Equal("/path/to/plugin"))
-		Expect(webhookSub.Args).To(Equal([]string{"--flag", "value"}))
+		Expect(webhookSub.Args).To(Equal([]string{argFlag, argValue}))
 	})
 
 	It("should return edit subcommand", func() {
@@ -1277,7 +1288,7 @@ var _ = Describe("Plugin", func() {
 		editSub, ok := sub.(*editSubcommand)
 		Expect(ok).To(BeTrue())
 		Expect(editSub.Path).To(Equal("/path/to/plugin"))
-		Expect(editSub.Args).To(Equal([]string{"--flag", "value"}))
+		Expect(editSub.Args).To(Equal([]string{argFlag, argValue}))
 	})
 
 	It("should return empty deprecation warning", func() {

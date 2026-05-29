@@ -59,6 +59,8 @@ var _ = Describe("TemplateMixin Delimiters", func() {
 })
 
 var _ = Describe("Mixins injection behaviors", func() {
+	const existing = "existing"
+
 	Context("DomainMixin", func() {
 		It("should not overwrite existing domain", func() {
 			tmp := DomainMixin{Domain: "existing.domain"}
@@ -89,9 +91,9 @@ var _ = Describe("Mixins injection behaviors", func() {
 
 	Context("ProjectNameMixin", func() {
 		It("should not overwrite existing project name", func() {
-			tmp := ProjectNameMixin{ProjectName: "existing"}
+			tmp := ProjectNameMixin{ProjectName: existing}
 			tmp.InjectProjectName("new")
-			Expect(tmp.ProjectName).To(Equal("existing"))
+			Expect(tmp.ProjectName).To(Equal(existing))
 		})
 
 		It("should inject project name when empty", func() {
@@ -103,9 +105,9 @@ var _ = Describe("Mixins injection behaviors", func() {
 
 	Context("BoilerplateMixin", func() {
 		It("should not overwrite existing boilerplate", func() {
-			tmp := BoilerplateMixin{Boilerplate: "existing"}
+			tmp := BoilerplateMixin{Boilerplate: existing}
 			tmp.InjectBoilerplate("new")
-			Expect(tmp.Boilerplate).To(Equal("existing"))
+			Expect(tmp.Boilerplate).To(Equal(existing))
 		})
 
 		It("should inject boilerplate when empty", func() {
@@ -117,10 +119,10 @@ var _ = Describe("Mixins injection behaviors", func() {
 
 	Context("ResourceMixin", func() {
 		It("should not overwrite existing resource", func() {
-			existing := &resource.Resource{GVK: resource.GVK{Group: "existing"}}
-			tmp := ResourceMixin{Resource: existing}
+			existingRes := &resource.Resource{GVK: resource.GVK{Group: existing}}
+			tmp := ResourceMixin{Resource: existingRes}
 			tmp.InjectResource(&resource.Resource{GVK: resource.GVK{Group: "new"}})
-			Expect(tmp.Resource.Group).To(Equal("existing"))
+			Expect(tmp.Resource.Group).To(Equal(existing))
 		})
 
 		It("should inject resource when nil", func() {

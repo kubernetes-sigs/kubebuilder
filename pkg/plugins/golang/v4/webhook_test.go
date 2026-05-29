@@ -41,12 +41,12 @@ var _ = Describe("createWebhookSubcommand", func() {
 		subCmd.options = &goPlugin.Options{}
 		res = &resource.Resource{
 			GVK: resource.GVK{
-				Group:   "crew",
-				Domain:  "test.io",
+				Group:   crewGroup,
+				Domain:  testIO,
 				Version: "v1",
-				Kind:    "Captain",
+				Kind:    captainKind,
 			},
-			Plural:   "captains",
+			Plural:   captains,
 			Webhooks: &resource.Webhooks{},
 		}
 	})
@@ -86,20 +86,20 @@ var _ = Describe("createWebhookSubcommand", func() {
 		BeforeEach(func() {
 			res = &resource.Resource{
 				GVK: resource.GVK{
-					Group:   "crew",
-					Domain:  "test.io",
+					Group:   crewGroup,
+					Domain:  testIO,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
 			}
 
 			for _, version := range []string{"v1", "v2", "v1beta1"} {
 				r := resource.Resource{
 					GVK: resource.GVK{
-						Group:   "crew",
-						Domain:  "test.io",
+						Group:   crewGroup,
+						Domain:  testIO,
 						Version: version,
-						Kind:    "Captain",
+						Kind:    captainKind,
 					},
 					API: &resource.API{CRDVersion: "v1"},
 				}
@@ -119,10 +119,10 @@ var _ = Describe("createWebhookSubcommand", func() {
 		It("should return false for different group", func() {
 			differentRes := resource.Resource{
 				GVK: resource.GVK{
-					Group:   "ship",
-					Domain:  "test.io",
+					Group:   shipGroup,
+					Domain:  testIO,
 					Version: "v1",
-					Kind:    "Frigate",
+					Kind:    frigateKind,
 				},
 				API: &resource.API{CRDVersion: "v1"},
 			}
@@ -135,8 +135,8 @@ var _ = Describe("createWebhookSubcommand", func() {
 		It("should return false for different kind", func() {
 			differentRes := resource.Resource{
 				GVK: resource.GVK{
-					Group:   "crew",
-					Domain:  "test.io",
+					Group:   crewGroup,
+					Domain:  testIO,
 					Version: "v1",
 					Kind:    "Pirate",
 				},

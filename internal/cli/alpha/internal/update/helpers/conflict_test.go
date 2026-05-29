@@ -72,7 +72,9 @@ var _ = Describe("Conflict Detection", func() {
 			cs := ConflictSummary{Makefile: false, API: false, AnyGo: false}
 			targets := DecideMakeTargets(cs)
 
-			expected := []string{"manifests", "generate", "fmt", "vet", "lint-fix"}
+			expected := []string{
+				makeTargetManifests, makeTargetGenerate, makeTargetFmt, makeTargetVet, makeTargetLintFix,
+			}
 			Expect(targets).To(Equal(expected))
 		})
 
