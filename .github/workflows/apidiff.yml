@@ -29,16 +29,16 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: go.mod
-      # When go-apidiff fails, maintainers may add label apidiff-override to accept intentional API changes (fork PRs use GitHub Actions; same-repo PRs use Prow).
-      - name: Execute go-apidiff
-        id: go-apidiff
+      # When the APIDiff check fails, maintainers may add label apidiff-override to accept intentional API changes (fork PRs use GitHub Actions; same-repo PRs use Prow).
+      - name: Verify API differences
+        id: apidiff
         continue-on-error: true
         uses: joelanford/go-apidiff@60c4206be8f84348ebda2a3e0c3ac9cb54b8f685 # v0.8.3
         with:
           compare-imports: true
           print-compatible: true
-      - name: Require clean API diff or override label
-        if: ${{ steps.go-apidiff.outcome == 'failure' }}
+      - name: Require APIDiff success or override label
+        if: ${{ steps.apidiff.outcome == 'failure' }}
         env:
           GH_TOKEN: ${{ github.token }}
           OWNER: ${{ github.repository_owner }}
@@ -48,8 +48,8 @@ jobs:
         run: |
           set -euo pipefail
           if gh api "repos/${OWNER}/${REPO}/pulls/${PR}" --jq '.labels[].name' | grep -qxF "${OVERRIDE_LABEL}"; then
-            echo "Found label '${OVERRIDE_LABEL}'; accepting failed API diff check."
+            echo "Found label '${OVERRIDE_LABEL}'; accepting failed APIDiff check."
             exit 0
           fi
-          echo "::error::API diff reported incompatible changes and PR does not have label '${OVERRIDE_LABEL}'. Maintainers may add that label if the change is intentional."
+          echo "::error::APIDiff reported incompatible changes and PR does not have label '${OVERRIDE_LABEL}'. Maintainers may add that label if the change is intentional."
           exit 1
