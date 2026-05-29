@@ -28,6 +28,49 @@ import (
 const testProjectName = "test-project"
 
 var _ = Describe("HelmValues", func() {
+	Describe("NetworkPolicy section", func() {
+		It("should default networkPolicy.enable to false when no NetworkPolicy resources exist", func() {
+			values := &HelmValues{
+				Extraction: nil,
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: false"))
+		})
+
+		It("should set networkPolicy.enable to true when NetworkPolicy resources are detected", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasNetworkPolicy: true,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: true"))
+		})
+
+		It("should set networkPolicy.enable to false when HasNetworkPolicy is false", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasNetworkPolicy: false,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: false"))
+		})
+	})
+
 	Describe("RoleNamespaces rendering", func() {
 		Context("when no roleNamespaces are detected", func() {
 			It("should not include roleNamespaces section when Extraction is nil", func() {

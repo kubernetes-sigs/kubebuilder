@@ -26,7 +26,8 @@ Many users prefer Helm for packaging and upgrades. This plugin converts `dist/in
 - Preserves environment variables, labels, annotations, and patches
 - Organizes templates to match your `config/` directory layout
 - Includes only configurable parameters in `values.yaml`
-- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, and `test-chart.yml` unless you use `--force`
+- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, and `templates/network-policy/*.yaml` unless you use `--force`
+- Adds default `ServiceMonitor` and `NetworkPolicy` templates when kustomize output does not provide them
 - Places custom resources in `templates/extras/` with Helm templating
 
 ## Usage
@@ -112,6 +113,9 @@ The plugin generates a chart layout that mirrors your `config/` directory:
     │   └── webhook-service.yaml
     ├── monitoring/
     │   └── servicemonitor.yaml
+    ├── network-policy/
+    │   ├── allow-metrics-traffic.yaml
+    │   └── allow-webhook-traffic.yaml  # If webhooks are configured
     └── extras/                  # Custom resources (if any)
         ├── my-service.yaml
         └── my-config.yaml
@@ -194,6 +198,12 @@ Install without webhooks:
 helm install my-release ./dist/chart --set webhook.enable=false --set certManager.enable=false
 ```
 
+Install with NetworkPolicy resources:
+
+```bash
+helm install my-release ./dist/chart --set networkPolicy.enable=true
+```
+
 ### Extra volumes
 
 Add volumes and volume mounts to the manager deployment beyond webhook and metrics certificates.
@@ -224,6 +234,12 @@ When `false`:
 The `metrics-auth-role` and `metrics-reader` are always ClusterRoles, even when `rbac.namespaced=true`. Metrics authentication uses cluster-scoped APIs for authenticating scrapers like Prometheus.
 
 </aside>
+
+### NetworkPolicy configuration
+
+Set `networkPolicy.enable: true` to install NetworkPolicy resources for the manager pod.
+
+When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enable: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
 
 ### Custom labels and annotations
 
@@ -335,7 +351,7 @@ Optional fields in `values.yaml` use Helm conditionals. Comment them out to excl
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `templates/network-policy/*.yaml`) |
 
 <aside class="note" role="note">
 <p class="note-title"> Examples </p>

@@ -36,12 +36,14 @@ const (
 	KindMutatingWebhook    = "MutatingWebhookConfiguration"
 	KindDeployment         = "Deployment"
 	KindCRD                = "CustomResourceDefinition"
+	KindNetworkPolicy      = "NetworkPolicy"
 )
 
 // API versions
 const (
 	APIVersionCertManager = "cert-manager.io/v1"
 	APIVersionMonitoring  = "monitoring.coreos.com/v1"
+	APIVersionNetworking  = "networking.k8s.io/v1"
 )
 
 // YAML keys

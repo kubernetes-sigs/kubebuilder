@@ -58,7 +58,8 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 	subcmdMeta.Description = `Generate a Helm chart from your project's kustomize output.
 
 Parses 'make build-installer' output (dist/install.yaml) and generates chart to allow easy
-distribution of your project. When enabled, adds Helm helpers targets to Makefile`
+distribution of your project. It also scaffolds default ServiceMonitor and NetworkPolicy templates
+when the kustomize output does not provide them. When enabled, adds Helm helpers targets to Makefile`
 
 	subcmdMeta.Examples = fmt.Sprintf(`# Generate Helm chart from default manifests (dist/install.yaml) to default output (dist/)
   %[1]s edit --plugins=%[2]s
@@ -81,7 +82,7 @@ distribution of your project. When enabled, adds Helm helpers targets to Makefil
 
 **NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
 Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
-and .github/workflows/test-chart.yml.
+.github/workflows/test-chart.yml, and templates/network-policy/*.yaml.
 All other template files in templates/ are always regenerated to match your current
 kustomize output. Use --force to regenerate all files except Chart.yaml.
 
@@ -96,6 +97,7 @@ The generated chart structure mirrors your config/ directory:
     ├── rbac/
     ├── manager/
     ├── webhook/
+    ├── network-policy/
     └── ...
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }

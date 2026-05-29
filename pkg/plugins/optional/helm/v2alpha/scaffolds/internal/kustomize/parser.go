@@ -53,6 +53,9 @@ type ParsedResources struct {
 	// Monitoring resources
 	ServiceMonitors []*unstructured.Unstructured
 
+	// Network policy resources
+	NetworkPolicies []*unstructured.Unstructured
+
 	// Other resources not fitting above categories
 	Other []*unstructured.Unstructured
 }
@@ -95,6 +98,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		Certificates:              make([]*unstructured.Unstructured, 0),
 		WebhookConfigurations:     make([]*unstructured.Unstructured, 0),
 		ServiceMonitors:           make([]*unstructured.Unstructured, 0),
+		NetworkPolicies:           make([]*unstructured.Unstructured, 0),
 		CustomResources:           make([]*unstructured.Unstructured, 0),
 		Other:                     make([]*unstructured.Unstructured, 0),
 	}
@@ -156,6 +160,8 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.WebhookConfigurations = append(resources.WebhookConfigurations, obj)
 	case kind == "ServiceMonitor" && apiVersion == "monitoring.coreos.com/v1":
 		resources.ServiceMonitors = append(resources.ServiceMonitors, obj)
+	case kind == "NetworkPolicy" && apiVersion == "networking.k8s.io/v1":
+		resources.NetworkPolicies = append(resources.NetworkPolicies, obj)
 	default:
 		resources.Other = append(resources.Other, obj)
 	}

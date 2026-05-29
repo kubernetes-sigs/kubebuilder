@@ -1,0 +1,26 @@
+{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "project.name" . }}
+  name: {{ include "project.resourceName" (dict "suffix" "allow-webhook-traffic" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: {{ include "project.name" . }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            webhook: enabled
+      ports:
+        - port: {{ .Values.webhook.port }}
+          protocol: TCP
+{{- end }}

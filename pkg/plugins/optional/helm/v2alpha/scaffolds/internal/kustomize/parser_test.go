@@ -214,6 +214,47 @@ spec:
 		})
 	})
 
+	Context("with NetworkPolicy", func() {
+		BeforeEach(func() {
+			yamlContent := `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-traffic
+  namespace: test-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            metrics: enabled
+      ports:
+        - port: 8443
+          protocol: TCP
+`
+			err := os.WriteFile(tempFile, []byte(yamlContent), 0o600)
+			Expect(err).NotTo(HaveOccurred())
+
+			parser = NewParser(tempFile)
+		})
+
+		It("should parse NetworkPolicy", func() {
+			resources, err := parser.Parse()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(resources.NetworkPolicies).To(HaveLen(1))
+
+			np := resources.NetworkPolicies[0]
+			Expect(np.GetKind()).To(Equal("NetworkPolicy"))
+			Expect(np.GetName()).To(Equal("allow-metrics-traffic"))
+		})
+	})
+
 	Context("with empty or invalid YAML", func() {
 		It("should handle empty file gracefully", func() {
 			err := os.WriteFile(tempFile, []byte(""), 0o600)

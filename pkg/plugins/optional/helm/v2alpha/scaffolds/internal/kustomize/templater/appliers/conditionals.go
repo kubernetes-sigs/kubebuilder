@@ -47,6 +47,11 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 	case kind == common.KindServiceMonitor && apiVersion == common.APIVersionMonitoring:
 		// CRITICAL: newline before {{- end }} prevents whitespace chomping from eating content
 		return fmt.Sprintf("{{- if .Values.prometheus.enable }}\n%s\n{{- end }}", yamlContent)
+	case kind == common.KindNetworkPolicy && apiVersion == common.APIVersionNetworking:
+		if strings.HasSuffix(name, "allow-webhook-traffic") {
+			return fmt.Sprintf("{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}\n%s\n{{- end }}", yamlContent)
+		}
+		return fmt.Sprintf("{{- if .Values.networkPolicy.enable }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindServiceAccount, kind == common.KindRole, kind == common.KindClusterRole,
 		kind == common.KindRoleBinding, kind == common.KindClusterRoleBinding:
 		return HandleRBACConditionalWrappers(yamlContent, kind, name)
