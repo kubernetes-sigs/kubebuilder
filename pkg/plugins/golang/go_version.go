@@ -75,7 +75,7 @@ func (v *GoVersion) parse(verStr string) error {
 	if m[3] != "" {
 		v.patch, err = strconv.Atoi(m[3])
 		if err != nil {
-			return fmt.Errorf("error parsing patch version %q: %w", m[2], err)
+			return fmt.Errorf("error parsing patch version %q: %w", m[3], err)
 		}
 	}
 
