@@ -27,7 +27,7 @@ import (
 const (
 	unknown                 = "unknown"
 	develVersion            = "(devel)"
-	kubernetesVendorVersion = "1.35.0"
+	kubernetesVendorVersion = "1.36.0"
 )
 
 type Version struct {
