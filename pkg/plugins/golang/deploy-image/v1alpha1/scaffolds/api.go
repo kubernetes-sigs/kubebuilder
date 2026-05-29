@@ -122,6 +122,12 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(
+		&controllers.Conditions{},
+	); err != nil {
+		return fmt.Errorf("error scaffolding controller status reasons: %w", err)
+	}
+
+	if err := scaffold.Execute(
 		controller,
 	); err != nil {
 		return fmt.Errorf("error scaffolding controller: %w", err)

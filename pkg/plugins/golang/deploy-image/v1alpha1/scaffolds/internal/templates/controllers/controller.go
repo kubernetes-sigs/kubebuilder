@@ -37,8 +37,6 @@ type Controller struct {
 	machinery.NamespacedMixin
 
 	ControllerRuntimeVersion string
-
-	PackageName string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -53,8 +51,6 @@ func (f *Controller) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Info(f.Path)
 
-	f.PackageName = "controller"
-
 	log.Info("creating import for resource", "resource_path", f.Resource.Path)
 	f.TemplateBody = controllerTemplate
 
@@ -67,7 +63,11 @@ func (f *Controller) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
-package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}{{ .PackageName }}{{ end }}
+{{if and .MultiGroup .Resource.Group }}
+package {{ .Resource.PackageName }}
+{{else}}
+package controller
+{{end}}
 
 import (
 	"context"
@@ -164,7 +164,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	}
 	
 	if len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
-		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: reasonReconciling, Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 			log.Error(err, "Failed to update {{ .Resource.Kind }} status")
 			return ctrl.Result{}, err
@@ -202,7 +202,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
-				Status: metav1.ConditionUnknown, Reason: "Finalizing",
+				Status: metav1.ConditionUnknown, Reason: reasonFinalizing,
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", {{ lower .Resource.Kind }}.Name)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -228,7 +228,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			}
 
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
-				Status: metav1.ConditionTrue, Reason: "Finalizing",
+				Status: metav1.ConditionTrue, Reason: reasonFinalizing,
 				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", {{ lower .Resource.Kind }}.Name)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -262,7 +262,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-				Status: metav1.ConditionFalse, Reason: "Reconciling",
+				Status: metav1.ConditionFalse, Reason: reasonReconciling,
 				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", {{ lower .Resource.Kind }}.Name, err)})
 
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -337,7 +337,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 	// The following implementation will update the status
 	meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Status: metav1.ConditionTrue, Reason: reasonReconciling,
 		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {

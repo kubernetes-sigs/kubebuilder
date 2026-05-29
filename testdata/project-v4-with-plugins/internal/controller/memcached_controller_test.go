@@ -145,7 +145,7 @@ var _ = Describe("Memcached controller", func() {
 				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableMemcached)
+			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailableMemcached)
 		})
 	})
 })

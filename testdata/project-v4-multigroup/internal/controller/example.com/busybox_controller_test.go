@@ -144,7 +144,7 @@ var _ = Describe("Busybox controller", func() {
 				HaveField("Type", Equal(typeAvailableBusybox)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableBusybox)
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableBusybox)
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableBusybox)
+			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailableBusybox)
 		})
 	})
 })
