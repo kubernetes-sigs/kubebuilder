@@ -228,7 +228,7 @@ func getExternalPluginFlags(req external.PluginRequest, path string) ([]external
 // isBooleanFlag is a helper function to determine if an argument flag is a boolean flag
 func isBooleanFlag(argIndex int, args []string) bool {
 	return argIndex+1 < len(args) &&
-		strings.Contains(args[argIndex+1], "--") ||
+		strings.HasPrefix(args[argIndex+1], "--") ||
 		argIndex+1 >= len(args)
 }
 
@@ -239,7 +239,7 @@ func bindAllFlags(fs *pflag.FlagSet, args []string) {
 
 	// Bind all flags passed in
 	for i := range args {
-		if strings.Contains(args[i], "--") {
+		if strings.HasPrefix(args[i], "--") {
 			flag := strings.Replace(args[i], "--", "", 1)
 			// Check if the flag is a boolean flag
 			if isBooleanFlag(i, args) {
