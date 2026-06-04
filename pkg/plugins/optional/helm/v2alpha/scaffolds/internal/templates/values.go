@@ -84,7 +84,7 @@ func (f *HelmValues) generateValues() string {
 manager:
   ## Set to false to skip manager installation
   ##
-  enabled: true
+  enable: true
 
 `)
 

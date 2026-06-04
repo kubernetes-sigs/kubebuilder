@@ -62,10 +62,10 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 		return HandleServiceConditionalWrappers(yamlContent, name)
 	case kind == common.KindDeployment:
 		// Manager deployment conditional allows backward compatibility:
-		// enabled when manager.enabled key is absent OR when explicitly true
+		// enabled when manager.enable key is absent OR when explicitly true
 		if IsManagerDeployment(resource) {
 			return fmt.Sprintf(
-				"{{- if or (not (hasKey .Values.manager \"enabled\")) (.Values.manager.enabled) }}\n%s\n{{- end }}\n",
+				"{{- if or (not (hasKey .Values.manager \"enable\")) (.Values.manager.enable) }}\n%s\n{{- end }}\n",
 				yamlContent,
 			)
 		}

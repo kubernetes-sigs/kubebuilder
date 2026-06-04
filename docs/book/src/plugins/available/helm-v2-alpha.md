@@ -189,7 +189,7 @@ helm install my-release ./dist/chart --namespace my-project-system --create-name
 Install only CRDs and RBAC:
 
 ```bash
-helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enable=false
+helm install my-release ./dist/chart --set manager.enable=false --set webhook.enable=false
 ```
 
 Install without webhooks:

@@ -1,4 +1,4 @@
-{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
+{{- if or (not (hasKey .Values.manager "enable")) (.Values.manager.enable) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

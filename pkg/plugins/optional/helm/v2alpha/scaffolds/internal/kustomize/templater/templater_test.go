@@ -1010,7 +1010,7 @@ spec:
 			Expect(result).To(ContainSubstring(expectedAnnotations))
 		})
 
-		It("should add manager.enabled conditional for manager Deployments", func() {
+		It("should add manager.enable conditional for manager Deployments", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")
 			deploymentResource.SetKind("Deployment")
@@ -1026,13 +1026,13 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			// Should be wrapped with manager.enabled conditional that defaults to true when key is absent
-			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			// Should be wrapped with manager.enable conditional that defaults to true when key is absent
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enable")) (.Values.manager.enable) }}`
 			Expect(result).To(ContainSubstring(expectedConditional))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should not add manager.enabled conditional for non-manager Deployments", func() {
+		It("should not add manager.enable conditional for non-manager Deployments", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")
 			deploymentResource.SetKind("Deployment")
@@ -1048,10 +1048,10 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			// Should NOT be wrapped with manager.enabled conditional
-			expectedConditional := `{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}`
+			// Should NOT be wrapped with manager.enable conditional
+			expectedConditional := `{{- if or (not (hasKey .Values.manager "enable")) (.Values.manager.enable) }}`
 			Expect(result).NotTo(ContainSubstring(expectedConditional))
-			Expect(result).NotTo(ContainSubstring(".Values.manager.enabled"))
+			Expect(result).NotTo(ContainSubstring(".Values.manager.enable"))
 		})
 	})
 
