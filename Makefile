@@ -106,6 +106,10 @@ fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
 	@echo "Removing trailing spaces from markdown files..."
 	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
 
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint linter
+	$(GOLANGCI_LINT) run
+
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
