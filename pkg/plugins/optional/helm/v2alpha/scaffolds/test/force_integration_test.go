@@ -136,7 +136,7 @@ spec:
 	})
 
 	Context("when --force flag is NOT used", func() {
-		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, test-chart.yml, and NetworkPolicy templates", func() {
+		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, test-chart.yml, and allow-metrics-traffic.yaml", func() {
 			// First generation with force=false
 			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
 			scaffolder.InjectFS(fs)
@@ -225,7 +225,7 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(networkPolicyContent)).To(
 				Equal(customNetworkPolicyContent),
-				"NetworkPolicy templates should not be overwritten without --force",
+				"allow-metrics-traffic.yaml should not be overwritten without --force",
 			)
 
 			testChartContent, err := os.ReadFile(testChartPath)
@@ -312,11 +312,11 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(networkPolicyContent)).NotTo(
 				Equal(customNetworkPolicyContent),
-				"NetworkPolicy templates should be overwritten with --force",
+				"allow-metrics-traffic.yaml should be overwritten with --force",
 			)
 			Expect(string(networkPolicyContent)).To(
 				ContainSubstring("kind: NetworkPolicy"),
-				"NetworkPolicy template should contain the generated policy",
+				"allow-metrics-traffic.yaml should contain the generated policy",
 			)
 
 			testChartContent, err := os.ReadFile(testChartPath)

@@ -197,7 +197,7 @@ The plugin uses Kubebuilder's Machinery framework for file management:
 
 **Never overwrite:** `Chart.yaml` (user-managed version info)
 
-**Overwrite only with `--force`:** `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `.github/workflows/test-chart.yml`
+**Overwrite only with `--force`:** `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `.github/workflows/test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`
 
 **Always overwrite:** All `templates/` resources (manager, rbac, webhook, etc.)
 
