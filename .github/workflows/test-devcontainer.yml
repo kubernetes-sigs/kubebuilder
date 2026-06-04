@@ -26,7 +26,7 @@ jobs:
           persist-credentials: false
 
       - name: Build and Run Dev Container Tests
-        uses: devcontainers/ci@b63b30de439b47a52267f241112c5b453b673db5 # v0.3.1900000449
+        uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
         with:
           subFolder: testdata/project-v4
           runCmd: |
