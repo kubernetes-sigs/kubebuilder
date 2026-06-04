@@ -82,7 +82,8 @@ when the kustomize output does not provide them. When enabled, adds Helm helpers
 
 **NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
 Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
-.github/workflows/test-chart.yml, and templates/network-policy/*.yaml.
+.github/workflows/test-chart.yml, network-policy/allow-metrics-traffic.yaml, and
+network-policy/allow-webhook-traffic.yaml.
 All other template files in templates/ are always regenerated to match your current
 kustomize output. Use --force to regenerate all files except Chart.yaml.
 
