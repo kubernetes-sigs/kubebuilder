@@ -519,6 +519,25 @@ var _ = Describe("Discover external plugins", func() {
 				"xn--bcher-kva.example",
 			}))
 		})
+
+		It("should not forward --plugins=<value> (equals form) to external plugins", func() {
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
+			os.Args = []string{
+				"kubebuilder",
+				"init",
+				"--plugins=myexternalplugin/v1",
+				"--domain",
+				"example.com",
+			}
+
+			args := parseExternalPluginArgs()
+			Expect(args).Should(ContainElements(
+				"--domain",
+				"example.com",
+			))
+			Expect(args).ShouldNot(ContainElement("--plugins=myexternalplugin/v1"))
+		})
 	})
 })
 
