@@ -179,7 +179,7 @@ func parseExternalPluginArgs() (args []string) {
 	// Loop through os.Args and only get flags and their values that should be passed to the plugins
 	// this also removes the --plugins flag and its values from the list passed to the external plugin
 	for i := range os.Args {
-		if strings.HasPrefix(os.Args[i], "--") && os.Args[i] != "--plugins" {
+		if strings.HasPrefix(os.Args[i], "--") && os.Args[i] != "--plugins" && !strings.HasPrefix(os.Args[i], "--plugins=") {
 			args = append(args, os.Args[i])
 
 			// Don't go out of bounds and don't append the next value if it is a flag
