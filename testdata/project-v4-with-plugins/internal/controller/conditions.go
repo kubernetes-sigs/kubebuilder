@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2026 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,21 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
-
-import (
-	"testing"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-)
+package controller
 
 const (
-	v1      = "v1"
-	v1beta1 = "v1beta1"
+	reasonReconciling = "Reconciling"
+	reasonFinalizing  = "Finalizing"
 )
-
-func TestResource(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Resource Suite")
-}

@@ -89,13 +89,27 @@ func MakeYamlContent(match string) string {
 	return match
 }
 
+const (
+	k8sObjectSpecField     = "spec"
+	k8sObjectTemplateField = "template"
+)
+
+var (
+	podTemplateContainersPath = []string{
+		k8sObjectSpecField, k8sObjectTemplateField, k8sObjectSpecField, "containers",
+	}
+	podTemplateInitContainersPath = []string{
+		k8sObjectSpecField, k8sObjectTemplateField, k8sObjectSpecField, "initContainers",
+	}
+)
+
 // ExtractContainerNames returns the set of container and initContainer names declared in a
 // Deployment (or any Pod-template-bearing resource).
 func ExtractContainerNames(resource *unstructured.Unstructured) map[string]bool {
 	names := map[string]bool{}
 	for _, fieldPath := range [][]string{
-		{"spec", "template", "spec", "containers"},
-		{"spec", "template", "spec", "initContainers"},
+		podTemplateContainersPath,
+		podTemplateInitContainersPath,
 	} {
 		val, found, err := unstructured.NestedFieldNoCopy(resource.Object, fieldPath...)
 		if err != nil || !found {

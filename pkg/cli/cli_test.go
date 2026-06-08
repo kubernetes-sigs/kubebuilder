@@ -141,6 +141,15 @@ type captureSubcommand struct {
 func (c *captureSubcommand) Scaffold(machinery.Filesystem) error { return nil }
 
 var _ = Describe("CLI", func() {
+	const (
+		pluginGoV1           = "go/v1"
+		pluginExampleV2      = "example/v2"
+		pluginTestV1         = "test/v1"
+		deployImageFooPlugin = "deploy-image.foo.example.com/v1-alpha"
+		deployImageBarPlugin = "deploy-image.bar.example.com/v1-alpha"
+		subcommandExtra      = "extra"
+	)
+
 	var (
 		c              *CLI
 		projectVersion config.Version
@@ -189,9 +198,9 @@ var _ = Describe("CLI", func() {
 
 			Expect(tuples).To(HaveLen(2))
 			Expect(tuples[0].key).To(Equal("deploy-image.go.kubebuilder.io/v1-alpha"))
-			Expect(tuples[0].configKey).To(Equal("deploy-image.foo.example.com/v1-alpha"))
+			Expect(tuples[0].configKey).To(Equal(deployImageFooPlugin))
 			Expect(tuples[1].key).To(Equal("deploy-image.go.kubebuilder.io/v1-alpha"))
-			Expect(tuples[1].configKey).To(Equal("deploy-image.bar.example.com/v1-alpha"))
+			Expect(tuples[1].configKey).To(Equal(deployImageBarPlugin))
 		})
 	})
 
@@ -199,8 +208,8 @@ var _ = Describe("CLI", func() {
 		It("temporarily reorders the plugin chain while invoking bundled subcommands", func() {
 			cfg := cfgv3.New()
 			Expect(cfg.SetPluginChain([]string{
-				"deploy-image.foo.example.com/v1-alpha",
-				"deploy-image.bar.example.com/v1-alpha",
+				deployImageFooPlugin,
+				deployImageBarPlugin,
 			})).To(Succeed())
 
 			store := &fakeStore{cfg: cfg}
@@ -210,8 +219,8 @@ var _ = Describe("CLI", func() {
 			factory := executionHooksFactory{
 				store: store,
 				subcommands: []keySubcommandTuple{
-					{configKey: "deploy-image.foo.example.com/v1-alpha", subcommand: first},
-					{configKey: "deploy-image.bar.example.com/v1-alpha", subcommand: second},
+					{configKey: deployImageFooPlugin, subcommand: first},
+					{configKey: deployImageBarPlugin, subcommand: second},
 				},
 				errorMessage: "test",
 			}
@@ -222,11 +231,11 @@ var _ = Describe("CLI", func() {
 				return nil
 			}, "scaffold")
 			Expect(callErr).NotTo(HaveOccurred())
-			Expect(first.lastChain[0]).To(Equal("deploy-image.foo.example.com/v1-alpha"))
-			Expect(second.lastChain[0]).To(Equal("deploy-image.bar.example.com/v1-alpha"))
+			Expect(first.lastChain[0]).To(Equal(deployImageFooPlugin))
+			Expect(second.lastChain[0]).To(Equal(deployImageBarPlugin))
 			Expect(store.Config().GetPluginChain()).To(Equal([]string{
-				"deploy-image.foo.example.com/v1-alpha",
-				"deploy-image.bar.example.com/v1-alpha",
+				deployImageFooPlugin,
+				deployImageBarPlugin,
 			}))
 		})
 	})
@@ -284,7 +293,7 @@ plugins:
 	Context("getInfoFromConfig", func() {
 		When("having a single plugin in the layout field", func() {
 			It("should succeed", func() {
-				pluginChain := []string{"go.kubebuilder.io/v4"}
+				pluginChain := []string{pluginGoKubebuilderV4}
 				projectConfig := cfgv3.New()
 				Expect(projectConfig.SetPluginChain(pluginChain)).To(Succeed())
 
@@ -296,7 +305,7 @@ plugins:
 
 		When("having multiple plugins in the layout field", func() {
 			It("should succeed", func() {
-				pluginChain := []string{"go.kubebuilder.io/v2", "deploy-image.go.kubebuilder.io/v1-alpha"}
+				pluginChain := []string{pluginGoKubebuilderV2, "deploy-image.go.kubebuilder.io/v1-alpha"}
 
 				projectConfig := cfgv3.New()
 				Expect(projectConfig.SetPluginChain(pluginChain)).To(Succeed())
@@ -341,7 +350,7 @@ plugins:
 
 		When(fmt.Sprintf("--%s flag is set", pluginsFlag), func() {
 			It("should succeed using one plugin key", func() {
-				pluginKeys := []string{"go/v1"}
+				pluginKeys := []string{pluginGoV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
@@ -350,7 +359,7 @@ plugins:
 			})
 
 			It("should succeed using more than one plugin key", func() {
-				pluginKeys := []string{"go/v1", "example/v2", "test/v1"}
+				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
@@ -359,7 +368,7 @@ plugins:
 			})
 
 			It("should succeed using more than one plugin key with spaces", func() {
-				pluginKeys := []string{"go/v1", "example/v2", "test/v1"}
+				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ", "))
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
@@ -392,7 +401,7 @@ plugins:
 
 		When(fmt.Sprintf("--%s and --%s flags are set", pluginsFlag, projectVersionFlag), func() {
 			It("should succeed using one plugin key", func() {
-				pluginKeys := []string{"go/v1"}
+				pluginKeys := []string{pluginGoV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 				setProjectVersionFlag(projectVersion.String())
 
@@ -402,7 +411,7 @@ plugins:
 			})
 
 			It("should succeed using more than one plugin key", func() {
-				pluginKeys := []string{"go/v1", "example/v2", "test/v1"}
+				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 				setProjectVersionFlag(projectVersion.String())
 
@@ -412,7 +421,7 @@ plugins:
 			})
 
 			It("should succeed using more than one plugin key with spaces", func() {
-				pluginKeys := []string{"go/v1", "example/v2", "test/v1"}
+				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ", "))
 				setProjectVersionFlag(projectVersion.String())
 
@@ -459,7 +468,7 @@ plugins:
 		var pluginKeys []string
 
 		BeforeEach(func() {
-			pluginKeys = []string{"go.kubebuilder.io/v2"}
+			pluginKeys = []string{pluginGoKubebuilderV2}
 		})
 
 		It("should be a no-op if already have plugin keys", func() {
@@ -716,7 +725,7 @@ plugins:
 
 		When("providing extra commands", func() {
 			It("should create a valid CLI for non-conflicting ones", func() {
-				extraCommand := &cobra.Command{Use: "extra"}
+				extraCommand := &cobra.Command{Use: subcommandExtra}
 				c, err = New(
 					WithPlugins(&golangv4.Plugin{}),
 					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
@@ -727,7 +736,7 @@ plugins:
 			})
 
 			It("should return an error for conflicting ones", func() {
-				extraCommand := &cobra.Command{Use: "init"}
+				extraCommand := &cobra.Command{Use: kubebuilderSubcommandInit}
 				c, err = New(
 					WithPlugins(&golangv4.Plugin{}),
 					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
@@ -739,7 +748,7 @@ plugins:
 
 		When("providing extra alpha commands", func() {
 			It("should create a valid CLI for non-conflicting ones", func() {
-				extraAlphaCommand := &cobra.Command{Use: "extra"}
+				extraAlphaCommand := &cobra.Command{Use: subcommandExtra}
 				c, err = New(
 					WithPlugins(&golangv4.Plugin{}),
 					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
@@ -758,7 +767,7 @@ plugins:
 			})
 
 			It("should return an error for conflicting ones", func() {
-				extraAlphaCommand := &cobra.Command{Use: "extra"}
+				extraAlphaCommand := &cobra.Command{Use: subcommandExtra}
 				_, err = New(
 					WithPlugins(&golangv4.Plugin{}),
 					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),

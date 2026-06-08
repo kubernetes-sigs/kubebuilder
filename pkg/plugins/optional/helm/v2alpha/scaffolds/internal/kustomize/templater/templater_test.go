@@ -26,6 +26,15 @@ import (
 )
 
 const (
+	testProjectName                 = "test-project"
+	testProjectSystemNamespace      = "test-project-system"
+	testRoleNamespaceInfrastructure = "infrastructure"
+	testRoleNamespaceUsers          = "users"
+	testManagerRoleName             = "manager-role"
+	testManagerRoleInfrastructure   = "manager-role-infrastructure"
+	testManagerRoleUsers            = "manager-role-users"
+	testManagerRoleBindingUsers     = "manager-rolebinding-users"
+
 	// Test expectation constants for test-project.resourceName templates
 	expectedIssuerName = `name: {{ include "test-project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}`
 )
@@ -35,9 +44,9 @@ var _ = Describe("Templater", func() {
 
 	BeforeEach(func() {
 		templater = &Templater{
-			detectedPrefix:   "test-project",
-			chartName:        "test-project",
-			managerNamespace: "test-project-system",
+			detectedPrefix:   testProjectName,
+			chartName:        testProjectName,
+			managerNamespace: testProjectSystemNamespace,
 			roleNamespaces:   nil,
 		}
 	})
@@ -1563,7 +1572,7 @@ spec:
 			configMapResource.SetAPIVersion("v1")
 			configMapResource.SetKind("ConfigMap")
 			configMapResource.SetName("template-config")
-			configMapResource.SetNamespace("test-project-system")
+			configMapResource.SetNamespace(testProjectSystemNamespace)
 
 			// ANY resource can have Go template syntax that needs escaping
 			// Examples: ConfigMaps with notification templates, Secrets with webhook URLs,
@@ -1853,12 +1862,12 @@ subjects:
 			roleResource := &unstructured.Unstructured{}
 			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			roleResource.SetKind("ClusterRole")
-			roleResource.SetName("manager-role")
+			roleResource.SetName(testManagerRoleName)
 
-			// Scenario: manager namespace is "user", CRD resource is "users"
+			// Scenario: manager namespace is "user", CRD resource is testRoleNamespaceUsers
 			customTemplater := &Templater{
-				detectedPrefix:   "test-project",
-				chartName:        "test-project",
+				detectedPrefix:   testProjectName,
+				chartName:        testProjectName,
 				managerNamespace: "user", // Short namespace that appears as substring
 				roleNamespaces:   nil,
 			}
@@ -1903,8 +1912,8 @@ rules:
 		It("should handle edge case where namespace is substring of multiple fields", func() {
 			// Test more edge cases: namespace "app" appears in "applications", "apps", etc.
 			customTemplater := &Templater{
-				detectedPrefix:   "test-project",
-				chartName:        "test-project",
+				detectedPrefix:   testProjectName,
+				chartName:        testProjectName,
 				managerNamespace: "app",
 				roleNamespaces:   nil,
 			}
@@ -2649,9 +2658,9 @@ spec:
 
 		It("should handle custom kustomize prefix", func() {
 			customPrefixTemplater := &Templater{
-				detectedPrefix:   "ln",           // Custom short prefix from kustomize
-				chartName:        "test-project", // Chart/project name
-				managerNamespace: "ln-system",    // Manager namespace
+				detectedPrefix:   "ln",            // Custom short prefix from kustomize
+				chartName:        testProjectName, // Chart/project name
+				managerNamespace: "ln-system",     // Manager namespace
 				roleNamespaces:   nil,
 			}
 
@@ -3927,18 +3936,18 @@ metadata:
 		It("should preserve role-specific namespace deployments using .Values.rbac.roleNamespaces", func() {
 			// Simulate role-namespace mappings
 			roleNamespaces := map[string]string{
-				"manager-role-infrastructure": "infrastructure",
-				"manager-role-users":          "users",
+				testManagerRoleInfrastructure: testRoleNamespaceInfrastructure,
+				testManagerRoleUsers:          testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role in infrastructure namespace
 			infraRole := &unstructured.Unstructured{}
 			infraRole.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			infraRole.SetKind("Role")
-			infraRole.SetName("manager-role-infrastructure")
-			infraRole.SetNamespace("infrastructure")
+			infraRole.SetName(testManagerRoleInfrastructure)
+			infraRole.SetNamespace(testRoleNamespaceInfrastructure)
 
 			infraContent := `apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -3952,9 +3961,8 @@ rules:
 
 			infraResult := multiNsTemplater.ApplyHelmSubstitutions(infraContent, infraRole)
 
-			// Should template to index .Values.rbac.roleNamespaces "manager-role-infrastructure" with default fallback
-			expectedNs := `namespace: {{ index .Values.rbac.roleNamespaces ` +
-				`"manager-role-infrastructure" | default "infrastructure" }}`
+			expectedNs := `namespace: {{ index .Values.rbac.roleNamespaces "` + testManagerRoleInfrastructure +
+				`" | default "` + testRoleNamespaceInfrastructure + `" }}`
 			Expect(infraResult).To(ContainSubstring(expectedNs))
 			// Should NOT use .Release.Namespace
 			Expect(infraResult).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"))
@@ -3962,17 +3970,17 @@ rules:
 
 		It("should preserve namespace in RoleBinding subjects for multi-namespace RBAC", func() {
 			roleNamespaces := map[string]string{
-				"manager-rolebinding-users": "users",
+				testManagerRoleBindingUsers: testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// RoleBinding in users namespace
 			usersBinding := &unstructured.Unstructured{}
 			usersBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			usersBinding.SetKind("RoleBinding")
-			usersBinding.SetName("manager-rolebinding-users")
-			usersBinding.SetNamespace("users")
+			usersBinding.SetName(testManagerRoleBindingUsers)
+			usersBinding.SetNamespace(testRoleNamespaceUsers)
 
 			bindingContent := `apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -3990,21 +3998,21 @@ subjects:
 
 			result := multiNsTemplater.ApplyHelmSubstitutions(bindingContent, usersBinding)
 
-			// RoleBinding namespace should use index .Values.rbac.roleNamespaces with binding name as key and default fallback
 			Expect(result).To(ContainSubstring(
-				`namespace: {{ index .Values.rbac.roleNamespaces "manager-rolebinding-users" | default "users" }}`))
+				`namespace: {{ index .Values.rbac.roleNamespaces "` + testManagerRoleBindingUsers +
+					`" | default "` + testRoleNamespaceUsers + `" }}`))
 			// Subject namespace should use .Release.Namespace (manager namespace)
 			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
 		})
 
 		It("should handle multiple role-namespace mappings simultaneously", func() {
 			roleNamespaces := map[string]string{
-				"manager-role-infrastructure": "infrastructure",
-				"manager-role-users":          "users",
+				testManagerRoleInfrastructure: testRoleNamespaceInfrastructure,
+				testManagerRoleUsers:          testRoleNamespaceUsers,
 				"manager-role-monitoring":     "monitoring",
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role in monitoring namespace
 			monitoringRole := &unstructured.Unstructured{}
@@ -4032,15 +4040,15 @@ rules:
 
 		It("should handle role names with hyphens correctly", func() {
 			roleNamespaces := map[string]string{
-				"manager-role": "app-infrastructure",
+				testManagerRoleName: "app-infrastructure",
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			roleResource := &unstructured.Unstructured{}
 			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			roleResource.SetKind("Role")
-			roleResource.SetName("manager-role")
+			roleResource.SetName(testManagerRoleName)
 			roleResource.SetNamespace("app-infrastructure")
 
 			content := `apiVersion: rbac.authorization.k8s.io/v1
@@ -4055,17 +4063,17 @@ rules:
 
 			result := multiNsTemplater.ApplyHelmSubstitutions(content, roleResource)
 
-			// Role name is used as key with default fallback
 			Expect(result).To(ContainSubstring(
-				`namespace: {{ index .Values.rbac.roleNamespaces "manager-role" | default "app-infrastructure" }}`))
+				`namespace: {{ index .Values.rbac.roleNamespaces "` + testManagerRoleName +
+					`" | default "app-infrastructure" }}`))
 		})
 
 		It("should preserve DNS references for role-specific namespaces", func() {
 			roleNamespaces := map[string]string{
-				"manager-role": "infrastructure",
+				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			configMap := &unstructured.Unstructured{}
 			configMap.SetAPIVersion("v1")
@@ -4087,17 +4095,17 @@ data:
 
 		It("should preserve resource references within role resources", func() {
 			roleNamespaces := map[string]string{
-				"manager-role": "infrastructure",
+				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater("test-project", "test-project", "test-project-system", roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role that has a reference to a resource in its namespace
 			role := &unstructured.Unstructured{}
 			role.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			role.SetKind("Role")
-			role.SetName("manager-role")
-			role.SetNamespace("infrastructure")
+			role.SetName(testManagerRoleName)
+			role.SetNamespace(testRoleNamespaceInfrastructure)
 
 			content := `apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -4110,16 +4118,16 @@ rules: []`
 
 			result := multiNsTemplater.ApplyHelmSubstitutions(content, role)
 
-			// Resource reference should be templated with index and default fallback
 			Expect(result).To(ContainSubstring(
-				`{{ index .Values.rbac.roleNamespaces "manager-role" | default "infrastructure" }}/serving-cert`))
+				`{{ index .Values.rbac.roleNamespaces "` + testManagerRoleName +
+					`" | default "` + testRoleNamespaceInfrastructure + `" }}/serving-cert`))
 		})
 	})
 
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with enable flag", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4142,7 +4150,7 @@ metadata:
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4164,7 +4172,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4188,7 +4196,7 @@ metadata:
 			})
 
 			It("merges custom annotations with existing annotations without duplication", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4222,7 +4230,7 @@ metadata:
 
 		Context("when using default ServiceAccount with nameOverride/fullnameOverride", func() {
 			It("respects nameOverride and fullnameOverride for default ServiceAccount name", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4240,7 +4248,7 @@ metadata:
 			})
 
 			It("ensures ServiceAccount name matches across all resource references", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
@@ -4263,7 +4271,7 @@ spec:
 
 		Context("when binding RBAC permissions to ServiceAccount", func() {
 			It("references ServiceAccount consistently in RoleBinding subjects", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4290,7 +4298,7 @@ subjects:
 			})
 
 			It("references ServiceAccount consistently in ClusterRoleBinding subjects", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				clusterRoleBinding := &unstructured.Unstructured{}
 				clusterRoleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4319,7 +4327,7 @@ subjects:
 
 		Context("when handling project names with prefixes", func() {
 			It("templates ServiceAccount name correctly with project prefix", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4337,7 +4345,7 @@ metadata:
 			})
 
 			It("templates Deployment serviceAccountName field correctly with project prefix", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
@@ -4358,7 +4366,7 @@ spec:
 			})
 
 			It("templates RoleBinding subjects correctly with project prefix", func() {
-				templater := NewTemplater("test-project", "test-project", "test-project-system", nil)
+				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")

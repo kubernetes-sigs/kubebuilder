@@ -122,6 +122,12 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(
+		&controllers.Conditions{},
+	); err != nil {
+		return fmt.Errorf("error scaffolding controller status reasons: %w", err)
+	}
+
+	if err := scaffold.Execute(
 		controller,
 	); err != nil {
 		return fmt.Errorf("error scaffolding controller: %w", err)
@@ -198,12 +204,12 @@ func (s *apiScaffolder) updateMainByAddingEventRecorder(defaultMainPath string) 
 
 // updateControllerCode will update the code generate on the template to add the Container information
 func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) error {
+	containerName := strings.ToLower(s.resource.Kind) + "ContainerName"
+
 	if err := util.ReplaceInFile(
 		controller.Path,
 		"//TODO: scaffold container",
-		fmt.Sprintf(containerTemplate, // value for the image
-			strings.ToLower(s.resource.Kind), // value for the name of the container
-		),
+		fmt.Sprintf(containerTemplate, containerName),
 	); err != nil {
 		return fmt.Errorf("error scaffolding container in the controller path %q: %w",
 			controller.Path, err)
@@ -252,7 +258,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 			fmt.Sprintf(
 				portTemplate,
 				strings.ToLower(s.resource.Kind),
-				strings.ToLower(s.resource.Kind)),
+				containerName),
 		); err != nil {
 			return fmt.Errorf("error scaffolding container port in the controller path %q: %w",
 				controller.Path,
@@ -303,7 +309,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 
 const containerTemplate = `Containers: []corev1.Container{{
 						Image:           image,
-						Name:            "%s",
+						Name:            %s,
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
@@ -327,7 +333,7 @@ const commandTemplate = `
 const portTemplate = `
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: %s.Spec.ContainerPort,
-							Name:          "%s",
+							Name:          %s,
 						}},`
 
 const recorderTemplate = `

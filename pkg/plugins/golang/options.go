@@ -25,30 +25,32 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
+const k8sIODomainSuffix = "k8s.io"
+
 var coreGroups = map[string]string{
-	"admission":             "k8s.io",
-	"admissionregistration": "k8s.io",
+	"admission":             k8sIODomainSuffix,
+	"admissionregistration": k8sIODomainSuffix,
 	"apps":                  "",
-	"auditregistration":     "k8s.io",
-	"apiextensions":         "k8s.io",
-	"authentication":        "k8s.io",
-	"authorization":         "k8s.io",
+	"auditregistration":     k8sIODomainSuffix,
+	"apiextensions":         k8sIODomainSuffix,
+	"authentication":        k8sIODomainSuffix,
+	"authorization":         k8sIODomainSuffix,
 	"autoscaling":           "",
 	"batch":                 "",
-	"certificates":          "k8s.io",
-	"coordination":          "k8s.io",
+	"certificates":          k8sIODomainSuffix,
+	"coordination":          k8sIODomainSuffix,
 	"core":                  "",
-	"events":                "k8s.io",
+	"events":                k8sIODomainSuffix,
 	"extensions":            "",
-	"imagepolicy":           "k8s.io",
-	"networking":            "k8s.io",
-	"node":                  "k8s.io",
-	"metrics":               "k8s.io",
+	"imagepolicy":           k8sIODomainSuffix,
+	"networking":            k8sIODomainSuffix,
+	"node":                  k8sIODomainSuffix,
+	"metrics":               k8sIODomainSuffix,
 	"policy":                "",
-	"rbac.authorization":    "k8s.io",
-	"scheduling":            "k8s.io",
-	"setting":               "k8s.io",
-	"storage":               "k8s.io",
+	"rbac.authorization":    k8sIODomainSuffix,
+	"scheduling":            k8sIODomainSuffix,
+	"setting":               k8sIODomainSuffix,
+	"storage":               k8sIODomainSuffix,
 }
 
 // Options contains the information required to build a new resource.Resource.

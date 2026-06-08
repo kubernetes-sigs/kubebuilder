@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
+const kubebuilderSubcommandInit = "init"
+
 var _ = Describe("Discover external plugins", func() {
 	Context("with valid plugins root path", func() {
 		var (
@@ -467,8 +469,8 @@ var _ = Describe("Discover external plugins", func() {
 			oldArgs := os.Args
 			defer func() { os.Args = oldArgs }()
 			os.Args = []string{
-				"kubebuilder",
-				"init",
+				kubebuilderCommandName,
+				kubebuilderSubcommandInit,
 				"--plugins",
 				"myexternalplugin/v1",
 				"--domain",
@@ -490,8 +492,8 @@ var _ = Describe("Discover external plugins", func() {
 			))
 
 			Expect(args).ShouldNot(ContainElements(
-				"kubebuilder",
-				"init",
+				kubebuilderCommandName,
+				kubebuilderSubcommandInit,
 				"--plugins",
 				"myexternalplugin/v1",
 			))

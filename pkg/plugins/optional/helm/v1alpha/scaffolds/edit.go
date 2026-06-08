@@ -259,6 +259,8 @@ func (s *editScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 	return mutatingWebhooks, validatingWebhooks, nil
 }
 
+const helmChartRBACSubDir = "rbac"
+
 // Helper function to copy files from config/ to dist/chart/templates/
 func (s *editScaffolder) copyConfigFiles() error {
 	configDirs := []struct {
@@ -266,7 +268,7 @@ func (s *editScaffolder) copyConfigFiles() error {
 		DestDir string
 		SubDir  string
 	}{
-		{"config/rbac", "dist/chart/templates/rbac", "rbac"},
+		{"config/rbac", "dist/chart/templates/rbac", helmChartRBACSubDir},
 		{"config/crd/bases", "dist/chart/templates/crd", "crd"},
 		{"config/network-policy", "dist/chart/templates/network-policy", "networkPolicy"},
 	}

@@ -23,25 +23,38 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
+const (
+	argGroup       = "--group"
+	argVersion     = "--version"
+	argKind        = "--kind"
+	argHelp        = "--help"
+	argFlag        = "--flag"
+	argCustom      = "--custom"
+	flagNameCustom = "custom"
+	argFlag1       = "--flag1"
+	argFlag2       = "--flag2"
+	argValue       = "value"
+)
+
 var _ = Describe("helpers", func() {
 	Context("isBooleanFlag", func() {
 		It("should return true when next arg starts with --", func() {
-			args := []string{"--flag1", "--flag2", "value"}
+			args := []string{argFlag1, argFlag2, argValue}
 			Expect(isBooleanFlag(0, args)).To(BeTrue())
 		})
 
 		It("should return true when at end of args", func() {
-			args := []string{"--flag1", "--flag2"}
+			args := []string{argFlag1, argFlag2}
 			Expect(isBooleanFlag(1, args)).To(BeTrue())
 		})
 
 		It("should return false when next arg is a value", func() {
-			args := []string{"--flag1", "value", "--flag2"}
+			args := []string{argFlag1, argValue, argFlag2}
 			Expect(isBooleanFlag(0, args)).To(BeFalse())
 		})
 
 		It("should return true for last argument", func() {
-			args := []string{"--flag"}
+			args := []string{argFlag}
 			Expect(isBooleanFlag(0, args)).To(BeTrue())
 		})
 	})
@@ -51,39 +64,39 @@ var _ = Describe("helpers", func() {
 
 		BeforeEach(func() {
 			testFlags = []external.Flag{
-				{Name: "group", Type: "string"},
-				{Name: "version", Type: "string"},
-				{Name: "kind", Type: "string"},
-				{Name: "custom", Type: "string"},
-				{Name: "help", Type: "bool"},
+				{Name: flagNameGroup, Type: flagTypeString},
+				{Name: flagNameVersion, Type: flagTypeString},
+				{Name: flagNameKind, Type: flagTypeString},
+				{Name: flagNameCustom, Type: flagTypeString},
+				{Name: flagNameHelp, Type: flagTypeBool},
 			}
 		})
 
 		It("should filter flags based on single filter", func() {
 			filter := func(flag external.Flag) bool {
-				return flag.Name != "group"
+				return flag.Name != flagNameGroup
 			}
 			result := filterFlags(testFlags, []externalFlagFilterFunc{filter})
 
 			Expect(result).To(HaveLen(4))
 			for _, flag := range result {
-				Expect(flag.Name).NotTo(Equal("group"))
+				Expect(flag.Name).NotTo(Equal(flagNameGroup))
 			}
 		})
 
 		It("should filter flags based on multiple filters", func() {
 			filter1 := func(flag external.Flag) bool {
-				return flag.Name != "group"
+				return flag.Name != flagNameGroup
 			}
 			filter2 := func(flag external.Flag) bool {
-				return flag.Name != "help"
+				return flag.Name != flagNameHelp
 			}
 			result := filterFlags(testFlags, []externalFlagFilterFunc{filter1, filter2})
 
 			Expect(result).To(HaveLen(3))
-			Expect(result).To(ContainElement(external.Flag{Name: "version", Type: "string"}))
-			Expect(result).To(ContainElement(external.Flag{Name: "kind", Type: "string"}))
-			Expect(result).To(ContainElement(external.Flag{Name: "custom", Type: "string"}))
+			Expect(result).To(ContainElement(external.Flag{Name: flagNameVersion, Type: flagTypeString}))
+			Expect(result).To(ContainElement(external.Flag{Name: flagNameKind, Type: flagTypeString}))
+			Expect(result).To(ContainElement(external.Flag{Name: flagNameCustom, Type: flagTypeString}))
 		})
 
 		It("should return empty when all flags filtered out", func() {
@@ -105,26 +118,26 @@ var _ = Describe("helpers", func() {
 
 	Context("filterArgs", func() {
 		It("should filter args based on single filter", func() {
-			args := []string{"--group", "--version", "--custom", "--help"}
+			args := []string{argGroup, argVersion, argCustom, argHelp}
 			filter := func(arg string) bool {
-				return arg != "--group"
+				return arg != argGroup
 			}
 			result := filterArgs(args, []argFilterFunc{filter})
 
-			Expect(result).To(Equal([]string{"--version", "--custom", "--help"}))
+			Expect(result).To(Equal([]string{argVersion, argCustom, argHelp}))
 		})
 
 		It("should filter args based on multiple filters", func() {
-			args := []string{"--group", "--version", "--custom"}
+			args := []string{argGroup, argVersion, argCustom}
 			filter1 := func(arg string) bool {
-				return arg != "--group"
+				return arg != argGroup
 			}
 			filter2 := func(arg string) bool {
-				return arg != "--version"
+				return arg != argVersion
 			}
 			result := filterArgs(args, []argFilterFunc{filter1, filter2})
 
-			Expect(result).To(Equal([]string{"--custom"}))
+			Expect(result).To(Equal([]string{argCustom}))
 		})
 
 		It("should return empty when all args filtered out", func() {
@@ -148,60 +161,60 @@ var _ = Describe("helpers", func() {
 
 	Context("gvkArgFilter", func() {
 		It("should filter out group flag", func() {
-			Expect(gvkArgFilter("group")).To(BeFalse())
-			Expect(gvkArgFilter("--group")).To(BeFalse())
+			Expect(gvkArgFilter(flagNameGroup)).To(BeFalse())
+			Expect(gvkArgFilter(argGroup)).To(BeFalse())
 		})
 
 		It("should filter out version flag", func() {
-			Expect(gvkArgFilter("version")).To(BeFalse())
-			Expect(gvkArgFilter("--version")).To(BeFalse())
+			Expect(gvkArgFilter(flagNameVersion)).To(BeFalse())
+			Expect(gvkArgFilter(argVersion)).To(BeFalse())
 		})
 
 		It("should filter out kind flag", func() {
-			Expect(gvkArgFilter("kind")).To(BeFalse())
-			Expect(gvkArgFilter("--kind")).To(BeFalse())
+			Expect(gvkArgFilter(flagNameKind)).To(BeFalse())
+			Expect(gvkArgFilter(argKind)).To(BeFalse())
 		})
 
 		It("should allow other flags", func() {
-			Expect(gvkArgFilter("custom")).To(BeTrue())
-			Expect(gvkArgFilter("--custom")).To(BeTrue())
+			Expect(gvkArgFilter(flagNameCustom)).To(BeTrue())
+			Expect(gvkArgFilter(argCustom)).To(BeTrue())
 			Expect(gvkArgFilter("domain")).To(BeTrue())
 		})
 	})
 
 	Context("gvkFlagFilter", func() {
 		It("should filter out group, version, kind flags", func() {
-			Expect(gvkFlagFilter(external.Flag{Name: "group"})).To(BeFalse())
-			Expect(gvkFlagFilter(external.Flag{Name: "version"})).To(BeFalse())
-			Expect(gvkFlagFilter(external.Flag{Name: "kind"})).To(BeFalse())
+			Expect(gvkFlagFilter(external.Flag{Name: flagNameGroup})).To(BeFalse())
+			Expect(gvkFlagFilter(external.Flag{Name: flagNameVersion})).To(BeFalse())
+			Expect(gvkFlagFilter(external.Flag{Name: flagNameKind})).To(BeFalse())
 		})
 
 		It("should allow other flags", func() {
-			Expect(gvkFlagFilter(external.Flag{Name: "custom"})).To(BeTrue())
+			Expect(gvkFlagFilter(external.Flag{Name: flagNameCustom})).To(BeTrue())
 			Expect(gvkFlagFilter(external.Flag{Name: "domain"})).To(BeTrue())
 		})
 	})
 
 	Context("helpArgFilter", func() {
 		It("should filter out help flag", func() {
-			Expect(helpArgFilter("help")).To(BeFalse())
-			Expect(helpArgFilter("--help")).To(BeFalse())
+			Expect(helpArgFilter(flagNameHelp)).To(BeFalse())
+			Expect(helpArgFilter(argHelp)).To(BeFalse())
 		})
 
 		It("should allow other flags", func() {
-			Expect(helpArgFilter("custom")).To(BeTrue())
-			Expect(helpArgFilter("--custom")).To(BeTrue())
+			Expect(helpArgFilter(flagNameCustom)).To(BeTrue())
+			Expect(helpArgFilter(argCustom)).To(BeTrue())
 			Expect(helpArgFilter("helpful")).To(BeTrue())
 		})
 	})
 
 	Context("helpFlagFilter", func() {
 		It("should filter out help flag", func() {
-			Expect(helpFlagFilter(external.Flag{Name: "help"})).To(BeFalse())
+			Expect(helpFlagFilter(external.Flag{Name: flagNameHelp})).To(BeFalse())
 		})
 
 		It("should allow other flags", func() {
-			Expect(helpFlagFilter(external.Flag{Name: "custom"})).To(BeTrue())
+			Expect(helpFlagFilter(external.Flag{Name: flagNameCustom})).To(BeTrue())
 			Expect(helpFlagFilter(external.Flag{Name: "helpful"})).To(BeTrue())
 		})
 	})

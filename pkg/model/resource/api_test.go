@@ -78,7 +78,7 @@ var _ = Describe("API", func() {
 
 			It("should fail if previously set and provided CRD versions do not match", func() {
 				api = API{CRDVersion: v1}
-				other = API{CRDVersion: "v1beta1"}
+				other = API{CRDVersion: v1beta1}
 				Expect(api.Update(&other)).NotTo(Succeed())
 			})
 		})

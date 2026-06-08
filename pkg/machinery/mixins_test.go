@@ -186,6 +186,12 @@ var _ = Describe("BoilerplateMixin", func() {
 })
 
 var _ = Describe("ResourceMixin", func() {
+	const (
+		group  = "group"
+		domain = "my.domain"
+		kind   = "Kind"
+	)
+
 	var (
 		res *resource.Resource
 		tmp mockTemplate
@@ -193,10 +199,10 @@ var _ = Describe("ResourceMixin", func() {
 
 	BeforeEach(func() {
 		res = &resource.Resource{GVK: resource.GVK{
-			Group:   "group",
-			Domain:  "my.domain",
+			Group:   group,
+			Domain:  domain,
 			Version: "v1",
-			Kind:    "Kind",
+			Kind:    kind,
 		}}
 
 		tmp = mockTemplate{}

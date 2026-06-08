@@ -34,6 +34,7 @@ var _ = Describe("Options", func() {
 			domain  = "test.io"
 			version = "v1"
 			kind    = "FirstMate"
+			plural  = "firstmates"
 		)
 
 		var (
@@ -64,7 +65,7 @@ var _ = Describe("Options", func() {
 
 					res := resource.Resource{
 						GVK:      gvk,
-						Plural:   "firstmates",
+						Plural:   plural,
 						API:      &resource.API{},
 						Webhooks: &resource.Webhooks{},
 					}
@@ -142,7 +143,7 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:   "firstmates",
+						Plural:   plural,
 						API:      &resource.API{},
 						Webhooks: &resource.Webhooks{},
 					}
@@ -182,7 +183,7 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:   "firstmates",
+						Plural:   plural,
 						API:      &resource.API{},
 						Webhooks: &resource.Webhooks{},
 					}

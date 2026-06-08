@@ -23,6 +23,10 @@ import (
 
 //nolint:dupl
 var _ = Describe("Webhooks", func() {
+	const (
+		customDefaultingPath = "/custom-defaulting"
+		customValidationPath = "/custom-validation"
+	)
 	Context("Validate", func() {
 		It("should succeed for a valid Webhooks", func() {
 			Expect(Webhooks{WebhookVersion: v1}.Validate()).To(Succeed())
@@ -102,7 +106,7 @@ var _ = Describe("Webhooks", func() {
 
 			It("should fail if previously set and provided webhooks versions do not match", func() {
 				webhook = Webhooks{WebhookVersion: v1}
-				other = Webhooks{WebhookVersion: "v1beta1"}
+				other = Webhooks{WebhookVersion: v1beta1}
 				Expect(webhook.Update(&other)).NotTo(Succeed())
 			})
 		})
@@ -200,9 +204,9 @@ var _ = Describe("Webhooks", func() {
 		Context("Custom webhook paths", func() {
 			It("should set the defaulting path if provided and not previously set", func() {
 				webhook = Webhooks{}
-				other = Webhooks{DefaultingPath: "/custom-defaulting"}
+				other = Webhooks{DefaultingPath: customDefaultingPath}
 				Expect(webhook.Update(&other)).To(Succeed())
-				Expect(webhook.DefaultingPath).To(Equal("/custom-defaulting"))
+				Expect(webhook.DefaultingPath).To(Equal(customDefaultingPath))
 			})
 
 			It("should update the defaulting path if other provides a new one", func() {
@@ -214,9 +218,9 @@ var _ = Describe("Webhooks", func() {
 
 			It("should set the validation path if provided and not previously set", func() {
 				webhook = Webhooks{}
-				other = Webhooks{ValidationPath: "/custom-validation"}
+				other = Webhooks{ValidationPath: customValidationPath}
 				Expect(webhook.Update(&other)).To(Succeed())
-				Expect(webhook.ValidationPath).To(Equal("/custom-validation"))
+				Expect(webhook.ValidationPath).To(Equal(customValidationPath))
 			})
 
 			It("should update the validation path if other provides a new one", func() {
@@ -331,8 +335,8 @@ var _ = Describe("Webhooks", func() {
 				Validation:     true,
 				Conversion:     true,
 				Spoke:          []string{"v1", "v2"},
-				DefaultingPath: "/custom-defaulting",
-				ValidationPath: "/custom-validation",
+				DefaultingPath: customDefaultingPath,
+				ValidationPath: customValidationPath,
 			}
 			other := webhook.Copy()
 
@@ -352,13 +356,13 @@ var _ = Describe("Webhooks", func() {
 				Validation:     true,
 				Conversion:     true,
 				Spoke:          []string{"v1", "v2"},
-				DefaultingPath: "/custom-defaulting",
-				ValidationPath: "/custom-validation",
+				DefaultingPath: customDefaultingPath,
+				ValidationPath: customValidationPath,
 			}
 			other := webhook.Copy()
 
 			// Modify the copy
-			other.WebhookVersion = "v1beta1"
+			other.WebhookVersion = v1beta1
 			other.Defaulting = false
 			other.Validation = false
 			other.Conversion = false
@@ -373,8 +377,8 @@ var _ = Describe("Webhooks", func() {
 			Expect(webhook.Validation).To(BeTrue())
 			Expect(webhook.Conversion).To(BeTrue())
 			Expect(webhook.Spoke).To(Equal([]string{"v1", "v2"}))
-			Expect(webhook.DefaultingPath).To(Equal("/custom-defaulting"))
-			Expect(webhook.ValidationPath).To(Equal("/custom-validation"))
+			Expect(webhook.DefaultingPath).To(Equal(customDefaultingPath))
+			Expect(webhook.ValidationPath).To(Equal(customValidationPath))
 		})
 
 		It("should handle nil Spoke slice", func() {
