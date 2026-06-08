@@ -31,7 +31,9 @@ func (c CLI) newCreateWebhookCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "webhook",
 		Short: "Scaffold a webhook for an API resource",
-		Long:  `Scaffold a webhook for an API resource.`,
+		Long: `Scaffold defaulting, validating, or conversion webhooks for an API resource.
+
+Run this command from an initialized project after creating the API resource.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("webhook subcommand requires an existing project"),
 		),

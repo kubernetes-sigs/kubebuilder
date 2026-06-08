@@ -81,10 +81,11 @@ Configuration flags:
   --license: License to use (apache2 or none, default: apache2)
 
 Plugin flags:
-  --plugins: Comma-separated list of plugins to use (default: go/v4)
-             Plugins scaffold files during init and are saved to the PROJECT layout
-             Future operations (i.e. create api, create webhook) call all plugins in the chain
-             Run 'kubebuilder init --plugins --help' to see available plugins
+  --plugins: Comma-separated list of plugins to use (e.g., go/v4,helm/v2-alpha).
+             If unset, Kubebuilder uses the default go/v4 scaffold.
+             Plugins used during init are saved to the PROJECT layout.
+             Future operations, such as create api and create webhook, use that plugin chain.
+             Run 'kubebuilder init --plugins --help' to see available plugins.
 
 Layout flags:
   --multigroup: Enable multigroup layout to organize APIs by group

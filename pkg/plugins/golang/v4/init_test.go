@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
@@ -41,6 +42,23 @@ var _ = Describe("initSubcommand", func() {
 	BeforeEach(func() {
 		subCmd = &initSubcommand{}
 		cfg = cfgv3.New()
+	})
+
+	Context("UpdateMetadata", func() {
+		It("should provide init examples", func() {
+			meta := &plugin.SubcommandMetadata{}
+
+			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
+
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder init --domain example.org"))
+			Expect(meta.Examples).To(ContainSubstring("--domain example.org --multigroup"))
+			Expect(meta.Examples).To(ContainSubstring("--domain example.org --namespaced"))
+			Expect(meta.Examples).To(ContainSubstring("--plugins go/v4,helm/v2-alpha"))
+			Expect(meta.Examples).To(ContainSubstring(`--owner "Your Name" --license apache2`))
+			Expect(meta.Examples).To(ContainSubstring("--license-file ./my-header.txt"))
+			Expect(meta.Examples).To(ContainSubstring("--project-version 3"))
+			Expect(meta.Examples).NotTo(ContainSubstring("--project-version 0"))
+		})
 	})
 
 	Context("InjectConfig", func() {

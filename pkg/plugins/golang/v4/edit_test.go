@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
@@ -45,6 +46,20 @@ var _ = Describe("editSubcommand", func() {
 	It("should inject config successfully", func() {
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 		Expect(subCmd.config).To(Equal(cfg))
+	})
+
+	Context("UpdateMetadata", func() {
+		It("should provide concise edit examples", func() {
+			meta := &plugin.SubcommandMetadata{}
+
+			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
+
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --multigroup"))
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --namespaced --force"))
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --multigroup --namespaced --force"))
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --license-file ./my-header.txt"))
+			Expect(meta.Examples).To(ContainSubstring(`kubebuilder edit --license apache2 --owner "Your Company"`))
+		})
 	})
 
 	Context("PreScaffold", func() {

@@ -19,8 +19,6 @@ package cli
 import (
 	"fmt"
 	"slices"
-	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -44,8 +42,7 @@ For further help about a specific plugin, set --plugins.
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
-		"Project version (e.g., 3). Defaults to CLI version if unset")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), projectVersionFlagDescription)
 
 	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
 	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
@@ -83,19 +80,31 @@ For further help about a specific plugin, set --plugins.
 }
 
 func (c CLI) getInitHelpExamples() string {
-	var sb strings.Builder
-	for _, version := range c.getAvailableProjectVersions() {
-		rendered := fmt.Sprintf(`  # Help for initializing a project with version %[2]s
-  %[1]s init --project-version=%[2]s -h
+	projectVersionExample := c.defaultProjectVersion.String()
+	if c.defaultProjectVersion.Validate() != nil {
+		versions := c.getAvailableProjectVersions()
+		if len(versions) == 0 {
+			return fmt.Sprintf(`  # Initialize a new project
+  %[1]s init --domain example.org
 
-`,
-			c.commandName, version)
-		sb.WriteString(rendered)
+  # Initialize with optional plugins
+  %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha`, c.commandName)
+		}
+		projectVersionExample = versions[len(versions)-1].String()
 	}
-	return strings.TrimSuffix(sb.String(), "\n\n")
+
+	return fmt.Sprintf(`  # Initialize a new project
+  %[1]s init --domain example.org
+
+  # Initialize with optional plugins
+  %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha
+
+  # Initialize with a specific project config version
+  %[1]s init --domain example.org --plugins go/v4 --project-version %[2]s`,
+		c.commandName, projectVersionExample)
 }
 
-func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
+func (c CLI) getAvailableProjectVersions() (projectVersions []config.Version) {
 	versionSet := make(map[config.Version]struct{})
 	for _, p := range c.plugins {
 		// Only return versions of non-deprecated plugins.
@@ -106,8 +115,10 @@ func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
 		}
 	}
 	for version := range versionSet {
-		projectVersions = append(projectVersions, strconv.Quote(version.String()))
+		projectVersions = append(projectVersions, version)
 	}
-	slices.Sort(projectVersions)
+	slices.SortFunc(projectVersions, func(a, b config.Version) int {
+		return a.Compare(b)
+	})
 	return projectVersions
 }

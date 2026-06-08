@@ -102,13 +102,10 @@ func (c CLI) newRootCmd() *cobra.Command {
 	}
 
 	// Global flags for all subcommands.
-	cmd.PersistentFlags().StringSlice(pluginsFlag, nil,
-		"Comma-separated list of plugin keys to use (e.g., go/v4, helm/v2-alpha). "+
-			"Defaults to the built-in go/v4 bundle if unset")
+	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, pluginsFlagDescription)
 
 	// Register --project-version on the root command so that it shows up in help.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
-		"Project version (e.g., 3). Defaults to CLI version if unset")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), projectVersionFlagDescription)
 
 	// As the root command will be used to shot the help message under some error conditions,
 	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
@@ -121,19 +118,20 @@ func (c CLI) newRootCmd() *cobra.Command {
 func (c CLI) rootExamples() string {
 	str := fmt.Sprintf(`Get started by initializing a new project:
 
-    %[1]s init --domain <YOUR_DOMAIN>
+    %[1]s init --domain example.org
 
-The default plugin scaffold includes everything you need. To use optional plugins:
+Use optional plugins when you want extra scaffolding during init:
 
-    %[1]s init --plugins=<PLUGIN_KEYS>
+    %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha
 
 Available plugins:
 
 %[2]s
 
-To see which plugins support a specific command:
+To see help for a command with a specific plugin:
 
     %[1]s <init|edit|create> --help
+    %[1]s init --help --plugins <PLUGIN_KEYS> [--project-version <PROJECT_VERSION>]
 `,
 		c.commandName, c.getPluginTable())
 
