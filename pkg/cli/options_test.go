@@ -498,6 +498,48 @@ var _ = Describe("Discover external plugins", func() {
 				"myexternalplugin/v1",
 			))
 		})
+
+		It("should preserve flag values that contain a double hyphen", func() {
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
+			os.Args = []string{
+				"kubebuilder",
+				"init",
+				"--plugins",
+				"myexternalplugin/v1",
+				"--repo",
+				"github.com/example/my--operator",
+				"--domain",
+				"xn--bcher-kva.example",
+			}
+
+			args := parseExternalPluginArgs()
+			Expect(args).To(Equal([]string{
+				"--repo",
+				"github.com/example/my--operator",
+				"--domain",
+				"xn--bcher-kva.example",
+			}))
+		})
+
+		It("should not forward --plugins=<value> (equals form) to external plugins", func() {
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
+			os.Args = []string{
+				"kubebuilder",
+				"init",
+				"--plugins=myexternalplugin/v1",
+				"--domain",
+				"example.com",
+			}
+
+			args := parseExternalPluginArgs()
+			Expect(args).Should(ContainElements(
+				"--domain",
+				"example.com",
+			))
+			Expect(args).ShouldNot(ContainElement("--plugins=myexternalplugin/v1"))
+		})
 	})
 })
 

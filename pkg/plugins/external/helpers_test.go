@@ -19,6 +19,7 @@ package external
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
@@ -53,9 +54,30 @@ var _ = Describe("helpers", func() {
 			Expect(isBooleanFlag(0, args)).To(BeFalse())
 		})
 
+		It("should return false when next arg is a value containing a double hyphen", func() {
+			args := []string{"--repo", "github.com/example/my--operator", "--domain", "example.com"}
+			Expect(isBooleanFlag(0, args)).To(BeFalse())
+		})
+
 		It("should return true for last argument", func() {
 			args := []string{argFlag}
 			Expect(isBooleanFlag(0, args)).To(BeTrue())
+		})
+	})
+
+	Context("bindAllFlags", func() {
+		It("binds string flags when their values contain a double hyphen", func() {
+			fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+			bindAllFlags(fs, []string{
+				"--repo", "github.com/example/my--operator",
+				"--domain", "example.com",
+			})
+
+			Expect(fs.Lookup("repo")).NotTo(BeNil())
+			Expect(fs.Lookup("repo").Value.Type()).To(Equal("string"))
+			Expect(fs.Lookup("domain")).NotTo(BeNil())
+			Expect(fs.Lookup("domain").Value.Type()).To(Equal("string"))
 		})
 	})
 
