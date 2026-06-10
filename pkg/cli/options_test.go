@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
-const kubebuilderSubcommandInit = "init"
+const domainFlagArg = "--domain"
 
 var _ = Describe("Discover external plugins", func() {
 	Context("with valid plugins root path", func() {
@@ -471,9 +471,9 @@ var _ = Describe("Discover external plugins", func() {
 			os.Args = []string{
 				kubebuilderCommandName,
 				kubebuilderSubcommandInit,
-				"--plugins",
+				pluginsFlagArg,
 				"myexternalplugin/v1",
-				"--domain",
+				domainFlagArg,
 				"example.com",
 				"--binary-flag",
 				"--license",
@@ -483,7 +483,7 @@ var _ = Describe("Discover external plugins", func() {
 
 			args := parseExternalPluginArgs()
 			Expect(args).Should(ContainElements(
-				"--domain",
+				domainFlagArg,
 				"example.com",
 				"--binary-flag",
 				"--license",
@@ -494,7 +494,7 @@ var _ = Describe("Discover external plugins", func() {
 			Expect(args).ShouldNot(ContainElements(
 				kubebuilderCommandName,
 				kubebuilderSubcommandInit,
-				"--plugins",
+				pluginsFlagArg,
 				"myexternalplugin/v1",
 			))
 		})
@@ -503,13 +503,13 @@ var _ = Describe("Discover external plugins", func() {
 			oldArgs := os.Args
 			defer func() { os.Args = oldArgs }()
 			os.Args = []string{
-				"kubebuilder",
-				"init",
-				"--plugins",
+				kubebuilderCommandName,
+				kubebuilderSubcommandInit,
+				pluginsFlagArg,
 				"myexternalplugin/v1",
 				"--repo",
 				"github.com/example/my--operator",
-				"--domain",
+				domainFlagArg,
 				"xn--bcher-kva.example",
 			}
 
@@ -517,7 +517,7 @@ var _ = Describe("Discover external plugins", func() {
 			Expect(args).To(Equal([]string{
 				"--repo",
 				"github.com/example/my--operator",
-				"--domain",
+				domainFlagArg,
 				"xn--bcher-kva.example",
 			}))
 		})
@@ -526,16 +526,16 @@ var _ = Describe("Discover external plugins", func() {
 			oldArgs := os.Args
 			defer func() { os.Args = oldArgs }()
 			os.Args = []string{
-				"kubebuilder",
-				"init",
+				kubebuilderCommandName,
+				kubebuilderSubcommandInit,
 				"--plugins=myexternalplugin/v1",
-				"--domain",
+				domainFlagArg,
 				"example.com",
 			}
 
 			args := parseExternalPluginArgs()
 			Expect(args).Should(ContainElements(
-				"--domain",
+				domainFlagArg,
 				"example.com",
 			))
 			Expect(args).ShouldNot(ContainElement("--plugins=myexternalplugin/v1"))

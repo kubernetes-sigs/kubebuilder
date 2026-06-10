@@ -39,11 +39,13 @@ const (
 	deprecationFmt = "[Deprecation Notice] %s\n\n"
 
 	pluginsFlag        = "plugins"
+	pluginsFlagArg     = "--plugins"
 	projectVersionFlag = "project-version"
 
-	kubebuilderCommandName = "kubebuilder"
-	pluginGoKubebuilderV4  = "go.kubebuilder.io/v4"
-	pluginGoKubebuilderV2  = "go.kubebuilder.io/v2"
+	kubebuilderCommandName    = "kubebuilder"
+	kubebuilderSubcommandInit = "init"
+	pluginGoKubebuilderV4     = "go.kubebuilder.io/v4"
+	pluginGoKubebuilderV2     = "go.kubebuilder.io/v2"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
@@ -343,7 +345,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	// Check if --plugins is followed by --help or -h to avoid parsing help as a plugin value
 	// This fixes: kubebuilder init --plugins --help
 	for i := 0; i < len(os.Args)-1; i++ {
-		if os.Args[i] == "--plugins" || os.Args[i] == "--plugins=" {
+		if os.Args[i] == pluginsFlagArg || os.Args[i] == pluginsFlagArg+"=" {
 			nextArg := os.Args[i+1]
 			if isHelpFlag(nextArg) {
 				// Help was requested, return early to let Cobra handle it
