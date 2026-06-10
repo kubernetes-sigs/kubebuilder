@@ -122,7 +122,7 @@ func MakeServiceMonitorBearerTokenConditional(yamlContent string) string {
 }
 
 // MakeServiceMonitorCertManagerConditional handles cert-manager conditional logic for ServiceMonitor.
-// It wraps cert-manager specific fields with {{- if .Values.certManager.enable }} when default
+// It wraps cert-manager specific fields with {{- if .Values.certManager.enabled }} when default
 // cert-manager secrets are detected. Custom certificate secrets are preserved as-is.
 // If no certificate fields are found, it converts insecureSkipVerify: false to true.
 func MakeServiceMonitorCertManagerConditional(yamlContent string) string {
@@ -234,7 +234,7 @@ func MakeServiceMonitorCertManagerConditional(yamlContent string) string {
 	return strings.Join(result, "\n")
 }
 
-// wrapCertManagerFields wraps cert-manager certificate fields with the certManager.enable conditional.
+// wrapCertManagerFields wraps cert-manager certificate fields with the certManager.enabled conditional.
 func wrapCertManagerFields(certFields, nonCertLines []string, baseIndent int) []string {
 	indentStr := strings.Repeat(" ", baseIndent+2)
 	result := make([]string, 0, len(nonCertLines)+len(certFields)+4)
@@ -247,7 +247,7 @@ func wrapCertManagerFields(certFields, nonCertLines []string, baseIndent int) []
 	}
 
 	// Wrap cert fields with cert-manager conditional and template insecureSkipVerify
-	result = append(result, indentStr+"{{- if .Values.certManager.enable }}")
+	result = append(result, indentStr+"{{- if .Values.certManager.enabled }}")
 	result = append(result, certFields...)
 	result = append(result, indentStr+"insecureSkipVerify: false")
 	result = append(result, indentStr+"{{- else }}")

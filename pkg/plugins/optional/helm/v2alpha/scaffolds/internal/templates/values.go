@@ -114,7 +114,7 @@ manager:
 ##
 crd:
   # Install CRDs with the chart
-  enable: true
+  enabled: true
   # Keep CRDs when uninstalling
   keep: true
 
@@ -133,7 +133,7 @@ crd:
 ## Required for webhook certificates and metrics endpoint certificates.
 ##
 certManager:
-  enable: true
+  enabled: true
 
 `)
 	} else {
@@ -141,7 +141,7 @@ certManager:
 ## Required for webhook certificates and metrics endpoint certificates.
 ##
 certManager:
-  enable: false
+  enabled: false
 
 `)
 	}
@@ -156,7 +156,7 @@ certManager:
 ## Requires prometheus-operator to be installed in the cluster.
 ##
 prometheus:
-  enable: false
+  enabled: false
 
 `)
 
@@ -168,7 +168,7 @@ prometheus:
 ##
 networkPolicy:
 `)
-	fmt.Fprintf(&buf, "  enable: %t\n\n", networkPolicyEnabled)
+	fmt.Fprintf(&buf, "  enabled: %t\n\n", networkPolicyEnabled)
 
 	return buf.String()
 }
@@ -524,7 +524,7 @@ rbac:
   helpers:
     ## Install convenience admin/editor/viewer roles for CRDs
     ##
-    enable: false
+    enabled: false
 
 `)
 }
@@ -535,10 +535,10 @@ func (f *HelmValues) addServiceAccountSection(buf *bytes.Buffer) {
 ##
 serviceAccount:
   # Install default ServiceAccount provided
-  enable: true
+  enabled: true
 
-  ## Existing ServiceAccount name (only when enable=false)
-  ## Note: When enable=true, respects nameOverride/fullnameOverride
+  ## Existing ServiceAccount name (only when enabled=false)
+  ## Note: When enabled=true, respects nameOverride/fullnameOverride
   ##
   # name: ""
 
@@ -570,7 +570,7 @@ func (f *HelmValues) addMetricsSection(buf *bytes.Buffer) {
 ##
 metrics:
 `)
-	fmt.Fprintf(buf, "  enable: %t\n", enableMetrics)
+	fmt.Fprintf(buf, "  enabled: %t\n", enableMetrics)
 	buf.WriteString(`  # Metrics server port
 `)
 	fmt.Fprintf(buf, "  port: %d\n", port)
@@ -591,7 +591,7 @@ func (f *HelmValues) addWebhookSection(buf *bytes.Buffer) {
 	buf.WriteString(`## Webhook server configuration
 ##
 webhook:
-  enable: true
+  enabled: true
   # Webhook server port
 `)
 	fmt.Fprintf(buf, "  port: %d\n\n", port)

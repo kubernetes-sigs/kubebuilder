@@ -65,11 +65,11 @@ var _ = Describe("NetworkPolicy", func() {
 			Expect(networkPolicy.IfExistsAction).To(Equal(machinery.SkipFile))
 		})
 
-		It("should generate a metrics NetworkPolicy guarded by networkPolicy.enable", func() {
+		It("should generate a metrics NetworkPolicy guarded by networkPolicy.enabled", func() {
 			err := networkPolicy.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(networkPolicy.TemplateBody).To(ContainSubstring("{{`{{- if .Values.networkPolicy.enable }}`}}"))
+			Expect(networkPolicy.TemplateBody).To(ContainSubstring("{{`{{- if .Values.networkPolicy.enabled }}`}}"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring("kind: NetworkPolicy"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
 				`name: {{ "{{ include \"test-project.resourceName\" ` +
@@ -87,7 +87,7 @@ var _ = Describe("NetworkPolicy", func() {
 
 			Expect(networkPolicy.Path).To(Equal("dist/chart/templates/network-policy/allow-webhook-traffic.yaml"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
-				"{{`{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}`}}"))
+				"{{`{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}`}}"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
 				`name: {{ "{{ include \"test-project.resourceName\" ` +
 					`(dict \"suffix\" \"allow-webhook-traffic\" \"context\" $) }}" }}`))
@@ -118,14 +118,14 @@ var _ = Describe("NetworkPolicy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			webhookPolicy := string(content)
 
-			Expect(metricsPolicy).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(metricsPolicy).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(metricsPolicy).To(ContainSubstring(`{{ include "test-project.name" . }}`))
 			Expect(metricsPolicy).To(ContainSubstring(
 				`name: {{ include "test-project.resourceName" (dict "suffix" "allow-metrics-traffic" "context" $) }}`))
 			Expect(metricsPolicy).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
 
 			Expect(webhookPolicy).To(ContainSubstring(
-				"{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+				"{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}"))
 			Expect(webhookPolicy).To(ContainSubstring(`{{ include "test-project.name" . }}`))
 			Expect(webhookPolicy).To(ContainSubstring(
 				`name: {{ include "test-project.resourceName" (dict "suffix" "allow-webhook-traffic" "context" $) }}`))

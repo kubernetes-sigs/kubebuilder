@@ -40,7 +40,7 @@ var _ = Describe("ChartScaffolder", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			rendered := string(content)
-			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(rendered).To(ContainSubstring("kind: NetworkPolicy"))
 			Expect(rendered).To(ContainSubstring(
 				`name: {{ include "test-project.resourceName" (dict "suffix" "allow-metrics-traffic" "context" $) }}`))
@@ -52,7 +52,7 @@ var _ = Describe("ChartScaffolder", func() {
 
 			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enable: false"))
+			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: false"))
 		})
 
 		It("should add generic metrics and webhook NetworkPolicies when no policy exists", func() {
@@ -95,7 +95,7 @@ var _ = Describe("ChartScaffolder", func() {
 			content, err := afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-metrics-traffic.yaml")
 			Expect(err).NotTo(HaveOccurred())
 			rendered := string(content)
-			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(rendered).To(ContainSubstring("metrics: enabled"))
 			Expect(rendered).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
 
@@ -104,7 +104,7 @@ var _ = Describe("ChartScaffolder", func() {
 
 			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enable: true"))
+			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: true"))
 		})
 
 		It("should place all NetworkPolicies from kustomize output in the network-policy directory", func() {
@@ -122,7 +122,7 @@ var _ = Describe("ChartScaffolder", func() {
 				"dist/chart/templates/network-policy/allow-metrics-traffic.yaml",
 			)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(metricsPolicy)).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(string(metricsPolicy)).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(string(metricsPolicy)).To(ContainSubstring("metrics: enabled"))
 			Expect(string(metricsPolicy)).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
 
@@ -131,7 +131,7 @@ var _ = Describe("ChartScaffolder", func() {
 				"dist/chart/templates/network-policy/allow-dns-traffic.yaml",
 			)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(dnsPolicy)).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(string(dnsPolicy)).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(string(dnsPolicy)).To(ContainSubstring("dns: enabled"))
 			Expect(string(dnsPolicy)).To(ContainSubstring("port: 5353"))
 
@@ -141,13 +141,13 @@ var _ = Describe("ChartScaffolder", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(webhookPolicy)).To(ContainSubstring(
-				"{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+				"{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}"))
 			Expect(string(webhookPolicy)).To(ContainSubstring("webhook: enabled"))
 			Expect(string(webhookPolicy)).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
 
 			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enable: true"))
+			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: true"))
 		})
 
 		It("should add new kustomize NetworkPolicies after fallback policies were scaffolded", func() {
@@ -190,13 +190,13 @@ var _ = Describe("ChartScaffolder", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(webhookPolicy)).To(ContainSubstring(
-				"{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+				"{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}"))
 			Expect(string(webhookPolicy)).To(ContainSubstring("webhook: enabled"))
 			Expect(string(webhookPolicy)).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
 
 			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enable: false"))
+			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: false"))
 		})
 	})
 })

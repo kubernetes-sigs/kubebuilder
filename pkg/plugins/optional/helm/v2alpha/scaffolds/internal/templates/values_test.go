@@ -29,7 +29,7 @@ const testProjectName = "test-project"
 
 var _ = Describe("HelmValues", func() {
 	Describe("NetworkPolicy section", func() {
-		It("should default networkPolicy.enable to false when no NetworkPolicy resources exist", func() {
+		It("should default networkPolicy.enabled to false when no NetworkPolicy resources exist", func() {
 			values := &HelmValues{
 				Extraction: nil,
 			}
@@ -37,10 +37,10 @@ var _ = Describe("HelmValues", func() {
 
 			result := values.generateValues()
 
-			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: false"))
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enabled: false"))
 		})
 
-		It("should set networkPolicy.enable to true when NetworkPolicy resources are detected", func() {
+		It("should set networkPolicy.enabled to true when NetworkPolicy resources are detected", func() {
 			values := &HelmValues{
 				Extraction: &extractor.Extraction{
 					Features: extractor.FeatureSet{
@@ -52,10 +52,10 @@ var _ = Describe("HelmValues", func() {
 
 			result := values.generateValues()
 
-			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: true"))
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enabled: true"))
 		})
 
-		It("should set networkPolicy.enable to false when HasNetworkPolicy is false", func() {
+		It("should set networkPolicy.enabled to false when HasNetworkPolicy is false", func() {
 			values := &HelmValues{
 				Extraction: &extractor.Extraction{
 					Features: extractor.FeatureSet{
@@ -67,7 +67,7 @@ var _ = Describe("HelmValues", func() {
 
 			result := values.generateValues()
 
-			Expect(result).To(ContainSubstring("networkPolicy:\n  enable: false"))
+			Expect(result).To(ContainSubstring("networkPolicy:\n  enabled: false"))
 		})
 	})
 

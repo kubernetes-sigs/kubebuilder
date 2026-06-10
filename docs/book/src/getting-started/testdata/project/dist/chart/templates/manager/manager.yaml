@@ -74,7 +74,7 @@ spec:
       {{- end }}
       containers:
       - args:
-        {{- if .Values.metrics.enable }}
+        {{- if .Values.metrics.enabled }}
         - --metrics-bind-address=:{{ .Values.metrics.port }}
         {{- if not .Values.metrics.secure }}
         - --metrics-secure=false

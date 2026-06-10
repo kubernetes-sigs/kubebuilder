@@ -1,4 +1,4 @@
-{{- if .Values.prometheus.enable }}
+{{- if .Values.prometheus.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -21,7 +21,7 @@ spec:
     {{- if .Values.metrics.secure }}
     tlsConfig:
       serverName: {{ include "project.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ .Release.Namespace }}.svc
-      {{- if .Values.certManager.enable }}
+      {{- if .Values.certManager.enabled }}
       ca:
         secret:
           name: metrics-server-cert

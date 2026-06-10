@@ -189,19 +189,19 @@ helm install my-release ./dist/chart --namespace my-project-system --create-name
 Install only CRDs and RBAC:
 
 ```bash
-helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enable=false
+helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enabled=false
 ```
 
 Install without webhooks:
 
 ```bash
-helm install my-release ./dist/chart --set webhook.enable=false --set certManager.enable=false
+helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
 ```
 
 Install with NetworkPolicy resources:
 
 ```bash
-helm install my-release ./dist/chart --set networkPolicy.enable=true
+helm install my-release ./dist/chart --set networkPolicy.enabled=true
 ```
 
 ### Extra volumes
@@ -210,7 +210,7 @@ Add volumes and volume mounts to the manager deployment beyond webhook and metri
 
 Volumes in your kustomize configuration (`config/manager/manager.yaml` or patches) are written to the chart template. When the manager has extra volumes, `values.yaml` includes `manager.extraVolumes` and `manager.extraVolumeMounts` fields. Use these to add more volumes at install time.
 
-Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed separately and controlled by `certManager.enable` and `metrics.enable`.
+Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed separately and controlled by `certManager.enabled` and (for metrics TLS) `metrics.enabled` + `metrics.secure`.
 
 ### Metrics configuration
 
@@ -219,7 +219,7 @@ Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed 
 Control transport security and authentication for the metrics endpoint (default: `true`).
 
 When `true`:
-- Uses HTTPS with TLS certificates (when `certManager.enable=true`)
+- Uses HTTPS with TLS certificates (when `certManager.enabled=true`)
 - Creates `metrics-auth-role` ClusterRole for authentication
 - ServiceMonitor uses HTTPS
 
@@ -237,9 +237,9 @@ The `metrics-auth-role` and `metrics-reader` are always ClusterRoles, even when 
 
 ### NetworkPolicy configuration
 
-Set `networkPolicy.enable: true` to install NetworkPolicy resources for the manager pod.
+Set `networkPolicy.enabled: true` to install NetworkPolicy resources for the manager pod.
 
-When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enable: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
+When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enabled: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
 
 ### Custom labels and annotations
 
@@ -247,13 +247,13 @@ Add custom labels and annotations using `manager.labels`, `manager.annotations`,
 
 ### ServiceAccount configuration
 
-Set `serviceAccount.enable: true` (default) to create a ServiceAccount. Set `serviceAccount.enable: false` to use an existing one.
+Set `serviceAccount.enabled: true` (default) to create a ServiceAccount. Set `serviceAccount.enabled: false` to use an existing one.
 
 Add annotations for cloud provider integrations:
 
 ```yaml
 serviceAccount:
-  enable: true
+  enabled: true
   annotations:
     iam.gke.io/gcp-service-account: my-operator@project.iam.gserviceaccount.com
 ```
@@ -307,7 +307,7 @@ rbac:
     "manager-rolebinding-users": "users"
 
   helpers:
-    enable: false
+    enabled: false
 ```
 
 Override namespaces at deployment using a values file:
@@ -339,7 +339,7 @@ helm install my-operator ./dist/chart \
 <aside class="note" role="note">
 <p class="note-title">Helper roles and optional values</p>
 
-Set `rbac.helpers.enable: true` to create admin, editor, and viewer roles for Custom Resources.
+Set `rbac.helpers.enabled: true` to create admin, editor, and viewer roles for Custom Resources.
 
 Optional fields in `values.yaml` use Helm conditionals. Comment them out to exclude them from deployed manifests.
 

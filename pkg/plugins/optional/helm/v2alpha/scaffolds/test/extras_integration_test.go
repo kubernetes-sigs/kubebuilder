@@ -1118,7 +1118,7 @@ spec:
 				"unescaped Go templates should not exist in default values")
 
 			// Helm templates we add should still work (not escaped)
-			Expect(crdStr).To(ContainSubstring("{{- if .Values.crd.enable }}"),
+			Expect(crdStr).To(ContainSubstring("{{- if .Values.crd.enabled }}"),
 				"Helm conditional should be present and NOT escaped")
 			Expect(crdStr).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
 				"Helm namespace template should be present and NOT escaped")

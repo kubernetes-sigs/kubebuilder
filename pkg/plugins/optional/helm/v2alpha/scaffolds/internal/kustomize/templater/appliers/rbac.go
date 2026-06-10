@@ -102,7 +102,7 @@ func TemplateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlConte
 func TemplateServiceAccount(detectedPrefix, chartName, yamlContent string) string {
 	yamlContent = AddServiceAccountLabelsAndAnnotations(yamlContent)
 	yamlContent = TemplateServiceAccountName(detectedPrefix, chartName, yamlContent)
-	yamlContent = WrapServiceAccountWithEnableConditional(yamlContent)
+	yamlContent = WrapServiceAccountWithEnabledConditional(yamlContent)
 	return yamlContent
 }
 
@@ -122,14 +122,14 @@ func TemplateServiceAccountName(detectedPrefix, chartName, yamlContent string) s
 	return yamlContent
 }
 
-// WrapServiceAccountWithEnableConditional wraps SA in serviceAccount.enable conditional.
-func WrapServiceAccountWithEnableConditional(yamlContent string) string {
+// WrapServiceAccountWithEnabledConditional wraps SA in serviceAccount.enabled conditional.
+func WrapServiceAccountWithEnabledConditional(yamlContent string) string {
 	// Ensure yamlContent ends with newline so {{- end }} is on its own line
 	if !strings.HasSuffix(yamlContent, "\n") {
 		yamlContent += "\n"
 	}
 	// Default to enabled, but allow an explicit false to disable ServiceAccount creation
-	return "{{- if ne .Values.serviceAccount.enable false }}\n" + yamlContent + "{{- end }}\n"
+	return "{{- if ne .Values.serviceAccount.enabled false }}\n" + yamlContent + "{{- end }}\n"
 }
 
 // AddServiceAccountLabelsAndAnnotations adds custom labels/annotations with omit() filtering.
