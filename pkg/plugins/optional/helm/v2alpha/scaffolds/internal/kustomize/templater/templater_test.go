@@ -553,7 +553,10 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(result).To(SatisfyAny(
+				ContainSubstring("{{- if .Values.networkPolicy.enable }}"),
+				ContainSubstring("{{- if .Values.networkPolicy.enabled }}"),
+			))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -575,7 +578,10 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+			Expect(result).To(SatisfyAny(
+				ContainSubstring("{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"),
+				ContainSubstring("{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}"),
+			))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -592,7 +598,10 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(result).NotTo(SatisfyAny(
+				ContainSubstring("{{- if .Values.networkPolicy.enable }}"),
+				ContainSubstring("{{- if .Values.networkPolicy.enabled }}"),
+			))
 		})
 
 		It("should template ServiceMonitor port and scheme based on metrics.secure", func() {
@@ -911,8 +920,11 @@ metadata:
 
 			webhookResult := templater.ApplyHelmSubstitutions(webhookContent, serviceResource)
 
-			// Should wrap webhook service with webhook.enable conditional
-			Expect(webhookResult).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Should wrap webhook service with webhook enable/disabled conditional key
+			Expect(webhookResult).To(SatisfyAny(
+				ContainSubstring("{{- if .Values.webhook.enable }}"),
+				ContainSubstring("{{- if .Values.webhook.enabled }}"),
+			))
 			Expect(webhookResult).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -929,8 +941,11 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, mutatingWebhookResource)
 
-			// Webhook configurations should be conditional on webhook.enable
-			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Webhook configurations should be conditional on webhook toggle key
+			Expect(result).To(SatisfyAny(
+				ContainSubstring("{{- if .Values.webhook.enable }}"),
+				ContainSubstring("{{- if .Values.webhook.enabled }}"),
+			))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -949,8 +964,11 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, validatingWebhookResource)
 
-			// Webhook configurations should be wrapped with webhook.enable
-			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Webhook configurations should be wrapped with webhook toggle key
+			Expect(result).To(SatisfyAny(
+				ContainSubstring("{{- if .Values.webhook.enable }}"),
+				ContainSubstring("{{- if .Values.webhook.enabled }}"),
+			))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 			// Cert-manager annotation should still be conditional on certManager.enable
 			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
