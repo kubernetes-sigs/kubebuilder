@@ -920,7 +920,7 @@ metadata:
 
 			webhookResult := templater.ApplyHelmSubstitutions(webhookContent, serviceResource)
 
-			// Should wrap webhook service with webhook enable/disabled conditional key
+			// Should wrap webhook service with webhook enable/enabled conditional key
 			Expect(webhookResult).To(SatisfyAny(
 				ContainSubstring("{{- if .Values.webhook.enable }}"),
 				ContainSubstring("{{- if .Values.webhook.enabled }}"),
