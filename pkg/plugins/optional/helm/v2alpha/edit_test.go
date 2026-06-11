@@ -284,6 +284,8 @@ jobs:
 			editCmd.outputDir = common.DefaultOutputDir
 		})
 
+
+
 		AfterEach(func() {
 			// Clean up temp directory
 			if tmpDir != "" {
@@ -423,4 +425,31 @@ helm-rollback: ## Rollback to previous Helm release.
 			Expect(err.Error()).To(ContainSubstring("makefile not found"))
 		})
 	})
+    Context("extractNamespaceFromManifests", func() {
+        It("should return default namespace for malformed YAML", func() {
+            tmpDir, err := os.MkdirTemp("", "helm-malformed-*")
+            Expect(err).NotTo(HaveOccurred())
+            defer os.RemoveAll(tmpDir)
+    
+            manifestsFile := filepath.Join(tmpDir, "install.yaml")
+    
+            malformedYAML := `
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: test-system
+    invalid: [
+    `
+    
+            err = os.WriteFile(manifestsFile, []byte(malformedYAML), 0644)
+            Expect(err).NotTo(HaveOccurred())
+    
+            editCmd.manifestsFile = manifestsFile
+    
+            namespace := editCmd.extractNamespaceFromManifests()
+    
+            Expect(namespace).To(Equal("test-project-system"))
+        })
+    })
+
 })
