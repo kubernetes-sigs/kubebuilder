@@ -31,9 +31,7 @@ import (
 )
 
 var _ = Describe("Webhook Incremental Scaffolding", func() {
-	var (
-		kbc *utils.TestContext
-	)
+	var kbc *utils.TestContext
 
 	BeforeEach(func() {
 		var err error
@@ -315,7 +313,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 	})`
 			modified = strings.Replace(modified, "	})\n\n	AfterEach(func() {", customCode+"\n\n	AfterEach(func() {", 1)
 
-			err = os.WriteFile(testFile, []byte(modified), 0644)
+			err = os.WriteFile(testFile, []byte(modified), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("customizing: adding custom implementation to webhook")
@@ -331,7 +329,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 		testcustom.Spec.Replicas = &replicas
 	}`)
 
-			err = os.WriteFile(webhookFile, []byte(modifiedWebhook), 0644)
+			err = os.WriteFile(webhookFile, []byte(modifiedWebhook), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("adding validation webhook WITHOUT --force")
@@ -401,7 +399,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			modified := strings.ReplaceAll(string(content), "// TODO (user): Add any setup logic common to all tests\n", "")
 			modified = strings.ReplaceAll(modified, "// TODO (user): Add any teardown logic common to all tests\n", "")
 
-			err = os.WriteFile(testFile, []byte(modified), 0644)
+			err = os.WriteFile(testFile, []byte(modified), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("adding defaulting webhook WITHOUT --force")
