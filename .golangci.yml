@@ -32,7 +32,7 @@ linters:
   settings:
     depguard:
       rules:
-        forbid-pkg-errors:
+        forbid-sort-pkg:
           deny:
             - pkg: sort
               desc: Should be replaced with slices package
