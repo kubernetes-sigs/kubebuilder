@@ -396,16 +396,20 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		slices.SortStableFunc(failedJobs, func(a, b *kbatch.Job) int {
 			aStartTime := a.Status.StartTime
 			bStartTime := b.Status.StartTime
-			if aStartTime == nil && bStartTime != nil {
-				return 1
-			}
-
-			if aStartTime.Before(bStartTime) {
+			switch {
+			case aStartTime == nil && bStartTime == nil:
+				return 0
+			case aStartTime == nil:
 				return -1
-			} else if bStartTime.Before(aStartTime) {
+			case bStartTime == nil:
 				return 1
+			case aStartTime.Before(bStartTime):
+				return -1
+			case bStartTime.Before(aStartTime):
+				return 1
+			default:
+				return 0
 			}
-			return 0
 		})
 		for i, job := range failedJobs {
 			if int32(i) >= int32(len(failedJobs))-*cronJob.Spec.FailedJobsHistoryLimit {
@@ -423,16 +427,20 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		slices.SortStableFunc(successfulJobs, func(a, b *kbatch.Job) int {
 			aStartTime := a.Status.StartTime
 			bStartTime := b.Status.StartTime
-			if aStartTime == nil && bStartTime != nil {
-				return 1
-			}
-
-			if aStartTime.Before(bStartTime) {
+			switch {
+			case aStartTime == nil && bStartTime == nil:
+				return 0
+			case aStartTime == nil:
 				return -1
-			} else if bStartTime.Before(aStartTime) {
+			case bStartTime == nil:
 				return 1
+			case aStartTime.Before(bStartTime):
+				return -1
+			case bStartTime.Before(aStartTime):
+				return 1
+			default:
+				return 0
 			}
-			return 0
 		})
 		for i, job := range successfulJobs {
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
