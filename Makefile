@@ -104,7 +104,8 @@ generate-charts: build ## Re-generate the helm chart testdata and docs samples
 fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
 	./hack/docs/fix_note_accessibility.sh
 	@echo "Removing trailing spaces from markdown files..."
-	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
+	@find . -type f -name "*.md" -exec sed -i.bak 's/[[:space:]]*$$//' {} +
+	@find . -type f -name "*.md.bak" -delete
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
