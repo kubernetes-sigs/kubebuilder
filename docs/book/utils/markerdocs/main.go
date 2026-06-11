@@ -50,12 +50,12 @@ func maybeDetails(help *DetailedHelp) toHTML {
 			summary(optionalClasses{"no-details": help.Details == ""},
 				Text(help.Summary)),
 			// NB(directxman12): if we don't wrap with newlines, markdown won't be parsed
-			Text(wrapWithNewlines(help.Details)))}
+			Text(wrapWithNewlines(help.Details))),
+	}
 }
 
 // markerTemplate returns HTML describing the documentation for a given marker.
 func markerTemplate(marker *MarkerDoc) toHTML {
-
 	// the marker name
 	term := dt(classes{"literal", "name"},
 		Text("// +"+marker.Name))
@@ -83,7 +83,8 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 			dd(optionalClasses{"argument": true, "type": true, "optional": field.Optional},
 				argType(&field.Argument)),
 			dd(classes{"description"},
-				maybeDetails(&field.DetailedHelp))})
+				maybeDetails(&field.DetailedHelp)),
+		})
 	}
 
 	// the help (displayed in both modes)

@@ -114,6 +114,10 @@ lint: golangci-lint ## Run golangci-lint linter
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: lint-fmt
+lint-fmt: golangci-lint ## Verify Go code is formatted
+	$(GOLANGCI_LINT) fmt --diff
+
 
 # Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
 # Repo YAML uses .yamllint; Helm output uses .yamllint-helm.
@@ -250,7 +254,7 @@ kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-
 verify: verify-lint verify-license verify-sample-permissions verify-testdata verify-docs verify-helm ## Run all verification checks
 
 .PHONY: verify-lint
-verify-lint: verify-lint-config yamllint-yaml ## Run linting checks (config, YAML). Note: golangci-lint run is done via CI action for PR comments
+verify-lint: verify-lint-config lint-fmt yamllint-yaml ## Run linting checks (config, format, YAML). Note: golangci-lint run is done via CI action for PR comments
 
 .PHONY: verify-lint-config
 verify-lint-config: golangci-lint ## Verify golangci-lint linter configuration

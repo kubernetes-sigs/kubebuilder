@@ -1380,9 +1380,9 @@ spec:
 `
 			// Write kustomize output to file
 			manifestsPath := filepath.Join("dist", "install.yaml")
-			err := fs.FS.MkdirAll(filepath.Dir(manifestsPath), 0755)
+			err := fs.FS.MkdirAll(filepath.Dir(manifestsPath), 0o755)
 			Expect(err).NotTo(HaveOccurred())
-			err = afero.WriteFile(fs.FS, manifestsPath, []byte(kustomizeOutput), 0644)
+			err = afero.WriteFile(fs.FS, manifestsPath, []byte(kustomizeOutput), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("parsing the kustomize output")
