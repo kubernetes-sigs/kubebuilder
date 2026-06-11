@@ -423,4 +423,62 @@ helm-rollback: ## Rollback to previous Helm release.
 			Expect(err.Error()).To(ContainSubstring("makefile not found"))
 		})
 	})
+
+	Context("extractNamespaceFromManifests", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "helm-edit-test-*")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = os.Chdir(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			editCmd.config = cfg
+		})
+
+		AfterEach(func() {
+			if tmpDir != "" {
+				_ = os.RemoveAll(tmpDir)
+			}
+		})
+
+		It("should return default namespace when manifests file does not exist", func() {
+			editCmd.manifestsFile = filepath.Join(tmpDir, "nonexistent.yaml")
+			ns := editCmd.extractNamespaceFromManifests()
+			Expect(ns).To(Equal("test-project-system"))
+		})
+
+		It("should return namespace from manager Deployment in valid manifests", func() {
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+  namespace: my-custom-system
+`
+			manifestPath := filepath.Join(tmpDir, "install.yaml")
+			err := os.WriteFile(manifestPath, []byte(content), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			editCmd.manifestsFile = manifestPath
+			ns := editCmd.extractNamespaceFromManifests()
+			Expect(ns).To(Equal("my-custom-system"))
+		})
+
+		It("should return default namespace when manifests are malformed YAML", func() {
+			malformed := `
+: this is not : valid yaml: [
+  broken: {
+`
+			manifestPath := filepath.Join(tmpDir, "install.yaml")
+			err := os.WriteFile(manifestPath, []byte(malformed), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			editCmd.manifestsFile = manifestPath
+
+			ns := editCmd.extractNamespaceFromManifests()
+			Expect(ns).To(Equal("test-project-system"))
+		})
+	})
 })
