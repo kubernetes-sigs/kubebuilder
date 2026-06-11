@@ -20,6 +20,7 @@ package test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -329,6 +330,48 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 						"app.kubernetes.io/name label should not be hardcoded in "+file.Name())
 				}
 			}
+		})
+	})
+
+	Context("ServiceAccount name resolution (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			if _, err := exec.LookPath("helm"); err != nil {
+				Skip("helm binary not found on PATH; skipping render-based test")
+			}
+
+			kustomizeYAML := createKustomizeForServiceAccountRender("test-project")
+			Expect(setupKustomizeFile(manifestsFile, kustomizeYAML)).To(Succeed())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
+			out, err := exec.Command("helm", args...).CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", string(out))
+			return string(out)
+		}
+
+		It("uses the external ServiceAccount name when enabled=false and name is set", func() {
+			rendered := renderChart("--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa")
+
+			By("the Deployment references the external ServiceAccount, not the generated name")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: external-sa"))
+			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+
+			By("no ServiceAccount manifest is created since enabled=false")
+			Expect(rendered).NotTo(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("falls back to the generated name when serviceAccount config is left at defaults", func() {
+			rendered := renderChart()
+
+			By("the Deployment uses the generated controller-manager name")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+
+			By("the default ServiceAccount manifest is created")
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
 		})
 	})
 
@@ -712,6 +755,87 @@ spec:
           capabilities:
             drop:
             - ALL
+`
+}
+
+// createKustomizeForServiceAccountRender produces a kustomize output complete enough to render
+// cleanly with `helm template` (full pod template metadata, resources, security context) while
+// including a ServiceAccount and ClusterRole so the chart exercises the serviceAccountName helper.
+func createKustomizeForServiceAccountRender(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ` + projectName + `-manager-role
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - --leader-elect
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: ` + projectName + `-controller-manager
 `
 }
 
