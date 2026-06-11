@@ -448,7 +448,7 @@ plugins:
 			// When --plugins is followed by --help, --help is consumed as plugin value
 			// This should not trigger plugin validation errors
 			It("should not fail when `--plugins --help` is used together", func() {
-				os.Args = append(os.Args, "edit", "--plugins", "--help")
+				os.Args = append(os.Args, "edit", pluginsFlagArg, "--help")
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
@@ -456,10 +456,24 @@ plugins:
 
 			// Same test for short help flag
 			It("should not fail when `--plugins -h` is used together", func() {
-				os.Args = append(os.Args, "edit", "--plugins", "-h")
+				os.Args = append(os.Args, "edit", pluginsFlagArg, "-h")
 
 				Expect(c.getInfoFromFlags(false)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
+			})
+
+			It("should keep the plugin key when `--plugins=<value> --help` is used together", func() {
+				os.Args = append(os.Args, "edit", pluginsFlagArg+"="+pluginGoV1, "--help")
+
+				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{pluginGoV1}))
+			})
+
+			It("should keep the plugin key when `--plugins=<value> -h` is used together", func() {
+				os.Args = append(os.Args, "edit", pluginsFlagArg+"="+pluginGoV1, "-h")
+
+				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{pluginGoV1}))
 			})
 		})
 	})

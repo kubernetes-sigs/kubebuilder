@@ -174,13 +174,17 @@ func WithFilesystem(filesystem machinery.Filesystem) Option {
 	}
 }
 
+func isPluginsFlag(arg string) bool {
+	return arg == pluginsFlagArg || strings.HasPrefix(arg, pluginsFlagArg+"=")
+}
+
 // parseExternalPluginArgs returns the program arguments.
 func parseExternalPluginArgs() (args []string) {
 	// Loop through os.Args and only get flags and their values that should be passed to the plugins
 	// this also removes the --plugins flag and its values from the list passed to the external plugin
-	for i := range os.Args {
-		if strings.HasPrefix(os.Args[i], "--") && os.Args[i] != "--plugins" && !strings.HasPrefix(os.Args[i], "--plugins=") {
-			args = append(args, os.Args[i])
+	for i, arg := range os.Args {
+		if strings.HasPrefix(arg, "--") && !isPluginsFlag(arg) {
+			args = append(args, arg)
 
 			// Don't go out of bounds and don't append the next value if it is a flag
 			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "--") {

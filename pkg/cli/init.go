@@ -32,7 +32,7 @@ const initErrorMsg = "failed to initialize project"
 
 func (c CLI) newInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init",
+		Use:   kubebuilderSubcommandInit,
 		Short: "Initialize a new project",
 		Long: `Initialize a new project.
 
