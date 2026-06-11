@@ -100,7 +100,7 @@ jobs:
       - name: Deploy manager via Helm
         working-directory: testdata/project-v4-with-plugins
         run: |
-          make helm-deploy IMG=controller:latest HELM_EXTRA_ARGS="--set prometheus.enable=true"
+          make helm-deploy IMG=controller:latest HELM_EXTRA_ARGS="--set prometheus.enabled=true"
 
       - name: Check Helm release status
         working-directory: testdata/project-v4-with-plugins

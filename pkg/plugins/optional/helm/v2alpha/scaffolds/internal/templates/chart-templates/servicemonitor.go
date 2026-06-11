@@ -58,7 +58,7 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	return nil
 }
 
-const serviceMonitorTemplate = `{{` + "`" + `{{- if .Values.prometheus.enable }}` + "`" + `}}
+const serviceMonitorTemplate = `{{` + "`" + `{{- if .Values.prometheus.enabled }}` + "`" + `}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -86,7 +86,7 @@ spec:
 	`{{ "{{ include \"%s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}" }}.` +
 	`{{ "{{ .Release.Namespace }}" }}.svc
-      {{ "{{- if .Values.certManager.enable }}" }}
+      {{ "{{- if .Values.certManager.enabled }}" }}
       ca:
         secret:
           name: metrics-server-cert

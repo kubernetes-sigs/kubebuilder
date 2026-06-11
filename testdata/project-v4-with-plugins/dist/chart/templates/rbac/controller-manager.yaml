@@ -1,4 +1,4 @@
-{{- if ne .Values.serviceAccount.enable false }}
+{{- if ne .Values.serviceAccount.enabled false }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

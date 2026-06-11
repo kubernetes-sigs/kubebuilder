@@ -1,9 +1,9 @@
-{{- if .Values.webhook.enable }}
+{{- if .Values.webhook.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    {{- if .Values.certManager.enable }}
+    {{- if .Values.certManager.enabled }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "project-v4-with-plugins.resourceName" (dict "suffix" "serving-cert" "context" $) }}
     {{- end }}
   name: {{ include "project-v4-with-plugins.resourceName" (dict "suffix" "validating-webhook-configuration" "context" $) }}

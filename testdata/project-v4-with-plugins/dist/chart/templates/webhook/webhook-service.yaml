@@ -1,4 +1,4 @@
-{{- if .Values.webhook.enable }}
+{{- if .Values.webhook.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

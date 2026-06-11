@@ -122,11 +122,12 @@ Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 
 {{` + "`" + `{{/*
 ServiceAccount name to use.
-If serviceAccount.enable is false and serviceAccount.name is set, use that name.
+If serviceAccount.enabled is false and serviceAccount.name is set, use that name.
 Otherwise, use the standard resourceName helper with "controller-manager" suffix.
 */}}` + "`" + `}}
 {{` + "`" + `{{- define "%s.serviceAccountName" -}}` + "`" + `}}
-{{` + "`" + `{{- if and (not (.Values.serviceAccount.enable | default true)) .Values.serviceAccount.name }}` + "`" + `}}
+{{` + "`" + `{{- if and (not (.Values.serviceAccount.enabled | default true))` +
+	` .Values.serviceAccount.name }}` + "`" + `}}
 {{` + "`" + `{{- .Values.serviceAccount.name }}` + "`" + `}}
 {{` + "`" + `{{- else }}` + "`" + `}}
 {{` + "`" + `{{- include "%s.resourceName" (dict "suffix" "controller-manager" "context" .) }}` + "`" + `}}

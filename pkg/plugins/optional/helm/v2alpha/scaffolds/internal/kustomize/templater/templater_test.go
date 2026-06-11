@@ -110,12 +110,12 @@ webhooks:
 			result := templater.ApplyHelmSubstitutions(content, resource)
 
 			// Should have proper conditional formatting without extra spaces
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 			Expect(result).To(ContainSubstring("cert-manager.io/inject-ca-from:"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 
 			// Should NOT have extra blank lines or improper indentation
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}\n\n"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enabled }}\n\n"))
 			Expect(result).NotTo(ContainSubstring("cert-manager.io/inject-ca-from:\n\n"))
 		})
 
@@ -191,7 +191,7 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enabled }}"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=:{{ .Values.metrics.port }}"))
 			Expect(result).To(ContainSubstring("{{- if not .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("- --metrics-secure=false"))
@@ -233,11 +233,12 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
 			// Should have conditional blocks for webhook certs
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 			Expect(result).To(ContainSubstring("mountPath: /tmp/k8s-webhook-server/serving-certs"))
 
 			// Should have conditional blocks for metrics certs
-			Expect(result).To(ContainSubstring("{{- if and .Values.certManager.enable .Values.metrics.enable }}"))
+			metricsSecureCond := "{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}"
+			Expect(result).To(ContainSubstring(metricsSecureCond))
 			Expect(result).To(ContainSubstring("mountPath: /tmp/k8s-metrics-server/metrics-certs"))
 		})
 
@@ -530,8 +531,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 
-			// Should be wrapped with prometheus enable conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.prometheus.enable }}"))
+			// Should be wrapped with prometheus enabled conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.prometheus.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -553,7 +554,7 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -575,7 +576,7 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if and .Values.networkPolicy.enable .Values.webhook.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -592,7 +593,7 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.networkPolicy.enable }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
 		})
 
 		It("should template ServiceMonitor port and scheme based on metrics.secure", func() {
@@ -674,7 +675,7 @@ spec:
 			Expect(result).To(ContainSubstring("scheme: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}"))
 		})
 
-		It("should wrap ServiceMonitor with certManager.enable conditional when using default cert-manager secret", func() {
+		It("should wrap ServiceMonitor with certManager.enabled conditional when using default cert-manager secret", func() {
 			serviceMonitorResource := &unstructured.Unstructured{}
 			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
 			serviceMonitorResource.SetKind("ServiceMonitor")
@@ -707,7 +708,7 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 
 			// Should have cert-manager conditional (using default cert-manager secret)
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 
 			// Should preserve secret names
 			Expect(result).To(ContainSubstring("name: metrics-server-cert"))
@@ -751,7 +752,7 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 
 			// Should NOT have cert-manager conditional (custom secrets)
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 			Expect(result).NotTo(ContainSubstring("{{- else }}"))
 
 			// Custom secret names should be preserved as-is
@@ -785,7 +786,7 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 
 			// Should NOT have cert-manager conditional (no cert-manager fields detected)
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 
 			// Should preserve insecureSkipVerify: true as-is
 			Expect(result).To(ContainSubstring("insecureSkipVerify: true"))
@@ -819,7 +820,7 @@ spec:
 			Expect(result).NotTo(ContainSubstring("insecureSkipVerify: false"))
 
 			// Should NOT have cert-manager conditional (no cert-manager fields)
-			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 		})
 
 		It("should add metrics conditional for metrics services", func() {
@@ -835,8 +836,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, serviceResource)
 
-			// Should be wrapped with metrics enable conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enable }}"))
+			// Should be wrapped with metrics enabled conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.metrics.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -853,8 +854,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, certResource)
 
-			// Should be wrapped with certManager enable conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			// Should be wrapped with certManager enabled conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -874,7 +875,7 @@ metadata:
 			// Should be wrapped with certManager, metrics, AND metrics.secure conditionals
 			// Metrics certs only needed when using HTTPS (metrics.secure=true)
 			Expect(result).To(ContainSubstring(
-				"{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}"))
+				"{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -911,8 +912,8 @@ metadata:
 
 			webhookResult := templater.ApplyHelmSubstitutions(webhookContent, serviceResource)
 
-			// Should wrap webhook service with webhook.enable conditional
-			Expect(webhookResult).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Should wrap webhook service with webhook.enabled conditional
+			Expect(webhookResult).To(ContainSubstring("{{- if .Values.webhook.enabled }}"))
 			Expect(webhookResult).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -929,8 +930,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, mutatingWebhookResource)
 
-			// Webhook configurations should be conditional on webhook.enable
-			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Webhook configurations should be conditional on webhook.enabled
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -949,14 +950,14 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, validatingWebhookResource)
 
-			// Webhook configurations should be wrapped with webhook.enable
-			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enable }}"))
+			// Webhook configurations should be wrapped with webhook.enabled
+			Expect(result).To(ContainSubstring("{{- if .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
-			// Cert-manager annotation should still be conditional on certManager.enable
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enable }}"))
+			// Cert-manager annotation should still be conditional on certManager.enabled
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 		})
 
-		It("should add crd.enable conditional and resource-policy annotation for CRDs", func() {
+		It("should add crd.enabled conditional and resource-policy annotation for CRDs", func() {
 			crdResource := &unstructured.Unstructured{}
 			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
 			crdResource.SetKind("CustomResourceDefinition")
@@ -971,8 +972,8 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, crdResource)
 
-			// Should be wrapped with crd.enable conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			// Should be wrapped with crd.enabled conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 			// Should have resource-policy annotation for helm uninstall protection
 			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
@@ -1003,8 +1004,8 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, crdResource)
 
-			// Should be wrapped with crd.enable conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.crd.enable }}"))
+			// Should be wrapped with crd.enabled conditional
+			Expect(result).To(ContainSubstring("{{- if .Values.crd.enabled }}"))
 			// Should have resource-policy annotation
 			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
 			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
@@ -1079,7 +1080,7 @@ metadata:
 			result := templater.ApplyHelmSubstitutions(content, clusterRoleResource)
 
 			// Should be wrapped with rbac.helpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -1097,7 +1098,7 @@ metadata:
 			result := templater.ApplyHelmSubstitutions(content, bindingResource)
 
 			// Should be wrapped with rbac.helpers conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enable }}"))
+			Expect(result).To(ContainSubstring("{{- if .Values.rbac.helpers.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 	})
@@ -2890,7 +2891,7 @@ spec:
           readOnly: true
 `
 			result := templater.ApplyHelmSubstitutions(content, deployment)
-			Expect(result).To(ContainSubstring(".Values.certManager.enable"))
+			Expect(result).To(ContainSubstring(".Values.certManager.enabled"))
 			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
 			Expect(result).To(ContainSubstring("app-secret-1"))
 		})
@@ -3879,7 +3880,7 @@ subjects:
 			Expect(result).NotTo(ContainSubstring("ClusterRoleBinding"))
 		})
 
-		It("should wrap metrics-auth ClusterRole with metrics.enable AND metrics.secure conditional", func() {
+		It("should wrap metrics-auth ClusterRole with metrics.enabled AND metrics.secure conditional", func() {
 			metricsRoleResource := &unstructured.Unstructured{}
 			metricsRoleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
 			metricsRoleResource.SetKind("ClusterRole")
@@ -3899,8 +3900,8 @@ rules:
 
 			result := templater.ApplyHelmSubstitutions(content, metricsRoleResource)
 
-			// Should wrap with metrics.enable AND metrics.secure conditional
-			Expect(result).To(ContainSubstring("{{- if and .Values.metrics.enable .Values.metrics.secure }}"))
+			// Should wrap with metrics.enabled AND metrics.secure conditional
+			Expect(result).To(ContainSubstring("{{- if and .Values.metrics.enabled .Values.metrics.secure }}"))
 			// Should NOT have rbac.create
 			Expect(result).NotTo(ContainSubstring("{{- if and .Values.rbac.create"))
 			// Metrics auth role is ALWAYS ClusterRole (never namespace-scoped)
@@ -4126,7 +4127,7 @@ rules: []`
 
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
-			It("allows toggling ServiceAccount installation with enable flag", func() {
+			It("allows toggling ServiceAccount installation with serviceAccount.enabled flag", func() {
 				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
@@ -4145,7 +4146,7 @@ metadata:
 
 				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enable false }}"))
+				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enabled false }}"))
 				Expect(result).To(ContainSubstring("{{- end }}"))
 			})
 

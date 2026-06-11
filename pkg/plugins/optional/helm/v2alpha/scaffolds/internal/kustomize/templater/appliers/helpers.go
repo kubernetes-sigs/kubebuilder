@@ -79,7 +79,7 @@ func MakeYamlContent(match string) string {
 
 		// Reconstruct the block with conditional wrapper at child indent
 		var result strings.Builder
-		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enable }}\n", childIndent)
+		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enabled }}\n", childIndent)
 		for _, line := range lines {
 			result.WriteString("  " + line + "\n")
 		}
