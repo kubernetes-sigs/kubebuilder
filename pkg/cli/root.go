@@ -122,7 +122,7 @@ func (c CLI) rootExamples() string {
 
 Use optional plugins when you want extra scaffolding during init:
 
-    %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha
+    %[1]s init --domain example.org --plugins <PLUGIN_KEYS>
 
 Available plugins:
 

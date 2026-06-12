@@ -55,6 +55,7 @@ var _ = Describe("editSubcommand", func() {
 			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
 
 			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --multigroup"))
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --namespaced\n"))
 			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --namespaced --force"))
 			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --multigroup --namespaced --force"))
 			Expect(meta.Examples).To(ContainSubstring("kubebuilder edit --license-file ./my-header.txt"))

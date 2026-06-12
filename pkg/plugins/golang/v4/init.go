@@ -81,7 +81,7 @@ Configuration flags:
   --license: License to use (apache2 or none, default: apache2)
 
 Plugin flags:
-  --plugins: Comma-separated list of plugins to use (e.g., go/v4,helm/v2-alpha).
+  --plugins: Comma-separated list of plugins to use (e.g., go/v4,<PLUGIN_KEY>).
              If unset, Kubebuilder uses the default go/v4 scaffold.
              Plugins used during init are saved to the PROJECT layout.
              Future operations, such as create api and create webhook, use that plugin chain.
@@ -110,7 +110,7 @@ Note: Layout settings can be changed later with 'kubebuilder edit'.
 
   # Initialize with optional plugins
   %[1]s init --plugins go/v4,autoupdate/v1-alpha --domain example.org
-  %[1]s init --plugins go/v4,helm/v2-alpha --domain example.org
+  %[1]s init --plugins go/v4,<PLUGIN_KEY> --domain example.org
 
   # Initialize with custom settings
   %[1]s init --domain example.org --owner "Your Name" --license apache2

@@ -42,8 +42,8 @@ var _ = Describe("init", func() {
 			examples := cli.getInitHelpExamples()
 
 			Expect(examples).To(ContainSubstring("kubebuilder init"))
-			Expect(examples).To(ContainSubstring("project-version"))
-			Expect(examples).To(ContainSubstring("--plugins go/v4,helm/v2-alpha"))
+			Expect(examples).To(ContainSubstring("--plugins"))
+			Expect(examples).To(ContainSubstring("--project-version 4"))
 		})
 
 		It("should handle multiple versions", func() {

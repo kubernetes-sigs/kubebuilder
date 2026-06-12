@@ -53,7 +53,7 @@ var _ = Describe("initSubcommand", func() {
 			Expect(meta.Examples).To(ContainSubstring("kubebuilder init --domain example.org"))
 			Expect(meta.Examples).To(ContainSubstring("--domain example.org --multigroup"))
 			Expect(meta.Examples).To(ContainSubstring("--domain example.org --namespaced"))
-			Expect(meta.Examples).To(ContainSubstring("--plugins go/v4,helm/v2-alpha"))
+			Expect(meta.Examples).To(ContainSubstring("--plugins go/v4,<PLUGIN_KEY>"))
 			Expect(meta.Examples).To(ContainSubstring(`--owner "Your Name" --license apache2`))
 			Expect(meta.Examples).To(ContainSubstring("--license-file ./my-header.txt"))
 			Expect(meta.Examples).To(ContainSubstring("--project-version 3"))

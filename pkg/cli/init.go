@@ -88,7 +88,7 @@ func (c CLI) getInitHelpExamples() string {
   %[1]s init --domain example.org
 
   # Initialize with optional plugins
-  %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha`, c.commandName)
+  %[1]s init --domain example.org --plugins <PLUGIN_KEYS>`, c.commandName)
 		}
 		projectVersionExample = versions[len(versions)-1].String()
 	}
@@ -97,10 +97,10 @@ func (c CLI) getInitHelpExamples() string {
   %[1]s init --domain example.org
 
   # Initialize with optional plugins
-  %[1]s init --domain example.org --plugins go/v4,helm/v2-alpha
+  %[1]s init --domain example.org --plugins <PLUGIN_KEYS>
 
   # Initialize with a specific project config version
-  %[1]s init --domain example.org --plugins go/v4 --project-version %[2]s`,
+  %[1]s init --domain example.org --plugins <PLUGIN_KEYS> --project-version %[2]s`,
 		c.commandName, projectVersionExample)
 }
 

@@ -80,6 +80,9 @@ Note: To add optional plugins after initialization, use 'kubebuilder edit --plug
 	subcmdMeta.Examples = fmt.Sprintf(`  # Enable multigroup layout
   %[1]s edit --multigroup
 
+  # Enable namespace-scoped permissions
+  %[1]s edit --namespaced
+
   # Enable namespace-scoped permissions and regenerate scaffolded files
   %[1]s edit --namespaced --force
 
