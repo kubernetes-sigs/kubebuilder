@@ -78,6 +78,16 @@ Following the targets that can be used to test your changes locally.
 
 **NOTE** `make verify-lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
 
+### macOS notes
+
+If you run the documentation targets on macOS, install the required tools first:
+
+```shell
+brew install bash mdbook
+```
+
+The docs cleanup targets support both BSD `sed` and GNU `sed`, so you do not need to replace the system `sed`.
+
 ### Running e2e tests locally
 
 See that you can run `test-e2e-local` to setup Kind and run e2e tests locally.
