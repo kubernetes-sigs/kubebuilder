@@ -2855,10 +2855,35 @@ spec:
 		})
 
 		It("should append only extraVolumes from values and keep webhook/metrics conditional", func() {
-			deployment := &unstructured.Unstructured{}
-			deployment.SetAPIVersion("apps/v1")
-			deployment.SetKind("Deployment")
-			deployment.SetName("test-project-controller-manager")
+			deployment := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]any{
+						"name": "test-project-controller-manager",
+					},
+					"spec": map[string]any{
+						"template": map[string]any{
+							"spec": map[string]any{
+								"volumes": []any{
+									map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+									map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+								},
+								"containers": []any{
+									map[string]any{
+										"name":  "manager",
+										"image": "controller:latest",
+										"volumeMounts": []any{
+											map[string]any{"name": "webhook-certs", "mountPath": "/tmp/k8s-webhook-server/serving-certs", "readOnly": true},
+											map[string]any{"name": "metrics-certs", "mountPath": "/tmp/k8s-metrics-server/metrics-certs", "readOnly": true},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
 			content := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2873,27 +2898,22 @@ spec:
       - name: metrics-certs
         secret:
           secretName: metrics-server-cert
-      - name: app-secret-1
-        secret:
-          secretName: app-secret-1
       containers:
       - name: manager
         image: controller:latest
         volumeMounts:
-        - name: webhook-certs
-          mountPath: /tmp/k8s-webhook-server/serving-certs
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
           readOnly: true
-        - name: metrics-certs
-          mountPath: /tmp/k8s-metrics-server/metrics-certs
-          readOnly: true
-        - name: app-secret-1
-          mountPath: /etc/secrets
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
           readOnly: true
 `
 			result := templater.ApplyHelmSubstitutions(content, deployment)
 			Expect(result).To(ContainSubstring(".Values.certManager.enabled"))
 			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
-			Expect(result).To(ContainSubstring("app-secret-1"))
+			Expect(result).To(ContainSubstring("webhook-certs"))
+			Expect(result).To(ContainSubstring("metrics-certs"))
 		})
 
 		It("should fall back to 'manager' when default-container annotation is missing", func() {

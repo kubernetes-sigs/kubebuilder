@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 // DeploymentExtractor extracts deployment configuration for values.yaml.
@@ -457,13 +459,9 @@ func extractContainerSecurityContext(container map[string]any, config map[string
 	config["securityContext"] = securityContext
 }
 
-// defaultWebhookMetricsVolumeNames are excluded from extraVolumes (managed by chart).
-var defaultWebhookMetricsVolumeNames = map[string]struct{}{
-	"webhook-certs": {},
-	"metrics-certs": {},
-}
 
-// extractExtraVolumes extracts volumes, excluding webhook-certs and metrics-certs.
+// extractExtraVolumes extracts custom volumes for values.yaml and removes them
+// from specMap so they only appear via {{ toYaml .Values.manager.extraVolumes }}.
 func extractExtraVolumes(specMap map[string]any, config map[string]any) {
 	volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes")
 	if !found || err != nil {
@@ -474,23 +472,27 @@ func extractExtraVolumes(specMap map[string]any, config map[string]any) {
 		return
 	}
 	extra := make([]any, 0, len(volumesList))
+	system := make([]any, 0, len(volumesList))
 	for _, v := range volumesList {
 		vm, ok := v.(map[string]any)
 		if !ok {
 			continue
 		}
 		name, _ := vm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
+		if _, isDefault := common.DefaultWebhookMetricNames[name]; isDefault {
+			system = append(system, v)
+		} else {
+			extra = append(extra, v)
 		}
-		extra = append(extra, v)
 	}
 	if len(extra) > 0 {
 		config["extraVolumes"] = extra
 	}
+	specMap["volumes"] = system
 }
 
-// extractExtraVolumeMounts extracts volume mounts, excluding webhook-certs and metrics-certs.
+// extractExtraVolumeMounts extracts custom volume mounts for values.yaml and removes them
+// from the container so they only appear via {{ toYaml .Values.manager.extraVolumeMounts }}.
 func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
 	mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts")
 	if !found || err != nil {
@@ -501,20 +503,23 @@ func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
 		return
 	}
 	extra := make([]any, 0, len(mountsList))
+	system := make([]any, 0, len(mountsList))
 	for _, m := range mountsList {
 		mm, ok := m.(map[string]any)
 		if !ok {
 			continue
 		}
 		name, _ := mm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
+		if _, isDefault := common.DefaultWebhookMetricNames[name]; isDefault {
+			system = append(system, m)
+		} else {
+			extra = append(extra, m)
 		}
-		extra = append(extra, m)
 	}
 	if len(extra) > 0 {
 		config["extraVolumeMounts"] = extra
 	}
+	container["volumeMounts"] = system
 }
 
 // extractDeploymentReplicas extracts the replicas count from the deployment spec.
