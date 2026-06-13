@@ -51,6 +51,11 @@ const (
 	testWebhookCertsVolume            = "webhook-certs"
 )
 
+func extractDeploymentConfig(deployment *unstructured.Unstructured) map[string]any {
+	de := extractor.DeploymentExtractor{}
+	return convertValuesConfigToMap(de.ExtractDeploymentConfig(deployment))
+}
+
 var _ = Describe("ChartConverter", func() {
 	var (
 		converter *ChartConverter
@@ -191,7 +196,7 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).NotTo(BeNil())
 			Expect(config).To(HaveKey("env"))
@@ -234,7 +239,7 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("metricsPort"))
 			Expect(config["metricsPort"]).To(Equal(8443))
@@ -264,7 +269,7 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("webhookPort"))
 			Expect(config["webhookPort"]).To(Equal(9443))
@@ -297,7 +302,7 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config["metricsPort"]).To(Equal(9090))
 			Expect(config["healthPort"]).To(BeNil())
@@ -332,13 +337,13 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 			Expect(config).To(HaveKey("imagePullSecrets"))
 			Expect(config["imagePullSecrets"]).To(Equal(imagePullSecrets))
 		})
 
 		It("should handle deployment without containers", func() {
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 			// Should still extract deployment-level fields (replicas, strategy) even without containers
 			Expect(config).To(HaveKey("replicas"))
 			Expect(config["replicas"]).To(Equal(1))
@@ -393,7 +398,7 @@ var _ = Describe("ChartConverter", func() {
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("extraVolumes"))
 			extraVols, ok := config["extraVolumes"].([]any)
@@ -448,7 +453,7 @@ var _ = Describe("ChartConverter", func() {
 			err = unstructured.SetNestedSlice(resources.Deployment.Object, containers, "spec", "template", "spec", "containers")
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			extraVols, ok := config["extraVolumes"].([]any)
 			Expect(ok).To(BeTrue())
@@ -462,7 +467,7 @@ var _ = Describe("ChartConverter", func() {
 
 		It("should extract deployment replicas", func() {
 			// replicas is set in BeforeEach to 1
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("replicas"))
 			Expect(config["replicas"]).To(Equal(1))
@@ -480,7 +485,7 @@ var _ = Describe("ChartConverter", func() {
 			err := unstructured.SetNestedField(resources.Deployment.Object, strategy, "spec", "strategy")
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("strategy"))
 			strategyConfig, ok := config["strategy"].(map[string]any)
@@ -499,7 +504,7 @@ var _ = Describe("ChartConverter", func() {
 				resources.Deployment.Object, "high-priority", "spec", "template", "spec", "priorityClassName")
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("priorityClassName"))
 			Expect(config["priorityClassName"]).To(Equal("high-priority"))
@@ -529,7 +534,7 @@ var _ = Describe("ChartConverter", func() {
 				"spec", "template", "spec", "topologySpreadConstraints")
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("topologySpreadConstraints"))
 			tsc, ok := config["topologySpreadConstraints"].([]any)
@@ -548,7 +553,7 @@ var _ = Describe("ChartConverter", func() {
 				resources.Deployment.Object, int64(30), "spec", "template", "spec", "terminationGracePeriodSeconds")
 			Expect(err).NotTo(HaveOccurred())
 
-			config := converter.ExtractDeploymentConfig()
+			config := extractDeploymentConfig(resources.Deployment)
 
 			Expect(config).To(HaveKey("terminationGracePeriodSeconds"))
 			Expect(config["terminationGracePeriodSeconds"]).To(Equal(30))

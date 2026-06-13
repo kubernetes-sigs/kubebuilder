@@ -55,6 +55,12 @@ const (
 	YamlKeyTemplate    = "template:"
 )
 
+// Manager container resolution constants
+const (
+	DefaultContainerAnnotation  = "kubectl.kubernetes.io/default-container"
+	DefaultManagerContainerName = "manager"
+)
+
 // Standard Kubernetes/Helm label keys
 const (
 	LabelKeyAppName      = "app.kubernetes.io/name:"

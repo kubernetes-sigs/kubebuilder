@@ -82,6 +82,10 @@ func (e *Extractor) Extract(resources *ResourceSet, projectName string) *Extract
 	features := e.featuresExtractor.DetectFeatures(resources, metadata.DetectedPrefix, metadata.ManagerNamespace)
 	values := e.deploymentExtractor.ExtractDeploymentConfig(resources.Deployment)
 
+	// Strip custom volumes from deployment after extraction so they only
+	// appear via Helm values templates, not as literal entries in the manifest.
+	e.deploymentExtractor.StripCustomVolumes(resources.Deployment)
+
 	return &Extraction{
 		Metadata: metadata,
 		Features: features,
