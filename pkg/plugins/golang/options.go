@@ -157,10 +157,10 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		loadedRes, err := c.GetResource(res.GVK)
 		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
-			if res.External {
+			if res.External && len(opts.ExternalAPIPath) > 0 {
 				res.Path = opts.ExternalAPIPath
 				res.Domain = opts.ExternalAPIDomain
-			} else {
+			} else if !res.External {
 				// Handle core types
 				if domain, found := coreGroups[res.Group]; found {
 					res.Core = true

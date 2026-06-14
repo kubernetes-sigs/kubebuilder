@@ -17,9 +17,11 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
+	"golang.org/x/mod/module"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -68,11 +70,22 @@ func (r Resource) Validate() error {
 
 	// Validate the Plural
 	// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
-	if errors := validation.IsDNS1035Label(r.Plural); len(errors) != 0 {
-		return fmt.Errorf("invalid Plural: %#v", errors)
+	if errs := validation.IsDNS1035Label(r.Plural); len(errs) != 0 {
+		return fmt.Errorf("invalid Plural: %#v", errs)
 	}
 
-	// TODO: validate the path
+	if r.External {
+		// External resources must have a resolvable package path because scaffolding imports
+		// their API types instead of generating those types in the project.
+		if err := ValidateExternalAPIPath(r.Path,
+			"Move module@version specifiers to the PROJECT resource's module: field"); err != nil {
+			return fmt.Errorf("invalid Path: %w", err)
+		}
+	} else if r.Path != "" {
+		if err := module.CheckImportPath(r.Path); err != nil {
+			return fmt.Errorf("invalid Path: %w", err)
+		}
+	}
 
 	// Validate the API
 	if r.API != nil && !r.API.IsEmpty() {
@@ -93,6 +106,41 @@ func (r Resource) Validate() error {
 		if err := r.Controllers.Validate(); err != nil {
 			return fmt.Errorf("invalid Controllers: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// externalAPIPathExample is the example import path shown in domain-qualification and
+// sub-path error messages.
+const externalAPIPathExample = "(for example, github.com/org/repo/api/v1)"
+
+// ValidateExternalAPIPath checks that an external API path is a resolvable Go import path.
+// It is called by validateExternalAPIPathFlag for CLI flag validation and by Resource.Validate
+// for resources read from the PROJECT file.
+func ValidateExternalAPIPath(apiPath, versionHint string) error {
+	if apiPath == "" {
+		return errors.New("external API import path must be specified " + externalAPIPathExample)
+	}
+
+	if strings.Contains(apiPath, "@") {
+		const msg = "external API import path must be a valid Go package import path and must not contain '@'"
+		if versionHint != "" {
+			return fmt.Errorf("%s. %s", msg, versionHint)
+		}
+		return errors.New(msg)
+	}
+
+	if err := module.CheckImportPath(apiPath); err != nil {
+		return fmt.Errorf("external API import path must be a valid Go package path: %w", err)
+	}
+
+	first, rest, _ := strings.Cut(apiPath, "/")
+	if !strings.Contains(first, ".") || strings.HasPrefix(first, ".") {
+		return fmt.Errorf("external API import path %q must be domain-qualified "+externalAPIPathExample, apiPath)
+	}
+	if rest == "" {
+		return fmt.Errorf("external API import path %q must include a package sub-path "+externalAPIPathExample, apiPath)
 	}
 
 	return nil
