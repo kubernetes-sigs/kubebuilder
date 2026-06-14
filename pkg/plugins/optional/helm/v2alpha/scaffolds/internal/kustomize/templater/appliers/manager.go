@@ -774,8 +774,8 @@ func templateImageReference(yamlContent string) string {
 		lines = append(lines[:i+1], append(filtered, lines[end:]...)...)
 		end = i + 1 + len(filtered)
 
-		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository }}" +
-			"{{- if not (contains \"@\" .Values.manager.image.repository) }}" +
+		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository | default \"controller\" }}" +
+			"{{- if not (contains \"@\" (.Values.manager.image.repository | default \"controller\")) }}" +
 			":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\""
 		pullPolicyLineStart := indentStr + "{{- with .Values.manager.image.pullPolicy }}"
 		pullPolicyLine := indentStr + "imagePullPolicy: {{ . }}"
