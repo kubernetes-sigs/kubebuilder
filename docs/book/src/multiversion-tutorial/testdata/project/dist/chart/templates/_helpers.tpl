@@ -55,7 +55,7 @@ If serviceAccount.enabled is false and serviceAccount.name is set, use that name
 Otherwise, use the standard resourceName helper with "controller-manager" suffix.
 */}}
 {{- define "project.serviceAccountName" -}}
-{{- if and (not (.Values.serviceAccount.enabled | default true)) .Values.serviceAccount.name }}
+{{- if and (eq (.Values.serviceAccount.enabled | toString) "false") .Values.serviceAccount.name }}
 {{- .Values.serviceAccount.name }}
 {{- else }}
 {{- include "project.resourceName" (dict "suffix" "controller-manager" "context" .) }}
