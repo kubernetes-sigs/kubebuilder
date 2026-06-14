@@ -167,4 +167,140 @@ var _ = Describe("DeploymentExtractor", func() {
 			})
 		})
 	})
+
+	Describe("extractExtraVolumes and extractExtraVolumeMounts", func() {
+		It("should strip all custom volumes and leave empty slice when no system volumes exist", func() {
+			deployment := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata":   map[string]any{"name": "test-deployment"},
+					"spec": map[string]any{
+						"template": map[string]any{
+							"spec": map[string]any{
+								"volumes": []any{
+									map[string]any{"name": "app-config", "configMap": map[string]any{"name": "my-config"}},
+									map[string]any{"name": "app-secret", "secret": map[string]any{"secretName": "my-secret"}},
+								},
+								"containers": []any{
+									map[string]any{
+										"name": "manager",
+										"volumeMounts": []any{
+											map[string]any{"name": "app-config", "mountPath": "/etc/config"},
+											map[string]any{"name": "app-secret", "mountPath": "/etc/secret"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			extractor := &DeploymentExtractor{}
+			config := extractor.ExtractDeploymentConfig(deployment)
+
+			Expect(config.Manager.ExtraVolumes).To(HaveLen(2))
+			Expect(config.Manager.ExtraVolumeMounts).To(HaveLen(2))
+
+			// Object should have empty slice (not nil) so yaml.Marshal produces "volumes: []"
+			specMap := deployment.Object["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)
+			volumes := specMap["volumes"].([]any)
+			Expect(volumes).To(BeEmpty())
+			Expect(volumes).NotTo(BeNil())
+
+			container := specMap["containers"].([]any)[0].(map[string]any)
+			mounts := container["volumeMounts"].([]any)
+			Expect(mounts).To(BeEmpty())
+			Expect(mounts).NotTo(BeNil())
+		})
+
+		It("should keep system volumes and strip custom ones", func() {
+			deployment := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata":   map[string]any{"name": "test-deployment"},
+					"spec": map[string]any{
+						"template": map[string]any{
+							"spec": map[string]any{
+								"volumes": []any{
+									map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+									map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+									map[string]any{"name": "app-config", "configMap": map[string]any{"name": "my-config"}},
+								},
+								"containers": []any{
+									map[string]any{
+										"name": "manager",
+										"volumeMounts": []any{
+											map[string]any{"name": "webhook-certs", "mountPath": "/certs"},
+											map[string]any{"name": "metrics-certs", "mountPath": "/metrics"},
+											map[string]any{"name": "app-config", "mountPath": "/etc/config"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			extractor := &DeploymentExtractor{}
+			config := extractor.ExtractDeploymentConfig(deployment)
+
+			Expect(config.Manager.ExtraVolumes).To(HaveLen(1))
+			Expect(config.Manager.ExtraVolumeMounts).To(HaveLen(1))
+
+			specMap := deployment.Object["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)
+			volumes := specMap["volumes"].([]any)
+			Expect(volumes).To(HaveLen(2))
+			Expect(volumes[0].(map[string]any)["name"]).To(Equal("webhook-certs"))
+			Expect(volumes[1].(map[string]any)["name"]).To(Equal("metrics-certs"))
+
+			container := specMap["containers"].([]any)[0].(map[string]any)
+			mounts := container["volumeMounts"].([]any)
+			Expect(mounts).To(HaveLen(2))
+			Expect(mounts[0].(map[string]any)["name"]).To(Equal("webhook-certs"))
+			Expect(mounts[1].(map[string]any)["name"]).To(Equal("metrics-certs"))
+		})
+
+		It("should not modify object when only system volumes exist", func() {
+			deployment := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata":   map[string]any{"name": "test-deployment"},
+					"spec": map[string]any{
+						"template": map[string]any{
+							"spec": map[string]any{
+								"volumes": []any{
+									map[string]any{"name": "webhook-certs"},
+									map[string]any{"name": "metrics-certs"},
+								},
+								"containers": []any{
+									map[string]any{
+										"name": "manager",
+										"volumeMounts": []any{
+											map[string]any{"name": "webhook-certs", "mountPath": "/certs"},
+											map[string]any{"name": "metrics-certs", "mountPath": "/metrics"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			extractor := &DeploymentExtractor{}
+			config := extractor.ExtractDeploymentConfig(deployment)
+
+			Expect(config.Manager.ExtraVolumes).To(BeNil())
+			Expect(config.Manager.ExtraVolumeMounts).To(BeNil())
+
+			specMap := deployment.Object["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)
+			volumes := specMap["volumes"].([]any)
+			Expect(volumes).To(HaveLen(2))
+		})
+	})
 })

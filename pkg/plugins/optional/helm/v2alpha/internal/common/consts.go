@@ -55,6 +55,12 @@ const (
 	YamlKeyTemplate    = "template:"
 )
 
+// DefaultWebhookMetricNames are volume names managed by the chart (webhook/metrics certs).
+var DefaultWebhookMetricNames = map[string]struct{}{
+	"webhook-certs": {},
+	"metrics-certs": {},
+}
+
 // Standard Kubernetes/Helm label keys
 const (
 	LabelKeyAppName      = "app.kubernetes.io/name:"
