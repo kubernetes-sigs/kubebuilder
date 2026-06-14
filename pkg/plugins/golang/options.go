@@ -120,7 +120,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		if !res.External {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		}
 
 		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
@@ -164,8 +166,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
 			if res.External {
-				res.Path = opts.ExternalAPIPath
-				res.Domain = opts.ExternalAPIDomain
+				if len(opts.ExternalAPIPath) > 0 {
+					res.Path = opts.ExternalAPIPath
+				}
+				if len(opts.ExternalAPIDomain) > 0 {
+					res.Domain = opts.ExternalAPIDomain
+				}
 			} else {
 				// Handle core types
 				if domain, found := coreGroups[res.Group]; found {
