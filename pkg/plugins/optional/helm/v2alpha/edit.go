@@ -292,7 +292,7 @@ func (p *editSubcommand) extractNamespaceFromManifests() string {
 			if err == io.EOF {
 				break
 			}
-			continue
+			break
 		}
 
 		// Check if this is a Deployment (manager)
