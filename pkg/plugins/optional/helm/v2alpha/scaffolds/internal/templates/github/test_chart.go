@@ -123,6 +123,7 @@ jobs:
 
       - name: Deploy manager via Helm
         run: |
+          unset IMG
           make helm-deploy
 
       - name: Check Helm release status
