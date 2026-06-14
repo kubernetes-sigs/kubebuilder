@@ -83,16 +83,13 @@ Note: To add optional plugins after initialization, use 'kubebuilder edit --plug
   # Enable namespace-scoped permissions
   %[1]s edit --namespaced
 
-  # Enable with automatic file regeneration
+  # Enable namespace-scoped permissions and regenerate scaffolded files
   %[1]s edit --namespaced --force
-
-  # Disable multigroup layout
-  %[1]s edit --multigroup=false
 
   # Enable/disable multiple settings
   %[1]s edit --multigroup --namespaced --force
 
-  # Update license header from custom file
+  # Update license headers from a custom file
   %[1]s edit --license-file ./my-header.txt
 
   # Update license header to built-in apache2

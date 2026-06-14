@@ -31,7 +31,10 @@ func (c CLI) newEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Update the project configuration",
-		Long:  `Edit the project configuration.`,
+		Long: `Update an initialized project's configuration and scaffold files needed for the selected settings.
+
+Use this command to enable layout options such as multigroup or namespace-scoped deployment, or to run optional
+plugins that modify an existing project.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("project must be initialized"),
 		),
