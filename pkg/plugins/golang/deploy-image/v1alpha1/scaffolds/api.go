@@ -106,7 +106,7 @@ func (s *apiScaffolder) Scaffold() error {
 	)
 
 	if err := scaffold.Execute(
-		&api.Types{Port: s.port},
+		&api.Types{Port: s.port, SkipApplyConfig: s.hasSSAInPackage()},
 	); err != nil {
 		return fmt.Errorf("error updating APIs: %w", err)
 	}
@@ -149,6 +149,25 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return s.addEnvVarIntoManager()
+}
+
+// hasSSAInPackage checks if another kind in the same group/version has SSA enabled.
+func (s *apiScaffolder) hasSSAInPackage() bool {
+	resources, err := s.config.GetResources()
+	if err != nil {
+		return false
+	}
+
+	for _, res := range resources {
+		if res.GVK == s.resource.GVK {
+			continue
+		}
+		if res.Group == s.resource.Group && res.Version == s.resource.Version &&
+			res.API != nil && res.API.SSA {
+			return true
+		}
+	}
+	return false
 }
 
 // addEnvVarIntoManager will update the config/manager/manager.yaml by adding

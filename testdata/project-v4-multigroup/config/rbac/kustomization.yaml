@@ -31,6 +31,9 @@ resources:
 - example.com_memcached_admin_role.yaml
 - example.com_memcached_editor_role.yaml
 - example.com_memcached_viewer_role.yaml
+- sea-creatures_prawn_admin_role.yaml
+- sea-creatures_prawn_editor_role.yaml
+- sea-creatures_prawn_viewer_role.yaml
 - fiz_bar_admin_role.yaml
 - fiz_bar_editor_role.yaml
 - fiz_bar_viewer_role.yaml
