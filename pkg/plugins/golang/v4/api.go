@@ -176,6 +176,9 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	if len(p.options.ExternalAPIModule) != 0 && len(p.options.ExternalAPIPath) == 0 {
 		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
+	if err := validateExternalAPIPathFlag(p.options.ExternalAPIPath); err != nil {
+		return err
+	}
 
 	p.options.UpdateResource(p.resource, p.config)
 

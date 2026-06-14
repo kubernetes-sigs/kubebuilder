@@ -72,7 +72,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 	})
 
 	It("should require external-api-path when using external-api-module", func() {
-		subCmd.options.ExternalAPIModule = "github.com/external/api@v1.0.0"
+		subCmd.options.ExternalAPIModule = externalAPIModuleWithVersion
 		subCmd.options.ExternalAPIPath = ""
 		subCmd.options.DoDefaulting = true
 
@@ -80,6 +80,68 @@ var _ = Describe("createWebhookSubcommand", func() {
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("requires '--external-api-path'"))
+	})
+
+	It("should reject external-api-path with module version guidance", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = externalAPIModuleWithVersion
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid '--external-api-path'"))
+		Expect(err.Error()).To(ContainSubstring("must be a valid Go package import path"))
+		Expect(err.Error()).To(ContainSubstring("Use '--external-api-module'"))
+	})
+
+	It("should reject bare relative external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = "api/v1"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("external API import path"))
+		Expect(err.Error()).To(ContainSubstring("must be domain-qualified"))
+	})
+
+	It("should reject leading-dot pseudo-domain external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = ".com/org/repo/api/v1"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid '--external-api-path'"))
+		Expect(err.Error()).To(ContainSubstring("must be domain-qualified"))
+	})
+
+	It("should reject malformed external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = "a//b"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid '--external-api-path'"))
+		Expect(err.Error()).To(ContainSubstring("malformed import path"))
+		Expect(err.Error()).To(ContainSubstring("double slash"))
+	})
+
+	It("should allow creating a webhook for an external resource with a valid path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = "github.com/example/external/api/v1"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal("github.com/example/external/api/v1"))
 	})
 
 	Context("isValidVersion", func() {

@@ -84,7 +84,7 @@ var _ = Describe("Options", func() {
 							Expect(res.Path).To(Equal(path.Join(cfg.GetRepository(), "api", gvk.Version)))
 						}
 					} else if len(options.ExternalAPIPath) > 0 {
-						Expect(res.Path).To(Equal("testPath"))
+						Expect(res.Path).To(Equal("github.com/example/external/api/v1"))
 					} else {
 						// Core-resources have a path despite not having an API/Webhook but they are not tested here
 						Expect(res.Path).To(Equal(""))
@@ -121,10 +121,29 @@ var _ = Describe("Options", func() {
 			Entry("when updating nothing", Options{}),
 			Entry("when updating the plural", Options{Plural: "mates"}),
 			Entry("when updating the Controller", Options{DoController: true}),
-			Entry("when updating with External API Path", Options{ExternalAPIPath: "testPath", ExternalAPIDomain: "test.io"}),
+			Entry("when updating with External API Path",
+				Options{ExternalAPIPath: "github.com/example/external/api/v1", ExternalAPIDomain: "test.io"}),
 			Entry("when updating the API with setting webhooks params",
 				Options{DoAPI: true, DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
+
+		It("should retain path and external flag when ExternalAPIPath is not provided but resource is already external", func() {
+			const externalPath = "github.com/example/external/api/v1"
+			res := resource.Resource{
+				GVK:      gvk,
+				Plural:   plural,
+				External: true,
+				Path:     externalPath,
+				API:      &resource.API{},
+				Webhooks: &resource.Webhooks{},
+			}
+
+			Options{DoController: true}.UpdateResource(&res, cfg)
+
+			Expect(res.External).To(BeTrue())
+			Expect(res.Path).To(Equal(externalPath))
+			Expect(res.Validate()).To(Succeed())
+		})
 
 		DescribeTable("should use core apis",
 			func(group, qualified string) {

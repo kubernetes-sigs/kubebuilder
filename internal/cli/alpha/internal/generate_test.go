@@ -546,7 +546,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 	Context("getWebhookResourceFlags", func() {
 		It("returns correct flags for specified resources", func() {
 			res := resource.Resource{
-				Path:     "external/test",
+				Path:     certManagerAPIPath,
 				GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
 				External: true,
 				Webhooks: &resource.Webhooks{
@@ -558,7 +558,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			}
 			flags := getWebhookResourceFlags(res)
 			Expect(flags).To(ContainElements(
-				"--external-api-path", "external/test",
+				"--external-api-path", certManagerAPIPath,
 				"--external-api-domain", fixtureTest,
 				"--programmatic-validation", "--defaulting", "--conversion", "--spoke", "v2",
 			))
@@ -652,7 +652,7 @@ var _ = Describe("generate: create-helpers", func() {
 					API:        &resource.API{Namespaced: true},
 					Controller: true,
 					External:   true,
-					Path:       "external/path",
+					Path:       certManagerAPIPath,
 				}
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())

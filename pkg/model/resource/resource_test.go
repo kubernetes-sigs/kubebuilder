@@ -93,6 +93,53 @@ var _ = Describe("Resource", func() {
 			Expect(err.Error()).To(ContainSubstring("invalid Webhooks"))
 		})
 
+		DescribeTable("should succeed for valid Paths",
+			func(p string) {
+				Expect(Resource{GVK: gvk, Plural: plural, Path: p}.Validate()).To(Succeed())
+			},
+			Entry("empty path (partial resource)", ""),
+			Entry("simple relative path", "api/v1"),
+			Entry("full module import path", "github.com/org/repo/api/v1"),
+			Entry("multi-segment path with hyphen", "github.com/my-org/my-repo/api/v1"),
+			Entry("k8s core path", "k8s.io/api/core/v1"),
+		)
+
+		DescribeTable("should succeed for valid external Paths",
+			func(p string) {
+				Expect(Resource{GVK: gvk, Plural: plural, Path: p, External: true}.Validate()).To(Succeed())
+			},
+			Entry("full module import path", "github.com/org/repo/api/v1"),
+			Entry("k8s core path", "k8s.io/api/core/v1"),
+		)
+
+		DescribeTable("should fail for invalid Paths",
+			func(p string, message string) {
+				err := Resource{GVK: gvk, Plural: plural, Path: p}.Validate()
+				Expect(err).NotTo(Succeed())
+				Expect(err.Error()).To(ContainSubstring("invalid Path"))
+				Expect(err.Error()).To(ContainSubstring(message))
+			},
+			Entry("absolute filesystem path", "/absolute/path", "empty path element"),
+			Entry("path traversal", "../traversal", "invalid path element \"..\""),
+			Entry("double slash", "a//b", "double slash"),
+			Entry("trailing slash", "path/", "trailing slash"),
+		)
+
+		DescribeTable("should fail for invalid external Paths",
+			func(p string, message string) {
+				err := Resource{GVK: gvk, Plural: plural, Path: p, External: true}.Validate()
+				Expect(err).NotTo(Succeed())
+				Expect(err.Error()).To(ContainSubstring("invalid Path"))
+				Expect(err.Error()).To(ContainSubstring(message))
+			},
+			Entry("empty path", "", "must be specified"),
+			Entry("absolute filesystem path", "/absolute/path", "must be a valid Go package path"),
+			Entry("relative package path", "api/v1", "must be domain-qualified"),
+			Entry("leading-dot pseudo-domain", ".com/api/v1", "must be domain-qualified"),
+			Entry("bare domain without sub-path", "example.com", "must include a package sub-path"),
+			Entry("module version in path", "github.com/org/repo@v1.0.0", "module: field"),
+		)
+
 		DescribeTable("should fail for invalid Resources",
 			func(res Resource) { Expect(res.Validate()).NotTo(Succeed()) },
 			// Ensure that the rest of the fields are valid to check each part
