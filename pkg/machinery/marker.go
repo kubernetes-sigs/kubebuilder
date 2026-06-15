@@ -19,6 +19,7 @@ package machinery
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -31,7 +32,8 @@ var commentsByExt = map[string]string{
 	goFileExt: "//",
 	".yaml":   "#",
 	".yml":    "#",
-	// When adding additional file extensions, update also the NewMarkerFor documentation and error
+	// When adding additional file extensions, update the "Supported file extensions" doc comment on
+	// NewMarkerFor, NewMarkerForE, and NewMarkerWithPrefixFor.
 }
 
 // Marker represents a machine-readable comment that will be used for scaffolding purposes
@@ -44,27 +46,54 @@ type Marker struct {
 // NewMarkerFor creates a new marker customized for the specific file. The created marker
 // is prefixed with `+kubebuilder:scaffold:` the default prefix for kubebuilder.
 // Supported file extensions: .go, .yaml, .yml.
+// Panics for unsupported extensions; use NewMarkerForE to handle the error instead.
 func NewMarkerFor(path string, value string) Marker {
 	return NewMarkerWithPrefixFor(kbPrefix, path, value)
 }
 
-// NewMarkerWithPrefixFor creates a new custom prefixed marker customized for the specific file
-// Supported file extensions: .go, .yaml, .yml
+// NewMarkerForE is the error-returning variant of NewMarkerFor.
+// Supported file extensions: .go, .yaml, .yml.
+func NewMarkerForE(path string, value string) (Marker, error) {
+	return newMarker(kbPrefix, path, value)
+}
+
+// NewMarkerWithPrefixFor creates a new custom prefixed marker customized for the specific file.
+// Supported file extensions: .go, .yaml, .yml.
+// Panics for unsupported extensions.
 func NewMarkerWithPrefixFor(prefix string, path string, value string) Marker {
+	m, err := newMarker(prefix, path, value)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
+func newMarker(prefix string, path string, value string) (Marker, error) {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
 		return Marker{
 			prefix:  markerPrefix(prefix),
 			comment: comment,
 			value:   value,
-		}
+		}, nil
 	}
 
-	extensions := make([]string, 0, len(commentsByExt))
-	for extension := range commentsByExt {
-		extensions = append(extensions, fmt.Sprintf("%q", extension))
+	exts := make([]string, 0, len(commentsByExt))
+	for e := range commentsByExt {
+		exts = append(exts, e)
 	}
-	panic(fmt.Errorf("unknown file extension: '%s', expected one of: %s", ext, strings.Join(extensions, ", ")))
+	slices.Sort(exts)
+	for i, e := range exts {
+		exts[i] = fmt.Sprintf("%q", e)
+	}
+	list := strings.Join(exts, ", ")
+
+	// ext=="" covers plain extensionless names (e.g. Makefile).
+	// ext=="." covers trailing-dot files (e.g. file.).
+	if ext == "" || ext == "." {
+		return Marker{}, fmt.Errorf("path %q has no file extension, expected one of: %s", path, list)
+	}
+	return Marker{}, fmt.Errorf("path %q has unknown file extension %q, expected one of: %s", path, ext, list)
 }
 
 // String implements Stringer
