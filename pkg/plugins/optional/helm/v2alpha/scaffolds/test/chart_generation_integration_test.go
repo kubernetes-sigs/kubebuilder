@@ -373,6 +373,14 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			By("the default ServiceAccount manifest is created")
 			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
 		})
+
+		It("uses the generated name when enabled=true even if serviceAccount.name is set", func() {
+			rendered := renderChart("--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa")
+
+			By("the external name is ignored while the chart manages its own ServiceAccount")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: custom-sa"))
+		})
 	})
 
 	Context("Custom Output Directory", func() {
@@ -758,85 +766,30 @@ spec:
 `
 }
 
-// createKustomizeForServiceAccountRender produces a kustomize output complete enough to render
-// cleanly with `helm template` (full pod template metadata, resources, security context) while
-// including a ServiceAccount and ClusterRole so the chart exercises the serviceAccountName helper.
+// createKustomizeForServiceAccountRender extends createBasicKustomizeOutput (Namespace +
+// ServiceAccount + Deployment) with the only two pieces the serviceAccountName render tests need:
+//   - a pod-template annotations block, so the chart renders cleanly under `helm template` instead
+//     of nil-pointering on .Values.manager.pod.annotations (the generator emits an unguarded
+//     reference when the source pod template has no annotations); and
+//   - an explicit serviceAccountName on the pod spec, which is what the helper rewrites.
 func createKustomizeForServiceAccountRender(projectName string) string {
-	return `---
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: ` + projectName + `
-  name: ` + projectName + `-system
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: ` + projectName + `
-  name: ` + projectName + `-controller-manager
-  namespace: ` + projectName + `-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: ` + projectName + `-manager-role
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: ` + projectName + `
-rules:
-- apiGroups: ["*"]
-  resources: ["*"]
-  verbs: ["*"]
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: ` + projectName + `
-    control-plane: controller-manager
-  name: ` + projectName + `-controller-manager
-  namespace: ` + projectName + `-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      control-plane: controller-manager
-  template:
-    metadata:
+	return strings.Replace(
+		createBasicKustomizeOutput(projectName),
+		`    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:`,
+		`    metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
     spec:
-      containers:
-      - name: manager
-        image: controller:latest
-        imagePullPolicy: IfNotPresent
-        args:
-        - --leader-elect
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-      serviceAccountName: ` + projectName + `-controller-manager
-`
+      serviceAccountName: `+projectName+`-controller-manager
+      containers:`,
+		1,
+	)
 }
 
 func setupKustomizeFile(filePath, content string) error {

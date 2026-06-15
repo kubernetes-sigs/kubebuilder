@@ -128,8 +128,10 @@ func WrapServiceAccountWithEnabledConditional(yamlContent string) string {
 	if !strings.HasSuffix(yamlContent, "\n") {
 		yamlContent += "\n"
 	}
-	// Default to enabled, but allow an explicit false to disable ServiceAccount creation
-	return "{{- if ne .Values.serviceAccount.enabled false }}\n" + yamlContent + "{{- end }}\n"
+	// Default to enabled, but allow an explicit false to disable ServiceAccount creation.
+	// Compare via toString so the guard matches the serviceAccountName helper exactly and never
+	// pipes the boolean through default (which would swallow an explicit false).
+	return "{{- if ne (.Values.serviceAccount.enabled | toString) \"false\" }}\n" + yamlContent + "{{- end }}\n"
 }
 
 // AddServiceAccountLabelsAndAnnotations adds custom labels/annotations with omit() filtering.
