@@ -1,4 +1,4 @@
-{{- if .Values.crd.enable }}
+{{- if .Values.crd.enabled }}
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -7,7 +7,7 @@ metadata:
     "helm.sh/resource-policy": keep
     {{- end }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "project.resourceName" (dict "suffix" "serving-cert" "context" $) }}
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   conversion:
@@ -2971,6 +2971,11 @@ spec:
                                 x-kubernetes-list-map-keys:
                                 - name
                                 x-kubernetes-list-type: map
+                              schedulingGroup:
+                                properties:
+                                  podGroupName:
+                                    type: string
+                                type: object
                               securityContext:
                                 properties:
                                   appArmorProfile:
@@ -3945,18 +3950,6 @@ spec:
                                 x-kubernetes-list-map-keys:
                                 - name
                                 x-kubernetes-list-type: map
-                              workloadRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  podGroup:
-                                    type: string
-                                  podGroupReplicaKey:
-                                    type: string
-                                required:
-                                - name
-                                - podGroup
-                                type: object
                             required:
                             - containers
                             type: object
@@ -7003,6 +6996,11 @@ spec:
                                 x-kubernetes-list-map-keys:
                                 - name
                                 x-kubernetes-list-type: map
+                              schedulingGroup:
+                                properties:
+                                  podGroupName:
+                                    type: string
+                                type: object
                               securityContext:
                                 properties:
                                   appArmorProfile:
@@ -7977,18 +7975,6 @@ spec:
                                 x-kubernetes-list-map-keys:
                                 - name
                                 x-kubernetes-list-type: map
-                              workloadRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  podGroup:
-                                    type: string
-                                  podGroupReplicaKey:
-                                    type: string
-                                required:
-                                - name
-                                - podGroup
-                                type: object
                             required:
                             - containers
                             type: object

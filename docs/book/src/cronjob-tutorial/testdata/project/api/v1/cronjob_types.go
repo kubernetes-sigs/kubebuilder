@@ -27,6 +27,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -213,7 +214,10 @@ type CronJobList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &CronJob{}, &CronJobList{})
+		return nil
+	})
 }
 
 // +kubebuilder:docs-gen:collapse=Root Object Definitions

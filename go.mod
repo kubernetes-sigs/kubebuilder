@@ -1,28 +1,28 @@
 module sigs.k8s.io/kubebuilder/v4
 
-go 1.25.7
+go 1.26.0
 
 retract v4.10.0 // invalid filename causes go get/install failure (#5211)
 
 require (
 	github.com/gobuffalo/flect v1.0.3
 	github.com/h2non/gock v1.2.0
-	github.com/onsi/ginkgo/v2 v2.28.3
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/ginkgo/v2 v2.30.0
+	github.com/onsi/gomega v1.41.0
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/mod v0.35.0
-	golang.org/x/text v0.36.0
-	golang.org/x/tools v0.44.0
-	helm.sh/helm/v3 v3.20.2
-	k8s.io/apimachinery v0.35.4
+	golang.org/x/mod v0.37.0
+	golang.org/x/text v0.38.0
+	golang.org/x/tools v0.46.0
+	helm.sh/helm/v3 v3.21.1
+	k8s.io/apimachinery v0.36.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -36,9 +36,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect

@@ -91,13 +91,16 @@ import (
 var _ = Describe("{{ .Resource.Kind }} Controller", func() {
 	Context("When reconciling a resource", func() {
 		{{ if .DoAPI -}}
-		const resourceName = "test-resource"
+		const (
+			resourceName          = "test-resource"
+			resourceNamespace     = "default"
+		)
 
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default",  // TODO(user):Modify as needed
+			Namespace: resourceNamespace,
 		}
 		{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
@@ -108,7 +111,7 @@ var _ = Describe("{{ .Resource.Kind }} Controller", func() {
 				resource := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "default",
+						Namespace: resourceNamespace,
 					},
 					// TODO(user): Specify other spec details if needed.
 				}

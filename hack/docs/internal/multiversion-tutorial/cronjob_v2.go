@@ -18,6 +18,7 @@ package multiversion
 
 const importV2 = `import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )`
 
 const importReplacement = `/*
@@ -26,6 +27,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )`
 
 // FIXME: We should just insert and replace what is need and not a block of code in this way

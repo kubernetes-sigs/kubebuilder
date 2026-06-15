@@ -26,7 +26,8 @@ Many users prefer Helm for packaging and upgrades. This plugin converts `dist/in
 - Preserves environment variables, labels, annotations, and patches
 - Organizes templates to match your `config/` directory layout
 - Includes only configurable parameters in `values.yaml`
-- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, and `test-chart.yml` unless you use `--force`
+- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, and `network-policy/allow-webhook-traffic.yaml` unless you use `--force`
+- Adds default `ServiceMonitor` and `NetworkPolicy` templates when kustomize output does not provide them
 - Places custom resources in `templates/extras/` with Helm templating
 
 ## Usage
@@ -112,6 +113,9 @@ The plugin generates a chart layout that mirrors your `config/` directory:
     │   └── webhook-service.yaml
     ├── monitoring/
     │   └── servicemonitor.yaml
+    ├── network-policy/
+    │   ├── allow-metrics-traffic.yaml
+    │   └── allow-webhook-traffic.yaml  # If webhooks are configured
     └── extras/                  # Custom resources (if any)
         ├── my-service.yaml
         └── my-config.yaml
@@ -185,13 +189,19 @@ helm install my-release ./dist/chart --namespace my-project-system --create-name
 Install only CRDs and RBAC:
 
 ```bash
-helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enable=false
+helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enabled=false
 ```
 
 Install without webhooks:
 
 ```bash
-helm install my-release ./dist/chart --set webhook.enable=false --set certManager.enable=false
+helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
+```
+
+Install with NetworkPolicy resources:
+
+```bash
+helm install my-release ./dist/chart --set networkPolicy.enabled=true
 ```
 
 ### Extra volumes
@@ -200,7 +210,7 @@ Add volumes and volume mounts to the manager deployment beyond webhook and metri
 
 Volumes in your kustomize configuration (`config/manager/manager.yaml` or patches) are written to the chart template. When the manager has extra volumes, `values.yaml` includes `manager.extraVolumes` and `manager.extraVolumeMounts` fields. Use these to add more volumes at install time.
 
-Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed separately and controlled by `certManager.enable` and `metrics.enable`.
+Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed separately and controlled by `certManager.enabled` and (for metrics TLS) `metrics.enabled` + `metrics.secure`.
 
 ### Metrics configuration
 
@@ -209,7 +219,7 @@ Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed 
 Control transport security and authentication for the metrics endpoint (default: `true`).
 
 When `true`:
-- Uses HTTPS with TLS certificates (when `certManager.enable=true`)
+- Uses HTTPS with TLS certificates (when `certManager.enabled=true`)
 - Creates `metrics-auth-role` ClusterRole for authentication
 - ServiceMonitor uses HTTPS
 
@@ -225,19 +235,25 @@ The `metrics-auth-role` and `metrics-reader` are always ClusterRoles, even when 
 
 </aside>
 
+### NetworkPolicy configuration
+
+Set `networkPolicy.enabled: true` to install NetworkPolicy resources for the manager pod.
+
+When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enabled: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
+
 ### Custom labels and annotations
 
 Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
 
 ### ServiceAccount configuration
 
-Set `serviceAccount.enable: true` (default) to create a ServiceAccount. Set `serviceAccount.enable: false` to use an existing one.
+Set `serviceAccount.enabled: true` (default) to create a ServiceAccount. Set `serviceAccount.enabled: false` to use an existing one.
 
 Add annotations for cloud provider integrations:
 
 ```yaml
 serviceAccount:
-  enable: true
+  enabled: true
   annotations:
     iam.gke.io/gcp-service-account: my-operator@project.iam.gserviceaccount.com
 ```
@@ -291,7 +307,7 @@ rbac:
     "manager-rolebinding-users": "users"
 
   helpers:
-    enable: false
+    enabled: false
 ```
 
 Override namespaces at deployment using a values file:
@@ -323,7 +339,7 @@ helm install my-operator ./dist/chart \
 <aside class="note" role="note">
 <p class="note-title">Helper roles and optional values</p>
 
-Set `rbac.helpers.enable: true` to create admin, editor, and viewer roles for Custom Resources.
+Set `rbac.helpers.enabled: true` to create admin, editor, and viewer roles for Custom Resources.
 
 Optional fields in `values.yaml` use Helm conditionals. Comment them out to exclude them from deployed manifests.
 
@@ -335,7 +351,7 @@ Optional fields in `values.yaml` use Helm conditionals. Comment them out to excl
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`) |
 
 <aside class="note" role="note">
 <p class="note-title"> Examples </p>

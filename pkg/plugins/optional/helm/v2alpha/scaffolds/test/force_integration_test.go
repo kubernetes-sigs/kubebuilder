@@ -136,7 +136,7 @@ spec:
 	})
 
 	Context("when --force flag is NOT used", func() {
-		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, and test-chart.yml", func() {
+		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, test-chart.yml, and allow-metrics-traffic.yaml", func() {
 			// First generation with force=false
 			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
 			scaffolder.InjectFS(fs)
@@ -149,6 +149,9 @@ spec:
 			helmignorePath := filepath.Join(tmpDir, outputDir, "chart", ".helmignore")
 			helpersPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "_helpers.tpl")
 			notesPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "NOTES.txt")
+			networkPolicyPath := filepath.Join(
+				tmpDir, outputDir, "chart", "templates", "network-policy", "allow-metrics-traffic.yaml",
+			)
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
 			// Verify files exist
@@ -162,6 +165,8 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(notesPath)
 			Expect(err).NotTo(HaveOccurred())
+			_, err = os.ReadFile(networkPolicyPath)
+			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -171,6 +176,7 @@ spec:
 			customHelmignoreContent := "# CUSTOM HELMIGNORE\n*.custom\n"
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
 			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
+			customNetworkPolicyContent := "# CUSTOM NETWORK POLICY\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -182,6 +188,8 @@ spec:
 			err = os.WriteFile(helpersPath, []byte(customHelpersContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(networkPolicyPath, []byte(customNetworkPolicyContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
@@ -213,6 +221,13 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(notesContent)).To(Equal(customNotesContent), "NOTES.txt should not be overwritten without --force")
 
+			networkPolicyContent, err := os.ReadFile(networkPolicyPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(networkPolicyContent)).To(
+				Equal(customNetworkPolicyContent),
+				"allow-metrics-traffic.yaml should not be overwritten without --force",
+			)
+
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(testChartContent)).To(Equal(customTestChartContent), "test-chart.yml should not be overwritten without --force")
@@ -233,6 +248,9 @@ spec:
 			helmignorePath := filepath.Join(tmpDir, outputDir, "chart", ".helmignore")
 			helpersPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "_helpers.tpl")
 			notesPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "NOTES.txt")
+			networkPolicyPath := filepath.Join(
+				tmpDir, outputDir, "chart", "templates", "network-policy", "allow-metrics-traffic.yaml",
+			)
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
 			// Modify all protected files with custom content
@@ -241,6 +259,7 @@ spec:
 			customHelmignoreContent := "# CUSTOM HELMIGNORE\n*.custom\n"
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
 			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
+			customNetworkPolicyContent := "# CUSTOM NETWORK POLICY\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -252,6 +271,8 @@ spec:
 			err = os.WriteFile(helpersPath, []byte(customHelpersContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(networkPolicyPath, []byte(customNetworkPolicyContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
@@ -286,6 +307,17 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(notesContent)).NotTo(Equal(customNotesContent), "NOTES.txt should be overwritten with --force")
 			Expect(string(notesContent)).To(ContainSubstring("installed"), "NOTES.txt should contain installation message")
+
+			networkPolicyContent, err := os.ReadFile(networkPolicyPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(networkPolicyContent)).NotTo(
+				Equal(customNetworkPolicyContent),
+				"allow-metrics-traffic.yaml should be overwritten with --force",
+			)
+			Expect(string(networkPolicyContent)).To(
+				ContainSubstring("kind: NetworkPolicy"),
+				"allow-metrics-traffic.yaml should contain the generated policy",
+			)
 
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())

@@ -133,8 +133,8 @@ func (g *TemplatesGenerator) templateResource(
 
 func (g *TemplatesGenerator) shouldSplitFiles(groupName string) bool {
 	return groupName == "crd" || groupName == "cert-manager" || groupName == "webhook" ||
-		groupName == "prometheus" || groupName == "rbac" || groupName == "metrics" ||
-		groupName == "extras"
+		groupName == "prometheus" || groupName == "network-policy" || groupName == "rbac" ||
+		groupName == "metrics" || groupName == "extras"
 }
 
 // generateFileName creates a unique filename for a resource based on its metadata.

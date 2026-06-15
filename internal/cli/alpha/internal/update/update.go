@@ -206,12 +206,12 @@ func (opts *Update) Update() error {
 
 	// Push the output branch if requested
 	if opts.Push {
-		if opts.Push {
-			out := opts.getOutputBranchName()
-			_ = helpers.GitCmd(opts.GitConfig, "checkout", out).Run()
-			if err := helpers.GitCmd(opts.GitConfig, "push", "-u", "origin", out).Run(); err != nil {
-				return fmt.Errorf("failed to push %s: %w", out, err)
-			}
+		out := opts.getOutputBranchName()
+		if err := helpers.GitCmd(opts.GitConfig, "checkout", out).Run(); err != nil {
+			return fmt.Errorf("failed to checkout %s: %w", out, err)
+		}
+		if err := helpers.GitCmd(opts.GitConfig, "push", "-u", "origin", out).Run(); err != nil {
+			return fmt.Errorf("failed to push %s: %w", out, err)
 		}
 	}
 

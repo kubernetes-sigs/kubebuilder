@@ -24,6 +24,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	goPrereleaseAlpha = "alpha1"
+	goPrereleaseBeta  = "beta1"
+	goPrereleaseRC    = "rc1"
+)
+
 var _ = Describe("GoVersion", func() {
 	Context("String", func() {
 		It("patch is not empty", func() {
@@ -80,17 +86,17 @@ var _ = Describe("GoVersion", func() {
 			Entry("for alpha release", "go1.15alpha1", GoVersion{
 				major:      1,
 				minor:      15,
-				prerelease: "alpha1",
+				prerelease: goPrereleaseAlpha,
 			}),
 			Entry("for beta release", "go1.15beta1", GoVersion{
 				major:      1,
 				minor:      15,
-				prerelease: "beta1",
+				prerelease: goPrereleaseBeta,
 			}),
 			Entry("for release candidate", "go1.15rc1", GoVersion{
 				major:      1,
 				minor:      15,
-				prerelease: "rc1",
+				prerelease: goPrereleaseRC,
 			}),
 		)
 
@@ -262,6 +268,7 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go.1.23", "go1.23"),
 		Entry("for go.1.24", "go1.24"),
 		Entry("for go.1.25", "go1.25"),
+		Entry("for go.1.26", "go1.26"),
 	)
 
 	DescribeTable("should return an error for non-supported go versions",

@@ -39,7 +39,13 @@ const (
 	deprecationFmt = "[Deprecation Notice] %s\n\n"
 
 	pluginsFlag        = "plugins"
+	pluginsFlagArg     = "--plugins"
 	projectVersionFlag = "project-version"
+
+	kubebuilderCommandName    = "kubebuilder"
+	kubebuilderSubcommandInit = "init"
+	pluginGoKubebuilderV4     = "go.kubebuilder.io/v4"
+	pluginGoKubebuilderV2     = "go.kubebuilder.io/v2"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
@@ -126,7 +132,7 @@ func New(options ...Option) (*CLI, error) {
 func newCLI(options ...Option) (*CLI, error) {
 	// Default CLI options.
 	c := &CLI{
-		commandName: "kubebuilder",
+		commandName: kubebuilderCommandName,
 		description: `CLI tool for building Kubernetes extensions and tools.
 `,
 		plugins:        make(map[string]plugin.Plugin),
@@ -285,9 +291,9 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	}
 
 	replacements := []pluginReplacement{
-		{"go.kubebuilder.io/v2", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3", "go.kubebuilder.io/v4"},
-		{"go.kubebuilder.io/v3-alpha", "go.kubebuilder.io/v4"},
+		{pluginGoKubebuilderV2, pluginGoKubebuilderV4},
+		{"go.kubebuilder.io/v3", pluginGoKubebuilderV4},
+		{"go.kubebuilder.io/v3-alpha", pluginGoKubebuilderV4},
 	}
 
 	content, err := afero.ReadFile(fs, path)
@@ -339,7 +345,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	// Check if --plugins is followed by --help or -h to avoid parsing help as a plugin value
 	// This fixes: kubebuilder init --plugins --help
 	for i := 0; i < len(os.Args)-1; i++ {
-		if os.Args[i] == "--plugins" || os.Args[i] == "--plugins=" {
+		if os.Args[i] == pluginsFlagArg || os.Args[i] == pluginsFlagArg+"=" {
 			nextArg := os.Args[i+1]
 			if isHelpFlag(nextArg) {
 				// Help was requested, return early to let Cobra handle it
@@ -583,8 +589,11 @@ func (c *CLI) addExtraCommands() error {
 // printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
 func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
-		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
+		if p == nil {
+			continue
+		}
+		if deprecated, ok := p.(plugin.Deprecated); ok && len(deprecated.DeprecationWarning()) > 0 {
+			_, _ = fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, deprecated.DeprecationWarning()))
 		}
 	}
 }

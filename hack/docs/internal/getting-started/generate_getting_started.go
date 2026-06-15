@@ -18,6 +18,7 @@ package gettingstarted
 
 import (
 	"log/slog"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -42,6 +43,7 @@ func NewSample(binaryPath, samplePath string) Sample {
 func (sp *Sample) UpdateTutorial() {
 	sp.updateAPI()
 	sp.updateSample()
+	sp.updateConditions()
 	sp.updateController()
 	sp.updateControllerTest()
 }
@@ -90,7 +92,7 @@ func (sp *Sample) updateControllerTest() {
 				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableMemcached)`,
+			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailableMemcached)`,
 	)
 	hackutils.CheckError("add spec apis", err)
 }
@@ -125,6 +127,12 @@ func (sp *Sample) updateSample() {
 	file := filepath.Join(sp.ctx.Dir, "config/samples/cache_v1alpha1_memcached.yaml")
 	err := pluginutil.ReplaceInFile(file, "# TODO(user): Add fields here", sampleSizeFragment)
 	hackutils.CheckError("update sample to add size", err)
+}
+
+func (sp *Sample) updateConditions() {
+	path := filepath.Join(sp.ctx.Dir, "internal/controller/conditions.go")
+	err := os.WriteFile(path, []byte(controllerConditionsFile), 0o644)
+	hackutils.CheckError("write conditions.go", err)
 }
 
 func (sp *Sample) updateController() {
@@ -279,7 +287,33 @@ const controllerStatusTypes = `
 const (
 	// typeAvailableMemcached represents the status of the Deployment reconciliation
 	typeAvailableMemcached = "Available"
-)`
+)
+
+const memcachedContainerName = "memcached"
+`
+
+const controllerConditionsFile = `/*
+Copyright 2026 The Kubernetes authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controller
+
+const (
+	reasonReconciling = "Reconciling"
+)
+`
 
 const controllerInfoReconcileOld = `// TODO(user): Modify the Reconcile function to compare the state specified by
 // the Memcached object against the actual cluster state, and then
@@ -314,7 +348,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 
 	// Let's just set the status as Unknown when no status is available
 	if len(memcached.Status.Conditions) == 0 {
-		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: reasonReconciling, Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, memcached); err != nil {
 			log.Error(err, "Failed to update Memcached status")
 			return ctrl.Result{}, err
@@ -342,7 +376,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 
 			// The following implementation will update the status
 			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-				Status: metav1.ConditionFalse, Reason: "Reconciling",
+				Status: metav1.ConditionFalse, Reason: reasonReconciling,
 				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", memcached.Name, err)})
 
 			if err := r.Status().Update(ctx, memcached); err != nil {
@@ -417,7 +451,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 
 	// The following implementation will update the status
 	meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Status: metav1.ConditionTrue, Reason: reasonReconciling,
 		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, desiredReplicas)})
 
 	if err := r.Status().Update(ctx, memcached); err != nil {
@@ -453,7 +487,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 					},
 					Containers: []corev1.Container{{
 						Image:           image,
-						Name:            "memcached",
+						Name:            memcachedContainerName,
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
@@ -469,7 +503,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 						},
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 11211,
-							Name:          "memcached",
+							Name:          memcachedContainerName,
 						}},
 						Command: []string{"memcached", "--memory-limit=64", "-o", "modern", "-v"},
 					}},

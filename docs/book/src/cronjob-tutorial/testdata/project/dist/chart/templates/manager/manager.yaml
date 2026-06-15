@@ -74,7 +74,7 @@ spec:
       {{- end }}
       containers:
       - args:
-        {{- if .Values.metrics.enable }}
+        {{- if .Values.metrics.enabled }}
         - --metrics-bind-address=:{{ .Values.metrics.port }}
         {{- if not .Values.metrics.secure }}
         - --metrics-secure=false
@@ -87,10 +87,10 @@ spec:
         {{- range .Values.manager.args }}
         - {{ . }}
         {{- end }}
-        {{- if and .Values.certManager.enable .Values.metrics.enable }}
+        {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
         - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
         {{- end }}
-        {{- if .Values.certManager.enable }}
+        {{- if .Values.certManager.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
         command:
@@ -135,16 +135,16 @@ spec:
           {{- if .Values.manager.extraVolumeMounts }}
           {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
           {{- end }}
-        {{- if and .Values.certManager.enable .Values.metrics.enable }}
-        - mountPath: /tmp/k8s-metrics-server/metrics-certs
-          name: metrics-certs
-          readOnly: true
-        {{- end }}
-        {{- if .Values.certManager.enable }}
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: webhook-certs
-          readOnly: true
-        {{- end }}
+          {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
+          - mountPath: /tmp/k8s-metrics-server/metrics-certs
+            name: metrics-certs
+            readOnly: true
+          {{- end }}
+          {{- if .Values.certManager.enabled }}
+          - mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: webhook-certs
+            readOnly: true
+          {{- end }}
       securityContext:
         {{- if .Values.manager.podSecurityContext }}
         {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
@@ -159,22 +159,22 @@ spec:
         {{- if .Values.manager.extraVolumes }}
         {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
         {{- end }}
-      {{- if and .Values.certManager.enable .Values.metrics.enable }}
-      - name: metrics-certs
-        secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          - key: tls.crt
-            path: tls.crt
-          - key: tls.key
-            path: tls.key
-          optional: false
-          secretName: metrics-server-cert
-      {{- end }}
-      {{- if .Values.certManager.enable }}
-      - name: webhook-certs
-        secret:
-          secretName: webhook-server-cert
-      {{- end }}
+        {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
+        - name: metrics-certs
+          secret:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+            optional: false
+            secretName: metrics-server-cert
+        {{- end }}
+        {{- if .Values.certManager.enabled }}
+        - name: webhook-certs
+          secret:
+            secretName: webhook-server-cert
+        {{- end }}
 {{- end }}

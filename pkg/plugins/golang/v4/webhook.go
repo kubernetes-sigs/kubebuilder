@@ -93,24 +93,26 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"Run 'make generate' after generating files (enabled by default; use --make=false to disable)")
 
 	fs.StringVar(&p.options.Plural, "plural", "",
-		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected if not provided")
+		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected from resource kind if not provided")
 
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
-		"If set, scaffold the defaulting webhook")
+		"If set, scaffold defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
-		"If set, scaffold the validating webhook")
+		"If set, scaffold validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
-		"If set, scaffold the conversion webhook")
+		"If set, scaffold conversion webhook")
 
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
 		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
 
 	fs.StringVar(&p.options.DefaultingPath, "defaulting-path", "",
-		"Custom path for the defaulting/mutating webhook (e.g., /my-custom-mutate-path); only valid with --defaulting")
+		"[Optional] Custom path for the defaulting/mutating webhook (e.g., /my-custom-mutate-path). "+
+			"Only valid with --defaulting")
 
 	fs.StringVar(&p.options.ValidationPath, "validation-path", "",
-		"Custom path for the validation webhook (e.g., /my-custom-validate-path); only valid with --programmatic-validation")
+		"[Optional] Custom path for the validation webhook (e.g., /my-custom-validate-path). "+
+			"Only valid with --programmatic-validation")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,

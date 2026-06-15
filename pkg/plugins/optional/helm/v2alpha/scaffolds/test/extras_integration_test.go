@@ -1118,7 +1118,7 @@ spec:
 				"unescaped Go templates should not exist in default values")
 
 			// Helm templates we add should still work (not escaped)
-			Expect(crdStr).To(ContainSubstring("{{- if .Values.crd.enable }}"),
+			Expect(crdStr).To(ContainSubstring("{{- if .Values.crd.enabled }}"),
 				"Helm conditional should be present and NOT escaped")
 			Expect(crdStr).To(ContainSubstring("namespace: {{ .Release.Namespace }}"),
 				"Helm namespace template should be present and NOT escaped")
@@ -1380,9 +1380,9 @@ spec:
 `
 			// Write kustomize output to file
 			manifestsPath := filepath.Join("dist", "install.yaml")
-			err := fs.FS.MkdirAll(filepath.Dir(manifestsPath), 0755)
+			err := fs.FS.MkdirAll(filepath.Dir(manifestsPath), 0o755)
 			Expect(err).NotTo(HaveOccurred())
-			err = afero.WriteFile(fs.FS, manifestsPath, []byte(kustomizeOutput), 0644)
+			err = afero.WriteFile(fs.FS, manifestsPath, []byte(kustomizeOutput), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("parsing the kustomize output")

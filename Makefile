@@ -106,9 +106,17 @@ fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
 	@echo "Removing trailing spaces from markdown files..."
 	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
 
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint linter
+	$(GOLANGCI_LINT) run
+
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: lint-fmt
+lint-fmt: golangci-lint ## Verify Go code is formatted
+	$(GOLANGCI_LINT) fmt --diff
 
 
 # Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
@@ -246,7 +254,7 @@ kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-
 verify: verify-lint verify-license verify-sample-permissions verify-testdata verify-docs verify-helm ## Run all verification checks
 
 .PHONY: verify-lint
-verify-lint: verify-lint-config yamllint-yaml ## Run linting checks (config, YAML). Note: golangci-lint run is done via CI action for PR comments
+verify-lint: verify-lint-config lint-fmt yamllint-yaml ## Run linting checks (config, format, YAML). Note: golangci-lint run is done via CI action for PR comments
 
 .PHONY: verify-lint-config
 verify-lint-config: golangci-lint ## Verify golangci-lint linter configuration
@@ -284,7 +292,7 @@ KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
-GOLANGCI_LINT_VERSION ?= v2.11.4
+GOLANGCI_LINT_VERSION ?= v2.12.2
 KUBE_LINTER_VERSION ?= v0.8.3
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist

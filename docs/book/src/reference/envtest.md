@@ -9,7 +9,7 @@ Installing the binaries is as a simple as running `make envtest`. `envtest` will
 by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
 
-You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, Kubebuilder configures it to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Kubebuilder configures it to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
 
 ```shell
 ## Tool binaries
@@ -19,8 +19,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool versions
 ...
-#ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
-ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+#ENVTEST_VERSION is the controller-runtime version to use for setup-envtest, derived from go.mod
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime)
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 ...

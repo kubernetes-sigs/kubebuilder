@@ -22,6 +22,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
+const (
+	exampleDomain       = "example.com"
+	testIODomain        = "test.io"
+	pluginGoKubebuilder = "go.kubebuilder.io/v4"
+	pluginDeployImage   = "deploy-image.go.kubebuilder.io/v1-alpha"
+)
+
 // TestGetPluginKeyForConfigIntegration tests that the plugin correctly resolves
 // its key based on the plugin chain, supporting custom bundle names.
 func TestGetPluginKeyForConfigIntegration(t *testing.T) {
@@ -35,38 +42,38 @@ func TestGetPluginKeyForConfigIntegration(t *testing.T) {
 	}{
 		{
 			name:        "exact match",
-			pluginChain: []string{"go.kubebuilder.io/v4", "deploy-image.go.kubebuilder.io/v1-alpha"},
-			expected:    "deploy-image.go.kubebuilder.io/v1-alpha",
+			pluginChain: []string{pluginGoKubebuilder, pluginDeployImage},
+			expected:    pluginDeployImage,
 			description: "When plugin is used directly, it should use its own key",
 		},
 		{
 			name:        "bundle match with custom domain",
-			pluginChain: []string{"go.kubebuilder.io/v4", "deploy-image.custom-domain/v1-alpha"},
+			pluginChain: []string{pluginGoKubebuilder, "deploy-image.custom-domain/v1-alpha"},
 			expected:    "deploy-image.custom-domain/v1-alpha",
 			description: "When plugin is wrapped in bundle with custom domain, it should use bundle's key",
 		},
 		{
 			name:        "bundle match with operator-sdk domain",
-			pluginChain: []string{"go.kubebuilder.io/v4", "deploy-image.operator-sdk.io/v1-alpha"},
+			pluginChain: []string{pluginGoKubebuilder, "deploy-image.operator-sdk.io/v1-alpha"},
 			expected:    "deploy-image.operator-sdk.io/v1-alpha",
 			description: "When plugin is wrapped in operator-sdk bundle, it should use bundle's key",
 		},
 		{
 			name:        "no match - fallback to plugin key",
-			pluginChain: []string{"go.kubebuilder.io/v4"},
-			expected:    "deploy-image.go.kubebuilder.io/v1-alpha",
+			pluginChain: []string{pluginGoKubebuilder},
+			expected:    pluginDeployImage,
 			description: "When no matching key in chain, fallback to plugin's own key",
 		},
 		{
 			name:        "version mismatch - fallback",
-			pluginChain: []string{"go.kubebuilder.io/v4", "deploy-image.custom-domain/v2-alpha"},
-			expected:    "deploy-image.go.kubebuilder.io/v1-alpha",
+			pluginChain: []string{pluginGoKubebuilder, "deploy-image.custom-domain/v2-alpha"},
+			expected:    pluginDeployImage,
 			description: "When version doesn't match, fallback to plugin's own key",
 		},
 		{
 			name:        "base name mismatch - fallback",
-			pluginChain: []string{"go.kubebuilder.io/v4", "other-plugin.custom-domain/v1-alpha"},
-			expected:    "deploy-image.go.kubebuilder.io/v1-alpha",
+			pluginChain: []string{pluginGoKubebuilder, "other-plugin.custom-domain/v1-alpha"},
+			expected:    pluginDeployImage,
 			description: "When base name doesn't match, fallback to plugin's own key",
 		},
 		{

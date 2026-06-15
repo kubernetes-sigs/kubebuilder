@@ -22,6 +22,13 @@ import (
 	"testing"
 )
 
+const (
+	testGitCommit             = "abcdef123"
+	testGitCommitDirty        = "abcdef123-dirty"
+	testKubebuilderV410       = "v4.10.4"
+	testKubebuilderVersion135 = "1.35.0"
+)
+
 func TestNew(t *testing.T) {
 	t.Run("Environment variable override", func(t *testing.T) {
 		expectedVersion := "v9.9.9-test"
@@ -51,8 +58,8 @@ func TestNew(t *testing.T) {
 	t.Run("VCS metadata resolution with tagged release", func(t *testing.T) {
 		v := &Version{KubeBuilderVersion: "v1.0.0"}
 		settings := []debug.BuildSetting{
-			{Key: "vcs.revision", Value: "abcdef123"},
-			{Key: "vcs.modified", Value: "true"},
+			{Key: vcsKeyRevision, Value: testGitCommit},
+			{Key: vcsKeyModified, Value: vcsValueTrue},
 		}
 
 		v.applyVCSMetadata(settings)
@@ -82,11 +89,11 @@ func TestGetKubeBuilderVersion(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"strips v prefix", "v1.35.0", "1.35.0"},
-		{"handles no prefix", "1.35.0", "1.35.0"},
-		{"preserves devel", "(devel)", "(devel)"},
+		{"strips v prefix", "v" + testKubebuilderVersion135, testKubebuilderVersion135},
+		{"handles no prefix", testKubebuilderVersion135, testKubebuilderVersion135},
+		{"preserves devel", develVersion, develVersion},
 		{"handles empty", "", ""},
-		{"handles dirty suffix", "v1.35.0-dirty", "1.35.0-dirty"},
+		{"handles dirty suffix", "v" + testKubebuilderVersion135 + "-dirty", testKubebuilderVersion135 + "-dirty"},
 	}
 
 	for _, tc := range testCases {
@@ -105,7 +112,7 @@ func TestResolveMainVersion(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"Valid Tag", "v4.10.4", "v4.10.4"},
+		{"Valid Tag", testKubebuilderV410, testKubebuilderV410},
 		{"Development Build", "", develVersion},
 	}
 
@@ -130,37 +137,37 @@ func TestApplyVCSMetadata(t *testing.T) {
 	}{
 		{
 			name:           "Clean release build",
-			initialVersion: "v4.10.4",
+			initialVersion: testKubebuilderV410,
 			settings: []debug.BuildSetting{
-				{Key: "vcs.revision", Value: "abcdef123"},
-				{Key: "vcs.time", Value: "2025-12-27T18:00:00Z"},
-				{Key: "vcs.modified", Value: "false"},
+				{Key: vcsKeyRevision, Value: testGitCommit},
+				{Key: vcsKeyTime, Value: "2025-12-27T18:00:00Z"},
+				{Key: vcsKeyModified, Value: "false"},
 			},
-			expectCommit:  "abcdef123",
-			expectVersion: "v4.10.4",
+			expectCommit:  testGitCommit,
+			expectVersion: testKubebuilderV410,
 			expectDate:    "2025-12-27T18:00:00Z",
 		},
 		{
 			name:           "Dirty development build",
 			initialVersion: develVersion,
 			settings: []debug.BuildSetting{
-				{Key: "vcs.revision", Value: "abcdef123"},
-				{Key: "vcs.modified", Value: "true"},
-				{Key: "vcs.time", Value: "2025-12-29T19:30:00Z"},
+				{Key: vcsKeyRevision, Value: testGitCommit},
+				{Key: vcsKeyModified, Value: vcsValueTrue},
+				{Key: vcsKeyTime, Value: "2025-12-29T19:30:00Z"},
 			},
-			expectCommit:  "abcdef123-dirty",
-			expectVersion: "(devel)",
+			expectCommit:  testGitCommitDirty,
+			expectVersion: develVersion,
 			expectDate:    "2025-12-29T19:30:00Z",
 		},
 		{
 			name:           "Dirty tagged release (GoReleaser scenario)",
 			initialVersion: "v4.5.3-rc.1",
 			settings: []debug.BuildSetting{
-				{Key: "vcs.revision", Value: "abcdef123"},
-				{Key: "vcs.modified", Value: "true"},
-				{Key: "vcs.time", Value: "2025-12-30T10:00:00Z"},
+				{Key: vcsKeyRevision, Value: testGitCommit},
+				{Key: vcsKeyModified, Value: vcsValueTrue},
+				{Key: vcsKeyTime, Value: "2025-12-30T10:00:00Z"},
 			},
-			expectCommit:  "abcdef123-dirty",
+			expectCommit:  testGitCommitDirty,
 			expectVersion: "v4.5.3-rc.1", // Stays clean for tagged releases
 			expectDate:    "2025-12-30T10:00:00Z",
 		},
@@ -168,11 +175,11 @@ func TestApplyVCSMetadata(t *testing.T) {
 			name:           "Dirty pseudo-version",
 			initialVersion: "v1.2.4-0.20191109021931-daa7c04131f5",
 			settings: []debug.BuildSetting{
-				{Key: "vcs.revision", Value: "abcdef123"},
-				{Key: "vcs.modified", Value: "true"},
+				{Key: vcsKeyRevision, Value: testGitCommit},
+				{Key: vcsKeyModified, Value: vcsValueTrue},
 			},
-			expectCommit:  "abcdef123-dirty",
-			expectVersion: "(devel)", // Pseudo-versions become (devel) when dirty
+			expectCommit:  testGitCommitDirty,
+			expectVersion: develVersion, // Pseudo-versions become (devel) when dirty
 			expectDate:    "",
 		},
 	}

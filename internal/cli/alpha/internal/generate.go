@@ -37,6 +37,16 @@ import (
 	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
+const (
+	flagPlugins                  = "--plugins"
+	kubebuilderSubcommandCreate  = "create"
+	kubebuilderSubcommandEdit    = "edit"
+	kubebuilderSubcommandAPI     = "api"
+	pluginGoKubebuilderV4        = "go.kubebuilder.io/v4"
+	pluginHelmKubebuilderV1Alpha = "helm.kubebuilder.io/v1-alpha"
+	pluginHelmKubebuilderV2Alpha = "helm.kubebuilder.io/v2-alpha"
+)
+
 // Generate store the required info for the command
 type Generate struct {
 	InputDir           string
@@ -371,7 +381,7 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 		return nil
 	}
 
-	args := []string{"edit", "--plugins", plugin.KeyFor(autoupdatev1alpha.Plugin{})}
+	args := []string{kubebuilderSubcommandEdit, flagPlugins, plugin.KeyFor(autoupdatev1alpha.Plugin{})}
 	if autoUpdatePlugin.UseGHModels {
 		args = append(args, "--use-gh-models")
 	}
@@ -433,7 +443,10 @@ func migrateDeployImagePlugin(s store.Store) error {
 
 // Creates an API with Deploy Image plugin.
 func createAPIWithDeployImage(resourceData deployimagev1alpha1.ResourceData) error {
-	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
+	args := append(
+		[]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI},
+		getGVKFlagsFromDeployImage(resourceData)...,
+	)
 	args = append(args, getDeployImageOptions(resourceData)...)
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
@@ -454,10 +467,10 @@ func getInitArgs(s store.Store, opts *Generate, tempLicenseFile string) []string
 
 	// Define outdated plugin versions that need replacement
 	outdatedPlugins := map[string]string{
-		"go.kubebuilder.io/v3":         "go.kubebuilder.io/v4",
-		"go.kubebuilder.io/v3-alpha":   "go.kubebuilder.io/v4",
-		"go.kubebuilder.io/v2":         "go.kubebuilder.io/v4",
-		"helm.kubebuilder.io/v1-alpha": "helm.kubebuilder.io/v2-alpha",
+		"go.kubebuilder.io/v3":       pluginGoKubebuilderV4,
+		"go.kubebuilder.io/v3-alpha": pluginGoKubebuilderV4,
+		"go.kubebuilder.io/v2":       pluginGoKubebuilderV4,
+		pluginHelmKubebuilderV1Alpha: pluginHelmKubebuilderV2Alpha,
 	}
 
 	// Replace outdated plugins and exit after the first replacement
@@ -473,7 +486,7 @@ func getInitArgs(s store.Store, opts *Generate, tempLicenseFile string) []string
 	}
 
 	if len(plugins) > 0 {
-		args = append(args, "--plugins", strings.Join(plugins, ","))
+		args = append(args, flagPlugins, strings.Join(plugins, ","))
 	}
 	if domain := s.Config().GetDomain(); domain != "" {
 		args = append(args, "--domain", domain)
@@ -555,7 +568,7 @@ func getDeployImageOptions(resourceData deployimagev1alpha1.ResourceData) []stri
 // Creates an API resource.
 // Controllers are scaffolded separately to support multiple controllers per API.
 func createAPI(res resource.Resource) error {
-	args := append([]string{"create", "api"}, getGVKFlags(res)...)
+	args := append([]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI}, getGVKFlags(res)...)
 	args = append(args, getAPIResourceFlags(res)...)
 
 	// Add the external API flags if the resource is external
@@ -596,7 +609,7 @@ func createControllers(res resource.Resource) error {
 
 // Creates a single controller for a resource with a specific name.
 func createControllerWithName(res resource.Resource, controllerName string) error {
-	args := append([]string{"create", "api"}, getGVKFlags(res)...)
+	args := append([]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI}, getGVKFlags(res)...)
 
 	// Always set --resource=false since we're only creating the controller
 	args = append(args, "--resource=false")
@@ -721,7 +734,7 @@ func grafanaConfigMigrate(src, des string) error {
 
 // Edits the project to include the Grafana plugin.
 func kubebuilderGrafanaEdit() error {
-	args := []string{"edit", "--plugins", plugin.KeyFor(grafanav1alpha.Plugin{})}
+	args := []string{kubebuilderSubcommandEdit, flagPlugins, plugin.KeyFor(grafanav1alpha.Plugin{})}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Grafana plugin: %w", err)
 	}
@@ -744,7 +757,7 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 
 	// Use tracked configuration values
 	pluginKey := plugin.KeyFor(helmv2alpha.Plugin{})
-	args := []string{"edit", "--plugins", pluginKey}
+	args := []string{kubebuilderSubcommandEdit, flagPlugins, pluginKey}
 	if cfg.ManifestsFile != "" {
 		args = append(args, "--manifests", cfg.ManifestsFile)
 	}
@@ -767,7 +780,7 @@ func kubebuilderHelmEdit(isV2Alpha bool) error {
 		pluginKey = plugin.KeyFor(helmv1alpha.Plugin{})
 	}
 
-	args := []string{"edit", "--plugins", pluginKey}
+	args := []string{kubebuilderSubcommandEdit, flagPlugins, pluginKey}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
 	}

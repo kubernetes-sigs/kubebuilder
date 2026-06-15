@@ -19,6 +19,7 @@ package appliers
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -678,7 +679,7 @@ func templateControllerManagerArgs(yamlContent string) string {
 			metricsIndent = itemIndent
 		}
 		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- if .Values.metrics.enable }}\n")
+		builder.WriteString("{{- if .Values.metrics.enabled }}\n")
 		builder.WriteString(metricsLine)
 		builder.WriteString("\n")
 		builder.WriteString(metricsIndent)
@@ -1340,8 +1341,8 @@ func detectChildIndent(lines []string, parentIndent string) string {
 	// Scan backwards to find the first child entry with indentation > parent
 	parentIndentLen := len(parentIndent)
 
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
+	for _, v := range slices.Backward(lines) {
+		line := v
 		trimmed := strings.TrimSpace(line)
 
 		// Skip empty lines and Helm template directives
@@ -1368,7 +1369,7 @@ func detectChildIndent(lines []string, parentIndent string) string {
 
 // MakeContainerArgsConditional makes webhook-cert-path and metrics-cert-path args conditional.
 func MakeContainerArgsConditional(yamlContent string) string {
-	// Make webhook-cert-path arg conditional on certManager.enable
+	// Make webhook-cert-path arg conditional on certManager.enabled
 	if strings.Contains(yamlContent, "--webhook-cert-path") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		webhookArgPattern := regexp.MustCompile(`([ \t]+)-\s*--webhook-cert-path=[^\n]*`)
@@ -1380,12 +1381,12 @@ func MakeContainerArgsConditional(yamlContent string) string {
 			}
 
 			argLine := strings.TrimSpace(match)
-			return fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n%s%s\n%s{{- end }}",
+			return fmt.Sprintf("%s{{- if .Values.certManager.enabled }}\n%s%s\n%s{{- end }}",
 				indent, indent, argLine, indent)
 		})
 	}
 
-	// Make metrics-cert-path arg conditional on certManager.enable AND metrics.enable
+	// Make metrics-cert-path arg conditional on certManager.enabled AND metrics.enabled AND metrics.secure
 	if strings.Contains(yamlContent, "--metrics-cert-path") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		metricsArgPattern := regexp.MustCompile(`([ \t]+)-\s*--metrics-cert-path=[^\n]*`)
@@ -1397,7 +1398,8 @@ func MakeContainerArgsConditional(yamlContent string) string {
 			}
 
 			argLine := strings.TrimSpace(match)
-			return fmt.Sprintf("%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n%s%s\n%s{{- end }}",
+			return fmt.Sprintf(
+				"%s{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}\n%s%s\n%s{{- end }}",
 				indent, indent, argLine, indent)
 		})
 	}
@@ -1405,9 +1407,9 @@ func MakeContainerArgsConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeWebhookVolumesConditional makes webhook volumes conditional on certManager.enable.
+// MakeWebhookVolumesConditional makes webhook volumes conditional on certManager.enabled.
 func MakeWebhookVolumesConditional(yamlContent string) string {
-	// Make webhook volumes conditional on certManager.enable
+	// Make webhook volumes conditional on certManager.enabled
 	if strings.Contains(yamlContent, "webhook-certs") && strings.Contains(yamlContent, "secretName: webhook-server-cert") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		volumePattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*webhook-certs[\s\S]*?secretName:\s*webhook-server-cert`)
@@ -1417,9 +1419,9 @@ func MakeWebhookVolumesConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeWebhookVolumeMountsConditional makes webhook volumeMounts conditional on certManager.enable.
+// MakeWebhookVolumeMountsConditional makes webhook volumeMounts conditional on certManager.enabled.
 func MakeWebhookVolumeMountsConditional(yamlContent string) string {
-	// Make webhook volumeMounts conditional on certManager.enable
+	// Make webhook volumeMounts conditional on certManager.enabled
 	webhookCertsPath := "/tmp/k8s-webhook-server/serving-certs"
 	if strings.Contains(yamlContent, "webhook-certs") && strings.Contains(yamlContent, webhookCertsPath) {
 		// Match only spaces/tabs for indent to avoid consuming the newline
@@ -1431,9 +1433,9 @@ func MakeWebhookVolumeMountsConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeMetricsVolumesConditional makes metrics volumes conditional on certManager.enable AND metrics.enable.
+// MakeMetricsVolumesConditional wraps metrics volumes with the metrics TLS conditional.
 func MakeMetricsVolumesConditional(yamlContent string) string {
-	// Make metrics volumes conditional on certManager.enable AND metrics.enable
+	// Make metrics volumes conditional on certManager.enabled AND metrics.enabled AND metrics.secure
 	if strings.Contains(yamlContent, "metrics-certs") && strings.Contains(yamlContent, "secretName: metrics-server-cert") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		volumePattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*metrics-certs[\s\S]*?secretName:\s*metrics-server-cert`)
@@ -1452,13 +1454,16 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 					}
 				}
 
-				// Reconstruct the block with conditional wrapper
+				childIndent := indent.String() + "  "
+
+				// Reconstruct the block with conditional wrapper at child indent
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enabled"+
+					" .Values.metrics.enabled .Values.metrics.secure }}\n", childIndent)
 				for _, line := range lines {
-					result.WriteString(line + "\n")
+					result.WriteString("  " + line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
+				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
 				return result.String()
 			}
 			return match
@@ -1468,9 +1473,9 @@ func MakeMetricsVolumesConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeMetricsVolumeMountsConditional makes metrics volumeMounts conditional on certManager.enable AND metrics.enable.
+// MakeMetricsVolumeMountsConditional wraps metrics volumeMounts with the metrics TLS conditional.
 func MakeMetricsVolumeMountsConditional(yamlContent string) string {
-	// Make metrics volumeMounts conditional on certManager.enable AND metrics.enable
+	// Make metrics volumeMounts conditional on certManager.enabled AND metrics.enabled AND metrics.secure
 	metricsCertsPath := "/tmp/k8s-metrics-server/metrics-certs"
 	if strings.Contains(yamlContent, "metrics-certs") && strings.Contains(yamlContent, metricsCertsPath) {
 		// Match only spaces/tabs for indent to avoid consuming the newline
@@ -1491,13 +1496,16 @@ func MakeMetricsVolumeMountsConditional(yamlContent string) string {
 					}
 				}
 
-				// Reconstruct the block with conditional wrapper
+				childIndent := indent.String() + "  "
+
+				// Reconstruct the block with conditional wrapper at child indent
 				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enable .Values.metrics.enable }}\n", indent.String())
+				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enabled"+
+					" .Values.metrics.enabled .Values.metrics.secure }}\n", childIndent)
 				for _, line := range lines {
-					result.WriteString(line + "\n")
+					result.WriteString("  " + line + "\n")
 				}
-				fmt.Fprintf(&result, "%s{{- end }}", indent.String())
+				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
 				return result.String()
 			}
 			return match

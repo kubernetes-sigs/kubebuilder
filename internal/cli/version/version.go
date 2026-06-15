@@ -27,7 +27,12 @@ import (
 const (
 	unknown                 = "unknown"
 	develVersion            = "(devel)"
-	kubernetesVendorVersion = "1.35.0"
+	kubernetesVendorVersion = "1.36.0"
+
+	vcsKeyRevision = "vcs.revision"
+	vcsKeyTime     = "vcs.time"
+	vcsKeyModified = "vcs.modified"
+	vcsValueTrue   = "true"
 )
 
 type Version struct {
@@ -87,12 +92,12 @@ func (v *Version) applyVCSMetadata(settings []debug.BuildSetting) {
 
 	for _, s := range settings {
 		switch s.Key {
-		case "vcs.revision":
+		case vcsKeyRevision:
 			v.GitCommit = s.Value
-		case "vcs.time":
+		case vcsKeyTime:
 			v.BuildDate = s.Value
-		case "vcs.modified":
-			isDirty = (s.Value == "true")
+		case vcsKeyModified:
+			isDirty = (s.Value == vcsValueTrue)
 		}
 	}
 

@@ -440,14 +440,14 @@ func init() {
 				Expect(err).To(MatchError(errType))
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
-				FileAlreadyExistsError{path: "filename"},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: Error}},
-				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
+				FileAlreadyExistsError{path: path},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
+				fakeInserter{fakeBuilder: fakeBuilder{path: path}},
 			),
 			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
-				UnknownIfExistsActionError{path: "filename", ifExistsAction: -1},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
-				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
+				UnknownIfExistsActionError{path: path, ifExistsAction: -1},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
+				fakeInserter{fakeBuilder: fakeBuilder{path: path}},
 			),
 		)
 

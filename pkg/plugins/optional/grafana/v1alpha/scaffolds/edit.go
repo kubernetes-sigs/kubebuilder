@@ -66,9 +66,11 @@ func loadConfig(configPath string) ([]templates.CustomMetricItem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin config: %w", err)
 	}
-
 	items, err := configReader(f)
 	if err != nil {
+		if cerr := f.Close(); cerr != nil {
+			return nil, fmt.Errorf("error reading config.yaml: %w; close error: %v", err, cerr)
+		}
 		return nil, fmt.Errorf("error reading config.yaml: %w", err)
 	}
 
@@ -181,7 +183,7 @@ func (s *editScaffolder) Scaffold() error {
 	if err == nil && len(configItems) > 0 {
 		templatesBuilder = append(templatesBuilder, &templates.CustomMetricsDashManifest{Items: configItems})
 	} else if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Error on scaffolding manifest for custom metris:\n%v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error on scaffolding manifest for custom metrics:\n%v", err)
 	}
 
 	if err = scaffold.Execute(templatesBuilder...); err != nil {

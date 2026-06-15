@@ -25,19 +25,20 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
-// TemplatePorts templates port numbers for Services and Deployments using values.yaml.
+// TemplatePorts templates port numbers for Services, Deployments, and NetworkPolicies using values.yaml.
 func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) string {
 	resourceName := resource.GetName()
 	resourceKind := resource.GetKind()
 
 	// Use suffix matching to avoid false positives when project name contains "webhook"
-	isWebhook := resourceKind == common.KindService &&
-		strings.HasSuffix(resourceName, "-webhook-service")
+	isWebhook := (resourceKind == common.KindService && strings.HasSuffix(resourceName, "-webhook-service")) ||
+		(resourceKind == common.KindNetworkPolicy && strings.HasSuffix(resourceName, "allow-webhook-traffic"))
 
 	// Use suffix matching to avoid false positives when project name contains "metrics"
-	isMetrics := resourceKind == common.KindService &&
+	isMetrics := (resourceKind == common.KindService &&
 		(strings.HasSuffix(resourceName, "-controller-manager-metrics-service") ||
-			strings.HasSuffix(resourceName, "-metrics-service"))
+			strings.HasSuffix(resourceName, "-metrics-service"))) ||
+		(resourceKind == common.KindNetworkPolicy && strings.HasSuffix(resourceName, "allow-metrics-traffic"))
 
 	// For Deployments, detect webhook ports from content
 	if resourceKind == common.KindDeployment {
@@ -48,6 +49,12 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 
 	// Template webhook ports
 	if isWebhook {
+		if resourceKind == common.KindNetworkPolicy {
+			yamlContent = regexp.MustCompile(`(\s*)port:\s*\d+`).
+				ReplaceAllString(yamlContent, "${1}port: {{ .Values.webhook.port }}")
+			return yamlContent
+		}
+
 		// Replace containerPort for webhook-server with template (matches any numeric port)
 		if strings.Contains(yamlContent, "webhook-server") {
 			yamlContent = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*webhook-server)`).
@@ -64,6 +71,10 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 		// Replace port with metrics.port template (matches any numeric port)
 		yamlContent = regexp.MustCompile(`(\s*)port:\s*\d+`).
 			ReplaceAllString(yamlContent, "${1}port: {{ .Values.metrics.port }}")
+
+		if resourceKind == common.KindNetworkPolicy {
+			return yamlContent
+		}
 
 		// Replace targetPort with metrics.port template (matches any numeric port)
 		yamlContent = regexp.MustCompile(`(\s*)targetPort:\s*\d+`).

@@ -36,7 +36,12 @@ import (
 var _ = Describe("CronJob controller", func() {
 	Context("CronJob controller test", func() {
 
-		const NamespaceName = "test-cronjob"
+		const (
+			NamespaceName      = "test-cronjob"
+			testSchedule       = "1 * * * *"
+			testContainerName  = "test-container"
+			testContainerImage = "test-image"
+		)
 
 		ctx := context.Background()
 
@@ -77,15 +82,15 @@ var _ = Describe("CronJob controller", func() {
 					Namespace: NamespaceName,
 				},
 				Spec: cronjobv1.CronJobSpec{
-					Schedule: "1 * * * *",
+					Schedule: testSchedule,
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
 									Containers: []v1.Container{
 										{
-											Name:  "test-container",
-											Image: "test-image",
+											Name:  testContainerName,
+											Image: testContainerImage,
 										},
 									},
 									RestartPolicy: v1.RestartPolicyOnFailure,
@@ -121,15 +126,15 @@ var _ = Describe("CronJob controller", func() {
 					Namespace: NamespaceName,
 				},
 				Spec: cronjobv1.CronJobSpec{
-					Schedule: "1 * * * *",
+					Schedule: testSchedule,
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
 									Containers: []v1.Container{
 										{
-											Name:  "test-container",
-											Image: "test-image",
+											Name:  testContainerName,
+											Image: testContainerImage,
 										},
 									},
 									RestartPolicy: v1.RestartPolicyOnFailure,
@@ -183,15 +188,15 @@ var _ = Describe("CronJob controller", func() {
 					Namespace: NamespaceName,
 				},
 				Spec: cronjobv1.CronJobSpec{
-					Schedule: "1 * * * *",
+					Schedule: testSchedule,
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
 									Containers: []v1.Container{
 										{
-											Name:  "test-container",
-											Image: "test-image",
+											Name:  testContainerName,
+											Image: testContainerImage,
 										},
 									},
 									RestartPolicy: v1.RestartPolicyOnFailure,
@@ -215,8 +220,8 @@ var _ = Describe("CronJob controller", func() {
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name:  "test-container",
-									Image: "test-image",
+									Name:  testContainerName,
+									Image: testContainerImage,
 								},
 							},
 							RestartPolicy: v1.RestartPolicyOnFailure,
@@ -279,15 +284,15 @@ var _ = Describe("CronJob controller", func() {
 					Namespace: NamespaceName,
 				},
 				Spec: cronjobv1.CronJobSpec{
-					Schedule: "1 * * * *",
+					Schedule: testSchedule,
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
 									Containers: []v1.Container{
 										{
-											Name:  "test-container",
-											Image: "test-image",
+											Name:  testContainerName,
+											Image: testContainerImage,
 										},
 									},
 									RestartPolicy: v1.RestartPolicyOnFailure,
@@ -311,8 +316,8 @@ var _ = Describe("CronJob controller", func() {
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name:  "test-container",
-									Image: "test-image",
+									Name:  testContainerName,
+									Image: testContainerImage,
 								},
 							},
 							RestartPolicy: v1.RestartPolicyOnFailure,
@@ -384,15 +389,15 @@ var _ = Describe("CronJob controller", func() {
 					Namespace: NamespaceName,
 				},
 				Spec: cronjobv1.CronJobSpec{
-					Schedule: "1 * * * *",
+					Schedule: testSchedule,
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
 									Containers: []v1.Container{
 										{
-											Name:  "test-container",
-											Image: "test-image",
+											Name:  testContainerName,
+											Image: testContainerImage,
 										},
 									},
 									RestartPolicy: v1.RestartPolicyOnFailure,

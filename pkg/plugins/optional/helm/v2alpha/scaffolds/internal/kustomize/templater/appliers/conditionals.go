@@ -39,20 +39,28 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 	case kind == common.KindCRD:
 		// Add resource-policy annotation to prevent deletion on helm uninstall
 		yamlContent = InjectCRDResourcePolicyAnnotation(yamlContent)
-		return fmt.Sprintf("{{- if .Values.crd.enable }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if .Values.crd.enabled }}\n%s{{- end }}\n", yamlContent)
 	case kind == common.KindCertificate && apiVersion == common.APIVersionCertManager:
 		return HandleCertificateConditionalWrappers(yamlContent, name)
 	case kind == common.KindIssuer && apiVersion == common.APIVersionCertManager:
-		return fmt.Sprintf("{{- if .Values.certManager.enable }}\n%s\n{{- end }}", yamlContent)
+		return fmt.Sprintf("{{- if .Values.certManager.enabled }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindServiceMonitor && apiVersion == common.APIVersionMonitoring:
 		// CRITICAL: newline before {{- end }} prevents whitespace chomping from eating content
-		return fmt.Sprintf("{{- if .Values.prometheus.enable }}\n%s\n{{- end }}", yamlContent)
+		return fmt.Sprintf("{{- if .Values.prometheus.enabled }}\n%s\n{{- end }}", yamlContent)
+	case kind == common.KindNetworkPolicy && apiVersion == common.APIVersionNetworking:
+		if strings.HasSuffix(name, "allow-webhook-traffic") {
+			return fmt.Sprintf(
+				"{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}\n%s\n{{- end }}",
+				yamlContent,
+			)
+		}
+		return fmt.Sprintf("{{- if .Values.networkPolicy.enabled }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindServiceAccount, kind == common.KindRole, kind == common.KindClusterRole,
 		kind == common.KindRoleBinding, kind == common.KindClusterRoleBinding:
 		return HandleRBACConditionalWrappers(yamlContent, kind, name)
 	case kind == common.KindValidatingWebhook || kind == common.KindMutatingWebhook:
 		yamlContent = MakeWebhookAnnotationsConditional(yamlContent)
-		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if .Values.webhook.enabled }}\n%s{{- end }}\n", yamlContent)
 	case kind == common.KindService:
 		return HandleServiceConditionalWrappers(yamlContent, name)
 	case kind == common.KindDeployment:
@@ -77,21 +85,21 @@ func HandleCertificateConditionalWrappers(yamlContent, name string) string {
 	if isMetricsCert {
 		// Metrics certificates require certManager AND metrics.secure=true (TLS enabled)
 		return fmt.Sprintf(
-			"{{- if and .Values.certManager.enable .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n",
+			"{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n",
 			yamlContent)
 	}
 	// Webhook serving certificates only need certManager
-	return fmt.Sprintf("{{- if .Values.certManager.enable }}\n%s{{- end }}", yamlContent)
+	return fmt.Sprintf("{{- if .Values.certManager.enabled }}\n%s{{- end }}", yamlContent)
 }
 
 // HandleServiceConditionalWrappers handles conditional logic for Service resources.
 // Uses suffix matching to avoid false positives when project name contains service types.
 func HandleServiceConditionalWrappers(yamlContent, name string) string {
 	if strings.HasSuffix(name, "-metrics-service") || strings.HasSuffix(name, "-controller-manager-metrics-service") {
-		return fmt.Sprintf("{{- if .Values.metrics.enable }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if .Values.metrics.enabled }}\n%s{{- end }}\n", yamlContent)
 	}
 	if strings.HasSuffix(name, "-webhook-service") {
-		return fmt.Sprintf("{{- if .Values.webhook.enable }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if .Values.webhook.enabled }}\n%s{{- end }}\n", yamlContent)
 	}
 	return yamlContent
 }
@@ -121,19 +129,19 @@ func HandleRBACConditionalWrappers(yamlContent, kind, name string) string {
 	}
 
 	if isHelper {
-		return fmt.Sprintf("{{- if .Values.rbac.helpers.enable }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if .Values.rbac.helpers.enabled }}\n%s{{- end }}\n", yamlContent)
 	}
 	if isMetricsAuthRole {
 		// Only needed when secure metrics enabled (authn via TokenReview/SubjectAccessReview)
-		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
 	}
 	if isMetricsReader {
 		// Only needed when secure metrics enabled (uses nonResourceURLs for /metrics access)
-		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
 	}
 	if isMetricsAuthBinding {
 		// Binding for metrics-auth-role, only needed when secure metrics enabled
-		return fmt.Sprintf("{{- if and .Values.metrics.enable .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
+		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
 	}
 	// Essential RBAC (manager, leader-election) - always created
 	return yamlContent
@@ -245,7 +253,7 @@ func InjectCRDResourcePolicyAnnotation(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeWebhookAnnotationsConditional makes cert-manager annotations conditional on .Values.certManager.enable.
+// MakeWebhookAnnotationsConditional makes cert-manager annotations conditional on .Values.certManager.enabled.
 func MakeWebhookAnnotationsConditional(yamlContent string) string {
 	// Find cert-manager.io/inject-ca-from annotation and make it conditional
 	if strings.Contains(yamlContent, "cert-manager.io/inject-ca-from") {
@@ -262,7 +270,7 @@ func MakeWebhookAnnotationsConditional(yamlContent string) string {
 			// Extract the annotation line with proper indentation
 			annotationLine := strings.TrimSpace(match)
 
-			return fmt.Sprintf("%s{{- if .Values.certManager.enable }}\n%s%s\n%s{{- end }}",
+			return fmt.Sprintf("%s{{- if .Values.certManager.enabled }}\n%s%s\n%s{{- end }}",
 				indent, indent, annotationLine, indent)
 		})
 	}

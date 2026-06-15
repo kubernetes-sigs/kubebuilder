@@ -20,6 +20,17 @@ import (
 	"testing"
 )
 
+const (
+	controller1        = "controller-1"
+	controller2        = "controller-2"
+	captainBackup      = "captainbackup"
+	captainBackupKebab = "captain-backup"
+	crewGroup          = "crew"
+	captainKind        = "Captain"
+	captainsPlural     = "captains"
+	myKind             = "MyKind"
+)
+
 func TestController_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -48,7 +59,7 @@ func TestController_Validate(t *testing.T) {
 		},
 		{
 			name:    "valid controller name with numbers",
-			ctrl:    Controller{Name: "controller-1"},
+			ctrl:    Controller{Name: controller1},
 			wantErr: false,
 		},
 	}
@@ -82,16 +93,16 @@ func TestControllers_Validate(t *testing.T) {
 		{
 			name: "valid controllers",
 			ctrls: &Controllers{
-				{Name: "controller-1"},
-				{Name: "controller-2"},
+				{Name: controller1},
+				{Name: controller2},
 			},
 			wantErr: false,
 		},
 		{
 			name: "duplicate controller names",
 			ctrls: &Controllers{
-				{Name: "controller-1"},
-				{Name: "controller-1"},
+				{Name: controller1},
+				{Name: controller1},
 			},
 			wantErr: true,
 		},
@@ -105,16 +116,16 @@ func TestControllers_Validate(t *testing.T) {
 		{
 			name: "normalization collision: removes hyphens",
 			ctrls: &Controllers{
-				{Name: "captainbackup"},
-				{Name: "captain-backup"},
+				{Name: captainBackup},
+				{Name: captainBackupKebab},
 			},
 			wantErr: true,
 		},
 		{
 			name: "normalization collision: case insensitive",
 			ctrls: &Controllers{
-				{Name: "captainbackup"},
-				{Name: "captainbackup"}, // Will be caught as exact duplicate first
+				{Name: captainBackup},
+				{Name: captainBackup}, // Will be caught as exact duplicate first
 			},
 			wantErr: true,
 		},
@@ -132,8 +143,8 @@ func TestControllers_Validate(t *testing.T) {
 
 func TestControllers_HasController(t *testing.T) {
 	ctrls := &Controllers{
-		{Name: "controller-1"},
-		{Name: "controller-2"},
+		{Name: controller1},
+		{Name: controller2},
 	}
 
 	tests := []struct {
@@ -141,11 +152,11 @@ func TestControllers_HasController(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "controller-1",
+			name: controller1,
 			want: true,
 		},
 		{
-			name: "controller-2",
+			name: controller2,
 			want: true,
 		},
 		{
@@ -174,22 +185,22 @@ func TestControllers_AddController(t *testing.T) {
 		{
 			name:    "add to nil controllers",
 			initial: nil,
-			addName: "controller-1",
+			addName: controller1,
 			wantErr: true,
 		},
 		{
 			name:    "add valid controller",
 			initial: &Controllers{},
-			addName: "controller-1",
+			addName: controller1,
 			wantErr: false,
 			wantLen: 1,
 		},
 		{
 			name: "add duplicate controller",
 			initial: &Controllers{
-				{Name: "controller-1"},
+				{Name: controller1},
 			},
-			addName: "controller-1",
+			addName: controller1,
 			wantErr: true,
 			wantLen: 1,
 		},
@@ -227,21 +238,21 @@ func TestResource_Update_WithControllers(t *testing.T) {
 			name: "update resource without controllers with one that has controllers",
 			base: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 			},
 			other: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 				Controllers: &Controllers{
-					{Name: "captain-backup"},
+					{Name: captainBackupKebab},
 				},
 			},
 			wantErr: false,
@@ -251,24 +262,24 @@ func TestResource_Update_WithControllers(t *testing.T) {
 			name: "update resource with controllers with another controller",
 			base: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 				Controllers: &Controllers{
 					{Name: "captain"},
 				},
 			},
 			other: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 				Controllers: &Controllers{
-					{Name: "captain-backup"},
+					{Name: captainBackupKebab},
 				},
 			},
 			wantErr: false,
@@ -278,22 +289,22 @@ func TestResource_Update_WithControllers(t *testing.T) {
 			name: "update with nil other controllers",
 			base: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 				Controllers: &Controllers{
 					{Name: "captain"},
 				},
 			},
 			other: Resource{
 				GVK: GVK{
-					Group:   "crew",
+					Group:   crewGroup,
 					Version: "v1",
-					Kind:    "Captain",
+					Kind:    captainKind,
 				},
-				Plural: "captains",
+				Plural: captainsPlural,
 			},
 			wantErr: false,
 			wantLen: 1,
@@ -328,18 +339,18 @@ func TestResource_GetControllerNames(t *testing.T) {
 		{
 			name: "resource with new Controllers field",
 			resource: Resource{
-				GVK: GVK{Kind: "MyKind"},
+				GVK: GVK{Kind: myKind},
 				Controllers: &Controllers{
-					{Name: "controller-1"},
-					{Name: "controller-2"},
+					{Name: controller1},
+					{Name: controller2},
 				},
 			},
-			want: []string{"controller-1", "controller-2"},
+			want: []string{controller1, controller2},
 		},
 		{
 			name: "resource with legacy Controller bool",
 			resource: Resource{
-				GVK:        GVK{Kind: "MyKind"},
+				GVK:        GVK{Kind: myKind},
 				Controller: true,
 			},
 			want: []string{"mykind"},
@@ -347,14 +358,14 @@ func TestResource_GetControllerNames(t *testing.T) {
 		{
 			name: "resource with no controllers",
 			resource: Resource{
-				GVK: GVK{Kind: "MyKind"},
+				GVK: GVK{Kind: myKind},
 			},
 			want: nil,
 		},
 		{
 			name: "resource with both fields (new takes precedence)",
 			resource: Resource{
-				GVK:        GVK{Kind: "MyKind"},
+				GVK:        GVK{Kind: myKind},
 				Controller: true,
 				Controllers: &Controllers{
 					{Name: "custom-controller"},

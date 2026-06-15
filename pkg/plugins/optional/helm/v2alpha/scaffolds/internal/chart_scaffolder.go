@@ -93,6 +93,7 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 		Certificates:              resources.Certificates,
 		Issuer:                    resources.Issuer,
 		ServiceMonitors:           resources.ServiceMonitors,
+		NetworkPolicies:           resources.NetworkPolicies,
 		Other:                     resources.Other,
 	}, s.config.ProjectName)
 
@@ -144,6 +145,21 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 			ServiceName: metricsServiceName,
 			Force:       s.config.Force,
 		})
+	}
+
+	// Add fallback policies only when kustomize output does not define any NetworkPolicy.
+	if !extraction.Features.HasNetworkPolicy {
+		builders = append(builders, &charttemplates.NetworkPolicy{
+			OutputDir: s.config.OutputDir,
+			Force:     s.config.Force,
+		})
+		if extraction.Features.HasWebhooks {
+			builders = append(builders, &charttemplates.NetworkPolicy{
+				Webhook:   true,
+				OutputDir: s.config.OutputDir,
+				Force:     s.config.Force,
+			})
+		}
 	}
 
 	// Append kustomize-derived chart templates

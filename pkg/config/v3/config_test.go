@@ -38,6 +38,13 @@ var _ = Describe("Cfg", func() {
 		repo   = "myrepo"
 		name   = "ProjectName"
 
+		resourceGroup = "group"
+		resourceKind  = "Kind"
+		apiVersion    = "v1beta1"
+		dataKey1      = "data-1"
+		pluginValue1  = "plugin value 1"
+		pluginValue2  = "plugin value 2"
+
 		otherDomain = "other.domain"
 		otherRepo   = "otherrepo"
 		otherName   = "OtherProjectName"
@@ -144,9 +151,9 @@ var _ = Describe("Cfg", func() {
 		BeforeEach(func() {
 			res = resource.Resource{
 				GVK: resource.GVK{
-					Group:   "group",
+					Group:   resourceGroup,
 					Version: "v1",
-					Kind:    "Kind",
+					Kind:    resourceKind,
 				},
 				Plural: "kinds",
 				Path:   "api/v1",
@@ -260,9 +267,9 @@ var _ = Describe("Cfg", func() {
 		It("UpdateResource should update it if the resource already exists", func() {
 			r := resource.Resource{
 				GVK: resource.GVK{
-					Group:   "group",
+					Group:   resourceGroup,
 					Version: "v1",
-					Kind:    "Kind",
+					Kind:    resourceKind,
 				},
 				Path: "api/v1",
 			}
@@ -302,7 +309,7 @@ var _ = Describe("Cfg", func() {
 						Version: res.Version,
 						Kind:    res.Kind,
 					},
-					API: &resource.API{CRDVersion: "v1beta1"},
+					API: &resource.API{CRDVersion: apiVersion},
 				},
 				resource.Resource{
 					GVK: resource.GVK{
@@ -315,7 +322,7 @@ var _ = Describe("Cfg", func() {
 			)
 			versions := c.ListCRDVersions()
 			slices.Sort(versions) // ListCRDVersions has no order guarantee so sorting for reproducibility
-			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
+			Expect(versions).To(Equal([]string{"v1", apiVersion}))
 		})
 
 		It("ListWebhookVersions should return an empty list with no tracked resources", func() {
@@ -330,7 +337,7 @@ var _ = Describe("Cfg", func() {
 						Version: res.Version,
 						Kind:    res.Kind,
 					},
-					Webhooks: &resource.Webhooks{WebhookVersion: "v1beta1"},
+					Webhooks: &resource.Webhooks{WebhookVersion: apiVersion},
 				},
 				resource.Resource{
 					GVK: resource.GVK{
@@ -343,7 +350,7 @@ var _ = Describe("Cfg", func() {
 			)
 			versions := c.ListWebhookVersions()
 			slices.Sort(versions) // ListWebhookVersions has no order guarantee so sorting for reproducibility
-			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
+			Expect(versions).To(Equal([]string{"v1", apiVersion}))
 		})
 	})
 
@@ -380,7 +387,7 @@ var _ = Describe("Cfg", func() {
 				PluginChain: pluginChain,
 				Plugins: pluginConfigs{
 					key: map[string]any{
-						"data-1": "",
+						dataKey1: "",
 					},
 				},
 			}
@@ -392,14 +399,14 @@ var _ = Describe("Cfg", func() {
 				PluginChain: pluginChain,
 				Plugins: pluginConfigs{
 					key: map[string]any{
-						"data-1": "plugin value 1",
-						"data-2": "plugin value 2",
+						dataKey1: pluginValue1,
+						"data-2": pluginValue2,
 					},
 				},
 			}
 			pluginCfg = PluginConfig{
-				Data1: "plugin value 1",
-				Data2: "plugin value 2",
+				Data1: pluginValue1,
+				Data2: pluginValue2,
 			}
 		})
 
@@ -463,14 +470,14 @@ var _ = Describe("Cfg", func() {
 				Resources: []resource.Resource{
 					{
 						GVK: resource.GVK{
-							Group:   "group",
+							Group:   resourceGroup,
 							Version: "v1",
-							Kind:    "Kind",
+							Kind:    resourceKind,
 						},
 					},
 					{
 						GVK: resource.GVK{
-							Group:   "group",
+							Group:   resourceGroup,
 							Version: "v1",
 							Kind:    "Kind2",
 						},
@@ -480,9 +487,9 @@ var _ = Describe("Cfg", func() {
 					},
 					{
 						GVK: resource.GVK{
-							Group:   "group",
+							Group:   resourceGroup,
 							Version: "v1-beta",
-							Kind:    "Kind",
+							Kind:    resourceKind,
 						},
 						Plural:   "kindes",
 						API:      nil,
@@ -492,7 +499,7 @@ var _ = Describe("Cfg", func() {
 						GVK: resource.GVK{
 							Group:   "group2",
 							Version: "v1",
-							Kind:    "Kind",
+							Kind:    resourceKind,
 						},
 						API: &resource.API{
 							CRDVersion: "v1",
@@ -509,11 +516,11 @@ var _ = Describe("Cfg", func() {
 				},
 				Plugins: pluginConfigs{
 					"plugin-x": map[string]any{
-						"data-1": "single plugin datum",
+						dataKey1: "single plugin datum",
 					},
 					"plugin-y/v1": map[string]any{
-						"data-1": "plugin value 1",
-						"data-2": "plugin value 2",
+						dataKey1: pluginValue1,
+						"data-2": pluginValue2,
 						"data-3": []string{"plugin value 3", "plugin value 4"},
 					},
 				},

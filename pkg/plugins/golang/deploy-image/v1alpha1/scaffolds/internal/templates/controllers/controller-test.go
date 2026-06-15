@@ -34,8 +34,7 @@ type ControllerTest struct {
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
 
-	Port        string
-	PackageName string
+	Port string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -50,7 +49,6 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Info(f.Path)
 
-	f.PackageName = "controller"
 	f.IfExistsAction = machinery.OverwriteFile
 
 	log.Info("creating import for resource", "resource", f.Resource.Path)
@@ -61,7 +59,11 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 
 const controllerTestTemplate = `{{ .Boilerplate }}
 
-package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}{{ .PackageName }}{{ end }}
+{{if and .MultiGroup .Resource.Group }}
+package {{ .Resource.PackageName }}
+{{else}}
+package controller
+{{end}}
 
 import (
 	"context"
@@ -196,7 +198,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailable{{ .Resource.Kind }})
-			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailable{{ .Resource.Kind }})
 		})
 	})
 })

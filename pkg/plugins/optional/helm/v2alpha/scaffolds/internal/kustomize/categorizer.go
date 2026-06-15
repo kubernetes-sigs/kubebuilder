@@ -26,7 +26,7 @@ import (
 
 // ResourceCategorizer groups Kubernetes resources by their logical function, matching the config/
 // directory structure used by kubebuilder. The groups are: crd, rbac, manager, metrics, webhook,
-// cert-manager, prometheus, and extras.
+// cert-manager, prometheus, network-policy, and extras.
 //
 // This categorization determines how resources are organized in the final Helm chart templates.
 type ResourceCategorizer struct {
@@ -75,6 +75,11 @@ func (c *ResourceCategorizer) CategorizeByFunction() map[string][]*unstructured.
 	prometheusResources := c.collectPrometheusResources()
 	if len(prometheusResources) > 0 {
 		groups["prometheus"] = prometheusResources
+	}
+
+	networkPolicyResources := c.collectNetworkPolicyResources()
+	if len(networkPolicyResources) > 0 {
+		groups["network-policy"] = networkPolicyResources
 	}
 
 	extrasResources := c.collectExtrasResources()
@@ -144,6 +149,11 @@ func (c *ResourceCategorizer) collectPrometheusResources() []*unstructured.Unstr
 	prometheusResources := make([]*unstructured.Unstructured, 0, len(c.resources.ServiceMonitors))
 	prometheusResources = append(prometheusResources, c.resources.ServiceMonitors...)
 	return prometheusResources
+}
+
+// collectNetworkPolicyResources gathers network policy related resources.
+func (c *ResourceCategorizer) collectNetworkPolicyResources() []*unstructured.Unstructured {
+	return c.resources.NetworkPolicies
 }
 
 // isWebhookService determines if a service is webhook-related.
