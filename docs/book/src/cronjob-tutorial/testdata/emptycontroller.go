@@ -59,7 +59,7 @@ needed to run.  As we add more functionality, we'll need to revisit these.
 The `ClusterRole` manifest at `config/rbac/role.yaml` is generated from the above markers via controller-gen with the following command:
 */
 
-// make manifests
+make manifests
 
 /*
 NOTE: If you receive an error, please run the specified command in the error and re-run `make manifests`.
