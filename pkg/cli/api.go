@@ -30,7 +30,9 @@ func (c CLI) newCreateAPICmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
 		Short: "Scaffold a Kubernetes API",
-		Long:  `Scaffold a Kubernetes API.`,
+		Long: `Scaffold a Kubernetes API by adding a resource definition and, when requested, a controller.
+
+Run this command from an initialized project.`,
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),

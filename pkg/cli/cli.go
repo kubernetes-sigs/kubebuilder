@@ -46,6 +46,11 @@ const (
 	kubebuilderSubcommandInit = "init"
 	pluginGoKubebuilderV4     = "go.kubebuilder.io/v4"
 	pluginGoKubebuilderV2     = "go.kubebuilder.io/v2"
+
+	pluginsFlagDescription = "Comma-separated list of plugin keys to use. " +
+		"If unset, Kubebuilder uses the plugin chain from PROJECT or the CLI default"
+	projectVersionFlagDescription = "Project config version used to select compatible plugins and write PROJECT " +
+		"(e.g., 3). If unset, Kubebuilder uses the version from PROJECT or the CLI default"
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.

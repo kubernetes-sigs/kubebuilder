@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
 
@@ -49,6 +50,19 @@ var _ = Describe("createWebhookSubcommand", func() {
 			Plural:   captains,
 			Webhooks: &resource.Webhooks{},
 		}
+	})
+
+	Context("UpdateMetadata", func() {
+		It("should provide webhook examples", func() {
+			meta := &plugin.SubcommandMetadata{}
+
+			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
+
+			Expect(meta.Examples).To(ContainSubstring("--defaulting --programmatic-validation"))
+			Expect(meta.Examples).To(ContainSubstring("--conversion --spoke v1"))
+			Expect(meta.Examples).To(ContainSubstring("--defaulting-path=/my-custom-mutate-path"))
+			Expect(meta.Examples).To(ContainSubstring("--validation-path=/my-custom-validate-path"))
+		})
 	})
 
 	It("should reject defaulting-path without --defaulting", func() {

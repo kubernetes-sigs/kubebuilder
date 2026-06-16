@@ -73,12 +73,12 @@ validating and/or conversion webhooks.
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting \
     --defaulting-path=/my-custom-mutate-path
-  
+
   # Create validation webhook with custom path for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --programmatic-validation --validation-path=/my-custom-validate-path
-  
+
   # Create both defaulting and validation webhooks with different custom paths
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --defaulting --programmatic-validation \

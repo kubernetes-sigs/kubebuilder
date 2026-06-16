@@ -43,19 +43,18 @@ func NewScaffoldCommand() *cobra.Command {
 	scaffoldCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Re-scaffold a Kubebuilder project from its PROJECT file",
-		Long: `The 'generate' command re-creates a Kubebuilder project scaffold based on the configuration 
+		Long: `The 'generate' command re-creates a Kubebuilder project scaffold based on the configuration
 defined in the PROJECT file, using the latest installed Kubebuilder version and plugins.
 
-This is helpful for migrating projects to a newer Kubebuilder layout or plugin version (e.g., v3 to v4)
-as update your project from any previous version to the current one.
+This is useful for migrating a project to a newer Kubebuilder layout or plugin version, such as from v3 to v4.
 
 If no output directory is provided, the current working directory will be cleaned (except .git and PROJECT).`,
 		Example: `
-  # **WARNING**(will delete all files to allow the re-scaffold except .git and PROJECT)
-  # Re-scaffold the project in-place 
+  # **WARNING**: will delete all files except .git and PROJECT
+  # Re-scaffold the current project in-place
   kubebuilder alpha generate
 
-  # Re-scaffold the project from ./test into ./my-output
+  # Re-scaffold the project from ./path/to/project into ./my-output
   kubebuilder alpha generate --input-dir="./path/to/project" --output-dir="./my-output"
 `,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
