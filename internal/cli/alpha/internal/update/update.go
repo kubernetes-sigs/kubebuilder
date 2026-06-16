@@ -434,8 +434,13 @@ func regenerateProjectWithVersion(version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download release %s binary: %w", version, err)
 	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Warn("failed to remove temporary directory", "dir", tempDir, "error", err)
+		}
+	}()
 	if err := runAlphaGenerate(tempDir, version); err != nil {
-		return fmt.Errorf("failed to run alpha generate on ancestor branch: %w", err)
+		return fmt.Errorf("failed to run alpha generate for version %s: %w", version, err)
 	}
 	return nil
 }
@@ -518,9 +523,9 @@ func runMakeTargets(skipConflicts bool) {
 	}
 }
 
-// runAlphaGenerate executes the old Kubebuilder version's 'alpha generate' command
-// to create clean scaffolding in the ancestor branch. This uses the downloaded
-// binary with the original PROJECT file to recreate the project's initial state.
+// runAlphaGenerate executes the specified Kubebuilder version's 'alpha generate' command
+// to create clean scaffolding. This uses the downloaded binary with the original
+// PROJECT file to recreate the project state for the given version.
 func runAlphaGenerate(tempDir, version string) error {
 	log.Info("Generating project", "version", version)
 
