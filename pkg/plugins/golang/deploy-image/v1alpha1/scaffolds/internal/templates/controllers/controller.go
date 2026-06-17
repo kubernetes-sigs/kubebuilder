@@ -84,7 +84,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -164,7 +163,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		log.Error(err, "Failed to get {{ lower .Resource.Kind }}")
 		return ctrl.Result{}, err
 	}
-	
+
 	if len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: reasonReconciling, Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -304,7 +303,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
 	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
-		found.Spec.Replicas = ptr.To(desiredReplicas)
+		found.Spec.Replicas = new(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -425,7 +424,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 					//	 },
 					// },
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: ptr.To(true),
+						RunAsNonRoot: new(true),
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
 						// If you are looking for to produce solutions to be supported
 						// on lower versions you must remove this option.

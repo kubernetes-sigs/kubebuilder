@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
@@ -78,7 +77,7 @@ var _ = Describe("Busybox controller", func() {
 						Namespace: namespace.Name,
 					},
 					Spec: examplecomv1alpha1.BusyboxSpec{
-						Size: ptr.To(int32(1)),
+						Size: new(int32(1)),
 					},
 				}
 
