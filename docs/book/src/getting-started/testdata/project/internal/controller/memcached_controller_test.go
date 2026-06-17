@@ -25,7 +25,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +57,7 @@ var _ = Describe("Memcached Controller", func() {
 						Namespace: resourceNamespace,
 					},
 					Spec: cachev1alpha1.MemcachedSpec{
-						Size: ptr.To(int32(1)),
+						Size: new(int32(1)),
 					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())

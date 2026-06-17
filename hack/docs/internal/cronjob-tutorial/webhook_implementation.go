@@ -219,9 +219,9 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
 			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			obj.Spec.Suspend = ptr.To(true)
-			obj.Spec.SuccessfulJobsHistoryLimit = ptr.To(int32(5))
-			obj.Spec.FailedJobsHistoryLimit = ptr.To(int32(2))
+			obj.Spec.Suspend = new(true)
+			obj.Spec.SuccessfulJobsHistoryLimit = new(int32(5))
+			obj.Spec.FailedJobsHistoryLimit = new(int32(2))
 
 			By("calling the Default method to apply defaults")
 			_ = defaulter.Default(ctx, obj)
@@ -339,8 +339,8 @@ const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -350,8 +350,8 @@ const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3

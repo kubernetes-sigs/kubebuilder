@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -161,7 +160,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
 	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
-		found.Spec.Replicas = ptr.To(desiredReplicas)
+		found.Spec.Replicas = new(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -237,7 +236,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: ptr.To(true),
+						RunAsNonRoot: new(true),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -249,9 +248,9 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             ptr.To(true),
-							RunAsUser:                ptr.To(int64(1001)),
-							AllowPrivilegeEscalation: ptr.To(false),
+							RunAsNonRoot:             new(true),
+							RunAsUser:                new(int64(1001)),
+							AllowPrivilegeEscalation: new(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",

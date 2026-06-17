@@ -55,7 +55,6 @@ func (sp *Sample) updateControllerTest() {
 		". \"github.com/onsi/gomega\"",
 		`. "github.com/onsi/gomega"
 
-	"k8s.io/utils/ptr"
 	appsv1 "k8s.io/api/apps/v1"`,
 	)
 	hackutils.CheckError("add imports apis", err)
@@ -64,7 +63,7 @@ func (sp *Sample) updateControllerTest() {
 		filepath.Join(sp.ctx.Dir, file),
 		"// TODO(user): Specify other spec details if needed.",
 		`Spec: cachev1alpha1.MemcachedSpec{
-						Size: ptr.To(int32(1)),
+						Size: new(int32(1)),
 					},`,
 	)
 	hackutils.CheckError("add spec apis", err)
@@ -279,7 +278,6 @@ const controllerImports = `"context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 `
 
 const controllerStatusTypes = `
@@ -416,7 +414,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
 	if found.Spec.Replicas == nil || *found.Spec.Replicas != desiredReplicas {
-		found.Spec.Replicas = ptr.To(desiredReplicas)
+		found.Spec.Replicas = new(desiredReplicas)
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
@@ -480,7 +478,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: ptr.To(true),
+						RunAsNonRoot: new(true),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -492,9 +490,9 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             ptr.To(true),
-							RunAsUser:                ptr.To(int64(1001)),
-							AllowPrivilegeEscalation: ptr.To(false),
+							RunAsNonRoot:             new(true),
+							RunAsUser:                new(int64(1001)),
+							AllowPrivilegeEscalation: new(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",
