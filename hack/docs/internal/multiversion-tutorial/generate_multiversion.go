@@ -100,13 +100,6 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
 
-	path := "internal/webhook/v1/cronjob_webhook_test.go"
-	err := pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
-		`// TODO (user): Add any additional imports if needed`,
-		`
-	"k8s.io/utils/ptr"`)
-	hackutils.CheckError("add import for webhook tests", err)
-
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()

@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 
 	cronjobv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -413,7 +412,7 @@ var _ = Describe("CronJob controller", func() {
 			By("Updating the CronJob to suspend it")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, typeNamespacedName, cronJob)).To(Succeed())
-				cronJob.Spec.Suspend = ptr.To(true)
+				cronJob.Spec.Suspend = new(true)
 				g.Expect(k8sClient.Update(ctx, cronJob)).To(Succeed())
 			}).Should(Succeed())
 
