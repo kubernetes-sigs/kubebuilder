@@ -201,8 +201,8 @@ spec:
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).To(ContainSubstring(`{{- with .Values.manager.image.pullPolicy }}
         imagePullPolicy: {{ . }}
@@ -2769,8 +2769,8 @@ spec:
 
 			// Should template image reference (not hardcoded)
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
@@ -2922,8 +2922,8 @@ spec:
 
 			// Should still template fields for "manager" container
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 		})
