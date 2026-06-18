@@ -416,7 +416,7 @@ var _ = Describe("kubebuilder", func() {
 				To(Succeed(), "failed to set custom registry in dist/chart/values.yaml")
 
 			By("editing project with Auto Update plugin")
-			cmd = exec.Command(kb, "edit", "--plugins=autoupdate.kubebuilder.io/v1-alpha", "--use-gh-models")
+			cmd = exec.Command(kb, "edit", "--plugins=autoupdate.kubebuilder.io/v1-alpha")
 			cmd.Dir = dir
 			output, err = cmd.CombinedOutput()
 			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("edit autoupdate failed: %s", output))

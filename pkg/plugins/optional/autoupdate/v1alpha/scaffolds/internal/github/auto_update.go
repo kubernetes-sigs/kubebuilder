@@ -28,9 +28,6 @@ var _ machinery.Template = &AutoUpdate{}
 type AutoUpdate struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
-
-	// UseGHModels indicates whether to enable GitHub Models AI summary
-	UseGHModels bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -50,7 +47,7 @@ const autoUpdateTemplate = `name: Auto Update
 # The 'kubebuilder alpha update' command requires write access to the repository to create a branch
 # with the update files and allow you to open a pull request using the link provided in the issue.
 # The branch created will be named in the format kubebuilder-update-from-<from-version>-to-<to-version> by default.
-# To protect your codebase, please ensure that you have branch protection rules configured for your 
+# To protect your codebase, please ensure that you have branch protection rules configured for your
 # main branches. This will guarantee that no one can bypass a review and push directly to a branch like 'main'.
 permissions: {}
 
@@ -63,8 +60,7 @@ jobs:
   auto-update:
     permissions:
       contents: write  # Create and push the update branch
-      issues: write    # Create GitHub Issue with PR link{{ if .UseGHModels }}
-      models: read     # Use GitHub Models for AI summaries{{ end }}
+      issues: write    # Create GitHub Issue with PR link
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
@@ -97,13 +93,7 @@ jobs:
         chmod +x kubebuilder
         sudo mv kubebuilder /usr/local/bin/
         kubebuilder version
-{{ if .UseGHModels }}
-    # Install Models extension for GitHub CLI.
-    - name: Install gh-models extension
-      run: |
-        gh extension install github/gh-models --force
-        gh models --help >/dev/null
-{{ end }}
+
     # Run the Kubebuilder alpha update command.
     # More info: https://kubebuilder.io/reference/commands/alpha_update
     - name: Run kubebuilder alpha update
@@ -111,19 +101,11 @@ jobs:
       # --force: Completes the merge even if conflicts occur, leaving conflict markers.
       # --push: Automatically pushes the resulting output branch to the 'origin' remote.
       # --restore-path: Preserves specified paths (e.g., CI workflow files) when squashing.
-      # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.{{ if .UseGHModels }}
-      # --use-gh-models: Adds an AI-generated comment to the created Issue with
-      #   a short overview of the scaffold changes and conflict-resolution guidance (if any).{{ else }}
-      #
-      # WARNING: This workflow does not use GitHub Models AI summary by default.
-      # To enable AI-generated summaries in GitHub issues, you need permissions to use GitHub Models.
-      # If you have the required permissions, re-run:
-      #   kubebuilder edit --plugins="autoupdate/v1-alpha" --use-gh-models{{ end }}
+      # --open-gh-issue: Creates a GitHub Issue with a link for opening a PR for review.
       run: |
         kubebuilder alpha update \
           --force \
           --push \
           --restore-path .github/workflows \
-          --open-gh-issue{{ if .UseGHModels }} \
-          --use-gh-models{{ end }}
+          --open-gh-issue
 `

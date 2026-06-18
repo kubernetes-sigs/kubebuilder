@@ -1022,20 +1022,10 @@ var _ = Describe("generate: migrate-plugins", func() {
 			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
 		})
 
-		It("migrates Auto Update plugin successfully without UseGHModels", func() {
+		It("migrates Auto Update plugin successfully", func() {
 			cfg := &fakeConfig{
 				plugins: map[string]any{
-					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{UseGHModels: false},
-				},
-			}
-			store := &fakeStore{cfg: cfg}
-			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
-		})
-
-		It("migrates Auto Update plugin successfully with UseGHModels enabled", func() {
-			cfg := &fakeConfig{
-				plugins: map[string]any{
-					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{UseGHModels: true},
+					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{},
 				},
 			}
 			store := &fakeStore{cfg: cfg}
