@@ -134,7 +134,7 @@ function scaffold_test_project {
     $kb edit --plugins=helm.kubebuilder.io/v2-alpha
 
     header_text 'Editing project with Auto Update plugin ...'
-    $kb edit --plugins=autoupdate.kubebuilder.io/v1-alpha --use-gh-models
+    $kb edit --plugins=autoupdate.kubebuilder.io/v1-alpha
   fi
 
   # To avoid conflicts

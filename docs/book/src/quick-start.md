@@ -319,4 +319,3 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 [markers]: reference/markers.md
 [controller-gen]: https://sigs.k8s.io/controller-tools/cmd/controller-gen
 [scaffolding-markers]: reference/markers/scaffold.md
-[ai-gh-models]: https://docs.github.com/en/github-models/about-github-models

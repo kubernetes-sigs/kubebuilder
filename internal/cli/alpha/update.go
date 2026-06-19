@@ -89,8 +89,8 @@ Defaults:
     --merge-message "chore: upgrade kubebuilder scaffold" \
     --conflict-message "chore: upgrade with conflicts - manual review needed"
 
-  # Create an issue and add an AI overview comment
-  kubebuilder alpha update --open-gh-issue --use-gh-models
+  # Create an issue to track the update
+  kubebuilder alpha update --open-gh-issue
 
   # Add extra Git configs (no need to re-specify defaults)
   kubebuilder alpha update --git-config merge.conflictStyle=diff3 --git-config rerere.enabled=true
@@ -100,10 +100,6 @@ Defaults:
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if opts.ShowCommits && len(opts.RestorePath) > 0 {
 				return fmt.Errorf("the --restore-path flag is not supported with --show-commits")
-			}
-
-			if opts.UseGhModels && !opts.OpenGhIssue {
-				return fmt.Errorf("the --use-gh-models requires --open-gh-issue to be set")
 			}
 
 			// Defaults always on unless "disable" is present anywhere
@@ -174,12 +170,6 @@ Defaults:
 	updateCmd.Flags().BoolVar(&opts.OpenGhIssue, "open-gh-issue", false,
 		"If set, create a GitHub issue with a pre-filled checklist and compare link after the update "+
 			"completes (requires `gh`)")
-	updateCmd.Flags().BoolVar(
-		&opts.UseGhModels,
-		"use-gh-models",
-		false,
-		"If set, generate and post an AI summary comment to the GitHub Issue using `gh models run` "+
-			"(requires --open-gh-issue and GitHub CLI with the `gh-models` extension)")
 	updateCmd.Flags().StringArrayVar(
 		&gitCfg,
 		"git-config",

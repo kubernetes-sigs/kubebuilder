@@ -18,7 +18,6 @@ package v1alpha
 
 import (
 	"fmt"
-	log "log/slog"
 
 	"github.com/spf13/pflag"
 
@@ -31,8 +30,7 @@ import (
 var _ plugin.EditSubcommand = &editSubcommand{}
 
 type editSubcommand struct {
-	config      config.Config
-	useGHModels bool
+	config config.Config
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -40,16 +38,10 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 
 	subcmdMeta.Examples = fmt.Sprintf(`  # Edit a common project with this plugin
   %[1]s edit --plugins=%[2]s
-
-  # Edit a common project with GitHub Models enabled (requires repo permissions)
-  %[1]s edit --plugins=%[2]s --use-gh-models
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
-func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.useGHModels, "use-gh-models", false,
-		"If set, enable GitHub Models AI summary in the scaffolded workflow (requires GitHub Models permissions)")
-}
+func (p *editSubcommand) BindFlags(_ *pflag.FlagSet) {}
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
@@ -68,24 +60,15 @@ func (p *editSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	if err := insertPluginMetaToConfig(p.config, PluginConfig{UseGHModels: p.useGHModels}); err != nil {
+	if err := insertPluginMetaToConfig(p.config, PluginConfig{}); err != nil {
 		return fmt.Errorf("error inserting project plugin meta to configuration: %w", err)
 	}
 
-	scaffolder := scaffolds.NewInitScaffolder(p.useGHModels)
+	scaffolder := scaffolds.NewInitScaffolder()
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding edit subcommand: %w", err)
 	}
 
-	return nil
-}
-
-func (p *editSubcommand) PostScaffold() error {
-	// Inform users about GitHub Models if they didn't enable it
-	if !p.useGHModels {
-		log.Info("Consider enabling GitHub Models to get an AI summary to help with the update")
-		log.Info("Use the --use-gh-models flag if your project/organization has permission to use GitHub Models")
-	}
 	return nil
 }

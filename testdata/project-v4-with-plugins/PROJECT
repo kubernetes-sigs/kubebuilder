@@ -8,8 +8,7 @@ layout:
 - go.kubebuilder.io/v4
 namespaced: true
 plugins:
-  autoupdate.kubebuilder.io/v1-alpha:
-    useGHModels: true
+  autoupdate.kubebuilder.io/v1-alpha: {}
   deploy-image.go.kubebuilder.io/v1-alpha:
     resources:
     - domain: testproject.org

@@ -382,9 +382,6 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 	}
 
 	args := []string{kubebuilderSubcommandEdit, flagPlugins, plugin.KeyFor(autoupdatev1alpha.Plugin{})}
-	if autoUpdatePlugin.UseGHModels {
-		args = append(args, "--use-gh-models")
-	}
 	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
