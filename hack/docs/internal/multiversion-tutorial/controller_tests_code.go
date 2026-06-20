@@ -46,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 
 	cronjobv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -394,6 +393,132 @@ var _ = Describe("CronJob controller", func() {
 			Expect(k8sClient.Delete(ctx, cronJob)).To(Succeed())
 		})
 
+		It("should prune old finished jobs by history limits", func() {
+			cronJobName := fmt.Sprintf("test-cronjob-prune-%d", GinkgoRandomSeed())
+			typeNamespacedName := types.NamespacedName{
+				Name:      cronJobName,
+				Namespace: NamespaceName,
+			}
+			failedJobsHistoryLimit := int32(1)
+			successfulJobsHistoryLimit := int32(1)
+
+			cronJob := &cronjobv1.CronJob{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cronJobName,
+					Namespace: NamespaceName,
+				},
+				Spec: cronjobv1.CronJobSpec{
+					Schedule:                   testSchedule,
+					FailedJobsHistoryLimit:     &failedJobsHistoryLimit,
+					SuccessfulJobsHistoryLimit: &successfulJobsHistoryLimit,
+					JobTemplate: batchv1.JobTemplateSpec{
+						Spec: batchv1.JobSpec{
+							Template: v1.PodTemplateSpec{
+								Spec: v1.PodSpec{
+									Containers: []v1.Container{
+										{
+											Name:  testContainerName,
+											Image: testContainerImage,
+										},
+									},
+									RestartPolicy: v1.RestartPolicyOnFailure,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, cronJob)).To(Succeed())
+
+			kind := reflect.TypeFor[cronjobv1.CronJob]().Name()
+			gvk := cronjobv1.GroupVersion.WithKind(kind)
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, cronJob)).To(Succeed())
+			}).Should(Succeed())
+
+			controllerRef := metav1.NewControllerRef(cronJob, gvk)
+			createFinishedJob := func(name string, conditionType batchv1.JobConditionType, startTime *metav1.Time) *batchv1.Job {
+				finishedJob := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: NamespaceName,
+					},
+					Spec: batchv1.JobSpec{
+						Template: v1.PodTemplateSpec{
+							Spec: v1.PodSpec{
+								Containers: []v1.Container{
+									{
+										Name:  testContainerName,
+										Image: testContainerImage,
+									},
+								},
+								RestartPolicy: v1.RestartPolicyOnFailure,
+							},
+						},
+					},
+				}
+				finishedJob.SetOwnerReferences([]metav1.OwnerReference{*controllerRef})
+				Expect(k8sClient.Create(ctx, finishedJob)).To(Succeed())
+
+				finishedJob.Status.StartTime = startTime
+				finishedJob.Status.Conditions = []batchv1.JobCondition{{
+					Type:   conditionType,
+					Status: v1.ConditionTrue,
+				}}
+				if conditionType == batchv1.JobFailed {
+					finishedJob.Status.Conditions = append([]batchv1.JobCondition{{
+						Type:   batchv1.JobFailureTarget,
+						Status: v1.ConditionTrue,
+					}}, finishedJob.Status.Conditions...)
+				}
+				if conditionType == batchv1.JobComplete {
+					finishedJob.Status.CompletionTime = startTime
+					finishedJob.Status.Conditions = append([]batchv1.JobCondition{{
+						Type:   batchv1.JobSuccessCriteriaMet,
+						Status: v1.ConditionTrue,
+					}}, finishedJob.Status.Conditions...)
+				}
+				Expect(k8sClient.Status().Update(ctx, finishedJob)).To(Succeed())
+
+				return finishedJob
+			}
+
+			baseTime := time.Now()
+			failedOldStartTime := metav1.NewTime(baseTime.Add(-time.Minute))
+			failedNewStartTime := metav1.NewTime(baseTime.Add(time.Second))
+			successfulOldStartTime := metav1.NewTime(baseTime.Add(-time.Minute))
+			successfulNewStartTime := metav1.NewTime(baseTime.Add(time.Second))
+
+			failedOldJob := createFinishedJob(fmt.Sprintf("%s-failed-old", cronJobName), batchv1.JobFailed, &failedOldStartTime)
+			failedNewJob := createFinishedJob(fmt.Sprintf("%s-failed-new", cronJobName), batchv1.JobFailed, &failedNewStartTime)
+			successfulOldJob := createFinishedJob(fmt.Sprintf("%s-successful-old", cronJobName), batchv1.JobComplete, &successfulOldStartTime)
+			successfulNewJob := createFinishedJob(fmt.Sprintf("%s-successful-new", cronJobName), batchv1.JobComplete, &successfulNewStartTime)
+
+			assertJobDeleted := func(g Gomega, job *batchv1.Job) {
+				found := &batchv1.Job{}
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)
+				g.Expect(errors.IsNotFound(err)).To(BeTrue())
+			}
+			assertJobExists := func(g Gomega, job *batchv1.Job) {
+				found := &batchv1.Job{}
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)).To(Succeed())
+			}
+
+			By("Checking that old finished Jobs are pruned")
+			Eventually(func(g Gomega) {
+				assertJobDeleted(g, failedOldJob)
+				assertJobDeleted(g, successfulOldJob)
+				assertJobExists(g, failedNewJob)
+				assertJobExists(g, successfulNewJob)
+			}).Should(Succeed())
+
+			By("Cleaning up")
+			Expect(k8sClient.Delete(ctx, failedNewJob)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, successfulNewJob)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, cronJob)).To(Succeed())
+		})
+
 		It("should set Available=False when CronJob is suspended", func() {
 			cronJobName := fmt.Sprintf("test-cronjob-%d", GinkgoRandomSeed())
 			typeNamespacedName := types.NamespacedName{
@@ -431,7 +556,7 @@ var _ = Describe("CronJob controller", func() {
 			By("Updating the CronJob to suspend it")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, typeNamespacedName, cronJob)).To(Succeed())
-				cronJob.Spec.Suspend = ptr.To(true)
+				cronJob.Spec.Suspend = new(true)
 				g.Expect(k8sClient.Update(ctx, cronJob)).To(Succeed())
 			}).Should(Succeed())
 
