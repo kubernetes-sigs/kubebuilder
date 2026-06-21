@@ -37,9 +37,8 @@ type ChartScaffolderConfig struct {
 	Force         bool
 }
 
-// ChartScaffolder orchestrates the conversion of kustomize output to Helm charts.
-// It parses kustomize YAML, analyzes resources, categorizes by function, applies Helm templating,
-// and generates machinery.Builders. File writing is handled by machinery.Scaffold.Execute().
+// ChartScaffolder converts kustomize output to a Helm chart.
+// File writing is deferred to machinery.Scaffold.Execute(), not this type.
 type ChartScaffolder struct {
 	config ChartScaffolderConfig
 }
@@ -49,9 +48,8 @@ func NewChartScaffolder(config ChartScaffolderConfig) *ChartScaffolder {
 	return &ChartScaffolder{config: config}
 }
 
-// PrepareTemplates executes the conversion pipeline and returns Machinery builders ready for execution.
-// Parses kustomize YAML, analyzes resources to extract metadata and features, converts resources to
-// Helm templates, and prepares Machinery builders with the analyzed data.
+// PrepareTemplates parses kustomize YAML, converts resources to Helm templates, and returns
+// the resulting machinery.Builders ready for file generation.
 func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.Builder, error) {
 	parser := kustomize.NewParser(s.config.ManifestsFile)
 
@@ -60,6 +58,17 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 	resources, err := parser.Parse()
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse kustomize output from %s: %w", s.config.ManifestsFile, err)
+	}
+
+	if resources.Deployment == nil {
+		if len(resources.ExtraDeployments) > 0 {
+			return nil, fmt.Errorf(
+				"unable to generate the chart: found %d Deployments but could not identify the controller-manager; "+
+					"add the label \"control-plane: controller-manager\" to the manager Deployment",
+				len(resources.ExtraDeployments),
+			)
+		}
+		return nil, fmt.Errorf("unable to generate the chart: no Deployment found in the kustomize output")
 	}
 
 	if len(resources.CustomResources) > 0 {
@@ -79,7 +88,7 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 	}
 
 	resourceExtractor := extractor.NewExtractor()
-	extraction := resourceExtractor.Extract(&extractor.ResourceSet{
+	extraction, err := resourceExtractor.Extract(&extractor.ResourceSet{
 		Namespace:                 resources.Namespace,
 		Deployment:                resources.Deployment,
 		Services:                  resources.Services,
@@ -96,6 +105,9 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 		NetworkPolicies:           resources.NetworkPolicies,
 		Other:                     resources.Other,
 	}, s.config.ProjectName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate the chart: %w", err)
+	}
 
 	chartConverter := kustomize.NewChartConverter(
 		resources,

@@ -53,7 +53,9 @@ const (
 
 func extractDeploymentConfig(deployment *unstructured.Unstructured) map[string]any {
 	de := extractor.DeploymentExtractor{}
-	return convertValuesConfigToMap(de.ExtractDeploymentConfig(deployment))
+	cfg, err := de.ExtractDeploymentConfig(deployment)
+	Expect(err).NotTo(HaveOccurred())
+	return convertValuesConfigToMap(cfg)
 }
 
 var _ = Describe("ChartConverter", func() {

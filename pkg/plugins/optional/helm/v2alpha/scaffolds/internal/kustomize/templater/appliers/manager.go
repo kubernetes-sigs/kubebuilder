@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
-// metadataPosition represents the current position in the deployment manifest.
 type metadataPosition int
 
 const (
@@ -36,7 +35,6 @@ const (
 	positionPodMetadata
 )
 
-// blockType represents which specific YAML block we're currently inside.
 type blockType int
 
 const (
@@ -47,21 +45,16 @@ const (
 	blockPodAnnotations
 )
 
-// customFieldsState tracks parsing state for injecting custom labels and annotations.
 type customFieldsState struct {
-	// Current position in the manifest structure
 	position                metadataPosition
 	deploymentMetadataDepth int
 
-	// Flags to track if we've already injected templates (prevent duplicates)
 	addedLabelsToDeployment      bool
 	addedPodLabels               bool
 	addedAnnotationsToDeployment bool
 	addedPodAnnotations          bool
-	// Whether Deployment has an annotations field in the kustomize output
-	hasDeploymentAnnotations bool
+	hasDeploymentAnnotations     bool
 
-	// Current block being parsed and its indentation
 	currentBlock       blockType
 	currentBlockIndent int
 }
@@ -99,9 +92,7 @@ func TemplateDeploymentFields(detectedPrefix, chartName, yamlContent string) str
 		".Values.manager.tolerations",
 	)
 
-	// Optional Kubernetes features: deployment strategy and pod scheduling
-	// Template conditionals are always created (even if field doesn't exist in kustomize)
-	// so users can uncomment them in values.yaml without regenerating the chart
+	// Always emit these conditionals so users can enable them in values.yaml without regenerating.
 	yamlContent = templateBasicWithStatement(
 		yamlContent,
 		"strategy",
@@ -120,17 +111,23 @@ func TemplateDeploymentFields(detectedPrefix, chartName, yamlContent string) str
 	return yamlContent
 }
 
+// isManagerContainerPresent reports whether yamlContent contains the manager container by literal or templated name.
+func isManagerContainerPresent(yamlContent string) bool {
+	containerName := GetDefaultContainerName(yamlContent)
+	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
+	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
+	return hasLiteralName || hasTemplatedName
+}
+
 func templateReplicas(yamlContent string) string {
 	if strings.Contains(yamlContent, ".Values.manager.replicas") {
 		return yamlContent
 	}
-	// Replace spec.replicas with values.yaml reference, preserving indentation
 	replicasPattern := regexp.MustCompile(`(?m)^(\s*)replicas:\s*\d+\s*$`)
 	return replicasPattern.ReplaceAllString(yamlContent, "${1}replicas: {{ .Values.manager.replicas }}")
 }
 
 func AddCustomLabelsAndAnnotations(yamlContent string) string {
-	// Check which blocks are present to avoid duplicates when re-running
 	hasDeploymentLabels := strings.Contains(yamlContent, "{{- if .Values.manager.labels }}") ||
 		strings.Contains(yamlContent, "{{- with .Values.manager.labels }}")
 	hasDeploymentAnnotations := strings.Contains(yamlContent, "{{- if .Values.manager.annotations }}") ||
@@ -183,16 +180,17 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 }
 
 func templateEnvironmentVariables(yamlContent string) string {
-	containerName := GetDefaultContainerName(yamlContent)
-	// Check for both literal container name and templated container name
-	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
-	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
-	if !hasLiteralName && !hasTemplatedName {
+	if !isManagerContainerPresent(yamlContent) {
 		return yamlContent
 	}
 
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+
 	lines := strings.Split(yamlContent, "\n")
 	for i := range lines {
+		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
+			continue
+		}
 		if strings.TrimSpace(lines[i]) != "env:" {
 			continue
 		}
@@ -253,18 +251,18 @@ func templateEnvironmentVariables(yamlContent string) string {
 	return yamlContent
 }
 
-// templateResources converts resource sections to Helm templates
 func templateResources(yamlContent string) string {
-	containerName := GetDefaultContainerName(yamlContent)
-	// Check for both literal container name and templated container name
-	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
-	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
-	if (!hasLiteralName && !hasTemplatedName) || !strings.Contains(yamlContent, "resources:") {
+	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "resources:") {
 		return yamlContent
 	}
 
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+
 	lines := strings.Split(yamlContent, "\n")
 	for i := range lines {
+		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
+			continue
+		}
 		if strings.TrimSpace(lines[i]) != "resources:" {
 			continue
 		}
@@ -280,7 +278,6 @@ func templateResources(yamlContent string) string {
 			if lineIndent < indentLen {
 				break
 			}
-			// stop at same-level keys that are not part of the resources mapping
 			if lineIndent == indentLen && !strings.Contains(trimmed, ":") {
 				break
 			}
@@ -315,7 +312,6 @@ func templateResources(yamlContent string) string {
 }
 
 func templateSecurityContexts(yamlContent string) string {
-	// Security contexts are preserved from kustomize output as-is
 	return yamlContent
 }
 
@@ -327,8 +323,8 @@ func templateVolumes(yamlContent string) string {
 	return appendToListFromValues(yamlContent, "volumes:", ".Values.manager.extraVolumes")
 }
 
-// appendToListFromValues appends a values path to a YAML list field.
-// For "key: []", replaces with conditional template. For "key:" with items, appends to the end.
+// appendToListFromValues injects a values reference into a YAML list field.
+// Replaces "key: []" with a conditional template; appends to "key:" with existing items.
 func appendToListFromValues(yamlContent string, keyColon string, valuesPath string) string {
 	if !strings.Contains(yamlContent, keyColon) {
 		return yamlContent
@@ -390,30 +386,22 @@ func appendToListFromValues(yamlContent string, keyColon string, valuesPath stri
 	return yamlContent
 }
 
-// templateImagePullSecrets exposes imagePullSecrets via values.yaml.
-// This is an optional Kubernetes deployment field that affects registry authentication but not operator logic.
-// Always injects a conditional template (even when field is missing from kustomize) so users can
-// uncomment it in values.yaml without regenerating the chart.
-// Handles list format with special logic to include all list items.
+// templateImagePullSecrets injects imagePullSecrets; always emits the block so users can enable it in values.yaml.
 func templateImagePullSecrets(yamlContent string) string {
 	lines := strings.Split(yamlContent, "\n")
 
-	// Check if field already exists
 	if strings.Contains(yamlContent, "imagePullSecrets:") {
 		for i := range lines {
-			// Use prefix to allow `imagePullSecrets: []` to be preserved
 			if !strings.HasPrefix(strings.TrimSpace(lines[i]), "imagePullSecrets:") {
 				continue
 			}
 
-			// Avoid duplicate templating
 			if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.imagePullSecrets") {
 				return yamlContent
 			}
 
 			indentStr, indentLen := LeadingWhitespace(lines[i])
 			end := i + 1
-			// Find end of imagePullSecrets block
 			for ; end < len(lines); end++ {
 				trimmed := strings.TrimSpace(lines[end])
 				if trimmed == "" {
@@ -445,7 +433,6 @@ func templateImagePullSecrets(yamlContent string) string {
 		}
 	}
 
-	// Field doesn't exist - inject into pod spec (spec.template.spec)
 	var insertAt int
 	foundTemplate := false
 	for i := range lines {
@@ -482,7 +469,6 @@ func templateImagePullSecrets(yamlContent string) string {
 	return strings.Join(newLines, "\n")
 }
 
-// templatePodSecurityContext exposes podSecurityContext via values.yaml
 func templatePodSecurityContext(yamlContent string) string {
 	if !strings.Contains(yamlContent, "securityContext:") {
 		return yamlContent
@@ -540,18 +526,18 @@ func templatePodSecurityContext(yamlContent string) string {
 	return yamlContent
 }
 
-// templateContainerSecurityContext exposes container securityContext via values.yaml
 func templateContainerSecurityContext(yamlContent string) string {
-	containerName := GetDefaultContainerName(yamlContent)
-	// Check for both literal container name and templated container name
-	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
-	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
-	if (!hasLiteralName && !hasTemplatedName) || !strings.Contains(yamlContent, "securityContext:") {
+	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "securityContext:") {
 		return yamlContent
 	}
 
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+
 	lines := strings.Split(yamlContent, "\n")
 	for i := range lines {
+		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
+			continue
+		}
 		if strings.TrimSpace(lines[i]) != "securityContext:" {
 			continue
 		}
@@ -604,24 +590,24 @@ func templateContainerSecurityContext(yamlContent string) string {
 	return yamlContent
 }
 
-// isManagerDeployment checks if a Deployment is the controller manager.
-// It returns true if either the deployment name contains "controller-manager"
-// OR the deployment has the label "control-plane: controller-manager".
-
-// templateControllerManagerArgs exposes controller manager args via values.yaml while keeping core defaults
 func templateControllerManagerArgs(yamlContent string) string {
-	containerName := GetDefaultContainerName(yamlContent)
-	// Check for both literal container name and templated container name
-	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
-	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
-	if !hasLiteralName && !hasTemplatedName {
+	if !isManagerContainerPresent(yamlContent) {
 		return yamlContent
 	}
+
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
 
 	argsPattern := regexp.MustCompile(`(?m)([ \t]+)args:\n((?:[ \t]+-.*\n)+)`)
 	loc := argsPattern.FindStringSubmatchIndex(yamlContent)
 	if loc == nil {
 		return yamlContent
+	}
+
+	if rangeStart >= 0 {
+		matchLine := strings.Count(yamlContent[:loc[0]], "\n")
+		if matchLine < rangeStart || matchLine > rangeEnd {
+			return yamlContent
+		}
 	}
 
 	match := yamlContent[loc[0]:loc[1]]
@@ -719,19 +705,18 @@ func templateControllerManagerArgs(yamlContent string) string {
 	return yamlContent[:loc[0]] + newBlock + yamlContent[loc[1]:]
 }
 
-// templateImageReference converts hardcoded image references to Helm templates
 func templateImageReference(yamlContent string) string {
-	containerName := GetDefaultContainerName(yamlContent)
-	// Check for both literal container name and templated container name (which may have been
-	// converted by substituteResourceNamesWithPrefix before this function runs)
-	hasLiteralName := strings.Contains(yamlContent, "name: "+containerName)
-	hasTemplatedName := strings.Contains(yamlContent, `name: {{ include "`) && strings.Contains(yamlContent, `"manager"`)
-	if !hasLiteralName && !hasTemplatedName {
+	if !isManagerContainerPresent(yamlContent) {
 		return yamlContent
 	}
 
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+
 	lines := strings.Split(yamlContent, "\n")
 	for i := 0; i < len(lines); i++ {
+		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
+			continue
+		}
 		trimmed := strings.TrimSpace(lines[i])
 		if !strings.HasPrefix(trimmed, "image:") {
 			continue
@@ -753,7 +738,6 @@ func templateImageReference(yamlContent string) string {
 			if lineIndent <= indentLen {
 				break
 			}
-			// Stop when we reach a sibling key like env:, args:, etc.
 			if lineIndent == indentLen+2 && strings.HasSuffix(nextTrimmed, ":") {
 				if strings.Contains(nextTrimmed, "imagePullPolicy") {
 					continue
@@ -762,7 +746,6 @@ func templateImageReference(yamlContent string) string {
 			}
 		}
 
-		// Remove any existing imagePullPolicy line inside the block
 		blockLines := lines[i+1 : end]
 		filtered := make([]string, 0, len(blockLines))
 		for _, line := range blockLines {
@@ -811,7 +794,6 @@ func templateBasicWithStatement(
 	var start, end int
 	var indentLen int
 	if !strings.Contains(yamlContent, yamlKey) {
-		// Find parent block start if the key is missing
 		pKeyParts := strings.Split(parentKey, ".")
 		pKeyIdx := 0
 		pKeyInit := false
@@ -825,7 +807,6 @@ func templateBasicWithStatement(
 				continue
 			}
 
-			// Parent key part found
 			pKeyIdx++
 			pKeyInit = true
 			if pKeyIdx >= len(pKeyParts) {
@@ -836,7 +817,6 @@ func templateBasicWithStatement(
 		}
 		_, indentLen = LeadingWhitespace(lines[start])
 	} else {
-		// Find the existing block - stop at the first match.
 		for i := range len(lines) {
 			if !strings.HasPrefix(strings.TrimSpace(lines[i]), yamlKey) {
 				continue
@@ -860,7 +840,7 @@ func templateBasicWithStatement(
 					}
 				}
 			}
-			break // use the first match only
+			break
 		}
 		_, indentLen = LeadingWhitespace(lines[start])
 	}
@@ -889,16 +869,13 @@ func templateBasicWithStatement(
 }
 
 func templatePriorityClassName(yamlContent string) string {
-	// Avoid duplicate templating
 	if strings.Contains(yamlContent, ".Values.manager.priorityClassName") {
 		return yamlContent
 	}
 
 	lines := strings.Split(yamlContent, "\n")
 
-	// Check if field already exists
 	if strings.Contains(yamlContent, "priorityClassName:") {
-		// Replace existing field with template (quote filter ensures proper YAML quoting)
 		pattern := regexp.MustCompile(`(?m)^(\s*)priorityClassName:\s*"?([^"\n]*)"?\s*$`)
 		yamlContent = pattern.ReplaceAllString(yamlContent,
 			"${1}{{- with .Values.manager.priorityClassName }}\n"+
@@ -907,8 +884,6 @@ func templatePriorityClassName(yamlContent string) string {
 		return yamlContent
 	}
 
-	// Field doesn't exist - inject it after finding parent block (spec.template.spec)
-	// Look for "spec:" (pod spec) under template
 	var insertAt int
 	foundTemplate := false
 	for i := range lines {
@@ -918,49 +893,39 @@ func templatePriorityClassName(yamlContent string) string {
 			continue
 		}
 		if foundTemplate && trimmed == common.YamlKeySpec {
-			// Found pod spec, inject at next line
 			insertAt = i + 1
 			break
 		}
 	}
 
 	if insertAt == 0 || insertAt >= len(lines) {
-		// Couldn't find injection point
 		return yamlContent
 	}
 
-	// Get indentation from the line after spec:
 	_, indentLen := LeadingWhitespace(lines[insertAt])
 	indentStr := strings.Repeat(" ", indentLen)
 
-	// Create conditional block (quote filter ensures proper YAML quoting)
 	block := []string{
 		indentStr + "{{- with .Values.manager.priorityClassName }}",
 		indentStr + "priorityClassName: {{ . | quote }}",
 		indentStr + "{{- end }}",
 	}
 
-	// Insert block
 	newLines := append([]string{}, lines[:insertAt]...)
 	newLines = append(newLines, block...)
 	newLines = append(newLines, lines[insertAt:]...)
 	return strings.Join(newLines, "\n")
 }
 
-// templateTerminationGracePeriodSeconds templates terminationGracePeriodSeconds.
-// Always injects this field (even when not in kustomize output) so users can configure
-// pod shutdown timeout in values.yaml. Uses hasKey to allow 0 seconds (immediate shutdown).
+// templateTerminationGracePeriodSeconds injects terminationGracePeriodSeconds; uses hasKey to allow 0 values.
 func templateTerminationGracePeriodSeconds(yamlContent string) string {
-	// Avoid duplicate templating
 	if strings.Contains(yamlContent, ".Values.manager.terminationGracePeriodSeconds") {
 		return yamlContent
 	}
 
 	lines := strings.Split(yamlContent, "\n")
 
-	// Check if field already exists
 	if strings.Contains(yamlContent, "terminationGracePeriodSeconds:") {
-		// Replace existing field with template (hasKey + ne nil supports 0 values while preventing <no value>)
 		pattern := regexp.MustCompile(`(?m)^(\s*)terminationGracePeriodSeconds:\s*\d+\s*$`)
 		yamlContent = pattern.ReplaceAllString(yamlContent,
 			"${1}{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\") "+
@@ -970,28 +935,22 @@ func templateTerminationGracePeriodSeconds(yamlContent string) string {
 		return yamlContent
 	}
 
-	// Field doesn't exist - inject it after finding serviceAccountName (typical location)
-	// Look for "serviceAccountName:" in pod spec
 	var insertAt int
 	for i := range lines {
 		trimmed := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(trimmed, "serviceAccountName:") {
-			// Inject after serviceAccountName
 			insertAt = i + 1
 			break
 		}
 	}
 
 	if insertAt == 0 || insertAt >= len(lines) {
-		// Couldn't find injection point
 		return yamlContent
 	}
 
-	// Get indentation from serviceAccountName line
 	_, indentLen := LeadingWhitespace(lines[insertAt-1])
 	indentStr := strings.Repeat(" ", indentLen)
 
-	// Create conditional block (hasKey + ne nil supports 0 values while preventing <no value>)
 	block := []string{
 		indentStr + "{{- if and (hasKey .Values.manager \"terminationGracePeriodSeconds\") " +
 			"(ne .Values.manager.terminationGracePeriodSeconds nil) }}",
@@ -999,7 +958,6 @@ func templateTerminationGracePeriodSeconds(yamlContent string) string {
 		indentStr + "{{- end }}",
 	}
 
-	// Insert block
 	newLines := append([]string{}, lines[:insertAt]...)
 	newLines = append(newLines, block...)
 	newLines = append(newLines, lines[insertAt:]...)
@@ -1026,8 +984,6 @@ func handleDeploymentAnnotations(
 		childIndent := detectChildIndent(result, parentIndent)
 
 		if len(existingKeys) == 0 {
-			// Empty annotations block (e.g., from "annotations: {}") - wrap header in conditional
-			// to avoid rendering "annotations: null" when values not set
 			result = result[:len(result)-1]
 			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
@@ -1037,7 +993,6 @@ func handleDeploymentAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			// Has existing annotations - inject additional ones with omit() filtering
 			result = injectDeploymentAnnotations(result, childIndent)
 		}
 
@@ -1049,7 +1004,6 @@ func handleDeploymentAnnotations(
 	return result
 }
 
-// handlePodAnnotations handles injection of custom Pod template annotations.
 func handlePodAnnotations(
 	state *customFieldsState, result []string, line, trimmed, indent string, indentLen int,
 ) []string {
@@ -1069,8 +1023,6 @@ func handlePodAnnotations(
 		childIndent := detectChildIndent(result, parentIndent)
 
 		if len(existingKeys) == 0 {
-			// Empty annotations block (e.g., from "annotations: {}") - wrap header in conditional
-			// to avoid rendering "annotations: null" when values not set
 			result = result[:len(result)-1]
 			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
@@ -1082,7 +1034,6 @@ func handlePodAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			// Has existing annotations - inject additional ones with omit() filtering
 			result = addPodAnnotations(result, childIndent)
 		}
 
@@ -1104,7 +1055,6 @@ func handlePodAnnotations(
 	return result
 }
 
-// shouldInjectDeploymentAnnotations checks if we should inject Deployment annotations.
 func shouldInjectDeploymentAnnotations(
 	state *customFieldsState, trimmed string, indentLen int,
 ) bool {
@@ -1117,7 +1067,6 @@ func shouldInjectDeploymentAnnotations(
 		!strings.HasPrefix(trimmed, common.YamlKeyAnnotations+" {")
 }
 
-// shouldInjectPodAnnotations checks if we should inject Pod annotations.
 func shouldInjectPodAnnotations(state *customFieldsState, trimmed string, indentLen int) bool {
 	return (state.position == positionPodMetadata || state.position == positionAfterDeploymentMetadata) &&
 		state.currentBlock == blockPodAnnotations &&
@@ -1128,7 +1077,6 @@ func shouldInjectPodAnnotations(state *customFieldsState, trimmed string, indent
 		!strings.HasPrefix(trimmed, common.YamlKeyAnnotations+" {")
 }
 
-// handleDeploymentLabels handles injection of custom Deployment labels.
 func handleDeploymentLabels(
 	state *customFieldsState, result []string, line, trimmed string, indentLen int,
 ) []string {
@@ -1435,82 +1383,29 @@ func MakeWebhookVolumeMountsConditional(yamlContent string) string {
 
 // MakeMetricsVolumesConditional wraps metrics volumes with the metrics TLS conditional.
 func MakeMetricsVolumesConditional(yamlContent string) string {
-	// Make metrics volumes conditional on certManager.enabled AND metrics.enabled AND metrics.secure
 	if strings.Contains(yamlContent, "metrics-certs") && strings.Contains(yamlContent, "secretName: metrics-server-cert") {
-		// Match only spaces/tabs for indent to avoid consuming the newline
-		volumePattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*metrics-certs[\s\S]*?secretName:\s*metrics-server-cert`)
-		yamlContent = volumePattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-			lines := strings.Split(match, "\n")
-			if len(lines) > 0 {
-				var indent strings.Builder
-				if len(lines[0]) > 0 && lines[0][0] == ' ' {
-					// Count leading spaces
-					for _, char := range lines[0] {
-						if char == ' ' {
-							indent.WriteString(" ")
-						} else {
-							break
-						}
-					}
-				}
-
-				childIndent := indent.String() + "  "
-
-				// Reconstruct the block with conditional wrapper at child indent
-				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enabled"+
-					" .Values.metrics.enabled .Values.metrics.secure }}\n", childIndent)
-				for _, line := range lines {
-					result.WriteString("  " + line + "\n")
-				}
-				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
-				return result.String()
-			}
-			return match
-		})
+		// [ \t]+ matches only spaces/tabs so the newline is not consumed by the regexp.
+		pattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*metrics-certs[\s\S]*?secretName:\s*metrics-server-cert`)
+		yamlContent = wrapWithMetricsTLSConditional(pattern, yamlContent)
 	}
-
 	return yamlContent
 }
 
 // MakeMetricsVolumeMountsConditional wraps metrics volumeMounts with the metrics TLS conditional.
 func MakeMetricsVolumeMountsConditional(yamlContent string) string {
-	// Make metrics volumeMounts conditional on certManager.enabled AND metrics.enabled AND metrics.secure
 	metricsCertsPath := "/tmp/k8s-metrics-server/metrics-certs"
 	if strings.Contains(yamlContent, "metrics-certs") && strings.Contains(yamlContent, metricsCertsPath) {
-		// Match only spaces/tabs for indent to avoid consuming the newline
-		mountPattern := regexp.MustCompile(
+		// [ \t]+ matches only spaces/tabs so the newline is not consumed by the regexp.
+		pattern := regexp.MustCompile(
 			`([ \t]+)-\s*mountPath:\s*/tmp/k8s-metrics-server/metrics-certs[\s\S]*?readOnly:\s*true`)
-		yamlContent = mountPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-			lines := strings.Split(match, "\n")
-			if len(lines) > 0 {
-				var indent strings.Builder
-				if len(lines[0]) > 0 && lines[0][0] == ' ' {
-					// Count leading spaces
-					for _, char := range lines[0] {
-						if char == ' ' {
-							indent.WriteString(" ")
-						} else {
-							break
-						}
-					}
-				}
-
-				childIndent := indent.String() + "  "
-
-				// Reconstruct the block with conditional wrapper at child indent
-				var result strings.Builder
-				fmt.Fprintf(&result, "%s{{- if and .Values.certManager.enabled"+
-					" .Values.metrics.enabled .Values.metrics.secure }}\n", childIndent)
-				for _, line := range lines {
-					result.WriteString("  " + line + "\n")
-				}
-				fmt.Fprintf(&result, "%s{{- end }}", childIndent)
-				return result.String()
-			}
-			return match
-		})
+		yamlContent = wrapWithMetricsTLSConditional(pattern, yamlContent)
 	}
-
 	return yamlContent
+}
+
+func wrapWithMetricsTLSConditional(pattern *regexp.Regexp, yamlContent string) string {
+	const metricsCondition = "{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}"
+	return pattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		return wrapBlock(match, metricsCondition)
+	})
 }

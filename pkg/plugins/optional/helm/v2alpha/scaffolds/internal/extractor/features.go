@@ -57,12 +57,7 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	features.HasCRDs = len(resources.CustomResourceDefinitions) > 0
 	features.HasWebhooks = len(resources.WebhookConfigurations) > 0
 
-	if resources.Issuer != nil {
-		features.HasCertManager = true
-	}
-	if len(resources.Certificates) > 0 {
-		features.HasCertManager = true
-	}
+	features.HasCertManager = resources.Issuer != nil || len(resources.Certificates) > 0
 
 	features.HasPrometheus = len(resources.ServiceMonitors) > 0
 	features.HasNetworkPolicy = len(resources.NetworkPolicies) > 0
@@ -162,34 +157,22 @@ func extractPortFromService(svc *unstructured.Unstructured) int {
 		return 0
 	}
 
-	if port, ok := firstPort["port"].(int64); ok {
-		return int(port)
-	}
-	if port, ok := firstPort["port"].(int); ok {
-		return port
-	}
-
-	return 0
+	port, _ := toInt(firstPort["port"])
+	return port
 }
 
 // extractWebhookPortFromDeployment extracts the webhook port from deployment container ports.
 func extractWebhookPortFromDeployment(deployment *unstructured.Unstructured) int {
-	containers, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec", "containers")
-	if !found || err != nil {
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return 0
+	}
+	container := findManagerContainer(deployment, specMap)
+	if container == nil {
 		return 0
 	}
 
-	containersList, ok := containers.([]any)
-	if !ok || len(containersList) == 0 {
-		return 0
-	}
-
-	firstContainer, ok := containersList[0].(map[string]any)
-	if !ok {
-		return 0
-	}
-
-	portsField, found, err := unstructured.NestedFieldNoCopy(firstContainer, "ports")
+	portsField, found, err := unstructured.NestedFieldNoCopy(container, "ports")
 	if !found || err != nil {
 		return 0
 	}
@@ -206,12 +189,8 @@ func extractWebhookPortFromDeployment(deployment *unstructured.Unstructured) int
 		}
 
 		name, _ := portMap["name"].(string)
-		name = strings.ToLower(name)
-		if name == "webhook-server" || name == "webhook" {
-			if cp, ok := portMap["containerPort"].(int64); ok {
-				return int(cp)
-			}
-			if cp, ok := portMap["containerPort"].(int); ok {
+		if isWebhookPortName(name) {
+			if cp, ok := toInt(portMap["containerPort"]); ok {
 				return cp
 			}
 		}

@@ -28,6 +28,11 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
+const (
+	testProjectName = "test-project"
+	testOutputDir   = "dist"
+)
+
 var _ = Describe("ChartScaffolder", func() {
 	Describe("PrepareTemplates", func() {
 		It("should add the generic metrics NetworkPolicy when it is missing", func() {
@@ -198,6 +203,52 @@ var _ = Describe("ChartScaffolder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: false"))
 		})
+
+		It("should error when no Deployment is found in the kustomize output", func() {
+			manifestsPath := filepath.Join(GinkgoT().TempDir(), "install.yaml")
+			Expect(os.WriteFile(manifestsPath, []byte(manifestsWithNoDeployment), 0o600)).To(Succeed())
+
+			scaffolder := NewChartScaffolder(ChartScaffolderConfig{
+				ProjectName:   testProjectName,
+				ManifestsFile: manifestsPath,
+				OutputDir:     testOutputDir,
+			})
+			_, err := scaffolder.PrepareTemplates(machinery.Filesystem{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unable to generate the chart"))
+			Expect(err.Error()).To(ContainSubstring("no Deployment found"))
+		})
+
+		It("should error when the Deployment has no containers", func() {
+			manifestsPath := filepath.Join(GinkgoT().TempDir(), "install.yaml")
+			Expect(os.WriteFile(manifestsPath, []byte(manifestsWithDeploymentNoContainers), 0o600)).To(Succeed())
+
+			scaffolder := NewChartScaffolder(ChartScaffolderConfig{
+				ProjectName:   testProjectName,
+				ManifestsFile: manifestsPath,
+				OutputDir:     testOutputDir,
+			})
+			_, err := scaffolder.PrepareTemplates(machinery.Filesystem{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unable to generate the chart"))
+			Expect(err.Error()).To(ContainSubstring("no manager container found"))
+		})
+
+		It("should error when multiple Deployments are present but none can be identified as the manager", func() {
+			manifestsPath := filepath.Join(GinkgoT().TempDir(), "install.yaml")
+			Expect(os.WriteFile(manifestsPath, []byte(manifestsWithAmbiguousDeployments), 0o600)).To(Succeed())
+
+			scaffolder := NewChartScaffolder(ChartScaffolderConfig{
+				ProjectName:   testProjectName,
+				ManifestsFile: manifestsPath,
+				OutputDir:     testOutputDir,
+			})
+			_, err := scaffolder.PrepareTemplates(machinery.Filesystem{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unable to generate the chart"))
+			Expect(err.Error()).To(ContainSubstring("could not identify the controller-manager"))
+			Expect(err.Error()).To(ContainSubstring("control-plane: controller-manager"))
+		})
 	})
 })
 
@@ -207,15 +258,15 @@ func executeChartScaffolder(manifestsPath string) afero.Fs {
 
 func executeChartScaffolderWithFS(manifestsPath string, fs afero.Fs) afero.Fs {
 	scaffolder := NewChartScaffolder(ChartScaffolderConfig{
-		ProjectName:   "test-project",
+		ProjectName:   testProjectName,
 		ManifestsFile: manifestsPath,
-		OutputDir:     "dist",
+		OutputDir:     testOutputDir,
 	})
 	builders, err := scaffolder.PrepareTemplates(machinery.Filesystem{})
 	Expect(err).NotTo(HaveOccurred())
 
 	cfg := cfgv3.New()
-	Expect(cfg.SetProjectName("test-project")).To(Succeed())
+	Expect(cfg.SetProjectName(testProjectName)).To(Succeed())
 
 	scaffold := machinery.NewScaffold(machinery.Filesystem{FS: fs}, machinery.WithConfig(cfg))
 	Expect(scaffold.Execute(builders...)).To(Succeed())
@@ -364,4 +415,57 @@ spec:
       ports:
         - port: 443
           protocol: TCP
+`
+
+const manifestsWithDeploymentNoContainers = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-system
+spec:
+  template:
+    spec:
+      containers: []
+`
+
+const manifestsWithNoDeployment = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-project-controller-manager
+  namespace: test-system
+`
+
+const manifestsWithAmbiguousDeployments = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alpha-operator
+  namespace: test-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beta-operator
+  namespace: test-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
 `
