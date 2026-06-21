@@ -131,16 +131,8 @@ func HandleRBACConditionalWrappers(yamlContent, kind, name string) string {
 	if isHelper {
 		return fmt.Sprintf("{{- if .Values.rbac.helpers.enabled }}\n%s{{- end }}\n", yamlContent)
 	}
-	if isMetricsAuthRole {
-		// Only needed when secure metrics enabled (authn via TokenReview/SubjectAccessReview)
-		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
-	}
-	if isMetricsReader {
-		// Only needed when secure metrics enabled (uses nonResourceURLs for /metrics access)
-		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
-	}
-	if isMetricsAuthBinding {
-		// Binding for metrics-auth-role, only needed when secure metrics enabled
+	// metrics-auth-role, metrics-reader, and metrics-auth-rolebinding all require secure metrics
+	if isMetricsAuthRole || isMetricsReader || isMetricsAuthBinding {
 		return fmt.Sprintf("{{- if and .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n", yamlContent)
 	}
 	// Essential RBAC (manager, leader-election) - always created
@@ -256,24 +248,22 @@ func InjectCRDResourcePolicyAnnotation(yamlContent string) string {
 // MakeWebhookAnnotationsConditional makes cert-manager annotations conditional on .Values.certManager.enabled.
 func MakeWebhookAnnotationsConditional(yamlContent string) string {
 	// Find cert-manager.io/inject-ca-from annotation and make it conditional
-	if strings.Contains(yamlContent, "cert-manager.io/inject-ca-from") {
-		// Replace the cert-manager annotation with conditional wrapper
-		certManagerPattern := regexp.MustCompile(`(\s+)cert-manager\.io/inject-ca-from:\s*[^\n]+`)
-		yamlContent = certManagerPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
-			// Extract the indentation
-			indentMatch := regexp.MustCompile(`^(\s+)`).FindStringSubmatch(match)
-			indent := ""
-			if len(indentMatch) > 1 {
-				indent = indentMatch[1]
-			}
-
-			// Extract the annotation line with proper indentation
-			annotationLine := strings.TrimSpace(match)
-
-			return fmt.Sprintf("%s{{- if .Values.certManager.enabled }}\n%s%s\n%s{{- end }}",
-				indent, indent, annotationLine, indent)
-		})
+	if !strings.Contains(yamlContent, "cert-manager.io/inject-ca-from") {
+		return yamlContent
 	}
-
+	certManagerPattern := regexp.MustCompile(`(\s+)cert-manager\.io/inject-ca-from:\s*[^\n]+`)
+	// Replace the cert-manager annotation with conditional wrapper
+	yamlContent = certManagerPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		// Extract the indentation
+		indentMatch := regexp.MustCompile(`^(\s+)`).FindStringSubmatch(match)
+		indent := ""
+		if len(indentMatch) > 1 {
+			indent = indentMatch[1]
+		}
+		// Extract the annotation line with proper indentation
+		annotationLine := strings.TrimSpace(match)
+		return fmt.Sprintf("%s{{- if .Values.certManager.enabled }}\n%s%s\n%s{{- end }}",
+			indent, indent, annotationLine, indent)
+	})
 	return yamlContent
 }

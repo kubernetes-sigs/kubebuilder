@@ -37,6 +37,8 @@ const (
 
 	// Test expectation constants for test-project.resourceName templates
 	expectedIssuerName = `name: {{ include "test-project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}`
+
+	k8sSpecField = "spec"
 )
 
 var _ = Describe("Templater", func() {
@@ -2862,9 +2864,9 @@ spec:
 					"metadata": map[string]any{
 						"name": "test-project-controller-manager", //nolint:goconst
 					},
-					"spec": map[string]any{
+					k8sSpecField: map[string]any{
 						"template": map[string]any{
-							"spec": map[string]any{
+							k8sSpecField: map[string]any{
 								"volumes": []any{
 									map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
 									map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
@@ -4152,7 +4154,7 @@ rules: []`
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with serviceAccount.enabled flag", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4168,14 +4170,14 @@ metadata:
   name: controller-manager
   namespace: system`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enabled false }}"))
 				Expect(result).To(ContainSubstring("{{- end }}"))
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4189,7 +4191,7 @@ metadata:
     app.kubernetes.io/name: test-project
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
 				Expect(result).To(ContainSubstring("annotations:"))
@@ -4197,7 +4199,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4212,7 +4214,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
 				Expect(result).To(ContainSubstring(`{{- with omit .`))
@@ -4221,7 +4223,7 @@ metadata:
 			})
 
 			It("merges custom annotations with existing annotations without duplication", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4237,7 +4239,7 @@ metadata:
     existing.annotation/key: "existing-value"
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				// Should NOT have duplicate annotations: keys
 				annotationsCount := strings.Count(result, "annotations:")
@@ -4255,8 +4257,6 @@ metadata:
 
 		Context("when using default ServiceAccount with nameOverride/fullnameOverride", func() {
 			It("respects nameOverride and fullnameOverride for default ServiceAccount name", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
 				serviceAccount.SetKind("ServiceAccount")
@@ -4273,8 +4273,6 @@ metadata:
 			})
 
 			It("ensures ServiceAccount name matches across all resource references", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
@@ -4296,8 +4294,6 @@ spec:
 
 		Context("when binding RBAC permissions to ServiceAccount", func() {
 			It("references ServiceAccount consistently in RoleBinding subjects", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				roleBinding.SetKind("RoleBinding")
@@ -4323,8 +4319,6 @@ subjects:
 			})
 
 			It("references ServiceAccount consistently in ClusterRoleBinding subjects", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				clusterRoleBinding := &unstructured.Unstructured{}
 				clusterRoleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				clusterRoleBinding.SetKind("ClusterRoleBinding")
@@ -4352,8 +4346,6 @@ subjects:
 
 		Context("when handling project names with prefixes", func() {
 			It("templates ServiceAccount name correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
 				serviceAccount.SetKind("ServiceAccount")
@@ -4370,8 +4362,6 @@ metadata:
 			})
 
 			It("templates Deployment serviceAccountName field correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
@@ -4391,8 +4381,6 @@ spec:
 			})
 
 			It("templates RoleBinding subjects correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				roleBinding.SetKind("RoleBinding")
@@ -4413,7 +4401,7 @@ subjects:
 
 		Context("when ensuring Kubernetes resource name limits", func() {
 			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
-				templater := NewTemplater("very-long-project-name-that-needs-truncation",
+				longNameTemplater := NewTemplater("very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation-system", nil)
 
@@ -4427,10 +4415,80 @@ kind: ServiceAccount
 metadata:
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := longNameTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring(
 					`name: {{ include "very-long-project-name-that-needs-truncation.serviceAccountName" . }}`))
+			})
+		})
+
+		Context("when a non-manager deployment is present alongside the manager", func() {
+			It("does not apply manager templates to an extra deployment with only the default-container annotation", func() {
+				// The annotation alone must not identify the manager — extra deployments with multiple containers carry it too.
+				extraDeployment := &unstructured.Unstructured{}
+				extraDeployment.SetAPIVersion("apps/v1")
+				extraDeployment.SetKind("Deployment")
+				extraDeployment.SetName("test-project-some-operator")
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-some-operator
+  namespace: test-project-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: worker
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
+`
+				result := templater.ApplyHelmSubstitutions(content, extraDeployment)
+
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager.replicas }}"),
+					"manager replicas template must not appear in a non-manager deployment")
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"),
+					"manager image template must not appear in a non-manager deployment")
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager."),
+					"no manager values must be injected into a non-manager deployment")
+			})
+
+			It("applies manager-specific templates to a deployment identified only by container name", func() {
+				// Manager identified by container name when the control-plane label is absent.
+				managerDeployment := &unstructured.Unstructured{}
+				managerDeployment.SetAPIVersion("apps/v1")
+				managerDeployment.SetKind("Deployment")
+				managerDeployment.SetName("test-project-controller-manager")
+				managerDeployment.Object[k8sSpecField] = map[string]any{
+					"template": map[string]any{
+						k8sSpecField: map[string]any{
+							"containers": []any{
+								map[string]any{"name": "manager", "image": "controller:latest"},
+							},
+						},
+					},
+				}
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+`
+				result := templater.ApplyHelmSubstitutions(content, managerDeployment)
+
+				Expect(result).To(ContainSubstring("{{ .Values.manager.replicas }}"),
+					"manager replicas template must appear for a deployment with a container named manager")
 			})
 		})
 	})

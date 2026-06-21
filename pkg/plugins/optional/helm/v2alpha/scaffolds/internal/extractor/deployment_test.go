@@ -32,22 +32,26 @@ const (
 	keyVolumeMounts = "volumeMounts"
 	keyMountPath    = "mountPath"
 
-	valAppsV1          = "apps/v1"
-	valDeployment      = "Deployment"
-	valTestDeploy      = "test-deployment"
-	valManager         = "manager"
-	valControllerImage = "controller:latest"
-	valAppConfig       = "app-config"
-	valAppSecret       = "app-secret"
-	valMyConfig        = "my-config"
-	valMySecret        = "my-secret"
-	valWebhookCert     = "webhook-certs"
-	valMetricsCert     = "metrics-certs"
-	valWebhookSecret   = "webhook-server-cert"
-	valSidecar         = "sidecar"
-	valMountConfig     = "/etc/config"
-	valMountCerts      = "/certs"
-	valMountMetrics    = "/metrics"
+	valAppsV1            = "apps/v1"
+	valDeployment        = "Deployment"
+	valTestDeploy        = "test-deployment"
+	valManager           = "manager"
+	valControllerImage   = "controller:latest"
+	valMgrImage          = "mgr:v1"
+	valSidecarImage      = "side:latest"
+	valCustomConfig      = "custom-config"
+	valMountConfigDir    = "/config"
+	valAppConfig         = "app-config"
+	valAppSecret         = "app-secret"
+	valMyConfig          = "my-config"
+	valMySecret          = "my-secret"
+	valWebhookCert       = "webhook-certs"
+	valMetricsCert       = "metrics-certs"
+	valWebhookSecretName = "webhook-server-cert"
+	valSidecar           = "sidecar"
+	valMountConfig       = "/etc/config"
+	valMountCerts        = "/certs"
+	valMountMetrics      = "/metrics"
 
 	annotationDefaultContainer = "kubectl.kubernetes.io/default-container"
 )
@@ -72,9 +76,11 @@ func makeDeployment(opts deploymentOpts) *unstructured.Unstructured {
 	}
 	template := map[string]any{"spec": podSpec}
 	if opts.annotations != nil {
-		template["metadata"] = map[string]any{
-			"annotations": opts.annotations,
+		annotations := make(map[string]any, len(opts.annotations))
+		for k, v := range opts.annotations {
+			annotations[k] = v
 		}
+		template["metadata"] = map[string]any{"annotations": annotations}
 	}
 	return &unstructured.Unstructured{
 		Object: map[string]any{
@@ -89,7 +95,9 @@ func makeDeployment(opts deploymentOpts) *unstructured.Unstructured {
 }
 
 func podSpec(d *unstructured.Unstructured) map[string]any {
-	return d.Object["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)
+	spec, _, _ := unstructured.NestedFieldNoCopy(d.Object, "spec", "template", "spec")
+	m, _ := spec.(map[string]any)
+	return m
 }
 
 var _ = Describe("DeploymentExtractor", func() {
@@ -109,22 +117,275 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should return nil when replicas is not set", func() {
-			result := extractor.ExtractDeploymentConfig(deployment)
+			result, err := extractor.ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).To(BeNil())
 		})
 
 		It("should preserve scale-to-zero", func() {
 			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(0)
-			result := extractor.ExtractDeploymentConfig(deployment)
+			result, err := extractor.ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
 			Expect(*result.Manager.Replicas).To(Equal(0))
 		})
 
 		It("should extract replicas value", func() {
 			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(3)
-			result := extractor.ExtractDeploymentConfig(deployment)
+			result, err := extractor.ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
 			Expect(*result.Manager.Replicas).To(Equal(3))
+		})
+	})
+
+	Describe("findManagerContainer", func() {
+		It("should return the container named 'manager' when it is first", func() {
+			d := makeDeployment(deploymentOpts{
+				containers: []map[string]any{
+					{keyName: valManager, keyImage: valMgrImage},
+				},
+			})
+			spec := podSpec(d)
+			c := findManagerContainer(d, spec)
+			Expect(c).NotTo(BeNil())
+			Expect(c[keyName]).To(Equal(valManager))
+		})
+
+		It("should return the manager container even when a sidecar comes first", func() {
+			d := makeDeployment(deploymentOpts{
+				containers: []map[string]any{
+					{keyName: valSidecar, keyImage: valSidecarImage},
+					{keyName: valManager, keyImage: valMgrImage},
+				},
+			})
+			spec := podSpec(d)
+			c := findManagerContainer(d, spec)
+			Expect(c).NotTo(BeNil())
+			Expect(c[keyName]).To(Equal(valManager))
+		})
+
+		It("should respect the default-container annotation", func() {
+			d := makeDeployment(deploymentOpts{
+				annotations: map[string]string{
+					annotationDefaultContainer: "custom-manager",
+				},
+				containers: []map[string]any{
+					{keyName: valSidecar, keyImage: valSidecarImage},
+					{keyName: "custom-manager", keyImage: valMgrImage},
+				},
+			})
+			spec := podSpec(d)
+			c := findManagerContainer(d, spec)
+			Expect(c).NotTo(BeNil())
+			Expect(c[keyName]).To(Equal("custom-manager"))
+		})
+
+		It("should fall back to the first container when no name matches", func() {
+			d := makeDeployment(deploymentOpts{
+				containers: []map[string]any{
+					{keyName: valSidecar, keyImage: valSidecarImage},
+					{keyName: "other", keyImage: "other:v1"},
+				},
+			})
+			spec := podSpec(d)
+			c := findManagerContainer(d, spec)
+			Expect(c).NotTo(BeNil())
+			Expect(c[keyName]).To(Equal(valSidecar))
+		})
+	})
+
+	Describe("RemoveExtractedVolumes", func() {
+		var ext *DeploymentExtractor
+
+		BeforeEach(func() {
+			ext = &DeploymentExtractor{}
+		})
+
+		It("should remove all custom volumes and leave an empty slice", func() {
+			d := makeDeployment(deploymentOpts{
+				volumes: []any{
+					map[string]any{keyName: valCustomConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
+				},
+				containers: []map[string]any{{
+					keyName: valManager,
+					keyVolumeMounts: []any{
+						map[string]any{keyName: valCustomConfig, keyMountPath: valMountConfigDir},
+					},
+				}},
+			})
+
+			ext.RemoveExtractedVolumes(d)
+
+			spec := podSpec(d)
+			volumes, _, _ := unstructured.NestedFieldNoCopy(spec, "volumes")
+			Expect(volumes.([]any)).To(BeEmpty())
+			containers, _, _ := unstructured.NestedFieldNoCopy(spec, "containers")
+			manager := containers.([]any)[0].(map[string]any)
+			mounts, _, _ := unstructured.NestedFieldNoCopy(manager, keyVolumeMounts)
+			Expect(mounts.([]any)).To(BeEmpty())
+		})
+
+		It("should remove custom volumes while keeping system volumes", func() {
+			d := makeDeployment(deploymentOpts{
+				volumes: []any{
+					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecretName}},
+					map[string]any{keyName: valCustomConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
+				},
+				containers: []map[string]any{{
+					keyName:  valManager,
+					keyImage: valMgrImage,
+					keyVolumeMounts: []any{
+						map[string]any{keyName: valWebhookCert, keyMountPath: "/tmp/certs"},
+						map[string]any{keyName: valCustomConfig, keyMountPath: valMountConfigDir},
+					},
+				}},
+			})
+
+			ext.RemoveExtractedVolumes(d)
+
+			spec := podSpec(d)
+			volumes, _, _ := unstructured.NestedFieldNoCopy(spec, "volumes")
+			volumeList, ok := volumes.([]any)
+			Expect(ok).To(BeTrue())
+			Expect(volumeList).To(HaveLen(1))
+			Expect(volumeList[0].(map[string]any)[keyName]).To(Equal(valWebhookCert))
+
+			containers, _, _ := unstructured.NestedFieldNoCopy(spec, "containers")
+			managerContainer := containers.([]any)[0].(map[string]any)
+			mounts, _, _ := unstructured.NestedFieldNoCopy(managerContainer, keyVolumeMounts)
+			mountList, ok := mounts.([]any)
+			Expect(ok).To(BeTrue())
+			Expect(mountList).To(HaveLen(1))
+			Expect(mountList[0].(map[string]any)[keyName]).To(Equal(valWebhookCert))
+		})
+
+		It("should keep both metrics-certs and webhook-certs volumes", func() {
+			d := makeDeployment(deploymentOpts{
+				volumes: []any{
+					map[string]any{keyName: valWebhookCert},
+					map[string]any{keyName: valMetricsCert},
+				},
+				containers: []map[string]any{{
+					keyName: valManager,
+					keyVolumeMounts: []any{
+						map[string]any{keyName: valWebhookCert, keyMountPath: valMountCerts},
+						map[string]any{keyName: valMetricsCert, keyMountPath: valMountMetrics},
+					},
+				}},
+			})
+
+			ext.RemoveExtractedVolumes(d)
+
+			spec := podSpec(d)
+			volumes, _, _ := unstructured.NestedFieldNoCopy(spec, "volumes")
+			Expect(volumes.([]any)).To(HaveLen(2))
+		})
+
+		It("should only strip volume mounts from the manager container, not sidecars", func() {
+			d := makeDeployment(deploymentOpts{
+				volumes: []any{
+					map[string]any{keyName: valWebhookCert},
+					map[string]any{keyName: valCustomConfig},
+				},
+				containers: []map[string]any{
+					{
+						keyName: valSidecar,
+						keyVolumeMounts: []any{
+							map[string]any{keyName: valCustomConfig, keyMountPath: valMountConfigDir},
+						},
+					},
+					{
+						keyName: valManager,
+						keyVolumeMounts: []any{
+							map[string]any{keyName: valWebhookCert, keyMountPath: "/tmp/certs"},
+							map[string]any{keyName: valCustomConfig, keyMountPath: valMountConfigDir},
+						},
+					},
+				},
+			})
+
+			ext.RemoveExtractedVolumes(d)
+
+			spec := podSpec(d)
+			containers, _, _ := unstructured.NestedFieldNoCopy(spec, "containers")
+			containerList := containers.([]any)
+
+			sidecar := containerList[0].(map[string]any)
+			sidecarMounts, _, _ := unstructured.NestedFieldNoCopy(sidecar, keyVolumeMounts)
+			Expect(sidecarMounts.([]any)).To(HaveLen(1), "sidecar mounts must not be touched")
+
+			manager := containerList[1].(map[string]any)
+			managerMounts, _, _ := unstructured.NestedFieldNoCopy(manager, keyVolumeMounts)
+			Expect(managerMounts.([]any)).To(HaveLen(1))
+			Expect(managerMounts.([]any)[0].(map[string]any)[keyName]).To(Equal(valWebhookCert))
+		})
+
+		It("should be a no-op on nil deployment", func() {
+			Expect(func() { ext.RemoveExtractedVolumes(nil) }).NotTo(Panic())
+		})
+	})
+
+	Describe("FindManagerDeployment", func() {
+		It("should return nil for an empty or nil slice", func() {
+			Expect(FindManagerDeployment(nil)).To(BeNil())
+			Expect(FindManagerDeployment([]*unstructured.Unstructured{})).To(BeNil())
+		})
+
+		It("should return the only deployment with no heuristics applied", func() {
+			d := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+			Expect(FindManagerDeployment([]*unstructured.Unstructured{d})).To(Equal(d))
+		})
+
+		Context("with multiple deployments", func() {
+			It("should select by label control-plane=controller-manager first", func() {
+				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: "other"}}})
+				winner.SetName("winner")
+				winner.SetLabels(map[string]string{"control-plane": "controller-manager"})
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should select by pod-template annotation when no label matches", func() {
+				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
+				winner := makeDeployment(deploymentOpts{
+					annotations: map[string]string{annotationDefaultContainer: valSidecar},
+					containers:  []map[string]any{{keyName: valSidecar}},
+				})
+				winner.SetName("winner")
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should select by container named manager when no label or annotation matches", func() {
+				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
+				winner.SetName("winner")
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should select by name containing controller-manager when no other signal matches", func() {
+				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				other.SetName("other")
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				winner.SetName("my-controller-manager")
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should return nil when multiple deployments have no identifying signals", func() {
+				first := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				second := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{first, second})
+				Expect(result).To(BeNil())
+			})
 		})
 	})
 
@@ -171,16 +432,17 @@ var _ = Describe("DeploymentExtractor", func() {
 				}},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.ExtraVolumes).To(HaveLen(2))
 			Expect(config.Manager.ExtraVolumeMounts).To(HaveLen(2))
-			Expect(podSpec(deployment)["volumes"].([]any)).To(HaveLen(2), "extraction should not mutate")
+			Expect(podSpec(deployment)["volumes"].([]any)).To(HaveLen(2), "extraction must not mutate the deployment")
 		})
 
 		It("should separate system and custom volumes", func() {
 			deployment := makeDeployment(deploymentOpts{
 				volumes: []any{
-					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecret}},
+					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecretName}},
 					map[string]any{keyName: valMetricsCert, keySecret: map[string]any{keySecretName: "metrics-server-cert"}},
 					map[string]any{keyName: valAppConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
 				},
@@ -194,7 +456,8 @@ var _ = Describe("DeploymentExtractor", func() {
 				}},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.ExtraVolumes).To(HaveLen(1))
 			Expect(config.Manager.ExtraVolumeMounts).To(HaveLen(1))
 		})
@@ -214,58 +477,10 @@ var _ = Describe("DeploymentExtractor", func() {
 				}},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.ExtraVolumes).To(BeNil())
 			Expect(config.Manager.ExtraVolumeMounts).To(BeNil())
-		})
-	})
-
-	Describe("StripCustomVolumes", func() {
-		It("should remove all custom volumes and leave empty slice", func() {
-			deployment := makeDeployment(deploymentOpts{
-				volumes: []any{
-					map[string]any{keyName: valAppConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
-				},
-				containers: []map[string]any{{
-					keyName: valManager,
-					keyVolumeMounts: []any{
-						map[string]any{keyName: valAppConfig, keyMountPath: valMountConfig},
-					},
-				}},
-			})
-
-			(&DeploymentExtractor{}).StripCustomVolumes(deployment)
-
-			spec := podSpec(deployment)
-			Expect(spec["volumes"].([]any)).To(BeEmpty())
-			container := spec["containers"].([]any)[0].(map[string]any)
-			Expect(container["volumeMounts"].([]any)).To(BeEmpty())
-		})
-
-		It("should keep system volumes and strip custom ones", func() {
-			deployment := makeDeployment(deploymentOpts{
-				volumes: []any{
-					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecret}},
-					map[string]any{keyName: valMetricsCert, keySecret: map[string]any{keySecretName: "metrics-server-cert"}},
-					map[string]any{keyName: valAppConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
-				},
-				containers: []map[string]any{{
-					keyName: valManager,
-					keyVolumeMounts: []any{
-						map[string]any{keyName: valWebhookCert, keyMountPath: valMountCerts},
-						map[string]any{keyName: valMetricsCert, keyMountPath: valMountMetrics},
-						map[string]any{keyName: valAppConfig, keyMountPath: valMountConfig},
-					},
-				}},
-			})
-
-			(&DeploymentExtractor{}).StripCustomVolumes(deployment)
-
-			spec := podSpec(deployment)
-			volumes := spec["volumes"].([]any)
-			Expect(volumes).To(HaveLen(2))
-			Expect(volumes[0].(map[string]any)["name"]).To(Equal(valWebhookCert))
-			Expect(volumes[1].(map[string]any)["name"]).To(Equal(valMetricsCert))
 		})
 	})
 
@@ -280,7 +495,8 @@ var _ = Describe("DeploymentExtractor", func() {
 				},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.Image.Repository).To(Equal("controller"))
 			Expect(config.Manager.Image.Tag).To(Equal("latest"))
 		})
@@ -296,7 +512,8 @@ var _ = Describe("DeploymentExtractor", func() {
 				},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.Image.Repository).To(Equal("controller"))
 		})
 
@@ -308,7 +525,8 @@ var _ = Describe("DeploymentExtractor", func() {
 				},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.Image.Repository).To(Equal("controller"))
 		})
 
@@ -319,17 +537,26 @@ var _ = Describe("DeploymentExtractor", func() {
 				},
 			})
 
-			config := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(config.Manager.Image.Repository).To(Equal("controller"))
 		})
 
-		It("should strip volumes from the correct container with sidecar before manager", func() {
+		It("should error when the deployment has no containers", func() {
+			deployment := makeDeployment(deploymentOpts{})
+
+			_, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no manager container found"))
+		})
+
+		It("should strip volumes only from the manager container when a sidecar comes first", func() {
 			deployment := makeDeployment(deploymentOpts{
 				annotations: map[string]string{
 					annotationDefaultContainer: valManager,
 				},
 				volumes: []any{
-					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecret}},
+					map[string]any{keyName: valWebhookCert, keySecret: map[string]any{keySecretName: valWebhookSecretName}},
 					map[string]any{keyName: valAppConfig, keyConfigMap: map[string]any{keyName: valMyConfig}},
 				},
 				containers: []map[string]any{
@@ -349,20 +576,20 @@ var _ = Describe("DeploymentExtractor", func() {
 				},
 			})
 
-			(&DeploymentExtractor{}).StripCustomVolumes(deployment)
+			(&DeploymentExtractor{}).RemoveExtractedVolumes(deployment)
 
 			spec := podSpec(deployment)
 			volumes := spec["volumes"].([]any)
 			Expect(volumes).To(HaveLen(1))
-			Expect(volumes[0].(map[string]any)["name"]).To(Equal(valWebhookCert))
+			Expect(volumes[0].(map[string]any)[keyName]).To(Equal(valWebhookCert))
 
 			sidecar := spec["containers"].([]any)[0].(map[string]any)
-			Expect(sidecar["volumeMounts"].([]any)).To(HaveLen(1), "sidecar mounts should be untouched")
+			Expect(sidecar[keyVolumeMounts].([]any)).To(HaveLen(1), "sidecar mounts must not be touched")
 
 			manager := spec["containers"].([]any)[1].(map[string]any)
-			managerMounts := manager["volumeMounts"].([]any)
+			managerMounts := manager[keyVolumeMounts].([]any)
 			Expect(managerMounts).To(HaveLen(1))
-			Expect(managerMounts[0].(map[string]any)["name"]).To(Equal(valWebhookCert))
+			Expect(managerMounts[0].(map[string]any)[keyName]).To(Equal(valWebhookCert))
 		})
 	})
 })

@@ -17,6 +17,7 @@ limitations under the License.
 package extractor
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -64,119 +65,121 @@ type ImageConfig struct {
 }
 
 // ExtractDeploymentConfig extracts configuration values from the deployment for values.yaml.
-func (d *DeploymentExtractor) ExtractDeploymentConfig(deployment *unstructured.Unstructured) ValuesConfig {
+func (d *DeploymentExtractor) ExtractDeploymentConfig(deployment *unstructured.Unstructured) (ValuesConfig, error) {
 	config := ValuesConfig{
 		Manager: ManagerConfig{},
 	}
 
 	if deployment == nil {
-		return config
+		return config, nil
 	}
 
-	configMap := make(map[string]any)
+	extracted := make(map[string]any)
 
-	extractDeploymentReplicas(deployment, configMap)
-	extractDeploymentStrategy(deployment, configMap)
+	extractDeploymentReplicas(deployment, extracted)
+	extractDeploymentStrategy(deployment, extracted)
 
 	specMap := extractDeploymentSpec(deployment)
 	if specMap != nil {
-		extractPodSecurityContext(specMap, configMap)
-		extractImagePullSecrets(specMap, configMap)
-		extractPodNodeSelector(specMap, configMap)
-		extractPodTolerations(specMap, configMap)
-		extractPodAffinity(specMap, configMap)
-		extractPriorityClassName(specMap, configMap)
-		extractTopologySpreadConstraints(specMap, configMap)
-		extractTerminationGracePeriodSeconds(specMap, configMap)
+		extractPodSecurityContext(specMap, extracted)
+		extractImagePullSecrets(specMap, extracted)
+		extractPodNodeSelector(specMap, extracted)
+		extractPodTolerations(specMap, extracted)
+		extractPodAffinity(specMap, extracted)
+		extractPriorityClassName(specMap, extracted)
+		extractTopologySpreadConstraints(specMap, extracted)
+		extractTerminationGracePeriodSeconds(specMap, extracted)
 
-		container := findManagerContainer(specMap, managerContainerName(deployment))
-		if container != nil {
-			extractContainerEnv(container, configMap)
-			extractContainerImage(container, configMap)
-			extractContainerArgs(container, configMap)
-			extractContainerPorts(container, configMap)
-			extractContainerResources(container, configMap)
-			extractContainerSecurityContext(container, configMap)
-
-			extractExtraVolumes(specMap, configMap)
-			extractExtraVolumeMounts(container, configMap)
+		container := findManagerContainer(deployment, specMap)
+		if container == nil {
+			return config, fmt.Errorf("no manager container found in Deployment %q", deployment.GetName())
 		}
+
+		extractContainerEnv(container, extracted)
+		extractContainerImage(container, extracted)
+		extractContainerArgs(container, extracted)
+		extractContainerPorts(container, extracted)
+		extractContainerResources(container, extracted)
+		extractContainerSecurityContext(container, extracted)
+
+		extractExtraVolumes(specMap, extracted)
+		extractExtraVolumeMounts(container, extracted)
 	}
 
-	config.Manager = convertToManagerConfig(configMap)
+	config.Manager = convertToManagerConfig(extracted)
 
-	if webhookPort, ok := configMap["webhookPort"].(int); ok {
+	if webhookPort, ok := extracted["webhookPort"].(int); ok {
 		config.WebhookPort = webhookPort
 	}
-	if metricsPort, ok := configMap["metricsPort"].(int); ok {
+	if metricsPort, ok := extracted["metricsPort"].(int); ok {
 		config.MetricsPort = metricsPort
 	}
 
-	return config
+	return config, nil
 }
 
 func convertToManagerConfig(configMap map[string]any) ManagerConfig {
-	mc := ManagerConfig{}
+	cfg := ManagerConfig{}
 
 	if replicas, ok := configMap["replicas"].(int); ok {
 		r := replicas
-		mc.Replicas = &r
+		cfg.Replicas = &r
 	}
 	if image, ok := configMap["image"].(map[string]any); ok {
-		mc.Image = ImageConfig{
+		cfg.Image = ImageConfig{
 			Repository: getStringValue(image, "repository"),
 			Tag:        getStringValue(image, "tag"),
 			PullPolicy: getStringValue(image, "pullPolicy"),
 		}
 	}
 	if resources, ok := configMap["resources"].(map[string]any); ok {
-		mc.Resources = resources
+		cfg.Resources = resources
 	}
 	if nodeSelector, ok := configMap["podNodeSelector"].(map[string]any); ok {
-		mc.NodeSelector = nodeSelector
+		cfg.NodeSelector = nodeSelector
 	}
 	if tolerations, ok := configMap["podTolerations"].([]any); ok {
-		mc.Tolerations = tolerations
+		cfg.Tolerations = tolerations
 	}
 	if affinity, ok := configMap["podAffinity"].(map[string]any); ok {
-		mc.Affinity = affinity
+		cfg.Affinity = affinity
 	}
 	if args, ok := configMap["args"].([]any); ok {
-		mc.Args = args
+		cfg.Args = args
 	}
 	if env, ok := configMap["env"].([]any); ok {
-		mc.Env = env
+		cfg.Env = env
 	}
 	if securityContext, ok := configMap["securityContext"].(map[string]any); ok {
-		mc.SecurityContext = securityContext
+		cfg.SecurityContext = securityContext
 	}
 	if podSecurityContext, ok := configMap["podSecurityContext"].(map[string]any); ok {
-		mc.PodSecurityContext = podSecurityContext
+		cfg.PodSecurityContext = podSecurityContext
 	}
 	if imagePullSecrets, ok := configMap["imagePullSecrets"].([]any); ok {
-		mc.ImagePullSecrets = imagePullSecrets
+		cfg.ImagePullSecrets = imagePullSecrets
 	}
 	if priorityClassName, ok := configMap["priorityClassName"].(string); ok {
-		mc.PriorityClassName = priorityClassName
+		cfg.PriorityClassName = priorityClassName
 	}
 	if topologySpreadConstraints, ok := configMap["topologySpreadConstraints"].([]any); ok {
-		mc.TopologySpreadConstraints = topologySpreadConstraints
+		cfg.TopologySpreadConstraints = topologySpreadConstraints
 	}
 	if terminationGracePeriodSeconds, ok := configMap["terminationGracePeriodSeconds"].(int); ok {
-		tgps := terminationGracePeriodSeconds
-		mc.TerminationGracePeriodSeconds = &tgps
+		gracePeriod := terminationGracePeriodSeconds
+		cfg.TerminationGracePeriodSeconds = &gracePeriod
 	}
 	if strategy, ok := configMap["strategy"].(map[string]any); ok {
-		mc.Strategy = strategy
+		cfg.Strategy = strategy
 	}
 	if extraVolumes, ok := configMap["extraVolumes"].([]any); ok {
-		mc.ExtraVolumes = extraVolumes
+		cfg.ExtraVolumes = extraVolumes
 	}
 	if extraVolumeMounts, ok := configMap["extraVolumeMounts"].([]any); ok {
-		mc.ExtraVolumeMounts = extraVolumeMounts
+		cfg.ExtraVolumeMounts = extraVolumeMounts
 	}
 
-	return mc
+	return cfg
 }
 
 func getStringValue(m map[string]any, key string) string {
@@ -270,16 +273,23 @@ func extractPodAffinity(specMap map[string]any, config map[string]any) {
 	config["podAffinity"] = result
 }
 
+// managerContainerName reads the default-container annotation; falls back to "manager".
 func managerContainerName(deployment *unstructured.Unstructured) string {
-	ann, _, _ := unstructured.NestedStringMap(deployment.Object,
-		"spec", "template", "metadata", "annotations")
-	if name := ann[common.DefaultContainerAnnotation]; name != "" {
-		return name
+	if deployment == nil {
+		return common.DefaultManagerContainerName
+	}
+	annotations, found, err := unstructured.NestedStringMap(
+		deployment.Object, "spec", "template", "metadata", "annotations")
+	if found && err == nil {
+		if name, ok := annotations[common.DefaultContainerAnnotation]; ok && name != "" {
+			return name
+		}
 	}
 	return common.DefaultManagerContainerName
 }
 
-func findManagerContainer(specMap map[string]any, targetName string) map[string]any {
+// findManagerContainer returns the named manager container; falls back to the first container.
+func findManagerContainer(deployment *unstructured.Unstructured, specMap map[string]any) map[string]any {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
 		return nil
@@ -290,20 +300,67 @@ func findManagerContainer(specMap map[string]any, targetName string) map[string]
 		return nil
 	}
 
+	targetName := managerContainerName(deployment)
 	for _, c := range containersList {
-		container, ok := c.(map[string]any)
-		if !ok {
+		container, containerOK := c.(map[string]any)
+		if !containerOK {
 			continue
 		}
-		if name, _ := container["name"].(string); name == targetName {
+		if name, nameOK := container["name"].(string); nameOK && name == targetName {
 			return container
 		}
 	}
 
-	if first, ok := containersList[0].(map[string]any); ok {
-		return first
+	firstContainer, firstOK := containersList[0].(map[string]any)
+	if !firstOK {
+		return nil
 	}
-	return nil
+	return firstContainer
+}
+
+// RemoveExtractedVolumes removes custom volumes and mounts from the deployment manifest.
+// Must be called after ExtractDeploymentConfig: extraction captures them in values.yaml first,
+// then this removes them from the manifest so they are injected only via Helm values at install time.
+func (d *DeploymentExtractor) RemoveExtractedVolumes(deployment *unstructured.Unstructured) {
+	if deployment == nil {
+		return
+	}
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return
+	}
+
+	if volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes"); found && err == nil {
+		if volumesList, ok := volumes.([]any); ok {
+			specMap["volumes"] = retainSystemEntries(volumesList)
+		}
+	}
+
+	container := findManagerContainer(deployment, specMap)
+	if container == nil {
+		return
+	}
+	if mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts"); found && err == nil {
+		if mountsList, ok := mounts.([]any); ok {
+			container["volumeMounts"] = retainSystemEntries(mountsList)
+		}
+	}
+}
+
+// retainSystemEntries keeps only webhook-certs and metrics-certs entries from a volume or volumeMount slice.
+func retainSystemEntries(entries []any) []any {
+	result := make([]any, 0, len(entries))
+	for _, entry := range entries {
+		entryMap, ok := entry.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := entryMap["name"].(string)
+		if _, isSystem := defaultWebhookMetricsVolumeNames[name]; isSystem {
+			result = append(result, entry)
+		}
+	}
+	return result
 }
 
 func extractContainerEnv(container map[string]any, config map[string]any) {
@@ -329,8 +386,7 @@ func extractContainerImage(container map[string]any, config map[string]any) {
 	repository := imageValue
 	tag := ""
 
-	// For digest-pinned images (repo@sha256:...), keep the full reference in repository.
-	// For tag-based images (repo:tag), split into repository and tag.
+	// Digest-pinned images stay whole in repository; tag-based images are split.
 	if !strings.Contains(imageValue, "@") {
 		tag = "latest"
 		lastColon := strings.LastIndex(imageValue, ":")
@@ -482,98 +538,43 @@ var defaultWebhookMetricsVolumeNames = map[string]struct{}{
 	"metrics-certs": {},
 }
 
-// extractExtraVolumes extracts volumes, excluding webhook-certs and metrics-certs.
-func extractExtraVolumes(specMap map[string]any, config map[string]any) {
-	volumes, found, err := unstructured.NestedFieldNoCopy(specMap, "volumes")
+// extractExtraEntries filters a slice of named entries (volumes or volumeMounts),
+// dropping any whose "name" field is in defaultWebhookMetricsVolumeNames, and stores
+// the result under configKey in config.
+func extractExtraEntries(source map[string]any, fieldKey, configKey string, config map[string]any) {
+	raw, found, err := unstructured.NestedFieldNoCopy(source, fieldKey)
 	if !found || err != nil {
 		return
 	}
-	volumesList, ok := volumes.([]any)
-	if !ok || len(volumesList) == 0 {
+	entries, ok := raw.([]any)
+	if !ok || len(entries) == 0 {
 		return
 	}
-	extra := make([]any, 0, len(volumesList))
-	for _, v := range volumesList {
-		vm, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		name, _ := vm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
-		}
-		extra = append(extra, v)
-	}
-	if len(extra) > 0 {
-		config["extraVolumes"] = extra
-	}
-}
-
-// extractExtraVolumeMounts extracts volume mounts, excluding webhook-certs and metrics-certs.
-func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
-	mounts, found, err := unstructured.NestedFieldNoCopy(container, "volumeMounts")
-	if !found || err != nil {
-		return
-	}
-	mountsList, ok := mounts.([]any)
-	if !ok || len(mountsList) == 0 {
-		return
-	}
-	extra := make([]any, 0, len(mountsList))
-	for _, m := range mountsList {
-		mm, ok := m.(map[string]any)
-		if !ok {
-			continue
-		}
-		name, _ := mm["name"].(string)
-		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			continue
-		}
-		extra = append(extra, m)
-	}
-	if len(extra) > 0 {
-		config["extraVolumeMounts"] = extra
-	}
-}
-
-// StripCustomVolumes removes custom (non-system) volumes and volume mounts from the deployment
-// so they only appear via Helm values templates. Call this after ExtractDeploymentConfig.
-func (d *DeploymentExtractor) StripCustomVolumes(deployment *unstructured.Unstructured) {
-	if deployment == nil {
-		return
-	}
-	specMap := extractDeploymentSpec(deployment)
-	if specMap == nil {
-		return
-	}
-	retainSystemEntries(specMap, "volumes")
-	container := findManagerContainer(specMap, managerContainerName(deployment))
-	if container != nil {
-		retainSystemEntries(container, "volumeMounts")
-	}
-}
-
-func retainSystemEntries(m map[string]any, key string) {
-	items, found, err := unstructured.NestedFieldNoCopy(m, key)
-	if !found || err != nil {
-		return
-	}
-	itemsList, ok := items.([]any)
-	if !ok || len(itemsList) == 0 {
-		return
-	}
-	system := make([]any, 0, len(itemsList))
-	for _, item := range itemsList {
-		entry, ok := item.(map[string]any)
+	extra := make([]any, 0, len(entries))
+	for _, e := range entries {
+		entry, ok := e.(map[string]any)
 		if !ok {
 			continue
 		}
 		name, _ := entry["name"].(string)
 		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
-			system = append(system, item)
+			continue
 		}
+		extra = append(extra, e)
 	}
-	m[key] = system
+	if len(extra) > 0 {
+		config[configKey] = extra
+	}
+}
+
+// extractExtraVolumes extracts volumes, excluding webhook-certs and metrics-certs.
+func extractExtraVolumes(specMap map[string]any, config map[string]any) {
+	extractExtraEntries(specMap, "volumes", "extraVolumes", config)
+}
+
+// extractExtraVolumeMounts extracts volume mounts, excluding webhook-certs and metrics-certs.
+func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
+	extractExtraEntries(container, "volumeMounts", "extraVolumeMounts", config)
 }
 
 // extractDeploymentReplicas extracts the replicas count from the deployment spec.
@@ -638,10 +639,71 @@ func extractTerminationGracePeriodSeconds(specMap map[string]any, config map[str
 	}
 }
 
-// isWebhookPortName returns true if the port name is webhook-related.
+// isWebhookPortName reports whether name identifies a webhook port.
 func isWebhookPortName(name string) bool {
 	name = strings.ToLower(name)
 	return name == "webhook-server" || name == "webhook"
+}
+
+// FindManagerDeployment returns the controller-manager Deployment from the slice.
+// With exactly one deployment, it is returned directly — no heuristics needed.
+// With multiple deployments, the following signals are tried in order:
+//  1. deployment label control-plane=controller-manager
+//  2. pod-template annotation kubectl.kubernetes.io/default-container is non-empty
+//  3. a container whose name is exactly "manager"
+//  4. deployment name contains "controller-manager"
+//
+// Returns nil when the slice is empty or when multiple deployments are present
+// but none matches any signal. Callers must treat nil as a hard error.
+func FindManagerDeployment(deployments []*unstructured.Unstructured) *unstructured.Unstructured {
+	if len(deployments) == 0 {
+		return nil
+	}
+	if len(deployments) == 1 {
+		return deployments[0]
+	}
+
+	for _, d := range deployments {
+		if d.GetLabels()["control-plane"] == "controller-manager" {
+			return d
+		}
+	}
+	for _, d := range deployments {
+		annotations, _, _ := unstructured.NestedStringMap(d.Object, "spec", "template", "metadata", "annotations")
+		if annotations[common.DefaultContainerAnnotation] != "" {
+			return d
+		}
+	}
+	for _, d := range deployments {
+		specMap := extractDeploymentSpec(d)
+		if specMap != nil && hasContainerNamed(specMap, common.DefaultManagerContainerName) {
+			return d
+		}
+	}
+	for _, d := range deployments {
+		if strings.Contains(d.GetName(), "controller-manager") {
+			return d
+		}
+	}
+	return nil
+}
+
+func hasContainerNamed(specMap map[string]any, name string) bool {
+	containers, _, _ := unstructured.NestedFieldNoCopy(specMap, "containers")
+	containersList, ok := containers.([]any)
+	if !ok {
+		return false
+	}
+	for _, c := range containersList {
+		container, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		if container["name"] == name {
+			return true
+		}
+	}
+	return false
 }
 
 // toInt converts numeric types (int, int32, int64, float64) to int.

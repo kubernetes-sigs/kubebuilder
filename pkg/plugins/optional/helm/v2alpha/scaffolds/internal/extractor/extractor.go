@@ -77,18 +77,21 @@ type ResourceSet struct {
 // Extract performs complete extraction of parsed resources.
 // It extracts metadata first, then detects features, and finally extracts deployment configuration.
 // projectName is the configured project name which becomes the chart name.
-func (e *Extractor) Extract(resources *ResourceSet, projectName string) *Extraction {
+func (e *Extractor) Extract(resources *ResourceSet, projectName string) (*Extraction, error) {
 	metadata := e.metadataExtractor.ExtractMetadata(resources, projectName)
 	features := e.featuresExtractor.DetectFeatures(resources, metadata.DetectedPrefix, metadata.ManagerNamespace)
-	values := e.deploymentExtractor.ExtractDeploymentConfig(resources.Deployment)
+	values, err := e.deploymentExtractor.ExtractDeploymentConfig(resources.Deployment)
+	if err != nil {
+		return nil, err
+	}
 
-	// Strip custom volumes from deployment after extraction so they only
-	// appear via Helm values templates, not as literal entries in the manifest.
-	e.deploymentExtractor.StripCustomVolumes(resources.Deployment)
+	if resources.Deployment != nil {
+		e.deploymentExtractor.RemoveExtractedVolumes(resources.Deployment)
+	}
 
 	return &Extraction{
 		Metadata: metadata,
 		Features: features,
 		Values:   values,
-	}
+	}, nil
 }
