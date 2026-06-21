@@ -530,6 +530,15 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 // It is extracted from getInfoFromConfigFile for testing purposes.
 func (c *CLI) getInfoFromConfig(projectConfig config.Config) error {
 	c.pluginKeys = projectConfig.GetPluginChain()
+	if isAlphaGenerateCommand(c.args) {
+		// Resolve the current Helm plugin without changing legacy metadata used by migration.
+		c.pluginKeys = append([]string(nil), c.pluginKeys...)
+		for i, key := range c.pluginKeys {
+			if key == "helm.kubebuilder.io/v1-alpha" {
+				c.pluginKeys[i] = "helm.kubebuilder.io/v2-alpha"
+			}
+		}
+	}
 	c.projectVersion = projectConfig.GetVersion()
 
 	for _, pluginKey := range c.pluginKeys {

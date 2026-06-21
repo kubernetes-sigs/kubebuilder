@@ -75,6 +75,13 @@ kubebuilder edit --plugins=helm/v2-alpha \
   --output-dir=helm-charts
 ```
 
+<aside class="note" role="note">
+<p class="note-title">Migrating from helm/v1-alpha</p>
+
+Use [`kubebuilder alpha generate`][alpha-generate] to migrate from `helm/v1-alpha` to `helm/v2-alpha`. For supported projects, [`kubebuilder alpha update`][alpha-update] automates the upgrade with a 3-way merge to preserve your custom code.
+
+</aside>
+
 ## Chart structure
 
 The plugin generates a chart layout that mirrors your `config/` directory:
@@ -493,3 +500,6 @@ Optional fields in `values.yaml` use Helm conditionals. Comment them out to excl
 You can find example projects in [testdata/project-v4-with-plugins](https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins).
 
 </aside>
+
+[alpha-generate]: ../../reference/commands/alpha_generate.md
+[alpha-update]: ../../reference/commands/alpha_update.md
