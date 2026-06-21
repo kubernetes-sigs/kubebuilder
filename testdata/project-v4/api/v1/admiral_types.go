@@ -60,6 +60,7 @@ type AdmiralStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:ac:generate=false
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=admirales,scope=Cluster
 

@@ -20,12 +20,16 @@ import (
 	"errors"
 	"fmt"
 	log "log/slog"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
@@ -97,11 +101,31 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if doAPI {
+		ssaEnabled := s.resource.API != nil && s.resource.API.SSA
+
 		if err := scaffold.Execute(
-			&api.Types{Force: s.force},
+			&api.Types{Force: s.force, SkipApplyConfig: !ssaEnabled && s.hasSSAInPackage()},
 			&api.Group{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %w", err)
+		}
+
+		// If SSA is enabled and groupversion_info.go already exists, we need to inject the marker
+		// (the template only runs when creating a new version package)
+		if ssaEnabled {
+			if err := s.updateGroupVersionInfo(); err != nil {
+				return fmt.Errorf("error adding ac:generate marker: %w", err)
+			}
+			// The ac:generate package marker enables generation for every kind in the
+			// group/version, so kinds scaffolded without SSA must opt out explicitly
+			if resources, err := s.config.GetResources(); err == nil {
+				s.optOutExistingKinds(resources)
+				s.warnUntrackedKinds(resources)
+			}
+			// Update Makefile if this is the first SSA API in the project
+			if s.isFirstSSAAPI() {
+				s.updateMakefile()
+			}
 		}
 	}
 
@@ -150,4 +174,206 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// apiPackageDir returns the directory of the resource group/version package.
+func (s *apiScaffolder) apiPackageDir() string {
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		return filepath.Join("api", s.resource.Group, s.resource.Version)
+	}
+	return filepath.Join("api", s.resource.Version)
+}
+
+// updateGroupVersionInfo adds the applyconfiguration generation marker
+// when groupversion_info.go already exists (e.g., adding a second API to an existing version)
+func (s *apiScaffolder) updateGroupVersionInfo() error {
+	groupVersionPath := filepath.Join(s.apiPackageDir(), "groupversion_info.go")
+
+	// Check if marker already exists to avoid duplicates when using --force or multiple kinds
+	hasMarker, err := util.HasFileContentWith(groupVersionPath, "+kubebuilder:ac:generate=true")
+	if err != nil {
+		return fmt.Errorf("error checking for existing ac:generate marker: %w", err)
+	}
+	if hasMarker {
+		return nil
+	}
+
+	// Add the marker after the object:generate marker
+	marker := `// +kubebuilder:object:generate=true`
+	insert := "\n// +kubebuilder:ac:generate=true"
+	if err := util.InsertCode(groupVersionPath, marker, insert); err != nil {
+		return fmt.Errorf("error adding ac:generate marker: %w", err)
+	}
+
+	return nil
+}
+
+// Makefile injection constants
+const (
+	makefileApplyConfigurationMarker = "applyconfiguration"
+
+	// The manifests target has a single consistent format — no boilerplate variants.
+	//nolint:lll
+	makefileOldManifestsLine = "\"$(CONTROLLER_GEN)\" rbac:roleName=manager-role crd webhook paths=\"./...\" output:crd:artifacts:config=config/crd/bases"
+	//nolint:lll
+	makefileNewManifestsLine = "\"$(CONTROLLER_GEN)\" rbac:roleName=manager-role crd webhook applyconfiguration:headerFile=\"hack/boilerplate.go.txt\" paths=\"./...\" output:crd:artifacts:config=config/crd/bases"
+
+	//nolint:lll
+	makefileOldManifestsHelp = "manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects."
+	//nolint:lll
+	makefileNewManifestsHelp = "manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects and ApplyConfiguration types."
+)
+
+// isFirstSSAAPI checks if this is the first API with SSA enabled in the project.
+// Returns true if there are no other resources with SSA enabled.
+func (s *apiScaffolder) isFirstSSAAPI() bool {
+	resources, err := s.config.GetResources()
+	if err != nil {
+		// If we can't get resources, assume this is the first
+		return true
+	}
+
+	for _, res := range resources {
+		if res.GVK == s.resource.GVK {
+			continue
+		}
+		if res.API != nil && res.API.SSA {
+			return false
+		}
+	}
+	return true
+}
+
+// hasSSAInPackage checks if another kind in the same group/version has SSA enabled.
+func (s *apiScaffolder) hasSSAInPackage() bool {
+	resources, err := s.config.GetResources()
+	if err != nil {
+		return false
+	}
+
+	for _, res := range resources {
+		if res.GVK == s.resource.GVK {
+			continue
+		}
+		if res.Group == s.resource.Group && res.Version == s.resource.Version &&
+			res.API != nil && res.API.SSA {
+			return true
+		}
+	}
+	return false
+}
+
+// optOutExistingKinds adds the +kubebuilder:ac:generate=false marker to kinds in the
+// same group/version that were scaffolded without SSA, so the package-level marker
+// does not generate ApplyConfigurations for them.
+// On failure, logs a warning and does not stop scaffolding.
+func (s *apiScaffolder) optOutExistingKinds(resources []resource.Resource) {
+	for _, res := range resources {
+		if res.GVK == s.resource.GVK || res.Group != s.resource.Group || res.Version != s.resource.Version {
+			continue
+		}
+		if !res.HasAPI() || res.API.SSA {
+			continue
+		}
+
+		typesPath := filepath.Join(s.apiPackageDir(), fmt.Sprintf("%s_types.go", strings.ToLower(res.Kind)))
+
+		hasMarker, err := util.HasFileContentWith(typesPath, "+kubebuilder:ac:generate")
+		if err != nil {
+			log.Warn("unable to check the '+kubebuilder:ac:generate' marker. "+
+				"Add '+kubebuilder:ac:generate=false' above the kind to exclude it "+
+				"from ApplyConfiguration generation",
+				"path", typesPath, "error", err)
+			continue
+		}
+		if hasMarker {
+			continue
+		}
+
+		if err := util.InsertCode(typesPath, "// +kubebuilder:object:root=true",
+			"\n// +kubebuilder:ac:generate=false"); err != nil {
+			log.Warn("unable to add the '+kubebuilder:ac:generate=false' marker. "+
+				"Add it above the kind to exclude it from ApplyConfiguration generation",
+				"path", typesPath, "error", err)
+		}
+	}
+}
+
+// warnUntrackedKinds warns when the group/version package has *_types.go files for
+// kinds not tracked in the PROJECT file (e.g. APIs added manually), since the
+// +kubebuilder:ac:generate=false marker cannot be added to them automatically.
+func (s *apiScaffolder) warnUntrackedKinds(resources []resource.Resource) {
+	known := map[string]bool{
+		fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind)): true,
+	}
+	for _, res := range resources {
+		if res.Group == s.resource.Group && res.Version == s.resource.Version {
+			known[fmt.Sprintf("%s_types.go", strings.ToLower(res.Kind))] = true
+		}
+	}
+
+	pkgDir := s.apiPackageDir()
+	entries, err := os.ReadDir(pkgDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, "_types.go") || known[name] {
+			continue
+		}
+		log.Warn("found an API not tracked in the PROJECT file, likely added manually. "+
+			"The '+kubebuilder:ac:generate=false' marker cannot be added automatically. "+
+			"Review this API and add the marker above the kind if it should not use Server-Side Apply",
+			"path", filepath.Join(pkgDir, name))
+	}
+}
+
+// updateMakefile adds applyconfiguration generation to the manifests target.
+// Only runs when the first SSA API is created.
+// On failure, logs a warning and does not stop scaffolding.
+func (s *apiScaffolder) updateMakefile() {
+	updated, err := addApplyConfigGenToMakefile("Makefile")
+	if err != nil {
+		log.Warn("unable to update Makefile 'manifests' target to add ApplyConfiguration generation for Server-Side Apply. "+
+			"Ensure your Makefile is updated to include 'applyconfiguration' in the controller-gen manifests command. "+
+			"For example, change '$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths=\"./...\"' to "+
+			"'$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook applyconfiguration:headerFile=\"hack/boilerplate.go.txt\" paths=\"./...\"'", //nolint:lll
+			"error", err)
+		return
+	}
+	if updated {
+		log.Info("applyconfiguration generation added to Makefile manifests target")
+	}
+}
+
+// addApplyConfigGenToMakefile adds applyconfiguration generation to the manifests target.
+// Returns false when the Makefile already runs applyconfiguration generation.
+func addApplyConfigGenToMakefile(makefilePath string) (bool, error) {
+	info, err := os.Stat(makefilePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to stat file %q: %w", makefilePath, err)
+	}
+	//nolint:gosec // false positive
+	content, err := os.ReadFile(makefilePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to read file %q: %w", makefilePath, err)
+	}
+
+	text := string(content)
+	if strings.Contains(text, makefileApplyConfigurationMarker) {
+		return false, nil
+	}
+
+	if !strings.Contains(text, makefileOldManifestsLine) {
+		return false, fmt.Errorf("manifests controller-gen line not found in %q", makefilePath)
+	}
+
+	text = strings.Replace(text, makefileOldManifestsLine, makefileNewManifestsLine, 1)
+	// Best effort: keep the manifests target help accurate when it was not customized
+	text = strings.Replace(text, makefileOldManifestsHelp, makefileNewManifestsHelp, 1)
+	if err := os.WriteFile(makefilePath, []byte(text), info.Mode()); err != nil {
+		return false, fmt.Errorf("failed to write file %q: %w", makefilePath, err)
+	}
+	return true, nil
 }

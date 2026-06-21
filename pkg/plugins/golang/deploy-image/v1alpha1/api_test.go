@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -59,6 +60,16 @@ var _ = Describe("createAPISubcommand", func() {
 
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+	})
+
+	Context("BindFlags", func() {
+		It("should not expose the --ssa flag since Server-Side Apply is not supported", func() {
+			flagSet := pflag.NewFlagSet("create-api", pflag.ContinueOnError)
+			subCmd.BindFlags(flagSet)
+
+			Expect(flagSet.Lookup("image")).NotTo(BeNil())
+			Expect(flagSet.Lookup("ssa")).To(BeNil())
+		})
 	})
 
 	Context("PreScaffold validation", func() {

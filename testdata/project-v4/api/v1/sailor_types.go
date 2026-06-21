@@ -60,6 +60,7 @@ type SailorStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:ac:generate=false
 // +kubebuilder:subresource:status
 
 // Sailor is the Schema for the sailors API
