@@ -393,6 +393,165 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	// Validates the full pipeline for deployments with custom volumes alongside system volumes.
+	// Custom volumes must appear only via extraVolumes template; system volumes remain literal.
+	Context("Custom volumes deduplication", func() {
+		It("should render custom volumes only through extraVolumes template, not as literal entries", func() {
+			kustomizeYAML := createKustomizeWithCustomVolumes("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+
+			By("reading the generated manager template")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			By("verifying extraVolumes appears via Helm template")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.extraVolumes"),
+				"manager template must reference extraVolumes from values")
+
+			By("verifying extraVolumeMounts appears via Helm template")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.extraVolumeMounts"),
+				"manager template must reference extraVolumeMounts from values")
+
+			By("verifying no literal custom volume entries remain in the template")
+			Expect(managerStr).NotTo(ContainSubstring("app-config"),
+				"custom volume name must not appear as literal entry in manager template")
+			Expect(managerStr).NotTo(ContainSubstring("app-secret"),
+				"custom volume name must not appear as literal entry in manager template")
+
+			By("verifying system volumes still appear in the template")
+			Expect(managerStr).To(ContainSubstring("webhook-certs"),
+				"system volume webhook-certs must remain in manager template")
+			Expect(managerStr).To(ContainSubstring("metrics-certs"),
+				"system volume metrics-certs must remain in manager template")
+
+			By("verifying custom volumes are extracted to values.yaml")
+			valuesPath := filepath.Join(chartPath, "values.yaml")
+			valuesBytes, err := os.ReadFile(valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			valuesStr := string(valuesBytes)
+			Expect(valuesStr).To(ContainSubstring("extraVolumes:"),
+				"extraVolumes must be present in values.yaml")
+			Expect(valuesStr).To(ContainSubstring("extraVolumeMounts:"),
+				"extraVolumeMounts must be present in values.yaml")
+			Expect(valuesStr).To(ContainSubstring("app-config"),
+				"custom volume app-config must be in values.yaml")
+
+			By("verifying the chart loads cleanly")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Validate()).To(Succeed())
+		})
+	})
+
+	// Validates the pipeline when only custom volumes exist (no system volumes like webhook-certs
+	// or metrics-certs). All volumes should be extracted to values and stripped from the template.
+	Context("Custom volumes without system volumes", func() {
+		It("should extract all volumes to values and leave none as literal entries", func() {
+			kustomizeYAML := createKustomizeWithCustomVolumesOnly("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+
+			By("reading the generated manager template")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			By("verifying extraVolumes appears via Helm template")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.extraVolumes"),
+				"manager template must reference extraVolumes from values")
+
+			By("verifying extraVolumeMounts appears via Helm template")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.extraVolumeMounts"),
+				"manager template must reference extraVolumeMounts from values")
+
+			By("verifying no literal custom volume entries remain in the template")
+			Expect(managerStr).NotTo(ContainSubstring("app-config"),
+				"custom volume name must not appear as literal entry in manager template")
+			Expect(managerStr).NotTo(ContainSubstring("app-secret"),
+				"custom volume name must not appear as literal entry in manager template")
+
+			By("verifying custom volumes are extracted to values.yaml")
+			valuesPath := filepath.Join(chartPath, "values.yaml")
+			valuesBytes, err := os.ReadFile(valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			valuesStr := string(valuesBytes)
+			Expect(valuesStr).To(ContainSubstring("extraVolumes:"),
+				"extraVolumes must be present in values.yaml")
+			Expect(valuesStr).To(ContainSubstring("extraVolumeMounts:"),
+				"extraVolumeMounts must be present in values.yaml")
+
+			By("verifying the chart loads cleanly")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Validate()).To(Succeed())
+		})
+	})
+
+	// Validates the pipeline when a sidecar container appears before the manager and the
+	// default-container annotation identifies which container is the manager.
+	Context("Sidecar before manager with default-container annotation", func() {
+		It("should extract and strip volumes from the correct container", func() {
+			kustomizeYAML := createKustomizeWithSidecarBeforeManager("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+
+			By("reading the generated manager template")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			By("verifying custom volumes only appear via Helm template")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.extraVolumes"))
+			Expect(managerStr).NotTo(ContainSubstring("app-config"),
+				"custom volume must not appear as literal entry")
+
+			By("verifying system volumes remain in the template")
+			Expect(managerStr).To(ContainSubstring("webhook-certs"))
+
+			By("verifying values.yaml has the manager's extraVolumes")
+			valuesPath := filepath.Join(chartPath, "values.yaml")
+			valuesBytes, err := os.ReadFile(valuesPath)
+			Expect(err).NotTo(HaveOccurred())
+			valuesStr := string(valuesBytes)
+			Expect(valuesStr).To(ContainSubstring("extraVolumes:"))
+			Expect(valuesStr).To(ContainSubstring("app-config"))
+
+			By("verifying the chart loads cleanly")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Validate()).To(Succeed())
+		})
+	})
+
 	// A project that already has hand-authored tolerations, nodeSelector, and affinity in
 	// its manager Deployment (typical of a project created before the Helm plugin was added)
 	// must produce a chart where each scheduling field appears exactly once in
@@ -789,6 +948,169 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+func createKustomizeWithCustomVolumes(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: metrics-certs
+          mountPath: /tmp/k8s-metrics-server/metrics-certs
+          readOnly: true
+        - name: app-config
+          mountPath: /etc/config
+        - name: app-secret
+          mountPath: /etc/secret
+          readOnly: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      - name: metrics-certs
+        secret:
+          secretName: metrics-server-cert
+      - name: app-config
+        configMap:
+          name: my-config
+      - name: app-secret
+        secret:
+          secretName: my-secret
+      serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+func createKustomizeWithSidecarBeforeManager(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: sidecar
+        image: sidecar:v1
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: app-config
+          mountPath: /etc/config
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
+      - name: app-config
+        configMap:
+          name: my-config
+      serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+func createKustomizeWithCustomVolumesOnly(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: app-config
+          mountPath: /etc/config
+        - name: app-secret
+          mountPath: /etc/secret
+          readOnly: true
+      volumes:
+      - name: app-config
+        configMap:
+          name: my-config
+      - name: app-secret
+        secret:
+          secretName: my-secret
       serviceAccountName: ` + projectName + `-controller-manager
 `
 }

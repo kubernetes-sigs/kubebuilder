@@ -22,20 +22,20 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 // GetDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
 // This allows the Helm plugin to work with any container name, not just "manager".
 // If the annotation is not found, it falls back to "manager" for backward compatibility.
 func GetDefaultContainerName(yamlContent string) string {
-	// Look for kubectl.kubernetes.io/default-container annotation
-	pattern := regexp.MustCompile(`(?m)^\s*kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
+	pattern := regexp.MustCompile(`(?m)^\s*` + regexp.QuoteMeta(common.DefaultContainerAnnotation) + `:\s+(\S+)`)
 	matches := pattern.FindStringSubmatch(yamlContent)
 	if len(matches) > 1 {
 		return matches[1]
 	}
-	// Fallback to "manager" for backward compatibility with older scaffolds
-	return "manager"
+	return common.DefaultManagerContainerName
 }
 
 // LeadingWhitespace extracts the leading whitespace from a line.

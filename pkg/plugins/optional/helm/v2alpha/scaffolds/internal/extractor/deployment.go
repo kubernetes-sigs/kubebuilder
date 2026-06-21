@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
 // DeploymentExtractor extracts deployment configuration for values.yaml.
@@ -87,7 +89,7 @@ func (d *DeploymentExtractor) ExtractDeploymentConfig(deployment *unstructured.U
 		extractTopologySpreadConstraints(specMap, configMap)
 		extractTerminationGracePeriodSeconds(specMap, configMap)
 
-		container := firstManagerContainer(specMap)
+		container := findManagerContainer(specMap, managerContainerName(deployment))
 		if container != nil {
 			extractContainerEnv(container, configMap)
 			extractContainerImage(container, configMap)
@@ -268,7 +270,16 @@ func extractPodAffinity(specMap map[string]any, config map[string]any) {
 	config["podAffinity"] = result
 }
 
-func firstManagerContainer(specMap map[string]any) map[string]any {
+func managerContainerName(deployment *unstructured.Unstructured) string {
+	ann, _, _ := unstructured.NestedStringMap(deployment.Object,
+		"spec", "template", "metadata", "annotations")
+	if name := ann[common.DefaultContainerAnnotation]; name != "" {
+		return name
+	}
+	return common.DefaultManagerContainerName
+}
+
+func findManagerContainer(specMap map[string]any, targetName string) map[string]any {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
 		return nil
@@ -279,12 +290,20 @@ func firstManagerContainer(specMap map[string]any) map[string]any {
 		return nil
 	}
 
-	firstContainer, ok := containersList[0].(map[string]any)
-	if !ok {
-		return nil
+	for _, c := range containersList {
+		container, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		if name, _ := container["name"].(string); name == targetName {
+			return container
+		}
 	}
 
-	return firstContainer
+	if first, ok := containersList[0].(map[string]any); ok {
+		return first
+	}
+	return nil
 }
 
 func extractContainerEnv(container map[string]any, config map[string]any) {
@@ -515,6 +534,46 @@ func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
 	if len(extra) > 0 {
 		config["extraVolumeMounts"] = extra
 	}
+}
+
+// StripCustomVolumes removes custom (non-system) volumes and volume mounts from the deployment
+// so they only appear via Helm values templates. Call this after ExtractDeploymentConfig.
+func (d *DeploymentExtractor) StripCustomVolumes(deployment *unstructured.Unstructured) {
+	if deployment == nil {
+		return
+	}
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return
+	}
+	retainSystemEntries(specMap, "volumes")
+	container := findManagerContainer(specMap, managerContainerName(deployment))
+	if container != nil {
+		retainSystemEntries(container, "volumeMounts")
+	}
+}
+
+func retainSystemEntries(m map[string]any, key string) {
+	items, found, err := unstructured.NestedFieldNoCopy(m, key)
+	if !found || err != nil {
+		return
+	}
+	itemsList, ok := items.([]any)
+	if !ok || len(itemsList) == 0 {
+		return
+	}
+	system := make([]any, 0, len(itemsList))
+	for _, item := range itemsList {
+		entry, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := entry["name"].(string)
+		if _, isDefault := defaultWebhookMetricsVolumeNames[name]; isDefault {
+			system = append(system, item)
+		}
+	}
+	m[key] = system
 }
 
 // extractDeploymentReplicas extracts the replicas count from the deployment spec.
