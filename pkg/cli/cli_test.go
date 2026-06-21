@@ -784,6 +784,24 @@ version: "3"
 	})
 
 	Context("getInfoFromConfig", func() {
+		DescribeTable("resolves legacy Helm only for alpha generate and preserves the source configuration",
+			func(args []string, expectedHelm string) {
+				c.args = args
+				projectConfig := cfgv3.New()
+				legacyHelm := "helm.kubebuilder.io/v1-alpha"
+				pluginChain := []string{pluginGoKubebuilderV4, legacyHelm}
+				Expect(projectConfig.SetPluginChain(pluginChain)).To(Succeed())
+				Expect(projectConfig.EncodePluginConfig(legacyHelm, map[string]any{})).To(Succeed())
+				Expect(c.getInfoFromConfig(projectConfig)).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{pluginGoKubebuilderV4, expectedHelm}))
+				Expect(projectConfig.GetPluginChain()).To(Equal(pluginChain))
+				var helmConfig map[string]any
+				Expect(projectConfig.DecodePluginConfig(legacyHelm, &helmConfig)).To(Succeed())
+			},
+			Entry("alpha generate", []string{alphaCommand, generateSubcommand}, "helm.kubebuilder.io/v2-alpha"),
+			Entry("create webhook", []string{"create", "webhook"}, "helm.kubebuilder.io/v1-alpha"),
+		)
+
 		When("having a single plugin in the layout field", func() {
 			It("should succeed", func() {
 				pluginChain := []string{pluginGoKubebuilderV4}
