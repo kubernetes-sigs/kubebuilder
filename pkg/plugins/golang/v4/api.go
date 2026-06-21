@@ -61,33 +61,21 @@ type createAPISubcommand struct {
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = `Scaffold a Kubernetes API by writing a Resource definition and/or a Controller.
 
-If information about whether the resource and controller should be scaffolded
-was not explicitly provided, it will prompt the user if they should be.
+If --resource or --controller is not explicitly set, Kubebuilder prompts for what to scaffold.
 
-After the scaffold is written, the dependencies will be updated and
-make generate will be run.
+After writing the scaffold, Kubebuilder updates dependencies. When an API resource is scaffolded,
+Kubebuilder runs make generate unless --make=false is set.
 `
-	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
-  %[1]s create api --group ship --version v1beta1 --kind Frigate
+	subcmdMeta.Examples = fmt.Sprintf(`  # Create a namespaced API resource and controller
+  %[1]s create api --group crew --version v1 --kind Captain
 
-  # Edit the API Scheme
+  # Create a cluster-scoped API resource without a controller
+  %[1]s create api --group crew --version v1 --kind Admiral --namespaced=false --controller=false
 
-  nano api/v1beta1/frigate_types.go
-
-  # Edit the Controller
-  nano internal/controller/frigate/frigate_controller.go
-
-  # Edit the Controller Test
-  nano internal/controller/frigate/frigate_controller_test.go
-
-  # Generate the manifests
-  make manifests
-
-  # Install CRDs into the Kubernetes cluster using kubectl apply
-  make install
-
-  # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
-  make run
+  # Create a controller for an external API type
+  %[1]s create api --group cert-manager --version v1 --kind Certificate \
+    --resource=false --controller=true \
+    --external-api-path github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
 `, cliMeta.CommandName)
 }
 

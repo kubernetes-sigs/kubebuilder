@@ -31,6 +31,9 @@ func (c CLI) newCreateCmd() *cobra.Command {
 		Short:      "Scaffold a Kubernetes API or webhook",
 		Long: fmt.Sprintf(`Scaffold a Kubernetes API or webhook.
 
+Use "create api" to add resources and controllers to an initialized project.
+Use "create webhook" to add defaulting, validating, or conversion webhooks.
+
 Available plugins that support 'create' subcommands:
 
 %s

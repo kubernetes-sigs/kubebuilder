@@ -24,16 +24,18 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
 
 const (
-	crewGroup   = "crew"
-	testIO      = "test.io"
-	captainKind = "Captain"
-	captains    = "captains"
-	shipGroup   = "ship"
-	frigateKind = "Frigate"
+	crewGroup       = "crew"
+	testIO          = "test.io"
+	testCommandName = "kubebuilder"
+	captainKind     = "Captain"
+	captains        = "captains"
+	shipGroup       = "ship"
+	frigateKind     = "Frigate"
 )
 
 var _ = Describe("createAPISubcommand", func() {
@@ -65,6 +67,19 @@ var _ = Describe("createAPISubcommand", func() {
 		}
 
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+	})
+
+	Context("UpdateMetadata", func() {
+		It("should provide concise API examples", func() {
+			meta := &plugin.SubcommandMetadata{}
+
+			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
+
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder create api --group crew --version v1 --kind Captain"))
+			Expect(meta.Examples).To(ContainSubstring("--namespaced=false --controller=false"))
+			Expect(meta.Examples).To(ContainSubstring("--external-api-path"))
+			Expect(meta.Examples).NotTo(ContainSubstring("nano "))
+		})
 	})
 
 	It("should reject external API options when creating API in project", func() {
