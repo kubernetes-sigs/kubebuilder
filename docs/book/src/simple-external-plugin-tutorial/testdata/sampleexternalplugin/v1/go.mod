@@ -3,7 +3,7 @@ module v1
 go 1.26.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.0
 	github.com/spf13/pflag v1.0.10
 	sigs.k8s.io/kubebuilder/v4 v4.11.1
