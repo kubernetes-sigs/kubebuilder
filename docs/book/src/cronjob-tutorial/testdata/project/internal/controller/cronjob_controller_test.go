@@ -26,6 +26,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cronjobv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -245,7 +247,139 @@ var _ = Describe("CronJob controller", func() {
 			Expect(conditions[0].Reason).To(Equal("JobsActive"), "reason should be JobsActive")
 		})
 	})
+
+		/*
+			### History limit pruning
+
+			This test exercises the FailedJobsHistoryLimit and SuccessfulJobsHistoryLimit pruning
+			path. It verifies that the reconciler keeps only the N most-recent jobs, and also that
+			the sort comparator handles jobs with a nil Status.StartTime correctly (nil-StartTime
+			jobs sort first and are therefore pruned first).
+		*/
+		It("should prune old jobs according to history limits, including jobs with nil StartTime", func() {
+			const pruneLimit = int32(2)
+			const totalFailed = 4
+			const totalSuccessful = 4
+
+			By("Patching the CronJob to set FailedJobsHistoryLimit and SuccessfulJobsHistoryLimit")
+			pruneJob := &cronjobv1.CronJob{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, pruneJob)).To(Succeed())
+			pruneJob.Spec.FailedJobsHistoryLimit = ptr(pruneLimit)
+			pruneJob.Spec.SuccessfulJobsHistoryLimit = ptr(pruneLimit)
+			Expect(k8sClient.Update(ctx, pruneJob)).To(Succeed())
+
+			// Build owner reference pointing at the CronJob.
+			kind := reflect.TypeFor[cronjobv1.CronJob]().Name()
+			gvk := cronjobv1.GroupVersion.WithKind(kind)
+			controllerRef := metav1.NewControllerRef(pruneJob, gvk)
+
+			By("Creating failed jobs: one with nil StartTime, the rest with distinct start times")
+			for i := 0; i < totalFailed; i++ {
+				j := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("failed-job-%d", i),
+						Namespace: namespace.Name,
+						OwnerReferences: []metav1.OwnerReference{*controllerRef},
+					},
+					Spec: batchv1.JobSpec{
+						Template: v1.PodTemplateSpec{
+							Spec: v1.PodSpec{
+								Containers:    []v1.Container{{Name: "c", Image: "busybox"}},
+								RestartPolicy: v1.RestartPolicyOnFailure,
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, j)).To(Succeed())
+
+				// Mark the job as Failed via status.
+				j.Status.Conditions = []batchv1.JobCondition{{
+					Type:   batchv1.JobFailed,
+					Status: v1.ConditionTrue,
+				}}
+				if i > 0 {
+					// Give each non-nil-StartTime job a distinct, increasing start time.
+					startTime := metav1.NewTime(time.Now().Add(time.Duration(i) * time.Minute))
+					j.Status.StartTime = &startTime
+				}
+				// i == 0: StartTime deliberately left nil.
+				Expect(k8sClient.Status().Update(ctx, j)).To(Succeed())
+			}
+
+			By("Creating successful jobs: one with nil StartTime, the rest with distinct start times")
+			for i := 0; i < totalSuccessful; i++ {
+				j := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("successful-job-%d", i),
+						Namespace: namespace.Name,
+						OwnerReferences: []metav1.OwnerReference{*controllerRef},
+					},
+					Spec: batchv1.JobSpec{
+						Template: v1.PodTemplateSpec{
+							Spec: v1.PodSpec{
+								Containers:    []v1.Container{{Name: "c", Image: "busybox"}},
+								RestartPolicy: v1.RestartPolicyOnFailure,
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, j)).To(Succeed())
+
+				// Mark the job as Complete via status.
+				j.Status.Conditions = []batchv1.JobCondition{{
+					Type:   batchv1.JobComplete,
+					Status: v1.ConditionTrue,
+				}}
+				if i > 0 {
+					startTime := metav1.NewTime(time.Now().Add(time.Duration(i) * time.Minute))
+					j.Status.StartTime = &startTime
+				}
+				// i == 0: StartTime deliberately left nil.
+				Expect(k8sClient.Status().Update(ctx, j)).To(Succeed())
+			}
+
+			By("Waiting for the controller to prune excess failed jobs down to the limit")
+			Eventually(func(g Gomega) {
+				var jobList batchv1.JobList
+				g.Expect(k8sClient.List(ctx, &jobList,
+					client.InNamespace(namespace.Name),
+				)).To(Succeed())
+
+				var failed, successful []batchv1.Job
+				for _, j := range jobList.Items {
+					for _, c := range j.Status.Conditions {
+						if c.Type == batchv1.JobFailed && c.Status == v1.ConditionTrue {
+							failed = append(failed, j)
+						}
+						if c.Type == batchv1.JobComplete && c.Status == v1.ConditionTrue {
+							successful = append(successful, j)
+						}
+					}
+				}
+
+				// After pruning: at most `pruneLimit` jobs of each type should remain.
+				g.Expect(len(failed)).To(BeNumerically("<=", int(pruneLimit)),
+					"failed jobs should be pruned to the history limit")
+				g.Expect(len(successful)).To(BeNumerically("<=", int(pruneLimit)),
+					"successful jobs should be pruned to the history limit")
+
+				// Verify that the NEWEST jobs are the ones kept (not the nil-StartTime job).
+				for _, j := range failed {
+					g.Expect(j.Status.StartTime).NotTo(BeNil(),
+						"the nil-StartTime failed job should have been pruned first")
+				}
+				for _, j := range successful {
+					g.Expect(j.Status.StartTime).NotTo(BeNil(),
+						"the nil-StartTime successful job should have been pruned first")
+				}
+			}).Should(Succeed())
+		})
+	})
 })
+
+// ptr returns a pointer to the given value — useful in test assertions for
+// spec fields that take *int32.
+func ptr[T any](v T) *T { return &v }
 
 /*
 	After writing all this code, you can run `make test` or `go test ./...` in your `controllers/` directory again to run your new test!
