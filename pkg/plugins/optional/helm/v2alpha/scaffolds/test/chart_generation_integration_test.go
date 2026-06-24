@@ -20,6 +20,7 @@ package test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -329,6 +330,56 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 						"app.kubernetes.io/name label should not be hardcoded in "+file.Name())
 				}
 			}
+		})
+	})
+
+	Context("ServiceAccount name resolution (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			if _, err := exec.LookPath("helm"); err != nil {
+				Skip("helm binary not found on PATH; skipping render-based test")
+			}
+
+			kustomizeYAML := createKustomizeForServiceAccountRender("test-project")
+			Expect(setupKustomizeFile(manifestsFile, kustomizeYAML)).To(Succeed())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
+			out, err := exec.Command("helm", args...).CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", string(out))
+			return string(out)
+		}
+
+		It("uses the external ServiceAccount name when enabled=false and name is set", func() {
+			rendered := renderChart("--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa")
+
+			By("the Deployment references the external ServiceAccount, not the generated name")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: external-sa"))
+			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+
+			By("no ServiceAccount manifest is created since enabled=false")
+			Expect(rendered).NotTo(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("falls back to the generated name when serviceAccount config is left at defaults", func() {
+			rendered := renderChart()
+
+			By("the Deployment uses the generated controller-manager name")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+
+			By("the default ServiceAccount manifest is created")
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("uses the generated name when enabled=true even if serviceAccount.name is set", func() {
+			rendered := renderChart("--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa")
+
+			By("the external name is ignored while the chart manages its own ServiceAccount")
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: custom-sa"))
 		})
 	})
 
@@ -872,6 +923,32 @@ spec:
             drop:
             - ALL
 `
+}
+
+// createKustomizeForServiceAccountRender extends createBasicKustomizeOutput (Namespace +
+// ServiceAccount + Deployment) with the only two pieces the serviceAccountName render tests need:
+//   - a pod-template annotations block, so the chart renders cleanly under `helm template` instead
+//     of nil-pointering on .Values.manager.pod.annotations (the generator emits an unguarded
+//     reference when the source pod template has no annotations); and
+//   - an explicit serviceAccountName on the pod spec, which is what the helper rewrites.
+func createKustomizeForServiceAccountRender(projectName string) string {
+	return strings.Replace(
+		createBasicKustomizeOutput(projectName),
+		`    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:`,
+		`    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: `+projectName+`-controller-manager
+      containers:`,
+		1,
+	)
 }
 
 func setupKustomizeFile(filePath, content string) error {

@@ -4172,7 +4172,7 @@ metadata:
 
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enabled false }}"))
+				Expect(result).To(ContainSubstring(`{{- if ne (.Values.serviceAccount.enabled | toString) "false" }}`))
 				Expect(result).To(ContainSubstring("{{- end }}"))
 			})
 
