@@ -66,6 +66,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 	})
 
 	It("should reject defaulting-path without --defaulting", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 		subCmd.options.DefaultingPath = "/custom-path"
 		subCmd.options.DoDefaulting = false
 
@@ -76,6 +77,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 	})
 
 	It("should reject validation-path without --programmatic-validation", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 		subCmd.options.ValidationPath = "/custom-path"
 		subCmd.options.DoValidation = false
 
@@ -86,7 +88,8 @@ var _ = Describe("createWebhookSubcommand", func() {
 	})
 
 	It("should require external-api-path when using external-api-module", func() {
-		subCmd.options.ExternalAPIModule = "github.com/external/api@v1.0.0"
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIModule = externalAPIModuleWithVersion
 		subCmd.options.ExternalAPIPath = ""
 		subCmd.options.DoDefaulting = true
 
@@ -94,6 +97,91 @@ var _ = Describe("createWebhookSubcommand", func() {
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("requires '--external-api-path'"))
+	})
+
+	It("should reject external-api-path with module version", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = externalAPIModuleWithVersion
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("version specifiers belong in the module field"))
+	})
+
+	It("should reject bare relative external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = relativeAPIPath
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject leading-dot pseudo-domain external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = ".com/org/repo/api/v1"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject malformed external-api-path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = "a//b"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("malformed import path"))
+		Expect(err.Error()).To(ContainSubstring("double slash"))
+	})
+
+	It("should allow creating a webhook for an external resource with a valid path", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.ExternalAPIPath = "github.com/example/external/api/v1"
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal("github.com/example/external/api/v1"))
+	})
+
+	It("should retain path for existing external resource without re-providing --external-api-path", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+
+		// Simulate an existing external resource stored in PROJECT.
+		// GVK domain stays as testIO because the lookup key is constructed from the CLI flags
+		// (--group, --version, --kind) with the project domain — not the external-api-domain.
+		storedRes := *res
+		storedRes.External = true
+		storedRes.Path = externalPath
+		Expect(cfg.AddResource(storedRes)).To(Succeed())
+
+		// User runs: kubebuilder create webhook --group crew --version v1 --kind Captain --defaulting
+		// without re-supplying --external-api-path
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal(externalPath))
 	})
 
 	Context("isValidVersion", func() {

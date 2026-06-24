@@ -36,6 +36,9 @@ const (
 	captains        = "captains"
 	shipGroup       = "ship"
 	frigateKind     = "Frigate"
+
+	externalAPIModuleWithVersion = "github.com/external/api@v1.0.0"
+	relativeAPIPath              = "api/v1"
 )
 
 var _ = Describe("createAPISubcommand", func() {
@@ -94,13 +97,99 @@ var _ = Describe("createAPISubcommand", func() {
 
 	It("should require external-api-path when using external-api-module", func() {
 		subCmd.options.DoAPI = false
-		subCmd.options.ExternalAPIModule = "github.com/external/api@v1.0.0"
+		subCmd.options.ExternalAPIModule = externalAPIModuleWithVersion
 		subCmd.options.ExternalAPIPath = ""
 
 		err := subCmd.InjectResource(res)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("requires '--external-api-path'"))
+	})
+
+	It("should reject external-api-path with module version", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = externalAPIModuleWithVersion
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("version specifiers belong in the module field"))
+	})
+
+	It("should reject bare relative external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = relativeAPIPath
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject leading-dot pseudo-domain external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ".com/org/repo/api/v1"
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject malformed external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = "a//b"
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("malformed import path"))
+		Expect(err.Error()).To(ContainSubstring("double slash"))
+	})
+
+	It("should allow adding a controller to existing external resource without re-providing --external-api-path", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		existingExternal := *res
+		existingExternal.External = true
+		existingExternal.Path = externalPath
+		Expect(cfg.AddResource(existingExternal)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ""
+		res.External = true
+		res.Path = externalPath
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should return an actionable error for --resource=false on old project with relative external path", func() {
+		// Simulate an old PROJECT file that stored a relative path instead of a Go import path
+		existingExternal := *res
+		existingExternal.External = true
+		existingExternal.Path = relativeAPIPath
+		Expect(cfg.AddResource(existingExternal)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ""
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+		Expect(err.Error()).To(ContainSubstring("github.com/org/repo/api/v1"))
 	})
 
 	It("should prevent duplicate API without force flag", func() {

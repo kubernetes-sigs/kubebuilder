@@ -96,23 +96,21 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected from resource kind if not provided")
 
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
-		"If set, scaffold defaulting webhook")
+		"If set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
-		"If set, scaffold validating webhook")
+		"If set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
-		"If set, scaffold conversion webhook")
+		"If set, scaffold the conversion webhook")
 
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
 		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
 
 	fs.StringVar(&p.options.DefaultingPath, "defaulting-path", "",
-		"[Optional] Custom path for the defaulting/mutating webhook (e.g., /my-custom-mutate-path). "+
-			"Only valid with --defaulting")
+		"Custom path for the defaulting/mutating webhook (e.g., /my-custom-mutate-path); only valid with --defaulting")
 
 	fs.StringVar(&p.options.ValidationPath, "validation-path", "",
-		"[Optional] Custom path for the validation webhook (e.g., /my-custom-validate-path). "+
-			"Only valid with --programmatic-validation")
+		"Custom path for the validation webhook (e.g., /my-custom-validate-path); only valid with --programmatic-validation")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,
@@ -141,6 +139,17 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
+
+	// Copy essential fields from existing resource in PROJECT file (Path, Plural,
+	// External, Core, Module). API/Controllers/Webhooks are managed separately
+	// by UpdateResource.
+	if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+		p.resource.Path = existingRes.Path
+		p.resource.Plural = existingRes.Plural
+		p.resource.External = existingRes.External
+		p.resource.Core = existingRes.Core
+		p.resource.Module = existingRes.Module
+	}
 
 	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
 		return errors.New("you cannot scaffold webhooks for external types using the legacy path")

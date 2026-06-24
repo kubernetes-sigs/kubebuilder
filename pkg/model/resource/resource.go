@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/mod/module"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -72,7 +73,27 @@ func (r Resource) Validate() error {
 		return fmt.Errorf("invalid Plural: %#v", errors)
 	}
 
-	// TODO: validate the path
+	if r.External {
+		if r.Path == "" {
+			return fmt.Errorf("invalid Path: external resources must specify a path " +
+				"(e.g., github.com/org/repo/api/v1)")
+		}
+		if strings.Contains(r.Path, "@") {
+			return fmt.Errorf("invalid Path: version specifiers belong in the module field, not the path")
+		}
+		if err := module.CheckImportPath(r.Path); err != nil {
+			return fmt.Errorf("invalid Path: must be a valid Go import path: %w", err)
+		}
+		first, _, _ := strings.Cut(r.Path, "/")
+		if !strings.Contains(first, ".") || strings.HasPrefix(first, ".") {
+			return fmt.Errorf("invalid Path: must be a fully-qualified Go import path " +
+				"(e.g., github.com/org/repo/api/v1)")
+		}
+	} else if r.Path != "" {
+		if err := module.CheckImportPath(r.Path); err != nil {
+			return fmt.Errorf("invalid Path: %w", err)
+		}
+	}
 
 	// Validate the API
 	if r.API != nil && !r.API.IsEmpty() {
