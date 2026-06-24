@@ -184,6 +184,30 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(res.Path).To(Equal(externalPath))
 	})
 
+	It("should find existing external resource when stored Domain differs from project domain", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		const externalDomain = "cert-manager.io"
+
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+
+		// Resource was originally scaffolded with --external-api-domain=cert-manager.io,
+		// so PROJECT stores Domain="cert-manager.io". The fresh CLI invocation below builds
+		// res with the project default Domain="test.io" — a full-GVK match would miss.
+		storedRes := *res
+		storedRes.External = true
+		storedRes.Path = externalPath
+		storedRes.Domain = externalDomain
+		Expect(cfg.AddResource(storedRes)).To(Succeed())
+
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal(externalPath))
+	})
+
 	Context("isValidVersion", func() {
 		BeforeEach(func() {
 			res = &resource.Resource{

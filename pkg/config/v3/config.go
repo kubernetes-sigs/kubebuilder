@@ -193,7 +193,7 @@ func (c Cfg) ResourcesLength() int {
 func (c Cfg) HasResource(gvk resource.GVK) bool {
 	found := false
 	for _, res := range c.Resources {
-		if gvk.IsEqualTo(res.GVK) {
+		if gvk.IsSameGVK(res.GVK) {
 			found = true
 			break
 		}
@@ -205,7 +205,7 @@ func (c Cfg) HasResource(gvk resource.GVK) bool {
 // GetResource implements config.Config
 func (c Cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 	for _, res := range c.Resources {
-		if gvk.IsEqualTo(res.GVK) {
+		if gvk.IsSameGVK(res.GVK) {
 			r := res.Copy()
 
 			// Plural is only stored if irregular, so if it is empty recover the regular form
@@ -264,7 +264,7 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	}
 
 	for i, r := range c.Resources {
-		if res.IsEqualTo(r.GVK) {
+		if res.IsSameGVK(r.GVK) {
 			if err := c.Resources[i].Update(res); err != nil {
 				return fmt.Errorf("failed to update resource %q: %w", res.GVK, err)
 			}

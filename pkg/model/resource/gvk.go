@@ -97,3 +97,12 @@ func (gvk GVK) IsEqualTo(other GVK) bool {
 		gvk.Version == other.Version &&
 		gvk.Kind == other.Kind
 }
+
+// IsSameGVK compares two GVKs by Group, Version, and Kind only.
+// Domain is ignored because external resources carry their own (e.g. cert-manager.io),
+// not the project's Domain, so resource lookup must not require it to match.
+func (gvk GVK) IsSameGVK(other GVK) bool {
+	return gvk.Group == other.Group &&
+		gvk.Version == other.Version &&
+		gvk.Kind == other.Kind
+}
