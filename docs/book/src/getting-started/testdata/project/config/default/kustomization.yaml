@@ -1,4 +1,5 @@
 # Adds namespace to all resources.
+# If using namespace-scoped RBAC, see [NAMESPACE-TRANSFORMER] below.
 namespace: project-system
 
 # Value of this field is prepended to the
@@ -232,3 +233,10 @@ patches:
 #     fieldPath: .metadata.name
 #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 # +kubebuilder:scaffold:crdkustomizecainjectionname
+
+# [NAMESPACE-TRANSFORMER] To use the NamespaceTransformer instead of the
+# "namespace:" field (e.g. for multi-namespace RBAC), comment out "namespace:"
+# above and uncomment the transformers section below.
+# See config/default/namespace_transformer.yaml for details.
+#transformers:
+#- namespace_transformer.yaml
