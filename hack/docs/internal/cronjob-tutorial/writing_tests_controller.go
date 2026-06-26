@@ -71,7 +71,11 @@ create the CronJob.
 var _ = Describe("CronJob controller", func() {
 	Context("CronJob controller test", func() {
 
-		const CronjobName = "test-cronjob"
+		const (
+			CronjobName        = "test-cronjob"
+			testContainerName  = "test-container"
+			testContainerImage = "test-image"
+		)
 
 		ctx := context.Background()
 
@@ -120,8 +124,8 @@ var _ = Describe("CronJob controller", func() {
 									Spec: v1.PodSpec{
 										Containers: []v1.Container{
 											{
-												Name:  "test-container",
-												Image: "test-image",
+												Name:  testContainerName,
+												Image: testContainerImage,
 											},
 										},
 										RestartPolicy: v1.RestartPolicyOnFailure,
@@ -210,8 +214,8 @@ var _ = Describe("CronJob controller", func() {
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name:  "test-container",
-									Image: "test-image",
+									Name:  testContainerName,
+									Image: testContainerImage,
 								},
 							},
 							RestartPolicy: v1.RestartPolicyOnFailure,
@@ -261,6 +265,94 @@ var _ = Describe("CronJob controller", func() {
 			Expect(conditions).To(HaveLen(1), "should have one Available condition")
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "Available should be True")
 			Expect(conditions[0].Reason).To(Equal("JobsActive"), "reason should be JobsActive")
+
+			/*
+				Next, verify that the controller prunes old finished Jobs according to
+				the history limits.
+			*/
+			By("Checking that old finished Jobs are pruned by history limits")
+			failedJobsHistoryLimit := int32(1)
+			successfulJobsHistoryLimit := int32(1)
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, cronJob)).To(Succeed())
+				cronJob.Spec.FailedJobsHistoryLimit = &failedJobsHistoryLimit
+				cronJob.Spec.SuccessfulJobsHistoryLimit = &successfulJobsHistoryLimit
+				g.Expect(k8sClient.Update(ctx, cronJob)).To(Succeed())
+			}).Should(Succeed())
+
+			createFinishedJob := func(name string, conditionType batchv1.JobConditionType, startTime *metav1.Time) *batchv1.Job {
+				finishedJob := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: namespace.Name,
+					},
+					Spec: batchv1.JobSpec{
+						Template: v1.PodTemplateSpec{
+							Spec: v1.PodSpec{
+								Containers: []v1.Container{
+									{
+										Name:  testContainerName,
+										Image: testContainerImage,
+									},
+								},
+								RestartPolicy: v1.RestartPolicyOnFailure,
+							},
+						},
+					},
+				}
+				finishedJob.SetOwnerReferences([]metav1.OwnerReference{*controllerRef})
+				Expect(k8sClient.Create(ctx, finishedJob)).To(Succeed())
+
+				finishedJob.Status.StartTime = startTime
+				finishedJob.Status.Conditions = []batchv1.JobCondition{{
+					Type:   conditionType,
+					Status: v1.ConditionTrue,
+				}}
+				if conditionType == batchv1.JobFailed {
+					finishedJob.Status.Conditions = append([]batchv1.JobCondition{{
+						Type:   batchv1.JobFailureTarget,
+						Status: v1.ConditionTrue,
+					}}, finishedJob.Status.Conditions...)
+				}
+				if conditionType == batchv1.JobComplete {
+					finishedJob.Status.CompletionTime = startTime
+					finishedJob.Status.Conditions = append([]batchv1.JobCondition{{
+						Type:   batchv1.JobSuccessCriteriaMet,
+						Status: v1.ConditionTrue,
+					}}, finishedJob.Status.Conditions...)
+				}
+				Expect(k8sClient.Status().Update(ctx, finishedJob)).To(Succeed())
+
+				return finishedJob
+			}
+
+			baseTime := time.Now()
+			failedOldStartTime := metav1.NewTime(baseTime.Add(-time.Minute))
+			failedNewStartTime := metav1.NewTime(baseTime.Add(time.Second))
+			successfulOldStartTime := metav1.NewTime(baseTime.Add(-time.Minute))
+			successfulNewStartTime := metav1.NewTime(baseTime.Add(time.Second))
+
+			failedOldJob := createFinishedJob("test-failed-job-old", batchv1.JobFailed, &failedOldStartTime)
+			failedNewJob := createFinishedJob("test-failed-job-new", batchv1.JobFailed, &failedNewStartTime)
+			successfulOldJob := createFinishedJob("test-successful-job-old", batchv1.JobComplete, &successfulOldStartTime)
+			successfulNewJob := createFinishedJob("test-successful-job-new", batchv1.JobComplete, &successfulNewStartTime)
+
+			assertJobDeleted := func(g Gomega, job *batchv1.Job) {
+				found := &batchv1.Job{}
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)
+				g.Expect(errors.IsNotFound(err)).To(BeTrue())
+			}
+			assertJobExists := func(g Gomega, job *batchv1.Job) {
+				found := &batchv1.Job{}
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)).To(Succeed())
+			}
+
+			Eventually(func(g Gomega) {
+				assertJobDeleted(g, failedOldJob)
+				assertJobDeleted(g, successfulOldJob)
+				assertJobExists(g, failedNewJob)
+				assertJobExists(g, successfulNewJob)
+			}).Should(Succeed())
 		})
 	})
 })
