@@ -97,6 +97,13 @@ type Config interface {
 	// ListWebhookVersions returns a list of the webhook versions in use by the tracked resources.
 	ListWebhookVersions() []string
 
+	/* Standalone webhooks */
+
+	// GetStandaloneWebhooks returns all standalone webhook entries.
+	GetStandaloneWebhooks() ([]resource.StandaloneWebhook, error)
+	// AddStandaloneWebhook adds a standalone webhook entry to the config.
+	AddStandaloneWebhook(wh resource.StandaloneWebhook) error
+
 	/* Plugins */
 
 	// DecodePluginConfig decodes a plugin config stored in Config into configObj, which must be a pointer.

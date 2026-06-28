@@ -36,7 +36,90 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/webhooks"
 )
 
-var _ plugins.Scaffolder = &webhookScaffolder{}
+var (
+	_ plugins.Scaffolder = &webhookScaffolder{}
+	_ plugins.Scaffolder = &standaloneWebhookScaffolder{}
+)
+
+type standaloneWebhookScaffolder struct {
+	config config.Config
+	wh     resource.StandaloneWebhook
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
+
+	// force indicates whether to scaffold webhook files even if they exist
+	force bool
+}
+
+// NewStandaloneWebhookScaffolder returns a new Scaffolder for multi-GVK webhook creation
+func NewStandaloneWebhookScaffolder(cfg config.Config, wh resource.StandaloneWebhook, force bool) plugins.Scaffolder {
+	return &standaloneWebhookScaffolder{
+		config: cfg,
+		wh:     wh,
+		force:  force,
+	}
+}
+
+// InjectFS implements cmdutil.Scaffolder
+func (s *standaloneWebhookScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
+}
+
+// Scaffold implements cmdutil.Scaffolder
+func (s *standaloneWebhookScaffolder) Scaffold() error {
+	log.Info("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	if err != nil {
+		if errors.Is(err, afero.ErrFileNotFound) {
+			log.Warn("unable to find boilerplate file. "+
+				"This file is used to generate the license header in the project..\n"+
+				"Note that controller-gen will also use this. Ensure that you "+
+				"add the license file or configure your project accordingly",
+				"file_path", hack.DefaultBoilerplatePath, "error", err)
+			boilerplate = []byte("")
+		} else {
+			return fmt.Errorf("error scaffolding webhook: failed to load boilerplate: %w", err)
+		}
+	}
+
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+	)
+
+	// Scaffold the standalone webhook file
+	webhookFilePath := s.getWebhookFilePath()
+	webhookFileExists := false
+	if _, statErr := s.fs.FS.Stat(webhookFilePath); statErr == nil {
+		webhookFileExists = true
+	}
+
+	if !webhookFileExists || s.force {
+		if err := scaffold.Execute(
+			&webhooks.StandaloneWebhook{Force: s.force, Webhook: s.wh},
+		); err != nil {
+			return fmt.Errorf("error creating standalone webhook: %w", err)
+		}
+	}
+
+	// Update main.go to wire the webhook handler
+	if err := scaffold.Execute(
+		&cmd.StandaloneWebhookMainUpdater{Webhook: s.wh},
+	); err != nil {
+		return fmt.Errorf("error updating main.go for standalone webhook: %w", err)
+	}
+
+	return nil
+}
+
+// getWebhookFilePath returns the path to the standalone webhook file
+func (s *standaloneWebhookScaffolder) getWebhookFilePath() string {
+	return fmt.Sprintf("internal/webhook/%s_webhook.go", strings.ToLower(s.wh.Name))
+}
 
 type webhookScaffolder struct {
 	config   config.Config

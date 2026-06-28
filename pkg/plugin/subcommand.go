@@ -48,6 +48,13 @@ type RequiresResource interface {
 	InjectResource(*resource.Resource) error
 }
 
+// RequiresStandaloneWebhook is an optional interface for subcommands that support
+// multi-GVK webhooks (webhooks not tied to a single API resource).
+type RequiresStandaloneWebhook interface {
+	// InjectStandaloneWebhook injects the standalone webhook configuration into the subcommand.
+	InjectStandaloneWebhook(*resource.StandaloneWebhook) error
+}
+
 // HasPreScaffold is an interface that implements the optional pre-scaffold method.
 type HasPreScaffold interface {
 	// PreScaffold executes tasks before the main scaffolding.

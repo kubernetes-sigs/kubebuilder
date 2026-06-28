@@ -71,6 +71,10 @@ type Cfg struct {
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
 
+	// StandaloneWebhooks stores webhooks that intercept multiple resource types
+	// (not tied to a single GVK resource).
+	StandaloneWebhooks []resource.StandaloneWebhook `json:"standaloneWebhooks,omitempty"`
+
 	// Plugins
 	Plugins pluginConfigs `json:"plugins,omitempty"`
 }
@@ -317,6 +321,11 @@ func (c Cfg) ListWebhookVersions() []string {
 			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
 		}
 	}
+	for _, w := range c.StandaloneWebhooks {
+		if w.WebhookVersion != "" {
+			versionSet[w.WebhookVersion] = struct{}{}
+		}
+	}
 
 	// Convert the map into a slice
 	versions := make([]string, 0, len(versionSet))
@@ -324,6 +333,30 @@ func (c Cfg) ListWebhookVersions() []string {
 		versions = append(versions, version)
 	}
 	return versions
+}
+
+// GetStandaloneWebhooks implements config.Config
+func (c Cfg) GetStandaloneWebhooks() ([]resource.StandaloneWebhook, error) {
+	webhooks := make([]resource.StandaloneWebhook, 0, len(c.StandaloneWebhooks))
+	for _, w := range c.StandaloneWebhooks {
+		webhooks = append(webhooks, w.Copy())
+	}
+	return webhooks, nil
+}
+
+// AddStandaloneWebhook implements config.Config
+func (c *Cfg) AddStandaloneWebhook(wh resource.StandaloneWebhook) error {
+	wh = wh.Copy()
+
+	// Check for duplicates by name
+	for _, existing := range c.StandaloneWebhooks {
+		if existing.Name == wh.Name {
+			return fmt.Errorf("standalone webhook %q already exists in project config", wh.Name)
+		}
+	}
+
+	c.StandaloneWebhooks = append(c.StandaloneWebhooks, wh)
+	return nil
 }
 
 // DecodePluginConfig implements config.Config
@@ -377,6 +410,15 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 			c.Resources[i].Webhooks = nil
 		}
 	}
+
+	// Filter out empty standalone webhooks
+	nonEmpty := make([]resource.StandaloneWebhook, 0, len(c.StandaloneWebhooks))
+	for _, w := range c.StandaloneWebhooks {
+		if !w.IsEmpty() {
+			nonEmpty = append(nonEmpty, w)
+		}
+	}
+	c.StandaloneWebhooks = nonEmpty
 
 	content, err := yaml.Marshal(c)
 	if err != nil {
