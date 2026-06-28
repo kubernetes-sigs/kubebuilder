@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -116,6 +117,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(chart.Validate()).To(Succeed())
 			Expect(chart.Name()).To(Equal("test-project"))
 
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+
 			By("verifying essential files exist")
 			essentialFiles := []string{
 				"Chart.yaml",
@@ -185,6 +190,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			valuesContent, err := afero.ReadFile(afero.NewOsFs(), valuesPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(valuesContent)).To(ContainSubstring("certManager:\n  enabled: true"))
+
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -227,6 +236,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(managerStr).To(ContainSubstring(`include "test-project`))
 			Expect(managerStr).NotTo(ContainSubstring(`custom-prefix-controller-manager`),
 				"Manager template should not contain hardcoded kustomize prefix")
+
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 
 		It("should properly template cert-manager resources when chart name is used", func() {
@@ -330,6 +343,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 						"app.kubernetes.io/name label should not be hardcoded in "+file.Name())
 				}
 			}
+
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -407,6 +424,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			chartFile := filepath.Join(chartPath, "Chart.yaml")
 			_, err = os.Stat(chartFile)
 			Expect(err).NotTo(HaveOccurred())
+
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -441,6 +462,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 			By("verifying security context is extracted")
 			Expect(valuesStr).To(ContainSubstring("securityContext:"))
+
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -498,10 +523,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(valuesStr).To(ContainSubstring("app-config"),
 				"custom volume app-config must be in values.yaml")
 
-			By("verifying the chart loads cleanly")
-			chart, err := helmChartLoader.LoadDir(chartPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(chart.Validate()).To(Succeed())
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -551,10 +575,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(valuesStr).To(ContainSubstring("extraVolumeMounts:"),
 				"extraVolumeMounts must be present in values.yaml")
 
-			By("verifying the chart loads cleanly")
-			chart, err := helmChartLoader.LoadDir(chartPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(chart.Validate()).To(Succeed())
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -596,10 +619,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(valuesStr).To(ContainSubstring("extraVolumes:"))
 			Expect(valuesStr).To(ContainSubstring("app-config"))
 
-			By("verifying the chart loads cleanly")
-			chart, err := helmChartLoader.LoadDir(chartPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(chart.Validate()).To(Succeed())
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 
@@ -666,10 +688,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(valuesStr).To(ContainSubstring("tolerations:"),
 				"tolerations must be extracted to values.yaml")
 
-			By("verifying the chart loads cleanly (no YAML parse errors)")
-			chart, err := helmChartLoader.LoadDir(chartPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(chart.Validate()).To(Succeed())
+			By("linting the generated chart")
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 })
@@ -903,10 +924,6 @@ spec:
         - --leader-elect
         - --metrics-bind-address=:8443
         - --health-probe-bind-address=:8081
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
         env:
         - name: TEST_ENV
           value: "test-value"

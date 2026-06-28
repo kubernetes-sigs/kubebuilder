@@ -1044,9 +1044,11 @@ func handlePodAnnotations(
 
 	if state.position == positionPodMetadata && !state.addedPodAnnotations && trimmed == common.YamlKeyLabels {
 		result = result[:len(result)-1]
-		result = append(result, indent+"{{- if .Values.manager.pod.annotations }}")
+		result = append(result, indent+"{{- with .Values.manager.pod }}")
+		result = append(result, indent+"{{- with .annotations }}")
 		result = append(result, indent+"annotations:")
 		result = addPodAnnotations(result, indent+"  ")
+		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+common.YamlKeyLabels)
 		state.addedPodAnnotations = true
