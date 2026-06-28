@@ -105,6 +105,9 @@ type Config interface {
 	// EncodePluginConfig encodes a config object into Config by overwriting the existing object stored under key.
 	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
 	EncodePluginConfig(key string, configObj any) error
+	// DeletePluginConfig removes the plugin config entry for key from the Config.
+	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
+	DeletePluginConfig(key string) error
 
 	/* Persistence */
 

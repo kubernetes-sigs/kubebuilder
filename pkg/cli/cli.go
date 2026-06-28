@@ -565,6 +565,9 @@ func (c *CLI) addSubcommands() {
 		c.cmd.AddCommand(createCmd)
 	}
 
+	// kubebuilder delete (plugin delete only)
+	c.cmd.AddCommand(c.newDeleteCmd())
+
 	// kubebuilder edit
 	c.cmd.AddCommand(c.newEditCmd())
 

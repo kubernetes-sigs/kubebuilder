@@ -31,6 +31,19 @@ changes are not pushed or merged without proper review.
 kubebuilder edit --plugins="autoupdate/v1-alpha"
 ```
 
+
+- If you want to create a new project with the `autoupdate` plugin:
+
+```shell
+kubebuilder init --plugins=go/v4,autoupdate/v1-alpha
+```
+
+- To remove the auto-update workflow from your project:
+
+```shell
+kubebuilder delete --plugins autoupdate/v1-alpha
+```
+
 ## How it works
 
 The plugin scaffolds a GitHub Actions workflow that checks for new Kubebuilder releases every week. When an update is available, it:

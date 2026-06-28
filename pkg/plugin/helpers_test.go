@@ -17,12 +17,14 @@ limitations under the License.
 package plugin
 
 import (
+	"errors"
 	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 )
 
@@ -186,6 +188,51 @@ var _ = Describe("CommonSupportedProjectVersions", func() {
 			})
 			Expect(versions).To(Equal(tc.versions))
 		}
+	})
+})
+
+var _ = Describe("RemovePluginConfig", func() {
+	var (
+		p   mockPlugin
+		cfg config.Config
+	)
+
+	BeforeEach(func() {
+		p = mockPlugin{
+			name:                     name,
+			version:                  version,
+			supportedProjectVersions: supportedProjectVersions,
+		}
+		cfg = cfgv3.New()
+	})
+
+	It("should succeed when plugin config does not exist", func() {
+		// Key not found is not an error for RemovePluginConfig.
+		Expect(RemovePluginConfig(cfg, p)).To(Succeed())
+	})
+
+	It("should remove an existing plugin config entry", func() {
+		type sampleCfg struct {
+			Field string `json:"field"`
+		}
+		pluginKey := KeyFor(p)
+		Expect(cfg.EncodePluginConfig(pluginKey, sampleCfg{Field: "value"})).To(Succeed())
+
+		Expect(RemovePluginConfig(cfg, p)).To(Succeed())
+
+		// After removal the key must be gone entirely.
+		var decoded sampleCfg
+		err := cfg.DecodePluginConfig(pluginKey, &decoded)
+		Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+	})
+
+	It("should fall back to canonical key when chain key differs", func() {
+		canonicalKey := KeyFor(p)
+		bundleKey := "myname.bundle.io/v1"
+		Expect(cfg.SetPluginChain([]string{bundleKey})).To(Succeed())
+
+		Expect(cfg.EncodePluginConfig(canonicalKey, struct{ X string }{X: "x"})).To(Succeed())
+		Expect(RemovePluginConfig(cfg, p)).To(Succeed())
 	})
 })
 

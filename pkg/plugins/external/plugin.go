@@ -21,13 +21,22 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
-var _ plugin.Full = Plugin{}
+var (
+	_ plugin.Full   = Plugin{}
+	_ plugin.Delete = Plugin{}
+)
 
-// Plugin implements the plugin.Full interface
+// Plugin implements the plugin.Full interface and plugin.Delete.
 type Plugin struct {
 	PName                     string
 	PVersion                  plugin.Version
 	PSupportedProjectVersions []config.Version
+
+	// PSupportsDelete declares that the external binary supports the "delete" command.
+	// Set this to true when loading the plugin if the binary handles Command:"delete".
+	// When false, GetDeleteSubcommand returns a subcommand that fails with a clear error
+	// rather than calling the binary.
+	PSupportsDelete bool
 
 	Path string
 	Args []string
@@ -71,6 +80,18 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand {
 	return &editSubcommand{
 		Path: p.Path,
 		Args: p.Args,
+	}
+}
+
+// GetDeleteSubcommand returns the subcommand that removes files scaffolded by this external plugin.
+// The returned subcommand calls the binary with Command:"delete".
+// Scaffold fails immediately when PSupportsDelete is false — set it to true and implement the
+// "delete" command in the binary to enable this feature.
+func (p Plugin) GetDeleteSubcommand() plugin.DeleteSubcommand {
+	return &deleteSubcommand{
+		Path:           p.Path,
+		Args:           p.Args,
+		supportsDelete: p.PSupportsDelete,
 	}
 }
 
