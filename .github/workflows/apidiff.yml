@@ -14,6 +14,7 @@ jobs:
   go-apidiff:
     permissions:
       contents: read
+      pull-requests: read
     name: Verify API differences
     runs-on: ubuntu-latest
     # Pull requests from different repository only trigger this checks
@@ -28,8 +29,27 @@ jobs:
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: go.mod
-      - name: Execute go-apidiff
+      # When the APIDiff check fails, maintainers may add label apidiff-override to accept intentional API changes (fork PRs use GitHub Actions; same-repo PRs use Prow).
+      - name: Verify API differences
+        id: apidiff
+        continue-on-error: true
         uses: joelanford/go-apidiff@60c4206be8f84348ebda2a3e0c3ac9cb54b8f685 # v0.8.3
         with:
           compare-imports: true
           print-compatible: true
+      - name: Require APIDiff success or override label
+        if: ${{ steps.apidiff.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          PR: ${{ github.event.pull_request.number }}
+          OVERRIDE_LABEL: apidiff-override
+        run: |
+          set -euo pipefail
+          if gh api "repos/${OWNER}/${REPO}/pulls/${PR}" --jq '.labels[].name' | grep -qxF "${OVERRIDE_LABEL}"; then
+            echo "Found label '${OVERRIDE_LABEL}'; accepting failed APIDiff check."
+            exit 0
+          fi
+          echo "::error::APIDiff reported incompatible changes and PR does not have label '${OVERRIDE_LABEL}'. Maintainers may add that label if the change is intentional."
+          exit 1
