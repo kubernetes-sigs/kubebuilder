@@ -20,17 +20,40 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
 )
 
-var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
+var (
+	_ plugin.CreateWebhookSubcommand   = &createWebhookSubcommand{}
+	_ plugin.RequiresStandaloneWebhook = &createWebhookSubcommand{}
+)
 
 type createWebhookSubcommand struct {
 	createSubcommand
 }
 
+func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.StandaloneWebhook) error {
+	// Create a minimal resource with webhook flags set so the kustomize scaffolder
+	// can enable webhook infrastructure (cert-manager, patches, etc.).
+	p.resource = &resource.Resource{
+		Webhooks: &resource.Webhooks{
+			WebhookVersion: wh.WebhookVersion,
+			Defaulting:     wh.Defaulting,
+			Validation:     wh.Validation,
+		},
+	}
+	return nil
+}
+
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+	if p.resource == nil {
+		// No resource to scaffold webhooks for; this should not happen
+		// but guard against it.
+		return nil
+	}
+
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {

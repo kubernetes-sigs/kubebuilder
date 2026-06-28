@@ -33,7 +33,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
-var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
+var (
+	_ plugin.CreateWebhookSubcommand   = &createWebhookSubcommand{}
+	_ plugin.RequiresStandaloneWebhook = &createWebhookSubcommand{}
+)
 
 type createWebhookSubcommand struct {
 	config config.Config
@@ -43,6 +46,10 @@ type createWebhookSubcommand struct {
 	options *goPlugin.Options
 
 	resource *resource.Resource
+
+	// standaloneWebhook holds the multi-GVK webhook config when scaffolded
+	// in standalone mode (no single GVK associated).
+	standaloneWebhook *resource.StandaloneWebhook
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
@@ -60,6 +67,9 @@ func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, sub
 
 	subcmdMeta.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and/or conversion webhooks.
+
+Use --webhook-name with --groups, --resources, and --webhook-versions to scaffold
+a webhook that intercepts multiple resource types (standalone webhook).
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for Group: ship, Version: v1beta1
   # and Kind: Frigate
@@ -83,6 +93,13 @@ validating and/or conversion webhooks.
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --defaulting --programmatic-validation \
     --defaulting-path=/custom-mutate --validation-path=/custom-validate
+
+  # Create a multi-GVK defaulting webhook that intercepts multiple resource types
+  %[1]s create webhook --webhook-name kube-state-metrics-annotations \
+    --groups "",apps,batch \
+    --resources configmaps,pods,deployments \
+    --webhook-versions "*" \
+    --defaulting
 `, cliMeta.CommandName)
 }
 
@@ -134,6 +151,38 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+	return nil
+}
+
+func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.StandaloneWebhook) error {
+	p.standaloneWebhook = wh
+
+	// Copy webhook configuration from options.
+	if p.options.DoDefaulting {
+		wh.Defaulting = true
+		if p.options.DefaultingPath != "" {
+			wh.DefaultingPath = p.options.DefaultingPath
+		}
+	}
+	if p.options.DoValidation {
+		wh.Validation = true
+		if p.options.ValidationPath != "" {
+			wh.ValidationPath = p.options.ValidationPath
+		}
+	}
+	if wh.WebhookVersion == "" {
+		wh.WebhookVersion = "v1"
+	}
+
+	if !wh.Defaulting && !wh.Validation {
+		return fmt.Errorf("%s create webhook requires at least one of --defaulting or "+
+			"--programmatic-validation for standalone webhooks", p.commandName)
+	}
+
+	if err := wh.Validate(); err != nil {
+		return fmt.Errorf("error validating standalone webhook: %w", err)
+	}
+
 	return nil
 }
 
@@ -216,6 +265,17 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+	// Standalone (multi-GVK) webhook path.
+	if p.standaloneWebhook != nil {
+		scaffolder := scaffolds.NewStandaloneWebhookScaffolder(p.config, *p.standaloneWebhook, p.force)
+		scaffolder.InjectFS(fs)
+		if err := scaffolder.Scaffold(); err != nil {
+			return fmt.Errorf("failed to scaffold standalone webhook: %w", err)
+		}
+		return nil
+	}
+
+	// Regular GVK-based webhook path.
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
@@ -226,6 +286,17 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
+	// Standalone webhook: just update dependencies, no make generate needed.
+	if p.standaloneWebhook != nil {
+		err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
+		if err != nil {
+			return fmt.Errorf("error updating go dependencies: %w", err)
+		}
+
+		fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
+		return nil
+	}
+
 	// If external API with module specified, add it using go get
 	if p.resource.IsExternal() && p.resource.Module != "" {
 		log.Info("Adding external API dependency", "module", p.resource.Module)

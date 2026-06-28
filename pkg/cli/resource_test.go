@@ -58,10 +58,16 @@ var _ = Describe("resourceOptions", func() {
 
 	Context("validate", func() {
 		DescribeTable("should succeed for valid options",
-			func(options resourceOptions) { Expect(options.validate()).To(Succeed()) },
-			Entry("full GVK", resourceOptions{GVK: fullGVK}),
-			Entry("missing domain", resourceOptions{GVK: noDomainGVK}),
-			Entry("missing group", resourceOptions{GVK: noGroupGVK}),
+			func(getOpts func() resourceOptions) { Expect(getOpts().validate()).To(Succeed()) },
+			Entry("full GVK", func() resourceOptions {
+				return resourceOptions{GVK: fullGVK}
+			}),
+			Entry("missing domain", func() resourceOptions {
+				return resourceOptions{GVK: noDomainGVK}
+			}),
+			Entry("missing group", func() resourceOptions {
+				return resourceOptions{GVK: noGroupGVK}
+			}),
 		)
 
 		DescribeTable("should fail for invalid options",

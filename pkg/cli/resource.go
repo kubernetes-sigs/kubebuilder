@@ -34,6 +34,12 @@ const (
 // resourceOptions contains the information required to build a new resource.Resource.
 type resourceOptions struct {
 	resource.GVK
+
+	// Standalone webhook fields (mutually exclusive with GVK fields).
+	WebhookName      string
+	WebhookGroups    []string
+	WebhookResources []string
+	WebhookVersions  []string
 }
 
 func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
@@ -43,11 +49,46 @@ func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
 	fs.StringVar(&options.Version, "version", "", "Resource Version (e.g., v1, v1beta1)")
 	fs.StringVar(&options.Kind, "kind", "", "Resource Kind (e.g., CronJob, Deployment)")
 
+	// Standalone webhook flags (for multi-GVK webhooks)
+	fs.StringVar(&options.WebhookName, "webhook-name", "",
+		"Name for a standalone webhook that intercepts multiple resource types. "+
+			"Use with --groups, --resources, and --versions instead of --group, --version, --kind")
+	fs.StringSliceVar(&options.WebhookGroups, "groups", nil,
+		"Comma-separated API groups the webhook intercepts (e.g., 'apps,batch'). Use \"\" for the core group")
+	fs.StringSliceVar(&options.WebhookResources, "resources", nil,
+		"Comma-separated resource types the webhook intercepts (e.g., 'pods,deployments')")
+	fs.StringSliceVar(&options.WebhookVersions, "webhook-versions", nil,
+		"Comma-separated API versions the webhook intercepts, or '*' for all (e.g., 'v1,v1beta1')")
+
 	return options
+}
+
+// isStandaloneWebhook returns true if standalone webhook flags were provided.
+func (opts resourceOptions) isStandaloneWebhook() bool {
+	return opts.WebhookName != ""
 }
 
 // validate verifies that all the fields have valid values.
 func (opts resourceOptions) validate() error {
+	// In standalone webhook mode, GVK flags are not required.
+	if opts.isStandaloneWebhook() {
+		if len(opts.WebhookGroups) == 0 {
+			return errors.New("--groups is required with --webhook-name")
+		}
+		if len(opts.WebhookResources) == 0 {
+			return errors.New("--resources is required with --webhook-name")
+		}
+		if len(opts.WebhookVersions) == 0 {
+			return errors.New("--webhook-versions is required with --webhook-name")
+		}
+		// Reject GVK flags when using standalone mode
+		if opts.Version != "" || opts.Kind != "" {
+			return errors.New("--version and --kind cannot be used with --webhook-name; " +
+				"use --groups, --resources, and --webhook-versions instead")
+		}
+		return nil
+	}
+
 	// Check that the required flags did not get a flag as their value.
 	// We can safely look for a '-' as the first char as none of the fields accepts it.
 	// NOTE: We must do this for all the required flags first or we may output the wrong
@@ -62,9 +103,13 @@ func (opts resourceOptions) validate() error {
 		return errors.New(kindPresent)
 	}
 
-	// We do not check here if the GVK values are empty because that would
-	// make them mandatory and some plugins may want to set default values.
-	// Instead, this is checked by resource.GVK.Validate()
+	// Check that required GVK flags are present (only in non-standalone mode).
+	if opts.Version == "" {
+		return errors.New(versionPresent)
+	}
+	if opts.Kind == "" {
+		return errors.New(kindPresent)
+	}
 
 	return nil
 }
@@ -81,5 +126,27 @@ func (opts resourceOptions) newResource() *resource.Resource {
 		Plural:   resource.RegularPlural(opts.Kind),
 		API:      &resource.API{},
 		Webhooks: &resource.Webhooks{},
+	}
+}
+
+// newStandaloneWebhook creates a StandaloneWebhook from the options.
+func (opts resourceOptions) newStandaloneWebhook() resource.StandaloneWebhook {
+	groups := make([]string, len(opts.WebhookGroups))
+	for i, g := range opts.WebhookGroups {
+		groups[i] = strings.TrimSpace(g)
+	}
+	resources := make([]string, len(opts.WebhookResources))
+	for i, r := range opts.WebhookResources {
+		resources[i] = strings.TrimSpace(r)
+	}
+	versions := make([]string, len(opts.WebhookVersions))
+	for i, v := range opts.WebhookVersions {
+		versions[i] = strings.TrimSpace(v)
+	}
+	return resource.StandaloneWebhook{
+		Name:      opts.WebhookName,
+		Groups:    groups,
+		Resources: resources,
+		Versions:  versions,
 	}
 }
