@@ -33,6 +33,38 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
+const k8sIODomainSuffix = "k8s.io"
+
+// coreGroups maps well-known Kubernetes API groups to their domain suffix.
+// Groups with an empty domain are part of the core Kubernetes API, while groups
+// mapped to k8s.io are under the k8s.io umbrella (e.g., networking.k8s.io).
+// NOTE: Keep in sync with sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/options.go
+var coreGroups = map[string]string{
+	"admission":             k8sIODomainSuffix,
+	"admissionregistration": k8sIODomainSuffix,
+	"apps":                  "",
+	"auditregistration":     k8sIODomainSuffix,
+	"apiextensions":         k8sIODomainSuffix,
+	"authentication":        k8sIODomainSuffix,
+	"authorization":         k8sIODomainSuffix,
+	"autoscaling":           "",
+	"batch":                 "",
+	"certificates":          k8sIODomainSuffix,
+	"coordination":          k8sIODomainSuffix,
+	"core":                  "",
+	"events":                k8sIODomainSuffix,
+	"extensions":            "",
+	"imagepolicy":           k8sIODomainSuffix,
+	"networking":            k8sIODomainSuffix,
+	"node":                  k8sIODomainSuffix,
+	"metrics":               k8sIODomainSuffix,
+	"policy":                "",
+	"rbac.authorization":    k8sIODomainSuffix,
+	"scheduling":            k8sIODomainSuffix,
+	"setting":               k8sIODomainSuffix,
+	"storage":               k8sIODomainSuffix,
+}
+
 var (
 	_ plugin.CreateWebhookSubcommand   = &createWebhookSubcommand{}
 	_ plugin.RequiresStandaloneWebhook = &createWebhookSubcommand{}
@@ -68,7 +100,7 @@ func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, sub
 	subcmdMeta.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and/or conversion webhooks.
 
-Use --webhook-name with --groups, --resources, and --webhook-versions to scaffold
+Use --name with --groups, --kinds, and --versions to scaffold
 a webhook that intercepts multiple resource types (standalone webhook).
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for Group: ship, Version: v1beta1
@@ -94,11 +126,11 @@ a webhook that intercepts multiple resource types (standalone webhook).
     --defaulting --programmatic-validation \
     --defaulting-path=/custom-mutate --validation-path=/custom-validate
 
-  # Create a multi-GVK defaulting webhook that intercepts multiple resource types
-  %[1]s create webhook --webhook-name kube-state-metrics-annotations \
-    --groups "",apps,batch \
-    --resources configmaps,pods,deployments \
-    --webhook-versions "*" \
+	# Create a multi-GVK defaulting webhook that intercepts multiple resource types
+  %[1]s create webhook --name kube-state-metrics-annotations \
+    --groups "core,apps,batch" \
+    --kinds ConfigMap,Pod,Deployment \
+    --versions "*" \
     --defaulting
 `, cliMeta.CommandName)
 }
@@ -155,6 +187,9 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.StandaloneWebhook) error {
+	if wh == nil || wh.IsEmpty() {
+		return nil
+	}
 	p.standaloneWebhook = wh
 
 	// Copy webhook configuration from options.
@@ -174,6 +209,31 @@ func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.Standalon
 		wh.WebhookVersion = "v1"
 	}
 
+	// Resolve domains for each group (core groups get their known domain,
+	// non-core groups use the project domain).
+	projectDomain := p.config.GetDomain()
+	resolvedGroups := make([]string, len(wh.Groups))
+	for i, g := range wh.Groups {
+		g = strings.TrimSpace(g)
+		if domain, found := coreGroups[g]; found {
+			if domain == "" {
+				resolvedGroups[i] = g
+			} else {
+				resolvedGroups[i] = g + "." + domain
+			}
+		} else {
+			// For groups with an explicit domain suffix, use as-is.
+			if strings.Contains(g, ".") {
+				resolvedGroups[i] = g
+			} else if projectDomain != "" {
+				resolvedGroups[i] = g + "." + projectDomain
+			} else {
+				resolvedGroups[i] = g
+			}
+		}
+	}
+	wh.Groups = resolvedGroups
+
 	if !wh.Defaulting && !wh.Validation {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting or "+
 			"--programmatic-validation for standalone webhooks", p.commandName)
@@ -186,7 +246,11 @@ func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.Standalon
 	return nil
 }
 
+//nolint:gocyclo // pre-existing complexity; nil guard adds one branch
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
+	if res == nil {
+		return nil
+	}
 	p.resource = res
 
 	// Copy essential fields from existing resource in PROJECT file (Path, Plural,

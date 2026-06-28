@@ -35,6 +35,9 @@ type createWebhookSubcommand struct {
 }
 
 func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.StandaloneWebhook) error {
+	if wh == nil || wh.IsEmpty() {
+		return nil
+	}
 	// Create a minimal resource with webhook flags set so the kustomize scaffolder
 	// can enable webhook infrastructure (cert-manager, patches, etc.).
 	p.resource = &resource.Resource{

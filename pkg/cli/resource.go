@@ -36,10 +36,10 @@ type resourceOptions struct {
 	resource.GVK
 
 	// Standalone webhook fields (mutually exclusive with GVK fields).
-	WebhookName      string
-	WebhookGroups    []string
-	WebhookResources []string
-	WebhookVersions  []string
+	WebhookName     string
+	WebhookGroups   []string
+	WebhookKinds    []string
+	WebhookVersions []string
 }
 
 func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
@@ -50,14 +50,14 @@ func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
 	fs.StringVar(&options.Kind, "kind", "", "Resource Kind (e.g., CronJob, Deployment)")
 
 	// Standalone webhook flags (for multi-GVK webhooks)
-	fs.StringVar(&options.WebhookName, "webhook-name", "",
+	fs.StringVar(&options.WebhookName, "name", "",
 		"Name for a standalone webhook that intercepts multiple resource types. "+
-			"Use with --groups, --resources, and --versions instead of --group, --version, --kind")
+			"Use with --groups, --kinds, and --versions instead of --group, --version, --kind")
 	fs.StringSliceVar(&options.WebhookGroups, "groups", nil,
 		"Comma-separated API groups the webhook intercepts (e.g., 'apps,batch'). Use \"\" for the core group")
-	fs.StringSliceVar(&options.WebhookResources, "resources", nil,
-		"Comma-separated resource types the webhook intercepts (e.g., 'pods,deployments')")
-	fs.StringSliceVar(&options.WebhookVersions, "webhook-versions", nil,
+	fs.StringSliceVar(&options.WebhookKinds, "kinds", nil,
+		"Comma-separated resource kinds the webhook intercepts (e.g., 'Pod,Deployment')")
+	fs.StringSliceVar(&options.WebhookVersions, "versions", nil,
 		"Comma-separated API versions the webhook intercepts, or '*' for all (e.g., 'v1,v1beta1')")
 
 	return options
@@ -73,18 +73,18 @@ func (opts resourceOptions) validate() error {
 	// In standalone webhook mode, GVK flags are not required.
 	if opts.isStandaloneWebhook() {
 		if len(opts.WebhookGroups) == 0 {
-			return errors.New("--groups is required with --webhook-name")
+			return errors.New("--groups is required with --name")
 		}
-		if len(opts.WebhookResources) == 0 {
-			return errors.New("--resources is required with --webhook-name")
+		if len(opts.WebhookKinds) == 0 {
+			return errors.New("--kinds is required with --name")
 		}
 		if len(opts.WebhookVersions) == 0 {
-			return errors.New("--webhook-versions is required with --webhook-name")
+			return errors.New("--versions is required with --name (use '*' for all)")
 		}
 		// Reject GVK flags when using standalone mode
 		if opts.Version != "" || opts.Kind != "" {
-			return errors.New("--version and --kind cannot be used with --webhook-name; " +
-				"use --groups, --resources, and --webhook-versions instead")
+			return errors.New("--version and --kind cannot be used with --name; " +
+				"use --groups, --kinds, and --versions instead")
 		}
 		return nil
 	}
@@ -114,8 +114,13 @@ func (opts resourceOptions) validate() error {
 	return nil
 }
 
-// newResource creates a new resource from the options
+// newResource creates a new resource from the options. Returns nil when the
+// options represent a standalone webhook, since those have no GVK to derive a
+// resource from.
 func (opts resourceOptions) newResource() *resource.Resource {
+	if opts.isStandaloneWebhook() {
+		return nil
+	}
 	return &resource.Resource{
 		GVK: resource.GVK{ // Remove whitespaces to prevent values like " " pass validation
 			Group:   strings.TrimSpace(opts.Group),
@@ -135,18 +140,19 @@ func (opts resourceOptions) newStandaloneWebhook() resource.StandaloneWebhook {
 	for i, g := range opts.WebhookGroups {
 		groups[i] = strings.TrimSpace(g)
 	}
-	resources := make([]string, len(opts.WebhookResources))
-	for i, r := range opts.WebhookResources {
-		resources[i] = strings.TrimSpace(r)
+	kinds := make([]string, len(opts.WebhookKinds))
+	for i, k := range opts.WebhookKinds {
+		kinds[i] = strings.TrimSpace(k)
 	}
 	versions := make([]string, len(opts.WebhookVersions))
 	for i, v := range opts.WebhookVersions {
 		versions[i] = strings.TrimSpace(v)
 	}
 	return resource.StandaloneWebhook{
-		Name:      opts.WebhookName,
-		Groups:    groups,
-		Resources: resources,
-		Versions:  versions,
+		Name:           opts.WebhookName,
+		Groups:         groups,
+		Resources:      kinds,
+		WebhookVersion: "v1",
+		Versions:       versions,
 	}
 }
