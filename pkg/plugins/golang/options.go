@@ -27,7 +27,7 @@ import (
 
 const k8sIODomainSuffix = "k8s.io"
 
-var coreGroups = map[string]string{
+var CoreGroups = map[string]string{
 	"admission":             k8sIODomainSuffix,
 	"admissionregistration": k8sIODomainSuffix,
 	"apps":                  "",
@@ -174,7 +174,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 				}
 			} else {
 				// Handle core types
-				if domain, found := coreGroups[res.Group]; found {
+				if domain, found := CoreGroups[res.Group]; found {
 					res.Core = true
 					res.Domain = domain
 					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)

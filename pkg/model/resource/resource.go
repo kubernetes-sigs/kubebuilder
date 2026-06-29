@@ -48,6 +48,10 @@ type Resource struct {
 	// Webhooks holds the information related to the associated webhooks.
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
 
+	// Webhook holds a multi-GVK webhook configuration (no single GVK tied resource).
+	// When set, the GVK fields may be empty.
+	Webhook *Webhook `json:"webhook,omitempty"`
+
 	// External specifies if the resource is defined externally.
 	External bool `json:"external,omitempty"`
 
@@ -230,6 +234,10 @@ func (r Resource) Copy() Resource {
 		webhooks := r.Webhooks.Copy()
 		r.Webhooks = &webhooks
 	}
+	if r.Webhook != nil {
+		webhook := r.Webhook.Copy()
+		r.Webhook = &webhook
+	}
 	return r
 }
 
@@ -302,7 +310,19 @@ func (r *Resource) Update(other Resource) error {
 		r.Webhooks = &Webhooks{}
 	}
 
-	return r.Webhooks.Update(other.Webhooks)
+	if err := r.Webhooks.Update(other.Webhooks); err != nil {
+		return err
+	}
+
+	// Update Webhook (multi-GVK webhook).
+	if other.Webhook != nil && !other.Webhook.IsEmpty() {
+		if r.Webhook == nil || r.Webhook.IsEmpty() {
+			wh := other.Webhook.Copy()
+			r.Webhook = &wh
+		}
+	}
+
+	return nil
 }
 
 func wrapKey(key string) string {

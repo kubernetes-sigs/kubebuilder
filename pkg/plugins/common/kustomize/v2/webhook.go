@@ -25,28 +25,32 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
 )
 
-var (
-	_ plugin.CreateWebhookSubcommand   = &createWebhookSubcommand{}
-	_ plugin.RequiresStandaloneWebhook = &createWebhookSubcommand{}
-)
+var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
 
 type createWebhookSubcommand struct {
 	createSubcommand
 }
 
-func (p *createWebhookSubcommand) InjectStandaloneWebhook(wh *resource.StandaloneWebhook) error {
-	if wh == nil || wh.IsEmpty() {
+func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
+	if res == nil {
 		return nil
 	}
-	// Create a minimal resource with webhook flags set so the kustomize scaffolder
-	// can enable webhook infrastructure (cert-manager, patches, etc.).
-	p.resource = &resource.Resource{
-		Webhooks: &resource.Webhooks{
-			WebhookVersion: wh.WebhookVersion,
-			Defaulting:     wh.Defaulting,
-			Validation:     wh.Validation,
-		},
+
+	// Multi-GVK webhook: populate Webhooks from the Webhook field.
+	if res.Webhook != nil && !res.Webhook.IsEmpty() {
+		p.resource = &resource.Resource{
+			Webhooks: &resource.Webhooks{
+				WebhookVersion: res.Webhook.WebhookVersion,
+				Defaulting:     res.Webhook.Defaulting,
+				Validation:     res.Webhook.Validation,
+			},
+		}
+		return nil
 	}
+
+	// GVK-based webhook: store the resource as-is.
+	r := res.Copy()
+	p.resource = &r
 	return nil
 }
 
