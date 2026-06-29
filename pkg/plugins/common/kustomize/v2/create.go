@@ -41,9 +41,6 @@ func (p *createSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *createSubcommand) InjectResource(res *resource.Resource) error {
-	if res == nil {
-		return nil
-	}
 	p.resource = res
 	return nil
 }
