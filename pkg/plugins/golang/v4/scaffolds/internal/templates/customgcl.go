@@ -50,9 +50,15 @@ const customGclTemplate = `# This file configures golangci-lint with module plug
 #
 # See: https://golangci-lint.run/plugins/module-plugins/
 version: {{ .GolangciLintVersion }}
+name: golangci-lint-custom
+destination: ./bin
+
 plugins:
   # logcheck validates structured logging calls and parameters (e.g., balanced key-value pairs)
   - module: "sigs.k8s.io/logtools"
     import: "sigs.k8s.io/logtools/logcheck/gclplugin"
+    version: latest 
+  # kube-api-linter checks Kubernetes API conventions
+  - module: "sigs.k8s.io/kube-api-linter"
     version: latest
 `
