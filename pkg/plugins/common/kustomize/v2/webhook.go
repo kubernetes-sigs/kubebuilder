@@ -32,10 +32,6 @@ type createWebhookSubcommand struct {
 }
 
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
-	if res == nil {
-		return nil
-	}
-
 	// Multi-GVK webhook: populate Webhooks from the Webhook field.
 	if res.Webhook != nil && !res.Webhook.IsEmpty() {
 		p.resource = &resource.Resource{

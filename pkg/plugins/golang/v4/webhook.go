@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/internal/coregroups"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
@@ -261,7 +262,7 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
 	resolvedGroups := make([]string, len(wh.Groups))
 	for i, g := range wh.Groups {
 		g = strings.TrimSpace(g)
-		if domain, found := goPlugin.CoreGroups[g]; found {
+		if domain, found := coregroups.Groups[g]; found {
 			if domain == "" {
 				resolvedGroups[i] = g
 			} else {

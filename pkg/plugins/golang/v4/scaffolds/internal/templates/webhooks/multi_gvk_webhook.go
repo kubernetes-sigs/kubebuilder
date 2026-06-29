@@ -10,7 +10,11 @@ import (
 
 var _ machinery.Template = &MultiGVKWebhook{}
 
-// MultiGVKWebhook scaffolds a multi-GVK webhook that intercepts multiple resource types
+// MultiGVKWebhook scaffolds a webhook that intercepts multiple resource types (multi-GVK).
+// Unlike Webhook (which is tied to a single CRD Kind), this template generates an
+// admission.Handler that switches on req.Resource at runtime. A separate file is used
+// because the generated code structure (package, imports, handler pattern, marker format)
+// differs fundamentally from the single-GVK webhook template.
 type MultiGVKWebhook struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
@@ -29,28 +33,7 @@ func (f *MultiGVKWebhook) SetTemplateDefaults() error {
 
 	f.Path = strings.ReplaceAll(f.Path, "%[webhook-name]", strings.ToLower(f.Webhook.Name))
 
-	var templateBody string
-	if f.Webhook.Defaulting && f.Webhook.Validation {
-		templateBody = multiGVKWebhookDefValTemplate
-	} else if f.Webhook.Defaulting {
-		templateBody = multiGVKWebhookDefaultingTemplate
-	} else {
-		templateBody = multiGVKWebhookValidationTemplate
-	}
-
-	f.TemplateBody = templateBody
-
-	// Replace path markers in the template body
-	defaultingPath := f.Webhook.DefaultingPath
-	if defaultingPath == "" {
-		defaultingPath = "/mutate-" + strings.ToLower(f.Webhook.Name)
-	}
-	validationPath := f.Webhook.ValidationPath
-	if validationPath == "" {
-		validationPath = "/validate-" + strings.ToLower(f.Webhook.Name)
-	}
-	f.TemplateBody = strings.ReplaceAll(f.TemplateBody, "%[def-path]", defaultingPath)
-	f.TemplateBody = strings.ReplaceAll(f.TemplateBody, "%[val-path]", validationPath)
+	f.TemplateBody = multiGVKWebhookTemplate
 
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
@@ -70,6 +53,22 @@ func (f *MultiGVKWebhook) HandlerName() string {
 		}
 	}
 	return strings.Join(parts, "") + "Webhook"
+}
+
+// DefaultingPath returns the path for the defaulting webhook.
+func (f *MultiGVKWebhook) DefaultingPath() string {
+	if f.Webhook.DefaultingPath != "" {
+		return f.Webhook.DefaultingPath
+	}
+	return "/mutate-" + strings.ToLower(f.Webhook.Name)
+}
+
+// ValidationPath returns the path for the validation webhook.
+func (f *MultiGVKWebhook) ValidationPath() string {
+	if f.Webhook.ValidationPath != "" {
+		return f.Webhook.ValidationPath
+	}
+	return "/validate-" + strings.ToLower(f.Webhook.Name)
 }
 
 // MarkerGroups returns the semicolon-separated group list for the +kubebuilder:webhook marker.
@@ -96,7 +95,7 @@ func (f *MultiGVKWebhook) MarkerVersions() string {
 }
 
 //nolint:lll
-const multiGVKWebhookDefaultingTemplate = `{{ .Boilerplate }}
+const multiGVKWebhookTemplate = `{{ .Boilerplate }}
 
 package webhook
 
@@ -106,73 +105,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+{{ if .Webhook.Defaulting }}
+// +kubebuilder:webhook:path={{ .DefaultingPath }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+{{ end }}
+{{ if .Webhook.Validation }}
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
+// +kubebuilder:webhook:path={{ .ValidationPath }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+{{ end }}
 
-// {{ .HandlerName }} mutates intercepted resources.
-type {{ .HandlerName }} struct {
-	Decoder admission.Decoder
-}
-
-// {{ .HandlerName }} implements admission.Handler.
-var _ admission.Handler = &{{ .HandlerName }}{}
-
-// Handle implements admission.Handler.
-func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) admission.Response {
-	// TODO(user): fill in your defaulting logic.
-	// Use req.Object.Raw to access the raw object, then decode it with h.Decoder.
-	// Use req.Resource.Group, req.Resource.Version, and req.Resource.Resource
-	// to identify which resource type triggered this webhook.
-	return admission.Allowed("")
-}
-`
-
-//nolint:lll
-const multiGVKWebhookValidationTemplate = `{{ .Boilerplate }}
-
-package webhook
-
-import (
-	"context"
-
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
-
-// {{ .HandlerName }} validates intercepted resources.
-type {{ .HandlerName }} struct {
-	Decoder admission.Decoder
-}
-
-// {{ .HandlerName }} implements admission.Handler.
-var _ admission.Handler = &{{ .HandlerName }}{}
-
-// Handle implements admission.Handler.
-func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) admission.Response {
-	// TODO(user): fill in your validation logic.
-	// Use req.Object.Raw to access the raw object, then decode it with h.Decoder.
-	// Use req.Resource.Group, req.Resource.Version, and req.Resource.Resource
-	// to identify which resource type triggered this webhook.
-	return admission.Allowed("")
-}
-`
-
-//nolint:lll
-const multiGVKWebhookDefValTemplate = `{{ .Boilerplate }}
-
-package webhook
-
-import (
-	"context"
-
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
-
-// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
-
+{{ if and .Webhook.Defaulting .Webhook.Validation }}
 // {{ .HandlerName }} mutates and validates intercepted resources.
+{{ else if .Webhook.Defaulting }}
+// {{ .HandlerName }} mutates intercepted resources.
+{{ else }}
+// {{ .HandlerName }} validates intercepted resources.
+{{ end }}
 type {{ .HandlerName }} struct {
 	Decoder admission.Decoder
 }
@@ -182,7 +130,13 @@ var _ admission.Handler = &{{ .HandlerName }}{}
 
 // Handle implements admission.Handler.
 func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) admission.Response {
+	{{ if and .Webhook.Defaulting .Webhook.Validation }}
 	// TODO(user): fill in your webhook logic.
+	{{ else if .Webhook.Defaulting }}
+	// TODO(user): fill in your defaulting logic.
+	{{ else }}
+	// TODO(user): fill in your validation logic.
+	{{ end }}
 	// Use req.Object.Raw to access the raw object, then decode it with h.Decoder.
 	// Use req.Resource.Group, req.Resource.Version, and req.Resource.Resource
 	// to identify which resource type triggered this webhook.
