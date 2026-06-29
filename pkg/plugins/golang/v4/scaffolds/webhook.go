@@ -38,12 +38,12 @@ import (
 
 var (
 	_ plugins.Scaffolder = &webhookScaffolder{}
-	_ plugins.Scaffolder = &standaloneWebhookScaffolder{}
+	_ plugins.Scaffolder = &multiGVKWebhookScaffolder{}
 )
 
-type standaloneWebhookScaffolder struct {
+type multiGVKWebhookScaffolder struct {
 	config config.Config
-	wh     resource.StandaloneWebhook
+	wh     resource.Webhook
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -52,9 +52,9 @@ type standaloneWebhookScaffolder struct {
 	force bool
 }
 
-// NewStandaloneWebhookScaffolder returns a new Scaffolder for multi-GVK webhook creation
-func NewStandaloneWebhookScaffolder(cfg config.Config, wh resource.StandaloneWebhook, force bool) plugins.Scaffolder {
-	return &standaloneWebhookScaffolder{
+// NewMultiGVKWebhookScaffolder returns a new Scaffolder for multi-GVK webhook creation
+func NewMultiGVKWebhookScaffolder(cfg config.Config, wh resource.Webhook, force bool) plugins.Scaffolder {
+	return &multiGVKWebhookScaffolder{
 		config: cfg,
 		wh:     wh,
 		force:  force,
@@ -62,12 +62,12 @@ func NewStandaloneWebhookScaffolder(cfg config.Config, wh resource.StandaloneWeb
 }
 
 // InjectFS implements cmdutil.Scaffolder
-func (s *standaloneWebhookScaffolder) InjectFS(fs machinery.Filesystem) {
+func (s *multiGVKWebhookScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
 }
 
 // Scaffold implements cmdutil.Scaffolder
-func (s *standaloneWebhookScaffolder) Scaffold() error {
+func (s *multiGVKWebhookScaffolder) Scaffold() error {
 	log.Info("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
@@ -91,7 +91,7 @@ func (s *standaloneWebhookScaffolder) Scaffold() error {
 		machinery.WithBoilerplate(string(boilerplate)),
 	)
 
-	// Scaffold the standalone webhook file
+	// Scaffold the webhook file
 	webhookFilePath := s.getWebhookFilePath()
 	webhookFileExists := false
 	if _, statErr := s.fs.FS.Stat(webhookFilePath); statErr == nil {
@@ -100,24 +100,24 @@ func (s *standaloneWebhookScaffolder) Scaffold() error {
 
 	if !webhookFileExists || s.force {
 		if err := scaffold.Execute(
-			&webhooks.StandaloneWebhook{Force: s.force, Webhook: s.wh},
+			&webhooks.MultiGVKWebhook{Force: s.force, Webhook: s.wh},
 		); err != nil {
-			return fmt.Errorf("error creating standalone webhook: %w", err)
+			return fmt.Errorf("error creating multi-GVK webhook: %w", err)
 		}
 	}
 
 	// Update main.go to wire the webhook handler
 	if err := scaffold.Execute(
-		&cmd.StandaloneWebhookMainUpdater{Webhook: s.wh},
+		&cmd.MultiGVKWebhookMainUpdater{Webhook: s.wh},
 	); err != nil {
-		return fmt.Errorf("error updating main.go for standalone webhook: %w", err)
+		return fmt.Errorf("error updating main.go for multi-GVK webhook: %w", err)
 	}
 
 	return nil
 }
 
-// getWebhookFilePath returns the path to the standalone webhook file
-func (s *standaloneWebhookScaffolder) getWebhookFilePath() string {
+// getWebhookFilePath returns the path to the webhook file
+func (s *multiGVKWebhookScaffolder) getWebhookFilePath() string {
 	return fmt.Sprintf("internal/webhook/%s_webhook.go", strings.ToLower(s.wh.Name))
 }
 

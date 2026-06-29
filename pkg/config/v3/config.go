@@ -71,9 +71,9 @@ type Cfg struct {
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
 
-	// StandaloneWebhooks stores webhooks that intercept multiple resource types
+	// MultiGVKWebhooks stores webhooks that intercept multiple resource types
 	// (not tied to a single GVK resource).
-	StandaloneWebhooks []resource.StandaloneWebhook `json:"standaloneWebhooks,omitempty"`
+	MultiGVKWebhooks []resource.Webhook `json:"multiGVKWebhooks,omitempty"`
 
 	// Plugins
 	Plugins pluginConfigs `json:"plugins,omitempty"`
@@ -321,7 +321,7 @@ func (c Cfg) ListWebhookVersions() []string {
 			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
 		}
 	}
-	for _, w := range c.StandaloneWebhooks {
+	for _, w := range c.MultiGVKWebhooks {
 		if w.WebhookVersion != "" {
 			versionSet[w.WebhookVersion] = struct{}{}
 		}
@@ -335,27 +335,27 @@ func (c Cfg) ListWebhookVersions() []string {
 	return versions
 }
 
-// GetStandaloneWebhooks implements config.Config
-func (c Cfg) GetStandaloneWebhooks() ([]resource.StandaloneWebhook, error) {
-	webhooks := make([]resource.StandaloneWebhook, 0, len(c.StandaloneWebhooks))
-	for _, w := range c.StandaloneWebhooks {
+// GetMultiGVKWebhooks implements config.Config
+func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhook, error) {
+	webhooks := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
+	for _, w := range c.MultiGVKWebhooks {
 		webhooks = append(webhooks, w.Copy())
 	}
 	return webhooks, nil
 }
 
-// AddStandaloneWebhook implements config.Config
-func (c *Cfg) AddStandaloneWebhook(wh resource.StandaloneWebhook) error {
+// AddMultiGVKWebhook implements config.Config
+func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhook) error {
 	wh = wh.Copy()
 
 	// Check for duplicates by name
-	for _, existing := range c.StandaloneWebhooks {
+	for _, existing := range c.MultiGVKWebhooks {
 		if existing.Name == wh.Name {
-			return fmt.Errorf("standalone webhook %q already exists in project config", wh.Name)
+			return fmt.Errorf("multi-GVK webhook %q already exists in project config", wh.Name)
 		}
 	}
 
-	c.StandaloneWebhooks = append(c.StandaloneWebhooks, wh)
+	c.MultiGVKWebhooks = append(c.MultiGVKWebhooks, wh)
 	return nil
 }
 
@@ -411,14 +411,14 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		}
 	}
 
-	// Filter out empty standalone webhooks
-	nonEmpty := make([]resource.StandaloneWebhook, 0, len(c.StandaloneWebhooks))
-	for _, w := range c.StandaloneWebhooks {
+	// Filter out empty multi-GVK webhooks
+	nonEmpty := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
+	for _, w := range c.MultiGVKWebhooks {
 		if !w.IsEmpty() {
 			nonEmpty = append(nonEmpty, w)
 		}
 	}
-	c.StandaloneWebhooks = nonEmpty
+	c.MultiGVKWebhooks = nonEmpty
 
 	content, err := yaml.Marshal(c)
 	if err != nil {

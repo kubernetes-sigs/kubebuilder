@@ -2,9 +2,9 @@ package resource
 
 import "fmt"
 
-// StandaloneWebhook defines a webhook that intercepts multiple resource types
+// Webhook defines a webhook that intercepts multiple resource types
 // (multiple GVKs) rather than being tied to a single API resource.
-type StandaloneWebhook struct {
+type Webhook struct {
 	// Name is a unique identifier for this webhook (used in the handler name, path, and PROJECT entry).
 	Name string `json:"name,omitempty"`
 
@@ -20,8 +20,8 @@ type StandaloneWebhook struct {
 	// Groups is the list of API groups the webhook intercepts. Use "" for the core group.
 	Groups []string `json:"groups,omitempty"`
 
-	// Resources is the list of resource types the webhook intercepts (e.g., pods, deployments).
-	Resources []string `json:"resources,omitempty"`
+	// Kinds is the list of resource kinds the webhook intercepts (e.g., pods, deployments).
+	Kinds []string `json:"resources,omitempty"`
 
 	// Versions is the list of API versions the webhook intercepts, or "*" for all.
 	Versions []string `json:"versions,omitempty"`
@@ -33,23 +33,10 @@ type StandaloneWebhook struct {
 	ValidationPath string `json:"validationPath,omitempty"`
 }
 
-// Validate checks that the StandaloneWebhook is valid.
-func (w StandaloneWebhook) Validate() error {
-	if w.Name == "" {
-		return fmt.Errorf("standalone webhook name cannot be empty")
-	}
-	if !w.Defaulting && !w.Validation {
-		return fmt.Errorf("standalone webhook %q requires at least one of defaulting or validation", w.Name)
-	}
-	if len(w.Groups) == 0 {
-		return fmt.Errorf("standalone webhook %q requires at least one group", w.Name)
-	}
-	if len(w.Resources) == 0 {
-		return fmt.Errorf("standalone webhook %q requires at least one resource", w.Name)
-	}
-	if len(w.Versions) == 0 {
-		return fmt.Errorf("standalone webhook %q requires at least one version", w.Name)
-	}
+// Validate checks that the Webhook is structurally valid.
+// Business-logic checks (e.g., requiring at least one group/resource/version)
+// are handled at the plugin level.
+func (w Webhook) Validate() error {
 	if w.WebhookVersion != "" {
 		if err := validateAPIVersion(w.WebhookVersion); err != nil {
 			return fmt.Errorf("invalid webhook version for %q: %w", w.Name, err)
@@ -58,27 +45,27 @@ func (w StandaloneWebhook) Validate() error {
 	return nil
 }
 
-// IsEmpty returns true if the StandaloneWebhook has no meaningful configuration.
-func (w StandaloneWebhook) IsEmpty() bool {
+// IsEmpty returns true if the Webhook has no meaningful configuration.
+func (w Webhook) IsEmpty() bool {
 	return w.Name == "" && !w.Defaulting && !w.Validation &&
-		len(w.Groups) == 0 && len(w.Resources) == 0 && len(w.Versions) == 0
+		len(w.Groups) == 0 && len(w.Kinds) == 0 && len(w.Versions) == 0
 }
 
-// Copy returns a deep copy of the StandaloneWebhook.
-func (w StandaloneWebhook) Copy() StandaloneWebhook {
+// Copy returns a deep copy of the Webhook.
+func (w Webhook) Copy() Webhook {
 	groups := make([]string, len(w.Groups))
 	copy(groups, w.Groups)
-	resources := make([]string, len(w.Resources))
-	copy(resources, w.Resources)
+	kinds := make([]string, len(w.Kinds))
+	copy(kinds, w.Kinds)
 	versions := make([]string, len(w.Versions))
 	copy(versions, w.Versions)
-	return StandaloneWebhook{
+	return Webhook{
 		Name:           w.Name,
 		WebhookVersion: w.WebhookVersion,
 		Defaulting:     w.Defaulting,
 		Validation:     w.Validation,
 		Groups:         groups,
-		Resources:      resources,
+		Kinds:          kinds,
 		Versions:       versions,
 		DefaultingPath: w.DefaultingPath,
 		ValidationPath: w.ValidationPath,

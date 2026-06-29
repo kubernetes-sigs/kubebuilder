@@ -8,79 +8,47 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
-var _ machinery.Template = &StandaloneWebhook{}
+var _ machinery.Template = &MultiGVKWebhook{}
 
-// StandaloneWebhook scaffolds a multi-GVK webhook that intercepts multiple resource types
-type StandaloneWebhook struct {
+// MultiGVKWebhook scaffolds a multi-GVK webhook that intercepts multiple resource types
+type MultiGVKWebhook struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
 
 	Force bool
 
-	// Webhook holds the standalone webhook configuration
-	Webhook resource.StandaloneWebhook
-
-	// GroupValue is the escaped group string for the webhook marker
-	GroupValue string
-
-	// ResourceValue is the resource string for the webhook marker
-	ResourceValue string
-
-	// VersionValue is the version string for the webhook marker
-	VersionValue string
-
-	// HandlerName is the Go struct name for the handler
-	HandlerName string
-
-	// GroupsMarker is the formatted groups for the +kubebuilder:webhook marker
-	GroupsMarker string
-
-	// ResourcesMarker is the formatted resources for the +kubebuilder:webhook marker
-	ResourcesMarker string
-
-	// VersionsMarker is the formatted versions for the +kubebuilder:webhook marker
-	VersionsMarker string
+	// Webhook holds the multi-GVK webhook configuration
+	Webhook resource.Webhook
 }
 
 // SetTemplateDefaults implements machinery.Template
-func (f *StandaloneWebhook) SetTemplateDefaults() error {
+func (f *MultiGVKWebhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("internal", "webhook", "%[webhook-name]_webhook.go")
 	}
 
-	// Replace template placeholders
 	f.Path = strings.ReplaceAll(f.Path, "%[webhook-name]", strings.ToLower(f.Webhook.Name))
-
-	// Build marker values
-	f.GroupsMarker = f.buildMarkerGroups()
-	f.ResourcesMarker = f.buildMarkerResources()
-	f.VersionsMarker = f.buildMarkerVersions()
-	f.HandlerName = f.buildHandlerName()
-
-	// Defaulting path
-	defaultingPath := f.Webhook.DefaultingPath
-	if defaultingPath == "" {
-		defaultingPath = "/mutate-" + strings.ToLower(f.Webhook.Name)
-	}
-
-	// Validation path
-	validationPath := f.Webhook.ValidationPath
-	if validationPath == "" {
-		validationPath = "/validate-" + strings.ToLower(f.Webhook.Name)
-	}
 
 	var templateBody string
 	if f.Webhook.Defaulting && f.Webhook.Validation {
-		templateBody = standaloneWebhookDefValTemplate
+		templateBody = multiGVKWebhookDefValTemplate
 	} else if f.Webhook.Defaulting {
-		templateBody = standaloneWebhookDefaultingTemplate
+		templateBody = multiGVKWebhookDefaultingTemplate
 	} else {
-		templateBody = standaloneWebhookValidationTemplate
+		templateBody = multiGVKWebhookValidationTemplate
 	}
 
 	f.TemplateBody = templateBody
 
 	// Replace path markers in the template body
+	defaultingPath := f.Webhook.DefaultingPath
+	if defaultingPath == "" {
+		defaultingPath = "/mutate-" + strings.ToLower(f.Webhook.Name)
+	}
+	validationPath := f.Webhook.ValidationPath
+	if validationPath == "" {
+		validationPath = "/validate-" + strings.ToLower(f.Webhook.Name)
+	}
 	f.TemplateBody = strings.ReplaceAll(f.TemplateBody, "%[def-path]", defaultingPath)
 	f.TemplateBody = strings.ReplaceAll(f.TemplateBody, "%[val-path]", validationPath)
 
@@ -93,7 +61,8 @@ func (f *StandaloneWebhook) SetTemplateDefaults() error {
 	return nil
 }
 
-func (f *StandaloneWebhook) buildHandlerName() string {
+// HandlerName returns the Go struct name for the webhook handler.
+func (f *MultiGVKWebhook) HandlerName() string {
 	parts := strings.Split(f.Webhook.Name, "-")
 	for i, p := range parts {
 		if len(p) > 0 {
@@ -103,7 +72,8 @@ func (f *StandaloneWebhook) buildHandlerName() string {
 	return strings.Join(parts, "") + "Webhook"
 }
 
-func (f *StandaloneWebhook) buildMarkerGroups() string {
+// MarkerGroups returns the semicolon-separated group list for the +kubebuilder:webhook marker.
+func (f *MultiGVKWebhook) MarkerGroups() string {
 	var parts []string
 	for _, g := range f.Webhook.Groups {
 		if g == "" {
@@ -115,16 +85,18 @@ func (f *StandaloneWebhook) buildMarkerGroups() string {
 	return strings.Join(parts, ";")
 }
 
-func (f *StandaloneWebhook) buildMarkerResources() string {
-	return strings.Join(f.Webhook.Resources, ";")
+// MarkerKinds returns the semicolon-separated kinds list for the +kubebuilder:webhook marker.
+func (f *MultiGVKWebhook) MarkerKinds() string {
+	return strings.Join(f.Webhook.Kinds, ";")
 }
 
-func (f *StandaloneWebhook) buildMarkerVersions() string {
+// MarkerVersions returns the semicolon-separated versions list for the +kubebuilder:webhook marker.
+func (f *MultiGVKWebhook) MarkerVersions() string {
 	return strings.Join(f.Webhook.Versions, ";")
 }
 
 //nolint:lll
-const standaloneWebhookDefaultingTemplate = `{{ .Boilerplate }}
+const multiGVKWebhookDefaultingTemplate = `{{ .Boilerplate }}
 
 package webhook
 
@@ -134,7 +106,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .GroupsMarker }},resources={{ .ResourcesMarker }},verbs=create;update,versions={{ .VersionsMarker }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
 
 // {{ .HandlerName }} mutates intercepted resources.
 type {{ .HandlerName }} struct {
@@ -155,7 +127,7 @@ func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) 
 `
 
 //nolint:lll
-const standaloneWebhookValidationTemplate = `{{ .Boilerplate }}
+const multiGVKWebhookValidationTemplate = `{{ .Boilerplate }}
 
 package webhook
 
@@ -165,7 +137,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .GroupsMarker }},resources={{ .ResourcesMarker }},verbs=create;update,versions={{ .VersionsMarker }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
 
 // {{ .HandlerName }} validates intercepted resources.
 type {{ .HandlerName }} struct {
@@ -186,7 +158,7 @@ func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) 
 `
 
 //nolint:lll
-const standaloneWebhookDefValTemplate = `{{ .Boilerplate }}
+const multiGVKWebhookDefValTemplate = `{{ .Boilerplate }}
 
 package webhook
 
@@ -196,9 +168,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .GroupsMarker }},resources={{ .ResourcesMarker }},verbs=create;update,versions={{ .VersionsMarker }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=%[def-path],mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
 
-// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .GroupsMarker }},resources={{ .ResourcesMarker }},verbs=create;update,versions={{ .VersionsMarker }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=%[val-path],mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .Webhook.Name }}.kb.io,admissionReviewVersions=v1
 
 // {{ .HandlerName }} mutates and validates intercepted resources.
 type {{ .HandlerName }} struct {

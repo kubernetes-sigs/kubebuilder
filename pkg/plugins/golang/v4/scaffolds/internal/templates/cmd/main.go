@@ -107,27 +107,27 @@ func (f *MainUpdater) GetMarkers() []machinery.Marker {
 	}
 }
 
-var _ machinery.Inserter = &StandaloneWebhookMainUpdater{}
+var _ machinery.Inserter = &MultiGVKWebhookMainUpdater{}
 
-// StandaloneWebhookMainUpdater updates cmd/main.go to wire a standalone webhook handler.
-type StandaloneWebhookMainUpdater struct {
+// MultiGVKWebhookMainUpdater updates cmd/main.go to wire a multi-GVK webhook handler.
+type MultiGVKWebhookMainUpdater struct {
 	machinery.RepositoryMixin
 
-	Webhook resource.StandaloneWebhook
+	Webhook resource.Webhook
 }
 
 // GetPath implements file.Builder
-func (f *StandaloneWebhookMainUpdater) GetPath() string {
+func (f *MultiGVKWebhookMainUpdater) GetPath() string {
 	return defaultMainPath
 }
 
 // GetIfExistsAction implements file.Builder
-func (*StandaloneWebhookMainUpdater) GetIfExistsAction() machinery.IfExistsAction {
+func (*MultiGVKWebhookMainUpdater) GetIfExistsAction() machinery.IfExistsAction {
 	return machinery.OverwriteFile
 }
 
 // GetMarkers implements file.Inserter
-func (f *StandaloneWebhookMainUpdater) GetMarkers() []machinery.Marker {
+func (f *MultiGVKWebhookMainUpdater) GetMarkers() []machinery.Marker {
 	return []machinery.Marker{
 		machinery.NewMarkerFor(defaultMainPath, importMarker),
 		machinery.NewMarkerFor(defaultMainPath, setupMarker),
@@ -135,11 +135,11 @@ func (f *StandaloneWebhookMainUpdater) GetMarkers() []machinery.Marker {
 }
 
 // GetCodeFragments implements file.Inserter
-func (f *StandaloneWebhookMainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
+func (f *MultiGVKWebhookMainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	fragments := make(machinery.CodeFragmentsMap, 2)
 
 	// Import
-	imports := []string{fmt.Sprintf(standaloneWebhookImportCodeFragment, f.Repo)}
+	imports := []string{fmt.Sprintf(multiGVKWebhookImportCodeFragment, f.Repo)}
 	fragments[machinery.NewMarkerFor(defaultMainPath, importMarker)] = imports
 
 	// Setup code - register at all relevant paths
@@ -150,7 +150,7 @@ func (f *StandaloneWebhookMainUpdater) GetCodeFragments() machinery.CodeFragment
 	return fragments
 }
 
-func (f *StandaloneWebhookMainUpdater) buildHandlerName() string {
+func (f *MultiGVKWebhookMainUpdater) buildHandlerName() string {
 	parts := strings.Split(f.Webhook.Name, "-")
 	for i, p := range parts {
 		if len(p) > 0 {
@@ -160,29 +160,29 @@ func (f *StandaloneWebhookMainUpdater) buildHandlerName() string {
 	return strings.Join(parts, "") + "Webhook"
 }
 
-func (f *StandaloneWebhookMainUpdater) buildSetupFragments(handlerName string) []string {
+func (f *MultiGVKWebhookMainUpdater) buildSetupFragments(handlerName string) []string {
 	var fragments []string
 	if f.Webhook.Defaulting {
 		path := f.Webhook.DefaultingPath
 		if path == "" {
 			path = "/mutate-" + f.Webhook.Name
 		}
-		fragments = append(fragments, fmt.Sprintf(standaloneWebhookSetupCodeFragment, path, handlerName))
+		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
 	}
 	if f.Webhook.Validation {
 		path := f.Webhook.ValidationPath
 		if path == "" {
 			path = "/validate-" + f.Webhook.Name
 		}
-		fragments = append(fragments, fmt.Sprintf(standaloneWebhookSetupCodeFragment, path, handlerName))
+		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
 	}
 	return fragments
 }
 
 const (
-	standaloneWebhookImportCodeFragment = `	ctrlwebhook "%s/internal/webhook"
+	multiGVKWebhookImportCodeFragment = `	ctrlwebhook "%s/internal/webhook"
 `
-	standaloneWebhookSetupCodeFragment = `// nolint:goconst
+	multiGVKWebhookSetupCodeFragment = `// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		mgr.GetWebhookServer().Register(
 			"%[1]s",

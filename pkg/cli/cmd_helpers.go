@@ -316,17 +316,6 @@ type executionHooksFactory struct {
 	duplicateFlagValues map[string][]pflag.Value
 }
 
-// hasStandaloneWebhookSupport returns true if at least one subcommand in the
-// chain implements RequiresStandaloneWebhook.
-func (factory *executionHooksFactory) hasStandaloneWebhookSupport() bool {
-	for _, tuple := range factory.subcommands {
-		if _, ok := tuple.subcommand.(plugin.RequiresStandaloneWebhook); ok {
-			return true
-		}
-	}
-	return false
-}
-
 func (factory *executionHooksFactory) forEach(cb func(subcommand plugin.Subcommand) error, errorMessage string) error {
 	for i, tuple := range factory.subcommands {
 		if tuple.skip {
@@ -456,11 +445,10 @@ func (factory *executionHooksFactory) preRunEFunc(
 			_ = cfg.SetPluginChain(factory.pluginChain)
 		}
 
-		// Create the resource and standalone webhook models from the parsed options.
-		// The plugin subcommands receive both and decide the mode (GVK-based vs standalone)
-		// by checking which fields are filled.
+		// Create the resource model from the parsed options.
+		// The plugin subcommands receive the resource and decide the mode
+		// (GVK-based vs multi-GVK webhook) by checking which fields are filled.
 		var res *resource.Resource
-		var swh resource.StandaloneWebhook
 		if options != nil {
 			// TODO: offer a flag instead of hard-coding project-wide domain
 			options.Domain = cfg.GetDomain()
@@ -468,14 +456,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 				return fmt.Errorf("%s: failed to create resource: %w", factory.errorMessage, err)
 			}
 
-			// Validate that the plugins support standalone webhooks when in standalone mode.
-			if options.isStandaloneWebhook() && !factory.hasStandaloneWebhookSupport() {
-				return fmt.Errorf("%s: none of the resolved plugins support multi-GVK webhooks "+
-					"(no plugin implements RequiresStandaloneWebhook)", factory.errorMessage)
-			}
-
 			res = options.newResource()
-			swh = options.newStandaloneWebhook()
 		}
 
 		// Inject config hook.
@@ -488,34 +469,17 @@ func (factory *executionHooksFactory) preRunEFunc(
 			return err
 		}
 
-		// Inject standalone webhook hook. Each plugin inspects the standalone webhook
-		// and decides whether it applies (empty webhooks are skipped by the plugin).
-		if !swh.IsEmpty() {
-			if err := cfg.AddStandaloneWebhook(swh); err != nil {
-				return fmt.Errorf("%s: failed to add standalone webhook: %w", factory.errorMessage, err)
-			}
+		if res != nil {
+			// Inject resource hook.
 			if err := factory.forEach(func(subcommand plugin.Subcommand) error {
-				if swhSubcommand, ok := subcommand.(plugin.RequiresStandaloneWebhook); ok {
-					return swhSubcommand.InjectStandaloneWebhook(&swh)
+				if subcommand, requiresResource := subcommand.(plugin.RequiresResource); requiresResource {
+					return subcommand.InjectResource(res)
 				}
 				return nil
-			}, "unable to inject the standalone webhook to"); err != nil {
+			}, "unable to inject the resource to"); err != nil {
 				return err
 			}
-		}
 
-		// Inject resource hook. Each plugin receives the resource (which may be nil
-		// for standalone webhooks) and decides how to handle it.
-		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
-			if subcommand, requiresResource := subcommand.(plugin.RequiresResource); requiresResource {
-				return subcommand.InjectResource(res)
-			}
-			return nil
-		}, "unable to inject the resource to"); err != nil {
-			return err
-		}
-
-		if res != nil {
 			if err := res.Validate(); err != nil {
 				return fmt.Errorf("%s: created invalid resource: %w", factory.errorMessage, err)
 			}
