@@ -172,5 +172,36 @@ var _ = Describe("NewMarkerFor with unsupported extensions", func() {
 	It("should panic for unsupported extensions", func() {
 		Expect(func() { NewMarkerFor("file.txt", "test") }).To(Panic())
 		Expect(func() { NewMarkerFor("file.md", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor("Makefile", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor(".gitignore", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor("file.", "test") }).To(Panic())
 	})
+})
+
+var _ = Describe("NewMarkerForE", func() {
+	It("should use the kubebuilder scaffold prefix", func() {
+		marker, err := NewMarkerForE("test.go", "imports")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(marker.String()).To(Equal("// +kubebuilder:scaffold:imports"))
+	})
+
+	DescribeTable("should return an error for unknown extensions",
+		func(path, extSubstr string) {
+			_, err := NewMarkerForE(path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(extSubstr))
+		},
+		Entry("for .txt extension", "file.txt", ".txt"),
+		Entry("for Unix dotfile paths", ".gitignore", ".gitignore"),
+	)
+
+	DescribeTable("should return an error for paths with no file extension",
+		func(path string) {
+			_, err := NewMarkerForE(path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no file extension"))
+		},
+		Entry("extensionless file", "Makefile"),
+		Entry("trailing-dot file", "file."),
+	)
 })
