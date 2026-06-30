@@ -829,8 +829,34 @@ var _ = Describe("generate: kubebuilder", func() {
 
 	Context("kubebuilderHelmEdit", func() {
 		It("runs kubebuilder edit successfully for Helm plugin", func() {
-			// Run kubebuilderHelmEdit and verify no errors
-			Expect(kubebuilderHelmEdit(true)).To(Succeed())
+			Expect(kubebuilderHelmEdit()).To(Succeed())
+		})
+	})
+
+	Context("kubebuilderHelmEditWithConfig", func() {
+		It("uses v2-alpha defaults when project has v1-alpha config", func() {
+			cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV1Alpha: true}}
+			store := &fakeStore{cfg: cfg}
+			Expect(kubebuilderHelmEditWithConfig(store)).To(Succeed())
+
+			log, err := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(log)).To(ContainSubstring(pluginHelmKubebuilderV2Alpha))
+			Expect(string(log)).NotTo(ContainSubstring(pluginHelmKubebuilderV1Alpha))
+		})
+
+		It("passes tracked options when project already has v2-alpha config", func() {
+			cfg := &fakeConfig{plugins: map[string]any{
+				pluginHelmKubebuilderV2Alpha: map[string]any{
+					"manifests": "dist/install.yaml",
+				},
+			}}
+			store := &fakeStore{cfg: cfg}
+			Expect(kubebuilderHelmEditWithConfig(store)).To(Succeed())
+
+			log, err := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(log)).To(ContainSubstring(pluginHelmKubebuilderV2Alpha))
 		})
 	})
 })
@@ -839,25 +865,19 @@ var _ = Describe("generate: hasHelmPlugin", func() {
 	It("returns true if v2-alpha plugin present", func() {
 		cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV2Alpha: true}}
 		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeTrue())
-		Expect(isV2Alpha).To(BeTrue())
+		Expect(hasHelmPlugin(store)).To(BeTrue())
 	})
 
-	It("returns true if v1-alpha plugin present", func() {
+	It("returns true if v1-alpha plugin present (migrated to v2-alpha during generate)", func() {
 		cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV1Alpha: true}}
 		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeTrue())
-		Expect(isV2Alpha).To(BeFalse())
+		Expect(hasHelmPlugin(store)).To(BeTrue())
 	})
 
-	It("returns false if both plugins not found", func() {
+	It("returns false if no helm plugin found", func() {
 		cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "helm.kubebuilder.io/v2-beta"}}
 		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeFalse())
-		Expect(isV2Alpha).To(BeFalse())
+		Expect(hasHelmPlugin(store)).To(BeFalse())
 	})
 })
 

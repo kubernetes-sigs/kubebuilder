@@ -33,7 +33,6 @@ import (
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha" //nolint:staticcheck // Deprecated
 	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
@@ -169,7 +168,7 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error migrating AutoUpdate plugin: %w", err)
 	}
 
-	if hasHelm, isV2Alpha := hasHelmPlugin(projectConfig); hasHelm && isV2Alpha {
+	if hasHelmPlugin(projectConfig) {
 		if err = kubebuilderHelmEditWithConfig(projectConfig); err != nil {
 			return fmt.Errorf("error editing Helm plugin: %w", err)
 		}
@@ -751,7 +750,7 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 	err := s.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &cfg)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		// No previous configuration, use defaults
-		return kubebuilderHelmEdit(true)
+		return kubebuilderHelmEdit()
 	} else if err != nil {
 		return fmt.Errorf("failed to decode helm plugin config: %w", err)
 	}
@@ -772,16 +771,9 @@ func kubebuilderHelmEditWithConfig(s store.Store) error {
 	return nil
 }
 
-// Edits the project to include the Helm plugin.
-func kubebuilderHelmEdit(isV2Alpha bool) error {
-	var pluginKey string
-	if isV2Alpha {
-		pluginKey = plugin.KeyFor(helmv2alpha.Plugin{})
-	} else {
-		pluginKey = plugin.KeyFor(helmv1alpha.Plugin{})
-	}
-
-	args := []string{kubebuilderSubcommandEdit, flagPlugins, pluginKey}
+// Edits the project to include the Helm v2alpha plugin.
+func kubebuilderHelmEdit() error {
+	args := []string{kubebuilderSubcommandEdit, flagPlugins, plugin.KeyFor(helmv2alpha.Plugin{})}
 	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
 	}
@@ -789,28 +781,17 @@ func kubebuilderHelmEdit(isV2Alpha bool) error {
 }
 
 // hasHelmPlugin checks if any Helm plugin (v1alpha or v2alpha) is present by inspecting
-// the plugin chain or configuration.
-func hasHelmPlugin(cfg store.Store) (bool, bool) {
+// the configuration. v1alpha projects are migrated to v2alpha during generate.
+func hasHelmPlugin(cfg store.Store) bool {
 	var pluginConfig map[string]any
-
-	// Check for v2alpha first (preferred)
-	err := cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv2alpha.Plugin{}), &pluginConfig)
-	if err == nil {
-		return true, true // has helm plugin, is v2alpha
-	}
-
-	// Check for v1alpha
-	err = cfg.Config().DecodePluginConfig(plugin.KeyFor(helmv1alpha.Plugin{}), &pluginConfig)
-	if err != nil {
-		// If neither Helm plugin is found, return false
-		if errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return false, false
+	for _, key := range []string{plugin.KeyFor(helmv2alpha.Plugin{}), pluginHelmKubebuilderV1Alpha} {
+		err := cfg.Config().DecodePluginConfig(key, &pluginConfig)
+		if err == nil {
+			return true
 		}
-		// slog other errors if needed
-		slog.Error("error decoding Helm plugin config", "error", err)
-		return false, false
+		if !errors.As(err, &config.PluginKeyNotFoundError{}) {
+			slog.Error("error decoding Helm plugin config", "error", err, "key", key)
+		}
 	}
-
-	// v1alpha Helm plugin is present
-	return true, false // has helm plugin, is not v2alpha
+	return false
 }
