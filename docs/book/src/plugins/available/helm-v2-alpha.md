@@ -26,7 +26,7 @@ Many users prefer Helm for packaging and upgrades. This plugin converts `dist/in
 - Preserves environment variables, labels, annotations, and patches
 - Organizes templates to match your `config/` directory layout
 - Includes only configurable parameters in `values.yaml`
-- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, and `network-policy/allow-webhook-traffic.yaml` unless you use `--force`
+- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`, and `prometheus/controller-manager-metrics-monitor.yaml` unless you use `--force`
 - Adds default `ServiceMonitor` and `NetworkPolicy` templates when kustomize output does not provide them
 - Places custom resources in `templates/extras/` with Helm templating
 
@@ -351,7 +351,7 @@ Optional fields in `values.yaml` use Helm conditionals. Comment them out to excl
 |---------------------|-----------------------------------------------------------------------------|
 | **--manifests**     | Path to YAML file containing Kubernetes manifests (default: `dist/install.yaml`) |
 | **--output-dir** string | Output directory for chart (default: `dist`)                                |
-| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`) |
+| **--force**         | Regenerates preserved files except `Chart.yaml` (`values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`, `prometheus/controller-manager-metrics-monitor.yaml`) |
 
 <aside class="note" role="note">
 <p class="note-title"> Examples </p>
