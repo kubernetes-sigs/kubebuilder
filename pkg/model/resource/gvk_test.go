@@ -113,4 +113,26 @@ var _ = Describe("GVK", func() {
 			}),
 		)
 	})
+
+	Context("IsSameGVK", func() {
+		It("should return true when Group, Version, and Kind match regardless of Domain", func() {
+			Expect(gvk.IsSameGVK(GVK{Group: group, Domain: "other.domain", Version: version, Kind: kind})).To(BeTrue())
+			Expect(gvk.IsSameGVK(GVK{Group: group, Version: version, Kind: kind})).To(BeTrue())
+		})
+
+		DescribeTable("should return false when Group, Version, or Kind differ",
+			func(get func() GVK) {
+				Expect(gvk.IsSameGVK(get())).To(BeFalse())
+			},
+			Entry("different kind", func() GVK {
+				return GVK{Group: group, Domain: domain, Version: version, Kind: "Kind2"}
+			}),
+			Entry("different version", func() GVK {
+				return GVK{Group: group, Domain: domain, Version: "v2", Kind: kind}
+			}),
+			Entry("different group", func() GVK {
+				return GVK{Group: "group2", Domain: domain, Version: version, Kind: kind}
+			}),
+		)
+	})
 })
