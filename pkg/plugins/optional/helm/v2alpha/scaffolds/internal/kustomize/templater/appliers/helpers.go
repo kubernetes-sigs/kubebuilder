@@ -99,42 +99,92 @@ var (
 
 // FindManagerContainerRange returns the 0-based inclusive line range of the manager container in yamlContent.
 // Returns (-1, -1) when not found; callers use this to restrict substitutions to the manager only.
+//
+// The function handles yaml.Marshal output where fields are sorted alphabetically,
+// meaning the name field may appear anywhere in the container block (not just first).
 func FindManagerContainerRange(yamlContent string) (int, int) {
-	containerName := GetDefaultContainerName(yamlContent)
+	name := GetDefaultContainerName(yamlContent)
 	lines := strings.Split(yamlContent, "\n")
 
-	start := -1
-	containerIndentLen := -1
-
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed != "- name: "+containerName {
-			continue
-		}
-		_, indentLen := LeadingWhitespace(line)
-		start = i
-		containerIndentLen = indentLen
-		break
-	}
-
-	if start == -1 {
+	listLine, listIndent := findListField(lines, "containers:")
+	if listLine < 0 {
 		return -1, -1
 	}
 
-	end := len(lines) - 1
-	for i := start + 1; i < len(lines); i++ {
+	start := findNamedBlockStart(lines, listLine, listIndent, name)
+	if start < 0 {
+		return -1, -1
+	}
+	return start, findListItemEnd(lines, start, listIndent)
+}
+
+// findListField returns the line index and indent of a YAML field.
+func findListField(lines []string, field string) (int, int) {
+	for i, line := range lines {
+		if strings.TrimSpace(line) == field {
+			_, indent := LeadingWhitespace(line)
+			return i, indent
+		}
+	}
+	return -1, -1
+}
+
+// findNamedBlockStart locates the "- " line that starts the YAML list
+// item containing "name: <name>". Scans forward from listLine so that
+// Helm directive insertions at low indentation are safely ignored.
+func findNamedBlockStart(lines []string, listLine, listIndent int, name string) int {
+	blockStart := -1
+	fieldIndent := -1
+
+	for i := listLine + 1; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		_, indent := LeadingWhitespace(lines[i])
+
+		if trimmed == "" {
+			continue
+		}
+		if indent < listIndent {
+			break
+		}
+
+		if indent == listIndent && strings.HasPrefix(trimmed, "- ") {
+			blockStart = i
+			fieldIndent = -1
+		}
+
+		if blockStart < 0 {
+			continue
+		}
+
+		if fieldIndent < 0 && indent > listIndent && !strings.HasPrefix(trimmed, "- ") {
+			fieldIndent = indent
+		}
+
+		isFirstField := indent == listIndent && trimmed == "- name: "+name
+		isContinuationField := fieldIndent > 0 && indent == fieldIndent && trimmed == "name: "+name
+
+		if isFirstField || isContinuationField {
+			return blockStart
+		}
+	}
+
+	return -1
+}
+
+// findListItemEnd returns the inclusive end line index of a YAML list
+// item that starts at blockStart within a list at listIndent.
+func findListItemEnd(lines []string, blockStart, listIndent int) int {
+	for i := blockStart + 1; i < len(lines); i++ {
 		trimmed := strings.TrimSpace(lines[i])
 		if trimmed == "" {
 			continue
 		}
-		_, indentLen := LeadingWhitespace(lines[i])
-		if indentLen <= containerIndentLen && strings.HasPrefix(trimmed, "- ") {
-			end = i - 1
-			break
+		_, indent := LeadingWhitespace(lines[i])
+		if indent <= listIndent && strings.HasPrefix(trimmed, "- ") {
+			return i - 1
 		}
 	}
-
-	return start, end
+	return len(lines) - 1
 }
 
 // ExtractContainerNames returns all container and initContainer names from a Deployment.
