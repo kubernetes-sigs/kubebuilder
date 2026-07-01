@@ -47,11 +47,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	ctx       context.Context
-	cancel    context.CancelFunc
-	k8sClient client.Client
-	cfg       *rest.Config
-	testEnv   *envtest.Environment
+	ctx            context.Context
+	cancel         context.CancelFunc
+	k8sClient      client.Client
+	cfg            *rest.Config
+	testEnv        *envtest.Environment
+	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -64,6 +65,7 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
+	managerStopped = make(chan struct{})
 
 	var err error
 	err = examplecomv1alpha1.AddToScheme(scheme.Scheme)
@@ -73,8 +75,9 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
+		CRDDirectoryPaths:       []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing:   false,
+		ControlPlaneStopTimeout: time.Minute,
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "..", "config", "webhook")},
@@ -116,6 +119,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
+		defer close(managerStopped)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -136,9 +140,9 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	<-managerStopped
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.

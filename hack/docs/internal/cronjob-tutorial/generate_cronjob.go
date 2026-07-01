@@ -597,9 +597,8 @@ var (
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 `, suiteTestCleanup)
 	hackutils.CheckError("updating suite_test.go to cleanup tests", err)
