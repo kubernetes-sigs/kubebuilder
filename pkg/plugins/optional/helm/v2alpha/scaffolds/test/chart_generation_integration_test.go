@@ -623,6 +623,52 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			lintResult := action.NewLint().Run([]string{chartPath}, nil)
 			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
+
+		It("should template manager container fields and leave sidecar fields as literals", func() {
+			kustomizeYAML := createKustomizeWithSidecarBeforeManager("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+
+			By("reading the generated manager template")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			By("verifying the manager's image is templated")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.image.repository"))
+
+			By("verifying the sidecar's image remains as a literal")
+			Expect(managerStr).To(ContainSubstring("image: sidecar:v1"))
+
+			By("verifying the sidecar's env remains as a literal")
+			Expect(managerStr).To(ContainSubstring("SIDECAR_MODE"))
+
+			By("verifying the sidecar's resources remain as literals")
+			Expect(managerStr).To(ContainSubstring("memory: 64Mi"))
+
+			By("verifying the manager's resources are templated")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.resources"))
+
+			By("verifying the manager's env is templated")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.env"))
+
+			By("verifying the manager's args are templated")
+			Expect(managerStr).To(ContainSubstring(".Values.manager.args"))
+
+			By("verifying the chart loads cleanly")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Validate()).To(Succeed())
+		})
 	})
 
 	// A project that already has hand-authored tolerations, nodeSelector, and affinity in
@@ -1141,8 +1187,36 @@ spec:
       containers:
       - name: sidecar
         image: sidecar:v1
+        env:
+        - name: SIDECAR_MODE
+          value: "active"
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          runAsNonRoot: true
       - name: manager
         image: controller:latest
+        args:
+        - --leader-elect
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        env:
+        - name: MANAGER_ENV
+          value: "production"
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         volumeMounts:
         - name: webhook-certs
           mountPath: /tmp/k8s-webhook-server/serving-certs
