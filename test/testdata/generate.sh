@@ -69,6 +69,19 @@ function scaffold_test_project {
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation
 
+    # Multi-GVK webhook intercepting multiple crew resources
+    $kb create webhook --webhook-name crew-defaulting \
+      --groups crew \
+      --resources captains,sailors \
+      --webhook-versions v1 \
+      --defaulting --make=false
+    # Multi-GVK webhook with core group types
+    $kb create webhook --webhook-name core-validation \
+      --groups core,apps \
+      --resources pods,deployments \
+      --webhook-versions "*" \
+      --programmatic-validation --make=false
+
     # Creating API with Server-Side Apply (SSA) - use same group as other APIs
     $kb create api --group crew --version v1 --kind Navigator --controller=true --resource=true --ssa --make=false
   fi
@@ -104,6 +117,19 @@ function scaffold_test_project {
     # Webhook for kubernetes Core type that is part of an api group - test incremental
     $kb create webhook --group apps --version v1 --kind Deployment --defaulting --make=false
     $kb create webhook --group apps --version v1 --kind Deployment --programmatic-validation --make=false
+
+    # Multi-GVK webhook intercepting multiple group resources
+    $kb create webhook --webhook-name sea-creatures-ship-defaulting \
+      --groups sea-creatures,ship \
+      --resources krakens,leviathans,frigates \
+      --webhook-versions "*" \
+      --defaulting --make=false
+    # Multi-GVK webhook with core group types
+    $kb create webhook --webhook-name core-defaulting \
+      --groups core,apps \
+      --resources pods,deployments \
+      --webhook-versions v1 \
+      --defaulting --make=false
 
     # Creating API with Server-Side Apply (SSA)
     $kb create api --group sea-creatures --version v1 --kind Prawn --controller=true --resource=true --ssa --make=false

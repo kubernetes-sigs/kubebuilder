@@ -62,6 +62,9 @@ var _ = Describe("createWebhookSubcommand", func() {
 			Expect(meta.Examples).To(ContainSubstring("--conversion --spoke v1"))
 			Expect(meta.Examples).To(ContainSubstring("--defaulting-path=/my-custom-mutate-path"))
 			Expect(meta.Examples).To(ContainSubstring("--validation-path=/my-custom-validate-path"))
+			Expect(meta.Examples).To(ContainSubstring("--webhook-name"))
+			Expect(meta.Examples).To(ContainSubstring("--groups core,apps,batch"))
+			Expect(meta.Examples).To(ContainSubstring("--resources configmaps,pods,deployments"))
 		})
 	})
 
@@ -85,6 +88,115 @@ var _ = Describe("createWebhookSubcommand", func() {
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("--validation-path can only be used with --programmatic-validation"))
+	})
+
+	Context("multi-GVK webhook", func() {
+		var emptyRes *resource.Resource
+
+		BeforeEach(func() {
+			emptyRes = &resource.Resource{}
+		})
+
+		It("should scaffold a multi-GVK webhook with valid flags", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "my-webhook"
+			subCmd.multiGVKGroups = []string{crewGroup}
+			subCmd.multiGVKKinds = []string{captains}
+			subCmd.multiGVKVersions = []string{"v1"}
+			subCmd.options.DoDefaulting = true
+			_ = cfg.SetDomain("test.io")
+
+			err := subCmd.InjectResource(emptyRes)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(emptyRes.Webhook).NotTo(BeNil())
+			Expect(emptyRes.Webhook.Name).To(Equal("my-webhook"))
+			Expect(emptyRes.Webhook.Defaulting).To(BeTrue())
+			Expect(emptyRes.Webhook.WebhookVersion).To(Equal("v1"))
+			Expect(emptyRes.Webhook.Groups).To(ContainElement("crew.test.io"))
+		})
+
+		It("should reject multi-GVK webhook with GVK flags set", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "my-webhook"
+			subCmd.multiGVKGroups = []string{crewGroup}
+			subCmd.multiGVKKinds = []string{captains}
+			subCmd.multiGVKVersions = []string{"v1"}
+			subCmd.options.DoDefaulting = true
+			_ = cfg.SetDomain("test.io")
+
+			resWithGVK := &resource.Resource{
+				GVK: resource.GVK{
+					Group:   crewGroup,
+					Domain:  testIO,
+					Version: "v1",
+					Kind:    captainKind,
+				},
+			}
+			err := subCmd.InjectResource(resWithGVK)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot be used with --webhook-name"))
+		})
+
+		It("should reject multi-GVK webhook without --defaulting or --programmatic-validation", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "no-type-webhook"
+			subCmd.multiGVKGroups = []string{crewGroup}
+			subCmd.multiGVKKinds = []string{captains}
+			subCmd.multiGVKVersions = []string{"v1"}
+			_ = cfg.SetDomain("test.io")
+
+			err := subCmd.InjectResource(emptyRes)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("requires at least one of --defaulting or --programmatic-validation"))
+		})
+
+		It("should resolve core group domains for multi-GVK webhook", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "core-webhook"
+			subCmd.multiGVKGroups = []string{"apps", "batch", "core"}
+			subCmd.multiGVKKinds = []string{"deployments", "jobs", "pods"}
+			subCmd.multiGVKVersions = []string{"v1"}
+			subCmd.options.DoValidation = true
+			_ = cfg.SetDomain("test.io")
+
+			err := subCmd.InjectResource(emptyRes)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"apps", "batch", "core"}))
+		})
+
+		It("should resolve k8s.io domain for well-known groups", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "networking-webhook"
+			subCmd.multiGVKGroups = []string{"admission", "networking.k8s.io"}
+			subCmd.multiGVKKinds = []string{"pods"}
+			subCmd.multiGVKVersions = []string{"v1"}
+			subCmd.options.DoValidation = true
+			_ = cfg.SetDomain("test.io")
+
+			err := subCmd.InjectResource(emptyRes)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"admission.k8s.io", "networking.k8s.io"}))
+		})
+
+		It("should resolve project domain for non-core groups", func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.multiGVKName = "project-webhook"
+			subCmd.multiGVKGroups = []string{crewGroup, shipGroup}
+			subCmd.multiGVKKinds = []string{captains, frigatesPlural}
+			subCmd.multiGVKVersions = []string{"v1"}
+			subCmd.options.DoDefaulting = true
+			_ = cfg.SetDomain("test.io")
+
+			err := subCmd.InjectResource(emptyRes)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"crew.test.io", "ship.test.io"}))
+		})
 	})
 
 	It("should require external-api-path when using external-api-module", func() {

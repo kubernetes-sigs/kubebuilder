@@ -307,27 +307,9 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
 	// Resolve domains for each group (core groups get their known domain,
 	// non-core groups use the project domain).
 	projectDomain := p.config.GetDomain()
-	resolvedGroups := make([]string, len(wh.Groups))
 	for i, g := range wh.Groups {
-		g = strings.TrimSpace(g)
-		if domain, found := resource.CoreGroupDomain(g); found {
-			if domain == "" {
-				resolvedGroups[i] = g
-			} else {
-				resolvedGroups[i] = g + "." + domain
-			}
-		} else {
-			// For groups with an explicit domain suffix, use as-is.
-			if strings.Contains(g, ".") {
-				resolvedGroups[i] = g
-			} else if projectDomain != "" {
-				resolvedGroups[i] = g + "." + projectDomain
-			} else {
-				resolvedGroups[i] = g
-			}
-		}
+		wh.Groups[i] = goPlugin.ResolveGroupDomain(g, projectDomain)
 	}
-	wh.Groups = resolvedGroups
 
 	if !wh.Defaulting && !wh.Validation {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting or "+
