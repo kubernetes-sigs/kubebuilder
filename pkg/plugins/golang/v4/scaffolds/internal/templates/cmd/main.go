@@ -165,14 +165,14 @@ func (f *MultiGVKWebhookMainUpdater) buildSetupFragments(handlerName string) []s
 	if f.Webhook.Defaulting {
 		path := f.Webhook.DefaultingPath
 		if path == "" {
-			path = "/mutate-" + f.Webhook.Name
+			path = "/mutate-" + strings.ToLower(f.Webhook.Name)
 		}
 		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
 	}
 	if f.Webhook.Validation {
 		path := f.Webhook.ValidationPath
 		if path == "" {
-			path = "/validate-" + f.Webhook.Name
+			path = "/validate-" + strings.ToLower(f.Webhook.Name)
 		}
 		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
 	}

@@ -91,19 +91,13 @@ func (s *multiGVKWebhookScaffolder) Scaffold() error {
 		machinery.WithBoilerplate(string(boilerplate)),
 	)
 
-	// Scaffold the webhook file
-	webhookFilePath := s.getWebhookFilePath()
-	webhookFileExists := false
-	if _, statErr := s.fs.FS.Stat(webhookFilePath); statErr == nil {
-		webhookFileExists = true
-	}
-
-	if !webhookFileExists || s.force {
-		if err := scaffold.Execute(
-			&webhooks.MultiGVKWebhook{Force: s.force, Webhook: s.wh},
-		); err != nil {
-			return fmt.Errorf("error creating multi-GVK webhook: %w", err)
-		}
+	// Scaffold the webhook file.
+	// The template's IfExistsAction (Error by default, OverwriteFile when --force is set)
+	// is respected automatically by the scaffold machinery.
+	if err := scaffold.Execute(
+		&webhooks.MultiGVKWebhook{Force: s.force, Webhook: s.wh},
+	); err != nil {
+		return fmt.Errorf("error creating multi-GVK webhook: %w", err)
 	}
 
 	// Update main.go to wire the webhook handler
@@ -114,11 +108,6 @@ func (s *multiGVKWebhookScaffolder) Scaffold() error {
 	}
 
 	return nil
-}
-
-// getWebhookFilePath returns the path to the webhook file
-func (s *multiGVKWebhookScaffolder) getWebhookFilePath() string {
-	return fmt.Sprintf("internal/webhook/%s_webhook.go", strings.ToLower(s.wh.Name))
 }
 
 type webhookScaffolder struct {

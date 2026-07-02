@@ -75,7 +75,7 @@ func (f *MultiGVKWebhook) ValidationPath() string {
 func (f *MultiGVKWebhook) MarkerGroups() string {
 	var parts []string
 	for _, g := range f.Webhook.Groups {
-		if g == "" {
+		if g == "" || g == "core" {
 			parts = append(parts, `""`)
 		} else {
 			parts = append(parts, g)
@@ -122,7 +122,6 @@ import (
 // {{ .HandlerName }} validates intercepted resources.
 {{ end }}
 type {{ .HandlerName }} struct {
-	Decoder admission.Decoder
 }
 
 // {{ .HandlerName }} implements admission.Handler.
@@ -137,7 +136,7 @@ func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) 
 	{{ else }}
 	// TODO(user): fill in your validation logic.
 	{{ end }}
-	// Use req.Object.Raw to access the raw object, then decode it with h.Decoder.
+	// Use admission.Decoder to decode req.Object.Raw.
 	// Use req.Resource.Group, req.Resource.Version, and req.Resource.Resource
 	// to identify which resource type triggered this webhook.
 	return admission.Allowed("")

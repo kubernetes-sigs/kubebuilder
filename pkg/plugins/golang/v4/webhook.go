@@ -54,6 +54,12 @@ type createWebhookSubcommand struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// Multi-GVK webhook fields (bound via flags in BindFlags, mutually exclusive with GVK flags).
+	multiGVKName     string
+	multiGVKGroups   []string
+	multiGVKKinds    []string
+	multiGVKVersions []string
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -90,9 +96,9 @@ a webhook that intercepts multiple resource types (multi-GVK webhook).
 
   # Create a multi-GVK defaulting webhook that intercepts multiple resource types
   %[1]s create webhook --name kube-state-metrics-annotations \
-    --groups "core,apps,batch" \
-    --kinds ConfigMap,Pod,Deployment \
-    --versions "*" \
+    --groups core,apps,batch \
+    --kinds configmaps,pods,deployments \
+    --versions v1 \
     --defaulting
 `, cliMeta.CommandName)
 }
@@ -141,6 +147,19 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"If set, attempt to create resource even if it already exists")
+
+	// Multi-GVK webhook flags (mutually exclusive with --group/--version/--kind).
+	fs.StringVar(&p.multiGVKName, "name", "",
+		"Name for a webhook that intercepts multiple resource types. "+
+			"Use with --groups, --kinds, and --versions instead of --group, --version, --kind")
+	fs.StringSliceVar(&p.multiGVKGroups, "groups", nil,
+		"Comma-separated list of API groups the webhook intercepts (e.g., --groups core,apps,batch). "+
+			"Use 'core' for the core group")
+	fs.StringSliceVar(&p.multiGVKKinds, "kinds", nil,
+		"Comma-separated list of API resources the webhook intercepts (plural form) (e.g., --kinds pods,deployments)")
+	fs.StringSliceVar(&p.multiGVKVersions, "versions", nil,
+		"Comma-separated list of API versions the webhook intercepts, "+
+			"or '*' for all (e.g., --versions v1,v1beta1,*)")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -156,8 +175,10 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
 	// Multi-GVK webhook path (no GVK fields).
-	if p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty() {
-		return p.injectMultiGVKWebhook()
+	// Detect multi-GVK mode via the plugin's own flags (--name) or from an already-populated
+	// Webhook field (e.g., from PROJECT config).
+	if p.multiGVKName != "" || (p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty()) {
+		return p.injectMultiGVKWebhookFromFlags()
 	}
 
 	// Copy essential fields from existing resource in PROJECT file (Path, Plural,
@@ -233,6 +254,47 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	}
 
 	return nil
+}
+
+// injectMultiGVKWebhookFromFlags handles the multi-GVK webhook injection path
+// when flags were provided via the CLI (as opposed to a pre-populated PROJECT config).
+// It validates the flags and sets up the resource's Webhook field.
+func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
+	// If the Webhook is already set (from PROJECT config), delegate directly.
+	if p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty() {
+		return p.injectMultiGVKWebhook()
+	}
+
+	// Validate multi-GVK webhook flags.
+	if p.multiGVKName == "" {
+		return errors.New("--name is required for multi-GVK webhooks")
+	}
+	if len(p.multiGVKGroups) == 0 {
+		return errors.New("--groups is required with --name")
+	}
+	if len(p.multiGVKKinds) == 0 {
+		return errors.New("--kinds is required with --name")
+	}
+	if len(p.multiGVKVersions) == 0 {
+		return errors.New("--versions is required with --name (use '*' for all)")
+	}
+
+	// Reject GVK flags when using multi-GVK webhook mode.
+	if p.resource.Group != "" || p.resource.Version != "" || p.resource.Kind != "" {
+		return errors.New("--group, --version and --kind cannot be used with --name; " +
+			"use --groups, --kinds, and --versions instead")
+	}
+
+	// Set up the webhook on the resource.
+	p.resource.Webhook = &resource.Webhook{
+		Name:           p.multiGVKName,
+		WebhookVersion: "v1",
+		Groups:         p.multiGVKGroups,
+		Kinds:          p.multiGVKKinds,
+		Versions:       p.multiGVKVersions,
+	}
+
+	return p.injectMultiGVKWebhook()
 }
 
 // injectMultiGVKWebhook handles the multi-GVK webhook injection path.

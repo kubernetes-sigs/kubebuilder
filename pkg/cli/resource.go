@@ -34,10 +34,6 @@ const (
 // resourceOptions contains the information required to build a new resource.Resource.
 type resourceOptions struct {
 	resource.GVK
-
-	// Webhook holds the webhook configuration for multi-GVK webhooks
-	// (mutually exclusive with GVK fields).
-	Webhook resource.Webhook
 }
 
 func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
@@ -47,46 +43,11 @@ func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
 	fs.StringVar(&options.Version, "version", "", "Resource Version (e.g., v1, v1beta1)")
 	fs.StringVar(&options.Kind, "kind", "", "Resource Kind (e.g., CronJob, Deployment)")
 
-	// Multi-GVK webhook flags (for webhooks that intercept multiple resource types)
-	fs.StringVar(&options.Webhook.Name, "name", "",
-		"Name for a webhook that intercepts multiple resource types. "+
-			"Use with --groups, --kinds, and --versions instead of --group, --version, --kind")
-	fs.StringSliceVar(&options.Webhook.Groups, "groups", nil,
-		"Comma-separated API groups the webhook intercepts (e.g., 'apps,batch'). Use \"\" for the core group")
-	fs.StringSliceVar(&options.Webhook.Kinds, "kinds", nil,
-		"Comma-separated resource kinds the webhook intercepts (e.g., 'Pod,Deployment')")
-	fs.StringSliceVar(&options.Webhook.Versions, "versions", nil,
-		"Comma-separated API versions the webhook intercepts, or '*' for all (e.g., 'v1,v1beta1')")
-
 	return options
-}
-
-// isMultiGVKWebhook returns true if multi-GVK webhook flags were provided.
-func (opts resourceOptions) isMultiGVKWebhook() bool {
-	return opts.Webhook.Name != ""
 }
 
 // validate verifies that all the fields have valid values.
 func (opts resourceOptions) validate() error {
-	// In multi-GVK webhook mode, GVK flags are not required.
-	if opts.isMultiGVKWebhook() {
-		if len(opts.Webhook.Groups) == 0 {
-			return errors.New("--groups is required with --name")
-		}
-		if len(opts.Webhook.Kinds) == 0 {
-			return errors.New("--kinds is required with --name")
-		}
-		if len(opts.Webhook.Versions) == 0 {
-			return errors.New("--versions is required with --name (use '*' for all)")
-		}
-		// Reject GVK flags when using multi-GVK webhook mode
-		if opts.Version != "" || opts.Kind != "" {
-			return errors.New("--version and --kind cannot be used with --name; " +
-				"use --groups, --kinds, and --versions instead")
-		}
-		return nil
-	}
-
 	// Check that the required flags did not get a flag as their value.
 	// We can safely look for a '-' as the first char as none of the fields accepts it.
 	// NOTE: We must do this for all the required flags first or we may output the wrong
@@ -101,22 +62,27 @@ func (opts resourceOptions) validate() error {
 		return errors.New(kindPresent)
 	}
 
-	// Check that required GVK flags are present (only in non-multi-GVK webhook mode).
+	// When none of the GVK flags are provided, skip the version/kind requirement.
+	// This allows webhook-only commands (multi-GVK webhooks) to pass validation
+	// without specifying a GVK. Plugin-level validation enforces the required flags.
+	if opts.Group == "" && opts.Version == "" && opts.Kind == "" {
+		return nil
+	}
+
+	// Check that required GVK flags are present.
 	if opts.Version == "" {
-		return errors.New(versionPresent)
+		return errors.New("--version is required")
 	}
 	if opts.Kind == "" {
-		return errors.New(kindPresent)
+		return errors.New("--kind is required")
 	}
 
 	return nil
 }
 
-// newResource creates a new resource from the options. Always returns a non-nil
-// *resource.Resource. When the options represent a multi-GVK webhook (no GVK),
-// the returned Resource carries the Webhook field set instead.
+// newResource creates a new resource from the options.
 func (opts resourceOptions) newResource() *resource.Resource {
-	res := &resource.Resource{
+	return &resource.Resource{
 		GVK: resource.GVK{ // Remove whitespaces to prevent values like " " pass validation
 			Group:   strings.TrimSpace(opts.Group),
 			Domain:  strings.TrimSpace(opts.Domain),
@@ -127,25 +93,4 @@ func (opts resourceOptions) newResource() *resource.Resource {
 		API:      &resource.API{},
 		Webhooks: &resource.Webhooks{},
 	}
-
-	if opts.isMultiGVKWebhook() {
-		wh := resource.Webhook{
-			Name:           opts.Webhook.Name,
-			WebhookVersion: "v1",
-			Groups:         trimSlice(opts.Webhook.Groups),
-			Kinds:          trimSlice(opts.Webhook.Kinds),
-			Versions:       trimSlice(opts.Webhook.Versions),
-		}
-		res.Webhook = &wh
-	}
-
-	return res
-}
-
-func trimSlice(s []string) []string {
-	out := make([]string, len(s))
-	for i, v := range s {
-		out[i] = strings.TrimSpace(v)
-	}
-	return out
 }
