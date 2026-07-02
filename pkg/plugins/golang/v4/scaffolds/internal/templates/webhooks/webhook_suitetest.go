@@ -239,7 +239,6 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing:   {{ .WireResource }},
-		ControlPlaneStopTimeout: time.Minute,
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
@@ -301,8 +300,13 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
 	<-managerStopped
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	// Wait for the control plane to shut down gracefully.
+	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
+	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
+	// and return nil, allowing the test suite to pass.
+	Eventually(func() error {
+		return testEnv.Stop()
+	}, time.Minute, time.Second).Should(Succeed())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
@@ -385,7 +389,6 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing:   {{ .WireResource }},
-		ControlPlaneStopTimeout: time.Minute,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
 		// without call the makefile target test. If not informed it will look for the
@@ -460,7 +463,12 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
 	<-managerStopped
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	// Wait for the control plane to shut down gracefully.
+	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
+	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
+	// and return nil, allowing the test suite to pass.
+	Eventually(func() error {
+		return testEnv.Stop()
+	}, time.Minute, time.Second).Should(Succeed())
 })
 `
