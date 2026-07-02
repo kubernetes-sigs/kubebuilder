@@ -40,6 +40,7 @@ var (
 	testEnv   *envtest.Environment
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
+	managerStopped chan struct{}
 )
 `
 
@@ -101,8 +102,11 @@ const suiteTestDescription = `
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
+	managerStopped = make(chan struct{})
+	managerStopCh := managerStopped
 	go func() {
 		defer GinkgoRecover()
+		defer close(managerStopCh)
 		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
@@ -117,10 +121,13 @@ You won't need to touch these.
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	// Wait for the control plane to shut down gracefully.
-	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
-	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
-	// and return nil, allowing the test suite to pass.
+	<-managerStopped
+	// Wait for the control plane to stop gracefully.
+	//
+	// If the control plane does not stop within the default 20-second timeout,
+	// testEnv.Stop() forcefully terminates the process and returns an error.
+	// A later retry detects that the process has already stopped and returns
+	// nil, allowing the test suite to continue.
 	Eventually(func() error {
 		return testEnv.Stop()
 	}, time.Minute, time.Second).Should(Succeed())

@@ -65,7 +65,10 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
+	// Initialize managerStopped as closed to avoid a deadlock in AfterSuite
+	// if the BeforeSuite panics before the manager is started.
 	managerStopped = make(chan struct{})
+	close(managerStopped)
 
 	var err error
 	err = crewv1.AddToScheme(scheme.Scheme)
@@ -116,9 +119,12 @@ var _ = BeforeSuite(func() {
 
 	// +kubebuilder:scaffold:webhook
 
+	// Re-initialize managerStopped to an open channel before starting the manager
+	managerStopped = make(chan struct{})
+	managerStopCh := managerStopped
 	go func() {
 		defer GinkgoRecover()
-		defer close(managerStopped)
+		defer close(managerStopCh)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -140,10 +146,12 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
 	<-managerStopped
-	// Wait for the control plane to shut down gracefully.
-	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
-	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
-	// and return nil, allowing the test suite to pass.
+	// Wait for the control plane to stop gracefully.
+	//
+	// If the control plane does not stop within the default 20-second timeout,
+	// testEnv.Stop() forcefully terminates the process and returns an error.
+	// A later retry detects that the process has already stopped and returns
+	// nil, allowing the test suite to continue.
 	Eventually(func() error {
 		return testEnv.Stop()
 	}, time.Minute, time.Second).Should(Succeed())
