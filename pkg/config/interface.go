@@ -97,6 +97,13 @@ type Config interface {
 	// ListWebhookVersions returns a list of the webhook versions in use by the tracked resources.
 	ListWebhookVersions() []string
 
+	/* Multi-GVK webhooks */
+
+	// GetMultiGVKWebhooks returns all multi-GVK webhook entries.
+	GetMultiGVKWebhooks() ([]resource.Webhook, error)
+	// AddMultiGVKWebhook adds a multi-GVK webhook entry to the config.
+	AddMultiGVKWebhook(wh resource.Webhook) error
+
 	/* Plugins */
 
 	// DecodePluginConfig decodes a plugin config stored in Config into configObj, which must be a pointer.

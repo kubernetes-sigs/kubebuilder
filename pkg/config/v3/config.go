@@ -71,6 +71,10 @@ type Cfg struct {
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
 
+	// MultiGVKWebhooks stores webhooks that intercept multiple resource types
+	// (not tied to a single GVK resource).
+	MultiGVKWebhooks []resource.Webhook `json:"multiGVKWebhooks,omitempty"`
+
 	// Plugins
 	Plugins pluginConfigs `json:"plugins,omitempty"`
 }
@@ -317,6 +321,11 @@ func (c Cfg) ListWebhookVersions() []string {
 			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
 		}
 	}
+	for _, w := range c.MultiGVKWebhooks {
+		if w.WebhookVersion != "" {
+			versionSet[w.WebhookVersion] = struct{}{}
+		}
+	}
 
 	// Convert the map into a slice
 	versions := make([]string, 0, len(versionSet))
@@ -324,6 +333,30 @@ func (c Cfg) ListWebhookVersions() []string {
 		versions = append(versions, version)
 	}
 	return versions
+}
+
+// GetMultiGVKWebhooks implements config.Config
+func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhook, error) {
+	webhooks := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
+	for _, w := range c.MultiGVKWebhooks {
+		webhooks = append(webhooks, w.Copy())
+	}
+	return webhooks, nil
+}
+
+// AddMultiGVKWebhook implements config.Config
+func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhook) error {
+	wh = wh.Copy()
+
+	// Check for duplicates by name
+	for _, existing := range c.MultiGVKWebhooks {
+		if existing.Name == wh.Name {
+			return fmt.Errorf("multi-GVK webhook %q already exists in project config", wh.Name)
+		}
+	}
+
+	c.MultiGVKWebhooks = append(c.MultiGVKWebhooks, wh)
+	return nil
 }
 
 // DecodePluginConfig implements config.Config
@@ -377,6 +410,15 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 			c.Resources[i].Webhooks = nil
 		}
 	}
+
+	// Filter out empty multi-GVK webhooks
+	nonEmpty := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
+	for _, w := range c.MultiGVKWebhooks {
+		if !w.IsEmpty() {
+			nonEmpty = append(nonEmpty, w)
+		}
+	}
+	c.MultiGVKWebhooks = nonEmpty
 
 	content, err := yaml.Marshal(c)
 	if err != nil {

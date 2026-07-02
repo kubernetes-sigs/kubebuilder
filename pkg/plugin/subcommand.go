@@ -17,6 +17,7 @@ limitations under the License.
 package plugin
 
 import (
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -34,6 +35,15 @@ type UpdatesMetadata interface {
 type HasFlags interface {
 	// BindFlags binds flags to the CLI subcommand.
 	BindFlags(*pflag.FlagSet)
+}
+
+// MarksRequiredFlags is an optional interface for subcommands that need to
+// mark flags as required after they are bound. This allows plugin-specific
+// required-flag logic that varies between subcommands (e.g., --version and
+// --kind are required for create api but not for create webhook standalone mode).
+type MarksRequiredFlags interface {
+	// MarkRequiredFlags marks specific flags as required on the given command.
+	MarkRequiredFlags(*cobra.Command) error
 }
 
 // RequiresConfig is an interface that implements the optional inject config method.

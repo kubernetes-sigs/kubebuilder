@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -106,7 +107,89 @@ func (f *MainUpdater) GetMarkers() []machinery.Marker {
 	}
 }
 
+var _ machinery.Inserter = &MultiGVKWebhookMainUpdater{}
+
+// MultiGVKWebhookMainUpdater updates cmd/main.go to wire a multi-GVK webhook handler.
+type MultiGVKWebhookMainUpdater struct {
+	machinery.RepositoryMixin
+
+	Webhook resource.Webhook
+}
+
+// GetPath implements file.Builder
+func (f *MultiGVKWebhookMainUpdater) GetPath() string {
+	return defaultMainPath
+}
+
+// GetIfExistsAction implements file.Builder
+func (*MultiGVKWebhookMainUpdater) GetIfExistsAction() machinery.IfExistsAction {
+	return machinery.OverwriteFile
+}
+
+// GetMarkers implements file.Inserter
+func (f *MultiGVKWebhookMainUpdater) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(defaultMainPath, importMarker),
+		machinery.NewMarkerFor(defaultMainPath, setupMarker),
+	}
+}
+
+// GetCodeFragments implements file.Inserter
+func (f *MultiGVKWebhookMainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 2)
+
+	// Import
+	imports := []string{fmt.Sprintf(multiGVKWebhookImportCodeFragment, f.Repo)}
+	fragments[machinery.NewMarkerFor(defaultMainPath, importMarker)] = imports
+
+	// Setup code - register at all relevant paths
+	handlerName := f.buildHandlerName()
+	setup := f.buildSetupFragments(handlerName)
+	fragments[machinery.NewMarkerFor(defaultMainPath, setupMarker)] = setup
+
+	return fragments
+}
+
+func (f *MultiGVKWebhookMainUpdater) buildHandlerName() string {
+	parts := strings.Split(f.Webhook.Name, "-")
+	for i, p := range parts {
+		if len(p) > 0 {
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return strings.Join(parts, "") + "Webhook"
+}
+
+func (f *MultiGVKWebhookMainUpdater) buildSetupFragments(handlerName string) []string {
+	var fragments []string
+	if f.Webhook.Defaulting {
+		path := f.Webhook.DefaultingPath
+		if path == "" {
+			path = "/mutate-" + strings.ToLower(f.Webhook.Name)
+		}
+		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
+	}
+	if f.Webhook.Validation {
+		path := f.Webhook.ValidationPath
+		if path == "" {
+			path = "/validate-" + strings.ToLower(f.Webhook.Name)
+		}
+		fragments = append(fragments, fmt.Sprintf(multiGVKWebhookSetupCodeFragment, path, handlerName))
+	}
+	return fragments
+}
+
 const (
+	multiGVKWebhookImportCodeFragment = `	ctrlwebhook "%s/internal/webhook"
+`
+	multiGVKWebhookSetupCodeFragment = `// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register(
+			"%[1]s",
+			&webhook.Admission{Handler: &ctrlwebhook.%[2]s{}},
+		)
+	}
+`
 	apiImportCodeFragment = `%s "%s"
 `
 	controllerImportCodeFragment = `"%s/internal/controller"

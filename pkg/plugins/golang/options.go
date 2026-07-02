@@ -23,35 +23,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/internal/coregroups"
 )
-
-const k8sIODomainSuffix = "k8s.io"
-
-var coreGroups = map[string]string{
-	"admission":             k8sIODomainSuffix,
-	"admissionregistration": k8sIODomainSuffix,
-	"apps":                  "",
-	"auditregistration":     k8sIODomainSuffix,
-	"apiextensions":         k8sIODomainSuffix,
-	"authentication":        k8sIODomainSuffix,
-	"authorization":         k8sIODomainSuffix,
-	"autoscaling":           "",
-	"batch":                 "",
-	"certificates":          k8sIODomainSuffix,
-	"coordination":          k8sIODomainSuffix,
-	"core":                  "",
-	"events":                k8sIODomainSuffix,
-	"extensions":            "",
-	"imagepolicy":           k8sIODomainSuffix,
-	"networking":            k8sIODomainSuffix,
-	"node":                  k8sIODomainSuffix,
-	"metrics":               k8sIODomainSuffix,
-	"policy":                "",
-	"rbac.authorization":    k8sIODomainSuffix,
-	"scheduling":            k8sIODomainSuffix,
-	"setting":               k8sIODomainSuffix,
-	"storage":               k8sIODomainSuffix,
-}
 
 // Options contains the information required to build a new resource.Resource.
 type Options struct {
@@ -174,7 +147,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 				}
 			} else {
 				// Handle core types
-				if domain, found := coreGroups[res.Group]; found {
+				if domain, found := coregroups.Groups[res.Group]; found {
 					res.Core = true
 					res.Domain = domain
 					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)

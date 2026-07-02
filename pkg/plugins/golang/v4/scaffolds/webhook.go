@@ -36,7 +36,79 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/webhooks"
 )
 
-var _ plugins.Scaffolder = &webhookScaffolder{}
+var (
+	_ plugins.Scaffolder = &webhookScaffolder{}
+	_ plugins.Scaffolder = &multiGVKWebhookScaffolder{}
+)
+
+type multiGVKWebhookScaffolder struct {
+	config config.Config
+	wh     resource.Webhook
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
+
+	// force indicates whether to scaffold webhook files even if they exist
+	force bool
+}
+
+// NewMultiGVKWebhookScaffolder returns a new Scaffolder for multi-GVK webhook creation
+func NewMultiGVKWebhookScaffolder(cfg config.Config, wh resource.Webhook, force bool) plugins.Scaffolder {
+	return &multiGVKWebhookScaffolder{
+		config: cfg,
+		wh:     wh,
+		force:  force,
+	}
+}
+
+// InjectFS implements cmdutil.Scaffolder
+func (s *multiGVKWebhookScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
+}
+
+// Scaffold implements cmdutil.Scaffolder
+func (s *multiGVKWebhookScaffolder) Scaffold() error {
+	log.Info("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	if err != nil {
+		if errors.Is(err, afero.ErrFileNotFound) {
+			log.Warn("unable to find boilerplate file. "+
+				"This file is used to generate the license header in the project..\n"+
+				"Note that controller-gen will also use this. Ensure that you "+
+				"add the license file or configure your project accordingly",
+				"file_path", hack.DefaultBoilerplatePath, "error", err)
+			boilerplate = []byte("")
+		} else {
+			return fmt.Errorf("error scaffolding webhook: failed to load boilerplate: %w", err)
+		}
+	}
+
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+	)
+
+	// Scaffold the webhook file.
+	// The template's IfExistsAction (Error by default, OverwriteFile when --force is set)
+	// is respected automatically by the scaffold machinery.
+	if err := scaffold.Execute(
+		&webhooks.MultiGVKWebhook{Force: s.force, Webhook: s.wh},
+	); err != nil {
+		return fmt.Errorf("error creating multi-GVK webhook: %w", err)
+	}
+
+	// Update main.go to wire the webhook handler
+	if err := scaffold.Execute(
+		&cmd.MultiGVKWebhookMainUpdater{Webhook: s.wh},
+	); err != nil {
+		return fmt.Errorf("error updating main.go for multi-GVK webhook: %w", err)
+	}
+
+	return nil
+}
 
 type webhookScaffolder struct {
 	config   config.Config

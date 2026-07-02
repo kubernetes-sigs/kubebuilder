@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/internal/coregroups"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
@@ -53,6 +54,12 @@ type createWebhookSubcommand struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// Multi-GVK webhook fields (bound via flags in BindFlags, mutually exclusive with GVK flags).
+	multiGVKName     string
+	multiGVKGroups   []string
+	multiGVKKinds    []string
+	multiGVKVersions []string
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -60,6 +67,9 @@ func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, sub
 
 	subcmdMeta.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and/or conversion webhooks.
+
+Use --name with --groups, --kinds, and --versions to scaffold
+a webhook that intercepts multiple resource types (multi-GVK webhook).
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for Group: ship, Version: v1beta1
   # and Kind: Frigate
@@ -83,6 +93,13 @@ validating and/or conversion webhooks.
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --defaulting --programmatic-validation \
     --defaulting-path=/custom-mutate --validation-path=/custom-validate
+
+  # Create a multi-GVK defaulting webhook that intercepts multiple resource types
+  %[1]s create webhook --name kube-state-metrics-annotations \
+    --groups core,apps,batch \
+    --kinds configmaps,pods,deployments \
+    --versions v1 \
+    --defaulting
 `, cliMeta.CommandName)
 }
 
@@ -130,6 +147,19 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"If set, attempt to create resource even if it already exists")
+
+	// Multi-GVK webhook flags (mutually exclusive with --group/--version/--kind).
+	fs.StringVar(&p.multiGVKName, "name", "",
+		"Name for a webhook that intercepts multiple resource types. "+
+			"Use with --groups, --kinds, and --versions instead of --group, --version, --kind")
+	fs.StringSliceVar(&p.multiGVKGroups, "groups", nil,
+		"Comma-separated list of API groups the webhook intercepts (e.g., --groups core,apps,batch). "+
+			"Use 'core' for the core group")
+	fs.StringSliceVar(&p.multiGVKKinds, "kinds", nil,
+		"Comma-separated list of API resources the webhook intercepts (plural form) (e.g., --kinds pods,deployments)")
+	fs.StringSliceVar(&p.multiGVKVersions, "versions", nil,
+		"Comma-separated list of API versions the webhook intercepts, "+
+			"or '*' for all (e.g., --versions v1,v1beta1,*)")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -137,8 +167,19 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	return nil
 }
 
+//nolint:gocyclo // pre-existing complexity; nil guard adds one branch
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
+	if res == nil {
+		return nil
+	}
 	p.resource = res
+
+	// Multi-GVK webhook path (no GVK fields).
+	// Detect multi-GVK mode via the plugin's own flags (--name) or from an already-populated
+	// Webhook field (e.g., from PROJECT config).
+	if p.multiGVKName != "" || (p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty()) {
+		return p.injectMultiGVKWebhookFromFlags()
+	}
 
 	// Copy essential fields from existing resource in PROJECT file (Path, Plural,
 	// External, Core, Module). API/Controllers/Webhooks are managed separately
@@ -215,7 +256,117 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	return nil
 }
 
+// injectMultiGVKWebhookFromFlags handles the multi-GVK webhook injection path
+// when flags were provided via the CLI (as opposed to a pre-populated PROJECT config).
+// It validates the flags and sets up the resource's Webhook field.
+func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
+	// If the Webhook is already set (from PROJECT config), delegate directly.
+	if p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty() {
+		return p.injectMultiGVKWebhook()
+	}
+
+	// Validate multi-GVK webhook flags.
+	if p.multiGVKName == "" {
+		return errors.New("--name is required for multi-GVK webhooks")
+	}
+	if len(p.multiGVKGroups) == 0 {
+		return errors.New("--groups is required with --name")
+	}
+	if len(p.multiGVKKinds) == 0 {
+		return errors.New("--kinds is required with --name")
+	}
+	if len(p.multiGVKVersions) == 0 {
+		return errors.New("--versions is required with --name (use '*' for all)")
+	}
+
+	// Reject GVK flags when using multi-GVK webhook mode.
+	if p.resource.Group != "" || p.resource.Version != "" || p.resource.Kind != "" {
+		return errors.New("--group, --version and --kind cannot be used with --name; " +
+			"use --groups, --kinds, and --versions instead")
+	}
+
+	// Set up the webhook on the resource.
+	p.resource.Webhook = &resource.Webhook{
+		Name:           p.multiGVKName,
+		WebhookVersion: "v1",
+		Groups:         p.multiGVKGroups,
+		Kinds:          p.multiGVKKinds,
+		Versions:       p.multiGVKVersions,
+	}
+
+	return p.injectMultiGVKWebhook()
+}
+
+// injectMultiGVKWebhook handles the multi-GVK webhook injection path.
+func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
+	wh := p.resource.Webhook
+
+	// Copy webhook configuration from options.
+	if p.options.DoDefaulting {
+		wh.Defaulting = true
+		if p.options.DefaultingPath != "" {
+			wh.DefaultingPath = p.options.DefaultingPath
+		}
+	}
+	if p.options.DoValidation {
+		wh.Validation = true
+		if p.options.ValidationPath != "" {
+			wh.ValidationPath = p.options.ValidationPath
+		}
+	}
+	if wh.WebhookVersion == "" {
+		wh.WebhookVersion = "v1"
+	}
+
+	// Resolve domains for each group (core groups get their known domain,
+	// non-core groups use the project domain).
+	projectDomain := p.config.GetDomain()
+	resolvedGroups := make([]string, len(wh.Groups))
+	for i, g := range wh.Groups {
+		g = strings.TrimSpace(g)
+		if domain, found := coregroups.Groups[g]; found {
+			if domain == "" {
+				resolvedGroups[i] = g
+			} else {
+				resolvedGroups[i] = g + "." + domain
+			}
+		} else {
+			// For groups with an explicit domain suffix, use as-is.
+			if strings.Contains(g, ".") {
+				resolvedGroups[i] = g
+			} else if projectDomain != "" {
+				resolvedGroups[i] = g + "." + projectDomain
+			} else {
+				resolvedGroups[i] = g
+			}
+		}
+	}
+	wh.Groups = resolvedGroups
+
+	if !wh.Defaulting && !wh.Validation {
+		return fmt.Errorf("%s create webhook requires at least one of --defaulting or "+
+			"--programmatic-validation for multi-GVK webhooks", p.commandName)
+	}
+
+	if err := wh.Validate(); err != nil {
+		return fmt.Errorf("error validating webhook: %w", err)
+	}
+
+	return nil
+}
+
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+	// Multi-GVK webhook path.
+	if p.resource != nil && p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty() {
+		scaffolder := scaffolds.NewMultiGVKWebhookScaffolder(p.config, *p.resource.Webhook, p.force)
+		scaffolder.InjectFS(fs)
+		if err := scaffolder.Scaffold(); err != nil {
+			return fmt.Errorf("failed to scaffold multi-GVK webhook: %w", err)
+		}
+		return nil
+	}
+
+	// Regular GVK-based webhook path.
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
@@ -226,6 +377,17 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
+	// Multi-GVK webhook: just update dependencies, no make generate needed.
+	if p.resource != nil && p.resource.Webhook != nil && !p.resource.Webhook.IsEmpty() {
+		err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
+		if err != nil {
+			return fmt.Errorf("error updating go dependencies: %w", err)
+		}
+
+		fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
+		return nil
+	}
+
 	// If external API with module specified, add it using go get
 	if p.resource.IsExternal() && p.resource.Module != "" {
 		log.Info("Adding external API dependency", "module", p.resource.Module)

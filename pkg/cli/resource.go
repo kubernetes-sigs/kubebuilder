@@ -62,14 +62,25 @@ func (opts resourceOptions) validate() error {
 		return errors.New(kindPresent)
 	}
 
-	// We do not check here if the GVK values are empty because that would
-	// make them mandatory and some plugins may want to set default values.
-	// Instead, this is checked by resource.GVK.Validate()
+	// When none of the GVK flags are provided, skip the version/kind requirement.
+	// This allows webhook-only commands (multi-GVK webhooks) to pass validation
+	// without specifying a GVK. Plugin-level validation enforces the required flags.
+	if opts.Group == "" && opts.Version == "" && opts.Kind == "" {
+		return nil
+	}
+
+	// Check that required GVK flags are present.
+	if opts.Version == "" {
+		return errors.New("--version is required")
+	}
+	if opts.Kind == "" {
+		return errors.New("--kind is required")
+	}
 
 	return nil
 }
 
-// newResource creates a new resource from the options
+// newResource creates a new resource from the options.
 func (opts resourceOptions) newResource() *resource.Resource {
 	return &resource.Resource{
 		GVK: resource.GVK{ // Remove whitespaces to prevent values like " " pass validation

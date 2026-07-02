@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
 )
@@ -30,7 +31,32 @@ type createWebhookSubcommand struct {
 	createSubcommand
 }
 
+func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
+	// Multi-GVK webhook: populate Webhooks from the Webhook field.
+	if res.Webhook != nil && !res.Webhook.IsEmpty() {
+		p.resource = &resource.Resource{
+			Webhooks: &resource.Webhooks{
+				WebhookVersion: res.Webhook.WebhookVersion,
+				Defaulting:     res.Webhook.Defaulting,
+				Validation:     res.Webhook.Validation,
+			},
+		}
+		return nil
+	}
+
+	// GVK-based webhook: store the resource as-is.
+	r := res.Copy()
+	p.resource = &r
+	return nil
+}
+
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+	if p.resource == nil {
+		// No resource to scaffold webhooks for; this should not happen
+		// but guard against it.
+		return nil
+	}
+
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {

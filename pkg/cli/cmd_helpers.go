@@ -268,12 +268,6 @@ func initializationHooks(
 	var options *resourceOptions
 	if requiresResource {
 		options = bindResourceFlags(cmd.Flags())
-		if err := cmd.MarkFlagRequired("version"); err != nil {
-			return nil, fmt.Errorf("failed to mark 'version' flag as required: %w", err)
-		}
-		if err := cmd.MarkFlagRequired("kind"); err != nil {
-			return nil, fmt.Errorf("failed to mark 'kind' flag as required: %w", err)
-		}
 	}
 
 	// Bind flags hook: each plugin binds to a temporary FlagSet, then we merge into the command so
@@ -286,6 +280,15 @@ func initializationHooks(
 			subcommand.BindFlags(tmpSet)
 			if err := mergeFlagSetInto(cmd.Flags(), tmpSet, duplicateValues, tuple.key, firstPluginByFlag); err != nil {
 				return nil, err
+			}
+		}
+	}
+
+	// Allow plugins to mark flags as required (e.g., create api marks --version/--kind).
+	for _, tuple := range subcommands {
+		if req, ok := tuple.subcommand.(plugin.MarksRequiredFlags); ok {
+			if err := req.MarkRequiredFlags(cmd); err != nil {
+				return nil, fmt.Errorf("failed to mark required flags for %q: %w", tuple.key, err)
 			}
 		}
 	}
@@ -442,7 +445,9 @@ func (factory *executionHooksFactory) preRunEFunc(
 			_ = cfg.SetPluginChain(factory.pluginChain)
 		}
 
-		// Create the resource if non-nil options provided
+		// Create the resource model from the parsed options.
+		// The plugin subcommands receive the resource and decide the mode
+		// (GVK-based vs multi-GVK webhook) by checking which fields are filled.
 		var res *resource.Resource
 		if options != nil {
 			// TODO: offer a flag instead of hard-coding project-wide domain
@@ -450,6 +455,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 			if err := options.validate(); err != nil {
 				return fmt.Errorf("%s: failed to create resource: %w", factory.errorMessage, err)
 			}
+
 			res = options.newResource()
 		}
 
