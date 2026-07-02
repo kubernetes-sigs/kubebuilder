@@ -47,11 +47,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	ctx       context.Context
-	cancel    context.CancelFunc
-	k8sClient client.Client
-	cfg       *rest.Config
-	testEnv   *envtest.Environment
+	ctx            context.Context
+	cancel         context.CancelFunc
+	k8sClient      client.Client
+	cfg            *rest.Config
+	testEnv        *envtest.Environment
+	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -64,6 +65,7 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
+	managerStopped = make(chan struct{})
 
 	var err error
 	err = shipv1.AddToScheme(scheme.Scheme)
@@ -116,6 +118,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
+		defer close(managerStopped)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -136,6 +139,11 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
+	<-managerStopped
+	// Wait for the control plane to shut down gracefully.
+	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
+	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
+	// and return nil, allowing the test suite to pass.
 	Eventually(func() error {
 		return testEnv.Stop()
 	}, time.Minute, time.Second).Should(Succeed())

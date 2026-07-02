@@ -214,6 +214,7 @@ var (
 	k8sClient client.Client
 	cfg *rest.Config
 	testEnv *envtest.Environment
+	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -226,6 +227,7 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
+	managerStopped = make(chan struct{})
 
 	var err error
 	err = %s.AddToScheme(scheme.Scheme)
@@ -235,8 +237,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: {{ .WireResource }},
+		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing:   {{ .WireResource }},
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
@@ -276,6 +278,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
+		defer close(managerStopped)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -296,6 +299,11 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
+	<-managerStopped
+	// Wait for the control plane to shut down gracefully.
+	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
+	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
+	// and return nil, allowing the test suite to pass.
 	Eventually(func() error {
 		return testEnv.Stop()
 	}, time.Minute, time.Second).Should(Succeed())
@@ -362,6 +370,7 @@ var (
 	ctx context.Context
 	k8sClient client.Client
 	testEnv *envtest.Environment
+	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -374,11 +383,12 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
+	managerStopped = make(chan struct{})
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: {{ .WireResource }},
+		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing:   {{ .WireResource }},
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
 		// without call the makefile target test. If not informed it will look for the
@@ -431,6 +441,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
+		defer close(managerStopped)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -451,6 +462,11 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
+	<-managerStopped
+	// Wait for the control plane to shut down gracefully.
+	// If it fails to gracefully shut down within the default timeout (20s) and SIGKILLs the process,
+	// testEnv.Stop() will return an error. Eventually will retry, see that the process is already dead,
+	// and return nil, allowing the test suite to pass.
 	Eventually(func() error {
 		return testEnv.Stop()
 	}, time.Minute, time.Second).Should(Succeed())
