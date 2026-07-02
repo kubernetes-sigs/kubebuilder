@@ -23,7 +23,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/internal/coregroups"
 )
 
 // Options contains the information required to build a new resource.Resource.
@@ -147,7 +146,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 				}
 			} else {
 				// Handle core types
-				if domain, found := coregroups.Groups[res.Group]; found {
+				if domain, found := resource.CoreGroupDomain(res.Group); found {
 					res.Core = true
 					res.Domain = domain
 					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)

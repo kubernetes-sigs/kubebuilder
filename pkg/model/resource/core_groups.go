@@ -1,11 +1,11 @@
-package coregroups
+package resource
 
 const k8sIODomainSuffix = "k8s.io"
 
-// Groups maps core Kubernetes API group names to their domain suffix.
-// An empty string means the group is at the root (e.g., "apps", "batch").
+// coreGroups maps well-known core Kubernetes API group names to their domain suffix.
+// An empty string means the group is at the root level (e.g., "apps", "batch").
 // A non-empty string is the domain suffix (e.g., "k8s.io").
-var Groups = map[string]string{
+var coreGroups = map[string]string{
 	"admission":             k8sIODomainSuffix,
 	"admissionregistration": k8sIODomainSuffix,
 	"apps":                  "",
@@ -29,4 +29,12 @@ var Groups = map[string]string{
 	"scheduling":            k8sIODomainSuffix,
 	"setting":               k8sIODomainSuffix,
 	"storage":               k8sIODomainSuffix,
+}
+
+// CoreGroupDomain returns the domain suffix for a well-known core Kubernetes API group.
+// If the group is a core group, it returns the domain (empty for root-level groups such as
+// "apps") and true. Otherwise, it returns an empty string and false.
+func CoreGroupDomain(group string) (string, bool) {
+	domain, ok := coreGroups[group]
+	return domain, ok
 }
