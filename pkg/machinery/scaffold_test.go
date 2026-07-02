@@ -109,8 +109,8 @@ var _ = Describe("Scaffold", func() {
 	})
 
 	Describe("SubstituteYear", func() {
-		It("should replace YEAR with the current UTC year", func() {
-			currentYear := strconv.Itoa(time.Now().UTC().Year())
+		It("should replace YEAR with the current local year", func() {
+			currentYear := strconv.Itoa(time.Now().Year())
 			Expect(SubstituteYear("Copyright YEAR The Authors.")).
 				To(Equal("Copyright " + currentYear + " The Authors."))
 		})
@@ -118,6 +118,12 @@ var _ = Describe("Scaffold", func() {
 		It("should leave strings without YEAR unchanged", func() {
 			Expect(SubstituteYear("Copyright 2024 The Authors.")).
 				To(Equal("Copyright 2024 The Authors."))
+		})
+
+		It("should not replace YEAR inside other words", func() {
+			currentYear := strconv.Itoa(time.Now().Year())
+			Expect(SubstituteYear("Copyright YEAR GOODYEAR Authors.")).
+				To(Equal("Copyright " + currentYear + " GOODYEAR Authors."))
 		})
 	})
 
