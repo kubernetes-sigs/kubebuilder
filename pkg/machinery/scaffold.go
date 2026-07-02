@@ -24,6 +24,7 @@ import (
 	log "log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -550,8 +551,10 @@ func (s Scaffold) writeFile(f *File) error {
 	return nil
 }
 
-// SubstituteYear replaces every occurrence of "YEAR" in the boilerplate string
-// with the current UTC year.
+var yearPlaceholder = regexp.MustCompile(`\bYEAR\b`)
+
+// SubstituteYear replaces standalone "YEAR" placeholders in the boilerplate string
+// with the current local year.
 func SubstituteYear(boilerplate string) string {
-	return strings.ReplaceAll(boilerplate, "YEAR", strconv.Itoa(time.Now().UTC().Year()))
+	return yearPlaceholder.ReplaceAllString(boilerplate, strconv.Itoa(time.Now().Year()))
 }
