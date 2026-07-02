@@ -1,6 +1,10 @@
 package resource
 
-import "fmt"
+import (
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/validation"
+)
 
 // Webhook defines a webhook that intercepts multiple resource types
 // (multiple GVKs) rather than being tied to a single API resource.
@@ -37,6 +41,11 @@ type Webhook struct {
 // Business-logic checks (e.g., requiring at least one group/resource/version)
 // are handled at the plugin level.
 func (w Webhook) Validate() error {
+	if w.Name != "" {
+		if errs := validation.IsDNS1035Label(w.Name); len(errs) != 0 {
+			return fmt.Errorf("invalid webhook name %q: %s", w.Name, errs)
+		}
+	}
 	if w.WebhookVersion != "" {
 		if err := validateAPIVersion(w.WebhookVersion); err != nil {
 			return fmt.Errorf("invalid webhook version for %q: %w", w.Name, err)

@@ -64,7 +64,7 @@ func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, sub
 	subcmdMeta.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and/or conversion webhooks.
 
-Use --name with --groups, --kinds, and --versions to scaffold
+Use --webhook-name with --groups, --resources, and --webhook-versions to scaffold
 a webhook that intercepts multiple resource types (multi-GVK webhook).
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for Group: ship, Version: v1beta1
@@ -91,10 +91,10 @@ a webhook that intercepts multiple resource types (multi-GVK webhook).
     --defaulting-path=/custom-mutate --validation-path=/custom-validate
 
   # Create a multi-GVK defaulting webhook that intercepts multiple resource types
-  %[1]s create webhook --name kube-state-metrics-annotations \
+  %[1]s create webhook --webhook-name kube-state-metrics-annotations \
     --groups core,apps,batch \
-    --kinds configmaps,pods,deployments \
-    --versions v1 \
+    --resources configmaps,pods,deployments \
+    --webhook-versions v1 \
     --defaulting
 `, cliMeta.CommandName)
 }
@@ -140,17 +140,17 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"If set, attempt to create resource even if it already exists")
 
 	// Multi-GVK webhook flags (mutually exclusive with --group/--version/--kind).
-	fs.StringVar(&p.multiGVKName, "name", "",
+	fs.StringVar(&p.multiGVKName, "webhook-name", "",
 		"Name for a webhook that intercepts multiple resource types. "+
-			"Use with --groups, --kinds, and --versions instead of --group, --version, --kind")
+			"Use with --groups, --resources, and --webhook-versions instead of --group, --version, --kind")
 	fs.StringSliceVar(&p.multiGVKGroups, "groups", nil,
 		"Comma-separated list of API groups the webhook intercepts (e.g., --groups core,apps,batch). "+
 			"Use 'core' for the core group")
-	fs.StringSliceVar(&p.multiGVKKinds, "kinds", nil,
-		"Comma-separated list of API resources the webhook intercepts (plural form) (e.g., --kinds pods,deployments)")
-	fs.StringSliceVar(&p.multiGVKVersions, "versions", nil,
+	fs.StringSliceVar(&p.multiGVKKinds, "resources", nil,
+		"Comma-separated list of API resources the webhook intercepts (plural form) (e.g., --resources pods,deployments)")
+	fs.StringSliceVar(&p.multiGVKVersions, "webhook-versions", nil,
 		"Comma-separated list of API versions the webhook intercepts, "+
-			"or '*' for all (e.g., --versions v1,v1beta1,*)")
+			"or '*' for all (e.g., --webhook-versions v1,v1beta1,*)")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -254,22 +254,22 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
 
 	// Validate multi-GVK webhook flags.
 	if p.multiGVKName == "" {
-		return errors.New("--name is required for multi-GVK webhooks")
+		return errors.New("--webhook-name is required for multi-GVK webhooks")
 	}
 	if len(p.multiGVKGroups) == 0 {
-		return errors.New("--groups is required with --name")
+		return errors.New("--groups is required with --webhook-name")
 	}
 	if len(p.multiGVKKinds) == 0 {
-		return errors.New("--kinds is required with --name")
+		return errors.New("--resources is required with --webhook-name")
 	}
 	if len(p.multiGVKVersions) == 0 {
-		return errors.New("--versions is required with --name (use '*' for all)")
+		return errors.New("--webhook-versions is required with --webhook-name (use '*' for all)")
 	}
 
 	// Reject GVK flags when using multi-GVK webhook mode.
 	if p.resource.Group != "" || p.resource.Version != "" || p.resource.Kind != "" {
-		return errors.New("--group, --version and --kind cannot be used with --name; " +
-			"use --groups, --kinds, and --versions instead")
+		return errors.New("--group, --version and --kind cannot be used with --webhook-name; " +
+			"use --groups, --resources, and --webhook-versions instead")
 	}
 
 	// Set up the webhook on the resource.
@@ -349,6 +349,10 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		scaffolder.InjectFS(fs)
 		if err := scaffolder.Scaffold(); err != nil {
 			return fmt.Errorf("failed to scaffold multi-GVK webhook: %w", err)
+		}
+		// Persist the webhook entry to the PROJECT config.
+		if err := p.config.AddMultiGVKWebhook(*p.resource.Webhook); err != nil {
+			return fmt.Errorf("failed to persist multi-GVK webhook to config: %w", err)
 		}
 		return nil
 	}

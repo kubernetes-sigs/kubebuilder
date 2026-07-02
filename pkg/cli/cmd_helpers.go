@@ -331,13 +331,30 @@ func initializationHooks(
 	}
 
 	// Allow plugins to mark flags as required (e.g., create api marks --version/--kind).
+	hasMarksRequiredFlags := false
 	for _, tuple := range subcommands {
 		if req, ok := tuple.subcommand.(plugin.MarksRequiredFlags); ok {
+			hasMarksRequiredFlags = true
 			if err := req.MarkRequiredFlags(cmd); err != nil {
 				return nil, fmt.Errorf("failed to mark required flags for %q: %w", tuple.key, err)
 			}
 		}
 	}
+		}
+	}
+
+	// Fallback: if no plugin implements MarksRequiredFlags and resource flags are bound,
+	// preserve the legacy contract of requiring --version and --kind for create api.
+	if !hasMarksRequiredFlags && options != nil {
+		if cmd.Flags().Lookup("version") != nil {
+			if err := cmd.MarkFlagRequired("version"); err != nil {
+				return nil, fmt.Errorf("failed to mark 'version' flag as required: %w", err)
+			}
+		}
+		if cmd.Flags().Lookup("kind") != nil {
+			if err := cmd.MarkFlagRequired("kind"); err != nil {
+				return nil, fmt.Errorf("failed to mark 'kind' flag as required: %w", err)
+			}
 		}
 	}
 

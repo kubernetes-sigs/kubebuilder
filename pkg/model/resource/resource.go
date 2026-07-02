@@ -106,6 +106,15 @@ func (r Resource) Validate() error {
 		}
 	}
 
+	// When a standalone multi-GVK Webhook is set, the GVK and Plural fields may be empty.
+	// Skip those validations and validate the Webhook directly instead.
+	if r.Webhook != nil && !r.Webhook.IsEmpty() {
+		if err := r.Webhook.Validate(); err != nil {
+			return fmt.Errorf("invalid Webhook: %w", err)
+		}
+		return nil
+	}
+
 	// Validate the Webhooks
 	if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
 		if err := r.Webhooks.Validate(); err != nil {
