@@ -214,7 +214,6 @@ var (
 	k8sClient client.Client
 	cfg *rest.Config
 	testEnv *envtest.Environment
-	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -227,10 +226,6 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	// Initialize managerStopped as closed to avoid a deadlock in AfterSuite
-	// if the BeforeSuite panics before the manager is started.
-	managerStopped = make(chan struct{})
-	close(managerStopped)
 
 	var err error
 	err = %s.AddToScheme(scheme.Scheme)
@@ -242,6 +237,7 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing:   {{ .WireResource }},
+		ControlPlaneStopTimeout: 60 * time.Second,
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
@@ -279,12 +275,8 @@ var _ = BeforeSuite(func() {
 
 	%s
 
-	// Re-initialize managerStopped to an open channel before starting the manager
-	managerStopped = make(chan struct{})
-	managerStopCh := managerStopped
 	go func() {
 		defer GinkgoRecover()
-		defer close(managerStopCh)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -305,16 +297,8 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	<-managerStopped
-	// Wait for the control plane to stop gracefully.
-	//
-	// If the control plane does not stop within the default 20-second timeout,
-	// testEnv.Stop() forcefully terminates the process and returns an error.
-	// A later retry detects that the process has already stopped and returns
-	// nil, allowing the test suite to continue.
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
@@ -378,7 +362,6 @@ var (
 	ctx context.Context
 	k8sClient client.Client
 	testEnv *envtest.Environment
-	managerStopped chan struct{}
 )
 
 func TestAPIs(t *testing.T) {
@@ -391,15 +374,12 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	// Initialize managerStopped as closed to avoid a deadlock in AfterSuite
-	// if the BeforeSuite panics before the manager is started.
-	managerStopped = make(chan struct{})
-	close(managerStopped)
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:       []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing:   {{ .WireResource }},
+		ControlPlaneStopTimeout: 60 * time.Second,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
 		// without call the makefile target test. If not informed it will look for the
@@ -450,12 +430,8 @@ var _ = BeforeSuite(func() {
 
 	%s
 
-	// Re-initialize managerStopped to an open channel before starting the manager
-	managerStopped = make(chan struct{})
-	managerStopCh := managerStopped
 	go func() {
 		defer GinkgoRecover()
-		defer close(managerStopCh)
 		err = mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
@@ -476,15 +452,7 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	<-managerStopped
-	// Wait for the control plane to stop gracefully.
-	//
-	// If the control plane does not stop within the default 20-second timeout,
-	// testEnv.Stop() forcefully terminates the process and returns an error.
-	// A later retry detects that the process has already stopped and returns
-	// nil, allowing the test suite to continue.
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 `

@@ -72,8 +72,9 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		CRDDirectoryPaths:       []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing:   true,
+		ControlPlaneStopTimeout: 60 * time.Second,
 	}
 
 	// Retrieve the first found binary directory to allow running tests from IDEs
@@ -94,15 +95,8 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	// Wait for the control plane to stop gracefully.
-	//
-	// If the control plane does not stop within the default 20-second timeout,
-	// testEnv.Stop() forcefully terminates the process and returns an error.
-	// A later retry detects that the process has already stopped and returns
-	// nil, allowing the test suite to continue.
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
