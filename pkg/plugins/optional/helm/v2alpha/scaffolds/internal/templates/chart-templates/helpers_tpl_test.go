@@ -37,8 +37,10 @@ var _ = Describe("HelmHelpers", func() {
 
 			Expect(templateBody).To(ContainSubstring(`{{- define "test-project.serviceAccountName" -}}`))
 			Expect(templateBody).To(ContainSubstring(
-				`{{- if and (eq (.Values.serviceAccount.enabled | toString) "false") .Values.serviceAccount.name }}`))
-			Expect(templateBody).To(ContainSubstring(`{{- .Values.serviceAccount.name }}`))
+				`{{- $sa := .Values.serviceAccount | default dict -}}`))
+			Expect(templateBody).To(ContainSubstring(
+				`{{- if and (eq ($sa.enabled | toString) "false") $sa.name }}`))
+			Expect(templateBody).To(ContainSubstring(`{{- $sa.name }}`))
 			Expect(templateBody).To(ContainSubstring(
 				`{{- include "test-project.resourceName" (dict "suffix" "controller-manager" "context" .) }}`))
 		})
@@ -70,9 +72,9 @@ var _ = Describe("HelmHelpers", func() {
 			templateBody := helpers.TemplateBody
 
 			Expect(templateBody).To(ContainSubstring(
-				`{{- if and (eq (.Values.serviceAccount.enabled | toString) "false") .Values.serviceAccount.name }}`))
+				`{{- if and (eq ($sa.enabled | toString) "false") $sa.name }}`))
 			Expect(templateBody).To(ContainSubstring(
-				`{{- .Values.serviceAccount.name }}`))
+				`{{- $sa.name }}`))
 		})
 	})
 })

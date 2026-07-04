@@ -4172,7 +4172,8 @@ metadata:
 
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring(`{{- if ne (.Values.serviceAccount.enabled | toString) "false" }}`))
+				Expect(result).To(ContainSubstring(`{{- $sa := .Values.serviceAccount | default dict -}}`))
+				Expect(result).To(ContainSubstring(`{{- if ne ($sa.enabled | toString) "false" }}`))
 				Expect(result).To(ContainSubstring("{{- end }}"))
 			})
 
@@ -4193,7 +4194,7 @@ metadata:
 
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
+				Expect(result).To(ContainSubstring("{{- with $sa.annotations }}"))
 				Expect(result).To(ContainSubstring("annotations:"))
 				Expect(result).To(ContainSubstring("{{- toYaml . | nindent 4 }}"))
 			})
@@ -4216,7 +4217,7 @@ metadata:
 
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
+				Expect(result).To(ContainSubstring("{{- with $sa.labels }}"))
 				Expect(result).To(ContainSubstring(`{{- with omit .`))
 				Expect(result).To(ContainSubstring(`"app.kubernetes.io/name"`))
 				Expect(result).To(ContainSubstring(`"app.kubernetes.io/managed-by"`))
@@ -4249,7 +4250,7 @@ metadata:
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
 				// Should add template for custom annotations with duplicate filtering
-				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
+				Expect(result).To(ContainSubstring("{{- with $sa.annotations }}"))
 				Expect(result).To(ContainSubstring(`{{- with omit .`))
 				Expect(result).To(ContainSubstring(`"existing.annotation/key"`))
 			})

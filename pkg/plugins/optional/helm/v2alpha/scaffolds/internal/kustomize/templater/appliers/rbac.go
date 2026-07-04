@@ -131,7 +131,8 @@ func WrapServiceAccountWithEnabledConditional(yamlContent string) string {
 	// Default to enabled, but allow an explicit false to disable ServiceAccount creation.
 	// Compare via toString so the guard matches the serviceAccountName helper exactly and never
 	// pipes the boolean through default (which would swallow an explicit false).
-	return "{{- if ne (.Values.serviceAccount.enabled | toString) \"false\" }}\n" + yamlContent + "{{- end }}\n"
+	return "{{- $sa := .Values.serviceAccount | default dict -}}\n" +
+		"{{- if ne ($sa.enabled | toString) \"false\" }}\n" + yamlContent + "{{- end }}\n"
 }
 
 // AddServiceAccountLabelsAndAnnotations adds custom labels/annotations with omit() filtering.
@@ -170,7 +171,7 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 			childIndent := strings.Repeat(" ", currentIndent+2)
 
 			// Add custom labels
-			result = appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.labels", existingKeys)
+			result = appendHelmMapBlock(result, childIndent, "$sa.labels", existingKeys)
 
 			// Merge into an existing annotations block when present; otherwise add one.
 			indent := strings.Repeat(" ", currentIndent)
@@ -197,10 +198,10 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 					}
 
 					existingAnnotationKeys := extractKeysFromLines(result[annotationsStart:])
-					result = appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.annotations", existingAnnotationKeys)
+					result = appendHelmMapBlock(result, childIndent, "$sa.annotations", existingAnnotationKeys)
 				} else {
 					result = append(result,
-						indent+"{{- with .Values.serviceAccount.annotations }}",
+						indent+"{{- with $sa.annotations }}",
 						indent+"annotations:",
 						childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
 						indent+"{{- end }}",
@@ -208,7 +209,7 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 				}
 			} else {
 				result = append(result,
-					indent+"{{- with .Values.serviceAccount.annotations }}",
+					indent+"{{- with $sa.annotations }}",
 					indent+"annotations:",
 					childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
 					indent+"{{- end }}",

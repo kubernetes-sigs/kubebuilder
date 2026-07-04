@@ -351,7 +351,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	})
 
 	Context("ServiceAccount name resolution (rendered)", func() {
-		renderChart := func(setArgs ...string) string {
+		renderChart := func(lintValues map[string]interface{}, setArgs ...string) string {
 			if _, err := exec.LookPath("helm"); err != nil {
 				Skip("helm binary not found on PATH; skipping render-based test")
 			}
@@ -364,6 +364,11 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(scaffolderBase.Scaffold()).To(Succeed())
 
 			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+
+			By("linting the generated chart with the ServiceAccount values")
+			lintResult := action.NewLint().Run([]string{chartPath}, lintValues)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+
 			args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
 			out, err := exec.Command("helm", args...).CombinedOutput()
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", string(out))
@@ -371,7 +376,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		}
 
 		It("uses the external ServiceAccount name when enabled=false and name is set", func() {
-			rendered := renderChart("--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa")
+			rendered := renderChart(
+				map[string]interface{}{"serviceAccount": map[string]interface{}{"enabled": false, "name": "external-sa"}},
+				"--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa",
+			)
 
 			By("the Deployment references the external ServiceAccount, not the generated name")
 			Expect(rendered).To(ContainSubstring("serviceAccountName: external-sa"))
@@ -382,7 +390,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 
 		It("falls back to the generated name when serviceAccount config is left at defaults", func() {
-			rendered := renderChart()
+			rendered := renderChart(nil)
 
 			By("the Deployment uses the generated controller-manager name")
 			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
@@ -391,8 +399,41 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
 		})
 
+		It("falls back to the generated ServiceAccount when serviceAccount is null", func() {
+			rendered := renderChart(map[string]interface{}{"serviceAccount": nil}, "--set", "serviceAccount=null")
+
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("falls back to the generated ServiceAccount when serviceAccount is empty", func() {
+			rendered := renderChart(map[string]interface{}{"serviceAccount": map[string]interface{}{}}, "--set-json", "serviceAccount={}")
+
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("renders custom labels and annotations on the generated ServiceAccount", func() {
+			rendered := renderChart(
+				map[string]interface{}{
+					"serviceAccount": map[string]interface{}{
+						"labels":      map[string]interface{}{"team": "platform"},
+						"annotations": map[string]interface{}{"owner": "platform"},
+					},
+				},
+				"--set", "serviceAccount.labels.team=platform",
+				"--set", "serviceAccount.annotations.owner=platform",
+			)
+
+			Expect(rendered).To(ContainSubstring("team: platform"))
+			Expect(rendered).To(ContainSubstring("owner: platform"))
+		})
+
 		It("uses the generated name when enabled=true even if serviceAccount.name is set", func() {
-			rendered := renderChart("--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa")
+			rendered := renderChart(
+				map[string]interface{}{"serviceAccount": map[string]interface{}{"enabled": true, "name": "custom-sa"}},
+				"--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa",
+			)
 
 			By("the external name is ignored while the chart manages its own ServiceAccount")
 			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))

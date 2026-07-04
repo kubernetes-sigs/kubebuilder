@@ -1,4 +1,5 @@
-{{- if ne (.Values.serviceAccount.enabled | toString) "false" }}
+{{- $sa := .Values.serviceAccount | default dict -}}
+{{- if ne ($sa.enabled | toString) "false" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -7,12 +8,12 @@ metadata:
     app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    {{- with .Values.serviceAccount.labels }}
+    {{- with $sa.labels }}
     {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- end }}
-  {{- with .Values.serviceAccount.annotations }}
+  {{- with $sa.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}

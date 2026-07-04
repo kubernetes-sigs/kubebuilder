@@ -126,9 +126,9 @@ If serviceAccount.enabled is false and serviceAccount.name is set, use that name
 Otherwise, use the standard resourceName helper with "controller-manager" suffix.
 */}}` + "`" + `}}
 {{` + "`" + `{{- define "%s.serviceAccountName" -}}` + "`" + `}}
-{{` + "`" + `{{- if and (eq (.Values.serviceAccount.enabled | toString) "false")` +
-	` .Values.serviceAccount.name }}` + "`" + `}}
-{{` + "`" + `{{- .Values.serviceAccount.name }}` + "`" + `}}
+{{` + "`" + `{{- $sa := .Values.serviceAccount | default dict -}}` + "`" + `}}
+{{` + "`" + `{{- if and (eq ($sa.enabled | toString) "false") $sa.name }}` + "`" + `}}
+{{` + "`" + `{{- $sa.name }}` + "`" + `}}
 {{` + "`" + `{{- else }}` + "`" + `}}
 {{` + "`" + `{{- include "%s.resourceName" (dict "suffix" "controller-manager" "context" .) }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
