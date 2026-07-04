@@ -171,6 +171,7 @@ var _ = Describe("API scaffolding with Server-Side Apply", func() {
 			content := scaffoldTypes(res, false)
 
 			Expect(content).To(ContainSubstring("// +genclient\n// +genclient:nonNamespaced"))
+			Expect(content).To(ContainSubstring("// +kubebuilder:resource:path=admirals,scope=Cluster"))
 		})
 
 		It("should scaffold the opt-out marker when another kind in the package has SSA enabled", func() {

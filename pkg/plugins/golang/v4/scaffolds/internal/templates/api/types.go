@@ -124,7 +124,7 @@ type {{ .Resource.Kind }}Status struct {
 {{- end }}
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-{{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
+{{- if and (not .Resource.API.Namespaced) (or (not .Resource.IsRegularPlural) .Resource.API.SSA) }}
 // +kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
 {{- else if not .Resource.API.Namespaced }}
 // +kubebuilder:resource:scope=Cluster
