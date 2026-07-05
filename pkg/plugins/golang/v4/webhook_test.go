@@ -47,8 +47,8 @@ var _ = Describe("createWebhookSubcommand", func() {
 				Version: "v1",
 				Kind:    captainKind,
 			},
-			Plural:   captains,
-			Webhooks: &resource.Webhooks{},
+			Plural:  captains,
+			Webhook: &resource.Webhook{},
 		}
 	})
 

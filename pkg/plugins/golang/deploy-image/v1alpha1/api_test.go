@@ -53,9 +53,9 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1alpha1",
 				Kind:    "Memcached",
 			},
-			Plural:   "memcacheds",
-			API:      &resource.API{},
-			Webhooks: &resource.Webhooks{},
+			Plural:  "memcacheds",
+			API:     &resource.API{},
+			Webhook: &resource.Webhook{},
 		}
 
 		fs = machinery.Filesystem{FS: afero.NewMemMapFs()}

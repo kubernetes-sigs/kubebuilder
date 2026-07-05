@@ -6,6 +6,32 @@ cliVersion: (devel)
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
+multiGVKWebhooks:
+- defaulting: true
+  groups:
+  - sea-creatures.testproject.org
+  - ship.testproject.org
+  multiGVK: true
+  name: sea-creatures-ship-defaulting
+  resources:
+  - krakens
+  - leviathans
+  - frigates
+  versions:
+  - '*'
+  webhookVersion: v1
+- defaulting: true
+  groups:
+  - core
+  - apps
+  multiGVK: true
+  name: core-defaulting
+  resources:
+  - pods
+  - deployments
+  versions:
+  - v1
+  webhookVersion: v1
 multigroup: true
 plugins:
   deploy-image.go.kubebuilder.io/v1-alpha:

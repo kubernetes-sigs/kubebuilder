@@ -223,7 +223,7 @@ func (s *webhookScaffolder) Scaffold() error {
 			return fmt.Errorf("error scaffold resource with hub: %w", err)
 		}
 
-		for _, spoke := range s.resource.Webhooks.Spoke {
+		for _, spoke := range s.resource.Webhook.Spoke {
 			log.Info("Scaffolding for spoke version", "version", spoke)
 			if err = scaffold.Execute(&api.Spoke{Force: s.force, SpokeVersion: spoke}); err != nil {
 				return fmt.Errorf("failed to scaffold spoke %s: %w", spoke, err)

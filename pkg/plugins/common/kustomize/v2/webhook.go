@@ -34,14 +34,11 @@ type createWebhookSubcommand struct {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	// Multi-GVK webhook: populate Webhooks from the Webhook field.
 	// Mark as External to skip CRD-related scaffolding (no GVK/plural).
-	if res.Webhook != nil && !res.Webhook.IsEmpty() {
+	if res.Webhook != nil && res.Webhook.IsMultiGVK() {
+		wh := res.Webhook.Copy()
 		p.resource = &resource.Resource{
 			External: true,
-			Webhooks: &resource.Webhooks{
-				WebhookVersion: res.Webhook.WebhookVersion,
-				Defaulting:     res.Webhook.Defaulting,
-				Validation:     res.Webhook.Validation,
-			},
+			Webhook:  &wh,
 		}
 		return nil
 	}

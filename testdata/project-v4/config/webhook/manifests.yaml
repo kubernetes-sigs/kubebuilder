@@ -50,6 +50,27 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-crew-defaulting
+  failurePolicy: Fail
+  name: mcrew-defaulting.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - captains
+    - sailors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-apps-v1-deployment
   failurePolicy: Fail
   name: mdeployment-v1.kb.io
@@ -169,6 +190,28 @@ webhooks:
     - UPDATE
     resources:
     - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-core-validation
+  failurePolicy: Fail
+  name: vcore-validation.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    - apps
+    apiVersions:
+    - '*'
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+    - deployments
   sideEffects: None
 - admissionReviewVersions:
   - v1

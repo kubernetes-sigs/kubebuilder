@@ -40,6 +40,7 @@ import (
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	crewv2 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
+	ctrlwebhook "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook"
 	webhookv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
@@ -277,6 +278,20 @@ func main() {
 			setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
 			os.Exit(1)
 		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register(
+			"/mutate-crew-defaulting",
+			&webhook.Admission{Handler: &ctrlwebhook.CrewDefaultingWebhook{}},
+		)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register(
+			"/validate-core-validation",
+			&webhook.Admission{Handler: &ctrlwebhook.CoreValidationWebhook{}},
+		)
 	}
 	if err := (&controller.NavigatorReconciler{
 		Client: mgr.GetClient(),

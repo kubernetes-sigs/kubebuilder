@@ -6,6 +6,30 @@ cliVersion: (devel)
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
+multiGVKWebhooks:
+- defaulting: true
+  groups:
+  - crew.testproject.org
+  multiGVK: true
+  name: crew-defaulting
+  resources:
+  - captains
+  - sailors
+  versions:
+  - v1
+  webhookVersion: v1
+- groups:
+  - core
+  - apps
+  multiGVK: true
+  name: core-validation
+  resources:
+  - pods
+  - deployments
+  validation: true
+  versions:
+  - '*'
+  webhookVersion: v1
 projectName: project-v4
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4
 resources:

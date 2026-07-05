@@ -94,11 +94,11 @@ var _ = Describe("resourceOptions", func() {
 				Expect(resource.API.CRDVersion).To(Equal(""))
 				Expect(resource.API.Namespaced).To(BeFalse())
 				Expect(resource.Controller).To(BeFalse())
-				Expect(resource.Webhooks).NotTo(BeNil())
-				Expect(resource.Webhooks.WebhookVersion).To(Equal(""))
-				Expect(resource.Webhooks.Defaulting).To(BeFalse())
-				Expect(resource.Webhooks.Validation).To(BeFalse())
-				Expect(resource.Webhooks.Conversion).To(BeFalse())
+				Expect(resource.Webhook).NotTo(BeNil())
+				Expect(resource.Webhook.WebhookVersion).To(Equal(""))
+				Expect(resource.Webhook.Defaulting).To(BeFalse())
+				Expect(resource.Webhook.Validation).To(BeFalse())
+				Expect(resource.Webhook.Conversion).To(BeFalse())
 			},
 			Entry("full GVK", func() resourceOptions { return resourceOptions{GVK: fullGVK} }),
 			Entry("missing domain", func() resourceOptions { return resourceOptions{GVK: noDomainGVK} }),

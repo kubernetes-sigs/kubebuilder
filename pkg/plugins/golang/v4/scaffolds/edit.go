@@ -193,7 +193,7 @@ func (s *editScaffolder) hasWebhooks() bool {
 		return false
 	}
 	for _, res := range resources {
-		if res.Webhooks != nil && !res.Webhooks.IsEmpty() {
+		if res.Webhook != nil && !res.Webhook.IsEmpty() {
 			return true
 		}
 	}

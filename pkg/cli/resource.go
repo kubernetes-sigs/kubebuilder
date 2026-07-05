@@ -108,8 +108,8 @@ func (opts resourceOptions) newResource() *resource.Resource {
 			Version: strings.TrimSpace(opts.Version),
 			Kind:    strings.TrimSpace(opts.Kind),
 		},
-		Plural:   resource.RegularPlural(opts.Kind),
-		API:      &resource.API{},
-		Webhooks: &resource.Webhooks{},
+		Plural:  resource.RegularPlural(opts.Kind),
+		API:     &resource.API{},
+		Webhook: &resource.Webhook{},
 	}
 }

@@ -65,9 +65,9 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    captainKind,
 			},
-			Plural:   captains,
-			API:      &resource.API{},
-			Webhooks: &resource.Webhooks{},
+			Plural:  captains,
+			API:     &resource.API{},
+			Webhook: &resource.Webhook{},
 		}
 
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())

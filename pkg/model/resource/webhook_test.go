@@ -22,41 +22,41 @@ import (
 )
 
 //nolint:dupl
-var _ = Describe("Webhooks", func() {
+var _ = Describe("Webhook", func() {
 	const (
 		customDefaultingPath = "/custom-defaulting"
 		customValidationPath = "/custom-validation"
 	)
 	Context("Validate", func() {
 		It("should succeed for a valid Webhooks", func() {
-			Expect(Webhooks{WebhookVersion: v1}.Validate()).To(Succeed())
+			Expect(Webhook{WebhookVersion: v1}.Validate()).To(Succeed())
 		})
 
 		It("should succeed for valid Webhooks with unique spoke versions", func() {
-			Expect(Webhooks{WebhookVersion: v1, Spoke: []string{"v1", "v2", "v3"}}.Validate()).To(Succeed())
+			Expect(Webhook{WebhookVersion: v1, Spoke: []string{"v1", "v2", "v3"}}.Validate()).To(Succeed())
 		})
 
 		DescribeTable("should fail for invalid Webhooks",
-			func(webhooks Webhooks) { Expect(webhooks.Validate()).NotTo(Succeed()) },
+			func(webhook Webhook) { Expect(webhook.Validate()).NotTo(Succeed()) },
 			// Ensure that the rest of the fields are valid to check each part
-			Entry("empty webhook version", Webhooks{}),
-			Entry("invalid webhook version", Webhooks{WebhookVersion: "1"}),
-			Entry("duplicate spoke versions", Webhooks{WebhookVersion: v1, Spoke: []string{"v1", "v2", "v1"}}),
+			Entry("empty webhook version", Webhook{}),
+			Entry("invalid webhook version", Webhook{WebhookVersion: "1"}),
+			Entry("duplicate spoke versions", Webhook{WebhookVersion: v1, Spoke: []string{"v1", "v2", "v1"}}),
 		)
 	})
 
 	Context("Update", func() {
-		var webhook, other Webhooks
+		var webhook, other Webhook
 
 		It("should do nothing if provided a nil pointer", func() {
-			webhook = Webhooks{}
+			webhook = Webhook{}
 			Expect(webhook.Update(nil)).To(Succeed())
 			Expect(webhook.WebhookVersion).To(Equal(""))
 			Expect(webhook.Defaulting).To(BeFalse())
 			Expect(webhook.Validation).To(BeFalse())
 			Expect(webhook.Conversion).To(BeFalse())
 
-			webhook = Webhooks{
+			webhook = Webhook{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Validation:     true,
@@ -72,10 +72,10 @@ var _ = Describe("Webhooks", func() {
 		})
 
 		It("should merge Spoke values without duplicates", func() {
-			webhook = Webhooks{
+			webhook = Webhook{
 				Spoke: []string{"v1"},
 			}
-			other = Webhooks{
+			other = Webhook{
 				Spoke: []string{"v1", "v2"},
 			}
 			Expect(webhook.Update(&other)).To(Succeed())
@@ -84,58 +84,58 @@ var _ = Describe("Webhooks", func() {
 
 		Context("webhooks version", func() {
 			It("should modify the webhooks version if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{WebhookVersion: v1}
+				webhook = Webhook{}
+				other = Webhook{WebhookVersion: v1}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.WebhookVersion).To(Equal(v1))
 			})
 
 			It("should keep the webhooks version if not provided", func() {
-				webhook = Webhooks{WebhookVersion: v1}
-				other = Webhooks{}
+				webhook = Webhook{WebhookVersion: v1}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.WebhookVersion).To(Equal(v1))
 			})
 
 			It("should keep the webhooks version if provided the same as previously set", func() {
-				webhook = Webhooks{WebhookVersion: v1}
-				other = Webhooks{WebhookVersion: v1}
+				webhook = Webhook{WebhookVersion: v1}
+				other = Webhook{WebhookVersion: v1}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.WebhookVersion).To(Equal(v1))
 			})
 
 			It("should fail if previously set and provided webhooks versions do not match", func() {
-				webhook = Webhooks{WebhookVersion: v1}
-				other = Webhooks{WebhookVersion: v1beta1}
+				webhook = Webhook{WebhookVersion: v1}
+				other = Webhook{WebhookVersion: v1beta1}
 				Expect(webhook.Update(&other)).NotTo(Succeed())
 			})
 		})
 
 		Context("Defaulting", func() {
 			It("should set the defaulting webhook if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{Defaulting: true}
+				webhook = Webhook{}
+				other = Webhook{Defaulting: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Defaulting).To(BeTrue())
 			})
 
 			It("should keep the defaulting webhook if previously set", func() {
-				webhook = Webhooks{Defaulting: true}
+				webhook = Webhook{Defaulting: true}
 
 				By("not providing it")
-				other = Webhooks{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Defaulting).To(BeTrue())
 
 				By("providing it")
-				other = Webhooks{Defaulting: true}
+				other = Webhook{Defaulting: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Defaulting).To(BeTrue())
 			})
 
 			It("should not set the defaulting webhook if not provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{}
+				webhook = Webhook{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Defaulting).To(BeFalse())
 			})
@@ -143,29 +143,29 @@ var _ = Describe("Webhooks", func() {
 
 		Context("Validation", func() {
 			It("should set the validation webhook if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{Validation: true}
+				webhook = Webhook{}
+				other = Webhook{Validation: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Validation).To(BeTrue())
 			})
 
 			It("should keep the validation webhook if previously set", func() {
-				webhook = Webhooks{Validation: true}
+				webhook = Webhook{Validation: true}
 
 				By("not providing it")
-				other = Webhooks{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Validation).To(BeTrue())
 
 				By("providing it")
-				other = Webhooks{Validation: true}
+				other = Webhook{Validation: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Validation).To(BeTrue())
 			})
 
 			It("should not set the validation webhook if not provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{}
+				webhook = Webhook{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Validation).To(BeFalse())
 			})
@@ -173,29 +173,29 @@ var _ = Describe("Webhooks", func() {
 
 		Context("Conversion", func() {
 			It("should set the conversion webhook if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{Conversion: true}
+				webhook = Webhook{}
+				other = Webhook{Conversion: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeTrue())
 			})
 
 			It("should keep the conversion webhook if previously set", func() {
-				webhook = Webhooks{Conversion: true}
+				webhook = Webhook{Conversion: true}
 
 				By("not providing it")
-				other = Webhooks{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeTrue())
 
 				By("providing it")
-				other = Webhooks{Conversion: true}
+				other = Webhook{Conversion: true}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeTrue())
 			})
 
 			It("should not set the conversion webhook if not provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{}
+				webhook = Webhook{}
+				other = Webhook{}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeFalse())
 			})
@@ -203,29 +203,29 @@ var _ = Describe("Webhooks", func() {
 
 		Context("Custom webhook paths", func() {
 			It("should set the defaulting path if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{DefaultingPath: customDefaultingPath}
+				webhook = Webhook{}
+				other = Webhook{DefaultingPath: customDefaultingPath}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.DefaultingPath).To(Equal(customDefaultingPath))
 			})
 
 			It("should update the defaulting path if other provides a new one", func() {
-				webhook = Webhooks{DefaultingPath: "/old-path"}
-				other = Webhooks{DefaultingPath: "/new-path"}
+				webhook = Webhook{DefaultingPath: "/old-path"}
+				other = Webhook{DefaultingPath: "/new-path"}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.DefaultingPath).To(Equal("/new-path"))
 			})
 
 			It("should set the validation path if provided and not previously set", func() {
-				webhook = Webhooks{}
-				other = Webhooks{ValidationPath: customValidationPath}
+				webhook = Webhook{}
+				other = Webhook{ValidationPath: customValidationPath}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.ValidationPath).To(Equal(customValidationPath))
 			})
 
 			It("should update the validation path if other provides a new one", func() {
-				webhook = Webhooks{ValidationPath: "/old-path"}
-				other = Webhooks{ValidationPath: "/new-path"}
+				webhook = Webhook{ValidationPath: "/old-path"}
+				other = Webhook{ValidationPath: "/new-path"}
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.ValidationPath).To(Equal("/new-path"))
 			})
@@ -234,57 +234,57 @@ var _ = Describe("Webhooks", func() {
 
 	Context("IsEmpty", func() {
 		var (
-			none       Webhooks
-			defaulting Webhooks
-			validation Webhooks
-			conversion Webhooks
+			none       Webhook
+			defaulting Webhook
+			validation Webhook
+			conversion Webhook
 
-			defaultingAndValidation Webhooks
-			defaultingAndConversion Webhooks
-			validationAndConversion Webhooks
+			defaultingAndValidation Webhook
+			defaultingAndConversion Webhook
+			validationAndConversion Webhook
 
-			all Webhooks
+			all Webhook
 		)
 
 		BeforeEach(func() {
-			none = Webhooks{}
-			defaulting = Webhooks{
+			none = Webhook{}
+			defaulting = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     true,
 				Validation:     false,
 				Conversion:     false,
 			}
-			validation = Webhooks{
+			validation = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     false,
 				Validation:     true,
 				Conversion:     false,
 			}
-			conversion = Webhooks{
+			conversion = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     false,
 				Validation:     false,
 				Conversion:     true,
 			}
-			defaultingAndValidation = Webhooks{
+			defaultingAndValidation = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     true,
 				Validation:     true,
 				Conversion:     false,
 			}
-			defaultingAndConversion = Webhooks{
+			defaultingAndConversion = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     true,
 				Validation:     false,
 				Conversion:     true,
 			}
-			validationAndConversion = Webhooks{
+			validationAndConversion = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     false,
 				Validation:     true,
 				Conversion:     true,
 			}
-			all = Webhooks{
+			all = Webhook{
 				WebhookVersion: "v1",
 				Defaulting:     true,
 				Validation:     true,
@@ -297,22 +297,22 @@ var _ = Describe("Webhooks", func() {
 		})
 
 		DescribeTable("should return false for non-empty objects",
-			func(get func() Webhooks) {
+			func(get func() Webhook) {
 				Expect(get().IsEmpty()).To(BeFalse())
 			},
-			Entry("defaulting", func() Webhooks { return defaulting }),
-			Entry("validation", func() Webhooks { return validation }),
-			Entry("conversion", func() Webhooks { return conversion }),
-			Entry("defaulting and validation", func() Webhooks { return defaultingAndValidation }),
-			Entry("defaulting and conversion", func() Webhooks { return defaultingAndConversion }),
-			Entry("validation and conversion", func() Webhooks { return validationAndConversion }),
-			Entry("defaulting and validation and conversion", func() Webhooks { return all }),
+			Entry("defaulting", func() Webhook { return defaulting }),
+			Entry("validation", func() Webhook { return validation }),
+			Entry("conversion", func() Webhook { return conversion }),
+			Entry("defaulting and validation", func() Webhook { return defaultingAndValidation }),
+			Entry("defaulting and conversion", func() Webhook { return defaultingAndConversion }),
+			Entry("validation and conversion", func() Webhook { return validationAndConversion }),
+			Entry("defaulting and validation and conversion", func() Webhook { return all }),
 		)
 	})
 
 	Context("AddSpoke", func() {
 		It("should add a spoke version if not already present", func() {
-			webhook := Webhooks{}
+			webhook := Webhook{}
 			webhook.AddSpoke("v1")
 			Expect(webhook.Spoke).To(Equal([]string{"v1"}))
 
@@ -321,7 +321,7 @@ var _ = Describe("Webhooks", func() {
 		})
 
 		It("should not add a duplicate spoke version", func() {
-			webhook := Webhooks{Spoke: []string{"v1"}}
+			webhook := Webhook{Spoke: []string{"v1"}}
 			webhook.AddSpoke("v1")
 			Expect(webhook.Spoke).To(Equal([]string{"v1"}))
 		})
@@ -329,7 +329,7 @@ var _ = Describe("Webhooks", func() {
 
 	Context("Copy", func() {
 		It("should return an exact copy", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Validation:     true,
@@ -350,7 +350,7 @@ var _ = Describe("Webhooks", func() {
 		})
 
 		It("modifying the copy should not affect the original", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Validation:     true,
@@ -382,7 +382,7 @@ var _ = Describe("Webhooks", func() {
 		})
 
 		It("should handle nil Spoke slice", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				WebhookVersion: v1,
 				Spoke:          nil,
 			}

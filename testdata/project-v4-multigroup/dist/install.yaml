@@ -3274,6 +3274,28 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /mutate-core-defaulting
+  failurePolicy: Fail
+  name: mcore-defaulting.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /mutate-apps-v1-deployment
   failurePolicy: Fail
   name: mdeployment-v1.kb.io
@@ -3327,6 +3349,29 @@ webhooks:
     - UPDATE
     resources:
     - issuers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /mutate-sea-creatures-ship-defaulting
+  failurePolicy: Fail
+  name: msea-creatures-ship-defaulting.kb.io
+  rules:
+  - apiGroups:
+    - sea-creatures.testproject.org
+    - ship.testproject.org
+    apiVersions:
+    - '*'
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - krakens
+    - leviathans
+    - frigates
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1

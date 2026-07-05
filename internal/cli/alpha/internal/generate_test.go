@@ -574,7 +574,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				Path:     certManagerAPIPath,
 				GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
 				External: true,
-				Webhooks: &resource.Webhooks{
+				Webhook: &resource.Webhook{
 					Validation: true,
 					Defaulting: true,
 					Conversion: true,
@@ -595,7 +595,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				Module:   "github.com/cert-manager/cert-manager@v1.18.2",
 				GVK:      resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
 				External: true,
-				Webhooks: &resource.Webhooks{
+				Webhook: &resource.Webhook{
 					Defaulting: true,
 				},
 			}
@@ -615,7 +615,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 				Module:   "", // No module specified
 				GVK:      resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
 				External: true,
-				Webhooks: &resource.Webhooks{
+				Webhook: &resource.Webhook{
 					Defaulting: true,
 				},
 			}
@@ -717,9 +717,9 @@ var _ = Describe("generate: create-helpers", func() {
 	Describe("createWebhook", func() {
 		It("runs kubebuilder create webhook successfully for a resource", func() {
 			res := resource.Resource{
-				GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
-				Plural:   examplesDir,
-				Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
+				GVK:     resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
+				Plural:  examplesDir,
+				Webhook: &resource.Webhook{WebhookVersion: "v1"},
 			}
 			// Run createWebhook and verify no errors
 			Expect(createWebhook(res)).To(Succeed())
@@ -727,9 +727,9 @@ var _ = Describe("generate: create-helpers", func() {
 
 		It("ignores web creation if webhook resource is empty", func() {
 			res := resource.Resource{
-				GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
-				Plural:   examplesDir,
-				Webhooks: &resource.Webhooks{},
+				GVK:     resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
+				Plural:  examplesDir,
+				Webhook: &resource.Webhook{},
 			}
 			// Run createWebhook and verify no errors
 			Expect(createWebhook(res)).To(Succeed())

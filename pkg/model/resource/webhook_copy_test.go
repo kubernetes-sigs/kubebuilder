@@ -21,10 +21,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Webhooks Copy and AddSpoke", func() {
+var _ = Describe("Webhook Copy and AddSpoke", func() {
 	Context("Copy", func() {
 		It("should create a deep copy of Webhooks", func() {
-			original := Webhooks{
+			original := Webhook{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Validation:     true,
@@ -42,7 +42,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should not affect original when modifying the copy", func() {
-			original := Webhooks{
+			original := Webhook{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Spoke:          []string{"v1"},
@@ -59,7 +59,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should handle empty Spoke slice", func() {
-			original := Webhooks{
+			original := Webhook{
 				WebhookVersion: v1,
 				Spoke:          []string{},
 			}
@@ -69,7 +69,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should handle nil Spoke slice", func() {
-			original := Webhooks{
+			original := Webhook{
 				WebhookVersion: v1,
 				Spoke:          nil,
 			}
@@ -79,7 +79,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should create independent Spoke slices", func() {
-			original := Webhooks{
+			original := Webhook{
 				Spoke: []string{"v1"},
 			}
 
@@ -93,7 +93,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 
 	Context("AddSpoke", func() {
 		It("should add a new spoke version", func() {
-			webhook := &Webhooks{}
+			webhook := &Webhook{}
 			webhook.AddSpoke("v1")
 
 			Expect(webhook.Spoke).To(HaveLen(1))
@@ -101,7 +101,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should not add duplicate spoke versions", func() {
-			webhook := &Webhooks{
+			webhook := &Webhook{
 				Spoke: []string{"v1"},
 			}
 			webhook.AddSpoke("v1")
@@ -111,7 +111,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should add multiple different spoke versions", func() {
-			webhook := &Webhooks{}
+			webhook := &Webhook{}
 			webhook.AddSpoke("v1")
 			webhook.AddSpoke("v2")
 			webhook.AddSpoke("v3")
@@ -121,7 +121,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should handle adding existing version in the middle", func() {
-			webhook := &Webhooks{
+			webhook := &Webhook{
 				Spoke: []string{"v1", "v2", "v3"},
 			}
 			webhook.AddSpoke("v2")
@@ -133,7 +133,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 
 	Context("Validate with duplicate Spoke versions", func() {
 		It("should fail validation with duplicate spoke versions", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				WebhookVersion: v1,
 				Spoke:          []string{"v1", "v1"},
 			}
@@ -142,7 +142,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should succeed validation with unique spoke versions", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				WebhookVersion: v1,
 				Spoke:          []string{"v1", "v2", "v3"},
 			}
@@ -153,7 +153,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 
 	Context("IsEmpty with Spoke", func() {
 		It("should return false when only Spoke is set", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				Spoke: []string{"v1"},
 			}
 
@@ -161,7 +161,7 @@ var _ = Describe("Webhooks Copy and AddSpoke", func() {
 		})
 
 		It("should return true when Spoke is empty array", func() {
-			webhook := Webhooks{
+			webhook := Webhook{
 				Spoke: []string{},
 			}
 

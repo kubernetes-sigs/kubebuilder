@@ -102,7 +102,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	// Only scaffold the following patches if is a conversion webhook
-	if s.resource.Webhooks.Conversion {
+	if s.resource.Webhook.Conversion {
 		buildScaffold = append(buildScaffold, &patches.EnableWebhookPatch{})
 		buildScaffold = append(buildScaffold, &kdefault.KustomizationCAConversionUpdater{})
 	}

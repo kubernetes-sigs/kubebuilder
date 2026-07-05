@@ -124,22 +124,25 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 		}
 
-		res.Webhooks.WebhookVersion = "v1"
+		if res.Webhook == nil {
+			res.Webhook = &resource.Webhook{}
+		}
+		res.Webhook.WebhookVersion = "v1"
 		if opts.DoDefaulting {
-			res.Webhooks.Defaulting = true
+			res.Webhook.Defaulting = true
 			if opts.DefaultingPath != "" {
-				res.Webhooks.DefaultingPath = opts.DefaultingPath
+				res.Webhook.DefaultingPath = opts.DefaultingPath
 			}
 		}
 		if opts.DoValidation {
-			res.Webhooks.Validation = true
+			res.Webhook.Validation = true
 			if opts.ValidationPath != "" {
-				res.Webhooks.ValidationPath = opts.ValidationPath
+				res.Webhook.ValidationPath = opts.ValidationPath
 			}
 		}
 		if opts.DoConversion {
-			res.Webhooks.Conversion = true
-			res.Webhooks.Spoke = opts.Spoke
+			res.Webhook.Conversion = true
+			res.Webhook.Spoke = opts.Spoke
 		}
 	}
 
@@ -225,6 +228,9 @@ func (opts Options) updateControllers(res *resource.Resource) {
 // For other groups, it appends the project domain if provided.
 func ResolveGroupDomain(group, projectDomain string) string {
 	g := strings.TrimSpace(group)
+	if g == "" {
+		return ""
+	}
 	if domain, found := coreGroups[g]; found {
 		if domain == "" {
 			return g

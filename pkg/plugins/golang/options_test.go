@@ -64,10 +64,10 @@ var _ = Describe("Options", func() {
 					}
 
 					res := resource.Resource{
-						GVK:      gvk,
-						Plural:   plural,
-						API:      &resource.API{},
-						Webhooks: &resource.Webhooks{},
+						GVK:     gvk,
+						Plural:  plural,
+						API:     &resource.API{},
+						Webhook: &resource.Webhook{},
 					}
 
 					options.UpdateResource(&res, cfg)
@@ -97,15 +97,15 @@ var _ = Describe("Options", func() {
 						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
 					Expect(res.Controller).To(Equal(options.DoController))
-					Expect(res.Webhooks).NotTo(BeNil())
+					Expect(res.Webhook).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
-						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
-						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
-						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
-						Expect(res.Webhooks.Spoke).To(Equal(options.Spoke))
-						Expect(res.Webhooks.IsEmpty()).To(BeFalse())
+						Expect(res.Webhook.Defaulting).To(Equal(options.DoDefaulting))
+						Expect(res.Webhook.Validation).To(Equal(options.DoValidation))
+						Expect(res.Webhook.Conversion).To(Equal(options.DoConversion))
+						Expect(res.Webhook.Spoke).To(Equal(options.Spoke))
+						Expect(res.Webhook.IsEmpty()).To(BeFalse())
 					} else {
-						Expect(res.Webhooks.IsEmpty()).To(BeTrue())
+						Expect(res.Webhook.IsEmpty()).To(BeTrue())
 					}
 
 					if len(options.ExternalAPIPath) > 0 {
@@ -137,7 +137,7 @@ var _ = Describe("Options", func() {
 					External: true,
 					Path:     externalPath,
 					API:      &resource.API{},
-					Webhooks: &resource.Webhooks{},
+					Webhook:  &resource.Webhook{},
 				}
 
 				Options{DoController: true}.UpdateResource(&res, cfg)
@@ -163,7 +163,7 @@ var _ = Describe("Options", func() {
 					External: true,
 					Path:     externalPath,
 					API:      &resource.API{},
-					Webhooks: &resource.Webhooks{},
+					Webhook:  &resource.Webhook{},
 				}
 
 				// DoDefaulting without ExternalAPIPath — simulates webhook flow without re-providing the flag
@@ -194,9 +194,9 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:   plural,
-						API:      &resource.API{},
-						Webhooks: &resource.Webhooks{},
+						Plural:  plural,
+						API:     &resource.API{},
+						Webhook: &resource.Webhook{},
 					}
 
 					options.UpdateResource(&res, cfg)
@@ -234,9 +234,9 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:   plural,
-						API:      &resource.API{},
-						Webhooks: &resource.Webhooks{},
+						Plural:  plural,
+						API:     &resource.API{},
+						Webhook: &resource.Webhook{},
 					}
 
 					options.UpdateResource(&res, cfg)
@@ -249,6 +249,27 @@ var _ = Describe("Options", func() {
 			},
 			Entry("for `apps`", "apps", "apps"),
 			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
+		)
+	})
+
+	Context("ResolveGroupDomain", func() {
+		DescribeTable("should resolve the group domain correctly",
+			func(group, projectDomain, expected string) {
+				Expect(ResolveGroupDomain(group, projectDomain)).To(Equal(expected))
+			},
+			Entry("core group without domain suffix", "apps", "example.com", "apps"),
+			Entry("core group with k8s.io domain", "admission", "example.com", "admission.k8s.io"),
+			Entry("core group authentication", "authentication", "", "authentication.k8s.io"),
+			Entry("core group batch with empty domain", "batch", "", "batch"),
+			Entry("group with explicit domain", "my.group.io", "example.com", "my.group.io"),
+			Entry("group with project domain", "crew", "example.com", "crew.example.com"),
+			Entry("group without project domain", "crew", "", "crew"),
+			Entry("group with trailing whitespace", "  crew  ", "test.io", "crew.test.io"),
+			Entry("core group with trailing whitespace", "  apps  ", "test.io", "apps"),
+			Entry("empty group with project domain", "", "example.com", ""),
+			Entry("empty group without project domain", "", "", ""),
+			Entry("core group storage", "storage", "example.com", "storage.k8s.io"),
+			Entry("non-core group with dotted group name", "rbac.authorization", "example.com", "rbac.authorization.k8s.io"),
 		)
 	})
 })

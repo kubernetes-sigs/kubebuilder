@@ -62,7 +62,7 @@ var _ = Describe("Resource", func() {
 		})
 
 		It("should succeed with empty Webhooks", func() {
-			Expect(Resource{GVK: gvk, Plural: plural, Webhooks: &Webhooks{}}.Validate()).To(Succeed())
+			Expect(Resource{GVK: gvk, Plural: plural, Webhook: &Webhook{}}.Validate()).To(Succeed())
 		})
 
 		It("should succeed with nil API", func() {
@@ -70,7 +70,7 @@ var _ = Describe("Resource", func() {
 		})
 
 		It("should succeed with nil Webhooks", func() {
-			Expect(Resource{GVK: gvk, Plural: plural, Webhooks: nil}.Validate()).To(Succeed())
+			Expect(Resource{GVK: gvk, Plural: plural, Webhook: nil}.Validate()).To(Succeed())
 		})
 
 		It("should fail for invalid Plural with specific error", func() {
@@ -88,10 +88,10 @@ var _ = Describe("Resource", func() {
 		})
 
 		It("should fail for invalid Webhooks with wrapped error", func() {
-			r := Resource{GVK: gvk, Plural: plural, Webhooks: &Webhooks{WebhookVersion: "1"}}
+			r := Resource{GVK: gvk, Plural: plural, Webhook: &Webhook{WebhookVersion: "1"}}
 			err := r.Validate()
 			Expect(err).NotTo(Succeed())
-			Expect(err.Error()).To(ContainSubstring("invalid Webhooks"))
+			Expect(err.Error()).To(ContainSubstring("invalid Webhook"))
 		})
 
 		DescribeTable("should fail for invalid Resources",
@@ -100,7 +100,7 @@ var _ = Describe("Resource", func() {
 			Entry("invalid GVK", Resource{GVK: GVK{}, Plural: invalidPlural}),
 			Entry("invalid Plural", Resource{GVK: gvk, Plural: "Plural"}),
 			Entry("invalid API", Resource{GVK: gvk, Plural: invalidPlural, API: &API{CRDVersion: "1"}}),
-			Entry("invalid Webhooks", Resource{GVK: gvk, Plural: invalidPlural, Webhooks: &Webhooks{WebhookVersion: "1"}}),
+			Entry("invalid Webhooks", Resource{GVK: gvk, Plural: invalidPlural, Webhook: &Webhook{WebhookVersion: "1"}}),
 		)
 
 		DescribeTable("should succeed for valid Paths",
@@ -249,37 +249,37 @@ var _ = Describe("Resource", func() {
 
 		Context("HasDefaultingWebhook", func() {
 			It("should return true if the defaulting webhook is scaffolded", func() {
-				Expect(Resource{Webhooks: &Webhooks{Defaulting: true}}.HasDefaultingWebhook()).To(BeTrue())
+				Expect(Resource{Webhook: &Webhook{Defaulting: true}}.HasDefaultingWebhook()).To(BeTrue())
 			})
 
 			DescribeTable("should return false if the defaulting webhook is not scaffolded",
 				func(res Resource) { Expect(res.HasDefaultingWebhook()).To(BeFalse()) },
-				Entry("nil webhooks", Resource{Webhooks: nil}),
-				Entry("no defaulting", Resource{Webhooks: &Webhooks{Defaulting: false}}),
+				Entry("nil webhooks", Resource{Webhook: nil}),
+				Entry("no defaulting", Resource{Webhook: &Webhook{Defaulting: false}}),
 			)
 		})
 
 		Context("HasValidationWebhook", func() {
 			It("should return true if the validation webhook is scaffolded", func() {
-				Expect(Resource{Webhooks: &Webhooks{Validation: true}}.HasValidationWebhook()).To(BeTrue())
+				Expect(Resource{Webhook: &Webhook{Validation: true}}.HasValidationWebhook()).To(BeTrue())
 			})
 
 			DescribeTable("should return false if the validation webhook is not scaffolded",
 				func(res Resource) { Expect(res.HasValidationWebhook()).To(BeFalse()) },
-				Entry("nil webhooks", Resource{Webhooks: nil}),
-				Entry("no validation", Resource{Webhooks: &Webhooks{Validation: false}}),
+				Entry("nil webhooks", Resource{Webhook: nil}),
+				Entry("no validation", Resource{Webhook: &Webhook{Validation: false}}),
 			)
 		})
 
 		Context("HasConversionWebhook", func() {
 			It("should return true if the conversion webhook is scaffolded", func() {
-				Expect(Resource{Webhooks: &Webhooks{Conversion: true}}.HasConversionWebhook()).To(BeTrue())
+				Expect(Resource{Webhook: &Webhook{Conversion: true}}.HasConversionWebhook()).To(BeTrue())
 			})
 
 			DescribeTable("should return false if the conversion webhook is not scaffolded",
 				func(res Resource) { Expect(res.HasConversionWebhook()).To(BeFalse()) },
-				Entry("nil webhooks", Resource{Webhooks: nil}),
-				Entry("no conversion", Resource{Webhooks: &Webhooks{Conversion: false}}),
+				Entry("nil webhooks", Resource{Webhook: nil}),
+				Entry("no conversion", Resource{Webhook: &Webhook{Conversion: false}}),
 			)
 		})
 
@@ -321,7 +321,7 @@ var _ = Describe("Resource", func() {
 					Namespaced: true,
 				},
 				Controller: true,
-				Webhooks: &Webhooks{
+				Webhook: &Webhook{
 					WebhookVersion: webhookVersion,
 					Defaulting:     true,
 					Validation:     true,
@@ -342,12 +342,12 @@ var _ = Describe("Resource", func() {
 			Expect(other.API.CRDVersion).To(Equal(res.API.CRDVersion))
 			Expect(other.API.Namespaced).To(Equal(res.API.Namespaced))
 			Expect(other.Controller).To(Equal(res.Controller))
-			Expect(other.Webhooks).NotTo(BeNil())
-			Expect(other.Webhooks.WebhookVersion).To(Equal(res.Webhooks.WebhookVersion))
-			Expect(other.Webhooks.Defaulting).To(Equal(res.Webhooks.Defaulting))
-			Expect(other.Webhooks.Validation).To(Equal(res.Webhooks.Validation))
-			Expect(other.Webhooks.Conversion).To(Equal(res.Webhooks.Conversion))
-			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
+			Expect(other.Webhook).NotTo(BeNil())
+			Expect(other.Webhook.WebhookVersion).To(Equal(res.Webhook.WebhookVersion))
+			Expect(other.Webhook.Defaulting).To(Equal(res.Webhook.Defaulting))
+			Expect(other.Webhook.Validation).To(Equal(res.Webhook.Validation))
+			Expect(other.Webhook.Conversion).To(Equal(res.Webhook.Conversion))
+			Expect(other.Webhook.Spoke).To(Equal(res.Webhook.Spoke))
 		})
 
 		It("modifying the copy should not affect the original", func() {
@@ -362,11 +362,11 @@ var _ = Describe("Resource", func() {
 			other.API.Namespaced = false
 			other.API = nil // Change fields before changing pointer
 			other.Controller = false
-			other.Webhooks.WebhookVersion = v1beta1
-			other.Webhooks.Defaulting = false
-			other.Webhooks.Validation = false
-			other.Webhooks.Conversion = false
-			other.Webhooks = nil // Change fields before changing pointer
+			other.Webhook.WebhookVersion = v1beta1
+			other.Webhook.Defaulting = false
+			other.Webhook.Validation = false
+			other.Webhook.Conversion = false
+			other.Webhook = nil // Change fields before changing pointer
 
 			Expect(res.Group).To(Equal(group))
 			Expect(res.Domain).To(Equal(domain))
@@ -378,11 +378,11 @@ var _ = Describe("Resource", func() {
 			Expect(res.API.CRDVersion).To(Equal(crdVersion))
 			Expect(res.API.Namespaced).To(BeTrue())
 			Expect(res.Controller).To(BeTrue())
-			Expect(res.Webhooks).NotTo(BeNil())
-			Expect(res.Webhooks.WebhookVersion).To(Equal(webhookVersion))
-			Expect(res.Webhooks.Defaulting).To(BeTrue())
-			Expect(res.Webhooks.Validation).To(BeTrue())
-			Expect(res.Webhooks.Conversion).To(BeTrue())
+			Expect(res.Webhook).NotTo(BeNil())
+			Expect(res.Webhook.WebhookVersion).To(Equal(webhookVersion))
+			Expect(res.Webhook.Defaulting).To(BeTrue())
+			Expect(res.Webhook.Validation).To(BeTrue())
+			Expect(res.Webhook.Conversion).To(BeTrue())
 		})
 	})
 
@@ -512,27 +512,27 @@ var _ = Describe("Resource", func() {
 			It("should work with nil Webhooks", func() {
 				r = Resource{GVK: gvk}
 				other = Resource{
-					GVK:      gvk,
-					Webhooks: &Webhooks{WebhookVersion: v1},
+					GVK:     gvk,
+					Webhook: &Webhook{WebhookVersion: v1},
 				}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Webhooks).NotTo(BeNil())
-				Expect(r.Webhooks.WebhookVersion).To(Equal(v1))
+				Expect(r.Webhook).NotTo(BeNil())
+				Expect(r.Webhook.WebhookVersion).To(Equal(v1))
 			})
 
-			It("should fail if Webhooks.Update fails", func() {
+			It("should fail if Webhook.Update fails", func() {
 				r = Resource{
-					GVK:      gvk,
-					Webhooks: &Webhooks{WebhookVersion: v1},
+					GVK:     gvk,
+					Webhook: &Webhook{WebhookVersion: v1},
 				}
 				other = Resource{
-					GVK:      gvk,
-					Webhooks: &Webhooks{WebhookVersion: v1beta1},
+					GVK:     gvk,
+					Webhook: &Webhook{WebhookVersion: v1beta1},
 				}
 				Expect(r.Update(other)).NotTo(Succeed())
 			})
 
-			// The rest of the cases are tested in Webhooks.Update
+			// The rest of the cases are tested in Webhook.Update
 		})
 	})
 

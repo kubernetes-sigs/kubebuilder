@@ -58,7 +58,7 @@ func (f *KustomizationCAConversionUpdater) GetCodeFragments() machinery.CodeFrag
 	// Obtain the formatted CRD name as Plural.Group.Domain (e.g., cronjobs.batch.tutorial.kubebuilder.io)
 	crdName := fmt.Sprintf("%s.%s", f.Resource.Plural, f.Resource.QualifiedGroup())
 
-	if !f.Resource.Webhooks.IsEmpty() && f.Resource.Webhooks.Conversion {
+	if !f.Resource.Webhook.IsEmpty() && f.Resource.Webhook.Conversion {
 		// Commented CA injection configuration for the namespace part
 		caInjectionNamespace := fmt.Sprintf(`#     - select:
 #         kind: CustomResourceDefinition
