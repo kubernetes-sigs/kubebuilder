@@ -55,6 +55,15 @@ jobs:
       - name: Show runner hostname
         run: hostname && hostname | wc -c
 
+      # DEBUG(#5804) experiment: prove the teardown hang follows the hostname
+      # length, not the OS or the darwin binaries. With a >63-byte hostname, the
+      # ubuntu job should fail exactly like the macOS one. Remove before merging.
+      - name: Set long hostname (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo hostname iad20-fj925-1e765033-cd01-40bb-b570-4dc95f1a1c65-3E9965871810.local
+          hostname && hostname | wc -c
+
       - name: Unit Tests
         run: make test-unit
 
@@ -62,6 +71,14 @@ jobs:
         run: make test-testdata
 
       # DEBUG(#5804): shutdown-phase logs from the project-v4 controller suite.
+      # Print the complete SIGQUIT goroutine dump (the watchdog fires 90s after
+      # SIGTERM); fall back to the log tail when no dump happened.
       - name: kube-apiserver debug log
         if: always()
-        run: tail -c 300000 "${TMPDIR:-/tmp}/kube-apiserver-debug.log" || true
+        run: |
+          LOG="${TMPDIR:-/tmp}/kube-apiserver-debug.log"
+          if grep -q "SIGQUIT: quit" "$LOG" 2>/dev/null; then
+            awk '/SIGQUIT: quit/{f=1} f' "$LOG" | head -c 8000000
+          else
+            tail -c 300000 "$LOG" || true
+          fi
