@@ -40,22 +40,12 @@ type Webhook struct {
 	AdmissionReviewVersions string
 
 	Force bool
-
-	// Deprecated - The flag should be removed from go/v5
-	// IsLegacyPath indicates if webhooks should be scaffolded under the API.
-	// Webhooks are now decoupled from APIs based on controller-runtime updates and community feedback.
-	// This flag ensures backward compatibility by allowing scaffolding in the legacy/deprecated path.
-	IsLegacyPath bool
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
-		// Deprecated: Remove me when remove go/v4
-		baseDir := "api"
-		if !f.IsLegacyPath {
-			baseDir = filepath.Join("internal", "webhook")
-		}
+		baseDir := filepath.Join("internal", "webhook")
 
 		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join(baseDir, "%[group]", "%[version]", "%[kind]_webhook.go")
@@ -103,10 +93,8 @@ import (
 	{{- if .Resource.HasValidationWebhook }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	{{- end }}
-	{{ if not .IsLegacyPath -}}
 	{{ if not (isEmptyStr .Resource.Path) -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
-	{{- end }}
 	{{- end }}
 )
 
@@ -114,25 +102,6 @@ import (
 // log is for logging in this package.
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 
-{{- if .IsLegacyPath -}}
-// SetupWebhookWithManager will setup the manager to manage the webhooks.
-func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr, r).
-		{{- if .Resource.HasValidationWebhook }}
-		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
-		{{- if ne .Resource.Webhooks.ValidationPath "" }}
-		WithValidatorCustomPath("{{ .Resource.Webhooks.ValidationPath }}").
-		{{- end }}
-		{{- end }}
-		{{- if .Resource.HasDefaultingWebhook }}
-		WithDefaulter(&{{ .Resource.Kind }}CustomDefaulter{}).
-		{{- if ne .Resource.Webhooks.DefaultingPath "" }}
-		WithDefaulterCustomPath("{{ .Resource.Webhooks.DefaultingPath }}").
-		{{- end }}
-		{{- end }}
-		Complete()
-}
-{{- else }}
 // Setup{{ .Resource.Kind }}WebhookWithManager registers the webhook for {{ .Resource.Kind }} in the manager.
 func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
 	{{- if not (isEmptyStr .Resource.ImportAlias) }}
@@ -154,7 +123,6 @@ func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
 		{{- end }}
 		Complete()
 }
-{{- end }}
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 `
@@ -163,9 +131,6 @@ func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
 	defaultingWebhookTemplate = `
 // +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhooks.DefaultingPath "" -}}path={{ .Resource.Webhooks.DefaultingPath }}{{- else -}}path=/mutate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-{{ if .IsLegacyPath -}}
-// +kubebuilder:object:generate=false
-{{- end }}
 // {{ .Resource.Kind }}CustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind {{ .Resource.Kind }} when those are created or updated.
 //
@@ -176,13 +141,8 @@ type {{ .Resource.Kind }}CustomDefaulter struct {
 }
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}.
-{{- if .IsLegacyPath }}
-func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{ .Resource.Kind }}) error {
-	{{ lower .Resource.Kind }}log.Info("Defaulting for {{ .Resource.Kind }}", "name", obj.GetName())
-{{- else }}
 func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) error {
 	{{ lower .Resource.Kind }}log.Info("Defaulting for {{ .Resource.Kind }}", "name", obj.GetName())
-{{- end }}
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -196,9 +156,6 @@ func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhooks.ValidationPath "" -}}path={{ .Resource.Webhooks.ValidationPath }}{{- else -}}path=/validate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-{{ if .IsLegacyPath -}}
-// +kubebuilder:object:generate=false
-{{- end }}
 // {{ .Resource.Kind }}CustomValidator struct is responsible for validating the {{ .Resource.Kind }} resource
 // when it is created, updated, or deleted.
 //
@@ -209,13 +166,8 @@ type {{ .Resource.Kind }}CustomValidator struct{
 }
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-{{- if .IsLegacyPath }}
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj *{{ .Resource.Kind }}) (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon creation", "name", obj.GetName())
-{{- else }}
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon creation", "name", obj.GetName())
-{{- end }}
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -223,13 +175,8 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, 
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-{{- if .IsLegacyPath }}
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *{{ .Resource.Kind }}) (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon update", "name", newObj.GetName())
-{{- else }}
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon update", "name", newObj.GetName())
-{{- end }}
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -237,13 +184,8 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, 
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-{{- if .IsLegacyPath }}
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(_ context.Context, obj *{{ .Resource.Kind }}) (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon deletion", "name", obj.GetName())
-{{- else }}
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(_ context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("Validation for {{ .Resource.Kind }} upon deletion", "name", obj.GetName())
-{{- end }}
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

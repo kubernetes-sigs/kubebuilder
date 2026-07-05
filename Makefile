@@ -217,13 +217,6 @@ test-external-plugin: install  ## Run tests for external plugin
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 test-plugin
 
-## TODO: Remove me when go/v4 plugin be removed
-## Deprecated
-.PHONY: test-legacy
-test-legacy:  ## Run the tests to validate legacy path for webhooks
-	rm -rf  ./testdata/**legacy**/
-	./test/testdata/legacy-webhook-path.sh
-
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm locally
 	@command -v helm >/dev/null 2>&1 || curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash

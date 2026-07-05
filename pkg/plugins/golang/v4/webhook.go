@@ -47,10 +47,6 @@ type createWebhookSubcommand struct {
 	// force indicates that the resource should be created even if it already exists
 	force bool
 
-	// Deprecated - TODO: remove it for go/v5
-	// isLegacyPath indicates that the resource should be created in the legacy path under the api
-	isLegacyPath bool
-
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
 }
@@ -112,11 +108,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.options.ValidationPath, "validation-path", "",
 		"Custom path for the validation webhook (e.g., /my-custom-validate-path); only valid with --programmatic-validation")
 
-	// TODO: remove for go/v5
-	fs.BoolVar(&p.isLegacyPath, "legacy", false,
-		"[DEPRECATED] If set, attempts to create resource under the API directory (legacy path). "+
-			"This option will be removed in future versions")
-
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
 		"Go package import path for the external API (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1). "+
 			"Used to scaffold webhooks for resources defined outside this project")
@@ -149,10 +140,6 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		p.resource.External = existingRes.External
 		p.resource.Core = existingRes.Core
 		p.resource.Module = existingRes.Module
-	}
-
-	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
-		return errors.New("you cannot scaffold webhooks for external types using the legacy path")
 	}
 
 	for _, spoke := range p.options.Spoke {
@@ -216,7 +203,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to scaffold webhook: %w", err)

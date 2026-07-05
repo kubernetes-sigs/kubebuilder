@@ -165,7 +165,7 @@ For deprecated flags that will be removed in future versions:
 
 Example:
 
-- `[DEPRECATED] If set, attempts to create resource under the API directory (legacy path). This option will be removed in future versions`
+- `[DEPRECATED] If set, uses the old behavior for <feature>. This option will be removed in future versions`
 
 ## Command short descriptions
 
