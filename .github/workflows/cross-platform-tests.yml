@@ -56,13 +56,15 @@ jobs:
         run: hostname && hostname | wc -c
 
       # DEBUG(#5804) experiment: prove the teardown hang follows the hostname
-      # length, not the OS or the darwin binaries. With a >63-byte hostname, the
-      # ubuntu job should fail exactly like the macOS one. Remove before merging.
+      # length, not the OS or the darwin binaries. Linux caps hostnames at
+      # HOST_NAME_MAX (64 bytes), so use exactly 64 characters — still over the
+      # 63-byte label limit that breaks the apiserver identity lease. With it,
+      # the ubuntu job should fail exactly like the macOS one. Remove before merging.
       - name: Set long hostname (linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo hostname iad20-fj925-1e765033-cd01-40bb-b570-4dc95f1a1c65-3E9965871810.local
-          hostname && hostname | wc -c
+          sudo hostname iad20-fj925-1e765033-cd01-40bb-b570-4dc95f1a1c65-3E9965871810.lo
+          hostname && hostname | awk '{print length}'
 
       - name: Unit Tests
         run: make test-unit
