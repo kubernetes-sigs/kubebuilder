@@ -141,6 +141,11 @@ Expect(err).NotTo(HaveOccurred())
 Expect(err).NotTo(HaveOccurred())
 
 `
+
+	addschemeCodeFragment = `err = %s.AddToScheme(scheme.Scheme)
+Expect(err).NotTo(HaveOccurred())
+
+`
 )
 
 // GetCodeFragments implements file.Inserter
@@ -161,6 +166,9 @@ func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
 	} else {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 		addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookManagerCodeFragment, f.Resource.Kind))
+		if f.Resource.Path != "" {
+			addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
+		}
 	}
 
 	// Only store code fragments in the map if the slices are non-empty
@@ -296,9 +304,8 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
@@ -451,8 +458,7 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 `

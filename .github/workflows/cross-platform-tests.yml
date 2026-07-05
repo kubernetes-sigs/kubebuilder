@@ -17,7 +17,19 @@ jobs:
       contents: read
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      # ENVTEST option to allow kube-apiserver to drain connections gracefully.
+      # GitHub runners (mostly macOS) can exceed the 20s default during teardown.
+      # DEBUG(#5804): the 6m experiment proved the apiserver never starts shutting
+      # down on these runners (no drain), so a long timeout only slows the job.
+      KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT: 2m
+      # ENVTEST option to stream kube-apiserver/etcd output into the test logs,
+      # so teardown issues on the runners can be diagnosed.
+      KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT: "true"
     strategy:
+      # Keep the other OS jobs running when one fails, so it is possible to
+      # tell whether a failure is specific to a single runner.
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -38,8 +50,18 @@ jobs:
       - name: Remove pre-installed kustomize
         run: sudo rm -f /usr/local/bin/kustomize
 
+      # DEBUG(#5804): identity-lease creation fails when the hostname exceeds the
+      # 63-byte label limit; record each runner's hostname for the investigation.
+      - name: Show runner hostname
+        run: hostname && hostname | wc -c
+
       - name: Unit Tests
         run: make test-unit
 
       - name: Run Testdata
         run: make test-testdata
+
+      # DEBUG(#5804): shutdown-phase logs from the project-v4 controller suite.
+      - name: kube-apiserver debug log
+        if: always()
+        run: tail -c 300000 "${TMPDIR:-/tmp}/kube-apiserver-debug.log" || true

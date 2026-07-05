@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -76,6 +77,18 @@ var _ = BeforeSuite(func() {
 		ErrorIfCRDPathMissing: true,
 	}
 
+	// DEBUG(#5804): verbose apiserver logs, written to a file, to identify which
+	// shutdown phase hangs on the GitHub Actions macOS runners. The output stream
+	// attached by KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT stops mid-startup on those
+	// runners, so a file is the reliable channel. Remove before merging.
+	apiServerLog, err := os.OpenFile(filepath.Join(os.TempDir(), "kube-apiserver-debug.log"),
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	Expect(err).NotTo(HaveOccurred())
+	apiServer := testEnv.ControlPlane.GetAPIServer()
+	apiServer.Configure().Append("v", "4")
+	apiServer.Out = apiServerLog
+	apiServer.Err = apiServerLog
+
 	// Retrieve the first found binary directory to allow running tests from IDEs
 	if getFirstFoundEnvTestBinaryDir() != "" {
 		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
@@ -94,9 +107,16 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	// DEBUG(#5804): if the apiserver has not exited 90s after SIGTERM, send SIGQUIT
+	// so the Go runtime dumps all goroutine stacks into the debug log. The dump
+	// shows exactly what the shutdown is blocked on. SIGQUIT also terminates the
+	// process, so Stop returns right after. Remove before merging.
+	go func() {
+		time.Sleep(90 * time.Second)
+		_ = exec.Command("pkill", "-QUIT", "-f", "kube-apiserver").Run()
+	}()
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
