@@ -51,10 +51,15 @@ type createWebhookSubcommand struct {
 	runMake bool
 
 	// Multi-GVK webhook fields (bound via flags in BindFlags, mutually exclusive with GVK flags).
-	multiGVKName     string
-	multiGVKGroups   []string
-	multiGVKKinds    []string
-	multiGVKVersions []string
+	multiGVKName    string
+	multiGVKOptions *multiGVKOptions
+}
+
+// multiGVKOptions holds the multi-GVK webhook flag values (isolated to avoid non-comparable fields on Plugin).
+type multiGVKOptions struct {
+	Groups   []string
+	Kinds    []string
+	Versions []string
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -142,12 +147,13 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.multiGVKName, "webhook-name", "",
 		"Name for a webhook that intercepts multiple resource types. "+
 			"Use with --groups, --resources, and --webhook-versions instead of --group, --version, --kind")
-	fs.StringSliceVar(&p.multiGVKGroups, "groups", nil,
+	p.multiGVKOptions = &multiGVKOptions{}
+	fs.StringSliceVar(&p.multiGVKOptions.Groups, "groups", nil,
 		"Comma-separated list of API groups the webhook intercepts (e.g., --groups core,apps,batch). "+
 			"Use 'core' for the core group")
-	fs.StringSliceVar(&p.multiGVKKinds, "resources", nil,
+	fs.StringSliceVar(&p.multiGVKOptions.Kinds, "resources", nil,
 		"Comma-separated list of API resources the webhook intercepts (plural form) (e.g., --resources pods,deployments)")
-	fs.StringSliceVar(&p.multiGVKVersions, "webhook-versions", nil,
+	fs.StringSliceVar(&p.multiGVKOptions.Versions, "webhook-versions", nil,
 		"Comma-separated list of API versions the webhook intercepts, "+
 			"or '*' for all (e.g., --webhook-versions v1,v1beta1,*)")
 }
@@ -255,13 +261,13 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
 	if p.multiGVKName == "" {
 		return errors.New("--webhook-name is required for multi-GVK webhooks")
 	}
-	if len(p.multiGVKGroups) == 0 {
+	if len(p.multiGVKOptions.Groups) == 0 {
 		return errors.New("--groups is required with --webhook-name")
 	}
-	if len(p.multiGVKKinds) == 0 {
+	if len(p.multiGVKOptions.Kinds) == 0 {
 		return errors.New("--resources is required with --webhook-name")
 	}
-	if len(p.multiGVKVersions) == 0 {
+	if len(p.multiGVKOptions.Versions) == 0 {
 		return errors.New("--webhook-versions is required with --webhook-name (use '*' for all)")
 	}
 
@@ -276,9 +282,9 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
 		Name:           p.multiGVKName,
 		MultiGVK:       true,
 		WebhookVersion: "v1",
-		Groups:         p.multiGVKGroups,
-		Kinds:          p.multiGVKKinds,
-		Versions:       p.multiGVKVersions,
+		Groups:         p.multiGVKOptions.Groups,
+		Kinds:          p.multiGVKOptions.Kinds,
+		Versions:       p.multiGVKOptions.Versions,
 	}
 
 	return p.injectMultiGVKWebhook()
