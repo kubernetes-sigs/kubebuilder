@@ -95,7 +95,7 @@ func (s *multiGVKWebhookScaffolder) Scaffold() error {
 	// The template's IfExistsAction (Error by default, OverwriteFile when --force is set)
 	// is respected automatically by the scaffold machinery.
 	if err := scaffold.Execute(
-		&webhooks.MultiGVKWebhook{Force: s.force, Webhook: s.wh},
+		&webhooks.Webhook{Force: s.force, MultiGVK: true, MultiGVKWebhook: s.wh},
 	); err != nil {
 		return fmt.Errorf("error creating multi-GVK webhook: %w", err)
 	}

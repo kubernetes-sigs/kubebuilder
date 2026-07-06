@@ -22,11 +22,13 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 var _ machinery.Template = &Webhook{}
 
-// Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
+// Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource,
+// or a standalone multi-GVK webhook when MultiGVK is true.
 type Webhook struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
@@ -40,40 +42,104 @@ type Webhook struct {
 	AdmissionReviewVersions string
 
 	Force bool
+
+	// MultiGVK indicates this is a standalone multi-GVK webhook (not tied to a single CRD Kind).
+	MultiGVK bool
+
+	// MultiGVKWebhook holds the webhook configuration for multi-GVK webhooks.
+	MultiGVKWebhook resource.Webhook
+}
+
+// HandlerName returns the Go struct name for the multi-GVK webhook handler.
+func (f *Webhook) HandlerName() string {
+	parts := strings.Split(f.MultiGVKWebhook.Name, "-")
+	for i, p := range parts {
+		if len(p) > 0 {
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return strings.Join(parts, "") + "Webhook"
+}
+
+// MarkerGroups returns the semicolon-separated group list for the +kubebuilder:webhook marker.
+func (f *Webhook) MarkerGroups() string {
+	var parts []string
+	for _, g := range f.MultiGVKWebhook.Groups {
+		if g == "" || g == "core" {
+			parts = append(parts, `""`)
+		} else {
+			parts = append(parts, g)
+		}
+	}
+	return strings.Join(parts, ";")
+}
+
+// MarkerKinds returns the semicolon-separated kinds list for the +kubebuilder:webhook marker.
+func (f *Webhook) MarkerKinds() string {
+	return strings.Join(f.MultiGVKWebhook.Kinds, ";")
+}
+
+// MarkerVersions returns the semicolon-separated versions list for the +kubebuilder:webhook marker.
+func (f *Webhook) MarkerVersions() string {
+	return strings.Join(f.MultiGVKWebhook.Versions, ";")
+}
+
+// MultiGVKDefaultingPath returns the defaulting webhook path for multi-GVK webhooks.
+func (f *Webhook) MultiGVKDefaultingPath() string {
+	if f.MultiGVKWebhook.DefaultingPath != "" {
+		return f.MultiGVKWebhook.DefaultingPath
+	}
+	return "/mutate-" + strings.ToLower(f.MultiGVKWebhook.Name)
+}
+
+// MultiGVKValidationPath returns the validation webhook path for multi-GVK webhooks.
+func (f *Webhook) MultiGVKValidationPath() string {
+	if f.MultiGVKWebhook.ValidationPath != "" {
+		return f.MultiGVKWebhook.ValidationPath
+	}
+	return "/validate-" + strings.ToLower(f.MultiGVKWebhook.Name)
 }
 
 // SetTemplateDefaults implements machinery.Template
 func (f *Webhook) SetTemplateDefaults() error {
-	if f.Path == "" {
-		baseDir := filepath.Join("internal", "webhook")
-
-		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join(baseDir, "%[group]", "%[version]", "%[kind]_webhook.go")
-		} else {
-			f.Path = filepath.Join(baseDir, "%[version]", "%[kind]_webhook.go")
+	if f.MultiGVK {
+		if f.Path == "" {
+			f.Path = filepath.Join("internal", "webhook", "%[webhook-name]_webhook.go")
 		}
-	}
+		f.Path = strings.ReplaceAll(f.Path, "%[webhook-name]", strings.ToLower(f.MultiGVKWebhook.Name))
+		f.TemplateBody = multiGVKWebhookTemplate
+	} else {
+		if f.Path == "" {
+			baseDir := filepath.Join("internal", "webhook")
 
-	f.Path = f.Resource.Replacer().Replace(f.Path)
-	log.Info(f.Path)
+			if f.MultiGroup && f.Resource.Group != "" {
+				f.Path = filepath.Join(baseDir, "%[group]", "%[version]", "%[kind]_webhook.go")
+			} else {
+				f.Path = filepath.Join(baseDir, "%[version]", "%[kind]_webhook.go")
+			}
+		}
 
-	webhookTemplate := webhookTemplate
-	if f.Resource.HasDefaultingWebhook() {
-		webhookTemplate = webhookTemplate + defaultingWebhookTemplate
+		f.Path = f.Resource.Replacer().Replace(f.Path)
+		log.Info(f.Path)
+
+		webhookCore := webhookTemplate
+		if f.Resource.HasDefaultingWebhook() {
+			webhookCore = webhookCore + defaultingWebhookTemplate
+		}
+		if f.Resource.HasValidationWebhook() {
+			webhookCore = webhookCore + validatingWebhookTemplate
+		}
+		f.TemplateBody = webhookCore
+
+		f.AdmissionReviewVersions = "v1"
+		f.QualifiedGroupWithDash = strings.ReplaceAll(f.Resource.QualifiedGroup(), ".", "-")
 	}
-	if f.Resource.HasValidationWebhook() {
-		webhookTemplate = webhookTemplate + validatingWebhookTemplate
-	}
-	f.TemplateBody = webhookTemplate
 
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
 	} else {
 		f.IfExistsAction = machinery.Error
 	}
-
-	f.AdmissionReviewVersions = "v1"
-	f.QualifiedGroupWithDash = strings.ReplaceAll(f.Resource.QualifiedGroup(), ".", "-")
 
 	return nil
 }
@@ -191,6 +257,55 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(_ context.Context, 
 	// TODO(user): fill in your validation logic upon object deletion.
 
 	return nil, nil
+}
+`
+
+	//nolint:lll
+	multiGVKWebhookTemplate = `{{ .Boilerplate }}
+
+package webhook
+
+import (
+	"context"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+{{ if .MultiGVKWebhook.Defaulting }}
+// +kubebuilder:webhook:path={{ .MultiGVKDefaultingPath }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=m{{ lower .MultiGVKWebhook.Name }}.kb.io,admissionReviewVersions=v1
+{{ end }}
+{{ if .MultiGVKWebhook.Validation }}
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
+// +kubebuilder:webhook:path={{ .MultiGVKValidationPath }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .MarkerGroups }},resources={{ .MarkerKinds }},verbs=create;update,versions={{ .MarkerVersions }},name=v{{ lower .MultiGVKWebhook.Name }}.kb.io,admissionReviewVersions=v1
+{{ end }}
+
+{{ if and .MultiGVKWebhook.Defaulting .MultiGVKWebhook.Validation }}
+// {{ .HandlerName }} mutates and validates intercepted resources.
+{{ else if .MultiGVKWebhook.Defaulting }}
+// {{ .HandlerName }} mutates intercepted resources.
+{{ else }}
+// {{ .HandlerName }} validates intercepted resources.
+{{ end }}
+type {{ .HandlerName }} struct {
+}
+
+// {{ .HandlerName }} implements admission.Handler.
+var _ admission.Handler = &{{ .HandlerName }}{}
+
+// Handle implements admission.Handler.
+func (h *{{ .HandlerName }}) Handle(ctx context.Context, req admission.Request) admission.Response {
+	{{ if and .MultiGVKWebhook.Defaulting .MultiGVKWebhook.Validation }}
+	// TODO(user): fill in your webhook logic.
+	{{ else if .MultiGVKWebhook.Defaulting }}
+	// TODO(user): fill in your defaulting logic.
+	{{ else }}
+	// TODO(user): fill in your validation logic.
+	{{ end }}
+	// Use admission.Decoder to decode req.Object.Raw.
+	// Use req.Resource.Group, req.Resource.Version, and req.Resource.Resource
+	// to identify which resource type triggered this webhook.
+	return admission.Allowed("")
 }
 `
 )

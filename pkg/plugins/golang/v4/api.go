@@ -24,7 +24,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -39,10 +38,7 @@ import (
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "cmd/main.go"
 
-var (
-	_ plugin.CreateAPISubcommand = &createAPISubcommand{}
-	_ plugin.MarksRequiredFlags  = &createAPISubcommand{}
-)
+var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
 type createAPISubcommand struct {
 	config config.Config
@@ -127,18 +123,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
 		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
-}
-
-// MarkRequiredFlags implements plugin.MarksRequiredFlags to mark --version and --kind
-// as required for the create api subcommand.
-func (p *createAPISubcommand) MarkRequiredFlags(cmd *cobra.Command) error {
-	if err := cmd.MarkFlagRequired("version"); err != nil {
-		return fmt.Errorf("failed to mark 'version' flag as required: %w", err)
-	}
-	if err := cmd.MarkFlagRequired("kind"); err != nil {
-		return fmt.Errorf("failed to mark 'kind' flag as required: %w", err)
-	}
-	return nil
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

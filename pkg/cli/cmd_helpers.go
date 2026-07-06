@@ -330,22 +330,8 @@ func initializationHooks(
 		}
 	}
 
-	// Allow plugins to mark flags as required (e.g., create api marks --version/--kind).
-	markedAny := false
-	for _, tuple := range subcommands {
-		if req, ok := tuple.subcommand.(plugin.MarksRequiredFlags); ok {
-			markedAny = true
-			if err := req.MarkRequiredFlags(cmd); err != nil {
-				return nil, fmt.Errorf("failed to mark required flags for %q: %w", tuple.key, err)
-			}
-		}
-	}
-		}
-	}
-
-	// Backward-compatible fallback: require GVK flags for the built-in `create api` command
-	// when no plugin implements MarksRequiredFlags (e.g., external plugins, non-go bundles).
-	if requiresResource && !markedAny && cmd.Name() == apiCmdName {
+	// Mark GVK flags as required for the create api command.
+	if requiresResource && cmd.Name() == apiCmdName {
 		if err := cmd.MarkFlagRequired("version"); err != nil {
 			return nil, fmt.Errorf("failed to mark 'version' flag as required: %w", err)
 		}
