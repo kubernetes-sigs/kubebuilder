@@ -662,7 +662,7 @@ func getAPIResourceFlags(res resource.Resource) []string {
 
 // Creates a webhook resource.
 func createWebhook(res resource.Resource) error {
-	if res.Webhook == nil || res.Webhook.IsEmpty() {
+	if res.Webhooks == nil || res.Webhooks.IsEmpty() {
 		return nil
 	}
 	args := append([]string{"create", "webhook"}, getGVKFlags(res)...)
@@ -688,20 +688,20 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	}
 	if res.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
-		if res.Webhook.ValidationPath != "" {
-			args = append(args, "--validation-path", res.Webhook.ValidationPath)
+		if res.Webhooks.ValidationPath != "" {
+			args = append(args, "--validation-path", res.Webhooks.ValidationPath)
 		}
 	}
 	if res.HasDefaultingWebhook() {
 		args = append(args, "--defaulting")
-		if res.Webhook.DefaultingPath != "" {
-			args = append(args, "--defaulting-path", res.Webhook.DefaultingPath)
+		if res.Webhooks.DefaultingPath != "" {
+			args = append(args, "--defaulting-path", res.Webhooks.DefaultingPath)
 		}
 	}
 	if res.HasConversionWebhook() {
 		args = append(args, "--conversion")
-		if len(res.Webhook.Spoke) > 0 {
-			for _, spoke := range res.Webhook.Spoke {
+		if len(res.Webhooks.Spoke) > 0 {
+			for _, spoke := range res.Webhooks.Spoke {
 				args = append(args, "--spoke", spoke)
 			}
 		}

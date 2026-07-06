@@ -45,10 +45,12 @@ type Resource struct {
 	// Controllers holds named controllers for this resource.
 	Controllers *Controllers `json:"controllers,omitempty"`
 
-	// Webhook holds the configuration for the webhook associated with this resource.
-	// For GVK-tied webhooks, MultiGVK is false; for standalone multi-GVK webhooks, MultiGVK is true.
-	// JSON key "webhooks" is used for backward compatibility with PROJECT files.
-	Webhook *Webhook `json:"webhooks,omitempty"`
+	// Webhooks holds the information related to the associated webhooks.
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
+
+	// Webhook holds a multi-GVK webhook configuration (no single GVK tied resource).
+	// When set, the GVK fields may be empty.
+	Webhook *Webhook `json:"webhook,omitempty"`
 
 	// External specifies if the resource is defined externally.
 	External bool `json:"external,omitempty"`
@@ -110,6 +112,13 @@ func (r Resource) Validate() error {
 	if r.API != nil && !r.API.IsEmpty() {
 		if err := r.API.Validate(); err != nil {
 			return fmt.Errorf("invalid API: %w", err)
+		}
+	}
+
+	// Validate the Webhooks
+	if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
+		if err := r.Webhooks.Validate(); err != nil {
+			return fmt.Errorf("invalid Webhooks: %w", err)
 		}
 	}
 
@@ -184,17 +193,17 @@ func (r Resource) HasController() bool {
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
 func (r Resource) HasDefaultingWebhook() bool {
-	return r.Webhook != nil && r.Webhook.Defaulting
+	return (r.Webhooks != nil && r.Webhooks.Defaulting) || (r.Webhook != nil && r.Webhook.Defaulting)
 }
 
 // HasValidationWebhook returns true if the resource has an associated validation webhook.
 func (r Resource) HasValidationWebhook() bool {
-	return r.Webhook != nil && r.Webhook.Validation
+	return (r.Webhooks != nil && r.Webhooks.Validation) || (r.Webhook != nil && r.Webhook.Validation)
 }
 
 // HasConversionWebhook returns true if the resource has an associated conversion webhook.
 func (r Resource) HasConversionWebhook() bool {
-	return r.Webhook != nil && r.Webhook.Conversion
+	return (r.Webhooks != nil && r.Webhooks.Conversion) || (r.Webhook != nil && r.Webhook.Conversion)
 }
 
 // IsExternal returns true if the resource was scaffold as external.
@@ -236,6 +245,10 @@ func (r Resource) Copy() Resource {
 	if r.Controllers != nil {
 		controllers := r.Controllers.Copy()
 		r.Controllers = &controllers
+	}
+	if r.Webhooks != nil {
+		webhooks := r.Webhooks.Copy()
+		r.Webhooks = &webhooks
 	}
 	if r.Webhook != nil {
 		webhook := r.Webhook.Copy()
@@ -308,14 +321,28 @@ func (r *Resource) Update(other Resource) error {
 		r.Controller = r.Controller || other.Controller
 	}
 
-	// Update Webhook.
+	// Update Webhooks.
+	if r.Webhooks == nil && other.Webhooks != nil {
+		r.Webhooks = &Webhooks{}
+	}
+
+	if r.Webhooks != nil {
+		if err := r.Webhooks.Update(other.Webhooks); err != nil {
+			return err
+		}
+	}
+
+	// Update Webhook (multi-GVK webhook).
 	if r.Webhook == nil && other.Webhook != nil {
 		r.Webhook = &Webhook{}
 	}
 
 	if r.Webhook != nil {
-		return r.Webhook.Update(other.Webhook)
+		if err := r.Webhook.Update(other.Webhook); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 

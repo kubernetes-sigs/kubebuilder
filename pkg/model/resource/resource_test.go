@@ -321,7 +321,7 @@ var _ = Describe("Resource", func() {
 					Namespaced: true,
 				},
 				Controller: true,
-				Webhook: &Webhook{
+				Webhooks: &Webhooks{
 					WebhookVersion: webhookVersion,
 					Defaulting:     true,
 					Validation:     true,
@@ -342,12 +342,12 @@ var _ = Describe("Resource", func() {
 			Expect(other.API.CRDVersion).To(Equal(res.API.CRDVersion))
 			Expect(other.API.Namespaced).To(Equal(res.API.Namespaced))
 			Expect(other.Controller).To(Equal(res.Controller))
-			Expect(other.Webhook).NotTo(BeNil())
-			Expect(other.Webhook.WebhookVersion).To(Equal(res.Webhook.WebhookVersion))
-			Expect(other.Webhook.Defaulting).To(Equal(res.Webhook.Defaulting))
-			Expect(other.Webhook.Validation).To(Equal(res.Webhook.Validation))
-			Expect(other.Webhook.Conversion).To(Equal(res.Webhook.Conversion))
-			Expect(other.Webhook.Spoke).To(Equal(res.Webhook.Spoke))
+			Expect(other.Webhooks).NotTo(BeNil())
+			Expect(other.Webhooks.WebhookVersion).To(Equal(res.Webhooks.WebhookVersion))
+			Expect(other.Webhooks.Defaulting).To(Equal(res.Webhooks.Defaulting))
+			Expect(other.Webhooks.Validation).To(Equal(res.Webhooks.Validation))
+			Expect(other.Webhooks.Conversion).To(Equal(res.Webhooks.Conversion))
+			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
 		})
 
 		It("modifying the copy should not affect the original", func() {
@@ -362,11 +362,11 @@ var _ = Describe("Resource", func() {
 			other.API.Namespaced = false
 			other.API = nil // Change fields before changing pointer
 			other.Controller = false
-			other.Webhook.WebhookVersion = v1beta1
-			other.Webhook.Defaulting = false
-			other.Webhook.Validation = false
-			other.Webhook.Conversion = false
-			other.Webhook = nil // Change fields before changing pointer
+			other.Webhooks.WebhookVersion = v1beta1
+			other.Webhooks.Defaulting = false
+			other.Webhooks.Validation = false
+			other.Webhooks.Conversion = false
+			other.Webhooks = nil // Change fields before changing pointer
 
 			Expect(res.Group).To(Equal(group))
 			Expect(res.Domain).To(Equal(domain))
@@ -378,11 +378,11 @@ var _ = Describe("Resource", func() {
 			Expect(res.API.CRDVersion).To(Equal(crdVersion))
 			Expect(res.API.Namespaced).To(BeTrue())
 			Expect(res.Controller).To(BeTrue())
-			Expect(res.Webhook).NotTo(BeNil())
-			Expect(res.Webhook.WebhookVersion).To(Equal(webhookVersion))
-			Expect(res.Webhook.Defaulting).To(BeTrue())
-			Expect(res.Webhook.Validation).To(BeTrue())
-			Expect(res.Webhook.Conversion).To(BeTrue())
+			Expect(res.Webhooks).NotTo(BeNil())
+			Expect(res.Webhooks.WebhookVersion).To(Equal(webhookVersion))
+			Expect(res.Webhooks.Defaulting).To(BeTrue())
+			Expect(res.Webhooks.Validation).To(BeTrue())
+			Expect(res.Webhooks.Conversion).To(BeTrue())
 		})
 	})
 
