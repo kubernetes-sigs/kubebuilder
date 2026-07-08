@@ -99,6 +99,19 @@ kind: ServiceAccount
 metadata:
   labels: {}
   name: controller-manager`
+
+	// A labels: header that is not a direct child of metadata: (here nested under another key).
+	// Only the metadata block should be templated; the deeper labels: must be left as written.
+	saNestedNonMetadataLabels = `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  name: controller-manager
+imagePullSecrets:
+  - name: my-registry
+    labels:
+      example.com/team: platform`
 )
 
 var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
@@ -159,4 +172,15 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 				Expect(rendered).To(ContainSubstring(`{{- with .Values.serviceAccount.labels }}`))
 			}),
 	)
+
+	It("only templates labels/annotations that are direct children of metadata", func() {
+		rendered := AddServiceAccountLabelsAndAnnotations(saNestedNonMetadataLabels)
+
+		// The metadata labels block is merged with the chart values once.
+		Expect(strings.Count(rendered, valuesServiceAccountLabels)).To(Equal(1))
+		Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
+
+		// The labels: nested under imagePullSecrets is left exactly as written.
+		Expect(rendered).To(ContainSubstring("    labels:\n      example.com/team: platform"))
+	})
 })

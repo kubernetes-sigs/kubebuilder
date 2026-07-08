@@ -157,11 +157,11 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 			_, metadataIndent = LeadingWhitespace(lines[lineIndex])
 			metadataLineIndex = len(merged)
 			merged = append(merged, lines[lineIndex])
-		case isMetadataMapHeader(trimmed, common.YamlKeyLabels):
+		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyLabels, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
 				merged, lines, lineIndex, common.YamlKeyLabels, valuesServiceAccountLabels)
 			labelsBlockEnd = len(merged)
-		case isMetadataMapHeader(trimmed, common.YamlKeyAnnotations):
+		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyAnnotations, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
 				merged, lines, lineIndex, common.YamlKeyAnnotations, valuesServiceAccountAnnotations)
 			annotationsBlockEnd = len(merged)
@@ -183,6 +183,20 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 // (for example "labels:"), including the inline empty-map form "labels: {}".
 func isMetadataMapHeader(trimmed, mapKey string) bool {
 	return trimmed == mapKey || trimmed == mapKey+" {}"
+}
+
+// isMetadataMapChildHeader reports whether line is the mapKey header (labels: or annotations:)
+// sitting directly under metadata:, indented metadataIndent + 2. It returns false before metadata:
+// is seen, so a key nested deeper in the resource is left untouched instead of merged.
+func isMetadataMapChildHeader(line, mapKey string, metadataIndent int) bool {
+	if metadataIndent < 0 {
+		return false
+	}
+	_, indent := LeadingWhitespace(line)
+	if indent != metadataIndent+2 {
+		return false
+	}
+	return isMetadataMapHeader(strings.TrimSpace(line), mapKey)
 }
 
 // injectMissingMetadataBlocks adds a guarded labels or annotations block for whichever one the
