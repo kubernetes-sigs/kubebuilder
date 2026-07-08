@@ -4222,6 +4222,9 @@ metadata:
 				Expect(result).To(ContainSubstring(`"app.kubernetes.io/managed-by"`))
 			})
 
+			// Kustomize emits metadata keys alphabetically, so a ServiceAccount that already
+			// carries annotations lists annotations before labels. The generator must merge into
+			// that block instead of emitting a second annotations key.
 			It("merges custom annotations with existing annotations without duplication", func() {
 				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
@@ -4233,10 +4236,10 @@ metadata:
 				content := `apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/name: test-project
   annotations:
     existing.annotation/key: "existing-value"
+  labels:
+    app.kubernetes.io/name: test-project
   name: controller-manager`
 
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
@@ -4248,10 +4251,13 @@ metadata:
 				// Should preserve existing annotation
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
-				// Should add template for custom annotations with duplicate filtering
+				// Should merge into the existing block and omit the scaffolded key so overrides never duplicate
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit .`))
-				Expect(result).To(ContainSubstring(`"existing.annotation/key"`))
+				Expect(result).To(ContainSubstring(`{{- with omit . "existing.annotation/key" }}`))
+
+				// Labels still merge independently of the annotations ordering
+				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
+				Expect(result).To(MatchRegexp(`{{- with omit \. .*"app.kubernetes.io/name".* }}`))
 			})
 		})
 

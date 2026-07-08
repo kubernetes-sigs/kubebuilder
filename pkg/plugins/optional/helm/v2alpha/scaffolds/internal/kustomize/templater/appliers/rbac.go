@@ -128,101 +128,132 @@ func WrapServiceAccountWithEnabledConditional(yamlContent string) string {
 	if !strings.HasSuffix(yamlContent, "\n") {
 		yamlContent += "\n"
 	}
-	// Create the ServiceAccount unless serviceAccount.enabled is false. Plain truthiness matches the
-	// serviceAccountName helper and every other section toggle in the chart.
+	// Create the ServiceAccount only when serviceAccount.enabled is truthy. Plain truthiness matches
+	// the serviceAccountName helper and every other section toggle in the chart.
 	return "{{- if .Values.serviceAccount.enabled }}\n" + yamlContent + "{{- end }}\n"
 }
 
-// AddServiceAccountLabelsAndAnnotations adds custom labels/annotations with omit() filtering.
+const (
+	valuesServiceAccountLabels      = ".Values.serviceAccount.labels"
+	valuesServiceAccountAnnotations = ".Values.serviceAccount.annotations"
+)
+
+// AddServiceAccountLabelsAndAnnotations makes the ServiceAccount metadata honor
+// .Values.serviceAccount.labels and .Values.serviceAccount.annotations. It merges into whichever
+// labels and annotations blocks Kustomize already emitted, in either order, and injects the block
+// that is missing. User-supplied values therefore always render and no metadata key is duplicated.
 func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 	lines := strings.Split(yamlContent, "\n")
-	result := make([]string, 0, len(lines))
-	addedCustomFields := false
+	merged := make([]string, 0, len(lines))
 
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		trimmed := strings.TrimSpace(line)
+	metadataIndent := -1
+	metadataLineIndex := -1
+	labelsBlockEnd := -1
+	annotationsBlockEnd := -1
 
-		// Look for labels: in metadata
-		if strings.HasPrefix(trimmed, common.YamlKeyLabels) && !addedCustomFields {
-			result = append(result, line)
-			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
-
-			// Collect all existing label lines
-			labelsStart := len(result)
-			i++
-			for i < len(lines) {
-				nextLine := lines[i]
-				nextTrimmed := strings.TrimSpace(nextLine)
-				nextIndent := len(nextLine) - len(strings.TrimLeft(nextLine, " \t"))
-
-				// Stop when we hit a line at same or less indentation (not comment/empty)
-				if nextTrimmed != "" && !strings.HasPrefix(nextTrimmed, "#") && nextIndent <= currentIndent {
-					break
-				}
-				result = append(result, nextLine)
-				i++
-			}
-
-			// Extract existing label keys
-			existingKeys := extractKeysFromLines(result[labelsStart:])
-			childIndent := strings.Repeat(" ", currentIndent+2)
-
-			// Add custom labels
-			result = appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.labels", existingKeys)
-
-			// Merge into an existing annotations block when present; otherwise add one.
-			indent := strings.Repeat(" ", currentIndent)
-			if i < len(lines) {
-				nextLine := lines[i]
-				nextTrimmed := strings.TrimSpace(nextLine)
-				nextIndent := len(nextLine) - len(strings.TrimLeft(nextLine, " \t"))
-
-				if strings.HasPrefix(nextTrimmed, "annotations:") && nextIndent == currentIndent {
-					result = append(result, nextLine)
-					annotationsStart := len(result)
-					i++
-					for i < len(lines) {
-						annotationLine := lines[i]
-						annotationTrimmed := strings.TrimSpace(annotationLine)
-						annotationIndent := len(annotationLine) - len(strings.TrimLeft(annotationLine, " \t"))
-
-						// Stop when we hit a line at same or less indentation (not comment/empty)
-						if annotationTrimmed != "" && !strings.HasPrefix(annotationTrimmed, "#") && annotationIndent <= currentIndent {
-							break
-						}
-						result = append(result, annotationLine)
-						i++
-					}
-
-					existingAnnotationKeys := extractKeysFromLines(result[annotationsStart:])
-					result = appendHelmMapBlock(result, childIndent, ".Values.serviceAccount.annotations", existingAnnotationKeys)
-				} else {
-					result = append(result,
-						indent+"{{- with .Values.serviceAccount.annotations }}",
-						indent+"annotations:",
-						childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
-						indent+"{{- end }}",
-					)
-				}
-			} else {
-				result = append(result,
-					indent+"{{- with .Values.serviceAccount.annotations }}",
-					indent+"annotations:",
-					childIndent+"{{- toYaml . | nindent "+strconv.Itoa(currentIndent+2)+" }}",
-					indent+"{{- end }}",
-				)
-			}
-
-			addedCustomFields = true
-			i-- // Adjust because outer loop will increment
-			continue
+	for lineIndex := 0; lineIndex < len(lines); lineIndex++ {
+		switch trimmed := strings.TrimSpace(lines[lineIndex]); {
+		case trimmed == common.YamlKeyMetadata:
+			_, metadataIndent = LeadingWhitespace(lines[lineIndex])
+			metadataLineIndex = len(merged)
+			merged = append(merged, lines[lineIndex])
+		case isMetadataMapHeader(trimmed, common.YamlKeyLabels):
+			merged, lineIndex = mergeMetadataMapBlock(
+				merged, lines, lineIndex, common.YamlKeyLabels, valuesServiceAccountLabels)
+			labelsBlockEnd = len(merged)
+		case isMetadataMapHeader(trimmed, common.YamlKeyAnnotations):
+			merged, lineIndex = mergeMetadataMapBlock(
+				merged, lines, lineIndex, common.YamlKeyAnnotations, valuesServiceAccountAnnotations)
+			annotationsBlockEnd = len(merged)
+		default:
+			merged = append(merged, lines[lineIndex])
 		}
-
-		result = append(result, line)
 	}
 
-	return strings.Join(result, "\n")
+	childIndent := 2
+	if metadataIndent >= 0 {
+		childIndent = metadataIndent + 2
+	}
+
+	merged = injectMissingMetadataBlocks(merged, childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd)
+	return strings.Join(merged, "\n")
+}
+
+// isMetadataMapHeader reports whether trimmed is the header for the given metadata map key
+// (for example "labels:"), including the inline empty-map form "labels: {}".
+func isMetadataMapHeader(trimmed, mapKey string) bool {
+	return trimmed == mapKey || trimmed == mapKey+" {}"
+}
+
+// injectMissingMetadataBlocks adds a guarded labels or annotations block for whichever one the
+// source metadata did not contain. The new block is placed next to the block that is present, or
+// right after "metadata:" when neither was present, so user-supplied values always render.
+func injectMissingMetadataBlocks(
+	merged []string,
+	childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd int,
+) []string {
+	labelsBlock := buildGuardedMetadataMapBlock(
+		childIndent, common.YamlKeyLabels, valuesServiceAccountLabels)
+	annotationsBlock := buildGuardedMetadataMapBlock(
+		childIndent, common.YamlKeyAnnotations, valuesServiceAccountAnnotations)
+
+	switch {
+	case labelsBlockEnd >= 0 && annotationsBlockEnd < 0:
+		merged = slices.Insert(merged, labelsBlockEnd, annotationsBlock...)
+	case annotationsBlockEnd >= 0 && labelsBlockEnd < 0:
+		merged = slices.Insert(merged, annotationsBlockEnd, labelsBlock...)
+	case labelsBlockEnd < 0 && annotationsBlockEnd < 0 && metadataLineIndex >= 0:
+		bothBlocks := append(annotationsBlock, labelsBlock...)
+		merged = slices.Insert(merged, metadataLineIndex+1, bothBlocks...)
+	}
+	return merged
+}
+
+// mergeMetadataMapBlock re-emits the existing labels/annotations block that starts at headerIndex
+// and appends a Helm block that merges the matching .Values map, omitting keys the block already
+// defines so nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
+// a guarded block, so the header renders only when the user supplies values and never as a null
+// key. It returns the updated output and the index of the last source line it consumed.
+func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valuePath string) ([]string, int) {
+	_, headerIndent := LeadingWhitespace(lines[headerIndex])
+
+	bodyStart := headerIndex + 1
+	bodyEnd := bodyStart
+	for ; bodyEnd < len(lines); bodyEnd++ {
+		trimmed := strings.TrimSpace(lines[bodyEnd])
+		_, indent := LeadingWhitespace(lines[bodyEnd])
+		if trimmed != "" && !strings.HasPrefix(trimmed, "#") && indent <= headerIndent {
+			break
+		}
+	}
+
+	body := lines[bodyStart:bodyEnd]
+	existingKeys := extractKeysFromLines(body)
+	if len(existingKeys) == 0 {
+		merged = append(merged, buildGuardedMetadataMapBlock(headerIndent, mapKey, valuePath)...)
+		return merged, bodyEnd - 1
+	}
+
+	merged = append(merged, strings.Repeat(" ", headerIndent)+mapKey)
+	merged = append(merged, body...)
+	valueIndent := strings.Repeat(" ", headerIndent+2)
+	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
+
+	return merged, bodyEnd - 1
+}
+
+// buildGuardedMetadataMapBlock renders a labels/annotations block wrapped in
+// "{{- with <valuePath> }}" so it appears only when the user sets that map. headerIndent is the
+// indentation of the header key.
+func buildGuardedMetadataMapBlock(headerIndent int, mapKey, valuePath string) []string {
+	indent := strings.Repeat(" ", headerIndent)
+	valueIndent := strings.Repeat(" ", headerIndent+2)
+	return []string{
+		indent + "{{- with " + valuePath + " }}",
+		indent + mapKey,
+		valueIndent + "{{- toYaml . | nindent " + strconv.Itoa(headerIndent+2) + " }}",
+		indent + "{{- end }}",
+	}
 }
 
 // appendHelmMapBlock appends Helm template blocks for custom labels/annotations.
@@ -272,8 +303,8 @@ func extractKeysFromLines(lines []string) []string {
 		}
 	}
 
-	// Matches YAML keys: "  key: value" (supports dots, slashes, hyphens)
-	keyPattern := regexp.MustCompile(`^\s+([a-zA-Z0-9._/-]+):\s+`)
+	// Matches YAML keys "  key: value" and empty-value keys "  key:" (supports dots, slashes, hyphens)
+	keyPattern := regexp.MustCompile(`^\s+([a-zA-Z0-9._/-]+):(\s|$)`)
 
 	for i := sectionStart; i < len(lines); i++ {
 		line := lines[i]

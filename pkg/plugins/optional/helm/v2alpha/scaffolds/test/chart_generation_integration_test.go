@@ -351,25 +351,40 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	// helmTemplate scaffolds kustomizeYAML into a chart and runs `helm template`, returning the
+	// combined output. Specs are skipped when helm is not on PATH.
+	helmTemplate := func(kustomizeYAML string, setArgs ...string) (string, error) {
+		if _, err := exec.LookPath("helm"); err != nil {
+			Skip("helm binary not found on PATH; skipping render-based test")
+		}
+
+		Expect(setupKustomizeFile(manifestsFile, kustomizeYAML)).To(Succeed())
+
+		scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+		scaffolderBase.InjectFS(fs)
+		Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+		chartPath := filepath.Join(tmpDir, outputDir, "chart")
+		args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
+		out, err := exec.Command("helm", args...).CombinedOutput()
+		return string(out), err
+	}
+
+	// serviceAccountDoc returns the ServiceAccount YAML document from a multi-document render.
+	serviceAccountDoc := func(rendered string) string {
+		for _, doc := range strings.Split(rendered, "\n---") {
+			if strings.Contains(doc, "\nkind: ServiceAccount\n") {
+				return doc
+			}
+		}
+		return ""
+	}
+
 	Context("ServiceAccount name resolution (rendered)", func() {
 		const generatedName = "my-release-test-project-controller-manager"
 
 		runHelmTemplate := func(setArgs ...string) (string, error) {
-			if _, err := exec.LookPath("helm"); err != nil {
-				Skip("helm binary not found on PATH; skipping render-based test")
-			}
-
-			kustomizeYAML := createKustomizeForServiceAccountRender("test-project")
-			Expect(setupKustomizeFile(manifestsFile, kustomizeYAML)).To(Succeed())
-
-			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
-			scaffolderBase.InjectFS(fs)
-			Expect(scaffolderBase.Scaffold()).To(Succeed())
-
-			chartPath := filepath.Join(tmpDir, outputDir, "chart")
-			args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
-			out, err := exec.Command("helm", args...).CombinedOutput()
-			return string(out), err
+			return helmTemplate(createKustomizeForServiceAccountRender("test-project"), setArgs...)
 		}
 
 		renderChart := func(setArgs ...string) string {
@@ -437,7 +452,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		)
 
 		// Failing at render time prevents silently binding operator RBAC to the shared default SA.
-		DescribeTable("fails to render when enabled=false and no ServiceAccount name is set",
+		DescribeTable("fails to render when the ServiceAccount is disabled and no name is set",
 			func(setArgs []string) {
 				out := renderChartExpectFailure(setArgs...)
 				Expect(out).To(ContainSubstring(
@@ -514,6 +529,59 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		It("never leaks a stale custom name while the chart manages its own SA", func() {
 			rendered := renderChart("--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa")
 			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: custom-sa"))
+		})
+	})
+
+	// When the source ServiceAccount already carries annotations, Kustomize lists annotations before
+	// labels. The generator must merge into that block; a second annotations key makes the manifest
+	// invalid YAML and fails `helm template`.
+	Context("ServiceAccount annotations (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeForServiceAccountWithAnnotationsRender("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("merges into the existing annotations block instead of duplicating it", func() {
+			sa := serviceAccountDoc(renderChart())
+
+			Expect(sa).NotTo(BeEmpty(), "expected a ServiceAccount manifest in the render")
+			Expect(strings.Count(sa, "annotations:")).To(Equal(1),
+				"ServiceAccount must keep a single annotations: block, got:\n%s", sa)
+			Expect(sa).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
+		})
+
+		It("renders user-supplied annotations alongside the scaffolded one", func() {
+			sa := serviceAccountDoc(renderChart("--set", "serviceAccount.annotations.team=platform"))
+
+			Expect(strings.Count(sa, "annotations:")).To(Equal(1))
+			Expect(sa).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
+			Expect(sa).To(ContainSubstring("team: platform"))
+		})
+	})
+
+	Context("ServiceAccount labels (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeForServiceAccountRender("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("renders user-supplied labels alongside the scaffolded ones", func() {
+			sa := serviceAccountDoc(renderChart("--set", "serviceAccount.labels.env=prod"))
+
+			Expect(sa).NotTo(BeEmpty(), "expected a ServiceAccount manifest in the render")
+			Expect(strings.Count(sa, "labels:")).To(Equal(1),
+				"ServiceAccount must keep a single labels: block, got:\n%s", sa)
+			Expect(sa).To(ContainSubstring("env: prod"))
+		})
+
+		It("does not duplicate a scaffolded label a user tries to override", func() {
+			sa := serviceAccountDoc(renderChart(
+				"--set", "serviceAccount.labels.app\\.kubernetes\\.io/name=override"))
+
+			Expect(strings.Count(sa, "app.kubernetes.io/name:")).To(Equal(1),
+				"a user override must not add a second app.kubernetes.io/name label, got:\n%s", sa)
 		})
 	})
 
@@ -1228,6 +1296,25 @@ subjects:
 `
 }
 
+// createKustomizeForServiceAccountWithAnnotationsRender reuses the serviceAccountName render
+// fixture but gives the ServiceAccount pre-existing annotations. Kustomize sorts metadata keys
+// alphabetically, so annotations lands before labels: the ordering that must merge into the
+// existing annotations block rather than emit a duplicate key.
+func createKustomizeForServiceAccountWithAnnotationsRender(projectName string) string {
+	return strings.Replace(
+		createKustomizeForServiceAccountRender(projectName),
+		`kind: ServiceAccount
+metadata:
+  labels:`,
+		`kind: ServiceAccount
+metadata:
+  annotations:
+    example.com/existing-annotation: preserved-value
+  labels:`,
+		1,
+	)
+}
+
 func setupKustomizeFile(filePath, content string) error {
 	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 		return err
@@ -1236,9 +1323,8 @@ func setupKustomizeFile(filePath, content string) error {
 }
 
 // createKustomizeWithTolerationsAndSchedulingFields simulates a manager.yaml that already
-// contains custom tolerations, nodeSelector, and affinity – the real-world case that
-// triggered https://github.com/kubernetes-sigs/kubebuilder/issues/5569 where Helm chart
-// generation produces a duplicate tolerations block causing Helm render failures.
+// contains custom tolerations, nodeSelector, and affinity. Chart generation must not emit a
+// duplicate tolerations block, which would make Helm render fail.
 func createKustomizeWithTolerationsAndSchedulingFields(projectName string) string {
 	return `---
 apiVersion: v1
