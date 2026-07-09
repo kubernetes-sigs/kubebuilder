@@ -162,7 +162,7 @@ var _ = Describe("Cfg", func() {
 					Namespaced: true,
 				},
 				Controller: true,
-				Webhook: &resource.Webhook{
+				Webhooks: &resource.Webhooks{
 					WebhookVersion: "v1",
 					Defaulting:     true,
 					Validation:     true,
@@ -188,14 +188,14 @@ var _ = Describe("Cfg", func() {
 					Expect(result.API.Namespaced).To(Equal(expected.API.Namespaced))
 				}
 				Expect(result.Controller).To(Equal(expected.Controller))
-				if expected.Webhook == nil {
-					Expect(result.Webhook).To(BeNil())
+				if expected.Webhooks == nil {
+					Expect(result.Webhooks).To(BeNil())
 				} else {
-					Expect(result.Webhook).NotTo(BeNil())
-					Expect(result.Webhook.WebhookVersion).To(Equal(expected.Webhook.WebhookVersion))
-					Expect(result.Webhook.Defaulting).To(Equal(expected.Webhook.Defaulting))
-					Expect(result.Webhook.Validation).To(Equal(expected.Webhook.Validation))
-					Expect(result.Webhook.Conversion).To(Equal(expected.Webhook.Conversion))
+					Expect(result.Webhooks).NotTo(BeNil())
+					Expect(result.Webhooks.WebhookVersion).To(Equal(expected.Webhooks.WebhookVersion))
+					Expect(result.Webhooks.Defaulting).To(Equal(expected.Webhooks.Defaulting))
+					Expect(result.Webhooks.Validation).To(Equal(expected.Webhooks.Validation))
+					Expect(result.Webhooks.Conversion).To(Equal(expected.Webhooks.Conversion))
 				}
 			}
 		})
@@ -337,7 +337,7 @@ var _ = Describe("Cfg", func() {
 						Version: res.Version,
 						Kind:    res.Kind,
 					},
-					Webhook: &resource.Webhook{WebhookVersion: apiVersion},
+					Webhooks: &resource.Webhooks{WebhookVersion: apiVersion},
 				},
 				resource.Resource{
 					GVK: resource.GVK{
@@ -345,7 +345,7 @@ var _ = Describe("Cfg", func() {
 						Version: res.Version,
 						Kind:    "OtherKind",
 					},
-					Webhook: &resource.Webhook{WebhookVersion: "v1"},
+					Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
 				},
 			)
 			versions := c.ListWebhookVersions()
@@ -483,7 +483,7 @@ var _ = Describe("Cfg", func() {
 						},
 						API:         &resource.API{CRDVersion: "v1"},
 						Controllers: &resource.Controllers{{Name: "kind2"}},
-						Webhook:     &resource.Webhook{WebhookVersion: "v1"},
+						Webhooks:    &resource.Webhooks{WebhookVersion: "v1"},
 					},
 					{
 						GVK: resource.GVK{
@@ -491,9 +491,9 @@ var _ = Describe("Cfg", func() {
 							Version: "v1-beta",
 							Kind:    resourceKind,
 						},
-						Plural:  "kindes",
-						API:     nil,
-						Webhook: nil,
+						Plural:   "kindes",
+						API:      nil,
+						Webhooks: nil,
 					},
 					{
 						GVK: resource.GVK{
@@ -506,7 +506,7 @@ var _ = Describe("Cfg", func() {
 							Namespaced: true,
 						},
 						Controllers: &resource.Controllers{{Name: "kind"}},
-						Webhook: &resource.Webhook{
+						Webhooks: &resource.Webhooks{
 							WebhookVersion: "v1",
 							Defaulting:     true,
 							Validation:     true,

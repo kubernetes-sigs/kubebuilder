@@ -52,7 +52,7 @@ func Run() {
 	// Bundle plugin which built the golang projects scaffold with base.go/v4 and kustomize/v2 plugins
 	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 4}),
-		plugin.WithPlugins(golangv4.Plugin{}, kustomizecommonv2.Plugin{}),
+		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv4.Plugin{}),
 		plugin.WithDescription("Default scaffold (go/v4 + kustomize/v2)"),
 	)
 

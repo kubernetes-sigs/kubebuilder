@@ -258,12 +258,17 @@ define gomodver
 $(shell go list -m -f '{{if .Replace}}{{.Replace.Version}}{{else}}{{.Version}}{{end}}' $(1) 2>/dev/null)
 endef
 
-##@ Helm
+##@ Helm Deployment
 
+## Helm binary to use for deploying the chart
 HELM ?= helm
+## Namespace to deploy the Helm release
 HELM_NAMESPACE ?= project-system
+## Name of the Helm release
 HELM_RELEASE ?= project
+## Path to the Helm chart directory
 HELM_CHART_DIR ?= dist/chart
+## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
 .PHONY: install-helm

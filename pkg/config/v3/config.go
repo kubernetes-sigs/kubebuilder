@@ -317,6 +317,9 @@ func (c Cfg) ListWebhookVersions() []string {
 	// Make a map to remove duplicates
 	versionSet := make(map[string]struct{})
 	for _, r := range c.Resources {
+		if r.Webhooks != nil && r.Webhooks.WebhookVersion != "" {
+			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
+		}
 		if r.Webhook != nil && r.Webhook.WebhookVersion != "" {
 			versionSet[r.Webhook.WebhookVersion] = struct{}{}
 		}
@@ -405,7 +408,11 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		if r.API != nil && r.API.IsEmpty() {
 			c.Resources[i].API = nil
 		}
-		// If Webhook is empty, omit it (prevents `webhooks: {}`).
+		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
+		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
+			c.Resources[i].Webhooks = nil
+		}
+		// If Webhook is empty, omit it (prevents `webhook: {}`).
 		if r.Webhook != nil && r.Webhook.IsEmpty() {
 			c.Resources[i].Webhook = nil
 		}
