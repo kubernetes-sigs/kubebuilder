@@ -19,7 +19,9 @@ package resource
 import (
 	"fmt"
 	"slices"
+	"strings"
 
+	"github.com/gobuffalo/flect"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -210,4 +212,54 @@ func (w *Webhook) AddSpoke(version string) {
 		return
 	}
 	w.Spoke = append(w.Spoke, version)
+}
+
+// WebhookToGVKs converts a Webhook's Groups/Kinds/Versions to a list of GVKs.
+// Groups are full domain strings (e.g., "crew.testproject.org"),
+// Kinds are plural resource names (e.g., "captains"),
+// Versions are API versions (e.g., "v1").
+func WebhookToGVKs(wh Webhook) []GVK {
+	if len(wh.Groups) == 0 || len(wh.Kinds) == 0 || len(wh.Versions) == 0 {
+		return nil
+	}
+
+	// Filter out wildcard versions since they cannot be represented as concrete GVKs.
+	concreteVersions := make([]string, 0, len(wh.Versions))
+	for _, v := range wh.Versions {
+		if v != "*" {
+			concreteVersions = append(concreteVersions, v)
+		}
+	}
+	if len(concreteVersions) == 0 {
+		return nil
+	}
+
+	gvks := make([]GVK, 0, len(wh.Groups)*len(wh.Kinds)*len(concreteVersions))
+	for _, groupDomain := range wh.Groups {
+		group := ExtractGroupFromDomain(groupDomain)
+		for _, pluralKind := range wh.Kinds {
+			singularKind := flect.Singularize(strings.ToLower(pluralKind))
+			// Capitalize first letter to match Kind convention
+			if len(singularKind) > 0 {
+				singularKind = strings.ToUpper(singularKind[:1]) + singularKind[1:]
+			}
+			for _, version := range concreteVersions {
+				gvks = append(gvks, GVK{
+					Group:   group,
+					Version: version,
+					Kind:    singularKind,
+				})
+			}
+		}
+	}
+	return gvks
+}
+
+// ExtractGroupFromDomain extracts the short group name from a fully qualified domain.
+// For example, "crew.testproject.org" returns "crew", "core" returns "core".
+func ExtractGroupFromDomain(groupDomain string) string {
+	if before, _, ok := strings.Cut(groupDomain, "."); ok {
+		return before
+	}
+	return groupDomain
 }

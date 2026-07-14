@@ -71,10 +71,6 @@ type Cfg struct {
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
 
-	// MultiGVKWebhooks stores webhooks that intercept multiple resource types
-	// (not tied to a single GVK resource).
-	MultiGVKWebhooks []resource.Webhook `json:"multiGVKWebhooks,omitempty"`
-
 	// Plugins
 	Plugins pluginConfigs `json:"plugins,omitempty"`
 }
@@ -324,11 +320,6 @@ func (c Cfg) ListWebhookVersions() []string {
 			versionSet[r.Webhook.WebhookVersion] = struct{}{}
 		}
 	}
-	for _, w := range c.MultiGVKWebhooks {
-		if w.WebhookVersion != "" {
-			versionSet[w.WebhookVersion] = struct{}{}
-		}
-	}
 
 	// Convert the map into a slice
 	versions := make([]string, 0, len(versionSet))
@@ -340,9 +331,11 @@ func (c Cfg) ListWebhookVersions() []string {
 
 // GetMultiGVKWebhooks implements config.Config
 func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhook, error) {
-	webhooks := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
-	for _, w := range c.MultiGVKWebhooks {
-		webhooks = append(webhooks, w.Copy())
+	webhooks := make([]resource.Webhook, 0)
+	for _, r := range c.Resources {
+		if r.Webhook != nil && r.Webhook.IsMultiGVK() {
+			webhooks = append(webhooks, r.Webhook.Copy())
+		}
 	}
 	return webhooks, nil
 }
@@ -351,14 +344,20 @@ func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhook, error) {
 func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhook) error {
 	wh = wh.Copy()
 
-	// Check for duplicates by name
-	for _, existing := range c.MultiGVKWebhooks {
-		if existing.Name == wh.Name {
+	// Check for duplicates by name across all resources
+	for _, existing := range c.Resources {
+		if existing.Webhook != nil && existing.Webhook.Name == wh.Name {
 			return fmt.Errorf("multi-GVK webhook %q already exists in project config", wh.Name)
 		}
 	}
 
-	c.MultiGVKWebhooks = append(c.MultiGVKWebhooks, wh)
+	// Create a resource entry with the webhook and GVKs.
+	// The GVKs are derived from the webhook's Groups/Kinds/Versions.
+	res := resource.Resource{
+		Webhook: &wh,
+		GVKs:    resource.WebhookToGVKs(wh),
+	}
+	c.Resources = append(c.Resources, res)
 	return nil
 }
 
@@ -418,15 +417,6 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		}
 	}
 
-	// Filter out empty multi-GVK webhooks
-	nonEmpty := make([]resource.Webhook, 0, len(c.MultiGVKWebhooks))
-	for _, w := range c.MultiGVKWebhooks {
-		if !w.IsEmpty() {
-			nonEmpty = append(nonEmpty, w)
-		}
-	}
-	c.MultiGVKWebhooks = nonEmpty
-
 	content, err := yaml.Marshal(c)
 	if err != nil {
 		return nil, config.MarshalError{Err: err}
@@ -435,8 +425,33 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 	return content, nil
 }
 
+// versionedConfig is used only for backward-compatible unmarshaling of legacy fields.
+type versionedConfig struct {
+	Version          config.Version      `json:"version"`
+	MultiGVKWebhooks []resource.Webhook  `json:"multiGVKWebhooks,omitempty"`
+	Resources        []resource.Resource `json:"resources,omitempty"`
+	Domain           string              `json:"domain,omitempty"`
+	Repository       string              `json:"repo,omitempty"`
+	Name             string              `json:"projectName,omitempty"`
+	CliVersion       string              `json:"cliVersion,omitempty"`
+	PluginChain      stringSlice         `json:"layout,omitempty"`
+	MultiGroup       bool                `json:"multigroup,omitempty"`
+	Namespaced       bool                `json:"namespaced,omitempty"`
+	Plugins          pluginConfigs       `json:"plugins,omitempty"`
+}
+
 // UnmarshalYAML implements config.Config
 func (c *Cfg) UnmarshalYAML(b []byte) error {
+	// Check for legacy multiGVKWebhooks top-level field and migrate it to resources.
+	var legacy versionedConfig
+	if err := yaml.Unmarshal(b, &legacy); err == nil && len(legacy.MultiGVKWebhooks) > 0 {
+		for _, wh := range legacy.MultiGVKWebhooks {
+			if wh.Name != "" {
+				_ = c.AddMultiGVKWebhook(wh)
+			}
+		}
+	}
+
 	// Use non-strict unmarshaling to allow forward compatibility and external plugin fields.
 	// Older versions of kubebuilder should be able to read PROJECT files
 	// with newer fields and simply ignore unknown fields.

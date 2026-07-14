@@ -6,30 +6,6 @@ cliVersion: (devel)
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
-multiGVKWebhooks:
-- defaulting: true
-  groups:
-  - crew.testproject.org
-  multiGVK: true
-  name: crew-defaulting
-  resources:
-  - captains
-  - sailors
-  versions:
-  - v1
-  webhookVersion: v1
-- groups:
-  - core
-  - apps
-  multiGVK: true
-  name: core-validation
-  resources:
-  - pods
-  - deployments
-  validation: true
-  versions:
-  - '*'
-  webhookVersion: v1
 projectName: project-v4
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4
 resources:
@@ -44,6 +20,10 @@ resources:
   kind: Captain
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
   version: v1
+  webhook:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
   webhooks:
     defaulting: true
     validation: true
@@ -57,6 +37,11 @@ resources:
   kind: FirstMate
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
   version: v1
+  webhook:
+    conversion: true
+    spoke:
+    - v2
+    webhookVersion: v1
   webhooks:
     conversion: true
     spoke:
@@ -79,6 +64,12 @@ resources:
   kind: Sailor
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
   version: v1
+  webhook:
+    defaulting: true
+    defaultingPath: /custom-mutate-sailor
+    validation: true
+    validationPath: /custom-validate-sailor
+    webhookVersion: v1
   webhooks:
     defaulting: true
     defaultingPath: /custom-mutate-sailor
@@ -94,6 +85,11 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
   plural: admirales
   version: v1
+  webhook:
+    defaulting: true
+    validation: true
+    validationPath: /custom-validate-admiral
+    webhookVersion: v1
   webhooks:
     defaulting: true
     validation: true
@@ -114,6 +110,9 @@ resources:
   module: github.com/cert-manager/cert-manager@v1.20.2
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
+  webhook:
+    defaulting: true
+    webhookVersion: v1
   webhooks:
     defaulting: true
     webhookVersion: v1
@@ -122,6 +121,9 @@ resources:
   kind: Pod
   path: k8s.io/api/core/v1
   version: v1
+  webhook:
+    defaulting: true
+    webhookVersion: v1
   webhooks:
     defaulting: true
     webhookVersion: v1
@@ -130,9 +132,45 @@ resources:
   kind: Deployment
   path: k8s.io/api/apps/v1
   version: v1
+  webhook:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
   webhooks:
     defaulting: true
     validation: true
+    webhookVersion: v1
+- gvks:
+  - group: crew
+    kind: Captain
+    version: v1
+  - group: crew
+    kind: Sailor
+    version: v1
+  webhook:
+    defaulting: true
+    groups:
+    - crew.testproject.org
+    multiGVK: true
+    name: crew-defaulting
+    resources:
+    - captains
+    - sailors
+    versions:
+    - v1
+    webhookVersion: v1
+- webhook:
+    groups:
+    - core
+    - apps
+    multiGVK: true
+    name: core-validation
+    resources:
+    - pods
+    - deployments
+    validation: true
+    versions:
+    - '*'
     webhookVersion: v1
 - api:
     crdVersion: v1

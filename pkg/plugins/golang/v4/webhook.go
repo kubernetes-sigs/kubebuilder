@@ -188,6 +188,9 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		p.resource.Module = existingRes.Module
 	}
 
+	if len(p.options.Spoke) > 0 && res.Webhook == nil {
+		res.Webhook = &resource.Webhook{WebhookVersion: "v1"}
+	}
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
 		if !isValidVersion(spoke, res, p.config) {
@@ -317,6 +320,9 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
 	for i, g := range wh.Groups {
 		wh.Groups[i] = goPlugin.ResolveGroupDomain(g, projectDomain)
 	}
+
+	// Derive GVKs from the webhook's Groups/Kinds/Versions.
+	p.resource.GVKs = resource.WebhookToGVKs(*wh)
 
 	if !wh.Defaulting && !wh.Validation {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting or "+

@@ -43,9 +43,12 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return nil
 	}
 
-	// GVK-based webhook: store the resource as-is.
-	r := res.Copy()
-	p.resource = &r
+	// GVK-based webhook: store a pointer to the shared resource so that
+	// changes made by other plugins during their InjectResource phase (e.g.,
+	// the Go plugin looking up an irregular Plural from the PROJECT file)
+	// are visible at Scaffold time. A deep copy is deferred to Scaffold
+	// after all InjectResource hooks have completed.
+	p.resource = res
 	return nil
 }
 

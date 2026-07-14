@@ -52,6 +52,10 @@ type Resource struct {
 	// When set, the GVK fields may be empty.
 	Webhook *Webhook `json:"webhook,omitempty"`
 
+	// GVKs holds the list of Group-Version-Kind triplets that a multi-GVK webhook intercepts.
+	// Only used when Webhook is set and Webhook.IsMultiGVK() is true.
+	GVKs []GVK `json:"gvks,omitempty"`
+
 	// External specifies if the resource is defined externally.
 	External bool `json:"external,omitempty"`
 
@@ -67,10 +71,15 @@ type Resource struct {
 // Validate checks that the Resource is valid.
 func (r Resource) Validate() error {
 	// When a standalone multi-GVK Webhook is set, the GVK and Plural fields may be empty.
-	// Skip GVK/API/Path validation and validate the Webhook directly instead.
+	// Skip GVK/API/Path validation and validate the Webhook and GVKs directly instead.
 	if r.Webhook != nil && r.Webhook.IsMultiGVK() {
 		if err := r.Webhook.Validate(); err != nil {
 			return fmt.Errorf("invalid Webhook: %w", err)
+		}
+		for i, gvk := range r.GVKs {
+			if err := gvk.Validate(); err != nil {
+				return fmt.Errorf("invalid GVKs[%d]: %w", i, err)
+			}
 		}
 		return nil
 	}
@@ -254,6 +263,11 @@ func (r Resource) Copy() Resource {
 		webhook := r.Webhook.Copy()
 		r.Webhook = &webhook
 	}
+	if len(r.GVKs) > 0 {
+		gvksCopy := make([]GVK, len(r.GVKs))
+		copy(gvksCopy, r.GVKs)
+		r.GVKs = gvksCopy
+	}
 	return r
 }
 
@@ -341,6 +355,12 @@ func (r *Resource) Update(other Resource) error {
 		if err := r.Webhook.Update(other.Webhook); err != nil {
 			return err
 		}
+	}
+
+	// Update GVKs (for multi-GVK webhooks).
+	if len(other.GVKs) > 0 && len(r.GVKs) == 0 {
+		r.GVKs = make([]GVK, len(other.GVKs))
+		copy(r.GVKs, other.GVKs)
 	}
 
 	return nil

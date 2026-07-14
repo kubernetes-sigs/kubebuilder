@@ -107,7 +107,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		buildScaffold = append(buildScaffold, &kdefault.KustomizationCAConversionUpdater{})
 	}
 
-	if !s.resource.External && !s.resource.Core {
+	if !s.resource.External && !s.resource.Core && (s.resource.Webhook == nil || !s.resource.Webhook.IsMultiGVK()) {
 		buildScaffold = append(buildScaffold, &crd.Kustomization{})
 	}
 
