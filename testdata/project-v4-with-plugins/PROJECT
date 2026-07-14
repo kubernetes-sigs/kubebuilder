@@ -42,9 +42,6 @@ resources:
   kind: Memcached
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1
   version: v1alpha1
-  webhook:
-    validation: true
-    webhookVersion: v1
   webhooks:
     validation: true
     webhookVersion: v1
@@ -66,11 +63,6 @@ resources:
   kind: Wordpress
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1
   version: v1
-  webhook:
-    conversion: true
-    spoke:
-    - v2
-    webhookVersion: v1
   webhooks:
     conversion: true
     spoke:

@@ -84,7 +84,7 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 		suffix = f.Resource.Group + "_" + f.Resource.Plural
 	}
 
-	if f.Resource.Webhook != nil && !f.Resource.Webhook.IsEmpty() && f.Resource.Webhook.Conversion {
+	if f.Resource.Webhooks != nil && !f.Resource.Webhooks.IsEmpty() && f.Resource.Webhooks.Conversion {
 		webhookPatch := fmt.Sprintf(webhookPatchCodeFragment, suffix)
 
 		marker := machinery.NewMarkerFor(f.Path, webhookPatchMarker)

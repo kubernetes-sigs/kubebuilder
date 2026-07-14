@@ -43,7 +43,7 @@ var (
 
 type multiGVKWebhookScaffolder struct {
 	config config.Config
-	wh     resource.Webhook
+	wh     resource.Webhooks
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -53,7 +53,7 @@ type multiGVKWebhookScaffolder struct {
 }
 
 // NewMultiGVKWebhookScaffolder returns a new Scaffolder for multi-GVK webhook creation
-func NewMultiGVKWebhookScaffolder(cfg config.Config, wh resource.Webhook, force bool) plugins.Scaffolder {
+func NewMultiGVKWebhookScaffolder(cfg config.Config, wh resource.Webhooks, force bool) plugins.Scaffolder {
 	return &multiGVKWebhookScaffolder{
 		config: cfg,
 		wh:     wh,
@@ -223,7 +223,7 @@ func (s *webhookScaffolder) Scaffold() error {
 			return fmt.Errorf("error scaffold resource with hub: %w", err)
 		}
 
-		for _, spoke := range s.resource.Webhook.Spoke {
+		for _, spoke := range s.resource.Webhooks.Spoke {
 			log.Info("Scaffolding for spoke version", "version", spoke)
 			if err = scaffold.Execute(&api.Spoke{Force: s.force, SpokeVersion: spoke}); err != nil {
 				return fmt.Errorf("failed to scaffold spoke %s: %w", spoke, err)

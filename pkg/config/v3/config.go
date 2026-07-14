@@ -316,9 +316,6 @@ func (c Cfg) ListWebhookVersions() []string {
 		if r.Webhooks != nil && r.Webhooks.WebhookVersion != "" {
 			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
 		}
-		if r.Webhook != nil && r.Webhook.WebhookVersion != "" {
-			versionSet[r.Webhook.WebhookVersion] = struct{}{}
-		}
 	}
 
 	// Convert the map into a slice
@@ -330,23 +327,23 @@ func (c Cfg) ListWebhookVersions() []string {
 }
 
 // GetMultiGVKWebhooks implements config.Config
-func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhook, error) {
-	webhooks := make([]resource.Webhook, 0)
+func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhooks, error) {
+	webhooks := make([]resource.Webhooks, 0)
 	for _, r := range c.Resources {
-		if r.Webhook != nil && r.Webhook.IsMultiGVK() {
-			webhooks = append(webhooks, r.Webhook.Copy())
+		if r.Webhooks != nil && r.Webhooks.IsMultiGVK() {
+			webhooks = append(webhooks, r.Webhooks.Copy())
 		}
 	}
 	return webhooks, nil
 }
 
 // AddMultiGVKWebhook implements config.Config
-func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhook) error {
+func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhooks) error {
 	wh = wh.Copy()
 
 	// Check for duplicates by name across all resources
 	for _, existing := range c.Resources {
-		if existing.Webhook != nil && existing.Webhook.Name == wh.Name {
+		if existing.Webhooks != nil && existing.Webhooks.Name == wh.Name {
 			return fmt.Errorf("multi-GVK webhook %q already exists in project config", wh.Name)
 		}
 	}
@@ -354,8 +351,8 @@ func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhook) error {
 	// Create a resource entry with the webhook and GVKs.
 	// The GVKs are derived from the webhook's Groups/Kinds/Versions.
 	res := resource.Resource{
-		Webhook: &wh,
-		GVKs:    resource.WebhookToGVKs(wh),
+		Webhooks: &wh,
+		GVKs:     resource.WebhookToGVKs(wh),
 	}
 	c.Resources = append(c.Resources, res)
 	return nil
@@ -411,10 +408,6 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
 			c.Resources[i].Webhooks = nil
 		}
-		// If Webhook is empty, omit it (prevents `webhook: {}`).
-		if r.Webhook != nil && r.Webhook.IsEmpty() {
-			c.Resources[i].Webhook = nil
-		}
 	}
 
 	content, err := yaml.Marshal(c)
@@ -425,33 +418,8 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 	return content, nil
 }
 
-// versionedConfig is used only for backward-compatible unmarshaling of legacy fields.
-type versionedConfig struct {
-	Version          config.Version      `json:"version"`
-	MultiGVKWebhooks []resource.Webhook  `json:"multiGVKWebhooks,omitempty"`
-	Resources        []resource.Resource `json:"resources,omitempty"`
-	Domain           string              `json:"domain,omitempty"`
-	Repository       string              `json:"repo,omitempty"`
-	Name             string              `json:"projectName,omitempty"`
-	CliVersion       string              `json:"cliVersion,omitempty"`
-	PluginChain      stringSlice         `json:"layout,omitempty"`
-	MultiGroup       bool                `json:"multigroup,omitempty"`
-	Namespaced       bool                `json:"namespaced,omitempty"`
-	Plugins          pluginConfigs       `json:"plugins,omitempty"`
-}
-
 // UnmarshalYAML implements config.Config
 func (c *Cfg) UnmarshalYAML(b []byte) error {
-	// Check for legacy multiGVKWebhooks top-level field and migrate it to resources.
-	var legacy versionedConfig
-	if err := yaml.Unmarshal(b, &legacy); err == nil && len(legacy.MultiGVKWebhooks) > 0 {
-		for _, wh := range legacy.MultiGVKWebhooks {
-			if wh.Name != "" {
-				_ = c.AddMultiGVKWebhook(wh)
-			}
-		}
-	}
-
 	// Use non-strict unmarshaling to allow forward compatibility and external plugin fields.
 	// Older versions of kubebuilder should be able to read PROJECT files
 	// with newer fields and simply ignore unknown fields.

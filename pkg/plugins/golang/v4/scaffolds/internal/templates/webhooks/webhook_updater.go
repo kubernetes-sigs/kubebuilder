@@ -246,8 +246,8 @@ func (f *WebhookUpdater) addAdmissionImport(content string) string {
 // generateDefaulterSetupCode generates the setup code for defaulting webhook
 func (f *WebhookUpdater) generateDefaulterSetupCode() string {
 	code := fmt.Sprintf("\t\tWithDefaulter(&%sCustomDefaulter{}).", f.Resource.Kind)
-	if f.Resource.Webhook.DefaultingPath != "" {
-		code += fmt.Sprintf("\n\t\tWithDefaulterCustomPath(\"%s\").", f.Resource.Webhook.DefaultingPath)
+	if f.Resource.Webhooks.DefaultingPath != "" {
+		code += fmt.Sprintf("\n\t\tWithDefaulterCustomPath(\"%s\").", f.Resource.Webhooks.DefaultingPath)
 	}
 	return code + "\n"
 }
@@ -255,8 +255,8 @@ func (f *WebhookUpdater) generateDefaulterSetupCode() string {
 // generateValidatorSetupCode generates the setup code for validation webhook
 func (f *WebhookUpdater) generateValidatorSetupCode() string {
 	code := fmt.Sprintf("\t\tWithValidator(&%sCustomValidator{}).", f.Resource.Kind)
-	if f.Resource.Webhook.ValidationPath != "" {
-		code += fmt.Sprintf("\n\t\tWithValidatorCustomPath(\"%s\").", f.Resource.Webhook.ValidationPath)
+	if f.Resource.Webhooks.ValidationPath != "" {
+		code += fmt.Sprintf("\n\t\tWithValidatorCustomPath(\"%s\").", f.Resource.Webhooks.ValidationPath)
 	}
 	return code + "\n"
 }
@@ -266,7 +266,7 @@ func (f *WebhookUpdater) generateDefaultingWebhookCode() string {
 	var code strings.Builder
 
 	// Webhook marker
-	defaultingPath := f.Resource.Webhook.DefaultingPath
+	defaultingPath := f.Resource.Webhooks.DefaultingPath
 	if defaultingPath == "" {
 		if f.Resource.Core && f.Resource.QualifiedGroup() == coreGroup {
 			defaultingPath = fmt.Sprintf("/mutate--%s-%s",
@@ -319,7 +319,7 @@ func (f *WebhookUpdater) generateValidationWebhookCode() string {
 	var code strings.Builder
 
 	// Webhook marker
-	validationPath := f.Resource.Webhook.ValidationPath
+	validationPath := f.Resource.Webhooks.ValidationPath
 	if validationPath == "" {
 		if f.Resource.Core && f.Resource.QualifiedGroup() == coreGroup {
 			validationPath = fmt.Sprintf("/validate--%s-%s",

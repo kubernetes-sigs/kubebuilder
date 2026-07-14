@@ -47,8 +47,8 @@ var _ = Describe("createWebhookSubcommand", func() {
 				Version: "v1",
 				Kind:    captainKind,
 			},
-			Plural:  captains,
-			Webhook: &resource.Webhook{},
+			Plural:   captains,
+			Webhooks: &resource.Webhooks{},
 		}
 	})
 
@@ -111,11 +111,11 @@ var _ = Describe("createWebhookSubcommand", func() {
 			err := subCmd.InjectResource(emptyRes)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(emptyRes.Webhook).NotTo(BeNil())
-			Expect(emptyRes.Webhook.Name).To(Equal("my-webhook"))
-			Expect(emptyRes.Webhook.Defaulting).To(BeTrue())
-			Expect(emptyRes.Webhook.WebhookVersion).To(Equal("v1"))
-			Expect(emptyRes.Webhook.Groups).To(ContainElement("crew.test.io"))
+			Expect(emptyRes.Webhooks).NotTo(BeNil())
+			Expect(emptyRes.Webhooks.Name).To(Equal("my-webhook"))
+			Expect(emptyRes.Webhooks.Defaulting).To(BeTrue())
+			Expect(emptyRes.Webhooks.WebhookVersion).To(Equal("v1"))
+			Expect(emptyRes.Webhooks.Groups).To(ContainElement("crew.test.io"))
 		})
 
 		It("should reject multi-GVK webhook with GVK flags set", func() {
@@ -173,7 +173,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 			err := subCmd.InjectResource(emptyRes)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"apps", "batch", "core"}))
+			Expect(emptyRes.Webhooks.Groups).To(Equal([]string{"apps", "batch", "core"}))
 		})
 
 		It("should resolve k8s.io domain for well-known groups", func() {
@@ -190,7 +190,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 			err := subCmd.InjectResource(emptyRes)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"admission.k8s.io", "networking.k8s.io"}))
+			Expect(emptyRes.Webhooks.Groups).To(Equal([]string{"admission.k8s.io", "networking.k8s.io"}))
 		})
 
 		It("should resolve project domain for non-core groups", func() {
@@ -207,7 +207,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 			err := subCmd.InjectResource(emptyRes)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(emptyRes.Webhook.Groups).To(Equal([]string{"crew.test.io", "ship.test.io"}))
+			Expect(emptyRes.Webhooks.Groups).To(Equal([]string{"crew.test.io", "ship.test.io"}))
 		})
 	})
 

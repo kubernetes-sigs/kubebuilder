@@ -64,10 +64,10 @@ var _ = Describe("Options", func() {
 					}
 
 					res := resource.Resource{
-						GVK:     gvk,
-						Plural:  plural,
-						API:     &resource.API{},
-						Webhook: &resource.Webhook{},
+						GVK:      gvk,
+						Plural:   plural,
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
 					}
 
 					options.UpdateResource(&res, cfg)
@@ -97,15 +97,15 @@ var _ = Describe("Options", func() {
 						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
 					Expect(res.Controller).To(Equal(options.DoController))
-					Expect(res.Webhook).NotTo(BeNil())
+					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
-						Expect(res.Webhook.Defaulting).To(Equal(options.DoDefaulting))
-						Expect(res.Webhook.Validation).To(Equal(options.DoValidation))
-						Expect(res.Webhook.Conversion).To(Equal(options.DoConversion))
-						Expect(res.Webhook.Spoke).To(Equal(options.Spoke))
-						Expect(res.Webhook.IsEmpty()).To(BeFalse())
+						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
+						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
+						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
+						Expect(res.Webhooks.Spoke).To(Equal(options.Spoke))
+						Expect(res.Webhooks.IsEmpty()).To(BeFalse())
 					} else {
-						Expect(res.Webhook.IsEmpty()).To(BeTrue())
+						Expect(res.Webhooks.IsEmpty()).To(BeTrue())
 					}
 
 					if len(options.ExternalAPIPath) > 0 {
@@ -137,7 +137,7 @@ var _ = Describe("Options", func() {
 					External: true,
 					Path:     externalPath,
 					API:      &resource.API{},
-					Webhook:  &resource.Webhook{},
+					Webhooks: &resource.Webhooks{},
 				}
 
 				Options{DoController: true}.UpdateResource(&res, cfg)
@@ -163,7 +163,7 @@ var _ = Describe("Options", func() {
 					External: true,
 					Path:     externalPath,
 					API:      &resource.API{},
-					Webhook:  &resource.Webhook{},
+					Webhooks: &resource.Webhooks{},
 				}
 
 				// DoDefaulting without ExternalAPIPath — simulates webhook flow without re-providing the flag
@@ -194,9 +194,9 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:  plural,
-						API:     &resource.API{},
-						Webhook: &resource.Webhook{},
+						Plural:   plural,
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
 					}
 
 					options.UpdateResource(&res, cfg)
@@ -234,9 +234,9 @@ var _ = Describe("Options", func() {
 							Version: version,
 							Kind:    kind,
 						},
-						Plural:  plural,
-						API:     &resource.API{},
-						Webhook: &resource.Webhook{},
+						Plural:   plural,
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
 					}
 
 					options.UpdateResource(&res, cfg)

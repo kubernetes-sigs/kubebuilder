@@ -172,8 +172,8 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 
 	// Multi-GVK webhook path (no GVK fields).
 	// Detect multi-GVK mode via the plugin's own flags (--webhook-name) or from a
-	// multi-GVK Webhook already stored in the PROJECT config.
-	if p.multiGVKName != "" || (p.resource.Webhook != nil && p.resource.Webhook.IsMultiGVK()) {
+	// multi-GVK Webhooks already stored in the PROJECT config.
+	if p.multiGVKName != "" || (p.resource.Webhooks != nil && p.resource.Webhooks.IsMultiGVK()) {
 		return p.injectMultiGVKWebhookFromFlags()
 	}
 
@@ -188,15 +188,15 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		p.resource.Module = existingRes.Module
 	}
 
-	if len(p.options.Spoke) > 0 && res.Webhook == nil {
-		res.Webhook = &resource.Webhook{WebhookVersion: "v1"}
+	if len(p.options.Spoke) > 0 && res.Webhooks == nil {
+		res.Webhooks = &resource.Webhooks{WebhookVersion: "v1"}
 	}
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
 		if !isValidVersion(spoke, res, p.config) {
 			return fmt.Errorf("invalid spoke version %q", spoke)
 		}
-		res.Webhook.Spoke = append(res.Webhook.Spoke, spoke)
+		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
 	}
 
 	// Validate path flags are only used with appropriate webhook types
@@ -230,20 +230,20 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		if !p.resource.External && !p.resource.Core {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		}
-	} else if res.Webhook != nil && !res.Webhook.IsEmpty() && !p.force {
+	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
 		// Check if user is trying to add a webhook type that already exists
-		if p.resource.HasDefaultingWebhook() && res.Webhook.Defaulting {
+		if p.resource.HasDefaultingWebhook() && res.Webhooks.Defaulting {
 			return fmt.Errorf("defaulting webhook already exists for this resource")
 		}
-		if p.resource.HasValidationWebhook() && res.Webhook.Validation {
+		if p.resource.HasValidationWebhook() && res.Webhooks.Validation {
 			return fmt.Errorf("validation webhook already exists for this resource")
 		}
-		if p.resource.HasConversionWebhook() && res.Webhook.Conversion {
+		if p.resource.HasConversionWebhook() && res.Webhooks.Conversion {
 			return fmt.Errorf("conversion webhook already exists for this resource")
 		}
 		// If we're here, user is adding a new webhook type to existing resource
 		// Merge the webhook configurations
-		if err := p.resource.Webhook.Update(res.Webhook); err != nil {
+		if err := p.resource.Webhooks.Update(res.Webhooks); err != nil {
 			return fmt.Errorf("error merging webhook configurations: %w", err)
 		}
 	}
@@ -253,10 +253,10 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 
 // injectMultiGVKWebhookFromFlags handles the multi-GVK webhook injection path
 // when flags were provided via the CLI (as opposed to a pre-populated PROJECT config).
-// It validates the flags and sets up the resource's Webhook field.
+// It validates the flags and sets up the resource's Webhooks field.
 func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
-	// If the Webhook is already set (from PROJECT config), delegate directly.
-	if p.resource.Webhook != nil && p.resource.Webhook.IsMultiGVK() {
+	// If the Webhooks is already set (from PROJECT config), delegate directly.
+	if p.resource.Webhooks != nil && p.resource.Webhooks.IsMultiGVK() {
 		return p.injectMultiGVKWebhook()
 	}
 
@@ -280,8 +280,8 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
 			"use --groups, --resources, and --webhook-versions instead")
 	}
 
-	// Set up the webhook on the resource.
-	p.resource.Webhook = &resource.Webhook{
+	// Set up the webhooks on the resource.
+	p.resource.Webhooks = &resource.Webhooks{
 		Name:           p.multiGVKName,
 		MultiGVK:       true,
 		WebhookVersion: "v1",
@@ -295,7 +295,7 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhookFromFlags() error {
 
 // injectMultiGVKWebhook handles the multi-GVK webhook injection path.
 func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
-	wh := p.resource.Webhook
+	wh := p.resource.Webhooks
 
 	// Copy webhook configuration from options.
 	if p.options.DoDefaulting {
@@ -338,14 +338,14 @@ func (p *createWebhookSubcommand) injectMultiGVKWebhook() error {
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 	// Multi-GVK webhook path.
-	if p.resource != nil && p.resource.Webhook != nil && p.resource.Webhook.IsMultiGVK() {
-		scaffolder := scaffolds.NewMultiGVKWebhookScaffolder(p.config, *p.resource.Webhook, p.force)
+	if p.resource != nil && p.resource.Webhooks != nil && p.resource.Webhooks.IsMultiGVK() {
+		scaffolder := scaffolds.NewMultiGVKWebhookScaffolder(p.config, *p.resource.Webhooks, p.force)
 		scaffolder.InjectFS(fs)
 		if err := scaffolder.Scaffold(); err != nil {
 			return fmt.Errorf("failed to scaffold multi-GVK webhook: %w", err)
 		}
 		// Persist the webhook entry to the PROJECT config.
-		if err := p.config.AddMultiGVKWebhook(*p.resource.Webhook); err != nil {
+		if err := p.config.AddMultiGVKWebhook(*p.resource.Webhooks); err != nil {
 			return fmt.Errorf("failed to persist multi-GVK webhook to config: %w", err)
 		}
 		return nil
@@ -363,7 +363,7 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 func (p *createWebhookSubcommand) PostScaffold() error {
 	// Multi-GVK webhook: just update dependencies, no make generate needed.
-	if p.resource != nil && p.resource.Webhook != nil && p.resource.Webhook.IsMultiGVK() {
+	if p.resource != nil && p.resource.Webhooks != nil && p.resource.Webhooks.IsMultiGVK() {
 		err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 		if err != nil {
 			return fmt.Errorf("error updating go dependencies: %w", err)

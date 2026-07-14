@@ -53,8 +53,8 @@ func (f *Kustomization) SetTemplateDefaults() error {
 // ManifestFile returns the webhook manifest filename.
 // If the webhook version is not v1, it includes the version suffix.
 func (f *Kustomization) ManifestFile() string {
-	if f.Resource != nil && f.Resource.Webhook != nil && f.Resource.Webhook.WebhookVersion != "v1" {
-		return "manifests." + f.Resource.Webhook.WebhookVersion + ".yaml"
+	if f.Resource != nil && f.Resource.Webhooks != nil && f.Resource.Webhooks.WebhookVersion != "v1" {
+		return "manifests." + f.Resource.Webhooks.WebhookVersion + ".yaml"
 	}
 	return "manifests.yaml"
 }

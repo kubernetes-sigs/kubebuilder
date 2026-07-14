@@ -40,10 +40,6 @@ resources:
   kind: Captain
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1
   version: v1
-  webhook:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
   webhooks:
     defaulting: true
     validation: true
@@ -65,9 +61,6 @@ resources:
   kind: Destroyer
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1
   version: v1
-  webhook:
-    defaulting: true
-    webhookVersion: v1
   webhooks:
     defaulting: true
     webhookVersion: v1
@@ -79,9 +72,6 @@ resources:
   kind: Cruiser
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v2alpha1
   version: v2alpha1
-  webhook:
-    validation: true
-    webhookVersion: v1
   webhooks:
     validation: true
     webhookVersion: v1
@@ -118,10 +108,6 @@ resources:
   kind: Deployment
   path: k8s.io/api/apps/v1
   version: v1
-  webhook:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
   webhooks:
     defaulting: true
     validation: true
@@ -159,9 +145,6 @@ resources:
   module: github.com/cert-manager/cert-manager@v1.20.2
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
-  webhook:
-    defaulting: true
-    webhookVersion: v1
   webhooks:
     defaulting: true
     webhookVersion: v1
@@ -170,13 +153,10 @@ resources:
   kind: Pod
   path: k8s.io/api/core/v1
   version: v1
-  webhook:
-    validation: true
-    webhookVersion: v1
   webhooks:
     validation: true
     webhookVersion: v1
-- webhook:
+- webhooks:
     defaulting: true
     groups:
     - sea-creatures.testproject.org
@@ -203,7 +183,7 @@ resources:
   - group: apps
     kind: Deployment
     version: v1
-  webhook:
+  webhooks:
     defaulting: true
     groups:
     - core
@@ -235,9 +215,6 @@ resources:
   kind: Memcached
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1
   version: v1alpha1
-  webhook:
-    validation: true
-    webhookVersion: v1
   webhooks:
     validation: true
     webhookVersion: v1
@@ -259,11 +236,6 @@ resources:
   kind: Wordpress
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1
   version: v1
-  webhook:
-    conversion: true
-    spoke:
-    - v2
-    webhookVersion: v1
   webhooks:
     conversion: true
     spoke:

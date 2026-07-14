@@ -47,7 +47,7 @@ type Webhook struct {
 	MultiGVK bool
 
 	// MultiGVKWebhook holds the webhook configuration for multi-GVK webhooks.
-	MultiGVKWebhook resource.Webhook
+	MultiGVKWebhook resource.Webhooks
 }
 
 // HandlerName returns the Go struct name for the multi-GVK webhook handler.
@@ -178,14 +178,14 @@ func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
 	{{- end }}
 		{{- if .Resource.HasValidationWebhook }}
 		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
-		{{- if ne .Resource.Webhook.ValidationPath "" }}
-		WithValidatorCustomPath("{{ .Resource.Webhook.ValidationPath }}").
+		{{- if ne .Resource.Webhooks.ValidationPath "" }}
+		WithValidatorCustomPath("{{ .Resource.Webhooks.ValidationPath }}").
 		{{- end }}
 		{{- end }}
 		{{- if .Resource.HasDefaultingWebhook }}
 		WithDefaulter(&{{ .Resource.Kind }}CustomDefaulter{}).
-		{{- if ne .Resource.Webhook.DefaultingPath "" }}
-		WithDefaulterCustomPath("{{ .Resource.Webhook.DefaultingPath }}").
+		{{- if ne .Resource.Webhooks.DefaultingPath "" }}
+		WithDefaulterCustomPath("{{ .Resource.Webhooks.DefaultingPath }}").
 		{{- end }}
 		{{- end }}
 		Complete()
@@ -196,7 +196,7 @@ func Setup{{ .Resource.Kind }}WebhookWithManager(mgr ctrl.Manager) error {
 
 	//nolint:lll
 	defaultingWebhookTemplate = `
-// +kubebuilder:webhook:{{ if ne .Resource.Webhook.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhook.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhook.DefaultingPath "" -}}path={{ .Resource.Webhook.DefaultingPath }}{{- else -}}path=/mutate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
+// +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhooks.DefaultingPath "" -}}path={{ .Resource.Webhooks.DefaultingPath }}{{- else -}}path=/mutate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
 // {{ .Resource.Kind }}CustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind {{ .Resource.Kind }} when those are created or updated.
@@ -221,7 +221,7 @@ func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj *{{
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
-// +kubebuilder:webhook:{{ if ne .Resource.Webhook.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhook.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhook.ValidationPath "" -}}path={{ .Resource.Webhook.ValidationPath }}{{- else -}}path=/validate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
+// +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}{{- if ne .Resource.Webhooks.ValidationPath "" -}}path={{ .Resource.Webhooks.ValidationPath }}{{- else -}}path=/validate-{{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}-{{ else }}{{ .QualifiedGroupWithDash }}-{{ end }}{{ .Resource.Version }}-{{ lower .Resource.Kind }}{{- end -}},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ if and .Resource.Core (eq .Resource.QualifiedGroup "core") }}""{{ else }}{{ .Resource.QualifiedGroup }}{{ end }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}-{{ .Resource.Version }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
 // {{ .Resource.Kind }}CustomValidator struct is responsible for validating the {{ .Resource.Kind }} resource
 // when it is created, updated, or deleted.

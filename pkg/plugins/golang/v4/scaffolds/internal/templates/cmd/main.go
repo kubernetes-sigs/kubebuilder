@@ -107,7 +107,7 @@ var _ machinery.Inserter = &MultiGVKWebhookMainUpdater{}
 type MultiGVKWebhookMainUpdater struct {
 	machinery.RepositoryMixin
 
-	Webhook resource.Webhook
+	Webhook resource.Webhooks
 }
 
 // GetPath implements file.Builder

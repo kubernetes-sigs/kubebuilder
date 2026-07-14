@@ -663,7 +663,7 @@ func getAPIResourceFlags(res resource.Resource) []string {
 // Creates a webhook resource.
 func createWebhook(res resource.Resource) error {
 	// Multi-GVK webhook: uses --webhook-name, --groups, --resources, --webhook-versions flags.
-	if res.Webhook != nil && res.Webhook.IsMultiGVK() {
+	if res.Webhooks != nil && res.Webhooks.IsMultiGVK() {
 		return createMultiGVKWebhook(res)
 	}
 
@@ -683,17 +683,17 @@ func createWebhook(res resource.Resource) error {
 
 // Creates a multi-GVK webhook from a resource entry.
 func createMultiGVKWebhook(res resource.Resource) error {
-	if res.Webhook == nil {
+	if res.Webhooks == nil {
 		return nil
 	}
 	args := []string{"create", "webhook"}
-	wh := res.Webhook
+	wh := res.Webhooks
 
 	args = append(args, "--webhook-name", wh.Name)
 
 	// When GVKs are available (concrete versions), derive flags from them.
 	// When GVKs is empty (e.g., all versions are "*"), fall back to the
-	// Webhook field's Groups/Kinds/Versions.
+	// Webhooks field's Groups/Kinds/Versions.
 	if len(res.GVKs) > 0 {
 		// Derive groups from GVKs (unique short group names).
 		groupSet := make(map[string]struct{})

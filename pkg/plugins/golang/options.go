@@ -144,22 +144,6 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			res.Webhooks.Conversion = true
 			res.Webhooks.Spoke = opts.Spoke
 		}
-
-		// Also set the Webhook field for scaffolding code that reads from it
-		if res.Webhook == nil {
-			res.Webhook = &resource.Webhook{}
-		}
-		res.Webhook.WebhookVersion = "v1"
-		res.Webhook.Defaulting = opts.DoDefaulting
-		if opts.DefaultingPath != "" {
-			res.Webhook.DefaultingPath = opts.DefaultingPath
-		}
-		res.Webhook.Validation = opts.DoValidation
-		if opts.ValidationPath != "" {
-			res.Webhook.ValidationPath = opts.ValidationPath
-		}
-		res.Webhook.Conversion = opts.DoConversion
-		res.Webhook.Spoke = opts.Spoke
 	}
 
 	if len(opts.ExternalAPIPath) > 0 {

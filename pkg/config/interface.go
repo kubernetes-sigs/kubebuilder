@@ -100,9 +100,9 @@ type Config interface {
 	/* Multi-GVK webhooks */
 
 	// GetMultiGVKWebhooks returns all multi-GVK webhook entries.
-	GetMultiGVKWebhooks() ([]resource.Webhook, error)
+	GetMultiGVKWebhooks() ([]resource.Webhooks, error)
 	// AddMultiGVKWebhook adds a multi-GVK webhook entry to the config.
-	AddMultiGVKWebhook(wh resource.Webhook) error
+	AddMultiGVKWebhook(wh resource.Webhooks) error
 
 	/* Plugins */
 
