@@ -46,6 +46,8 @@ const (
 	apiSubcommand     = "api"
 	webhookSubcommand = "webhook"
 	editSubcommand    = "edit"
+	groupFlagArg      = "--group"
+	versionFlagArg    = "--version"
 	kindFlagArg       = "--kind"
 	kindValue         = "Captain"
 )
@@ -1216,8 +1218,8 @@ plugins:
 						`no plugin could be resolved with key "gone.example.com/v1"`)))
 				},
 				Entry("for --kind", kindFlagArg),
-				Entry("for --group", "--group"),
-				Entry("for --version", "--version"),
+				Entry("for --group", groupFlagArg),
+				Entry("for --version", versionFlagArg),
 			)
 		})
 
@@ -1267,7 +1269,7 @@ plugins:
 				projectPlugin = newDescribedCreateAPIPlugin()
 				createAPIArgs = []string{
 					createSubcommand, apiSubcommand,
-					"--group", "crew", "--version", "v1", kindFlagArg, kindValue,
+					groupFlagArg, "crew", versionFlagArg, "v1", kindFlagArg, kindValue,
 				}
 			})
 

@@ -253,4 +253,68 @@ var _ = Describe("Options", func() {
 			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
 		)
 	})
+
+	Context("ReconcileDomainAlias", func() {
+		const (
+			projectDomain  = "test.io"
+			externalDomain = "cert-manager.io"
+		)
+
+		var cfg config.Config
+
+		newRes := func(domain string) *resource.Resource {
+			return &resource.Resource{
+				GVK: resource.GVK{Group: "cert-manager", Domain: domain, Version: "v1", Kind: "Issuer"},
+			}
+		}
+
+		BeforeEach(func() {
+			cfg = cfgv3.New()
+			Expect(cfg.SetDomain(projectDomain)).To(Succeed())
+		})
+
+		It("is a no-op when the deprecated flag is unset", func() {
+			res := newRes(projectDomain)
+
+			Expect(Options{}.ReconcileDomainAlias(res, cfg)).To(Succeed())
+			Expect(res.Domain).To(Equal(projectDomain))
+		})
+
+		It("is a no-op when both flags agree", func() {
+			res := newRes(externalDomain)
+			opts := Options{ExternalAPIDomain: externalDomain}
+
+			Expect(opts.ReconcileDomainAlias(res, cfg)).To(Succeed())
+			Expect(res.Domain).To(Equal(externalDomain))
+		})
+
+		It("keeps working as the alias when the ambiguity went unresolved", func() {
+			res := newRes("")
+			opts := Options{ExternalAPIDomain: externalDomain}
+
+			Expect(opts.ReconcileDomainAlias(res, cfg)).To(Succeed())
+			Expect(res.Domain).To(Equal(externalDomain))
+		})
+
+		It("keeps working as the alias when the resource is untracked", func() {
+			res := newRes(projectDomain)
+			opts := Options{ExternalAPIDomain: externalDomain}
+
+			Expect(opts.ReconcileDomainAlias(res, cfg)).To(Succeed())
+			Expect(res.Domain).To(Equal(externalDomain))
+		})
+
+		It("refuses two different values rather than letting one win", func() {
+			res := newRes("other.io")
+			opts := Options{ExternalAPIDomain: externalDomain}
+
+			err := opts.ReconcileDomainAlias(res, cfg)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("conflicting values"))
+			Expect(err.Error()).To(ContainSubstring("other.io"))
+			Expect(err.Error()).To(ContainSubstring(externalDomain))
+			Expect(res.Domain).To(Equal("other.io"))
+		})
+	})
 })

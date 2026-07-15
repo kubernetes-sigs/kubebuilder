@@ -490,10 +490,10 @@ func (factory *executionHooksFactory) preRunEFunc(
 
 		// Create the resource if non-nil options provided
 		var res *resource.Resource
+		var trackedDomains []string
 		if options != nil {
-			// TODO: offer a --domain flag so a fresh resource can set it directly.
-			options.Domain = cfg.GetDomain()
-			options.Domain = options.resolveDomain(cfg)
+			trackedDomains = options.trackedDomains(cfg)
+			options.Domain = options.resolveDomain(trackedDomains, cfg.GetDomain())
 			if err := options.validate(); err != nil {
 				return fmt.Errorf("%s: failed to create resource: %w", factory.errorMessage, err)
 			}
@@ -511,14 +511,23 @@ func (factory *executionHooksFactory) preRunEFunc(
 		}
 
 		if res != nil {
-			// Inject resource hook.
-			if err := factory.forEach(func(subcommand plugin.Subcommand) error {
+			// Inject resource hook. A plugin may name a domain from its own flags here, so
+			// the resolved domain is only judged afterwards.
+			injectErr := factory.forEach(func(subcommand plugin.Subcommand) error {
 				if subcommand, requiresResource := subcommand.(plugin.RequiresResource); requiresResource {
 					return subcommand.InjectResource(res)
 				}
 				return nil
-			}, "unable to inject the resource to"); err != nil {
-				return err
+			}, "unable to inject the resource to")
+
+			// An unresolved domain is reported ahead of injectErr: a plugin that could not
+			// find the resource it was asked for is a consequence of the ambiguity, and its
+			// error says far less about how to get past it.
+			if err := options.checkDomain(trackedDomains, res.Domain); err != nil {
+				return fmt.Errorf("%s: %w", factory.errorMessage, err)
+			}
+			if injectErr != nil {
+				return injectErr
 			}
 
 			if err := res.Validate(); err != nil {

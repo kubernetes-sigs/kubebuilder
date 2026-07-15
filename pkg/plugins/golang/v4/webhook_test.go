@@ -166,8 +166,8 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 
 		// Simulate an existing external resource stored in PROJECT.
-		// GVK domain stays as testIO because the lookup key is constructed from the CLI flags
-		// (--group, --version, --kind) with the project domain — not the external-api-domain.
+		// GVK domain stays as testIO because the stored resource carries the project domain,
+		// so that is what the single tracked group/version/kind match lends back.
 		storedRes := *res
 		storedRes.External = true
 		storedRes.Path = externalPath
@@ -191,16 +191,20 @@ var _ = Describe("createWebhookSubcommand", func() {
 
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 
-		// Simulate an external API in the PROJECT file
+		// Resource was originally scaffolded with --domain=cert-manager.io, so PROJECT stores
+		// Domain="cert-manager.io". A fresh CLI invocation without --domain has the single
+		// tracked group/version/kind match lend its domain up in cmd_helpers before the GVK
+		// reaches InjectResource, so by this point res.Domain is already the stored external
+		// domain — mirror that here.
 		storedRes := *res
 		storedRes.External = true
 		storedRes.Path = externalPath
 		storedRes.Domain = externalDomain
 		Expect(cfg.AddResource(storedRes)).To(Succeed())
 
-		// Simulate user running create webhook without any external flags.
-		// res.Domain will be the default project domain initially.
+		// Simulate user running create webhook without any other external flags.
 		subCmd.options.DoDefaulting = true
+		res.Domain = externalDomain
 
 		err := subCmd.InjectResource(res)
 
@@ -221,6 +225,32 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(err.Error()).To(ContainSubstring("no API found for"))
 		Expect(err.Error()).To(ContainSubstring("run 'create api' first"))
 		Expect(err.Error()).To(ContainSubstring("or pass --external-api-path for an external type"))
+	})
+
+	// The stored resource is found by its full GVK, so the deprecated alias has to reach the
+	// resource before the lookup runs; reconciling it afterwards would miss the entry and leave
+	// the external path unset.
+	It("should find the existing external resource when only the deprecated alias names its domain", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		const externalDomain = "cert-manager.io"
+
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+
+		storedRes := *res
+		storedRes.External = true
+		storedRes.Path = externalPath
+		storedRes.Domain = externalDomain
+		Expect(cfg.AddResource(storedRes)).To(Succeed())
+
+		// The ambiguity left the domain unresolved, so only --external-api-domain names it.
+		subCmd.options.DoDefaulting = true
+		subCmd.options.ExternalAPIDomain = externalDomain
+		res.Domain = ""
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(res.Domain).To(Equal(externalDomain))
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal(externalPath))
 	})
 
 	Context("isValidVersion", func() {

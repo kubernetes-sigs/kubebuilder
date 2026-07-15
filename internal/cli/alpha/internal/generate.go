@@ -505,6 +505,9 @@ func getGVKFlags(res resource.Resource) []string {
 	if res.Group != "" {
 		args = append(args, "--group", res.Group)
 	}
+	if res.Domain != "" {
+		args = append(args, "--domain", res.Domain)
+	}
 	if res.Version != "" {
 		args = append(args, "--version", res.Version)
 	}
@@ -554,10 +557,10 @@ func createAPI(res resource.Resource) error {
 	args := append([]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI}, getGVKFlags(res)...)
 	args = append(args, getAPIResourceFlags(res)...)
 
-	// Add the external API flags if the resource is external
+	// Add the external API flags if the resource is external. The domain is replayed as
+	// --domain by getGVKFlags, for external and project-owned resources alike.
 	if res.IsExternal() {
 		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
 		// Add module if specified
 		if res.Module != "" {
 			args = append(args, "--external-api-module", res.Module)
@@ -603,10 +606,10 @@ func createControllerWithName(res resource.Resource, controllerName string) erro
 		args = append(args, "--controller-name", controllerName)
 	}
 
-	// Add the external API flags if the resource is external
+	// Add the external API flags if the resource is external. The domain is replayed as
+	// --domain by getGVKFlags, for external and project-owned resources alike.
 	if res.IsExternal() {
 		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
 		// Add module if specified
 		if res.Module != "" {
 			args = append(args, "--external-api-module", res.Module)
@@ -666,7 +669,6 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	var args []string
 	if res.IsExternal() {
 		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
 		// Add module if specified
 		if res.Module != "" {
 			args = append(args, "--external-api-module", res.Module)

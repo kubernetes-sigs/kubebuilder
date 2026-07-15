@@ -118,7 +118,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 			"Used to scaffold controllers for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
+		"Deprecated: use --domain instead. Domain name for the external API (e.g., cert-manager.io). "+
 			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
@@ -143,6 +143,12 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
+	// The deprecated alias has to be reconciled before the lookup below, which matches on the
+	// full GVK: a domain named only by the alias is not on the resource yet.
+	if err := p.options.ReconcileDomainAlias(p.resource, p.config); err != nil {
+		return fmt.Errorf("failed to reconcile the domain flags: %w", err)
+	}
+
 	if existingRes, err := p.config.GetResource(res.GVK); err == nil {
 		// When scaffolding a controller without an API (--resource=false), copy essential
 		// fields from the existing resource in the PROJECT file, such as Path and Plural.
@@ -160,12 +166,13 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	}
 
 	// Ensure that external API options cannot be used when creating an API in the project.
+	// --external-api-domain is not one of them: it is a deprecated alias of --domain, which
+	// a project-owned resource may legitimately set.
 	if p.options.DoAPI &&
 		(len(p.options.ExternalAPIPath) != 0 ||
-			len(p.options.ExternalAPIDomain) != 0 ||
 			len(p.options.ExternalAPIModule) != 0) {
 		return errors.New(
-			"cannot use '--external-api-path', '--external-api-domain', or '--external-api-module' " +
+			"cannot use '--external-api-path' or '--external-api-module' " +
 				"when creating an API in the project with '--resource=true'. " +
 				"Use '--resource=false' when referencing an external API",
 		)
@@ -204,12 +211,46 @@ func (p *createAPISubcommand) validateAPI() error {
 		return errors.New("API resource already exists")
 	}
 
+	if err := p.validateLayoutCanHoldAPI(); err != nil {
+		return err
+	}
+
 	// Check that the provided group can be added to the project
 	if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 		return fmt.Errorf(
 			"multiple groups are not allowed by default, " +
 				"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html",
 		)
+	}
+
+	return nil
+}
+
+// validateLayoutCanHoldAPI refuses a project-owned API that would land on files another
+// resource already owns. The go/v4 layout names the types file, the controller and the
+// sample after the group, version and kind only, so a second resource differing solely by
+// domain has nowhere of its own to go. Without this the command fails deep in the
+// scaffolder on a file-already-exists error that says nothing about the real cause.
+func (p *createAPISubcommand) validateLayoutCanHoldAPI() error {
+	if p.force {
+		return nil
+	}
+
+	resources, err := p.config.GetResources()
+	if err != nil {
+		return fmt.Errorf("failed to get resources: %w", err)
+	}
+
+	for _, r := range resources {
+		if r.Group == p.resource.Group && r.Version == p.resource.Version &&
+			r.Kind == p.resource.Kind && r.Domain != p.resource.Domain {
+			return fmt.Errorf(
+				"the project already has a resource with group %q, version %q and kind %q (%s), "+
+					"and the layout cannot hold a second one under a different domain (%s): "+
+					"the API types, controller and sample are named after the group, version and kind only",
+				r.Group, r.Version, r.Kind, r.QualifiedGroup(), p.resource.QualifiedGroup(),
+			)
+		}
 	}
 
 	return nil
