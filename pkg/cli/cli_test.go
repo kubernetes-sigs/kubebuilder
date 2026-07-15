@@ -36,6 +36,8 @@ import (
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 )
 
+const kindFlagArg = "--kind"
+
 func makeMockPluginsFor(projectVersion config.Version, pluginKeys ...string) []plugin.Plugin {
 	plugins := make([]plugin.Plugin, 0, len(pluginKeys))
 	for _, key := range pluginKeys {
@@ -869,7 +871,6 @@ plugins:
 				const (
 					createSubcommand = "create"
 					apiSubcommand    = "api"
-					kindFlagArg      = "--kind"
 				)
 
 				args := os.Args

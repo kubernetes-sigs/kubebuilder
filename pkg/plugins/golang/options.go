@@ -17,6 +17,7 @@ limitations under the License.
 package golang
 
 import (
+	"fmt"
 	log "log/slog"
 	"path"
 	"strings"
@@ -97,6 +98,32 @@ type Options struct {
 
 	// ValidationPath is the custom path for the validation webhook
 	ValidationPath string
+}
+
+// ReconcileDomainAlias applies --external-api-domain to the resource domain.
+//
+// The flag predates --domain and is kept working as a deprecated alias, including as the
+// way an older command line names one of several resources sharing a Group/Version/Kind.
+// It is adopted when the CLI had nothing better: an unresolved ambiguity leaves res.Domain
+// empty, and an untracked resource leaves it at the project domain. Anything else came from
+// --domain or from the resource itself, and two different values are refused rather than
+// one silently winning, since the domain decides which resource the command works on.
+func (opts Options) ReconcileDomainAlias(res *resource.Resource, c config.Config) error {
+	if opts.ExternalAPIDomain == "" || opts.ExternalAPIDomain == res.Domain {
+		return nil
+	}
+
+	if res.Domain != "" && res.Domain != c.GetDomain() {
+		return fmt.Errorf(
+			"conflicting values for --domain (%q) and --external-api-domain (%q); "+
+				"provide one or set them to the same value",
+			res.Domain, opts.ExternalAPIDomain,
+		)
+	}
+
+	log.Warn("--external-api-domain is deprecated; use --domain instead")
+	res.Domain = opts.ExternalAPIDomain
+	return nil
 }
 
 // UpdateResource updates the provided resource with the options

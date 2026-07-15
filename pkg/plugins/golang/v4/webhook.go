@@ -115,7 +115,7 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 			"Used to scaffold webhooks for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
+		"Deprecated: use --domain instead. Domain name for the external API (e.g., cert-manager.io). "+
 			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
@@ -133,9 +133,13 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	if err := p.updateResourceFromConfig(res); err != nil {
-		return err
+	// The deprecated alias has to be reconciled before the lookup below, which matches on the
+	// full GVK: a domain named only by the alias is not on the resource yet.
+	if err := p.options.ReconcileDomainAlias(p.resource, p.config); err != nil {
+		return fmt.Errorf("failed to reconcile the domain flags: %w", err)
 	}
+
+	p.updateResourceFromConfig(res)
 
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
@@ -242,29 +246,24 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 }
 
 // updateResourceFromConfig copies existing resource configuration from PROJECT file.
-func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
-	// Match by Group, Version, and Kind because external APIs may have
-	// a different domain than the project domain.
-	resources, err := p.config.GetResources()
+//
+// The lookup matches the full GVK, domain included. Which domain the command works on is
+// settled before any plugin runs (see resolveDomain in pkg/cli): a lone tracked
+// group/version/kind match lends its own domain, so an external API is still found without
+// --domain on the command line. Matching on group, version and kind here instead would
+// override an explicit --domain and would silently take the first of several resources
+// sharing a GVK, which is the pick the CLI refuses to make on the user's behalf.
+func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) {
+	existingRes, err := p.config.GetResource(res.GVK)
 	if err != nil {
-		return fmt.Errorf("failed to load resources from project configuration: %w", err)
+		return
 	}
 
-	for _, existingRes := range resources {
-		if existingRes.Group == res.Group &&
-			existingRes.Version == res.Version &&
-			existingRes.Kind == res.Kind {
-			p.resource.Domain = existingRes.Domain
-			p.resource.Path = existingRes.Path
-			p.resource.Plural = existingRes.Plural
-			p.resource.External = existingRes.External
-			p.resource.Core = existingRes.Core
-			p.resource.Module = existingRes.Module
-			break
-		}
-	}
-
-	return nil
+	p.resource.Path = existingRes.Path
+	p.resource.Plural = existingRes.Plural
+	p.resource.External = existingRes.External
+	p.resource.Core = existingRes.Core
+	p.resource.Module = existingRes.Module
 }
 
 // Helper function to validate spoke versions

@@ -68,8 +68,9 @@ var _ = Describe("resourceOptions", func() {
 		DescribeTable("should fail for invalid options",
 			func(options resourceOptions) { Expect(options.validate()).NotTo(Succeed()) },
 			Entry("group flag captured another flag", resourceOptions{GVK: resource.GVK{Group: "--version"}}),
-			Entry("version flag captured another flag", resourceOptions{GVK: resource.GVK{Version: "--kind"}}),
+			Entry("version flag captured another flag", resourceOptions{GVK: resource.GVK{Version: kindFlagArg}}),
 			Entry("kind flag captured another flag", resourceOptions{GVK: resource.GVK{Kind: "--group"}}),
+			Entry("domain flag captured another flag", resourceOptions{GVK: resource.GVK{Domain: kindFlagArg}}),
 		)
 	})
 
@@ -115,8 +116,9 @@ var _ = Describe("resourceOptions", func() {
 		)
 	})
 
-	Context("resolveDomain", func() {
+	Context("domain resolution", func() {
 		const externalDomain = "cert-manager.io"
+		const otherDomain = "other-domain.io"
 
 		external := func(d string) resource.Resource {
 			return resource.Resource{
@@ -133,30 +135,113 @@ var _ = Describe("resourceOptions", func() {
 			return c
 		}
 
-		DescribeTable("keeps the project domain",
-			func(getCfg func() *cfgv3.Cfg) {
+		Context("trackedDomains", func() {
+			It("collects the domain of every group, version and kind match in project file order", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+				cfg := newCfg(external(externalDomain), external(otherDomain))
+
+				Expect(opts.trackedDomains(cfg)).To(Equal([]string{externalDomain, otherDomain}))
+			})
+
+			It("ignores resources with a different group, version or kind", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+				cfg := newCfg(
+					external(externalDomain),
+					resource.Resource{GVK: resource.GVK{
+						Group: group, Domain: otherDomain, Version: "v2", Kind: kind,
+					}},
+					resource.Resource{GVK: resource.GVK{
+						Group: "other", Domain: otherDomain, Version: version, Kind: kind,
+					}},
+				)
+
+				Expect(opts.trackedDomains(cfg)).To(Equal([]string{externalDomain}))
+			})
+
+			It("returns nothing when no resource matches", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+
+				Expect(opts.trackedDomains(newCfg())).To(BeEmpty())
+			})
+		})
+
+		Context("resolveDomain", func() {
+			It("falls back to the project domain when nothing is tracked", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+
+				Expect(opts.resolveDomain(nil, domain)).To(Equal(domain))
+			})
+
+			It("adopts the single tracked domain and flows it through newResource", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+				cfg := newCfg(external(externalDomain))
+
+				opts.Domain = opts.resolveDomain(opts.trackedDomains(cfg), domain)
+				res := opts.newResource()
+
+				Expect(opts.Domain).To(Equal(externalDomain))
+				Expect(res.Domain).To(Equal(externalDomain))
+				Expect(res.QualifiedGroup()).To(Equal(group + "." + externalDomain))
+			})
+
+			It("resolves to nothing when several resources match, whatever their order", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+				forward := newCfg(external(externalDomain), external(otherDomain))
+				reversed := newCfg(external(otherDomain), external(externalDomain))
+
+				Expect(opts.resolveDomain(opts.trackedDomains(forward), domain)).To(BeEmpty())
+				Expect(opts.resolveDomain(opts.trackedDomains(reversed), domain)).To(BeEmpty())
+			})
+
+			It("keeps an explicit --domain even when several resources match", func() {
+				opts := resourceOptions{GVK: resource.GVK{
+					Group: group, Version: version, Kind: kind, Domain: externalDomain,
+				}}
+				cfg := newCfg(external(externalDomain), external(otherDomain))
+
+				Expect(opts.resolveDomain(opts.trackedDomains(cfg), domain)).To(Equal(externalDomain))
+			})
+
+			It("keeps an explicit --domain even when the exact GVK is already tracked", func() {
 				opts := resourceOptions{GVK: fullGVK}
-				Expect(opts.resolveDomain(getCfg())).To(Equal(domain))
-			},
-			Entry("when nothing is tracked", func() *cfgv3.Cfg { return newCfg() }),
-			Entry("when the exact GVK is tracked", func() *cfgv3.Cfg {
-				return newCfg(resource.Resource{GVK: fullGVK})
-			}),
-			Entry("when multiple G+V+K matches are ambiguous", func() *cfgv3.Cfg {
-				return newCfg(external(externalDomain), external("other-vendor.io"))
-			}),
-		)
+				cfg := newCfg(resource.Resource{GVK: fullGVK})
 
-		It("adopts the stored external domain and flows it through newResource", func() {
-			opts := resourceOptions{GVK: fullGVK}
-			cfg := newCfg(external(externalDomain))
+				Expect(opts.resolveDomain(opts.trackedDomains(cfg), domain)).To(Equal(domain))
+			})
+		})
 
-			opts.Domain = opts.resolveDomain(cfg)
-			res := opts.newResource()
+		Context("checkDomain", func() {
+			It("accepts anything when nothing is tracked", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
 
-			Expect(opts.Domain).To(Equal(externalDomain))
-			Expect(res.Domain).To(Equal(externalDomain))
-			Expect(res.QualifiedGroup()).To(Equal(group + "." + externalDomain))
+				Expect(opts.checkDomain(nil, "")).To(Succeed())
+				Expect(opts.checkDomain(nil, externalDomain)).To(Succeed())
+			})
+
+			It("accepts a domain matching one of the tracked resources", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+				tracked := []string{externalDomain, otherDomain}
+
+				Expect(opts.checkDomain(tracked, otherDomain)).To(Succeed())
+			})
+
+			It("names the matching qualified groups when the ambiguity went unresolved", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+
+				err := opts.checkDomain([]string{externalDomain, otherDomain}, "")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("match more than one resource"))
+				Expect(err.Error()).To(ContainSubstring(group + "." + externalDomain))
+				Expect(err.Error()).To(ContainSubstring(group + "." + otherDomain))
+				Expect(err.Error()).To(ContainSubstring("--domain"))
+			})
+
+			It("allows recording a new resource beside the tracked ones", func() {
+				opts := resourceOptions{GVK: noDomainGVK}
+
+				Expect(opts.checkDomain([]string{externalDomain}, "brand-new.io")).To(Succeed())
+			})
 		})
 	})
 })
