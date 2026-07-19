@@ -42,11 +42,17 @@ const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/re
 # Ignore everything by default and re-include only needed files
 **
 
-# Re-include Go source files (but not *_test.go)
-!**/*.go
-**/*_test.go
-
 # Re-include Go module files
 !go.mod
 !go.sum
+
+# Re-include Go source files (but not *_test.go).
+# The source directories are listed as well so that the legacy Docker builder (used when
+# BuildKit/buildx is not available) re-includes files whose parent directory would otherwise
+# stay ignored; on BuildKit "!**/*.go" already re-includes them on its own.
+!**/*.go
+!cmd
+!api
+!internal
+**/*_test.go
 `
