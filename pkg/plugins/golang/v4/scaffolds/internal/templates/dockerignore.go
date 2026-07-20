@@ -46,10 +46,8 @@ const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/re
 !go.mod
 !go.sum
 
-# Re-include Go source files (but not *_test.go).
-# The source directories are listed as well so that the legacy Docker builder (used when
-# BuildKit/buildx is not available) re-includes files whose parent directory would otherwise
-# stay ignored; on BuildKit "!**/*.go" already re-includes them on its own.
+# Re-include Go source files (but not *_test.go). The source dirs are named because
+# Podman and the classic Docker builder skip ignored dirs; add your own dirs here too.
 !**/*.go
 !cmd
 !api

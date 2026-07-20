@@ -1,0 +1,123 @@
+name: Docker Build Context
+
+on:
+  push:
+    paths:
+      - '**/.dockerignore'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerignore.go'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerfile.go'
+      - 'test/verify-docker-build-context.sh'
+      - '.github/workflows/test-dockerignore.yml'
+  pull_request:
+    paths:
+      - '**/.dockerignore'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerignore.go'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerfile.go'
+      - 'test/verify-docker-build-context.sh'
+      - '.github/workflows/test-dockerignore.yml'
+
+permissions: {}
+
+jobs:
+  # Container tools disagree on whether they descend into an ignored directory to
+  # evaluate a re-include such as "!**/*.go". Build the sample project with each of
+  # them so the scaffolded .dockerignore cannot regress on any one of them.
+  build-context-testdata:
+    name: ${{ matrix.name }} / testdata sample
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: docker (BuildKit)
+            tool: docker
+            buildkit: '1'
+          - name: docker (classic builder)
+            tool: docker
+            buildkit: '0'
+          - name: podman
+            tool: podman
+            buildkit: ''
+    env:
+      DOCKER_BUILDKIT: ${{ matrix.buildkit }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Prepare project-v4
+        working-directory: testdata/project-v4
+        run: go mod tidy
+
+      - name: Verify the build context
+        env:
+          CONTAINER_TOOL: ${{ matrix.tool }}
+        run: ./test/verify-docker-build-context.sh testdata/project-v4
+
+      - name: Build the manager image
+        working-directory: testdata/project-v4
+        env:
+          CONTAINER_TOOL: ${{ matrix.tool }}
+        run: make docker-build IMG=controller:ci CONTAINER_TOOL="${CONTAINER_TOOL}"
+
+  # Covers the case reported in #5886: a freshly scaffolded project, no APIs yet.
+  build-context-scaffolded:
+    name: ${{ matrix.name }} / freshly scaffolded
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: docker (BuildKit)
+            tool: docker
+            buildkit: '1'
+          - name: docker (classic builder)
+            tool: docker
+            buildkit: '0'
+          - name: podman
+            tool: podman
+            buildkit: ''
+    env:
+      DOCKER_BUILDKIT: ${{ matrix.buildkit }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Build kubebuilder CLI from this repo
+        run: make install
+
+      - name: Scaffold a go/v4 project
+        run: |
+          mkdir -p /tmp/dockerignore-project
+          cd /tmp/dockerignore-project
+          kubebuilder init --plugins go/v4 --domain example.com --repo example.com/dockerignore-operator
+          kubebuilder create api --group crew --version v1 --kind Captain --resource --controller
+          go mod tidy
+
+      - name: Verify the build context
+        env:
+          CONTAINER_TOOL: ${{ matrix.tool }}
+        run: ${GITHUB_WORKSPACE}/test/verify-docker-build-context.sh /tmp/dockerignore-project
+
+      - name: Build the manager image
+        working-directory: /tmp/dockerignore-project
+        env:
+          CONTAINER_TOOL: ${{ matrix.tool }}
+        run: make docker-build IMG=controller:ci CONTAINER_TOOL="${CONTAINER_TOOL}"
