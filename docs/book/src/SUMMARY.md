@@ -130,6 +130,7 @@
     - [Custom Markers](./plugins/extending/custom-markers.md)
     - [E2E Tests](./plugins/extending/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
+  - [Ecosystem Plugins](./plugins/ecosystem-plugins.md)
 
 
 ---

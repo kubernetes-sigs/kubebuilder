@@ -40,6 +40,7 @@ and how to create your own plugins while following the same layout structures.
 - [Available Plugins](./available-plugins.md)
 - [Extending](./extending.md)
 - [Plugins Versioning](./plugins-versioning.md)
+- [Ecosystem Plugins](./ecosystem-plugins.md)
 
 [extending-cli]: extending.md
 [grafana-plugin]: ./available/grafana-v1-alpha.md
