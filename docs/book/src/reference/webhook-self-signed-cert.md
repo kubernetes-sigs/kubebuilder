@@ -1,21 +1,15 @@
 # Webhook with Self-Signed Certificates (Without cert-manager)
 
 <aside class="warning" role="note">
-
 <p class="note-title">Warning</p>
-
 This guide shows how to configure webhook TLS using manually generated
 self-signed certificates. This approach is intended **for development and
 testing environments only** (e.g. local `kind` clusters). It is **not
-recommended for production** because:
+recommended for production**.
 
-- Certificates must be rotated manually.
-- The CA bundle must be patched into the webhook configuration by hand.
-- There is no automated renewal or revocation.
-
-For production, use [cert-manager](https://cert-manager.io) or another certificate manager of your choice, as described in
+For production, use [cert-manager](https://cert-manager.io) or another certificate
+manager of your choice, as described in
 [Deploying cert-manager](../cronjob-tutorial/cert-manager.md).
-
 </aside>
 
 ## Overview
@@ -23,12 +17,12 @@ For production, use [cert-manager](https://cert-manager.io) or another certifica
 By default, Kubebuilder scaffolds webhook configuration that relies on
 [cert-manager](https://cert-manager.io) to provision and inject TLS
 certificates. If you want to run webhooks in a development cluster **without**
-installing cert-manager, you can:
+installing cert-manager, you can automate certificate generation and injection using a simple helper script and a Makefile target.
 
+The script will:
 1. Generate a self-signed CA and TLS certificate with `openssl`.
-2. Create a Kubernetes `Secret` from those certificates.
-3. Disable the cert-manager components in your Kustomize configuration.
-4. Patch the `caBundle` field in the webhook configuration manually.
+2. Create the `webhook-server-cert` Secret in your cluster.
+3. Automatically patch the CA bundle into your `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, and CRD conversion webhooks.
 
 ---
 
@@ -41,18 +35,23 @@ installing cert-manager, you can:
 
 ---
 
-## Step 1: Generate self-signed certificates
+## Step 1: Create the helper script
 
-To simplify certificate generation, you can use the following script. Save it to `hack/generate-certs.sh` and make it executable:
+Create a file named `hack/webhook-certs.sh` in your project and add the following content:
 
 ```bash
 #!/usr/bin/env bash
 
-# Set the namespace and service name
-NAMESPACE=${1:-"my-project-system"}
-SERVICE=${2:-"webhook-service"}
+set -e
+
+# Usage: ./hack/webhook-certs.sh <project-name>
+
+PROJECT_NAME=${1:-"my-project"}
+NAMESPACE="${PROJECT_NAME}-system"
+SERVICE="${PROJECT_NAME}-webhook-service"
 CERT_DIR="config/webhook/certs"
 
+echo "Generating certificates for ${SERVICE}.${NAMESPACE}.svc..."
 mkdir -p "${CERT_DIR}"
 
 # 1. Generate the CA private key and self-signed certificate
@@ -85,53 +84,80 @@ openssl x509 -req -days 365 \
   -extfile "${CERT_DIR}/san.ext" \
   -out "${CERT_DIR}/tls.crt"
 
-# Clean up CSR and SAN extension files
+# Clean up temporary CSR and SAN extension files
 rm "${CERT_DIR}/tls.csr" "${CERT_DIR}/san.ext"
-```
 
-Run the script by specifying your webhook namespace:
+# Base64 encode the CA bundle
+CA_BUNDLE=$(base64 -w 0 < "${CERT_DIR}/ca.crt")
 
-```bash
-chmod +x hack/generate-certs.sh
-./hack/generate-certs.sh my-project-system
-```
-
-<aside class="note" role="note">
-
-<p class="note-title">Namespace</p>
-
-Set the namespace argument to match the `namePrefix` + `-system` in your
-`config/default/kustomization.yaml`. For example, if your `namePrefix` is
-`my-project-`, run the script with `my-project-system`.
-
-</aside>
-
----
-
-## Step 2: Create the TLS Secret in the cluster
-
-The Kubebuilder scaffold expects the certificate secret to be named
-`webhook-server-cert` in the controller namespace.
-
-```bash
-NAMESPACE="my-project-system"
-
-kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-
+echo "Creating or updating the webhook-server-cert Secret in namespace ${NAMESPACE}..."
+kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret tls webhook-server-cert \
-  --cert=config/webhook/certs/tls.crt \
-  --key=config/webhook/certs/tls.key \
-  --namespace=${NAMESPACE} \
+  --cert="${CERT_DIR}/tls.crt" \
+  --key="${CERT_DIR}/tls.key" \
+  --namespace="${NAMESPACE}" \
   --dry-run=client -o yaml | kubectl apply -f -
+
+echo "Injecting CA bundle into MutatingWebhookConfigurations..."
+for webhook in $(kubectl get mutatingwebhookconfiguration -o name | grep "${PROJECT_NAME}" || true); do
+    WEBHOOKS_COUNT=$(kubectl get "$webhook" -o jsonpath='{range .webhooks[*]}{@.name}{"\n"}{end}' | wc -l)
+    for (( i=0; i<WEBHOOKS_COUNT; i++ )); do
+        kubectl patch "$webhook" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/webhooks/$i/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
+    done
+done
+
+echo "Injecting CA bundle into ValidatingWebhookConfigurations..."
+for webhook in $(kubectl get validatingwebhookconfiguration -o name | grep "${PROJECT_NAME}" || true); do
+    WEBHOOKS_COUNT=$(kubectl get "$webhook" -o jsonpath='{range .webhooks[*]}{@.name}{"\n"}{end}' | wc -l)
+    for (( i=0; i<WEBHOOKS_COUNT; i++ )); do
+        kubectl patch "$webhook" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/webhooks/$i/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
+    done
+done
+
+echo "Injecting CA bundle into CRD conversion webhooks..."
+for crd in $(kubectl get crd -o name | grep "${PROJECT_NAME}" || true); do
+    HAS_WEBHOOK=$(kubectl get "$crd" -o jsonpath='{.spec.conversion.webhook.clientConfig}' || true)
+    if [ -n "$HAS_WEBHOOK" ]; then
+        kubectl patch "$crd" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/spec/conversion/webhook/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
+    fi
+done
+
+echo "Done!"
+```
+
+Make the script executable:
+
+```bash
+chmod +x hack/webhook-certs.sh
+```
+
+Ensure the generated certificates aren't accidentally tracked by Git:
+
+```bash
+echo "config/webhook/certs/" >> .gitignore
 ```
 
 ---
 
-## Step 3: Disable cert-manager in the Kustomize configuration
+## Step 2: Add a Makefile target
+
+Open your `Makefile` and add the following target to automate running the script:
+
+```makefile
+.PHONY: webhook-certs
+webhook-certs: ## Generate and inject development webhook certificates
+	./hack/webhook-certs.sh my-project
+```
+
+*(Note: Make sure to replace `my-project` with the actual name prefix of your project)*
+
+---
+
+## Step 3: Disable cert-manager in Kustomize
 
 Open `config/default/kustomization.yaml` and make the following changes:
 
-**4a. Remove (or comment out) the `../certmanager` resource:**
+**3a. Remove (or comment out) the `../certmanager` resource:**
 
 ```yaml
 resources:
@@ -143,7 +169,7 @@ resources:
 #- ../certmanager
 ```
 
-**4b. Remove (or comment out) all `replacements` blocks** that reference
+**3b. Remove (or comment out) all `replacements` blocks** that reference
 `cert-manager.io` resources. These are the blocks that inject
 `cert-manager.io/inject-ca-from` annotations into your webhook configurations.
 They all start with a `- source:` entry whose `kind` is `Certificate` or whose
@@ -166,58 +192,9 @@ patches:
 
 ---
 
-## Step 4: Patch the webhook `caBundle`
+## Step 4: Build, Deploy and Inject
 
-Without cert-manager's CA injector, you must inject the CA bundle manually so
-that the Kubernetes API server can verify the webhook's TLS certificate.
-
-**4a. Base64-encode the CA certificate:**
-
-```bash
-CA_BUNDLE=$(base64 -w 0 < config/webhook/certs/ca.crt)
-echo $CA_BUNDLE   # save this value, you'll need it below
-```
-
-**4b. Create a Kustomize JSON patch file** at
-`config/webhook/cainjection_patch.yaml`:
-
-```yaml
-# config/webhook/cainjection_patch.yaml
-# Patch the caBundle for MutatingWebhookConfiguration
-- op: add
-  path: /webhooks/0/clientConfig/caBundle
-  value: <BASE64_CA_BUNDLE>
-```
-
-Replace `<BASE64_CA_BUNDLE>` with the output from Step 4a.
-
-If you also have a `ValidatingWebhookConfiguration`, add a second patch file
-`config/webhook/cainjection_validating_patch.yaml` with the same content.
-
-**4c. Register the patch in `config/webhook/kustomization.yaml`:**
-
-```yaml
-resources:
-- manifests.yaml
-- service.yaml
-
-patches:
-- path: cainjection_patch.yaml
-  target:
-    group: admissionregistration.k8s.io
-    version: v1
-    kind: MutatingWebhookConfiguration
-# Uncomment if you also have a ValidatingWebhookConfiguration
-#- path: cainjection_validating_patch.yaml
-#  target:
-#    group: admissionregistration.k8s.io
-#    version: v1
-#    kind: ValidatingWebhookConfiguration
-```
-
----
-
-## Step 5: Build and deploy
+Now, you can build and deploy your project, followed by injecting the certificates:
 
 ```bash
 # Build and push your controller image
@@ -225,13 +202,16 @@ make docker-build docker-push IMG=<your-registry>/my-project:dev
 
 # Deploy (cert-manager is not needed)
 make deploy IMG=<your-registry>/my-project:dev
+
+# Generate certificates and inject them into the deployed webhooks
+make webhook-certs
 ```
 
 Verify the webhook pod is running and the certificate secret was mounted:
 
 ```bash
-kubectl get pods -n ${NAMESPACE}
-kubectl describe secret webhook-server-cert -n ${NAMESPACE}
+kubectl get pods -n <your-project>-system
+kubectl describe secret webhook-server-cert -n <your-project>-system
 ```
 
 ---
@@ -239,11 +219,18 @@ kubectl describe secret webhook-server-cert -n ${NAMESPACE}
 ## Alternative: `make run` (local process, not in-cluster)
 
 When running the controller locally with `make run`, the webhook server needs
-TLS certificates on the local filesystem. Point controller-runtime to the
-certificates generated in Step 1:
+TLS certificates on the local filesystem.
+
+First, run the script to generate the certificates in the `config/webhook/certs` directory:
 
 ```bash
-make run ARGS="--cert-dir=config/webhook/certs"
+make webhook-certs
+```
+
+Then, point controller-runtime to the certificates using the `--webhook-cert-path` flag:
+
+```bash
+make run ARGS="--webhook-cert-path=config/webhook/certs"
 ```
 
 You still need to:
