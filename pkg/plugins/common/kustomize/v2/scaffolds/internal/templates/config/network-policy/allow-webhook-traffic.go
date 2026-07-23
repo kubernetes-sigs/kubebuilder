@@ -24,8 +24,7 @@ import (
 
 var _ machinery.Template = &PolicyAllowWebhooks{}
 
-// PolicyAllowWebhooks in scaffolds a file that defines the NetworkPolicy
-// to allow the webhook server can communicate
+// PolicyAllowWebhooks scaffolds a NetworkPolicy that allows traffic to the webhook server.
 type PolicyAllowWebhooks struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
@@ -42,9 +41,11 @@ func (f *PolicyAllowWebhooks) SetTemplateDefaults() error {
 	return nil
 }
 
-const webhooksNetworkPolicyTemplate = `# This NetworkPolicy allows ingress traffic to your webhook server running
-# as part of the controller-manager from specific namespaces and pods. CR(s) which uses webhooks
-# will only work when applied in namespaces labeled with 'webhook: enabled'
+const webhooksNetworkPolicyTemplate = `# Allow ingress to the webhook server's pod port (9443) from all sources.
+# The webhook Service exposes port 443 and forwards traffic to the pod port.
+# The Kubernetes API server uses the Service to reach admission and CRD conversion webhooks.
+# To restrict admission requests by namespace, configure namespaceSelector in the
+# MutatingWebhookConfiguration or ValidatingWebhookConfiguration.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -61,12 +62,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    # This allows ingress traffic from any namespace with the label webhook: enabled
-    - from:
-      - namespaceSelector:
-          matchLabels:
-            webhook: enabled # Only from namespaces with this label
-      ports:
-        - port: 443
+    - ports:
+        - port: 9443
           protocol: TCP
 `

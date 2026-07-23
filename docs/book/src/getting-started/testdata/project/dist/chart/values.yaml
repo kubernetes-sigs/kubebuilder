@@ -172,6 +172,13 @@ metrics:
 certManager:
   enabled: false
 
+## Webhook server configuration
+##
+webhook:
+  enabled: false
+  # Webhook server port
+  port: 9443
+
 ## Prometheus ServiceMonitor for metrics scraping.
 ## Requires prometheus-operator to be installed in the cluster.
 ##

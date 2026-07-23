@@ -69,7 +69,8 @@ func (f *NetworkPolicy) SetTemplateDefaults() error {
 	return nil
 }
 
-const networkPolicyTemplate = `{{` + "`" + `{{- if .Values.networkPolicy.enabled }}` + "`" + `}}
+const networkPolicyTemplate = `{{` + "`" +
+	`{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}` + "`" + `}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -99,6 +100,11 @@ spec:
 const webhookNetworkPolicyTemplate = `{{` + "`" +
 	`{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}` + "`" + `}}
 ---
+# Allow ingress to the webhook server's pod port from all sources.
+# The webhook Service forwards traffic from its Service port to the pod port.
+# The Kubernetes API server uses the Service to reach admission and CRD conversion webhooks.
+# To restrict admission requests by namespace, configure namespaceSelector in the
+# MutatingWebhookConfiguration or ValidatingWebhookConfiguration.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -115,11 +121,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    - from:
-      - namespaceSelector:
-          matchLabels:
-            webhook: enabled
-      ports:
+    - ports:
         - port: {{ "{{ .Values.webhook.port }}" }}
           protocol: TCP
 {{` + "`" + `{{- end }}` + "`" + `}}

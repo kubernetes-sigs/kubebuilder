@@ -69,7 +69,8 @@ var _ = Describe("NetworkPolicy", func() {
 			err := networkPolicy.SetTemplateDefaults()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(networkPolicy.TemplateBody).To(ContainSubstring("{{`{{- if .Values.networkPolicy.enabled }}`}}"))
+			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
+				"{{`{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}`}}"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring("kind: NetworkPolicy"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
 				`name: {{ "{{ include \"test-project.resourceName\" ` +
@@ -91,7 +92,6 @@ var _ = Describe("NetworkPolicy", func() {
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(
 				`name: {{ "{{ include \"test-project.resourceName\" ` +
 					`(dict \"suffix\" \"allow-webhook-traffic\" \"context\" $) }}" }}`))
-			Expect(networkPolicy.TemplateBody).To(ContainSubstring("webhook: enabled"))
 			Expect(networkPolicy.TemplateBody).To(ContainSubstring(`port: {{ "{{ .Values.webhook.port }}" }}`))
 			Expect(networkPolicy.TemplateBody).NotTo(ContainSubstring("allow-metrics-traffic"))
 		})
@@ -118,7 +118,8 @@ var _ = Describe("NetworkPolicy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			webhookPolicy := string(content)
 
-			Expect(metricsPolicy).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(metricsPolicy).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(metricsPolicy).To(ContainSubstring(`{{ include "test-project.name" . }}`))
 			Expect(metricsPolicy).To(ContainSubstring(
 				`name: {{ include "test-project.resourceName" (dict "suffix" "allow-metrics-traffic" "context" $) }}`))
