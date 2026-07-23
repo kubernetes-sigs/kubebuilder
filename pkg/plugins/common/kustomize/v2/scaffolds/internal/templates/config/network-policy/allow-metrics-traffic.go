@@ -42,9 +42,8 @@ func (f *PolicyAllowMetrics) SetTemplateDefaults() error {
 	return nil
 }
 
-const metricsNetworkPolicyTemplate = `# This NetworkPolicy allows ingress traffic
-# with Pods running on namespaces labeled with 'metrics: enabled'. Only Pods on those
-# namespaces are able to gather data from the metrics endpoint.
+const metricsNetworkPolicyTemplate = `# Allow metrics traffic only from namespaces labeled 'metrics: enabled'.
+# Label each namespace that should be able to scrape the metrics endpoint.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -61,7 +60,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    # This allows ingress traffic from any namespace with the label metrics: enabled
+    # This allows traffic from any namespace with the label metrics: enabled.
     - from:
       - namespaceSelector:
           matchLabels:

@@ -45,7 +45,8 @@ var _ = Describe("ChartScaffolder", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			rendered := string(content)
-			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(rendered).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(rendered).To(ContainSubstring("kind: NetworkPolicy"))
 			Expect(rendered).To(ContainSubstring(
 				`name: {{ include "test-project.resourceName" (dict "suffix" "allow-metrics-traffic" "context" $) }}`))
@@ -83,7 +84,6 @@ var _ = Describe("ChartScaffolder", func() {
 				"dist/chart/templates/network-policy/allow-webhook-traffic.yaml",
 			)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(webhookPolicy)).To(ContainSubstring("webhook: enabled"))
 			Expect(string(webhookPolicy)).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
 		})
 
@@ -100,7 +100,8 @@ var _ = Describe("ChartScaffolder", func() {
 			content, err := afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-metrics-traffic.yaml")
 			Expect(err).NotTo(HaveOccurred())
 			rendered := string(content)
-			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(rendered).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(rendered).To(ContainSubstring("metrics: enabled"))
 			Expect(rendered).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
 
@@ -110,6 +111,54 @@ var _ = Describe("ChartScaffolder", func() {
 			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: true"))
+		})
+
+		It("should produce only the metrics policy when kustomize output has no webhook", func() {
+			manifestsPath := filepath.Join(GinkgoT().TempDir(), "install.yaml")
+			Expect(os.WriteFile(
+				manifestsPath,
+				[]byte(manifestsWithMetricsNetworkPolicyNoWebhooks),
+				0o600,
+			)).To(Succeed())
+
+			fs := executeChartScaffolder(manifestsPath)
+
+			content, err := afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-metrics-traffic.yaml")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
+			Expect(string(content)).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
+
+			_, err = afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-webhook-traffic.yaml")
+			Expect(err).To(HaveOccurred())
+
+			values, err := afero.ReadFile(fs, "dist/chart/values.yaml")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(values)).To(ContainSubstring("networkPolicy:\n  enabled: true"))
+		})
+
+		It("should preserve an egress NetworkPolicy from kustomize output", func() {
+			manifestsPath := filepath.Join(GinkgoT().TempDir(), "install.yaml")
+			Expect(os.WriteFile(
+				manifestsPath,
+				[]byte(manifestsWithEgressNetworkPolicy),
+				0o600,
+			)).To(Succeed())
+
+			fs := executeChartScaffolder(manifestsPath)
+
+			content, err := afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-egress-dns.yaml")
+			Expect(err).NotTo(HaveOccurred())
+			rendered := string(content)
+			// Custom policies are gated on networkPolicy.enabled only, regardless of direction.
+			Expect(rendered).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(rendered).NotTo(ContainSubstring(".Values.metrics.enabled"))
+			// Egress ports target other services and must not be rewritten to a manager port.
+			Expect(rendered).To(ContainSubstring("policyTypes:"))
+			Expect(rendered).To(ContainSubstring("- Egress"))
+			Expect(rendered).To(ContainSubstring("port: 53"))
+			Expect(rendered).NotTo(ContainSubstring(".Values.metrics.port"))
+			Expect(rendered).NotTo(ContainSubstring(".Values.webhook.port"))
 		})
 
 		It("should place all NetworkPolicies from kustomize output in the network-policy directory", func() {
@@ -127,7 +176,8 @@ var _ = Describe("ChartScaffolder", func() {
 				"dist/chart/templates/network-policy/allow-metrics-traffic.yaml",
 			)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(metricsPolicy)).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(string(metricsPolicy)).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(string(metricsPolicy)).To(ContainSubstring("metrics: enabled"))
 			Expect(string(metricsPolicy)).To(ContainSubstring("port: {{ .Values.metrics.port }}"))
 
@@ -352,6 +402,50 @@ metadata:
 webhooks: []
 `
 
+const manifestsWithEgressNetworkPolicy = manifestsWithoutNetworkPolicy + `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-project-allow-egress-dns
+  namespace: test-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: test-project
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+`
+
+const manifestsWithMetricsNetworkPolicyNoWebhooks = manifestsWithoutNetworkPolicy + `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-project-allow-metrics-traffic
+  namespace: test-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: test-project
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            metrics: enabled
+      ports:
+        - port: 8443
+          protocol: TCP
+`
+
 const manifestsWithMultipleNetworkPolicies = manifestsWithoutNetworkPolicy + `---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -413,7 +507,7 @@ spec:
           matchLabels:
             webhook: enabled
       ports:
-        - port: 443
+        - port: 9443
           protocol: TCP
 `
 

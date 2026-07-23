@@ -23,15 +23,26 @@ import (
 )
 
 const (
-	keyName         = "name"
-	keyArgs         = "args"
-	keyReplicas     = "replicas"
-	keySecretName   = "secretName"
-	keyConfigMap    = "configMap"
-	keyImage        = "image"
-	keySecret       = "secret"
-	keyVolumeMounts = "volumeMounts"
-	keyMountPath    = "mountPath"
+	keyName          = "name"
+	keyArgs          = "args"
+	keyContainers    = "containers"
+	keyPorts         = "ports"
+	keyContainerPort = "containerPort"
+	keyReplicas      = "replicas"
+	keySecretName    = "secretName"
+	keyConfigMap     = "configMap"
+	keyImage         = "image"
+	keySecret        = "secret"
+	keyVolumeMounts  = "volumeMounts"
+	keyVolumes       = "volumes"
+	keyMountPath     = "mountPath"
+	keyAPIVersion    = "apiVersion"
+	keyKind          = "kind"
+	keyMetadata      = "metadata"
+	keyAnnotations   = "annotations"
+	keySpec          = "spec"
+	keyTemplate      = "template"
+	keyControlPlane  = "control-plane"
 
 	valAppsV1            = "apps/v1"
 	valDeployment        = "Deployment"
@@ -70,33 +81,33 @@ func makeDeployment(opts deploymentOpts) *unstructured.Unstructured {
 		for i, c := range opts.containers {
 			cs[i] = c
 		}
-		podSpec["containers"] = cs
+		podSpec[keyContainers] = cs
 	}
 	if opts.volumes != nil {
-		podSpec["volumes"] = opts.volumes
+		podSpec[keyVolumes] = opts.volumes
 	}
-	template := map[string]any{"spec": podSpec}
+	template := map[string]any{keySpec: podSpec}
 	if opts.annotations != nil {
 		annotations := make(map[string]any, len(opts.annotations))
 		for k, v := range opts.annotations {
 			annotations[k] = v
 		}
-		template["metadata"] = map[string]any{"annotations": annotations}
+		template[keyMetadata] = map[string]any{keyAnnotations: annotations}
 	}
 	return &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": valAppsV1,
-			"kind":       valDeployment,
-			"metadata":   map[string]any{keyName: valTestDeploy},
-			"spec": map[string]any{
-				"template": template,
+			keyAPIVersion: valAppsV1,
+			keyKind:       valDeployment,
+			keyMetadata:   map[string]any{keyName: valTestDeploy},
+			keySpec: map[string]any{
+				keyTemplate: template,
 			},
 		},
 	}
 }
 
 func podSpec(d *unstructured.Unstructured) map[string]any {
-	spec, _, _ := unstructured.NestedFieldNoCopy(d.Object, "spec", "template", "spec")
+	spec, _, _ := unstructured.NestedFieldNoCopy(d.Object, keySpec, keyTemplate, keySpec)
 	m, _ := spec.(map[string]any)
 	return m
 }
@@ -124,7 +135,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should preserve scale-to-zero", func() {
-			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(0)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(0)
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -132,7 +143,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should extract replicas value", func() {
-			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(3)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(3)
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -343,7 +354,7 @@ var _ = Describe("DeploymentExtractor", func() {
 				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
 				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: "other"}}})
 				winner.SetName("winner")
-				winner.SetLabels(map[string]string{"control-plane": "controller-manager"})
+				winner.SetLabels(map[string]string{keyControlPlane: "controller-manager"})
 
 				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
 				Expect(result).To(Equal(winner))
@@ -453,7 +464,7 @@ var _ = Describe("DeploymentExtractor", func() {
 					{
 						keyName:  valManager,
 						keyImage: valControllerImage,
-						"args": []any{
+						keyArgs: []any{
 							"--webhook-port=9443",
 						},
 					},
@@ -471,13 +482,13 @@ var _ = Describe("DeploymentExtractor", func() {
 					{
 						keyName:  valManager,
 						keyImage: valControllerImage,
-						"args": []any{
+						keyArgs: []any{
 							"--webhook-port=8443",
 						},
-						"ports": []any{
+						keyPorts: []any{
 							map[string]any{
-								"name":          "webhook-server",
-								"containerPort": int64(9443),
+								keyName:          "webhook-server",
+								keyContainerPort: int64(9443),
 							},
 						},
 					},

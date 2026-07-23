@@ -360,11 +360,23 @@ flow at the IP address or port level. However, it does not handle `authn/authz`.
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
 ```yaml
-# [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
-# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
+# [NETWORK POLICY] Protect the metrics and webhook ports.
+# Metrics traffic is allowed only from namespaces labeled with 'metrics: enabled'.
+# Webhook traffic is allowed from all sources so the API server can reach the webhook.
+# To restrict which admission requests reach the webhook, configure namespaceSelector in the
+# admission webhook configuration.
 #- ../network-policy
 ```
+
+Then, label the namespaces that must be able to scrape the metrics:
+
+```bash
+$ kubectl label namespace <namespace> metrics=enabled
+```
+
+The webhook NetworkPolicy allows traffic from all sources so the Kubernetes API server can reach
+the webhook. To limit which admission requests reach it, configure `namespaceSelector` in the
+admission webhook configuration.
 
 ## Exporting metrics for Prometheus
 

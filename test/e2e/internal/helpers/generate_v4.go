@@ -167,6 +167,35 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		"#- ../network-policy", "#")).To(Succeed())
 }
 
+// EnableWebhookNamespaceGating adds the namespaceSelector emitted by the controller-tools patch marker.
+// The kustomize patch can be removed after Kubebuilder updates to a release that includes the marker.
+func EnableWebhookNamespaceGating(kbc *utils.TestContext) {
+	By("patching the webhook configurations to only admit resources from labeled namespaces")
+	const anchor = `- path: manager_metrics_patch.yaml
+  target:
+    kind: Deployment`
+	const gatingPatches = anchor + `
+- patch: |-
+    - op: add
+      path: /webhooks/0/namespaceSelector
+      value:
+        matchLabels:
+          webhook: enabled
+  target:
+    kind: MutatingWebhookConfiguration
+- patch: |-
+    - op: add
+      path: /webhooks/0/namespaceSelector
+      value:
+        matchLabels:
+          webhook: enabled
+  target:
+    kind: ValidatingWebhookConfiguration`
+	ExpectWithOffset(1, pluginutil.ReplaceInFile(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		anchor, gatingPatches)).To(Succeed())
+}
+
 // GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
 func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 	initingTheProject(kbc)

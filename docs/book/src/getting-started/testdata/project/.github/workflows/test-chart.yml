@@ -50,6 +50,7 @@ jobs:
         run: |
           helm lint ./dist/chart
 
+
 # TODO: Uncomment if cert-manager is enabled
 #      - name: Install cert-manager via Helm (wait for readiness)
 #        run: |
@@ -61,6 +62,7 @@ jobs:
 #            --set crds.enabled=true \
 #            --wait \
 #            --timeout 300s
+
 
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs

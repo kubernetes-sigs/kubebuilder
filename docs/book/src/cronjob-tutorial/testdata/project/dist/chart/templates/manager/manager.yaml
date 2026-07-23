@@ -93,7 +93,7 @@ spec:
         {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
         - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
         command:
@@ -143,7 +143,7 @@ spec:
             name: metrics-certs
             readOnly: true
           {{- end }}
-          {{- if .Values.certManager.enabled }}
+          {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
@@ -175,7 +175,7 @@ spec:
             optional: false
             secretName: metrics-server-cert
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - name: webhook-certs
           secret:
             secretName: webhook-server-cert

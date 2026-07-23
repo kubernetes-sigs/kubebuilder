@@ -25,20 +25,28 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
+// IsScaffoldedPolicyName reports whether name is the bare scaffolded NetworkPolicy name
+// or the policy name prefixed by the detected project prefix.
+func IsScaffoldedPolicyName(name, detectedPrefix, policy string) bool {
+	return name == policy || (detectedPrefix != "" && name == detectedPrefix+"-"+policy)
+}
+
 // TemplatePorts templates port numbers for Services, Deployments, and NetworkPolicies using values.yaml.
-func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) string {
+func TemplatePorts(yamlContent string, resource *unstructured.Unstructured, detectedPrefix string) string {
 	resourceName := resource.GetName()
 	resourceKind := resource.GetKind()
 
 	// Use suffix matching to avoid false positives when project name contains "webhook"
 	isWebhook := (resourceKind == common.KindService && strings.HasSuffix(resourceName, "-webhook-service")) ||
-		(resourceKind == common.KindNetworkPolicy && strings.HasSuffix(resourceName, "allow-webhook-traffic"))
+		(resourceKind == common.KindNetworkPolicy &&
+			IsScaffoldedPolicyName(resourceName, detectedPrefix, "allow-webhook-traffic"))
 
 	// Use suffix matching to avoid false positives when project name contains "metrics"
 	isMetrics := (resourceKind == common.KindService &&
 		(strings.HasSuffix(resourceName, "-controller-manager-metrics-service") ||
 			strings.HasSuffix(resourceName, "-metrics-service"))) ||
-		(resourceKind == common.KindNetworkPolicy && strings.HasSuffix(resourceName, "allow-metrics-traffic"))
+		(resourceKind == common.KindNetworkPolicy &&
+			IsScaffoldedPolicyName(resourceName, detectedPrefix, "allow-metrics-traffic"))
 
 	// For Deployments, detect webhook ports from content
 	if resourceKind == common.KindDeployment {
@@ -50,9 +58,7 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 	// Template webhook ports
 	if isWebhook {
 		if resourceKind == common.KindNetworkPolicy {
-			yamlContent = regexp.MustCompile(`(\s*)port:\s*\d+`).
-				ReplaceAllString(yamlContent, "${1}port: {{ .Values.webhook.port }}")
-			return yamlContent
+			return templateNetworkPolicyIngressPort(yamlContent, "{{ .Values.webhook.port }}")
 		}
 
 		// Replace containerPort for webhook-server with template (matches any numeric port)
@@ -68,20 +74,19 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 
 	// Template metrics ports
 	if isMetrics {
+		if resourceKind == common.KindNetworkPolicy {
+			return templateNetworkPolicyIngressPort(yamlContent, "{{ .Values.metrics.port }}")
+		}
+
 		// Replace port with metrics.port template (matches any numeric port)
 		yamlContent = regexp.MustCompile(`(\s*)port:\s*\d+`).
 			ReplaceAllString(yamlContent, "${1}port: {{ .Values.metrics.port }}")
-
-		if resourceKind == common.KindNetworkPolicy {
-			return yamlContent
-		}
 
 		// Replace targetPort with metrics.port template (matches any numeric port)
 		yamlContent = regexp.MustCompile(`(\s*)targetPort:\s*\d+`).
 			ReplaceAllString(yamlContent, "${1}targetPort: {{ .Values.metrics.port }}")
 
-		// Template port name based on metrics.secure (http vs https)
-		// This ensures Service and ServiceMonitor use the correct scheme
+		// The port name follows metrics.secure so Service and ServiceMonitor agree on the scheme.
 		if resource.GetKind() == common.KindService {
 			yamlContent = regexp.MustCompile(`(\s*)- name:\s*https(\s+port:)`).
 				ReplaceAllString(yamlContent, `${1}- name: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}${2}`)
@@ -103,6 +108,37 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 	}
 
 	return yamlContent
+}
+
+// templateNetworkPolicyIngressPort rewrites the port only inside the NetworkPolicy's
+// ingress rule. The ingress block spans the lines indented deeper than the `ingress:` key;
+// it ends at the next sibling key (e.g. `egress:`) or the end of the spec. Ports under an
+// egress rule target other services and must be left as-is, and scoping this way also avoids
+// rewriting an unrelated port that follows the ingress block.
+func templateNetworkPolicyIngressPort(yamlContent, portTemplate string) string {
+	portRe := regexp.MustCompile(`(\s*)port:\s*\d+`)
+	lines := strings.Split(yamlContent, "\n")
+	inIngress := false
+	ingressIndent := 0
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " "))
+		switch {
+		case strings.HasPrefix(trimmed, "ingress:"):
+			inIngress = true
+			ingressIndent = indent
+		case inIngress && indent <= ingressIndent && !strings.HasPrefix(trimmed, "-"):
+			// A sibling key (e.g. egress:) at or above the ingress indentation ends the block.
+			// List items (- ...) at the same indentation are still part of the ingress rule.
+			inIngress = false
+		case inIngress:
+			lines[i] = portRe.ReplaceAllString(line, "${1}port: "+portTemplate)
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // templateHealthProbePort templates the manager health probe port so it can be

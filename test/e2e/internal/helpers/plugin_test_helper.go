@@ -63,6 +63,13 @@ type RunOptions struct {
 	HasMetrics bool
 	// HasNetworkPolicies indicates if network policies are enabled
 	HasNetworkPolicies bool
+	// MetricsPort is the expected metrics port the metrics NetworkPolicy must allow (defaults to 8443)
+	MetricsPort int
+	// WebhookPort is the expected webhook port the webhook NetworkPolicy must allow (defaults to 9443)
+	WebhookPort int
+	// WebhookNamespaceGating indicates the webhook configurations were patched with a
+	// namespaceSelector so admission only runs for namespaces labeled 'webhook: enabled'
+	WebhookNamespaceGating bool
 	// IsNamespaced indicates if project is namespace-scoped
 	IsNamespaced bool
 	// InstallMethod specifies how to install the project
@@ -178,12 +185,22 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 	Expect(err).NotTo(HaveOccurred())
 
 	if opts.HasNetworkPolicies {
-		if opts.HasMetrics {
-			By("labeling the namespace to allow consume the metrics")
-			Expect(kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
-				"metrics=enabled")).Error().NotTo(HaveOccurred())
+		metricsPort := opts.MetricsPort
+		if metricsPort == 0 {
+			metricsPort = defaultMetricsPort
+		}
+		webhookPort := opts.WebhookPort
+		if webhookPort == 0 {
+			webhookPort = defaultWebhookPort
+		}
 
-			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists", func() {
+		if opts.HasMetrics {
+			By("labeling the namespace to allow metrics access")
+			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
+				"metrics=enabled")
+			Expect(err).NotTo(HaveOccurred())
+
+			By("ensuring the metrics NetworkPolicy allows the metrics port", func() {
 				var output string
 				output, err = kbc.Kubectl.Get(
 					true,
@@ -192,16 +209,22 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-metrics-traffic should exist in the namespace")
 				Expect(output).To(ContainSubstring("allow-metrics-traffic"), "NetworkPolicy allow-metrics-traffic "+
 					"should be present in the output")
+
+				// The NetworkPolicy must allow the pod's metrics port, otherwise it blocks scraping.
+				var port string
+				port, err = kbc.Kubectl.Get(
+					true,
+					"networkpolicy", fmt.Sprintf("e2e-%s-allow-metrics-traffic", kbc.TestSuffix),
+					"-o", "jsonpath={.spec.ingress[*].ports[*].port}",
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(port).To(Equal(strconv.Itoa(metricsPort)),
+					"metrics NetworkPolicy must allow the metrics port")
 			})
 		}
 
 		if opts.HasWebhook {
-			By("labeling the namespace to allow webhooks traffic")
-			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
-				"webhook=enabled")
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Ensuring the allow-webhook-traffic NetworkPolicy exists", func() {
+			By("ensuring the webhook NetworkPolicy allows the webhook port", func() {
 				var output string
 				output, err = kbc.Kubectl.Get(
 					true,
@@ -210,8 +233,53 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-webhook-traffic should exist in the namespace")
 				Expect(output).To(ContainSubstring("allow-webhook-traffic"), "NetworkPolicy allow-webhook-traffic "+
 					"should be present in the output")
+
+				// The policy must allow the webhook container port; the Service port (443) never matches pod traffic.
+				var port string
+				port, err = kbc.Kubectl.Get(
+					true,
+					"networkpolicy", fmt.Sprintf("e2e-%s-allow-webhook-traffic", kbc.TestSuffix),
+					"-o", "jsonpath={.spec.ingress[*].ports[*].port}",
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(port).To(Equal(strconv.Itoa(webhookPort)),
+					"webhook NetworkPolicy must allow the webhook container port")
 			})
 		}
+
+		if opts.HasMetrics {
+			ValidateNetworkPolicyEnforcement(
+				controllerPodName, namePrefix, webhookPort, opts.HasWebhook, kbc)
+		}
+	}
+
+	if opts.HasWebhook && opts.WebhookNamespaceGating {
+		By("ensuring the webhook configurations are scoped with the namespaceSelector")
+		webhookConfigs := map[string]string{
+			"mutatingwebhookconfigurations":   fmt.Sprintf("%s-mutating-webhook-configuration", namePrefix),
+			"validatingwebhookconfigurations": fmt.Sprintf("%s-validating-webhook-configuration", namePrefix),
+		}
+		for kind, name := range webhookConfigs {
+			var selectors string
+			selectors, err = kbc.Kubectl.Get(
+				false,
+				kind, name,
+				"-o", `jsonpath={range .webhooks[*]}{.namespaceSelector.matchLabels.webhook}{"\n"}{end}`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			entries := strings.Split(strings.TrimSuffix(selectors, "\n"), "\n")
+			Expect(entries).NotTo(BeEmpty(), "%s must have webhook entries", name)
+			for _, entry := range entries {
+				Expect(entry).To(Equal("enabled"),
+					"every webhook in %s must carry the namespaceSelector so only labeled namespaces trigger admission",
+					name)
+			}
+		}
+
+		By("labeling the manager namespace so the scoped webhooks run for resources in it")
+		_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
+			"webhook=enabled", "--overwrite")
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	if opts.HasWebhook {
@@ -349,6 +417,28 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 		}
 		Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
 
+		if opts.WebhookNamespaceGating {
+			By("validating that webhooks are skipped in a namespace without the 'webhook: enabled' label")
+			var cnt string
+			cnt, err = kbc.Kubectl.Get(
+				false,
+				"-n", namespace,
+				"-f", sampleFile,
+				"-o", "jsonpath={.spec.count}")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cnt).To(BeEmpty(),
+				"the mutating webhook must not run for namespaces without the 'webhook: enabled' label")
+
+			By("labeling the namespace so the webhooks run for resources in it")
+			_, err = kbc.Kubectl.Command("label", "namespaces", namespace, "webhook=enabled")
+			Expect(err).NotTo(HaveOccurred())
+
+			By("recreating the CR so admission runs with the label in place")
+			_, err = kbc.Kubectl.Delete(false, "-n", namespace, "-f", sampleFile)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
+		}
+
 		// Note: Webhooks are cluster-scoped and validate/mutate CRs in ALL namespaces,
 		// even in namespace-scoped managers. The manager won't reconcile CRs outside
 		// its WATCH_NAMESPACE, but webhooks will still enforce validation/mutation rules.
@@ -367,8 +457,8 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 			"the mutating webhook should set the count to 5")
 
 		By("removing the namespace")
-		Expect(kbc.Kubectl.Command("delete", "namespace", namespace)).
-			Error().NotTo(HaveOccurred(), "namespace should be removed successfully")
+		_, err = kbc.Kubectl.Command("delete", "namespace", namespace)
+		Expect(err).NotTo(HaveOccurred(), "namespace should be removed successfully")
 
 		By("validating the conversion")
 

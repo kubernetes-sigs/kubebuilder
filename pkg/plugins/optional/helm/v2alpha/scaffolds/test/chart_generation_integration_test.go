@@ -134,6 +134,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				_, err := os.Stat(filePath)
 				Expect(err).NotTo(HaveOccurred(), "File %s should exist", file)
 			}
+
+			By("keeping cert-manager commented when kustomize output has no webhooks")
+			workflow, err := os.ReadFile(filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(workflow)).To(ContainSubstring(
+				"#      - name: Install cert-manager via Helm (wait for readiness)"))
 		})
 	})
 
@@ -157,6 +163,14 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			info, err := os.Stat(webhookDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info.IsDir()).To(BeTrue())
+
+			By("enabling cert-manager when kustomize output has webhooks")
+			workflow, err := os.ReadFile(filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(workflow)).To(ContainSubstring(
+				"      - name: Install cert-manager via Helm (wait for readiness)"))
+			Expect(string(workflow)).NotTo(ContainSubstring(
+				"#      - name: Install cert-manager via Helm (wait for readiness)"))
 
 			By("verifying webhook configuration files exist")
 			files, err := afero.ReadDir(afero.NewOsFs(), webhookDir)
@@ -582,6 +596,235 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 			Expect(strings.Count(sa, "app.kubernetes.io/name:")).To(Equal(1),
 				"a user override must not add a second app.kubernetes.io/name label, got:\n%s", sa)
+		})
+	})
+
+	Context("NetworkPolicy (rendered)", func() {
+		// networkPolicyDoc returns the NetworkPolicy document whose name ends with the given
+		// suffix from a multi-document render, or "" when it was not rendered.
+		networkPolicyDoc := func(rendered, suffix string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: NetworkPolicy\n") && strings.Contains(doc, suffix) {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		renderWithNetworkPolicies := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithWebhooks("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("renders both policies with the metrics and webhook ports when enabled", func() {
+			rendered := renderWithNetworkPolicies(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=true",
+				"--set", "webhook.enabled=true",
+			)
+
+			metricsPolicy := networkPolicyDoc(rendered, "allow-metrics-traffic")
+			Expect(metricsPolicy).NotTo(BeEmpty(), "metrics NetworkPolicy should be rendered")
+			Expect(metricsPolicy).To(ContainSubstring("metrics: enabled"))
+			Expect(metricsPolicy).To(ContainSubstring("port: 8443"))
+
+			webhookPolicy := networkPolicyDoc(rendered, "allow-webhook-traffic")
+			Expect(webhookPolicy).NotTo(BeEmpty(), "webhook NetworkPolicy should be rendered")
+			Expect(webhookPolicy).To(ContainSubstring("port: 9443"))
+		})
+
+		DescribeTable("renders no NetworkPolicy when networkPolicy.enabled is false",
+			func(metricsEnabled, webhookEnabled string) {
+				rendered := renderWithNetworkPolicies(
+					"--set", "networkPolicy.enabled=false",
+					"--set", "metrics.enabled="+metricsEnabled,
+					"--set", "webhook.enabled="+webhookEnabled,
+				)
+
+				Expect(rendered).NotTo(ContainSubstring("kind: NetworkPolicy"))
+			},
+			Entry("with metrics and webhook enabled", "true", "true"),
+			Entry("with only metrics enabled", "true", "false"),
+			Entry("with only webhook enabled", "false", "true"),
+			Entry("with both disabled", "false", "false"),
+		)
+
+		It("suppresses the metrics policy when metrics are disabled but keeps the webhook policy", func() {
+			rendered := renderWithNetworkPolicies(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=false",
+				"--set", "webhook.enabled=true",
+			)
+
+			Expect(networkPolicyDoc(rendered, "allow-metrics-traffic")).To(BeEmpty(),
+				"metrics NetworkPolicy must be gated by metrics.enabled")
+			Expect(networkPolicyDoc(rendered, "allow-webhook-traffic")).NotTo(BeEmpty(),
+				"webhook NetworkPolicy should still render")
+		})
+
+		It("suppresses the webhook policy when webhooks are disabled but keeps the metrics policy", func() {
+			rendered := renderWithNetworkPolicies(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=true",
+				"--set", "webhook.enabled=false",
+			)
+
+			Expect(networkPolicyDoc(rendered, "allow-webhook-traffic")).To(BeEmpty(),
+				"webhook NetworkPolicy must be gated by webhook.enabled")
+			Expect(networkPolicyDoc(rendered, "allow-metrics-traffic")).NotTo(BeEmpty(),
+				"metrics NetworkPolicy should still render")
+		})
+
+		It("renders no NetworkPolicy when networkPolicy is enabled but metrics and webhooks are disabled", func() {
+			rendered := renderWithNetworkPolicies(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=false",
+				"--set", "webhook.enabled=false",
+			)
+
+			Expect(rendered).NotTo(ContainSubstring("kind: NetworkPolicy"),
+				"both policies must be gated off when their features are disabled")
+		})
+
+		It("tracks custom metrics and webhook ports in the rendered policies", func() {
+			rendered := renderWithNetworkPolicies(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=true", "--set", "metrics.port=9000",
+				"--set", "webhook.enabled=true", "--set", "webhook.port=9001",
+			)
+
+			Expect(networkPolicyDoc(rendered, "allow-metrics-traffic")).To(ContainSubstring("port: 9000"))
+			Expect(networkPolicyDoc(rendered, "allow-webhook-traffic")).To(ContainSubstring("port: 9001"))
+		})
+	})
+
+	Context("Disabled admission webhooks (rendered)", func() {
+		It("does not render webhook resources when cert-manager stays enabled", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithWebhooksAndCertManager("test-project"),
+				"--set", "webhook.enabled=false",
+				"--set", "certManager.enabled=true",
+				"--set", "networkPolicy.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			Expect(rendered).NotTo(ContainSubstring("kind: ValidatingWebhookConfiguration"))
+			Expect(rendered).NotTo(ContainSubstring("-serving-cert"))
+			Expect(rendered).NotTo(ContainSubstring("webhook-server-cert"))
+			Expect(rendered).NotTo(ContainSubstring("-webhook-service"))
+			Expect(rendered).NotTo(ContainSubstring("allow-webhook-traffic"))
+			Expect(rendered).To(ContainSubstring("kind: Issuer"),
+				"cert-manager resources unrelated to the disabled webhook should remain")
+		})
+	})
+
+	Context("NetworkPolicy conversion from kustomize (rendered)", func() {
+		networkPolicyDoc := func(rendered, suffix string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: NetworkPolicy\n") && strings.Contains(doc, suffix) {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		renderConverted := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithWebhooksAndNetworkPolicies("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("renders all converted policies with their gates and ports when everything is enabled", func() {
+			rendered := renderConverted(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=true",
+				"--set", "webhook.enabled=true",
+			)
+
+			Expect(networkPolicyDoc(rendered, "-allow-metrics-traffic")).To(ContainSubstring("port: 8443"))
+			Expect(networkPolicyDoc(rendered, "-allow-webhook-traffic")).To(ContainSubstring("port: 9443"))
+			Expect(networkPolicyDoc(rendered, "allow-dns-traffic")).To(ContainSubstring("port: 5353"))
+			Expect(networkPolicyDoc(rendered, "disallow-metrics-traffic")).To(ContainSubstring("port: 7777"),
+				"a policy whose name only resembles the scaffolded ones must keep its port")
+		})
+
+		It("renders no converted policy when networkPolicy.enabled is false", func() {
+			rendered := renderConverted(
+				"--set", "networkPolicy.enabled=false",
+				"--set", "metrics.enabled=true",
+				"--set", "webhook.enabled=true",
+			)
+
+			Expect(rendered).NotTo(ContainSubstring("kind: NetworkPolicy"))
+		})
+
+		It("gates only the scaffolded policies on their feature toggles", func() {
+			rendered := renderConverted(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=false",
+				"--set", "webhook.enabled=false",
+			)
+
+			Expect(networkPolicyDoc(rendered, "-allow-metrics-traffic")).To(BeEmpty(),
+				"converted metrics policy must be gated by metrics.enabled")
+			Expect(networkPolicyDoc(rendered, "-allow-webhook-traffic")).To(BeEmpty(),
+				"converted webhook policy must be gated by webhook.enabled")
+			Expect(networkPolicyDoc(rendered, "allow-dns-traffic")).NotTo(BeEmpty(),
+				"custom policies must only be gated by networkPolicy.enabled")
+			Expect(networkPolicyDoc(rendered, "disallow-metrics-traffic")).NotTo(BeEmpty(),
+				"a policy whose name only resembles the scaffolded ones must only be gated by networkPolicy.enabled")
+		})
+
+		It("renders a conversion webhook chart and rejects disabling its webhook", func() {
+			out, err := helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			var crd string
+			for _, doc := range strings.Split(out, "\n---") {
+				if strings.Contains(doc, "\nkind: CustomResourceDefinition\n") {
+					crd = doc
+					break
+				}
+			}
+			Expect(crd).NotTo(BeEmpty(), "the conversion CRD must render")
+			Expect(crd).To(ContainSubstring("strategy: Webhook"))
+			Expect(crd).To(ContainSubstring("name: my-release-test-project-webhook-service"))
+			Expect(crd).To(ContainSubstring("namespace: my-namespace"))
+			Expect(networkPolicyDoc(out, "-allow-webhook-traffic")).To(ContainSubstring("port: 9443"),
+				"the webhook NetworkPolicy must render with webhook.enabled defaulting to true")
+
+			workflow, err := os.ReadFile(filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(workflow)).To(ContainSubstring(
+				"      - name: Install cert-manager via Helm (wait for readiness)"),
+				"conversion webhooks from kustomize output must enable cert-manager in the workflow")
+			Expect(string(workflow)).NotTo(ContainSubstring(
+				"#      - name: Install cert-manager via Helm (wait for readiness)"))
+
+			out, err = helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"),
+				"--set", "webhook.enabled=false")
+			Expect(err).To(HaveOccurred(), "helm template should reject disabling a required webhook: %s", out)
+			Expect(out).To(ContainSubstring(
+				"webhook.enabled must be true for CRD conversion"))
+
+			out, err = helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"),
+				"--set", "crd.enabled=false", "--set", "webhook.enabled=false")
+			Expect(err).NotTo(HaveOccurred(),
+				"helm template should allow disabling an unrendered conversion CRD: %s", out)
+		})
+
+		It("tracks custom ports in the converted scaffolded policies only", func() {
+			rendered := renderConverted(
+				"--set", "networkPolicy.enabled=true",
+				"--set", "metrics.enabled=true", "--set", "metrics.port=9100",
+				"--set", "webhook.enabled=true", "--set", "webhook.port=9101",
+			)
+
+			Expect(networkPolicyDoc(rendered, "-allow-metrics-traffic")).To(ContainSubstring("port: 9100"))
+			Expect(networkPolicyDoc(rendered, "-allow-webhook-traffic")).To(ContainSubstring("port: 9101"))
+			Expect(networkPolicyDoc(rendered, "allow-dns-traffic")).To(ContainSubstring("port: 5353"))
+			Expect(networkPolicyDoc(rendered, "disallow-metrics-traffic")).To(ContainSubstring("port: 7777"))
 		})
 	})
 
@@ -1156,6 +1399,149 @@ webhooks:
       path: /validate
   name: validate.example.com
   sideEffects: None
+`
+}
+
+func createKustomizeConversionOnlyWithNetworkPolicies(projectName string) string {
+	return createBasicKustomizeOutput(projectName) + `---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: widgets.example.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: ` + projectName + `-webhook-service
+          namespace: ` + projectName + `-system
+          path: /convert
+      conversionReviewVersions:
+        - v1
+  group: example.io
+  names:
+    kind: Widget
+    listKind: WidgetList
+    plural: widgets
+    singular: widget
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          type: object
+      served: true
+      storage: true
+    - name: v2
+      schema:
+        openAPIV3Schema:
+          type: object
+      served: true
+      storage: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+  name: ` + projectName + `-webhook-service
+  namespace: ` + projectName + `-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-webhook-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+`
+}
+
+func createKustomizeWithWebhooksAndNetworkPolicies(projectName string) string {
+	return createKustomizeWithWebhooks(projectName) + `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-metrics-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            metrics: enabled
+      ports:
+        - port: 8443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-webhook-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-dns-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 5353
+          protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-disallow-metrics-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 7777
+          protocol: TCP
 `
 }
 
