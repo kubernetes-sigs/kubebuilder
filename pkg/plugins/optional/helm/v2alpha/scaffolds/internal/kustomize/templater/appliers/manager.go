@@ -1291,9 +1291,9 @@ func detectChildIndent(lines []string, parentIndent string) string {
 	return parentIndent + "  "
 }
 
-// MakeContainerArgsConditional makes webhook-cert-path and metrics-cert-path args conditional.
+// MakeContainerArgsConditional makes certificate path args conditional.
 func MakeContainerArgsConditional(yamlContent string) string {
-	// Make webhook-cert-path arg conditional on certManager.enabled
+	// The webhook certificate path requires both features.
 	if strings.Contains(yamlContent, "--webhook-cert-path") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		webhookArgPattern := regexp.MustCompile(`([ \t]+)-\s*--webhook-cert-path=[^\n]*`)
@@ -1305,7 +1305,7 @@ func MakeContainerArgsConditional(yamlContent string) string {
 			}
 
 			argLine := strings.TrimSpace(match)
-			return fmt.Sprintf("%s{{- if .Values.certManager.enabled }}\n%s%s\n%s{{- end }}",
+			return fmt.Sprintf("%s{{- if and .Values.certManager.enabled .Values.webhook.enabled }}\n%s%s\n%s{{- end }}",
 				indent, indent, argLine, indent)
 		})
 	}
@@ -1331,9 +1331,8 @@ func MakeContainerArgsConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeWebhookVolumesConditional makes webhook volumes conditional on certManager.enabled.
+// MakeWebhookVolumesConditional makes webhook volumes conditional on both features.
 func MakeWebhookVolumesConditional(yamlContent string) string {
-	// Make webhook volumes conditional on certManager.enabled
 	if strings.Contains(yamlContent, "webhook-certs") && strings.Contains(yamlContent, "secretName: webhook-server-cert") {
 		// Match only spaces/tabs for indent to avoid consuming the newline
 		volumePattern := regexp.MustCompile(`([ \t]+)-\s*name:\s*webhook-certs[\s\S]*?secretName:\s*webhook-server-cert`)
@@ -1343,9 +1342,8 @@ func MakeWebhookVolumesConditional(yamlContent string) string {
 	return yamlContent
 }
 
-// MakeWebhookVolumeMountsConditional makes webhook volumeMounts conditional on certManager.enabled.
+// MakeWebhookVolumeMountsConditional makes webhook volume mounts conditional on both features.
 func MakeWebhookVolumeMountsConditional(yamlContent string) string {
-	// Make webhook volumeMounts conditional on certManager.enabled
 	webhookCertsPath := "/tmp/k8s-webhook-server/serving-certs"
 	if strings.Contains(yamlContent, "webhook-certs") && strings.Contains(yamlContent, webhookCertsPath) {
 		// Match only spaces/tabs for indent to avoid consuming the newline

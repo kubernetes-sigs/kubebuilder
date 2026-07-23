@@ -152,6 +152,49 @@ maintainers:
 		Expect(string(content)).To(ContainSubstring("My custom description"))
 	})
 
+	It("should preserve user edits to NetworkPolicy and ServiceMonitor unless --force", func() {
+		networkPolicyPath := filepath.Join(tmpDir, outputDir, "chart", "templates",
+			"network-policy", "allow-metrics-traffic.yaml")
+		serviceMonitorPath := filepath.Join(tmpDir, outputDir, "chart", "templates",
+			"prometheus", "controller-manager-metrics-monitor.yaml")
+
+		scaffoldChart := func(force bool) {
+			s := scaffolds.NewChartScaffolder(projectConfig, force, manifestsFile, outputDir)
+			s.InjectFS(fs)
+			Expect(s.Scaffold()).To(Succeed())
+		}
+
+		// Initial scaffold creates the user-owned files (SkipFile still writes when absent).
+		scaffoldChart(false)
+		Expect(networkPolicyPath).To(BeAnExistingFile(), "initial scaffold must create the NetworkPolicy")
+		Expect(serviceMonitorPath).To(BeAnExistingFile(), "initial scaffold must create the ServiceMonitor")
+
+		Expect(os.WriteFile(networkPolicyPath, []byte("custom-network-policy\n"), 0o644)).To(Succeed())
+		Expect(os.WriteFile(serviceMonitorPath, []byte("custom-service-monitor\n"), 0o644)).To(Succeed())
+
+		// Regenerating without --force must keep the local edits.
+		scaffoldChart(false)
+		networkPolicyContent, err := os.ReadFile(networkPolicyPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(networkPolicyContent)).To(Equal("custom-network-policy\n"),
+			"NetworkPolicy should be preserved without --force")
+		serviceMonitorContent, err := os.ReadFile(serviceMonitorPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(serviceMonitorContent)).To(Equal("custom-service-monitor\n"),
+			"ServiceMonitor should be preserved without --force")
+
+		// Regenerating with --force must overwrite them.
+		scaffoldChart(true)
+		networkPolicyContent, err = os.ReadFile(networkPolicyPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(networkPolicyContent)).To(ContainSubstring("kind: NetworkPolicy"),
+			"NetworkPolicy should be regenerated with --force")
+		serviceMonitorContent, err = os.ReadFile(serviceMonitorPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(serviceMonitorContent)).To(ContainSubstring("kind: ServiceMonitor"),
+			"ServiceMonitor should be regenerated with --force")
+	})
+
 	It("should preserve Chart.yaml on initial scaffold if file already exists", func() {
 		// Create Chart.yaml before any scaffolding
 		chartPath := filepath.Join(tmpDir, outputDir, "chart", "Chart.yaml")

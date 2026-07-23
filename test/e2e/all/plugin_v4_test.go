@@ -93,20 +93,22 @@ var _ = Describe("kubebuilder", func() {
 			})
 		})
 
-		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
+		It("should deploy admission and conversion webhooks protected by network policies", func() {
 			helpers.GenerateV4WithNetworkPolicies(kbc)
+			helpers.EnableWebhookNamespaceGating(kbc)
 			helpers.Run(kbc, helpers.RunOptions{
-				HasWebhook:         true,
-				HasMetrics:         true,
-				HasNetworkPolicies: true,
-				InstallMethod:      helpers.InstallMethodKustomize,
+				HasWebhook:             true,
+				HasMetrics:             true,
+				HasNetworkPolicies:     true,
+				WebhookNamespaceGating: true,
+				InstallMethod:          helpers.InstallMethodKustomize,
 			})
 		})
 
 		It("should generate a runnable project with a custom webhook port protected by network policies", func() {
 			helpers.GenerateV4WithNetworkPolicies(kbc)
 
-			By("configuring the manager and webhook Service to use a custom webhook port")
+			By("configuring the manager, webhook Service, and webhook NetworkPolicy to use a custom port")
 			const customWebhookPort = "9444"
 			Expect(util.ReplaceInFile(
 				filepath.Join(kbc.Dir, "config", "default", "manager_webhook_patch.yaml"),
@@ -114,12 +116,18 @@ var _ = Describe("kubebuilder", func() {
 			Expect(util.ReplaceInFile(
 				filepath.Join(kbc.Dir, "config", "webhook", "service.yaml"),
 				"targetPort: 9443", "targetPort: "+customWebhookPort)).To(Succeed())
+			// The webhook NetworkPolicy must allow the same pod port, otherwise a CNI that
+			// enforces NetworkPolicies would block admission traffic to the custom port.
+			Expect(util.ReplaceInFile(
+				filepath.Join(kbc.Dir, "config", "network-policy", "allow-webhook-traffic.yaml"),
+				"port: 9443", "port: "+customWebhookPort)).To(Succeed())
 
 			By("deploying with the custom webhook port and validating all webhook flows")
 			helpers.Run(kbc, helpers.RunOptions{
 				HasWebhook:         true,
 				HasMetrics:         true,
 				HasNetworkPolicies: true,
+				WebhookPort:        9444,
 				InstallMethod:      helpers.InstallMethodKustomize,
 			})
 

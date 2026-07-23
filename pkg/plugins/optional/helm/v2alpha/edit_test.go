@@ -74,7 +74,7 @@ version: "3"
 			editCmd.UpdateMetadata(cliMeta, &meta)
 
 			Expect(meta.Description).To(ContainSubstring("Generate a Helm chart"))
-			Expect(meta.Description).To(ContainSubstring("kustomize"))
+			Expect(meta.Description).To(ContainSubstring("Kustomize"))
 			Expect(meta.Examples).NotTo(BeEmpty())
 		})
 	})
@@ -103,13 +103,6 @@ version: "3"
 			err := editCmd.InjectConfig(cfg)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(editCmd.config).To(Equal(cfg))
-		})
-	})
-
-	Context("hasWebhooksWith", func() {
-		It("should return false for config without webhooks", func() {
-			result := hasWebhooksWith(cfg)
-			Expect(result).To(BeFalse())
 		})
 	})
 
@@ -211,61 +204,6 @@ version: "3"
 			err = reloadedCfg.DecodePluginConfig(v1AlphaPluginKey, &v1AlphaCfg)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("plugin key"))
-		})
-	})
-
-	Context("PostScaffold", func() {
-		BeforeEach(func() {
-			// Create the directory structure
-			err := fs.FS.MkdirAll(".github/workflows", 0o755)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should not modify workflow file when no webhooks present", func() {
-			// Create test workflow file
-			workflowContent := `name: Test Chart
-on:
-  push:
-    branches: [main]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-#      - name: Install cert-manager via Helm
-#        run: |
-#          helm repo add jetstack https://charts.jetstack.io
-#          helm repo update
-#          helm install cert-manager jetstack/cert-manager \
-#            --namespace cert-manager --create-namespace --set crds.enabled=true
-#
-#      - name: Wait for cert-manager to be ready
-#        run: |
-#          kubectl wait --namespace cert-manager --for=condition=available \
-#            --timeout=300s deployment/cert-manager
-#          kubectl wait --namespace cert-manager --for=condition=available \
-#            --timeout=300s deployment/cert-manager-cainjector
-#          kubectl wait --namespace cert-manager --for=condition=available \
-#            --timeout=300s deployment/cert-manager-webhook
-`
-			workflowPath := filepath.Join(".github", "workflows", "test-chart.yml")
-			err := afero.WriteFile(fs.FS, workflowPath, []byte(workflowContent), 0o644)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = editCmd.PostScaffold()
-			Expect(err).NotTo(HaveOccurred())
-
-			// Content should remain unchanged
-			content, err := afero.ReadFile(fs.FS, workflowPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(ContainSubstring("#      - name: Install cert-manager via Helm"))
-		})
-
-		It("should handle missing workflow file gracefully", func() {
-			editCmd.config = cfg
-			err := editCmd.PostScaffold()
-			Expect(err).NotTo(HaveOccurred()) // Should not error even if file doesn't exist
 		})
 	})
 

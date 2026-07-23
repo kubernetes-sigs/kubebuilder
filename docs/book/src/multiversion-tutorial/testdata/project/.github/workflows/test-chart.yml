@@ -62,6 +62,7 @@ jobs:
             --wait \
             --timeout 300s
 
+
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs
 #        run: |

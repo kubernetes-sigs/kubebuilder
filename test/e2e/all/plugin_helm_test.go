@@ -119,14 +119,16 @@ var _ = Describe("kubebuilder", func() {
 			})
 		})
 
-		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
+		It("should deploy admission and conversion webhooks protected by network policies", func() {
 			helpers.GenerateV4WithNetworkPolicies(kbc)
+			helpers.EnableWebhookNamespaceGating(kbc)
 
 			helpers.Run(kbc, helpers.RunOptions{
-				HasWebhook:         true,
-				HasMetrics:         true,
-				HasNetworkPolicies: true,
-				InstallMethod:      helpers.InstallMethodHelm,
+				HasWebhook:             true,
+				HasMetrics:             true,
+				HasNetworkPolicies:     true,
+				WebhookNamespaceGating: true,
+				InstallMethod:          helpers.InstallMethodHelm,
 			})
 		})
 
@@ -205,6 +207,8 @@ var _ = Describe("kubebuilder", func() {
 				HasWebhook:          true,
 				HasMetrics:          true,
 				HasNetworkPolicies:  true,
+				MetricsPort:         customMetricsPort,
+				WebhookPort:         customWebhookPort,
 				InstallMethod:       helpers.InstallMethodHelm,
 				SkipChartGeneration: true, // Chart already generated and customized above
 			})

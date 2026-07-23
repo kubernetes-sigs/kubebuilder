@@ -69,7 +69,8 @@ func (f *NetworkPolicy) SetTemplateDefaults() error {
 	return nil
 }
 
-const networkPolicyTemplate = `{{` + "`" + `{{- if .Values.networkPolicy.enabled }}` + "`" + `}}
+const networkPolicyTemplate = `{{` + "`" +
+	`{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}` + "`" + `}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -99,6 +100,8 @@ spec:
 const webhookNetworkPolicyTemplate = `{{` + "`" +
 	`{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}` + "`" + `}}
 ---
+# Keep the webhook port reachable from the Kubernetes API server.
+# Set namespaceSelector in webhook configurations to limit admission by namespace.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -115,11 +118,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    - from:
-      - namespaceSelector:
-          matchLabels:
-            webhook: enabled
-      ports:
+    - ports:
         - port: {{ "{{ .Values.webhook.port }}" }}
           protocol: TCP
 {{` + "`" + `{{- end }}` + "`" + `}}
