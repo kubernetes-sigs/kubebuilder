@@ -29,10 +29,10 @@ import (
 //   - --privileged - Required for Docker daemon to run inside container (DinD)
 //   - --init - Properly handles zombie processes and signal forwarding
 //   - GO111MODULE=on - Ensures Go modules work consistently
-//   - Runs as root (golang:1.25 default) - no sudo needed in post-install script
+//   - Runs as root (docker.io/library/golang:1.25 default) - no sudo needed in post-install script
 const devContainerTemplate = `{
   "name": "Kubebuilder DevContainer",
-  "image": "golang:1.26",
+  "image": "docker.io/library/golang:1.26",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false,

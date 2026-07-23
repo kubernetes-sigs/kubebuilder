@@ -172,7 +172,7 @@ var _ = Describe("editSubcommand", func() {
 			}
 
 			// Create necessary files for edit to work
-			err = os.WriteFile(filepath.Join(tmpDir, "Dockerfile"), []byte("FROM golang:1.23"), 0o644)
+			err = os.WriteFile(filepath.Join(tmpDir, "Dockerfile"), []byte("FROM docker.io/library/golang:1.23"), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			DeferCleanup(func() {
