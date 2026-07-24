@@ -192,6 +192,41 @@ If you use Podman, re-include your source directories by name in `.dockerignore`
 
 Add any other directory in your project that holds Go source files.
 
+## When I build the image with Podman or Buildah I get `short-name "golang:1.26" did not resolve to an alias and no unqualified-search registries are defined`. How to solve it?
+
+While we do our best to keep the scaffold working with other container tools, Kubebuilder is officially tested and supported with **Docker**.
+
+Docker resolves short image names to Docker Hub. Podman and Buildah resolve them from the host, using either the [short-name aliases][podman-shortnames] in [`registries.conf.d`][podman-registries-conf-d] or `unqualified-search-registries` in [`registries.conf`][podman-registries-conf]. You hit this error when the host has neither. Debian 12, for example, ships neither.
+
+Use one of the options below.
+
+**Override the base image.** The scaffolded `Dockerfile` exposes it as a [build argument][docker-arg-from]:
+
+```dockerfile
+ARG BASE_IMAGE=golang:1.26
+FROM ${BASE_IMAGE} AS builder
+```
+
+```sh
+# From Docker Hub
+make docker-build IMG=<some-registry>/<project>:tag BASE_IMAGE=docker.io/library/golang:1.26
+
+# From your own registry or mirror
+make docker-build IMG=<some-registry>/<project>:tag BASE_IMAGE=<myregistry>/golang:1.26
+```
+
+`make docker-buildx` accepts `BASE_IMAGE` too.
+
+**Or add an alias on the host** for the `golang` short name:
+
+```toml
+# /etc/containers/registries.conf.d/golang.conf
+[aliases]
+"golang" = "docker.io/library/golang"
+```
+
+A matching alias is used without consulting `unqualified-search-registries`, so it works even when that list is empty. It also ignores the tag, so one entry covers all `golang` tags. Prefer it over adding `docker.io` to the search list, which changes how every unqualified image name resolves on the host. For rootless Podman, use `$HOME/.config/containers/registries.conf.d/golang.conf`.
+
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
 [gvk]: ./cronjob-tutorial/gvks.md
 [project-file-def]: ./reference/project-config.md
@@ -203,3 +238,7 @@ Add any other directory in your project that holds Go source files.
 [k8s-ssa-docs]: https://kubernetes.io/docs/reference/using-api/server-side-apply/
 [dockerignore-kb-issue]: https://github.com/kubernetes-sigs/kubebuilder/issues/5181
 [dockerignore-buildah-issue]: https://github.com/containers/buildah/issues/6417
+[podman-registries-conf]: https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md
+[podman-registries-conf-d]: https://github.com/containers/image/blob/main/docs/containers-registries.conf.d.5.md
+[podman-shortnames]: https://github.com/containers/shortnames
+[docker-arg-from]: https://docs.docker.com/reference/dockerfile/#understand-how-arg-and-from-interact
