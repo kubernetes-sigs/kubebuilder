@@ -133,15 +133,8 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	// Copy essential fields from existing resource in PROJECT file (Path, Plural,
-	// External, Core, Module). API/Controllers/Webhooks are managed separately
-	// by UpdateResource.
-	if existingRes, err := p.config.GetResource(res.GVK); err == nil {
-		p.resource.Path = existingRes.Path
-		p.resource.Plural = existingRes.Plural
-		p.resource.External = existingRes.External
-		p.resource.Core = existingRes.Core
-		p.resource.Module = existingRes.Module
+	if err := p.updateResourceFromConfig(res); err != nil {
+		return err
 	}
 
 	for _, spoke := range p.options.Spoke {
@@ -181,7 +174,13 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	res = &resValue
 	if err != nil {
 		if !p.resource.External && !p.resource.Core {
-			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+			return fmt.Errorf(
+				"no API found for %s/%s, Kind %s: run 'create api' first, "+
+					"or pass --external-api-path for an external type",
+				p.resource.QualifiedGroup(),
+				p.resource.Version,
+				p.resource.Kind,
+			)
 		}
 	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
 		// Check if user is trying to add a webhook type that already exists
@@ -238,6 +237,32 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	}
 
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
+
+	return nil
+}
+
+// updateResourceFromConfig copies existing resource configuration from PROJECT file.
+func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
+	// Match by Group, Version, and Kind because external APIs may have
+	// a different domain than the project domain.
+	resources, err := p.config.GetResources()
+	if err != nil {
+		return fmt.Errorf("failed to load resources from project configuration: %w", err)
+	}
+
+	for _, existingRes := range resources {
+		if existingRes.Group == res.Group &&
+			existingRes.Version == res.Version &&
+			existingRes.Kind == res.Kind {
+			p.resource.Domain = existingRes.Domain
+			p.resource.Path = existingRes.Path
+			p.resource.Plural = existingRes.Plural
+			p.resource.External = existingRes.External
+			p.resource.Core = existingRes.Core
+			p.resource.Module = existingRes.Module
+			break
+		}
+	}
 
 	return nil
 }
