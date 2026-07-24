@@ -42,15 +42,14 @@ const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/re
 # Ignore everything by default and re-include only needed files
 **
 
+# Re-include Go source files (but not *_test.go)
+# If you use Podman, re-include your source directories by name,
+# such as !cmd, !api, and !internal.
+# See https://github.com/containers/buildah/issues/6417
+!**/*.go
+**/*_test.go
+
 # Re-include Go module files
 !go.mod
 !go.sum
-
-# Re-include Go source files (but not *_test.go). The source dirs are named because
-# Podman and the classic Docker builder skip ignored dirs; add your own dirs here too.
-!**/*.go
-!cmd
-!api
-!internal
-**/*_test.go
 `

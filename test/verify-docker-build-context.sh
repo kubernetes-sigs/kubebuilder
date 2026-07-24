@@ -14,64 +14,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Verifies the scaffolded .dockerignore: the builder stage must receive every Go source
-# needed to build the manager, and none of the files that must not reach the image.
+# Checks that the scaffolded .dockerignore sends exactly the Go sources that build the
+# manager to the image build context: every non-test *.go in the project, wherever it
+# lives, plus go.mod and go.sum, and nothing else.
 #
-# Container tools disagree on whether they descend into an ignored directory to evaluate
-# a re-include such as "!**/*.go": BuildKit does, the classic Docker builder and
-# Podman/buildah do not. Run this against each of them.
+# Docker (BuildKit) is the supported tool. Podman and Buildah do not evaluate the
+# !**/*.go re-include (containers/buildah#6417) and fail this check by design; the
+# limitation and its workaround are documented in the FAQ.
 #
-# Usage: CONTAINER_TOOL=docker ./test/verify-docker-build-context.sh <project-dir>
+# Usage: ./test/verify-docker-build-context.sh <project-dir>
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
+# Sort by bytes on the host so the ordering matches the container's C-locale sort,
+# on both Linux and macOS.
+export LC_ALL=C
+
+# The !**/*.go re-include needs BuildKit, the default builder since Docker 23.
+export DOCKER_BUILDKIT=1
+
 CONTAINER_TOOL="${CONTAINER_TOOL:-docker}"
 PROJECT_DIR="${1:?usage: $0 <project-dir>}"
 
+if ! command -v "${CONTAINER_TOOL}" >/dev/null 2>&1; then
+  echo "ERROR: '${CONTAINER_TOOL}' is not installed. Install Docker or Podman," >&2
+  echo "       or set CONTAINER_TOOL to a container tool that is on PATH." >&2
+  exit 1
+fi
+
 cd "${PROJECT_DIR}"
+
+# The files the build context must hold, derived from the project itself: every
+# non-test Go source, no matter the directory, plus the module files.
+# go.sum is only present once modules are resolved, so include it only if it exists.
+expected="$( { find . -type f -name '*.go' ! -name '*_test.go' | sed 's|^\./||'
+               ls go.mod go.sum 2>/dev/null || true; } | sort )"
 
 IMG="dockerignore-context-probe:$$"
 trap '${CONTAINER_TOOL} rmi -f "${IMG}" >/dev/null 2>&1 || true' EXIT
 
-# Stop at the builder stage: it still has a shell, and it is the stage that consumes
-# the build context. The final image is distroless and only holds the binary.
-echo "Building the builder stage with ${CONTAINER_TOOL} ..."
-"${CONTAINER_TOOL}" build --target builder -t "${IMG}" .
+# Copy the build context into a throwaway image so we can list what the .dockerignore
+# let through, without running the real (slow) manager build.
+"${CONTAINER_TOOL}" build -q -t "${IMG}" -f - . >/dev/null <<'EOF'
+FROM busybox
+WORKDIR /context
+COPY . .
+EOF
 
-context="$("${CONTAINER_TOOL}" run --rm "${IMG}" \
-  sh -c 'cd /workspace && find . -type f | sed "s|^\./||" | sort')"
+actual="$("${CONTAINER_TOOL}" run --rm "${IMG}" \
+  sh -c 'cd /context && find . -type f | sed "s|^\./||" | sort')"
 
-echo "Files the builder stage received:"
-echo "${context}" | sed 's/^/  /'
-
-fail=0
-
-# Every non-test Go source under the scaffolded source dirs has to be there, or the
-# build either breaks now or breaks later when a controller starts importing it.
-required="$(find ./cmd ./api ./internal -type f -name '*.go' ! -name '*_test.go' 2>/dev/null \
-  | sed 's|^\./||' | sort || true)"
-required="$(printf '%s\ngo.mod\ngo.sum\n' "${required}" | grep -v '^$' | sort)"
-
-missing="$(comm -23 <(echo "${required}") <(echo "${context}"))"
-if [[ -n "${missing}" ]]; then
-  echo "ERROR: these files are missing from the build context:"
-  echo "${missing}" | sed 's/^/  /'
-  fail=1
-fi
-
-# Nothing that belongs to the repo rather than the binary may reach the context.
-forbidden="$(echo "${context}" | grep -E \
-  '^(config/|dist/|bin/|hack/|grafana/|\.git/|Makefile$|PROJECT$|Dockerfile$|.*\.md$)|_test\.go$' || true)"
-if [[ -n "${forbidden}" ]]; then
-  echo "ERROR: these files must not be in the build context:"
-  echo "${forbidden}" | sed 's/^/  /'
-  fail=1
-fi
-
-if [[ "${fail}" -ne 0 ]]; then
+if ! diff <(echo "${expected}") <(echo "${actual}"); then
+  echo "ERROR: ${CONTAINER_TOOL} build context does not match the manager sources."
+  echo "       '<' expected, '>' present in the context."
   exit 1
 fi
 
-echo "OK: ${CONTAINER_TOOL} build context contains the manager sources and nothing else."
+echo "OK: ${CONTAINER_TOOL} build context holds exactly the manager sources."

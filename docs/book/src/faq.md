@@ -176,7 +176,21 @@ type StructName struct {
 - Users still receive error notifications from the Kubernetes API for invalid `timeField` values.
 - Developers can directly use the parsed TimeField in their code without additional parsing, reducing errors and improving efficiency.
 
+## When I build the image with Podman or Buildah, the build fails with `cmd/main.go: no such file or directory`. How to solve it?
 
+While we do our best to keep the scaffold working with other container tools, Kubebuilder is officially tested and supported with **Docker**.
+
+The scaffolded `.dockerignore` re-includes all Go source files with `!**/*.go`. Docker honors this pattern. Podman and Buildah do not: they skip ignored directories, so no Go source reaches the build context. This is tracked upstream in [buildah#6417][dockerignore-buildah-issue] and was reported in [kubebuilder#5181][dockerignore-kb-issue].
+
+If you use Podman, re-include your source directories by name in `.dockerignore`:
+
+```text
+!cmd
+!api
+!internal
+```
+
+Add any other directory in your project that holds Go source files.
 
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
 [gvk]: ./cronjob-tutorial/gvks.md
@@ -187,3 +201,5 @@ type StructName struct {
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
 [k8s-ssa-docs]: https://kubernetes.io/docs/reference/using-api/server-side-apply/
+[dockerignore-kb-issue]: https://github.com/kubernetes-sigs/kubebuilder/issues/5181
+[dockerignore-buildah-issue]: https://github.com/containers/buildah/issues/6417
