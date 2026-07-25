@@ -288,7 +288,7 @@ func managerContainerName(deployment *unstructured.Unstructured) string {
 	return common.DefaultManagerContainerName
 }
 
-// findManagerContainer returns the named manager container; falls back to the first container.
+// findManagerContainer returns the named manager container.
 func findManagerContainer(deployment *unstructured.Unstructured, specMap map[string]any) map[string]any {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
@@ -311,11 +311,7 @@ func findManagerContainer(deployment *unstructured.Unstructured, specMap map[str
 		}
 	}
 
-	firstContainer, firstOK := containersList[0].(map[string]any)
-	if !firstOK {
-		return nil
-	}
-	return firstContainer
+	return nil
 }
 
 // RemoveExtractedVolumes removes custom volumes and mounts from the deployment manifest.
