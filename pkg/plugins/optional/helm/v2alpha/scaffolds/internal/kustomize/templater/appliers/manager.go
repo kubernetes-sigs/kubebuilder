@@ -316,7 +316,31 @@ func templateSecurityContexts(yamlContent string) string {
 }
 
 func templateVolumeMounts(yamlContent string) string {
-	return appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "volumeMounts:") {
+		return yamlContent
+	}
+
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+	if rangeStart < 0 {
+		return appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	before := strings.Join(lines[:rangeStart], "\n")
+	rangeSection := strings.Join(lines[rangeStart:rangeEnd+1], "\n")
+	after := strings.Join(lines[rangeEnd+1:], "\n")
+
+	rangeSection = appendToListFromValues(rangeSection, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+
+	parts := make([]string, 0, 3)
+	if before != "" {
+		parts = append(parts, before)
+	}
+	parts = append(parts, rangeSection)
+	if after != "" {
+		parts = append(parts, after)
+	}
+	return strings.Join(parts, "\n")
 }
 
 func templateVolumes(yamlContent string) string {

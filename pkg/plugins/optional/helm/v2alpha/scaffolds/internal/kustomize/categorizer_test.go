@@ -38,6 +38,14 @@ func makeDeployment(name string, labels map[string]string) *unstructured.Unstruc
 	return d
 }
 
+func makeServiceAccount(name string) *unstructured.Unstructured {
+	sa := &unstructured.Unstructured{}
+	sa.SetAPIVersion("v1")
+	sa.SetKind("ServiceAccount")
+	sa.SetName(name)
+	return sa
+}
+
 var _ = Describe("ResourceCategorizer", func() {
 	Describe("CategorizeByFunction", func() {
 		It("should place the manager deployment in the manager group", func() {
@@ -89,6 +97,21 @@ var _ = Describe("ResourceCategorizer", func() {
 				groups["extras"][1].GetName(),
 			}
 			Expect(extraNames).To(ConsistOf("operator-a", "operator-b"))
+		})
+
+		It("should place extra ServiceAccounts in the extras group and manager SA in rbac", func() {
+			resources := &ParsedResources{
+				ServiceAccount: makeServiceAccount("project-v4-controller-manager"),
+				ExtraServiceAccounts: []*unstructured.Unstructured{
+					makeServiceAccount("external-sa"),
+				},
+			}
+			groups := NewResourceCategorizer(resources).CategorizeByFunction()
+
+			Expect(groups["rbac"]).To(HaveLen(1))
+			Expect(groups["rbac"][0].GetName()).To(Equal("project-v4-controller-manager"))
+			Expect(groups["extras"]).To(HaveLen(1))
+			Expect(groups["extras"][0].GetName()).To(Equal("external-sa"))
 		})
 
 		It("should produce no manager or extras group when resources are empty", func() {

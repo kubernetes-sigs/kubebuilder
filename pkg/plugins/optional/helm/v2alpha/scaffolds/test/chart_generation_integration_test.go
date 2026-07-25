@@ -863,6 +863,52 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("Manager deployment with an extra deployment", func() {
+		It("should template manager values only in the manager manifest and place the extra deployment in extras", func() {
+			kustomizeYAML := createKustomizeWithExtraDeployment("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+			extrasDir := filepath.Join(chartPath, "templates", "extras")
+
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+			Expect(managerStr).To(ContainSubstring(".Values.manager.image.repository"))
+			Expect(managerStr).To(ContainSubstring(".Values.manager.replicas"))
+
+			extrasFiles, err := os.ReadDir(extrasDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(extrasFiles).NotTo(BeEmpty())
+
+			var extraDeploymentFound bool
+			for _, f := range extrasFiles {
+				if !strings.Contains(f.Name(), "some-operator") {
+					continue
+				}
+				extraDeploymentFound = true
+				extraBytes, err := os.ReadFile(filepath.Join(extrasDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				extraStr := string(extraBytes)
+				Expect(extraStr).NotTo(ContainSubstring(".Values.manager."),
+					"extra deployment must not receive manager values templating")
+				Expect(extraStr).To(ContainSubstring("image: worker:latest"))
+			}
+			Expect(extraDeploymentFound).To(BeTrue(), "extra deployment file should exist in extras")
+
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+		})
+	})
+
 	// A project that already has hand-authored tolerations, nodeSelector, and affinity in
 	// its manager Deployment (typical of a project created before the Helm plugin was added)
 	// must produce a chart where each scheduling field appears exactly once in
@@ -1450,6 +1496,29 @@ spec:
         secret:
           secretName: my-secret
       serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+func createKustomizeWithExtraDeployment(projectName string) string {
+	return createKustomizeWithFullDeploymentConfig(projectName) + `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ` + projectName + `-some-operator
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: some-operator
+  template:
+    metadata:
+      labels:
+        app: some-operator
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
 `
 }
 

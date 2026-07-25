@@ -74,7 +74,7 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.SubstituteRBACValues(t.detectedPrefix, t.chartName, yamlContent)
 	if resource.GetKind() == common.KindServiceAccount {
-		yamlContent = appliers.TemplateServiceAccount(t.detectedPrefix, t.chartName, yamlContent)
+		yamlContent = appliers.TemplateServiceAccount(t.detectedPrefix, t.chartName, yamlContent, resource)
 	}
 	if resource.GetKind() == common.KindDeployment && appliers.IsManagerDeployment(resource) {
 		yamlContent = appliers.AddCustomLabelsAndAnnotations(yamlContent)

@@ -19,6 +19,8 @@ package appliers
 import (
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // This file contains RBAC and ServiceAccount name/enable transformations:
@@ -95,8 +97,13 @@ func TemplateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlConte
 	return yamlContent
 }
 
-// TemplateServiceAccount applies all ServiceAccount-specific transformations.
-func TemplateServiceAccount(detectedPrefix, chartName, yamlContent string) string {
+// TemplateServiceAccount applies manager ServiceAccount-specific transformations.
+func TemplateServiceAccount(
+	detectedPrefix, chartName, yamlContent string, resource *unstructured.Unstructured,
+) string {
+	if !IsManagerServiceAccount(resource) {
+		return yamlContent
+	}
 	yamlContent = AddServiceAccountLabelsAndAnnotations(yamlContent)
 	yamlContent = TemplateServiceAccountName(detectedPrefix, chartName, yamlContent)
 	yamlContent = WrapServiceAccountWithEnabledConditional(yamlContent)
