@@ -49,6 +49,17 @@ func LeadingWhitespace(line string) (string, int) {
 	return line[:indentLen], indentLen
 }
 
+const managerServiceAccountSuffix = "controller-manager"
+
+// IsManagerServiceAccount reports whether resource is the controller-manager ServiceAccount.
+func IsManagerServiceAccount(resource *unstructured.Unstructured) bool {
+	if resource == nil {
+		return false
+	}
+	name := resource.GetName()
+	return name == managerServiceAccountSuffix || strings.HasSuffix(name, "-"+managerServiceAccountSuffix)
+}
+
 // IsManagerDeployment reports whether resource is the controller-manager Deployment.
 // Annotation is not checked — any extra Deployment may carry it, causing false positives.
 func IsManagerDeployment(resource *unstructured.Unstructured) bool {
