@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater/appliers"
 )
 
 // ParsedResources holds Kubernetes resources organized by type for Helm chart generation.
@@ -38,11 +39,12 @@ type ParsedResources struct {
 	Services         []*unstructured.Unstructured
 
 	// RBAC resources
-	ServiceAccount      *unstructured.Unstructured
-	Roles               []*unstructured.Unstructured
-	ClusterRoles        []*unstructured.Unstructured
-	RoleBindings        []*unstructured.Unstructured
-	ClusterRoleBindings []*unstructured.Unstructured
+	ServiceAccount       *unstructured.Unstructured
+	ExtraServiceAccounts []*unstructured.Unstructured
+	Roles                []*unstructured.Unstructured
+	ClusterRoles         []*unstructured.Unstructured
+	RoleBindings         []*unstructured.Unstructured
+	ClusterRoleBindings  []*unstructured.Unstructured
 
 	// CRD and API resources
 	CustomResourceDefinitions []*unstructured.Unstructured
@@ -104,6 +106,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		ServiceMonitors:           make([]*unstructured.Unstructured, 0),
 		NetworkPolicies:           make([]*unstructured.Unstructured, 0),
 		CustomResources:           make([]*unstructured.Unstructured, 0),
+		ExtraServiceAccounts:      make([]*unstructured.Unstructured, 0),
 		Other:                     make([]*unstructured.Unstructured, 0),
 	}
 
@@ -152,7 +155,7 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	case kind == "CustomResourceDefinition":
 		resources.CustomResourceDefinitions = append(resources.CustomResourceDefinitions, obj)
 	case kind == "ServiceAccount":
-		resources.ServiceAccount = obj
+		classifyServiceAccount(obj, resources)
 	case kind == "Role":
 		resources.Roles = append(resources.Roles, obj)
 	case kind == "ClusterRole":
@@ -176,6 +179,18 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	default:
 		resources.Other = append(resources.Other, obj)
 	}
+}
+
+// classifyServiceAccount routes the manager ServiceAccount to ServiceAccount and others to ExtraServiceAccounts.
+func classifyServiceAccount(obj *unstructured.Unstructured, resources *ParsedResources) {
+	if appliers.IsManagerServiceAccount(obj) {
+		if resources.ServiceAccount != nil {
+			resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, resources.ServiceAccount)
+		}
+		resources.ServiceAccount = obj
+		return
+	}
+	resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, obj)
 }
 
 // identifyCustomResources moves resources from Other to CustomResources if they are instances of project CRDs.
