@@ -283,8 +283,8 @@ spec:
         image: controller:latest`
 
 	// Hand-ordered: labels precede annotations at the Deployment scope. Kustomize alphabetizes so
-	// this shape only appears when a human edits the manifest, but a refactor could regress it
-	// silently — the current implementation emits a second annotations: header instead of merging.
+	// this shape only appears when a human edits the manifest; it must merge into the existing
+	// annotations block just like the alphabetical shape does.
 	depLabelsThenAnnotations = `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -395,21 +395,22 @@ var _ = Describe("AddCustomLabelsAndAnnotations", func() {
 		Expect(rendered).To(ContainSubstring("kubectl.kubernetes.io/default-container: manager"))
 	})
 
-	It("pins the current behavior for hand-ordered labels-then-annotations input", func() {
+	It("merges into an existing annotations block for hand-ordered labels-then-annotations input", func() {
 		rendered := AddCustomLabelsAndAnnotations(depLabelsThenAnnotations)
 		meta := deploymentMetadataSlice(rendered)
 
-		// Existing annotation is kept (as bare metadata under the source block).
+		// Existing annotation is preserved and merged, not duplicated into a second block.
 		Expect(meta).To(ContainSubstring("example.com/managed: keep"))
+		Expect(meta).To(ContainSubstring("{{- with .Values.manager.annotations }}"))
+		Expect(meta).To(ContainSubstring(`{{- with omit . "example.com/managed" }}`))
 
 		// Labels block gets merged with omit() over both existing keys.
 		Expect(meta).To(ContainSubstring("{{- with .Values.manager.labels }}"))
 		Expect(meta).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" "control-plane" }}`))
 
-		// A second annotations: header is injected — current shape, buggy, pinned so a refactor
-		// cannot regress silently in the other direction either.
-		Expect(countMetadataHeader(meta, "annotations:")).To(Equal(2))
-		Expect(meta).To(ContainSubstring("{{- if .Values.manager.annotations }}"))
+		// One header of each — the hand-ordered shape no longer emits a duplicate annotations:.
+		Expect(countMetadataHeader(meta, "labels:")).To(Equal(1))
+		Expect(countMetadataHeader(meta, "annotations:")).To(Equal(1))
 	})
 
 	It("is a no-op on a raw string that already references .Values.manager.labels", func() {

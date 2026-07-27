@@ -978,6 +978,16 @@ func templateTerminationGracePeriodSeconds(yamlContent string) string {
 func handleDeploymentAnnotations(
 	state *customFieldsState, result []string, line, trimmed, indent string, indentLen int,
 ) []string {
+	// Hand-ordered shape: an open labels block ends here on this "annotations:" line. Flush the
+	// labels merge before the annotations block opens, so both blocks stay separate under metadata:
+	// instead of collapsing into a duplicate annotations header before spec:.
+	if state.position == positionDeploymentMetadata &&
+		state.currentBlock == blockDeploymentLabels &&
+		!state.addedLabelsToDeployment &&
+		(trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations)) {
+		result = flushDeploymentLabels(state, result, line)
+	}
+
 	if state.position == positionDeploymentMetadata &&
 		state.currentBlock == blockNone &&
 		(trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations)) {
@@ -1018,6 +1028,15 @@ func handleDeploymentAnnotations(
 func handlePodAnnotations(
 	state *customFieldsState, result []string, line, trimmed, indent string, indentLen int,
 ) []string {
+	// Hand-ordered pod-template shape: an open labels block ends here on this "annotations:" line.
+	// Flush the pod labels merge first so it doesn't get lost as the annotations block opens.
+	if state.position == positionPodMetadata &&
+		state.currentBlock == blockPodLabels &&
+		!state.addedPodLabels &&
+		(trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations)) {
+		result = flushPodLabels(state, result, line)
+	}
+
 	if state.position == positionPodMetadata &&
 		state.currentBlock == blockNone &&
 		(trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations)) {
@@ -1168,9 +1187,35 @@ func injectDeploymentLabels(result []string, childIndent string) []string {
 	return appendHelmMapBlock(result, childIndent, ".Values.manager.labels", existingKeys)
 }
 
+// flushDeploymentLabels emits the pending Deployment labels merge before another metadata block
+// (typically "annotations:") consumes the closing line. It mirrors the injection branch of
+// handleDeploymentLabels: pop the current line, append the labels block, put the line back.
+func flushDeploymentLabels(state *customFieldsState, result []string, line string) []string {
+	result = result[:len(result)-1]
+	parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+	childIndent := detectChildIndent(result, parentIndent)
+	result = injectDeploymentLabels(result, childIndent)
+	result = append(result, line)
+	state.addedLabelsToDeployment = true
+	state.currentBlock = blockNone
+	return result
+}
+
 func injectPodLabels(result []string, childIndent string) []string {
 	existingKeys := extractKeysFromLines(result)
 	return appendNestedHelmMapBlock(result, childIndent, ".Values.manager.pod", ".labels", existingKeys)
+}
+
+// flushPodLabels is the pod-template counterpart to flushDeploymentLabels.
+func flushPodLabels(state *customFieldsState, result []string, line string) []string {
+	result = result[:len(result)-1]
+	parentIndent := strings.Repeat(" ", state.currentBlockIndent)
+	childIndent := detectChildIndent(result, parentIndent)
+	result = injectPodLabels(result, childIndent)
+	result = append(result, line)
+	state.addedPodLabels = true
+	state.currentBlock = blockNone
+	return result
 }
 
 func injectDeploymentAnnotations(result []string, indent string) []string {

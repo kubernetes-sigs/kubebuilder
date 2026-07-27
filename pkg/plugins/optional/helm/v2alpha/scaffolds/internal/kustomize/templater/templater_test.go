@@ -3850,12 +3850,16 @@ spec:
 				ContainSubstring("{{- with .Values.manager.annotations }}"),
 				ContainSubstring("{{- if .Values.manager.annotations }}"),
 			))
-			// Verify annotations are properly nested under metadata:
-			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{2}.*\n)*^[ ]{2}annotations:\n`).MatchString(result)).To(BeTrue(),
+			// Verify annotations are properly nested under metadata: at the same 4-space indent
+			// Kustomize used for the source block — never hoisted to 2-space, which would sit
+			// outside metadata and produce invalid YAML.
+			Expect(regexp.MustCompile(`(?m)^metadata:\n(?:^[ ]{4}.*\n)*^[ ]{4}annotations:\n`).MatchString(result)).To(BeTrue(),
 				"manager.annotations should be nested under Deployment metadata")
 			Expect(regexp.MustCompile(`(?ms)^annotations:\n.*?^spec:`).MatchString(result)).To(BeFalse(),
 				"annotations should not be emitted as a top-level block before spec")
 			Expect(result).To(ContainSubstring("{{- with .Values.manager.pod }}"))
+			// Existing annotation is preserved and merged, not duplicated.
+			Expect(strings.Count(result, "existing-annotation: value1")).To(Equal(1))
 
 			// Verify custom annotations come after existing ones
 			deploymentAnnotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
