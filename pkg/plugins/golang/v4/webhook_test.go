@@ -182,6 +182,7 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(res.External).To(BeTrue())
 		Expect(res.Path).To(Equal(externalPath))
+		Expect(res.Domain).To(Equal(testIO))
 	})
 
 	It("should find existing external resource when stored Domain differs from project domain", func() {
