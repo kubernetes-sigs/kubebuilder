@@ -178,7 +178,9 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("'--ssa' can only be used when creating an API resource ('--resource=true')")
 	}
 
-	p.options.UpdateResource(p.resource, p.config)
+	if err := p.options.UpdateResource(p.resource, p.config); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
 
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)

@@ -165,7 +165,9 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("'--external-api-module' requires '--external-api-path' to be specified")
 	}
 
-	p.options.UpdateResource(p.resource, p.config)
+	if err := p.options.UpdateResource(p.resource, p.config); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
 
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
