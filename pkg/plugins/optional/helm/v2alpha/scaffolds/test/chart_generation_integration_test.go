@@ -931,6 +931,113 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
+
+	// The `tpl` change in templateControllerManagerArgs evaluates each manager.args entry as a
+	// Helm template (`{{ tpl . $ }}`) instead of rendering it verbatim (`{{ . }}`). These specs
+	// render the chart with `helm template` to prove every combination resolves correctly: the
+	// chart's own default extracted args (no values override), plain literal args (backwards
+	// compatibility), a single templated arg, several templated args together, templated and
+	// literal args mixed in the same list, and a templated arg that calls a Helm template
+	// function.
+	Context("Manager args templating (rendered)", func() {
+		writeValuesFile := func(content string) string {
+			valuesFile := filepath.Join(tmpDir, "manager-args-values.yaml")
+			Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
+			return valuesFile
+		}
+
+		// renderWithArgs scaffolds the chart and renders it with `helm template`. When
+		// valuesContent is empty, no `-f` override is passed, so the chart renders with its own
+		// generated values.yaml (i.e. the default manager.args extracted from the kustomize
+		// output), exercising the same code path production users hit before ever touching
+		// manager.args themselves.
+		renderWithArgs := func(valuesContent string) string {
+			var setArgs []string
+			if valuesContent != "" {
+				setArgs = []string{"-f", writeValuesFile(valuesContent)}
+			}
+			out, err := helmTemplate(createKustomizeWithFullDeploymentConfig("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		// managerArgsLines extracts every rendered "- --flag..." list item so assertions do not
+		// depend on indentation and are not confused by other list items in the manifest.
+		managerArgsLines := func(rendered string) []string {
+			var args []string
+			for _, line := range strings.Split(rendered, "\n") {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "- --") {
+					args = append(args, strings.TrimPrefix(trimmed, "- "))
+				}
+			}
+			return args
+		}
+
+		It("should render the manager Deployment successfully when manager.args uses the chart's own "+
+			"default values (no values override)", func() {
+			rendered := renderWithArgs("")
+
+			By("the default extracted arg renders as a literal, unaffected by tpl")
+			Expect(managerArgsLines(rendered)).To(ContainElement("--leader-elect"))
+		})
+
+		DescribeTable("should resolve manager.args entries through tpl when values are provided",
+			func(valuesContent string, wantArgs []string, unwantedSubstrings []string) {
+				rendered := renderWithArgs(valuesContent)
+
+				args := managerArgsLines(rendered)
+				for _, want := range wantArgs {
+					Expect(args).To(ContainElement(want), "rendered manager args: %v", args)
+				}
+				for _, unwanted := range unwantedSubstrings {
+					Expect(rendered).NotTo(ContainSubstring(unwanted))
+				}
+			},
+			Entry("should keep plain literal args unchanged when no template syntax is used (backwards compatible)",
+				"manager:\n  args:\n  - --leader-elect\n  - --zap-log-level=info\n",
+				[]string{"--leader-elect", "--zap-log-level=info"},
+				[]string(nil),
+			),
+			Entry("should resolve to the release namespace when an arg references .Release.Namespace",
+				"manager:\n  args:\n  - --leader-election-namespace={{ .Release.Namespace }}\n",
+				[]string{"--leader-election-namespace=my-namespace"},
+				[]string{"{{ .Release.Namespace }}"},
+			),
+			Entry("should resolve every arg independently and keep list order when multiple args are templated",
+				"manager:\n  args:\n"+
+					"  - --leader-election-namespace={{ .Release.Namespace }}\n"+
+					"  - --release-name={{ .Release.Name }}\n"+
+					"  - --chart-name={{ .Chart.Name }}\n",
+				[]string{
+					"--leader-election-namespace=my-namespace",
+					"--release-name=my-release",
+					"--chart-name=test-project",
+				},
+				[]string{"{{ .Release", "{{ .Chart"},
+			),
+			Entry("should resolve templated args and keep literal args unchanged when both appear in the same list",
+				"manager:\n  args:\n"+
+					"  - --leader-elect\n"+
+					"  - --leader-election-namespace={{ .Release.Namespace }}\n"+
+					"  - --zap-log-level=info\n",
+				[]string{
+					"--leader-elect",
+					"--leader-election-namespace=my-namespace",
+					"--zap-log-level=info",
+				},
+				[]string(nil),
+			),
+			Entry("should resolve an arg when it calls a Helm template function",
+				`manager:
+  args:
+  - --extra-flag={{ printf "%s-%s" .Release.Name .Release.Namespace }}
+`,
+				[]string{"--extra-flag=my-release-my-namespace"},
+				[]string{"{{ printf"},
+			),
+		)
+	})
 })
 
 // Helper functions to create kustomize YAML outputs for different scenarios

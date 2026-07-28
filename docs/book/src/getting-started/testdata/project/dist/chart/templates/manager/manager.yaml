@@ -85,7 +85,7 @@ spec:
         {{- end }}
         - --health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}
         {{- range .Values.manager.args }}
-        - {{ . }}
+        - {{ tpl . $ }}
         {{- end }}
         command:
         - /manager

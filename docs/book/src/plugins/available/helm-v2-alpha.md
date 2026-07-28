@@ -271,11 +271,27 @@ helm install my-operator ./dist/chart --set manager.healthProbe.port=8082
 
 The default is `8081`, detected from your project configuration.
 
-### Port flags in manager.args
+### Passing args for the manager
 
-Use `manager.args` for flags that the chart does not expose as values. For the ports above, always use `metrics.port`, `webhook.port`, and `manager.healthProbe.port`.
+Use `manager.args` in `values.yaml` to pass extra flags to the manager container that the chart does not expose as dedicated values. The chart renders each entry through Helm's `tpl` function, evaluated against the chart's root context, so an arg can reference other values, release information, or chart template functions instead of only a static string.
 
-The chart renders `--metrics-bind-address`, `--webhook-port`, and `--health-probe-bind-address` from these values. Setting one of these flags in `manager.args` overrides the manager listener, while the Service, NetworkPolicy, and probe ports keep the configured values, so traffic and probes target the wrong port. The plugin removes these flags from the extracted args when it generates the chart.
+For example, set the leader election namespace from the release namespace and add a plain flag:
+
+```yaml
+manager:
+  args:
+  - --leader-election-namespace={{ .Release.Namespace }}
+  - --leader-elect
+```
+
+Helm evaluates `{{ .Release.Namespace }}` at render time, so the manager container receives `--leader-election-namespace=<release-namespace>`. The `--leader-elect` flag has no template syntax, so it renders unchanged.
+
+<aside class="note" role="note">
+<p class="note-title">Do not set the metrics, webhook, or health probe flags in manager.args</p>
+
+The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--health-probe-bind-address` as `metrics.port`, `webhook.port`, and `manager.healthProbe.port`. Set those values instead of adding the flags to `manager.args`. The plugin removes these flags from the extracted args when it generates the chart, so adding one back through `manager.args`, templated or not, creates a duplicate flag alongside the value-driven one. The Service, NetworkPolicy, and probes keep using the configured port, so traffic and probes then target the wrong port.
+
+</aside>
 
 ### NetworkPolicy configuration
 

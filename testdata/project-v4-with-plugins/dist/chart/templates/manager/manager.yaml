@@ -88,7 +88,7 @@ spec:
         - --webhook-port={{ .Values.webhook.port }}
         {{- end }}
         {{- range .Values.manager.args }}
-        - {{ . }}
+        - {{ tpl . $ }}
         {{- end }}
         {{- if .Values.certManager.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
