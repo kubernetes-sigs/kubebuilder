@@ -493,7 +493,7 @@ var _ = Describe("cmd_helpers", func() {
 		})
 
 		It("applies merge and sync for any subcommand (init, api, webhook, edit), not only edit", func() {
-			cmd := &cobra.Command{Use: "api"}
+			cmd := &cobra.Command{Use: apiCmdName}
 			pluginA := &mockSubcommandWithForceFlag{}
 			pluginB := &mockSubcommandWithForceFlag{}
 			tuples := []keySubcommandTuple{

@@ -251,4 +251,25 @@ var _ = Describe("Options", func() {
 			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
 		)
 	})
+
+	Context("ResolveGroupDomain", func() {
+		DescribeTable("should resolve the group domain correctly",
+			func(group, projectDomain, expected string) {
+				Expect(ResolveGroupDomain(group, projectDomain)).To(Equal(expected))
+			},
+			Entry("core group without domain suffix", "apps", "example.com", "apps"),
+			Entry("core group with k8s.io domain", "admission", "example.com", "admission.k8s.io"),
+			Entry("core group authentication", "authentication", "", "authentication.k8s.io"),
+			Entry("core group batch with empty domain", "batch", "", "batch"),
+			Entry("group with explicit domain", "my.group.io", "example.com", "my.group.io"),
+			Entry("group with project domain", "crew", "example.com", "crew.example.com"),
+			Entry("group without project domain", "crew", "", "crew"),
+			Entry("group with trailing whitespace", "  crew  ", "test.io", "crew.test.io"),
+			Entry("core group with trailing whitespace", "  apps  ", "test.io", "apps"),
+			Entry("empty group with project domain", "", "example.com", ""),
+			Entry("empty group without project domain", "", "", ""),
+			Entry("core group storage", "storage", "example.com", "storage.k8s.io"),
+			Entry("non-core group with dotted group name", "rbac.authorization", "example.com", "rbac.authorization.k8s.io"),
+		)
+	})
 })

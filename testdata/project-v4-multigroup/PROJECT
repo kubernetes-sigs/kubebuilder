@@ -156,6 +156,46 @@ resources:
   webhooks:
     validation: true
     webhookVersion: v1
+- webhooks:
+    defaulting: true
+    groups:
+    - sea-creatures.testproject.org
+    - ship.testproject.org
+    multiGVK: true
+    name: sea-creatures-ship-defaulting
+    resources:
+    - krakens
+    - leviathans
+    - frigates
+    versions:
+    - '*'
+    webhookVersion: v1
+- gvks:
+  - group: core
+    kind: Pod
+    version: v1
+  - group: core
+    kind: Deployment
+    version: v1
+  - group: apps
+    kind: Pod
+    version: v1
+  - group: apps
+    kind: Deployment
+    version: v1
+  webhooks:
+    defaulting: true
+    groups:
+    - core
+    - apps
+    multiGVK: true
+    name: core-defaulting
+    resources:
+    - pods
+    - deployments
+    versions:
+    - v1
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

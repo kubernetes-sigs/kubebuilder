@@ -36,6 +36,7 @@ const (
 	captains        = "captains"
 	shipGroup       = "ship"
 	frigateKind     = "Frigate"
+	frigatesPlural  = "frigates"
 
 	externalAPIModuleWithVersion = "github.com/external/api@v1.0.0"
 	relativeAPIPath              = "api/v1"
@@ -292,7 +293,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigatesPlural,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
@@ -319,7 +320,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigatesPlural,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())

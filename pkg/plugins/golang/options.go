@@ -124,6 +124,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 		}
 
+		if res.Webhooks == nil {
+			res.Webhooks = &resource.Webhooks{}
+		}
 		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
@@ -216,4 +219,29 @@ func (opts Options) updateControllers(res *resource.Resource) {
 
 	// Add the new named controller (AddController validates and checks for duplicates)
 	_ = res.Controllers.AddController(opts.ControllerName)
+}
+
+// ResolveGroupDomain resolves the fully qualified domain for a Kubernetes API group.
+// For core groups (e.g., "apps", "batch"), it returns the group name without a domain suffix.
+// For well-known k8s.io groups (e.g., "admission", "networking"), it appends "k8s.io".
+// For groups with an explicit domain (containing "."), it returns the group as-is.
+// For other groups, it appends the project domain if provided.
+func ResolveGroupDomain(group, projectDomain string) string {
+	g := strings.TrimSpace(group)
+	if g == "" {
+		return ""
+	}
+	if domain, found := coreGroups[g]; found {
+		if domain == "" {
+			return g
+		}
+		return g + "." + domain
+	}
+	if strings.Contains(g, ".") {
+		return g
+	}
+	if projectDomain != "" {
+		return g + "." + projectDomain
+	}
+	return g
 }

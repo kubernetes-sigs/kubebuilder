@@ -110,6 +110,38 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
+- gvks:
+  - group: crew
+    kind: Captain
+    version: v1
+  - group: crew
+    kind: Sailor
+    version: v1
+  webhooks:
+    defaulting: true
+    groups:
+    - crew.testproject.org
+    multiGVK: true
+    name: crew-defaulting
+    resources:
+    - captains
+    - sailors
+    versions:
+    - v1
+    webhookVersion: v1
+- webhooks:
+    groups:
+    - core
+    - apps
+    multiGVK: true
+    name: core-validation
+    resources:
+    - pods
+    - deployments
+    validation: true
+    versions:
+    - '*'
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

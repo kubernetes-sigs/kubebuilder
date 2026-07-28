@@ -24,11 +24,14 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
-const apiErrorMsg = "failed to create API"
+const (
+	apiErrorMsg = "failed to create API"
+	apiCmdName  = "api"
+)
 
 func (c CLI) newCreateAPICmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "api",
+		Use:   apiCmdName,
 		Short: "Scaffold a Kubernetes API",
 		Long: `Scaffold a Kubernetes API by adding a resource definition and, when requested, a controller.
 

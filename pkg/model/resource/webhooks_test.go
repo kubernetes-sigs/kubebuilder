@@ -210,10 +210,10 @@ var _ = Describe("Webhooks", func() {
 			})
 
 			It("should update the defaulting path if other provides a new one", func() {
-				webhook = Webhooks{DefaultingPath: "/old-path"}
-				other = Webhooks{DefaultingPath: "/new-path"}
+				webhook = Webhooks{DefaultingPath: "/old-def-path"}
+				other = Webhooks{DefaultingPath: "/new-def-path"}
 				Expect(webhook.Update(&other)).To(Succeed())
-				Expect(webhook.DefaultingPath).To(Equal("/new-path"))
+				Expect(webhook.DefaultingPath).To(Equal("/new-def-path"))
 			})
 
 			It("should set the validation path if provided and not previously set", func() {
@@ -224,10 +224,10 @@ var _ = Describe("Webhooks", func() {
 			})
 
 			It("should update the validation path if other provides a new one", func() {
-				webhook = Webhooks{ValidationPath: "/old-path"}
-				other = Webhooks{ValidationPath: "/new-path"}
+				webhook = Webhooks{ValidationPath: "/old-val-path"}
+				other = Webhooks{ValidationPath: "/new-val-path"}
 				Expect(webhook.Update(&other)).To(Succeed())
-				Expect(webhook.ValidationPath).To(Equal("/new-path"))
+				Expect(webhook.ValidationPath).To(Equal("/new-val-path"))
 			})
 		})
 	})

@@ -326,6 +326,38 @@ func (c Cfg) ListWebhookVersions() []string {
 	return versions
 }
 
+// GetMultiGVKWebhooks implements config.Config
+func (c Cfg) GetMultiGVKWebhooks() ([]resource.Webhooks, error) {
+	webhooks := make([]resource.Webhooks, 0)
+	for _, r := range c.Resources {
+		if r.Webhooks != nil && r.Webhooks.IsMultiGVK() {
+			webhooks = append(webhooks, r.Webhooks.Copy())
+		}
+	}
+	return webhooks, nil
+}
+
+// AddMultiGVKWebhook implements config.Config
+func (c *Cfg) AddMultiGVKWebhook(wh resource.Webhooks) error {
+	wh = wh.Copy()
+
+	// Check for duplicates by name across all resources
+	for _, existing := range c.Resources {
+		if existing.Webhooks != nil && existing.Webhooks.Name == wh.Name {
+			return fmt.Errorf("multi-GVK webhook %q already exists in project config", wh.Name)
+		}
+	}
+
+	// Create a resource entry with the webhook and GVKs.
+	// The GVKs are derived from the webhook's Groups/Kinds/Versions.
+	res := resource.Resource{
+		Webhooks: &wh,
+		GVKs:     resource.WebhookToGVKs(wh),
+	}
+	c.Resources = append(c.Resources, res)
+	return nil
+}
+
 // DecodePluginConfig implements config.Config
 func (c Cfg) DecodePluginConfig(key string, configObj any) error {
 	if len(c.Plugins) == 0 {

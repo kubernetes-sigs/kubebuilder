@@ -80,8 +80,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		machinery.WithResource(&s.resource),
 	)
 
-	if err := s.config.UpdateResource(s.resource); err != nil {
-		return fmt.Errorf("error updating resource: %w", err)
+	// Only update the resource in config if it has a valid GVK.
+	// Standalone (multi-GVK) webhooks don't have a GVK and should not create
+	// a resource entry in the PROJECT file.
+	if s.resource.Version != "" && s.resource.Kind != "" {
+		if err := s.config.UpdateResource(s.resource); err != nil {
+			return fmt.Errorf("error updating resource: %w", err)
+		}
 	}
 
 	buildScaffold := []machinery.Builder{
@@ -97,12 +102,12 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	// Only scaffold the following patches if is a conversion webhook
-	if s.resource.Webhooks.Conversion {
+	if s.resource.HasConversionWebhook() {
 		buildScaffold = append(buildScaffold, &patches.EnableWebhookPatch{})
 		buildScaffold = append(buildScaffold, &kdefault.KustomizationCAConversionUpdater{})
 	}
 
-	if !s.resource.External && !s.resource.Core {
+	if !s.resource.External && !s.resource.Core && (s.resource.Webhooks == nil || !s.resource.Webhooks.IsMultiGVK()) {
 		buildScaffold = append(buildScaffold, &crd.Kustomization{})
 	}
 

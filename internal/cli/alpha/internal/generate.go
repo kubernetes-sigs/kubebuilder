@@ -648,11 +648,85 @@ func getAPIResourceFlags(res resource.Resource) []string {
 
 // Creates a webhook resource.
 func createWebhook(res resource.Resource) error {
+	// Multi-GVK webhook: uses --webhook-name, --groups, --resources, --webhook-versions flags.
+	if res.Webhooks != nil && res.Webhooks.IsMultiGVK() {
+		return createMultiGVKWebhook(res)
+	}
+
+	// GVK-tied webhook: uses --group, --version, --kind flags.
 	if res.Webhooks == nil || res.Webhooks.IsEmpty() {
 		return nil
 	}
 	args := append([]string{"create", "webhook"}, getGVKFlags(res)...)
 	args = append(args, getWebhookResourceFlags(res)...)
+
+	if err := util.RunCmd("kubebuilder create webhook", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create webhook command: %w", err)
+	}
+
+	return nil
+}
+
+// Creates a multi-GVK webhook from a resource entry.
+func createMultiGVKWebhook(res resource.Resource) error {
+	if res.Webhooks == nil {
+		return nil
+	}
+	args := []string{"create", "webhook"}
+	wh := res.Webhooks
+
+	args = append(args, "--webhook-name", wh.Name)
+
+	// When GVKs are available (concrete versions), derive flags from them.
+	// When GVKs is empty (e.g., all versions are "*"), fall back to the
+	// Webhooks field's Groups/Kinds/Versions.
+	if len(res.GVKs) > 0 {
+		// Derive groups from GVKs (unique short group names).
+		groupSet := make(map[string]struct{})
+		for _, gvk := range res.GVKs {
+			groupSet[gvk.Group] = struct{}{}
+		}
+		groups := make([]string, 0, len(groupSet))
+		for g := range groupSet {
+			groups = append(groups, g)
+		}
+		args = append(args, "--groups", strings.Join(groups, ","))
+
+		// Derive resources (plural kind names) from GVKs.
+		kindSet := make(map[string]struct{})
+		for _, gvk := range res.GVKs {
+			kindSet[gvk.Kind] = struct{}{}
+		}
+		kinds := make([]string, 0, len(kindSet))
+		for k := range kindSet {
+			kinds = append(kinds, resource.RegularPlural(k))
+		}
+		args = append(args, "--resources", strings.Join(kinds, ","))
+
+		// Derive versions from GVKs.
+		versionSet := make(map[string]struct{})
+		for _, gvk := range res.GVKs {
+			versionSet[gvk.Version] = struct{}{}
+		}
+		versions := make([]string, 0, len(versionSet))
+		for v := range versionSet {
+			versions = append(versions, v)
+		}
+		args = append(args, "--webhook-versions", strings.Join(versions, ","))
+	} else {
+		// Fall back to the Webhook field for groups, kinds, and versions.
+		args = append(args, "--groups", strings.Join(wh.Groups, ","))
+		args = append(args, "--resources", strings.Join(wh.Kinds, ","))
+		args = append(args, "--webhook-versions", strings.Join(wh.Versions, ","))
+	}
+
+	if wh.Defaulting {
+		args = append(args, "--defaulting")
+	}
+	if wh.Validation {
+		args = append(args, "--programmatic-validation")
+	}
+	args = append(args, "--make=false")
 
 	if err := util.RunCmd("kubebuilder create webhook", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder create webhook command: %w", err)

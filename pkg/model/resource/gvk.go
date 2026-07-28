@@ -37,8 +37,8 @@ const (
 type GVK struct {
 	Group   string `json:"group,omitempty"`
 	Domain  string `json:"domain,omitempty"`
-	Version string `json:"version"`
-	Kind    string `json:"kind"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
 }
 
 // Validate checks that the GVK is valid.

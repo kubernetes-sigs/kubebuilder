@@ -59,6 +59,7 @@ import (
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+	ctrlwebhook "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook"
 	webhookappsv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/apps/v1"
 	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/cert-manager/v1"
 	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/core/v1"
@@ -349,6 +350,20 @@ func main() {
 			setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
 			os.Exit(1)
 		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register(
+			"/mutate-sea-creatures-ship-defaulting",
+			&webhook.Admission{Handler: &ctrlwebhook.SeaCreaturesShipDefaultingWebhook{}},
+		)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register(
+			"/mutate-core-defaulting",
+			&webhook.Admission{Handler: &ctrlwebhook.CoreDefaultingWebhook{}},
+		)
 	}
 	if err := (&seacreaturescontroller.PrawnReconciler{
 		Client: mgr.GetClient(),
