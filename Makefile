@@ -212,6 +212,10 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 test-gomod:  ## Run the Go module compatibility check
 	go run ./hack/test/check_go_module.go
 
+.PHONY: test-docker-build-context
+test-docker-build-context: ## Check the scaffolded .dockerignore ships only the manager sources to the image build
+	./test/verify-docker-build-context.sh testdata/project-v4
+
 .PHONY: test-external-plugin
 test-external-plugin: install  ## Run tests for external plugin
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
