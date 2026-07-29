@@ -185,31 +185,42 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(res.Domain).To(Equal(testIO))
 	})
 
-	It("should find existing external resource when stored Domain differs from project domain", func() {
+	It("should reuse external API configuration from PROJECT without external flags", func() {
 		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 		const externalDomain = "cert-manager.io"
 
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 
-		// Resource was originally scaffolded with --external-api-domain=cert-manager.io,
-		// so PROJECT stores Domain="cert-manager.io". A fresh CLI invocation without
-		// --external-api-domain runs resolveDomain up in cmd_helpers before the GVK
-		// reaches InjectResource, so by this point res.Domain has already been reconciled
-		// to the stored external domain — mirror that here.
+		// Simulate an external API in the PROJECT file
 		storedRes := *res
 		storedRes.External = true
 		storedRes.Path = externalPath
 		storedRes.Domain = externalDomain
 		Expect(cfg.AddResource(storedRes)).To(Succeed())
 
+		// Simulate user running create webhook without any external flags.
+		// res.Domain will be the default project domain initially.
 		subCmd.options.DoDefaulting = true
-		res.Domain = externalDomain
 
 		err := subCmd.InjectResource(res)
 
+		// Expected: success, and fields are correctly reused.
 		Expect(err).NotTo(HaveOccurred())
 		Expect(res.External).To(BeTrue())
 		Expect(res.Path).To(Equal(externalPath))
+		Expect(res.Domain).To(Equal(externalDomain))
+	})
+
+	It("should return improved error message when API is missing", func() {
+		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+		subCmd.options.DoDefaulting = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("no API found for"))
+		Expect(err.Error()).To(ContainSubstring("run 'create api' first"))
+		Expect(err.Error()).To(ContainSubstring("or pass --external-api-path for an external type"))
 	})
 
 	Context("isValidVersion", func() {
