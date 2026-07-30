@@ -702,7 +702,7 @@ func templateControllerManagerArgs(yamlContent string) string {
 	builder.WriteString(itemIndent)
 	builder.WriteString("{{- range .Values.manager.args }}\n")
 	builder.WriteString(itemIndent)
-	builder.WriteString("- {{ . }}\n")
+	builder.WriteString("- {{ tpl . $ }}\n")
 	builder.WriteString(itemIndent)
 	builder.WriteString("{{- end }}\n")
 
