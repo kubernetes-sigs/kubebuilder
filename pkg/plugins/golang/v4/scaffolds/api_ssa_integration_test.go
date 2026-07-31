@@ -148,6 +148,90 @@ var _ = Describe("Server-Side Apply (--ssa) Scaffolding", func() {
 		Expect(string(projectContent)).To(ContainSubstring("controller: true"))
 	})
 
+	It("should keep the SSA scaffold when the API is recreated with --force and without --ssa", func() {
+		typesFile := filepath.Join(kbc.Dir, "api", "v1", "captain_types.go")
+
+		By("creating an API with Server-Side Apply enabled")
+		Expect(kbc.CreateAPI(
+			"--group", "crew",
+			"--version", "v1",
+			"--kind", "Captain",
+			"--resource", "--controller",
+			"--ssa",
+			"--make=false",
+		)).To(Succeed())
+
+		By("recreating the same API with --force and without --ssa")
+		Expect(kbc.CreateAPI(
+			"--group", "crew",
+			"--version", "v1",
+			"--kind", "Captain",
+			"--resource", "--controller",
+			"--force",
+			"--make=false",
+		)).To(Succeed())
+
+		By("verifying the SSA markers were kept in the regenerated types file")
+		typesContent, err := os.ReadFile(typesFile)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(typesContent)).To(ContainSubstring("+genclient"),
+			"the regenerated API must keep the SSA markers tracked in the PROJECT file")
+		Expect(string(typesContent)).To(ContainSubstring("+kubebuilder:resource:path=captains"))
+		Expect(string(typesContent)).NotTo(ContainSubstring("+kubebuilder:ac:generate=false"))
+
+		By("verifying the PROJECT file still tracks ssa")
+		projectContent, err := os.ReadFile(filepath.Join(kbc.Dir, "PROJECT"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(projectContent)).To(ContainSubstring("ssa: true"))
+
+		By("verifying 'make manifests' still generates the applyconfiguration code")
+		Expect(kbc.Make("manifests")).To(Succeed())
+		_, err = os.Stat(filepath.Join(kbc.Dir, "api", "v1", "applyconfiguration", "api", "v1", "captain.go"))
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	DescribeTable("should keep cluster-scoped SSA markers when the API is recreated with --force",
+		func(includeSSA bool) {
+			typesFile := filepath.Join(kbc.Dir, "api", "v1", "admiral_types.go")
+
+			By("creating a cluster-scoped API with Server-Side Apply enabled")
+			Expect(kbc.CreateAPI(
+				"--group", "crew",
+				"--version", "v1",
+				"--kind", "Admiral",
+				"--resource", "--controller",
+				"--namespaced=false",
+				"--ssa",
+				"--make=false",
+			)).To(Succeed())
+
+			By("recreating the same cluster-scoped API with --force")
+			forceOptions := []string{
+				"--group", "crew",
+				"--version", "v1",
+				"--kind", "Admiral",
+				"--resource", "--controller",
+				"--namespaced=false",
+				"--force",
+				"--make=false",
+			}
+			if includeSSA {
+				forceOptions = append(forceOptions, "--ssa")
+			}
+			Expect(kbc.CreateAPI(forceOptions...)).To(Succeed())
+
+			By("verifying the cluster-scoped SSA markers were kept in the regenerated types file")
+			typesContent, err := os.ReadFile(typesFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(typesContent)).To(ContainSubstring("// +genclient\n// +genclient:nonNamespaced"),
+				"the regenerated cluster-scoped API must keep the SSA client markers")
+			Expect(string(typesContent)).To(ContainSubstring(
+				"// +kubebuilder:resource:path=admirals,scope=Cluster"))
+		},
+		Entry("when --ssa is provided again", true),
+		Entry("when --ssa is omitted", false),
+	)
+
 	It("should complete 'create api --ssa' when groupversion_info.go was customized", func() {
 		By("creating a first SSA API to scaffold the group/version package")
 		Expect(kbc.CreateAPI(
