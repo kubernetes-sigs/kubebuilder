@@ -627,6 +627,48 @@ var _ = Describe("generate: get-args-helpers", func() {
 			Expect(flags).NotTo(ContainElement("--external-api-module"))
 			Expect(flags).To(ContainElement("--defaulting"))
 		})
+
+		It("passes no external API flag for a resource of the project", func() {
+			res := resource.Resource{
+				Path:     "github.com/example/test/api/v1",
+				GVK:      resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: fixtureTest},
+				API:      &resource.API{CRDVersion: "v1"},
+				Webhooks: &resource.Webhooks{Defaulting: true},
+			}
+
+			flags := getWebhookResourceFlags(res)
+
+			// The command works on the API of the project when no external API flag is given.
+			Expect(flags).NotTo(ContainElement("--external-api-domain"))
+			Expect(flags).NotTo(ContainElement("--external-api-path"))
+		})
+
+		It("passes the domain of a core type, which tells it from the other resources", func() {
+			res := resource.Resource{
+				Path:     "k8s.io/api/authentication/v1",
+				GVK:      resource.GVK{Group: "authentication", Version: "v1", Kind: "TokenReview", Domain: "k8s.io"},
+				Core:     true,
+				Webhooks: &resource.Webhooks{Defaulting: true},
+			}
+
+			flags := getWebhookResourceFlags(res)
+
+			Expect(flags).To(ContainElements("--external-api-domain", "k8s.io"))
+			Expect(flags).NotTo(ContainElement("--external-api-path"))
+		})
+
+		It("passes no domain for a core type tracked without one", func() {
+			res := resource.Resource{
+				Path:     "k8s.io/api/apps/v1",
+				GVK:      resource.GVK{Group: "apps", Version: "v1", Kind: "Deployment"},
+				Core:     true,
+				Webhooks: &resource.Webhooks{Defaulting: true},
+			}
+
+			flags := getWebhookResourceFlags(res)
+
+			Expect(flags).NotTo(ContainElement("--external-api-domain"))
+		})
 	})
 })
 

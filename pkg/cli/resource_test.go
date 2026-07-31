@@ -145,6 +145,9 @@ var _ = Describe("resourceOptions", func() {
 			Entry("when multiple G+V+K matches are ambiguous", func() *cfgv3.Cfg {
 				return newCfg(external(externalDomain), external("other-vendor.io"))
 			}),
+			Entry("whatever the order of the ambiguous matches", func() *cfgv3.Cfg {
+				return newCfg(external("other-vendor.io"), external(externalDomain))
+			}),
 		)
 
 		It("adopts the stored external domain and flows it through newResource", func() {

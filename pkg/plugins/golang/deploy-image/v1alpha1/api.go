@@ -146,6 +146,9 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.DoController = true
 	p.options.Namespaced = true
 
+	// The CLI may have picked the domain of another resource with the same Group, Version and Kind.
+	p.resource.Domain = p.config.GetDomain()
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {

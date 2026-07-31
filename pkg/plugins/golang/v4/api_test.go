@@ -52,6 +52,7 @@ var _ = Describe("createAPISubcommand", func() {
 		subCmd = &createAPISubcommand{}
 		cfg = cfgv3.New()
 		_ = cfg.SetRepository("github.com/example/test")
+		_ = cfg.SetDomain(testIO)
 
 		subCmd.options = &goPlugin.Options{}
 		subCmd.resourceFlag = &pflag.Flag{Changed: true}
@@ -231,6 +232,83 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(res.External).To(BeTrue())
 		Expect(res.Path).To(Equal(externalPath))
+	})
+
+	Context("when several resources share the Group, Version and Kind", func() {
+		const (
+			certManagerPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+			otherVendorPath = "github.com/other-vendor/cert-manager/apis/certmanager/v1"
+		)
+
+		external := func(domain, apiPath string) resource.Resource {
+			stored := *res
+			stored.Domain = domain
+			stored.External = true
+			stored.Path = apiPath
+
+			return stored
+		}
+
+		// track adds the resources in the given order, so that the tests can prove that the
+		// result does not depend on the order of the PROJECT file.
+		track := func(first, second string) {
+			resources := map[string]resource.Resource{
+				testIO:   external(testIO, certManagerPath),
+				"k8s.io": external("k8s.io", otherVendorPath),
+			}
+			Expect(cfg.AddResource(resources[first])).To(Succeed())
+			Expect(cfg.AddResource(resources[second])).To(Succeed())
+		}
+
+		DescribeTable("should ask for --external-api-domain when adding a controller",
+			func(first, second string) {
+				track(first, second)
+				subCmd.options.DoAPI = false
+				subCmd.options.DoController = true
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("tracks 2 resources"))
+				Expect(err.Error()).To(ContainSubstring("--external-api-domain"))
+			},
+			Entry("cert-manager.io first", testIO, "k8s.io"),
+			Entry("cert-manager.k8s.io first", "k8s.io", testIO),
+		)
+
+		DescribeTable("should add the controller to the selected domain",
+			func(first, second string) {
+				track(first, second)
+				subCmd.options.DoAPI = false
+				subCmd.options.DoController = true
+				subCmd.options.ExternalAPIDomain = "k8s.io"
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Domain).To(Equal("k8s.io"))
+				Expect(res.Path).To(Equal(otherVendorPath))
+				Expect(res.External).To(BeTrue())
+			},
+			Entry("cert-manager.io first", testIO, "k8s.io"),
+			Entry("cert-manager.k8s.io first", "k8s.io", testIO),
+		)
+
+		It("should keep the project domain when scaffolding an API of the project", func() {
+			Expect(cfg.AddResource(external("cert-manager.io", certManagerPath))).To(Succeed())
+
+			// The CLI picks the domain of the only resource matching the Group, Version and Kind.
+			res.Domain = "cert-manager.io"
+			subCmd.options.DoAPI = true
+			subCmd.options.DoController = true
+
+			err := subCmd.InjectResource(res)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(res.Domain).To(Equal(testIO))
+			Expect(res.External).To(BeFalse())
+			Expect(res.Path).To(Equal("github.com/example/test/api/v1"))
+		})
 	})
 
 	It("should return an actionable error for --resource=false on old project with relative external path", func() {

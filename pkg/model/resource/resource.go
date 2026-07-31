@@ -195,6 +195,12 @@ func (r Resource) IsExternal() bool {
 	return r.External
 }
 
+// IsDefinedInProject returns true if the project defines the API itself, which is the case when
+// it is neither an external API nor a Kubernetes core type.
+func (r Resource) IsDefinedInProject() bool {
+	return !r.External && !r.Core
+}
+
 // IsRegularPlural returns true if the plural is the regular plural form for the kind.
 func (r Resource) IsRegularPlural() bool {
 	return r.Plural == RegularPlural(r.Kind)

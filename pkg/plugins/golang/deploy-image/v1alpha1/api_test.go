@@ -159,6 +159,24 @@ var _ = Describe("createAPISubcommand", func() {
 			Expect(subCmd.options.Namespaced).To(BeTrue())
 		})
 
+		It("should keep the project domain when an external resource has the same GVK", func() {
+			Expect(cfg.SetDomain(testIODomain)).To(Succeed())
+
+			externalRes := *res
+			externalRes.Domain = "cert-manager.io"
+			externalRes.External = true
+			externalRes.Path = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+			Expect(cfg.AddResource(externalRes)).To(Succeed())
+
+			// The CLI picks the domain of the only resource matching the Group, Version and Kind.
+			res.Domain = "cert-manager.io"
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+
+			Expect(res.Domain).To(Equal(testIODomain))
+			Expect(res.External).To(BeFalse())
+		})
+
 		It("should prevent multiple groups in single-group project", func() {
 			firstRes := resource.Resource{
 				GVK: resource.GVK{

@@ -554,14 +554,10 @@ func createAPI(res resource.Resource) error {
 	args := append([]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI}, getGVKFlags(res)...)
 	args = append(args, getAPIResourceFlags(res)...)
 
-	// Add the external API flags if the resource is external
-	if res.IsExternal() {
-		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
-		// Add module if specified
-		if res.Module != "" {
-			args = append(args, "--external-api-module", res.Module)
-		}
+	// These flags are rejected when the API is scaffolded in the project, which always uses the
+	// project domain.
+	if res.API == nil || res.API.IsEmpty() {
+		args = append(args, getExternalAPIFlags(res)...)
 	}
 
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
@@ -603,15 +599,7 @@ func createControllerWithName(res resource.Resource, controllerName string) erro
 		args = append(args, "--controller-name", controllerName)
 	}
 
-	// Add the external API flags if the resource is external
-	if res.IsExternal() {
-		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
-		// Add module if specified
-		if res.Module != "" {
-			args = append(args, "--external-api-module", res.Module)
-		}
-	}
+	args = append(args, getExternalAPIFlags(res)...)
 
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
@@ -646,6 +634,29 @@ func getAPIResourceFlags(res resource.Resource) []string {
 	return args
 }
 
+// Gets the '--external-api-*' flags that tell the commands which resource to work on. Several
+// resources can share the same Group, Version and Kind, so the domain of an API defined outside
+// the project is always passed. The API of the project needs no flag: the commands work on it
+// when none is given.
+func getExternalAPIFlags(res resource.Resource) []string {
+	if !res.IsExternal() && !res.Core {
+		return nil
+	}
+
+	var args []string
+	if res.IsExternal() {
+		args = append(args, "--external-api-path", res.Path)
+		if res.Module != "" {
+			args = append(args, "--external-api-module", res.Module)
+		}
+	}
+	if res.Domain != "" {
+		args = append(args, "--external-api-domain", res.Domain)
+	}
+
+	return args
+}
+
 // Creates a webhook resource.
 func createWebhook(res resource.Resource) error {
 	if res.Webhooks == nil || res.Webhooks.IsEmpty() {
@@ -663,15 +674,7 @@ func createWebhook(res resource.Resource) error {
 
 // Gets flags for webhook creation.
 func getWebhookResourceFlags(res resource.Resource) []string {
-	var args []string
-	if res.IsExternal() {
-		args = append(args, "--external-api-path", res.Path)
-		args = append(args, "--external-api-domain", res.Domain)
-		// Add module if specified
-		if res.Module != "" {
-			args = append(args, "--external-api-module", res.Module)
-		}
-	}
+	args := getExternalAPIFlags(res)
 	if res.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
 		if res.Webhooks.ValidationPath != "" {

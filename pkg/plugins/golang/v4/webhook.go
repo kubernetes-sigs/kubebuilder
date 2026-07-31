@@ -133,14 +133,18 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	if err := p.updateResourceFromConfig(res); err != nil {
+	// Take the values of the resource tracked in the PROJECT file, such as the domain and the
+	// path of an API defined outside the project.
+	if err := resolveTrackedResource(p.config, p.options, res); err != nil {
 		return err
 	}
 
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
 		if !isValidVersion(spoke, res, p.config) {
-			return fmt.Errorf("invalid spoke version %q", spoke)
+			return fmt.Errorf("invalid spoke version %q: the PROJECT file has no %s/%s, Kind %s "+
+				"under the domain %q. Pass '--external-api-domain' when the resource is an "+
+				"external API", spoke, res.Group, spoke, res.Kind, res.Domain)
 		}
 		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
 	}
@@ -167,6 +171,12 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true", p.commandName)
+	}
+
+	// The webhook files are named after the Kind, so only one resource of each Group, Version and
+	// Kind can have webhooks.
+	if err := p.checkWebhookOfAnotherDomain(); err != nil {
+		return err
 	}
 
 	// check if resource exist to create webhook
@@ -241,30 +251,36 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	return nil
 }
 
-// updateResourceFromConfig copies existing resource configuration from PROJECT file.
-func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
-	// Match by Group, Version, and Kind because external APIs may have
-	// a different domain than the project domain.
+// checkWebhookOfAnotherDomain rejects the first webhook of a resource when the PROJECT file
+// already has webhooks for the same Group, Version and Kind under another domain. The scaffold
+// names the webhook files after the Kind, so the second webhook would overwrite the first one.
+// Adding another webhook type to a resource that already has some is left alone.
+func (p *createWebhookSubcommand) checkWebhookOfAnotherDomain() error {
 	resources, err := p.config.GetResources()
 	if err != nil {
 		return fmt.Errorf("failed to load resources from project configuration: %w", err)
 	}
 
-	for _, existingRes := range resources {
-		if existingRes.Group == res.Group &&
-			existingRes.Version == res.Version &&
-			existingRes.Kind == res.Kind {
-			p.resource.Domain = existingRes.Domain
-			p.resource.Path = existingRes.Path
-			p.resource.Plural = existingRes.Plural
-			p.resource.External = existingRes.External
-			p.resource.Core = existingRes.Core
-			p.resource.Module = existingRes.Module
-			break
+	var scaffolded *resource.Resource
+	for i, tracked := range resources {
+		if tracked.Group != p.resource.Group || tracked.Version != p.resource.Version ||
+			tracked.Kind != p.resource.Kind || tracked.Webhooks == nil || tracked.Webhooks.IsEmpty() {
+			continue
 		}
+		if tracked.IsEqualTo(p.resource.GVK) {
+			return nil
+		}
+		scaffolded = &resources[i]
 	}
 
-	return nil
+	if scaffolded == nil {
+		return nil
+	}
+
+	return fmt.Errorf("the PROJECT file already has webhooks for %s/%s, Kind %s under the domain "+
+		"%q. The webhook files are named after the Kind, so the project cannot hold webhooks for a "+
+		"second resource with the same Group, Version and Kind",
+		p.resource.Group, p.resource.Version, p.resource.Kind, scaffolded.Domain)
 }
 
 // Helper function to validate spoke versions
@@ -275,9 +291,10 @@ func isValidVersion(version string, res *resource.Resource, cfg config.Config) b
 		return false
 	}
 
-	// Iterate through resources and validate if the given version exists for the same Group and Kind
+	// Iterate through resources and validate if the given version exists for the same resource.
+	// The domain is part of the check because another resource can share the Group and the Kind.
 	for _, r := range resources {
-		if r.Group == res.Group && r.Kind == res.Kind && r.Version == version {
+		if r.Group == res.Group && r.Domain == res.Domain && r.Kind == res.Kind && r.Version == version {
 			return true
 		}
 	}

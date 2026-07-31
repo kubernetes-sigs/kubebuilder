@@ -22,6 +22,7 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"strings"
 )
 
 const (
@@ -57,13 +58,13 @@ func (h *Handler) Handle(_ context.Context, r slog.Record) error {
 	case slog.LevelError:
 		color = ColorError + r.Level.String() + ColorReset
 	}
-	attrs := ""
+	var attrs []string
 	r.Attrs(func(attr slog.Attr) bool {
-		attrs += fmt.Sprintf("%s=%v", attr.Key, attr.Value.Any())
+		attrs = append(attrs, fmt.Sprintf("%s=%v", attr.Key, attr.Value.Any()))
 		return true
 	})
 
-	h.l.Println(color, r.Message, attrs)
+	h.l.Println(color, r.Message, strings.Join(attrs, " "))
 	return nil
 }
 

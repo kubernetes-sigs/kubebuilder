@@ -28,7 +28,7 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 For example, if you are managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+kubebuilder create api --group cert-manager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
 <aside class="note" role="note">
@@ -37,7 +37,7 @@ kubebuilder create api --group certmanager --version v1 --kind Certificate --con
 You can pin a specific version of the external API dependency using the `--external-api-module` flag:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate \
+kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
   --external-api-domain=io \
@@ -97,21 +97,70 @@ definitions since an external project defines the type.
 You can create webhooks for external types by providing the external API path, domain, and optionally the module:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=cert-manager.io
+  --external-api-domain=io
 ```
+
+The group and the domain build the API group used in the RBAC markers, `cert-manager.io` in the
+example above.
 
 You can also pin the version using the `--external-api-module` flag:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=cert-manager.io \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
+
+### Working with several resources that share the same Kind
+
+The PROJECT file identifies a resource by group, domain, version and kind, while the commands
+only take `--group`, `--version` and `--kind`. Therefore, your project can track more than one
+resource that matches the same flags. For example, an `Issuer` from `cert-manager.io` and an
+`Issuer` from another vendor:
+
+```yaml
+resources:
+- domain: io
+  external: true
+  group: cert-manager
+  kind: Issuer
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
+- domain: other-vendor.io
+  external: true
+  group: cert-manager
+  kind: Issuer
+  path: github.com/other-vendor/cert-manager/apis/certmanager/v1
+  version: v1
+```
+
+In this case, `create api` and `create webhook` cannot tell which one you mean, so they ask you
+to select it with `--external-api-domain`. When one of them is an API of your own project, no
+flag is needed: the commands work on it, because the external API flags only name APIs defined
+outside the project.
+
+```shell
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
+  --programmatic-validation \
+  --external-api-domain=other-vendor.io
+```
+
+Passing an `--external-api-domain` that no resource uses, together with `--external-api-path`,
+records a new resource for that domain.
+
+<aside class="note warning" role="note">
+<p class="note-title">Only one of them can have webhooks</p>
+
+The scaffold names the files after the kind, for example `internal/webhook/v1/issuer_webhook.go`.
+Therefore, only one resource of each group, version and kind can have webhooks, and
+`create webhook` refuses to scaffold webhooks for a second one.
+
+</aside>
 
 ## Managing core types
 
@@ -199,6 +248,16 @@ Also, the RBAC for the above [markers][markers-rbac]:
 
 This scaffolds a controller for the Core type `corev1.Pod` but skips creating new resource
 definitions since the type is already defined in the Kubernetes API.
+
+### When your project defines the same kind as a core type
+
+Core types are tracked with the domain of the table above, which is `k8s.io` for most groups and
+empty for `apps`, `batch`, `core`, `autoscaling`, `extensions` and `policy`. If your project also
+defines the same group, version and kind, the commands work on the resource of your project.
+
+A core type with a domain is selected with `--external-api-domain`, for example
+`--external-api-domain=k8s.io`. A core type of a group without a domain cannot be selected today,
+because an empty `--external-api-domain` cannot be told from an absent one.
 
 ### Creating a webhook to manage a core type
 

@@ -211,6 +211,171 @@ var _ = Describe("createWebhookSubcommand", func() {
 		Expect(res.Domain).To(Equal(externalDomain))
 	})
 
+	Context("when several resources share the Group, Version and Kind", func() {
+		const (
+			certManagerPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+			otherVendorPath = "github.com/other-vendor/cert-manager/apis/certmanager/v1"
+			otherVendor     = "k8s.io"
+		)
+
+		// trackInOrder adds the two external resources to the PROJECT file in the given order, so
+		// that the tests can prove that the order does not change the result. Only the resource
+		// given webhooks has them, because the project cannot hold webhooks for both.
+		trackInOrder := func(withWebhooks string, domains ...string) {
+			paths := map[string]string{testIO: certManagerPath, otherVendor: otherVendorPath}
+			for _, domain := range domains {
+				stored := *res
+				stored.Domain = domain
+				stored.External = true
+				stored.Path = paths[domain]
+				stored.Webhooks = &resource.Webhooks{}
+				if domain == withWebhooks {
+					stored.Webhooks = &resource.Webhooks{Defaulting: true, WebhookVersion: "v1"}
+				}
+				Expect(cfg.AddResource(stored)).To(Succeed())
+			}
+		}
+
+		BeforeEach(func() {
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+			subCmd.options.DoDefaulting = true
+		})
+
+		DescribeTable("should ask for --external-api-domain",
+			func(domains ...string) {
+				trackInOrder("", domains...)
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("tracks 2 resources"))
+				Expect(err.Error()).To(ContainSubstring("--external-api-domain"))
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should scaffold the webhook for the domain given",
+			func(domains ...string) {
+				trackInOrder("", domains...)
+				subCmd.options.ExternalAPIDomain = otherVendor
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Domain).To(Equal(otherVendor))
+				Expect(res.Path).To(Equal(otherVendorPath))
+				Expect(res.External).To(BeTrue())
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should scaffold the webhook for the path given",
+			func(domains ...string) {
+				trackInOrder("", domains...)
+				subCmd.options.ExternalAPIPath = otherVendorPath
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Domain).To(Equal(otherVendor))
+				Expect(res.Path).To(Equal(otherVendorPath))
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should add another webhook to the resource that has them",
+			func(domains ...string) {
+				trackInOrder(testIO, domains...)
+				subCmd.options.DoDefaulting = false
+				subCmd.options.DoValidation = true
+				subCmd.options.ExternalAPIDomain = testIO
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Domain).To(Equal(testIO))
+				// The webhooks of the selected resource are merged, not the ones of the other.
+				Expect(res.Webhooks.Defaulting).To(BeTrue())
+				Expect(res.Webhooks.Validation).To(BeTrue())
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should reject a webhook that the selected resource already has",
+			func(domains ...string) {
+				trackInOrder(testIO, domains...)
+				subCmd.options.ExternalAPIDomain = testIO
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("defaulting webhook already exists"))
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should let a resource that already has webhooks get another type",
+			func(domains ...string) {
+				// A project can reach this state with an older version of Kubebuilder, and the
+				// resource that has the webhooks must stay usable.
+				trackInOrder(testIO, domains...)
+				stored := *res
+				stored.Domain = otherVendor
+				stored.External = true
+				stored.Path = otherVendorPath
+				stored.Webhooks = &resource.Webhooks{Defaulting: true, WebhookVersion: "v1"}
+				Expect(cfg.UpdateResource(stored)).To(Succeed())
+
+				subCmd.options.DoDefaulting = false
+				subCmd.options.DoValidation = true
+				subCmd.options.ExternalAPIDomain = otherVendor
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Webhooks.Validation).To(BeTrue())
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should refuse webhooks for a second resource of the same Kind",
+			func(domains ...string) {
+				trackInOrder(testIO, domains...)
+				subCmd.options.ExternalAPIDomain = otherVendor
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("already has webhooks"))
+				Expect(err.Error()).To(ContainSubstring("named after the Kind"))
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+
+		DescribeTable("should scaffold a webhook for a resource of a new domain",
+			func(domains ...string) {
+				trackInOrder("", domains...)
+				subCmd.options.ExternalAPIDomain = "third.io"
+				subCmd.options.ExternalAPIPath = "github.com/third-vendor/api/v1"
+
+				err := subCmd.InjectResource(res)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Domain).To(Equal("third.io"))
+				Expect(res.Path).To(Equal("github.com/third-vendor/api/v1"))
+			},
+			Entry("cert-manager.io first", testIO, otherVendor),
+			Entry("cert-manager.k8s.io first", otherVendor, testIO),
+		)
+	})
+
 	It("should return improved error message when API is missing", func() {
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 		subCmd.options.DoDefaulting = true
@@ -251,6 +416,23 @@ var _ = Describe("createWebhookSubcommand", func() {
 		It("should return true for existing version with same group and kind", func() {
 			Expect(isValidVersion("v2", res, cfg)).To(BeTrue())
 			Expect(isValidVersion("v1beta1", res, cfg)).To(BeTrue())
+		})
+
+		It("should return false for a version of another domain", func() {
+			// Another vendor can track the same Group, Version and Kind, and its versions are
+			// not spokes of this resource.
+			other := resource.Resource{
+				GVK: resource.GVK{
+					Group:   crewGroup,
+					Domain:  "other.io",
+					Version: "v3",
+					Kind:    captainKind,
+				},
+				API: &resource.API{CRDVersion: "v1"},
+			}
+			Expect(cfg.AddResource(other)).To(Succeed())
+
+			Expect(isValidVersion("v3", res, cfg)).To(BeFalse())
 		})
 
 		It("should return false for non-existing version", func() {

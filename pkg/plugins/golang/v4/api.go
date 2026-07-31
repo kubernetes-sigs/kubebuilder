@@ -118,8 +118,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 			"Used to scaffold controllers for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
-			"Used to generate accurate RBAC markers and permissions for the external resources")
+		"Domain of the API to work on (e.g., cert-manager.io). Used to build the API group for the "+
+			"RBAC markers, and to select the resource when the PROJECT file tracks more than one "+
+			"with the same Group, Version and Kind")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
 		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
@@ -143,16 +144,16 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	// When scaffolding a controller without an API (--resource=false), copy essential
-	// fields from the existing resource in the PROJECT file, such as Path and Plural.
-	// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
-	if !p.options.DoAPI {
-		if existingRes, err := p.config.GetResource(res.GVK); err == nil {
-			p.resource.Path = existingRes.Path
-			p.resource.Plural = existingRes.Plural
-			p.resource.External = existingRes.External
-			p.resource.Core = existingRes.Core
-			p.resource.Module = existingRes.Module
+	if p.options.DoAPI {
+		// The CLI may have picked the domain of another resource with the same Group, Version
+		// and Kind. An API of the project always uses the project domain.
+		p.resource.Domain = p.config.GetDomain()
+	} else {
+		// When scaffolding a controller without an API (--resource=false), copy the values of the
+		// resource tracked in the PROJECT file, such as the domain and the path.
+		// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
+		if err := resolveTrackedResource(p.config, p.options, res); err != nil {
+			return err
 		}
 	}
 
