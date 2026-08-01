@@ -793,6 +793,66 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
+	Context("WithSubcommandsWithoutConfig", func() {
+		It("should keep the built-in subcommands by default", func() {
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.subcommandsWithoutConfig).To(Equal(defaultSubcommandsWithoutConfig))
+		})
+
+		It("should add the provided subcommands", func() {
+			c, err = newCLI(WithSubcommandsWithoutConfig("docs", "alpha generate"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.subcommandsWithoutConfig).To(ContainElements("docs", "alpha generate"))
+			Expect(c.subcommandsWithoutConfig).To(ContainElements(defaultSubcommandsWithoutConfig))
+		})
+
+		It("should not modify the defaults", func() {
+			_, err = newCLI(WithSubcommandsWithoutConfig("docs"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(defaultSubcommandsWithoutConfig).NotTo(ContainElement("docs"))
+		})
+
+		It("should return an error for an empty subcommand", func() {
+			c, err = newCLI(WithSubcommandsWithoutConfig(" "))
+			Expect(err).To(HaveOccurred())
+			Expect(c).To(BeNil())
+		})
+	})
+
+	Context("WithArgs", func() {
+		It("should use the arguments of the running program by default", func() {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandInit, domainFlagArg, "example.com"}
+
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.args).To(Equal([]string{kubebuilderSubcommandInit, domainFlagArg, "example.com"}))
+		})
+
+		It("should use the provided arguments", func() {
+			args := []string{kubebuilderSubcommandVersion}
+
+			c, err = newCLI(WithArgs(args))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.args).To(Equal(args))
+		})
+
+		It("should not be affected by later changes to the provided arguments", func() {
+			args := []string{kubebuilderSubcommandVersion}
+
+			c, err = newCLI(WithArgs(args))
+			Expect(err).NotTo(HaveOccurred())
+			args[0] = kubebuilderSubcommandInit
+			Expect(c.args).To(Equal([]string{kubebuilderSubcommandVersion}))
+		})
+	})
+
 	Context("WithFilesystem", func() {
 		When("providing a valid filesystem", func() {
 			It("should use the provided filesystem", func() {

@@ -19,6 +19,7 @@ package v4
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -173,6 +174,73 @@ var _ = Describe("initSubcommand", func() {
 			err = checkDir()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("already initialized"))
+		})
+
+		It("should fail when PROJECT exists even if it cannot be parsed", func() {
+			err := os.WriteFile("PROJECT", []byte("{{ not a valid config"), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("already initialized"))
+		})
+
+		It("should fail without claiming initialization when PROJECT is a directory", func() {
+			err := os.Mkdir("PROJECT", 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`"PROJECT" is a directory`))
+			Expect(err.Error()).NotTo(ContainSubstring("already initialized"))
+		})
+
+		It("should fail without following a symbolic link", func() {
+			if runtime.GOOS == "windows" {
+				Skip("symlink creation requires elevated privileges on Windows")
+			}
+
+			target := filepath.Join(GinkgoT().TempDir(), "stolen.txt")
+			Expect(os.Symlink(target, "Makefile")).To(Succeed())
+
+			err := checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`"Makefile" is a symbolic link`))
+			Expect(err.Error()).NotTo(ContainSubstring("already initialized"))
+			Expect(target).NotTo(BeAnExistingFile())
+		})
+
+		It("should fail without claiming initialization when Makefile is a directory", func() {
+			err := os.Mkdir("Makefile", 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`"Makefile" is a directory`))
+			Expect(err.Error()).NotTo(ContainSubstring("already initialized"))
+		})
+
+		It("should fail without claiming initialization when cmd/main.go is a directory", func() {
+			err := os.MkdirAll(filepath.Join("cmd", "main.go"), 0o755)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("is a directory"))
+			Expect(err.Error()).NotTo(ContainSubstring("already initialized"))
+		})
+
+		It("should surface stat errors instead of scaffolding over them", func() {
+			if runtime.GOOS == "windows" {
+				Skip("Windows reports a file blocking the parent path as not-exist")
+			}
+
+			err := os.WriteFile("cmd", []byte("not a directory"), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = checkDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`failed to check "cmd/main.go"`))
 		})
 
 		It("should fail when cmd/main.go exists", func() {
