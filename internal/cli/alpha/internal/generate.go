@@ -592,27 +592,20 @@ func createAPI(res resource.Resource) error {
 	return nil
 }
 
-// Creates controllers for a resource.
-// This function supports multiple controllers per resource (GVK).
+// createControllers scaffolds each controller recorded for a resource.
+// Legacy controllers use the default name for their kind.
 func createControllers(res resource.Resource) error {
-	if res.Controllers == nil || res.Controllers.IsEmpty() {
-		if !res.Controller {
-			return nil
-		}
-		return createControllerWithName(res, "")
-	}
-
-	for _, controller := range *res.Controllers {
-		if err := createControllerWithName(res, controller.Name); err != nil {
-			return fmt.Errorf("failed to create controller %q: %w", controller.Name, err)
+	for _, name := range res.GetControllerNames() {
+		if err := createControllerWithName(res, name); err != nil {
+			return fmt.Errorf("failed to create controller %q: %w", name, err)
 		}
 	}
 
 	return nil
 }
 
-// Creates a single controller for a resource with a specific name.
-func createControllerWithName(res resource.Resource, controllerName string) error {
+// getControllerFlags builds the create api arguments for a named controller.
+func getControllerFlags(res resource.Resource, controllerName string) []string {
 	args := append([]string{kubebuilderSubcommandCreate, kubebuilderSubcommandAPI}, getGVKFlags(res)...)
 
 	// Always set --resource=false since we're only creating the controller
@@ -633,6 +626,13 @@ func createControllerWithName(res resource.Resource, controllerName string) erro
 			args = append(args, "--external-api-module", res.Module)
 		}
 	}
+
+	return args
+}
+
+// createControllerWithName scaffolds a controller with the given name.
+func createControllerWithName(res resource.Resource, controllerName string) error {
+	args := getControllerFlags(res, controllerName)
 
 	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)

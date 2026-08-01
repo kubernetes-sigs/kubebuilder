@@ -77,6 +77,12 @@ make test       # Run unit tests
 kubebuilder create api --group <group> --version <version> --kind <Kind>
 ```
 
+### Controller names
+
+Controllers use named entries in `PROJECT`. If you omit `--controller-name`, the name is the lowercase kind.
+Legacy `controller: true` entries still work and migrate when the CLI saves `PROJECT`.
+Use `--resource=false --controller-name=<name>` to add another controller for an existing API.
+
 ### Deploy Image Plugin (scaffold to deploy/manage ANY container image)
 
 Generate a controller that deploys and manages a container image (nginx, redis, memcached, your app, etc.):

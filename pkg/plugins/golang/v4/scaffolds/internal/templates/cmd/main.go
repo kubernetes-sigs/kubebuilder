@@ -183,6 +183,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	setup := make([]string, 0)
 	if f.WireController {
 		reconcilerName := f.ReconcilerName()
+		// Use the runtime controller name in setup errors.
 		controllerName := resource.GetControllerName(f.ControllerName, f.Resource.Kind, f.Resource.Group, f.MultiGroup)
 
 		if !f.MultiGroup || f.Resource.Group == "" {

@@ -473,17 +473,19 @@ var _ = Describe("Resource", func() {
 		})
 
 		Context("Controller", func() {
-			It("should set the controller flag if provided and not previously set", func() {
+			It("should record the controller if provided and not previously set", func() {
 				r = Resource{GVK: gvk}
 				other = Resource{
 					GVK:        gvk,
 					Controller: true,
 				}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
+				Expect(r.HasController()).To(BeTrue())
+				Expect(r.Controller).To(BeFalse())
+				Expect(r.GetControllerNames()).To(Equal([]string{strings.ToLower(kind)}))
 			})
 
-			It("should keep the controller flag if previously set", func() {
+			It("should keep the controller if previously set", func() {
 				r = Resource{
 					GVK:        gvk,
 					Controller: true,
@@ -492,7 +494,8 @@ var _ = Describe("Resource", func() {
 				By("not providing it")
 				other = Resource{GVK: gvk}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
+				Expect(r.HasController()).To(BeTrue())
+				Expect(r.GetControllerNames()).To(Equal([]string{strings.ToLower(kind)}))
 
 				By("providing it")
 				other = Resource{
@@ -500,7 +503,9 @@ var _ = Describe("Resource", func() {
 					Controller: true,
 				}
 				Expect(r.Update(other)).To(Succeed())
-				Expect(r.Controller).To(BeTrue())
+				Expect(r.HasController()).To(BeTrue())
+				Expect(r.Controller).To(BeFalse())
+				Expect(r.GetControllerNames()).To(Equal([]string{strings.ToLower(kind)}))
 			})
 
 			It("should not set the controller flag if not provided and not previously set", func() {
