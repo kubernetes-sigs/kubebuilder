@@ -139,7 +139,7 @@ var _ = Describe("cmd_helpers", func() {
 		It("should return false if neither --plugins flag nor external plugin is used", func() {
 			c := &CLI{resolvedPlugins: []plugin.Plugin{mockPlugin{}}}
 			Expect(c.shouldShowPluginPrefix([]string{
-				kubebuilderCommandName, kubebuilderSubcommandInit, "--domain", "my-test.example.com",
+				kubebuilderCommandName, kubebuilderSubcommandInit, domainFlagArg, "my-test.example.com",
 			})).To(BeFalse())
 		})
 	})
