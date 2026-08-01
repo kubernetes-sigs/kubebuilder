@@ -367,15 +367,30 @@ func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 
 // MarshalYAML implements config.Config
 func (c Cfg) MarshalYAML() ([]byte, error) {
-	for i, r := range c.Resources {
+	// Copy resources so serialization leaves the caller's config unchanged.
+	resources := c.Resources
+	c.Resources = make([]resource.Resource, len(resources))
+	for i, original := range resources {
+		r := original.Copy()
+		// Migrate every resource when saving the PROJECT file.
+		if err := r.Migrate(); err != nil {
+			return nil, config.MarshalError{Err: err}
+		}
+
+		// Check the migrated copy: migration may have filled an empty Controllers list.
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
-			c.Resources[i].API = nil
+			r.API = nil
 		}
 		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
 		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
-			c.Resources[i].Webhooks = nil
+			r.Webhooks = nil
 		}
+		// If Controllers is empty, omit it (prevents `controllers: []`).
+		if r.Controllers != nil && r.Controllers.IsEmpty() {
+			r.Controllers = nil
+		}
+		c.Resources[i] = r
 	}
 
 	content, err := yaml.Marshal(c)
@@ -393,11 +408,6 @@ func (c *Cfg) UnmarshalYAML(b []byte) error {
 	// with newer fields and simply ignore unknown fields.
 	if err := yaml.Unmarshal(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
-	}
-
-	// Normalize resources to auto-migrate legacy controller: true format
-	for i := range c.Resources {
-		c.Resources[i].Normalize()
 	}
 
 	return nil

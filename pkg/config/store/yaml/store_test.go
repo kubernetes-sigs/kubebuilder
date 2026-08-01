@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 func TestConfigStoreYaml(t *testing.T) {
@@ -271,6 +272,48 @@ layout: ""
 					},
 				}),
 			}))
+		})
+	})
+
+	Context("legacy controller migration", func() {
+		const legacyProject = `version: "3"
+resources:
+- controller: true
+  group: crew
+  kind: MyKind
+  version: v1
+`
+		It("should load, save, and reload an unnamed legacy controller", func() {
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(legacyProject), 0o644)).To(Succeed())
+			Expect(s.Load()).To(Succeed())
+			gvk := resource.GVK{Group: "crew", Version: "v1", Kind: "MyKind"}
+			legacy, err := s.Config().GetResource(gvk)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(legacy.Validate()).To(Succeed())
+			Expect(legacy.GetControllerNames()).To(Equal([]string{"mykind"}))
+			Expect(s.Save()).To(Succeed())
+			unchanged, err := s.Config().GetResource(gvk)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(unchanged).To(Equal(legacy))
+			content, err := afero.ReadFile(s.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring("controllers:\n  - name: mykind"))
+			Expect(string(content)).NotTo(ContainSubstring("controller: true"))
+			Expect(s.Load()).To(Succeed())
+			migrated, err := s.Config().GetResource(gvk)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(migrated.Validate()).To(Succeed())
+			Expect(migrated.GetControllerNames()).To(Equal(legacy.GetControllerNames()))
+		})
+
+		It("should preserve the PROJECT file when migration fails", func() {
+			body := legacyProject + "  controllers:\n  - name: my-kind\n"
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(body), 0o644)).To(Succeed())
+			Expect(s.Load()).To(Succeed())
+			Expect(s.Save()).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+			content, err := afero.ReadFile(s.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(body))
 		})
 	})
 

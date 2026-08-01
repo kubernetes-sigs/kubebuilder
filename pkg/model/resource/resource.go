@@ -38,8 +38,10 @@ type Resource struct {
 	// API holds the information related to the resource API.
 	API *API `json:"api,omitempty"`
 
-	// Controller specifies if a controller has been scaffolded (legacy, deprecated).
-	// Deprecated: Use Controllers for multiple controller support.
+	// Controller specifies if a controller has been scaffolded.
+	// Retained to read legacy PROJECT files and preserve compatibility with plugins.
+	//
+	// Deprecated: use Controllers.
 	Controller bool `json:"controller,omitempty"`
 
 	// Controllers holds named controllers for this resource.
@@ -113,29 +115,82 @@ func (r Resource) Validate() error {
 		}
 	}
 
-	// Validate the Controllers
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		if err := r.Controllers.Validate(); err != nil {
-			return fmt.Errorf("invalid Controllers: %w", err)
+	return r.validateControllers()
+}
+
+// validateControllers checks controller names and the Go identifiers they generate.
+func (r Resource) validateControllers() error {
+	if err := r.Controllers.Validate(); err != nil {
+		return fmt.Errorf("invalid Controllers: %w", err)
+	}
+	if err := r.validateReconcilerNames(); err != nil {
+		return fmt.Errorf("invalid Controllers: %w", err)
+	}
+	return nil
+}
+
+// validateReconcilerNames rejects names that generate the same reconciler struct.
+func (r Resource) validateReconcilerNames() error {
+	names := r.GetControllerNames()
+	reconcilers := make(map[string]string, len(names))
+	for _, name := range names {
+		reconciler := NormalizeReconcilerName(name, r.Kind)
+		if existing, found := reconcilers[reconciler]; found {
+			return fmt.Errorf("controller name %q conflicts with %q: both generate %s",
+				name, existing, reconciler)
 		}
+		reconcilers[reconciler] = name
 	}
 
 	return nil
 }
 
-// Normalize handles the edge case where both controller: true and controllers: are set.
-// This can only occur if someone manually edits the PROJECT file.
-// The new controllers array format takes precedence, and the legacy flag is cleared.
-func (r *Resource) Normalize() {
+// Migrate replaces deprecated fields with the current resource format.
+// PROJECT files are migrated when saved; legacy fields remain supported on read.
+func (r *Resource) Migrate() error {
 	if r == nil {
-		return
+		return nil
 	}
 
-	// If both controller: true and controllers: are set (manual edit),
-	// keep the explicit controllers array and clear the legacy flag
-	if r.Controller && r.Controllers != nil && !r.Controllers.IsEmpty() {
-		r.Controller = false
+	return r.migrateControllers()
+}
+
+// Normalize migrates deprecated resource fields.
+// A resource that cannot be migrated is left unchanged.
+//
+// Deprecated: use Migrate, which reports failures.
+func (r *Resource) Normalize() {
+	_ = r.Migrate()
+}
+
+// migrateControllers records a legacy controller under its default kind-based name.
+func (r *Resource) migrateControllers() error {
+	if !r.Controller {
+		return nil
 	}
+
+	if r.Kind == "" {
+		return fmt.Errorf("cannot migrate legacy controller: kind cannot be empty")
+	}
+
+	// Validate a copy so a failed migration leaves the resource unchanged.
+	migrated := *r
+	controllers := r.Controllers.Copy()
+	migrated.Controllers = &controllers
+	name := DefaultControllerName(r.Kind)
+	if !migrated.Controllers.HasController(name) {
+		if err := migrated.Controllers.AddController(name); err != nil {
+			return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
+		}
+	}
+	migrated.Controller = false
+	if err := migrated.validateControllers(); err != nil {
+		return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
+	}
+	r.Controllers = migrated.Controllers
+	r.Controller = false
+
+	return nil
 }
 
 // PackageName returns a name valid to be used for Go packages.
@@ -162,17 +217,9 @@ func (r Resource) HasAPI() bool {
 }
 
 // HasController returns true if the resource has at least one associated controller.
-// It checks both the legacy Controller bool field and the new Controllers field.
+// It also accepts the legacy Controller field.
 func (r Resource) HasController() bool {
-	// Check legacy field first for backward compatibility
-	if r.Controller {
-		return true
-	}
-	// Check new Controllers field
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		return true
-	}
-	return false
+	return r.Controller || !r.Controllers.IsEmpty()
 }
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
@@ -201,21 +248,17 @@ func (r Resource) IsRegularPlural() bool {
 }
 
 // GetControllerNames returns the names of all controllers for this resource.
-// For resources using the new Controllers field, it returns the actual controller names.
-// For resources using the legacy Controller bool field, it returns a default name (lowercase kind).
+// Legacy controllers use the default name for their kind.
 // Returns nil if the resource has no controllers.
 func (r Resource) GetControllerNames() []string {
-	// New format: return explicit controller names
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		return r.Controllers.GetControllerNames()
+	names := r.Controllers.GetControllerNames()
+
+	// Preserve the legacy controller when both formats are present.
+	if name := DefaultControllerName(r.Kind); r.Controller && !r.Controllers.HasController(name) {
+		names = append(names, name)
 	}
 
-	// Legacy format: generate default name from kind
-	if r.Controller {
-		return []string{strings.ToLower(r.Kind)}
-	}
-
-	return nil
+	return names
 }
 
 // Copy returns a deep copy of the Resource that can be safely modified without affecting the original.
@@ -270,35 +313,8 @@ func (r *Resource) Update(other Resource) error {
 		return err
 	}
 
-	// Update controllers
-	if other.Controllers != nil && !other.Controllers.IsEmpty() {
-		// Migrate legacy controller: true to the new controllers array format
-		if r.Controller {
-			if r.Controllers == nil {
-				r.Controllers = &Controllers{}
-			}
-			// Add a default controller with a kind-based name
-			defaultName := strings.ToLower(r.Kind)
-			if !r.Controllers.HasController(defaultName) {
-				_ = r.Controllers.AddController(defaultName)
-			}
-		}
-
-		// Initialize controllers array if not yet created
-		if r.Controllers == nil {
-			r.Controllers = &Controllers{}
-		}
-
-		// Merge controllers from the other resource
-		if err := r.Controllers.Update(other.Controllers); err != nil {
-			return err
-		}
-
-		// Clear the legacy flag now that we're using the new format
-		r.Controller = false
-	} else {
-		// Only update the legacy field if not using the new format
-		r.Controller = r.Controller || other.Controller
+	if err := r.updateControllers(other); err != nil {
+		return err
 	}
 
 	// Update Webhooks.
@@ -307,6 +323,34 @@ func (r *Resource) Update(other Resource) error {
 	}
 
 	return r.Webhooks.Update(other.Webhooks)
+}
+
+// updateControllers migrates and merges controllers, then validates the result.
+func (r *Resource) updateControllers(other Resource) error {
+	// Validate the merged copy before changing the original resource.
+	merged := r.Copy()
+	if err := merged.Migrate(); err != nil {
+		return err
+	}
+	incoming := other.Copy()
+	if err := incoming.Migrate(); err != nil {
+		return err
+	}
+	if !incoming.Controllers.IsEmpty() {
+		if merged.Controllers == nil {
+			merged.Controllers = &Controllers{}
+		}
+		if err := merged.Controllers.Update(incoming.Controllers); err != nil {
+			return err
+		}
+	}
+	if err := merged.validateControllers(); err != nil {
+		return fmt.Errorf("cannot update controllers of kind %q: %w", r.Kind, err)
+	}
+	r.Controller = merged.Controller
+	r.Controllers = merged.Controllers
+
+	return nil
 }
 
 func wrapKey(key string) string {

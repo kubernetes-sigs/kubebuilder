@@ -17,376 +17,378 @@ limitations under the License.
 package resource
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-const (
-	controller1        = "controller-1"
-	controller2        = "controller-2"
-	captainBackup      = "captainbackup"
-	captainBackupKebab = "captain-backup"
-	crewGroup          = "crew"
-	captainKind        = "Captain"
-	captainsPlural     = "captains"
-	myKind             = "MyKind"
-)
+var _ = Describe("Controller", func() {
+	const (
+		controller1        = "controller-1"
+		controller2        = "controller-2"
+		captain            = "captain"
+		captainBackup      = "captainbackup"
+		captainBackupKebab = "captain-backup"
+		crewGroup          = "crew"
+		captainKind        = "Captain"
+		captainsPlural     = "captains"
+		myKind             = "MyKind"
+		myKindCtrl         = "mykind"
+		myKindKebab        = "my-kind"
+		myKindsPlural      = "mykinds"
+	)
 
-func TestController_Validate(t *testing.T) {
-	tests := []struct {
-		name    string
-		ctrl    Controller
-		wantErr bool
-	}{
-		{
-			name:    "valid controller name",
-			ctrl:    Controller{Name: "my-controller"},
-			wantErr: false,
+	DescribeTable("Validate should succeed for valid names",
+		func(name string) {
+			Expect(Controller{Name: name}.Validate()).To(Succeed())
 		},
-		{
-			name:    "empty controller name",
-			ctrl:    Controller{Name: ""},
-			wantErr: true,
-		},
-		{
-			name:    "invalid controller name with uppercase",
-			ctrl:    Controller{Name: "MyController"},
-			wantErr: true,
-		},
-		{
-			name:    "invalid controller name with underscore",
-			ctrl:    Controller{Name: "my_controller"},
-			wantErr: true,
-		},
-		{
-			name:    "valid controller name with numbers",
-			ctrl:    Controller{Name: controller1},
-			wantErr: false,
-		},
-	}
+		Entry("a hyphenated name", "my-controller"),
+		Entry("a name with numbers", controller1),
+	)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.ctrl.Validate()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Controller.Validate() error = %v, wantErr %v", err, tt.wantErr)
-			}
+	DescribeTable("Validate should fail for invalid names",
+		func(name string) {
+			Expect(Controller{Name: name}.Validate()).NotTo(Succeed())
+		},
+		Entry("an empty name", ""),
+		Entry("a name with uppercase characters", "MyController"),
+		Entry("a name with an underscore", "my_controller"),
+	)
+
+	Context("Controllers", func() {
+		DescribeTable("Validate should succeed",
+			func(controllers *Controllers) {
+				Expect(controllers.Validate()).To(Succeed())
+			},
+			Entry("for nil controllers", nil),
+			Entry("for empty controllers", &Controllers{}),
+			Entry("for distinct names", &Controllers{{Name: controller1}, {Name: controller2}}),
+		)
+
+		DescribeTable("Validate should fail",
+			func(controllers *Controllers) {
+				Expect(controllers.Validate()).NotTo(Succeed())
+			},
+			Entry("for duplicate names", &Controllers{{Name: controller1}, {Name: controller1}}),
+			Entry("for an invalid name", &Controllers{{Name: "Controller-1"}}),
+		)
+
+		DescribeTable("HasController should report whether a name is present",
+			func(name string, expected bool) {
+				controllers := &Controllers{{Name: controller1}, {Name: controller2}}
+				Expect(controllers.HasController(name)).To(Equal(expected))
+			},
+			Entry("for the first controller", controller1, true),
+			Entry("for the second controller", controller2, true),
+			Entry("for an absent controller", "controller-3", false),
+		)
+
+		Context("AddController", func() {
+			It("should fail on nil controllers", func() {
+				var controllers *Controllers
+				Expect(controllers.AddController(controller1)).NotTo(Succeed())
+			})
+
+			It("should append valid controllers in order", func() {
+				controllers := &Controllers{}
+				Expect(controllers.AddController(controller1)).To(Succeed())
+				Expect(controllers.AddController(controller2)).To(Succeed())
+				Expect(controllers.GetControllerNames()).To(Equal([]string{controller1, controller2}))
+			})
+
+			It("should reject a duplicate controller", func() {
+				controllers := &Controllers{{Name: controller1}}
+				Expect(controllers.AddController(controller1)).NotTo(Succeed())
+				Expect(*controllers).To(HaveLen(1))
+			})
+
+			It("should reject an invalid name", func() {
+				controllers := &Controllers{}
+				Expect(controllers.AddController("Controller_1")).NotTo(Succeed())
+				Expect(*controllers).To(BeEmpty())
+			})
 		})
-	}
-}
+	})
 
-func TestControllers_Validate(t *testing.T) {
-	tests := []struct {
-		name    string
-		ctrls   *Controllers
-		wantErr bool
-	}{
-		{
-			name:    "nil controllers",
-			ctrls:   nil,
-			wantErr: false,
-		},
-		{
-			name:    "empty controllers",
-			ctrls:   &Controllers{},
-			wantErr: false,
-		},
-		{
-			name: "valid controllers",
-			ctrls: &Controllers{
-				{Name: controller1},
-				{Name: controller2},
-			},
-			wantErr: false,
-		},
-		{
-			name: "duplicate controller names",
-			ctrls: &Controllers{
-				{Name: controller1},
-				{Name: controller1},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid controller name",
-			ctrls: &Controllers{
-				{Name: "Controller-1"},
-			},
-			wantErr: true,
-		},
-		{
-			name: "normalization collision: removes hyphens",
-			ctrls: &Controllers{
-				{Name: captainBackup},
-				{Name: captainBackupKebab},
-			},
-			wantErr: true,
-		},
-		{
-			name: "normalization collision: case insensitive",
-			ctrls: &Controllers{
-				{Name: captainBackup},
-				{Name: captainBackup}, // Will be caught as exact duplicate first
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.ctrls.Validate()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Controllers.Validate() error = %v, wantErr %v", err, tt.wantErr)
+	Context("Resource.Validate reconciler names", func() {
+		validate := func(kind string, names ...string) error {
+			controllers := make(Controllers, 0, len(names))
+			for _, name := range names {
+				controllers = append(controllers, Controller{Name: name})
 			}
+
+			res := Resource{
+				GVK:         GVK{Group: crewGroup, Version: "v1", Kind: kind},
+				Plural:      captainsPlural,
+				Controllers: &controllers,
+			}
+
+			return res.validateReconcilerNames()
+		}
+
+		It("should accept names differing only by a hyphen", func() {
+			// These names generate CaptainbackupReconciler and CaptainBackupReconciler.
+			Expect(validate(captainKind, captainBackup, captainBackupKebab)).To(Succeed())
 		})
-	}
-}
 
-func TestControllers_HasController(t *testing.T) {
-	ctrls := &Controllers{
-		{Name: controller1},
-		{Name: controller2},
-	}
-
-	tests := []struct {
-		name string
-		want bool
-	}{
-		{
-			name: controller1,
-			want: true,
-		},
-		{
-			name: controller2,
-			want: true,
-		},
-		{
-			name: "controller-3",
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ctrls.HasController(tt.name); got != tt.want {
-				t.Errorf("Controllers.HasController() = %v, want %v", got, tt.want)
-			}
+		It("should reject names generating the same reconciler", func() {
+			Expect(validate(captainKind, captainBackupKebab, "captain--backup")).NotTo(Succeed())
 		})
-	}
-}
 
-func TestControllers_AddController(t *testing.T) {
-	tests := []struct {
-		name    string
-		initial *Controllers
-		addName string
-		wantErr bool
-		wantLen int
-	}{
-		{
-			name:    "add to nil controllers",
-			initial: nil,
-			addName: controller1,
-			wantErr: true,
-		},
-		{
-			name:    "add valid controller",
-			initial: &Controllers{},
-			addName: controller1,
-			wantErr: false,
-			wantLen: 1,
-		},
-		{
-			name: "add duplicate controller",
-			initial: &Controllers{
-				{Name: controller1},
-			},
-			addName: controller1,
-			wantErr: true,
-			wantLen: 1,
-		},
-		{
-			name:    "add invalid controller name",
-			initial: &Controllers{},
-			addName: "Controller_1",
-			wantErr: true,
-			wantLen: 0,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.initial.AddController(tt.addName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Controllers.AddController() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.initial != nil && len(*tt.initial) != tt.wantLen {
-				t.Errorf("Controllers.AddController() len = %v, want %v", len(*tt.initial), tt.wantLen)
-			}
+		It("should reject a name colliding with the kind-based default", func() {
+			// Both names generate MyKindReconciler.
+			Expect(validate(myKind, myKindCtrl, myKindKebab)).NotTo(Succeed())
 		})
-	}
-}
 
-func TestResource_Update_WithControllers(t *testing.T) {
-	tests := []struct {
-		name    string
-		base    Resource
-		other   Resource
-		wantErr bool
-		wantLen int
-	}{
-		{
-			name: "update resource without controllers with one that has controllers",
-			base: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-			},
-			other: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-				Controllers: &Controllers{
-					{Name: captainBackupKebab},
-				},
-			},
-			wantErr: false,
-			wantLen: 1,
-		},
-		{
-			name: "update resource with controllers with another controller",
-			base: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-				Controllers: &Controllers{
-					{Name: "captain"},
-				},
-			},
-			other: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-				Controllers: &Controllers{
-					{Name: captainBackupKebab},
-				},
-			},
-			wantErr: false,
-			wantLen: 2,
-		},
-		{
-			name: "update with nil other controllers",
-			base: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-				Controllers: &Controllers{
-					{Name: "captain"},
-				},
-			},
-			other: Resource{
-				GVK: GVK{
-					Group:   crewGroup,
-					Version: "v1",
-					Kind:    captainKind,
-				},
-				Plural: captainsPlural,
-			},
-			wantErr: false,
-			wantLen: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.base.Update(tt.other)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Resource.Update() error = %v, wantErr %v", err, tt.wantErr)
+		It("should reject collisions with an unmigrated legacy controller", func() {
+			res := Resource{
+				GVK:    GVK{Group: crewGroup, Version: "v1", Kind: myKind},
+				Plural: myKindsPlural, Controller: true, Controllers: &Controllers{{Name: myKindKebab}},
 			}
-			if !tt.wantErr {
-				if tt.base.Controllers != nil {
-					if len(*tt.base.Controllers) != tt.wantLen {
-						t.Errorf("Resource.Update() controllers len = %v, want %v", len(*tt.base.Controllers), tt.wantLen)
-					}
-				} else if tt.wantLen > 0 {
-					t.Errorf("Resource.Update() controllers is nil, want %v controllers", tt.wantLen)
+			Expect(res.Validate()).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+		})
+
+		It("should surface the collision through Resource.Validate", func() {
+			res := Resource{
+				GVK:         GVK{Group: crewGroup, Version: "v1", Kind: myKind},
+				Plural:      myKindsPlural,
+				Controllers: &Controllers{{Name: myKindCtrl}, {Name: myKindKebab}},
+			}
+			Expect(res.Validate()).NotTo(Succeed())
+		})
+	})
+
+	Context("Resource.Migrate", func() {
+		DescribeTable("should leave a failed migration unchanged",
+			func(res Resource, message string) {
+				before := res.Copy()
+				Expect(res.Migrate()).To(MatchError(ContainSubstring(message)))
+				Expect(res).To(Equal(before))
+			},
+			Entry("a missing kind", Resource{Controller: true}, "kind cannot be empty"),
+			Entry("an invalid default name", Resource{GVK: GVK{Kind: "Invalid_Kind"}, Controller: true},
+				`kind "Invalid_Kind"`),
+			Entry("a default reconciler collision", Resource{
+				GVK: GVK{Kind: myKind}, Controller: true,
+				Controllers: &Controllers{{Name: myKindKebab}},
+			}, "both generate MyKindReconciler"),
+			Entry("invalid existing controllers", Resource{
+				GVK: GVK{Kind: captainKind}, Controller: true,
+				Controllers: &Controllers{{Name: "Invalid"}},
+			}, "invalid controller name"),
+		)
+
+		It("should leave a legacy resource unchanged when Normalize cannot migrate it", func() {
+			res := Resource{Controller: true}
+			res.Normalize()
+			Expect(res.Controller).To(BeTrue())
+			Expect(res.Controllers).To(BeNil())
+		})
+
+		It("should not duplicate an already recorded default controller", func() {
+			res := Resource{
+				GVK: GVK{Kind: captainKind}, Controller: true,
+				Controllers: &Controllers{{Name: captain}},
+			}
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.Controller).To(BeFalse())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
+		})
+
+		It("should record a legacy controller under its default name", func() {
+			res := Resource{GVK: GVK{Kind: captainKind}, Controller: true}
+
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.Controller).To(BeFalse())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
+		})
+
+		It("should keep the default alongside names already recorded", func() {
+			res := Resource{
+				GVK:         GVK{Kind: captainKind},
+				Controller:  true,
+				Controllers: &Controllers{{Name: captainBackupKebab}},
+			}
+
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.Controller).To(BeFalse())
+			Expect(res.GetControllerNames()).To(Equal([]string{captainBackupKebab, captain}))
+		})
+
+		It("should be a no-op for a resource with no controller", func() {
+			res := Resource{GVK: GVK{Kind: captainKind}}
+
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.HasController()).To(BeFalse())
+			Expect(res.Controllers).To(BeNil())
+		})
+
+		It("should be idempotent", func() {
+			res := Resource{GVK: GVK{Kind: captainKind}, Controller: true}
+
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
+		})
+	})
+
+	Context("Resource.Update", func() {
+		var gvk GVK
+
+		BeforeEach(func() {
+			gvk = GVK{Group: crewGroup, Version: "v1", Kind: captainKind}
+		})
+
+		DescribeTable("should reject collisions introduced by merging controllers",
+			func(legacy bool) {
+				res := Resource{
+					GVK:    GVK{Group: crewGroup, Version: "v1", Kind: myKind},
+					Plural: myKindsPlural, Controllers: &Controllers{{Name: myKindKebab}},
 				}
-			}
-		})
-	}
-}
-
-func TestResource_GetControllerNames(t *testing.T) {
-	tests := []struct {
-		name     string
-		resource Resource
-		want     []string
-	}{
-		{
-			name: "resource with new Controllers field",
-			resource: Resource{
-				GVK: GVK{Kind: myKind},
-				Controllers: &Controllers{
-					{Name: controller1},
-					{Name: controller2},
-				},
-			},
-			want: []string{controller1, controller2},
-		},
-		{
-			name: "resource with legacy Controller bool",
-			resource: Resource{
-				GVK:        GVK{Kind: myKind},
-				Controller: true,
-			},
-			want: []string{"mykind"},
-		},
-		{
-			name: "resource with no controllers",
-			resource: Resource{
-				GVK: GVK{Kind: myKind},
-			},
-			want: nil,
-		},
-		{
-			name: "resource with both fields (new takes precedence)",
-			resource: Resource{
-				GVK:        GVK{Kind: myKind},
-				Controller: true,
-				Controllers: &Controllers{
-					{Name: "custom-controller"},
-				},
-			},
-			want: []string{"custom-controller"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.resource.GetControllerNames()
-			if len(got) != len(tt.want) {
-				t.Errorf("Resource.GetControllerNames() = %v, want %v", got, tt.want)
-				return
-			}
-			for i, name := range got {
-				if name != tt.want[i] {
-					t.Errorf("Resource.GetControllerNames()[%d] = %v, want %v", i, name, tt.want[i])
+				other := Resource{GVK: res.GVK, Plural: res.Plural, Controller: legacy}
+				if !legacy {
+					other.Controllers = &Controllers{{Name: myKindCtrl}}
 				}
+				before := res.Copy()
+				Expect(res.Update(other)).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+				Expect(res).To(Equal(before))
+			},
+			Entry("with an incoming legacy controller", true),
+			Entry("with an incoming named controller", false),
+		)
+
+		It("should adopt the controllers of the other resource", func() {
+			res := Resource{GVK: gvk, Plural: captainsPlural}
+			other := Resource{
+				GVK:         gvk,
+				Plural:      captainsPlural,
+				Controllers: &Controllers{{Name: captainBackupKebab}},
 			}
+
+			Expect(res.Update(other)).To(Succeed())
+			Expect(res.GetControllerNames()).To(Equal([]string{captainBackupKebab}))
 		})
-	}
-}
+
+		It("should merge controllers from both resources", func() {
+			res := Resource{GVK: gvk, Plural: captainsPlural, Controllers: &Controllers{{Name: captain}}}
+			other := Resource{
+				GVK:         gvk,
+				Plural:      captainsPlural,
+				Controllers: &Controllers{{Name: captainBackupKebab}},
+			}
+
+			Expect(res.Update(other)).To(Succeed())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain, captainBackupKebab}))
+		})
+
+		It("should keep its controllers when the other resource has none", func() {
+			res := Resource{GVK: gvk, Plural: captainsPlural, Controllers: &Controllers{{Name: captain}}}
+			other := Resource{GVK: gvk, Plural: captainsPlural}
+
+			Expect(res.Update(other)).To(Succeed())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
+		})
+
+		It("should migrate a legacy controller into the controllers list", func() {
+			res := Resource{GVK: gvk, Plural: captainsPlural, Controller: true}
+			other := Resource{
+				GVK:         gvk,
+				Plural:      captainsPlural,
+				Controllers: &Controllers{{Name: captainBackupKebab}},
+			}
+
+			Expect(res.Update(other)).To(Succeed())
+			Expect(res.Controller).To(BeFalse())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain, captainBackupKebab}))
+		})
+
+		It("should migrate a legacy controller coming from the other resource", func() {
+			res := Resource{GVK: gvk, Plural: captainsPlural}
+			other := Resource{GVK: gvk, Plural: captainsPlural, Controller: true}
+
+			Expect(res.Update(other)).To(Succeed())
+			Expect(res.Controller).To(BeFalse())
+			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
+		})
+	})
+
+	DescribeTable("Resource.GetControllerNames",
+		func(res Resource, expected []string) {
+			Expect(res.GetControllerNames()).To(Equal(expected))
+		},
+		Entry("returns the names from the controllers list",
+			Resource{
+				GVK:         GVK{Kind: myKind},
+				Controllers: &Controllers{{Name: controller1}, {Name: controller2}},
+			},
+			[]string{controller1, controller2}),
+		Entry("returns the kind-based default for a legacy controller",
+			Resource{GVK: GVK{Kind: myKind}, Controller: true},
+			[]string{myKindCtrl}),
+		Entry("returns nil when there is no controller",
+			Resource{GVK: GVK{Kind: myKind}},
+			nil),
+		Entry("reports the legacy controller alongside the list",
+			Resource{
+				GVK:         GVK{Kind: myKind},
+				Controller:  true,
+				Controllers: &Controllers{{Name: "custom-controller"}},
+			},
+			[]string{"custom-controller", myKindCtrl}),
+		Entry("does not repeat a legacy controller already in the list",
+			Resource{
+				GVK:         GVK{Kind: myKind},
+				Controller:  true,
+				Controllers: &Controllers{{Name: myKindCtrl}},
+			},
+			[]string{myKindCtrl}),
+	)
+
+	It("should report the same controllers that Migrate records", func() {
+		for _, res := range []Resource{
+			{GVK: GVK{Kind: captainKind}, Controller: true},
+			{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captainBackupKebab}}},
+			{GVK: GVK{Kind: captainKind}, Controller: true, Controllers: &Controllers{{Name: captainBackupKebab}}},
+			{GVK: GVK{Kind: captainKind}},
+		} {
+			before := res.GetControllerNames()
+			Expect(res.Migrate()).To(Succeed())
+			Expect(res.GetControllerNames()).To(ConsistOf(before))
+		}
+	})
+
+	DescribeTable("NormalizeReconcilerName",
+		func(controllerName, kind, expected string) {
+			Expect(NormalizeReconcilerName(controllerName, kind)).To(Equal(expected))
+		},
+		Entry("falls back to the kind when no name is given", "", captainKind, "CaptainReconciler"),
+		Entry("falls back to the kind when the name matches it", captain, captainKind, "CaptainReconciler"),
+		Entry("converts a hyphenated name to PascalCase",
+			captainBackupKebab, captainKind, "CaptainBackupReconciler"),
+	)
+
+	DescribeTable("GetControllerName",
+		func(controllerName, kind, group string, multiGroup bool, expected string) {
+			Expect(GetControllerName(controllerName, kind, group, multiGroup)).To(Equal(expected))
+		},
+		Entry("uses the lowercase kind when no name is given", "", captainKind, crewGroup, false, captain),
+		Entry("uses the given name", captainBackupKebab, captainKind, crewGroup, false, captainBackupKebab),
+		Entry("prefixes the group in multigroup projects", captain, captainKind, crewGroup, true, "crew-captain"),
+		Entry("skips the prefix when there is no group", captain, captainKind, "", true, captain),
+	)
+
+	DescribeTable("NormalizeFileName",
+		func(controllerName, expected string) {
+			Expect(NormalizeFileName(controllerName)).To(Equal(expected))
+		},
+		Entry("leaves a plain name untouched", captain, captain),
+		Entry("replaces hyphens with underscores", captainBackupKebab, "captain_backup"),
+	)
+
+	DescribeTable("DefaultControllerName",
+		func(kind, expected string) {
+			Expect(DefaultControllerName(kind)).To(Equal(expected))
+		},
+		Entry("lowercases a single-word kind", captainKind, captain),
+		Entry("lowercases a multi-word kind", myKind, myKindCtrl),
+	)
+})
