@@ -92,6 +92,7 @@ var _ = Describe("Options", func() {
 					Expect(res.API).NotTo(BeNil())
 					if options.DoAPI {
 						Expect(res.API.Namespaced).To(Equal(options.Namespaced))
+						Expect(res.API.SSA).To(Equal(options.SSA))
 						Expect(res.API.IsEmpty()).To(BeFalse())
 					} else {
 						Expect(res.API.IsEmpty()).To(BeTrue())
@@ -125,6 +126,7 @@ var _ = Describe("Options", func() {
 				Options{ExternalAPIPath: "github.com/example/external/api/v1", ExternalAPIDomain: "test.io"}),
 			Entry("when updating the API with setting webhooks params",
 				Options{DoAPI: true, DoDefaulting: true, DoValidation: true, DoConversion: true}),
+			Entry("when updating the API with SSA enabled", Options{DoAPI: true, SSA: true}),
 		)
 
 		It("should retain path and external flag when ExternalAPIPath is not provided but resource is already external",

@@ -44,14 +44,17 @@ var _ = Describe("API", func() {
 			Expect(api.Update(nil)).To(Succeed())
 			Expect(api.CRDVersion).To(Equal(""))
 			Expect(api.Namespaced).To(BeFalse())
+			Expect(api.SSA).To(BeFalse())
 
 			api = API{
 				CRDVersion: v1,
 				Namespaced: true,
+				SSA:        true,
 			}
 			Expect(api.Update(nil)).To(Succeed())
 			Expect(api.CRDVersion).To(Equal(v1))
 			Expect(api.Namespaced).To(BeTrue())
+			Expect(api.SSA).To(BeTrue())
 		})
 
 		Context("CRD version", func() {
@@ -112,6 +115,36 @@ var _ = Describe("API", func() {
 				Expect(api.Namespaced).To(BeFalse())
 			})
 		})
+
+		Context("SSA", func() {
+			It("should enable SSA if provided and not previously set", func() {
+				api = API{}
+				other = API{SSA: true}
+				Expect(api.Update(&other)).To(Succeed())
+				Expect(api.SSA).To(BeTrue())
+			})
+
+			It("should keep SSA enabled if previously set", func() {
+				api = API{SSA: true}
+
+				By("not providing it")
+				other = API{}
+				Expect(api.Update(&other)).To(Succeed())
+				Expect(api.SSA).To(BeTrue())
+
+				By("providing it")
+				other = API{SSA: true}
+				Expect(api.Update(&other)).To(Succeed())
+				Expect(api.SSA).To(BeTrue())
+			})
+
+			It("should not enable SSA if not provided and not previously set", func() {
+				api = API{}
+				other = API{}
+				Expect(api.Update(&other)).To(Succeed())
+				Expect(api.SSA).To(BeFalse())
+			})
+		})
 	})
 
 	Context("IsEmpty", func() {
@@ -119,6 +152,7 @@ var _ = Describe("API", func() {
 			none       API
 			cluster    API
 			namespaced API
+			ssa        API
 		)
 
 		BeforeEach(func() {
@@ -129,6 +163,9 @@ var _ = Describe("API", func() {
 			namespaced = API{
 				CRDVersion: v1,
 				Namespaced: true,
+			}
+			ssa = API{
+				SSA: true,
 			}
 		})
 
@@ -142,6 +179,7 @@ var _ = Describe("API", func() {
 			},
 			Entry("cluster-scope", func() API { return cluster }),
 			Entry("namespace-scope", func() API { return namespaced }),
+			Entry("ssa-only", func() API { return ssa }),
 		)
 	})
 })
