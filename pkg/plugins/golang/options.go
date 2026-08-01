@@ -19,7 +19,6 @@ package golang
 import (
 	log "log/slog"
 	"path"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -184,36 +183,27 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 }
 
-// updateControllers applies controller-related options to the resource.
-// It handles both legacy (--controller) and new (--controller-name) controller creation.
+// updateControllers records the controller on the resource. Controllers are always
+// stored in the Controllers list; the legacy Controller bool is never written back.
+// The name is rejected earlier by createAPISubcommand.validateController, so a failure here
+// means a caller built the options directly. UpdateResource has no error to return, so it is
+// logged: the resource then records no controller and nothing is scaffolded for it.
 func (opts Options) updateControllers(res *resource.Resource) {
-	if opts.ControllerName == "" {
-		// No controller name specified: use legacy mode
-		if res.Controllers == nil || res.Controllers.IsEmpty() {
-			res.Controller = true
-		} else {
-			// Warn when trying to use legacy mode on a resource with named controllers
-			log.Warn("resource already has named controllers; use --controller-name to add another controller")
-		}
-		return
+	if err := res.Migrate(); err != nil {
+		log.Error("could not migrate resource", "kind", res.Kind, "error", err)
 	}
 
-	// Controller name specified: migrate from legacy format if needed
-	if res.Controller {
-		if res.Controllers == nil {
-			res.Controllers = &resource.Controllers{}
-		}
-		// Convert the legacy controller: true to a named controller
-		defaultName := strings.ToLower(res.Kind)
-		_ = res.Controllers.AddController(defaultName)
-		res.Controller = false
-	}
-
-	// Initialize controllers array if not yet created
 	if res.Controllers == nil {
 		res.Controllers = &resource.Controllers{}
 	}
 
-	// Add the new named controller (AddController validates and checks for duplicates)
-	_ = res.Controllers.AddController(opts.ControllerName)
+	name := opts.ControllerName
+	if name == "" {
+		name = resource.DefaultControllerName(res.Kind)
+	}
+	if !res.Controllers.HasController(name) {
+		if err := res.Controllers.AddController(name); err != nil {
+			log.Error("could not record controller", "name", name, "kind", res.Kind, "error", err)
+		}
+	}
 }

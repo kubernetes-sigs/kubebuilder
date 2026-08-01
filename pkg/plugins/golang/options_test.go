@@ -30,11 +30,13 @@ import (
 var _ = Describe("Options", func() {
 	Context("UpdateResource", func() {
 		const (
-			group   = "crew"
-			domain  = "test.io"
-			version = "v1"
-			kind    = "FirstMate"
-			plural  = "firstmates"
+			group         = "crew"
+			domain        = "test.io"
+			version       = "v1"
+			kind          = "FirstMate"
+			plural        = "firstmates"
+			controller    = "firstmate"
+			backupControl = "firstmate-backup"
 		)
 
 		var (
@@ -96,7 +98,9 @@ var _ = Describe("Options", func() {
 					} else {
 						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
-					Expect(res.Controller).To(Equal(options.DoController))
+					// Controllers are always recorded in the list; the legacy flag is never written.
+					Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // asserting it stays unwritten
+					Expect(res.HasController()).To(Equal(options.DoController))
 					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
@@ -126,6 +130,53 @@ var _ = Describe("Options", func() {
 			Entry("when updating the API with setting webhooks params",
 				Options{DoAPI: true, DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
+
+		Context("recording controllers", func() {
+			var res resource.Resource
+
+			BeforeEach(func() {
+				res = resource.Resource{
+					GVK:      gvk,
+					Plural:   plural,
+					API:      &resource.API{},
+					Webhooks: &resource.Webhooks{},
+				}
+			})
+
+			It("should record the default kind-based name when none is given", func() {
+				Options{DoController: true}.UpdateResource(&res, cfg)
+
+				Expect(res.GetControllerNames()).To(Equal([]string{controller}))
+			})
+
+			It("should record the given controller name", func() {
+				Options{DoController: true, ControllerName: backupControl}.UpdateResource(&res, cfg)
+
+				Expect(res.GetControllerNames()).To(Equal([]string{backupControl}))
+			})
+
+			It("should carry a legacy controller into the list before adding a new one", func() {
+				res.Controller = true //nolint:staticcheck // simulating a project read from an old PROJECT file
+
+				Options{DoController: true, ControllerName: backupControl}.UpdateResource(&res, cfg)
+
+				Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // asserting it stays unwritten
+				Expect(res.GetControllerNames()).To(Equal([]string{controller, backupControl}))
+			})
+
+			It("should not duplicate a controller that is already recorded", func() {
+				Options{DoController: true}.UpdateResource(&res, cfg)
+				Options{DoController: true}.UpdateResource(&res, cfg)
+
+				Expect(res.GetControllerNames()).To(Equal([]string{controller}))
+			})
+
+			It("should record nothing when no controller is requested", func() {
+				Options{}.UpdateResource(&res, cfg)
+
+				Expect(res.HasController()).To(BeFalse())
+			})
+		})
 
 		It("should retain path and external flag when ExternalAPIPath is not provided but resource is already external",
 			func() {

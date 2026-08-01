@@ -145,7 +145,8 @@ var _ = Describe("Server-Side Apply (--ssa) Scaffolding", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(projectContent)).To(ContainSubstring("ssa: true"),
 			"adding the controller must not drop the ssa flag from the PROJECT file")
-		Expect(string(projectContent)).To(ContainSubstring("controller: true"))
+		Expect(string(projectContent)).To(ContainSubstring("- name: admiral"))
+		Expect(string(projectContent)).NotTo(ContainSubstring("controller: true"))
 	})
 
 	It("should complete 'create api --ssa' when groupversion_info.go was customized", func() {

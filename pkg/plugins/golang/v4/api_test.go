@@ -17,6 +17,8 @@ limitations under the License.
 package v4
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
@@ -328,4 +330,204 @@ var _ = Describe("createAPISubcommand", func() {
 
 		Expect(subCmd.InjectResource(res)).To(Succeed())
 	})
+})
+
+var _ = Describe("validateController", func() {
+	const (
+		captainCtrl   = "captain"
+		captainBackup = "captain-backup"
+	)
+
+	var (
+		cfg config.Config
+		gvk resource.GVK
+	)
+
+	BeforeEach(func() {
+		cfg = cfgv3.New()
+		Expect(cfg.SetRepository("test")).To(Succeed())
+		gvk = resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: captainKind}
+	})
+
+	// stored puts a resource carrying the given controllers into the config, the way a
+	// PROJECT file on disk would present it.
+	stored := func(controllers *resource.Controllers, legacy bool) {
+		res := resource.Resource{GVK: gvk, Plural: captains, Controllers: controllers}
+		res.Controller = legacy //nolint:staticcheck // simulating an unmigrated PROJECT file
+		Expect(cfg.AddResource(res)).To(Succeed())
+	}
+
+	subcommand := func(name string, doAPI bool) *createAPISubcommand {
+		return &createAPISubcommand{
+			config:   cfg,
+			resource: &resource.Resource{GVK: gvk, Plural: captains},
+			options:  &goPlugin.Options{DoController: true, ControllerName: name, DoAPI: doAPI},
+		}
+	}
+
+	It("should skip validation when no controller is requested", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+		p := subcommand("", false)
+		p.options.DoController = false
+
+		Expect(p.validateController()).To(Succeed())
+	})
+
+	It("should reject a name that is not a valid DNS label", func() {
+		Expect(subcommand("Not_A_Label", false).validateController()).NotTo(Succeed())
+	})
+
+	It("should accept any name when the resource does not exist yet", func() {
+		Expect(subcommand(captainBackup, false).validateController()).To(Succeed())
+	})
+
+	It("should accept a new name on a resource that already has controllers", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+
+		Expect(subcommand(captainBackup, false).validateController()).To(Succeed())
+	})
+
+	It("should reject a name already recorded", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+
+		Expect(subcommand(captainCtrl, false).validateController()).NotTo(Succeed())
+	})
+
+	It("should reject a name already recorded through the legacy field", func() {
+		stored(nil, true)
+
+		Expect(subcommand(captainCtrl, false).validateController()).NotTo(Succeed())
+	})
+
+	It("should reject a name generating an existing reconciler", func() {
+		stored(&resource.Controllers{{Name: captainBackup}}, false)
+
+		Expect(subcommand("captain--backup", false).validateController()).NotTo(Succeed())
+	})
+
+	It("should allow re-scaffolding the single default controller without a name", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+
+		Expect(subcommand("", false).validateController()).To(Succeed())
+	})
+
+	It("should require a name when the resource has several controllers", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+
+		Expect(subcommand("", false).validateController()).NotTo(Succeed())
+	})
+
+	It("should require a name when the only controller is not the default", func() {
+		stored(&resource.Controllers{{Name: captainBackup}}, false)
+
+		Expect(subcommand("", false).validateController()).NotTo(Succeed())
+	})
+
+	It("should allow omitting the name while recreating the API", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+
+		Expect(subcommand("", true).validateController()).To(Succeed())
+	})
+})
+
+var _ = Describe("validateController across resources", func() {
+	const (
+		admiralCtrl   = "admiral"
+		admiralKind   = "Admiral"
+		admiralPlural = "admirals"
+	)
+
+	var (
+		cfg        config.Config
+		captainGVK resource.GVK
+	)
+
+	BeforeEach(func() {
+		cfg = cfgv3.New()
+		Expect(cfg.SetRepository("test")).To(Succeed())
+		captainGVK = resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: captainKind}
+
+		// Admiral already owns AdmiralReconciler under its default controller name.
+		Expect(cfg.AddResource(resource.Resource{
+			GVK:         resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: admiralKind},
+			Plural:      admiralPlural,
+			Controllers: &resource.Controllers{{Name: admiralCtrl}},
+		})).To(Succeed())
+	})
+
+	subcommand := func(name string) *createAPISubcommand {
+		return &createAPISubcommand{
+			config:   cfg,
+			resource: &resource.Resource{GVK: captainGVK, Plural: captains},
+			options:  &goPlugin.Options{DoController: true, ControllerName: name},
+		}
+	}
+
+	It("should reject a name generating another resource's reconciler", func() {
+		err := subcommand(admiralCtrl).validateController()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("AdmiralReconciler"))
+	})
+
+	It("should accept a name that does not collide", func() {
+		Expect(subcommand("captain-backup").validateController()).To(Succeed())
+	})
+
+	// A second version of an existing kind resolves to the same default controller name,
+	// so it collides even though no --controller-name was given.
+	It("should reject the default name when another version of the kind already has it", func() {
+		p := subcommand("")
+		p.resource = &resource.Resource{
+			GVK:    resource.GVK{Group: crewGroup, Domain: testIO, Version: "v2", Kind: admiralKind},
+			Plural: admiralPlural,
+		}
+
+		err := p.validateController()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("AdmiralReconciler"))
+	})
+
+	It("should accept a second version of a kind that names its controller", func() {
+		p := subcommand("admiral-v2")
+		p.resource = &resource.Resource{
+			GVK:    resource.GVK{Group: crewGroup, Domain: testIO, Version: "v2", Kind: admiralKind},
+			Plural: admiralPlural,
+		}
+
+		Expect(p.validateController()).To(Succeed())
+	})
+
+	It("should allow the same name in another group of a multigroup project", func() {
+		Expect(cfg.SetMultiGroup()).To(Succeed())
+		p := subcommand(admiralCtrl)
+		p.resource.Group = shipGroup
+
+		Expect(p.validateController()).To(Succeed())
+	})
+
+	It("should still reject it within the same group of a multigroup project", func() {
+		Expect(cfg.SetMultiGroup()).To(Succeed())
+
+		Expect(subcommand(admiralCtrl).validateController()).NotTo(Succeed())
+	})
+})
+
+var _ = Describe("default controller name", func() {
+	// Migrate derives the default name with strings.ToLower(Kind) and Controller.Validate
+	// requires a DNS-1035 label. GVK.Validate applies the same rule to the kind, so any
+	// resource kubebuilder accepts can always be migrated.
+	DescribeTable("should be valid for every kind GVK.Validate accepts",
+		func(kind string) {
+			gvk := resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: kind}
+			Expect(gvk.Validate()).To(Succeed())
+
+			name := resource.DefaultControllerName(kind)
+			Expect(resource.Controller{Name: name}.Validate()).To(Succeed())
+		},
+		Entry("a short kind", captainKind),
+		Entry("a kind with digits", "Captain2"),
+		Entry("a kind at the 63 character limit", "C"+strings.Repeat("a", 62)),
+	)
 })
