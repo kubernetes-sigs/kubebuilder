@@ -143,16 +143,19 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	// When scaffolding a controller without an API (--resource=false), copy essential
-	// fields from the existing resource in the PROJECT file, such as Path and Plural.
-	// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
-	if !p.options.DoAPI {
-		if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+	if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+		// When scaffolding a controller without an API (--resource=false), copy essential
+		// fields from the existing resource in the PROJECT file, such as Path and Plural.
+		// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
+		if !p.options.DoAPI {
 			p.resource.Path = existingRes.Path
 			p.resource.Plural = existingRes.Plural
 			p.resource.External = existingRes.External
 			p.resource.Core = existingRes.Core
 			p.resource.Module = existingRes.Module
+		} else if existingRes.API != nil && existingRes.API.SSA {
+			// SSA cannot be disabled, so keep the value tracked in the PROJECT file.
+			p.options.SSA = true
 		}
 	}
 

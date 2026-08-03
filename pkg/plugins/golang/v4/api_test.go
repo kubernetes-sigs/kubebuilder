@@ -36,6 +36,7 @@ const (
 	captains        = "captains"
 	shipGroup       = "ship"
 	frigateKind     = "Frigate"
+	frigates        = "frigates"
 
 	externalAPIModuleWithVersion = "github.com/external/api@v1.0.0"
 	relativeAPIPath              = "api/v1"
@@ -114,6 +115,51 @@ var _ = Describe("createAPISubcommand", func() {
 
 		Expect(subCmd.InjectResource(res)).To(Succeed())
 		Expect(res.API.SSA).To(BeTrue())
+	})
+
+	DescribeTable("should keep the SSA value tracked in the PROJECT file",
+		func(storedSSA, flagSSA, expected bool) {
+			existing := *res
+			existing.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: storedSSA}
+			Expect(cfg.AddResource(existing)).To(Succeed())
+
+			subCmd.force = true
+			subCmd.options.DoAPI = true
+			subCmd.options.Namespaced = true
+			subCmd.options.SSA = flagSSA
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+			Expect(res.API.SSA).To(Equal(expected))
+		},
+		Entry("when the flag is not provided for an API scaffolded with SSA", true, false, true),
+		Entry("when the flag is provided for an API scaffolded with SSA", true, true, true),
+		Entry("when the flag is provided for an API scaffolded without SSA", false, true, true),
+		Entry("when the flag is not provided for an API scaffolded without SSA", false, false, false),
+	)
+
+	It("should not enable SSA for a new API when another one has it enabled", func() {
+		other := *res
+		other.Kind = frigateKind
+		other.Plural = frigates
+		other.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+		Expect(cfg.AddResource(other)).To(Succeed())
+
+		subCmd.options.DoAPI = true
+		subCmd.options.Namespaced = true
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(res.API.SSA).To(BeFalse())
+	})
+
+	It("should not reject --resource=false for an API scaffolded with SSA", func() {
+		existing := *res
+		existing.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+		Expect(cfg.AddResource(existing)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
 	})
 
 	It("should require external-api-path when using external-api-module", func() {
@@ -292,7 +338,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigates,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
@@ -319,7 +365,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigates,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
