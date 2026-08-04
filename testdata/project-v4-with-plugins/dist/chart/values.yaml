@@ -47,7 +47,7 @@ manager:
           fieldPath: metadata.namespace
 
   ## Env overrides (--set manager.envOverrides.VAR=value)
-  ## Same name in env above: this value takes precedence.
+  ## Each name must match an entry in env above. The override value takes precedence.
   ##
   envOverrides: {}
 

@@ -277,7 +277,7 @@ func (f *HelmValues) addEnvSection(buf *bytes.Buffer) {
 
 		// Add envOverrides when env exists
 		buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
-		buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
+		buf.WriteString("  ## Each name must match an entry in env above. The override value takes precedence.\n")
 		buf.WriteString("  ##\n")
 		buf.WriteString("  envOverrides: {}\n\n")
 	}

@@ -97,15 +97,31 @@ spec:
         - /manager
         env:
         {{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
-          {{- if .Values.manager.env }}
-          {{- toYaml .Values.manager.env | nindent 10 }}
-          {{- end }}
+          {{- /* Collect override names. */ -}}
+          {{- $envOverrides := dict }}
+          {{- $overrideNames := list }}
           {{- if kindIs "map" .Values.manager.envOverrides }}
-          {{- range $k, $v := .Values.manager.envOverrides }}
-          - name: {{ $k }}
-            value: {{ $v | quote }}
-          {{ end }}
+          {{- $envOverrides = deepCopy .Values.manager.envOverrides }}
+          {{- range $name, $_ := $envOverrides }}
+          {{- $overrideNames = append $overrideNames $name }}
           {{- end }}
+          {{- end }}
+          {{- /* Append or replace existing variables in order. */ -}}
+          {{- $env := list }}
+          {{- range .Values.manager.env }}
+          {{- if not (has .name $overrideNames) }}
+          {{- $env = append $env . }}
+          {{- else }}
+          {{- $env = append $env (dict "name" .name "value" (get $envOverrides .name | toString)) }}
+          {{- $_ := unset $envOverrides .name -}}
+          {{- end }}
+          {{- end }}
+          {{- /* Fail if an override does not match an existing variable. */ -}}
+          {{- range $envOverrides }}
+          {{- fail (printf "manager.envOverrides contains unknown environment variable(s): %s" (keys $envOverrides | sortAlpha | join ", ")) }}
+          {{- end }}
+          {{- /* Render the merged environment list. */ -}}
+          {{- toYaml $env | nindent 10 }}
           {{- else }}
           []
           {{- end }}
