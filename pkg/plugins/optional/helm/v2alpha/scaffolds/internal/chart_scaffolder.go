@@ -122,7 +122,10 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 	chartBuilders := chartConverter.GetChartBuilders()
 
 	builders := []machinery.Builder{
-		&github.HelmChartCI{Force: s.config.Force},
+		&github.HelmChartCI{
+			Force:       s.config.Force,
+			HasWebhooks: extraction.Features.HasWebhooks,
+		},
 		&templates.HelmChart{
 			OutputDir:     s.config.OutputDir,
 			ChartMetadata: extraction.Metadata,

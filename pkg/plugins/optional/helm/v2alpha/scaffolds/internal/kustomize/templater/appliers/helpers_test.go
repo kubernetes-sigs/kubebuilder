@@ -25,6 +25,8 @@ import (
 )
 
 const (
+	apiVersionKey = "apiVersion"
+	kindKey       = "kind"
 	nameKey       = "name"
 	cpuKey        = "cpu"
 	memoryKey     = "memory"
@@ -362,8 +364,8 @@ var _ = Describe("FindManagerContainerRange", func() {
 
 	It("should work on real yaml.Marshal output with sidecar before manager", func() {
 		deployment := map[string]any{
-			"apiVersion": "apps/v1",
-			"kind":       "Deployment",
+			apiVersionKey: "apps/v1",
+			kindKey:       "Deployment",
 			metadataKey: map[string]any{
 				nameKey: "test-controller-manager",
 			},
@@ -424,8 +426,8 @@ var _ = Describe("FindManagerContainerRange", func() {
 
 	It("should not false-positive on nested name fields in yaml.Marshal output", func() {
 		deployment := map[string]any{
-			"apiVersion": "apps/v1",
-			"kind":       "Deployment",
+			apiVersionKey: "apps/v1",
+			kindKey:       "Deployment",
 			metadataKey: map[string]any{
 				nameKey: "test-controller-manager",
 			},

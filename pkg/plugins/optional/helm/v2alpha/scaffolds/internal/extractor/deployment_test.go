@@ -32,6 +32,10 @@ const (
 	keySecret       = "secret"
 	keyVolumeMounts = "volumeMounts"
 	keyMountPath    = "mountPath"
+	keyAPIVersion   = "apiVersion"
+	keyKind         = "kind"
+	keyMetadata     = "metadata"
+	keySpec         = "spec"
 
 	valAppsV1            = "apps/v1"
 	valDeployment        = "Deployment"
@@ -75,20 +79,20 @@ func makeDeployment(opts deploymentOpts) *unstructured.Unstructured {
 	if opts.volumes != nil {
 		podSpec["volumes"] = opts.volumes
 	}
-	template := map[string]any{"spec": podSpec}
+	template := map[string]any{keySpec: podSpec}
 	if opts.annotations != nil {
 		annotations := make(map[string]any, len(opts.annotations))
 		for k, v := range opts.annotations {
 			annotations[k] = v
 		}
-		template["metadata"] = map[string]any{"annotations": annotations}
+		template[keyMetadata] = map[string]any{"annotations": annotations}
 	}
 	return &unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": valAppsV1,
-			"kind":       valDeployment,
-			"metadata":   map[string]any{keyName: valTestDeploy},
-			"spec": map[string]any{
+			keyAPIVersion: valAppsV1,
+			keyKind:       valDeployment,
+			keyMetadata:   map[string]any{keyName: valTestDeploy},
+			keySpec: map[string]any{
 				"template": template,
 			},
 		},
@@ -124,7 +128,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should preserve scale-to-zero", func() {
-			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(0)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(0)
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -132,7 +136,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should extract replicas value", func() {
-			deployment.Object["spec"].(map[string]any)[keyReplicas] = int64(3)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(3)
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -447,7 +451,7 @@ var _ = Describe("DeploymentExtractor", func() {
 						},
 						"ports": []any{
 							map[string]any{
-								"name":          "webhook-server",
+								keyName:         "webhook-server",
 								"containerPort": int64(9443),
 							},
 						},

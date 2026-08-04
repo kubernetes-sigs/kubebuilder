@@ -22,7 +22,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -55,11 +54,11 @@ type editSubcommand struct {
 
 //nolint:lll
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `Generate a Helm chart from your project's kustomize output.
+	subcmdMeta.Description = `Generate a Helm chart from your project's Kustomize output.
 
-Parses 'make build-installer' output (dist/install.yaml) and generates chart to allow easy
-distribution of your project. It also scaffolds default ServiceMonitor and NetworkPolicy templates
-when the kustomize output does not provide them. When enabled, adds Helm helpers targets to Makefile`
+The command reads 'make build-installer' output from dist/install.yaml by default. It adds default
+ServiceMonitor and NetworkPolicy templates when they are missing. On the first run, it also adds
+Helm deployment targets to the Makefile.`
 
 	subcmdMeta.Examples = fmt.Sprintf(`# Generate Helm chart from default manifests (dist/install.yaml) to default output (dist/)
   %[1]s edit --plugins=%[2]s
@@ -82,10 +81,9 @@ when the kustomize output does not provide them. When enabled, adds Helm helpers
 
 **NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
 Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
-.github/workflows/test-chart.yml, network-policy/allow-metrics-traffic.yaml, and
-network-policy/allow-webhook-traffic.yaml.
-All other template files in templates/ are always regenerated to match your current
-kustomize output. Use --force to regenerate all files except Chart.yaml.
+.github/workflows/test-chart.yml, and default NetworkPolicy and ServiceMonitor templates.
+Templates from the kustomize output always regenerate. Use --force to regenerate all files
+except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
 <output>/chart/
@@ -205,43 +203,6 @@ func (p *editSubcommand) ensureManifestsExist() error {
 	}
 
 	slog.Info("Successfully generated manifests file", "file", p.manifestsFile)
-	return nil
-}
-
-func (p *editSubcommand) PostScaffold() error {
-	hasWebhooks := hasWebhooksWith(p.config)
-
-	if hasWebhooks {
-		workflowFile := filepath.Join(".github", "workflows", "test-chart.yml")
-		if _, err := os.Stat(workflowFile); err != nil {
-			slog.Info(
-				"Workflow file not found, unable to uncomment cert-manager installation",
-				"error", err,
-				"file", workflowFile,
-			)
-			return nil
-		}
-		target := `
-#      - name: Install cert-manager via Helm (wait for readiness)
-#        run: |
-#          helm repo add jetstack https://charts.jetstack.io
-#          helm repo update
-#          helm install cert-manager jetstack/cert-manager \
-#            --namespace cert-manager \
-#            --create-namespace \
-#            --set crds.enabled=true \
-#            --wait \
-#            --timeout 300s`
-		if err := util.UncommentCode(workflowFile, target, "#"); err != nil {
-			hasUncommented, errCheck := util.HasFileContentWith(workflowFile, "- name: Install cert-manager via Helm")
-			if !hasUncommented || errCheck != nil {
-				slog.Warn("Failed to uncomment cert-manager installation in workflow file", "error", err, "file", workflowFile)
-			}
-		} else {
-			target = `# TODO: Uncomment if cert-manager is enabled`
-			_ = util.ReplaceInFile(workflowFile, target, "")
-		}
-	}
 	return nil
 }
 
@@ -379,21 +340,6 @@ helm-rollback: ## Rollback to previous Helm release.
 
 func helmMakefileTemplate(namespace, release, outputDir string) string {
 	return fmt.Sprintf(helmMakefileTemplateFormat, namespace, release, outputDir)
-}
-
-func hasWebhooksWith(c config.Config) bool {
-	resources, err := c.GetResources()
-	if err != nil {
-		return false
-	}
-
-	for _, res := range resources {
-		if res.HasDefaultingWebhook() || res.HasValidationWebhook() || res.HasConversionWebhook() {
-			return true
-		}
-	}
-
-	return false
 }
 
 // removeV1AlphaPluginEntry removes the deprecated helm.kubebuilder.io/v1-alpha plugin entry.

@@ -203,6 +203,9 @@ spec:
 			Expect(result).To(ContainSubstring(`{{- if .Values.webhook.enabled }}
         - --webhook-port={{ .Values.webhook.port }}
         {{- end }}`))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}\n" +
+					"        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt"))
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
@@ -262,8 +265,9 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			// Should have conditional blocks for webhook certs
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			// Webhook certificates require both features.
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("mountPath: /tmp/k8s-webhook-server/serving-certs"))
 
 			// Should have conditional blocks for metrics certs
@@ -584,7 +588,8 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -871,7 +876,7 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should add cert-manager conditional for Certificate resources", func() {
+		It("should add cert-manager and webhook conditionals for webhook certificates", func() {
 			certResource := &unstructured.Unstructured{}
 			certResource.SetAPIVersion("cert-manager.io/v1")
 			certResource.SetKind("Certificate")
@@ -884,8 +889,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, certResource)
 
-			// Should be wrapped with certManager enabled conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -907,6 +912,23 @@ metadata:
 			Expect(result).To(ContainSubstring(
 				"{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should not tie a custom certificate to webhook.enabled", func() {
+			certResource := &unstructured.Unstructured{}
+			certResource.SetAPIVersion("cert-manager.io/v1")
+			certResource.SetKind("Certificate")
+			certResource.SetName("test-project-database-cert")
+
+			content := `apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-project-database-cert`
+
+			result := templater.ApplyHelmSubstitutions(content, certResource)
+
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			Expect(result).NotTo(ContainSubstring(".Values.webhook.enabled"))
 		})
 
 		It("should add kind conditionals to essential ClusterRole resources", func() {
@@ -2704,13 +2726,13 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: 443
+    - port: 9443
       protocol: TCP`
 
 			result := templater.templatePorts(content, networkPolicy)
 
 			Expect(result).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
-			Expect(result).NotTo(ContainSubstring("port: 443"))
+			Expect(result).NotTo(ContainSubstring("port: 9443"))
 		})
 
 		It("should not template custom NetworkPolicy ports", func() {

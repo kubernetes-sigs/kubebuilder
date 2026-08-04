@@ -61,10 +61,10 @@ func IsManagerDeployment(resource *unstructured.Unstructured) bool {
 	return strings.Contains(resource.GetName(), "controller-manager")
 }
 
-// MakeYamlContent wraps a YAML block with a cert-manager conditional.
+// MakeYamlContent wraps a webhook certificate block with its feature conditions.
 // Shifts by 2 spaces to align with the child indent used by appendToListFromValues.
 func MakeYamlContent(match string) string {
-	return wrapBlock(match, "{{- if .Values.certManager.enabled }}")
+	return wrapBlock(match, "{{- if and .Values.certManager.enabled .Values.webhook.enabled }}")
 }
 
 // wrapBlock wraps a YAML block match with the given Helm conditional string.

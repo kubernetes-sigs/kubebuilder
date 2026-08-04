@@ -82,9 +82,14 @@ func GetControllerPodName(kbc *utils.TestContext) string {
 	return controllerPodName
 }
 
-// defaultMetricsPort is the scaffolded metrics port, used by ValidateMetricsUnavailable
-// where no metrics service exists to read the port from.
+// healthProbePort is the scaffolded health probe port; no NetworkPolicy allows it
+const healthProbePort = 8081
+
+// defaultMetricsPort is the scaffolded metrics port
 const defaultMetricsPort = 8443
+
+// defaultWebhookPort is the scaffolded webhook server port
+const defaultWebhookPort = 9443
 
 // GetMetricsServicePort returns the port exposed by the controller-manager metrics Service.
 // namePrefix is the prefix for service names (e.g., "e2e-{suffix}" or "custom-operator" from fullnameOverride)
@@ -303,6 +308,162 @@ func removeCurlPod(kbc *utils.TestContext) {
 	By("cleaning up the curl pod")
 	_, err := kbc.Kubectl.Delete(true, "pods/curl", "--grace-period=0", "--force")
 	Expect(err).NotTo(HaveOccurred())
+}
+
+// ValidateNetworkPolicyEnforcement checks allowed and blocked manager traffic.
+func ValidateNetworkPolicyEnforcement(
+	controllerPodName, namePrefix string,
+	webhookPort int,
+	hasWebhook bool,
+	kbc *utils.TestContext,
+) {
+	metricsServiceName := fmt.Sprintf("%s-controller-manager-metrics-service", namePrefix)
+	metricsPort := GetMetricsServicePort(namePrefix, kbc)
+
+	By("ensuring the metrics endpoint is ready so a blocked request cannot be mistaken for a slow start")
+	Eventually(func(g Gomega) {
+		output, err := kbc.Kubectl.Command(
+			"get", "endpointslices.discovery.k8s.io",
+			"-n", kbc.Kubectl.Namespace,
+			"-l", fmt.Sprintf("kubernetes.io/service-name=%s", metricsServiceName),
+			"-o", "jsonpath={range .items[*]}{range .endpoints[*]}{.addresses[*]}{end}{end}",
+		)
+		g.Expect(err).NotTo(HaveOccurred(), "endpointslices should exist")
+		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
+	}, 2*time.Minute, time.Second).Should(Succeed())
+
+	By("ensuring the controller pod is ready")
+	Eventually(func(g Gomega) {
+		output, err := kbc.Kubectl.Get(
+			true,
+			"pod", controllerPodName,
+			"-o", "jsonpath={.status.conditions[?(@.type=='Ready')].status}",
+		)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(output).To(Equal("True"), "Controller pod not ready")
+	}, defaultTimeout, defaultPollingInterval).Should(Succeed())
+
+	By("proving the metrics NetworkPolicy blocks scrapes from namespaces without the 'metrics: enabled' label")
+	deniedNamespace := fmt.Sprintf("test-np-denied-%s", kbc.TestSuffix)
+	_, err := kbc.Kubectl.Command("create", "namespace", deniedNamespace)
+	Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
+	DeferCleanup(func() {
+		_, _ = kbc.Kubectl.Command("delete", "namespace", deniedNamespace, "--ignore-not-found")
+	})
+
+	metricsURL := fmt.Sprintf("https://%s.%s.svc.cluster.local:%d/metrics",
+		metricsServiceName, kbc.Kubectl.Namespace, metricsPort)
+	expectRequestTimedOut(kbc, "np-denied-metrics", deniedNamespace, metricsURL)
+
+	By("proving the NetworkPolicies deny ingress to a manager port they do not allow")
+	podIP, err := kbc.Kubectl.Get(
+		true,
+		"pod", controllerPodName,
+		"-o", "jsonpath={.status.podIP}",
+	)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(podIP).NotTo(BeEmpty(), "controller pod should have an IP assigned")
+
+	healthURL := fmt.Sprintf("http://%s:%d/healthz", podIP, healthProbePort)
+	expectRequestTimedOut(kbc, "np-denied-port", kbc.Kubectl.Namespace, healthURL)
+
+	if hasWebhook {
+		By("proving the webhook NetworkPolicy allows the configured pod port")
+		webhookURL := fmt.Sprintf("https://%s:%d/", podIP, webhookPort)
+		expectRequestAllowed(kbc, "np-allowed-webhook", deniedNamespace, webhookURL)
+	}
+}
+
+// expectRequestTimedOut runs a curl pod against url and expects the request to time out
+// (curl exit code 28), which is how a NetworkPolicy drop surfaces. The pod retries a few
+// times so a request sent before the CNI programs the policy does not flake the test.
+func expectRequestTimedOut(kbc *utils.TestContext, podName, namespace, url string) {
+	script := fmt.Sprintf(
+		"for i in $(seq 1 6); do "+
+			"curl -sk -o /dev/null --max-time 10 %s; rc=$?; "+
+			"if [ $rc -eq 28 ]; then echo BLOCKED; exit 0; fi; "+
+			"echo attempt $i exited with $rc; sleep 5; "+
+			"done; echo NOT-BLOCKED; exit 1", url)
+
+	runCurlPod(kbc, podName, namespace, script)
+
+	By(fmt.Sprintf("validating that the request from pod %s timed out", podName))
+	Eventually(func(g Gomega) {
+		status, errStatus := kbc.Kubectl.Command(
+			"get", "pods", podName,
+			"-n", namespace,
+			"-o", "jsonpath={.status.phase}",
+		)
+		g.Expect(errStatus).NotTo(HaveOccurred())
+		g.Expect(status).To(Equal("Succeeded"),
+			"curl should time out on the blocked endpoint; check the pod logs for the exit codes seen")
+
+		logs, errLogs := kbc.Kubectl.Command("logs", podName, "-n", namespace)
+		g.Expect(errLogs).NotTo(HaveOccurred())
+		g.Expect(logs).To(ContainSubstring("BLOCKED"),
+			"the request should be dropped by the NetworkPolicy, not answered or refused")
+	}, 3*time.Minute, time.Second).Should(Succeed())
+}
+
+func expectRequestAllowed(kbc *utils.TestContext, podName, namespace, url string) {
+	script := fmt.Sprintf(
+		"for i in $(seq 1 6); do "+
+			"if curl -sk -o /dev/null --max-time 5 %s; then echo ALLOWED; exit 0; fi; "+
+			"sleep 2; "+
+			"done; echo BLOCKED; exit 1", url)
+	runCurlPod(kbc, podName, namespace, script)
+
+	By(fmt.Sprintf("validating that the request from pod %s succeeded", podName))
+	Eventually(func(g Gomega) {
+		status, errStatus := kbc.Kubectl.Command(
+			"get", "pods", podName,
+			"-n", namespace,
+			"-o", "jsonpath={.status.phase}",
+		)
+		g.Expect(errStatus).NotTo(HaveOccurred())
+		g.Expect(status).To(Equal("Succeeded"), "the webhook port should accept traffic")
+
+		logs, errLogs := kbc.Kubectl.Command("logs", podName, "-n", namespace)
+		g.Expect(errLogs).NotTo(HaveOccurred())
+		g.Expect(logs).To(ContainSubstring("ALLOWED"))
+	}, 2*time.Minute, time.Second).Should(Succeed())
+}
+
+func runCurlPod(kbc *utils.TestContext, podName, namespace, script string) {
+	_, err := kbc.Kubectl.Command(
+		"run", podName,
+		"--restart=Never",
+		"--namespace", namespace,
+		"--image=curlimages/curl:latest",
+		"--overrides",
+		fmt.Sprintf(`{
+			"spec": {
+				"containers": [{
+					"name": "%s",
+					"image": "curlimages/curl:latest",
+					"command": ["/bin/sh", "-c"],
+					"args": ["%s"],
+					"securityContext": {
+						"readOnlyRootFilesystem": true,
+						"allowPrivilegeEscalation": false,
+						"capabilities": {
+							"drop": ["ALL"]
+						},
+						"runAsNonRoot": true,
+						"runAsUser": 1000,
+						"seccompProfile": {
+							"type": "RuntimeDefault"
+						}
+					}
+				}]
+			}
+		}`, podName, script),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(func() {
+		_, _ = kbc.Kubectl.Command("delete", "pods", podName, "-n", namespace,
+			"--ignore-not-found", "--grace-period=0", "--force")
+	})
 }
 
 // serviceAccountToken provides a helper function that can provide you with a service account

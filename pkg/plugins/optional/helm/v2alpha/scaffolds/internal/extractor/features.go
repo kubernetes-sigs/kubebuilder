@@ -27,22 +27,20 @@ type FeaturesExtractor struct{}
 
 // FeatureSet represents detected features in the resources.
 // It includes flags for CRDs, webhooks, metrics, Prometheus, cert-manager,
-// NetworkPolicies, NetworkPolicy traffic paths, and cluster-scoped RBAC.
+// NetworkPolicies, and cluster-scoped RBAC.
 // It also includes port configurations and multi-namespace RBAC mappings.
 type FeatureSet struct {
-	HasCRDs                 bool
-	HasWebhooks             bool
-	HasMetrics              bool
-	HasPrometheus           bool
-	HasCertManager          bool
-	HasNetworkPolicy        bool
-	HasMetricsNetworkPolicy bool
-	HasWebhookNetworkPolicy bool
-	HasClusterScopedRBAC    bool
-	WebhookPort             int
-	MetricsPort             int
-	HealthProbePort         int
-	RoleNamespaces          map[string]string
+	HasCRDs              bool
+	HasWebhooks          bool
+	HasMetrics           bool
+	HasPrometheus        bool
+	HasCertManager       bool
+	HasNetworkPolicy     bool
+	HasClusterScopedRBAC bool
+	WebhookPort          int
+	MetricsPort          int
+	HealthProbePort      int
+	RoleNamespaces       map[string]string
 }
 
 // DetectFeatures detects features from parsed resources.
@@ -57,21 +55,13 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	}
 
 	features.HasCRDs = len(resources.CustomResourceDefinitions) > 0
-	features.HasWebhooks = len(resources.WebhookConfigurations) > 0
+	features.HasWebhooks = len(resources.WebhookConfigurations) > 0 ||
+		hasConversionWebhooks(resources.CustomResourceDefinitions)
 
 	features.HasCertManager = resources.Issuer != nil || len(resources.Certificates) > 0
 
 	features.HasPrometheus = len(resources.ServiceMonitors) > 0
 	features.HasNetworkPolicy = len(resources.NetworkPolicies) > 0
-	for _, policy := range resources.NetworkPolicies {
-		name := policy.GetName()
-		if strings.HasSuffix(name, "allow-metrics-traffic") {
-			features.HasMetricsNetworkPolicy = true
-		}
-		if strings.HasSuffix(name, "allow-webhook-traffic") {
-			features.HasWebhookNetworkPolicy = true
-		}
-	}
 
 	for _, svc := range resources.Services {
 		name := svc.GetName()
@@ -93,12 +83,12 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 			}
 		}
 
-		// Only extract from service if we didn't find it in deployment
+		// The webhook server listens on the Service targetPort (the pod port), not the exposed 443.
 		if !webhookPortFromDeployment {
 			for _, svc := range resources.Services {
 				name := svc.GetName()
 				if strings.HasSuffix(name, "-webhook-service") {
-					if port := extractPortFromService(svc); port > 0 {
+					if port := extractTargetPortFromService(svc); port > 0 {
 						features.WebhookPort = port
 					}
 					break
@@ -149,25 +139,61 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	return features
 }
 
-// extractPortFromService extracts the port number from a service.
-func extractPortFromService(svc *unstructured.Unstructured) int {
+// firstServicePort returns the first entry of a service's spec.ports, or false when absent.
+func firstServicePort(svc *unstructured.Unstructured) (map[string]any, bool) {
 	ports, found, err := unstructured.NestedFieldNoCopy(svc.Object, "spec", "ports")
 	if !found || err != nil {
-		return 0
+		return nil, false
 	}
 
 	portsList, ok := ports.([]any)
 	if !ok || len(portsList) == 0 {
-		return 0
+		return nil, false
 	}
 
 	firstPort, ok := portsList[0].(map[string]any)
+	return firstPort, ok
+}
+
+// extractPortFromService extracts the exposed port of a service's first port.
+func extractPortFromService(svc *unstructured.Unstructured) int {
+	firstPort, ok := firstServicePort(svc)
 	if !ok {
 		return 0
 	}
 
 	port, _ := toInt(firstPort["port"])
 	return port
+}
+
+// extractTargetPortFromService returns the numeric targetPort of a Service's first port.
+// It returns 0 for a named targetPort because the pod port cannot be resolved here.
+func extractTargetPortFromService(svc *unstructured.Unstructured) int {
+	firstPort, ok := firstServicePort(svc)
+	if !ok {
+		return 0
+	}
+
+	if targetPort, ok := toInt(firstPort["targetPort"]); ok && targetPort > 0 {
+		return targetPort
+	}
+
+	if _, named := firstPort["targetPort"].(string); named {
+		return 0
+	}
+
+	port, _ := toInt(firstPort["port"])
+	return port
+}
+
+func hasConversionWebhooks(crds []*unstructured.Unstructured) bool {
+	for _, crd := range crds {
+		strategy, found, err := unstructured.NestedString(crd.Object, "spec", "conversion", "strategy")
+		if err == nil && found && strategy == "Webhook" {
+			return true
+		}
+	}
+	return false
 }
 
 // extractWebhookPortFromDeployment extracts the webhook port from the manager

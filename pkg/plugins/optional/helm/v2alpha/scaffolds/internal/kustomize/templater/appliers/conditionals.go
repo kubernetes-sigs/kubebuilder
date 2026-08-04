@@ -39,7 +39,14 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 	case kind == common.KindCRD:
 		// Add resource-policy annotation to prevent deletion on helm uninstall
 		yamlContent = InjectCRDResourcePolicyAnnotation(yamlContent)
-		return fmt.Sprintf("{{- if .Values.crd.enabled }}\n%s{{- end }}\n", yamlContent)
+		yamlContent = fmt.Sprintf("{{- if .Values.crd.enabled }}\n%s{{- end }}\n", yamlContent)
+		if !hasWebhookConversion(resource) {
+			return yamlContent
+		}
+		return fmt.Sprintf(`{{- if not .Values.webhook.enabled }}
+{{- fail "webhook.enabled must be true for CRD conversion" }}
+{{- end }}
+%s`, yamlContent)
 	case kind == common.KindCertificate && apiVersion == common.APIVersionCertManager:
 		return HandleCertificateConditionalWrappers(yamlContent, name)
 	case kind == common.KindIssuer && apiVersion == common.APIVersionCertManager:
@@ -48,13 +55,20 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 		// CRITICAL: newline before {{- end }} prevents whitespace chomping from eating content
 		return fmt.Sprintf("{{- if .Values.prometheus.enabled }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindNetworkPolicy && apiVersion == common.APIVersionNetworking:
-		if strings.HasSuffix(name, "allow-webhook-traffic") {
+		switch {
+		case IsScaffoldedPolicyName(name, "allow-webhook-traffic"):
 			return fmt.Sprintf(
 				"{{- if and .Values.networkPolicy.enabled .Values.webhook.enabled }}\n%s\n{{- end }}",
 				yamlContent,
 			)
+		case IsScaffoldedPolicyName(name, "allow-metrics-traffic"):
+			return fmt.Sprintf(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}\n%s\n{{- end }}",
+				yamlContent,
+			)
+		default:
+			return fmt.Sprintf("{{- if .Values.networkPolicy.enabled }}\n%s\n{{- end }}", yamlContent)
 		}
-		return fmt.Sprintf("{{- if .Values.networkPolicy.enabled }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindServiceAccount, kind == common.KindRole, kind == common.KindClusterRole,
 		kind == common.KindRoleBinding, kind == common.KindClusterRoleBinding:
 		return HandleRBACConditionalWrappers(yamlContent, kind, name)
@@ -78,6 +92,11 @@ func AddConditionalWrappers(yamlContent string, resource *unstructured.Unstructu
 	}
 }
 
+func hasWebhookConversion(resource *unstructured.Unstructured) bool {
+	strategy, found, err := unstructured.NestedString(resource.Object, "spec", "conversion", "strategy")
+	return err == nil && found && strategy == "Webhook"
+}
+
 // HandleCertificateConditionalWrappers handles conditional logic for Certificate resources.
 // Uses suffix matching to avoid false positives when project name contains "metrics".
 func HandleCertificateConditionalWrappers(yamlContent, name string) string {
@@ -88,7 +107,11 @@ func HandleCertificateConditionalWrappers(yamlContent, name string) string {
 			"{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}\n%s{{- end }}\n",
 			yamlContent)
 	}
-	// Webhook serving certificates only need certManager
+	if strings.HasSuffix(name, "-serving-cert") {
+		// The scaffolded webhook serving certificate requires both features.
+		return fmt.Sprintf(
+			"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}\n%s{{- end }}", yamlContent)
+	}
 	return fmt.Sprintf("{{- if .Values.certManager.enabled }}\n%s{{- end }}", yamlContent)
 }
 
