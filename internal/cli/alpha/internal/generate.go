@@ -89,20 +89,20 @@ func (opts *Generate) Generate() error {
 		slog.Info("Preserving existing license header file for regeneration")
 	}
 
-	if opts.OutputDir == "" {
-		cwd, getWdErr := os.Getwd()
-		if getWdErr != nil {
-			return fmt.Errorf("failed to get working directory: %w", getWdErr)
-		}
-		opts.OutputDir = cwd
-		if _, err = os.Stat(opts.OutputDir); err == nil {
-			slog.Warn("Using current working directory to re-scaffold the project")
+	inPlace := opts.OutputDir == ""
+	if opts.OutputDir, err = resolveOutputDir(opts.InputDir, opts.OutputDir); err != nil {
+		return err
+	}
+
+	if inPlace {
+		if _, statErr := os.Stat(opts.OutputDir); statErr == nil {
+			slog.Warn("Re-scaffolding the project in place", "dir", opts.OutputDir)
 			slog.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
 			// Ensure we clean the correct directory without shell interpolation
 			// of --output-dir (paths with metacharacters must not reach sh -c).
 			slog.Info("Cleaning directory", "dir", opts.OutputDir)
-			if err = cleanOutputDirPreservingGitAndProject(opts.OutputDir); err != nil {
+			if err = cleanOutputDirPreservingGit(opts.OutputDir); err != nil {
 				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
@@ -696,16 +696,36 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	return args
 }
 
-// cleanOutputDirPreservingGitAndProject removes all top-level entries under
-// outputDir except `.git` and `PROJECT`, using Go filesystem APIs only.
-func cleanOutputDirPreservingGitAndProject(outputDir string) error {
+// resolveOutputDir returns the directory the new scaffold is written to.
+// With --output-dir unset the project is regenerated in place, which means the
+// directory it was read from. Falling back to the working directory here would
+// clean an unrelated tree whenever --input-dir points elsewhere.
+func resolveOutputDir(inputDir, outputDir string) (string, error) {
+	if outputDir != "" {
+		return outputDir, nil
+	}
+	if inputDir != "" {
+		return inputDir, nil
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get working directory: %w", err)
+	}
+	return cwd, nil
+}
+
+// cleanOutputDirPreservingGit removes all top-level entries under outputDir
+// except `.git`, using Go filesystem APIs only.
+// PROJECT must go too: `kubebuilder init` refuses to run when a config file is
+// already present, and it re-creates PROJECT from the config loaded in memory.
+func cleanOutputDirPreservingGit(outputDir string) error {
 	entries, err := os.ReadDir(outputDir)
 	if err != nil {
 		return fmt.Errorf("read output directory %q: %w", outputDir, err)
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if name == ".git" || name == "PROJECT" {
+		if name == ".git" {
 			continue
 		}
 		path := filepath.Join(outputDir, name)
