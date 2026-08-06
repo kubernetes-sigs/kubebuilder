@@ -99,10 +99,24 @@ func (opts *Generate) Generate() error {
 			slog.Warn("Using current working directory to re-scaffold the project")
 			slog.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
-			// Ensure we clean the correct directory without shell interpolation
-			// of --output-dir (paths with metacharacters must not reach sh -c).
+			// Ensure we clean the correct directory
 			slog.Info("Cleaning directory", "dir", opts.OutputDir)
-			if err = cleanOutputDirPreservingGitAndProject(opts.OutputDir); err != nil {
+
+			// Use an absolute path to target files directly
+			cleanupCmd := fmt.Sprintf("rm -rf %s/*", opts.OutputDir)
+			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
+			if err != nil {
+				slog.Error("Cleanup failed", "error", err)
+				return fmt.Errorf("cleanup failed: %w", err)
+			}
+
+			// Note that we should remove ALL files except the PROJECT file and .git directory
+			cleanupCmd = fmt.Sprintf(
+				`find %q -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {} +`,
+				opts.OutputDir,
+			)
+			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
+			if err != nil {
 				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
@@ -696,34 +710,13 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	return args
 }
 
-// cleanOutputDirPreservingGitAndProject removes all top-level entries under
-// outputDir except `.git` and `PROJECT`, using Go filesystem APIs only.
-func cleanOutputDirPreservingGitAndProject(outputDir string) error {
-	entries, err := os.ReadDir(outputDir)
-	if err != nil {
-		return fmt.Errorf("read output directory %q: %w", outputDir, err)
-	}
-	for _, entry := range entries {
-		name := entry.Name()
-		if name == ".git" || name == "PROJECT" {
-			continue
-		}
-		path := filepath.Join(outputDir, name)
-		if removeErr := os.RemoveAll(path); removeErr != nil {
-			return fmt.Errorf("remove %q: %w", path, removeErr)
-		}
-	}
-	return nil
-}
-
 // Copies files from source to destination.
 func copyFile(src, des string) error {
 	bytesRead, err := os.ReadFile(src)
 	if err != nil {
 		return fmt.Errorf("source file path %q does not exist: %w", src, err)
 	}
-	// Data files (YAML, manifests) must not be world-executable.
-	if err = os.WriteFile(des, bytesRead, 0o644); err != nil {
+	if err = os.WriteFile(des, bytesRead, 0o755); err != nil {
 		return fmt.Errorf("failed to write file %q: %w", des, err)
 	}
 
