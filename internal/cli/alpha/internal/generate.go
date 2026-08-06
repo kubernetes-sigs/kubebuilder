@@ -102,7 +102,7 @@ func (opts *Generate) Generate() error {
 			// Ensure we clean the correct directory without shell interpolation
 			// of --output-dir (paths with metacharacters must not reach sh -c).
 			slog.Info("Cleaning directory", "dir", opts.OutputDir)
-			if err = cleanOutputDirPreservingGitAndProject(opts.OutputDir); err != nil {
+			if err = cleanOutputDirPreservingGit(opts.OutputDir); err != nil {
 				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
@@ -696,16 +696,22 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	return args
 }
 
-// cleanOutputDirPreservingGitAndProject removes all top-level entries under
-// outputDir except `.git` and `PROJECT`, using Go filesystem APIs only.
-func cleanOutputDirPreservingGitAndProject(outputDir string) error {
+// cleanOutputDirPreservingGit removes all top-level entries under outputDir
+// except `.git`, using Go filesystem APIs only (no shell).
+//
+// PROJECT must be removed: alpha generate re-runs kubebuilder init, which
+// refuses when a PROJECT file already exists ("already initialized"). The
+// historical shell cleanup (rm -rf dir/* then find) already deleted PROJECT
+// via the first glob; only .git survived. Preserving PROJECT was a regression
+// from matching the old comment instead of effective behavior (#5953).
+func cleanOutputDirPreservingGit(outputDir string) error {
 	entries, err := os.ReadDir(outputDir)
 	if err != nil {
 		return fmt.Errorf("read output directory %q: %w", outputDir, err)
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if name == ".git" || name == "PROJECT" {
+		if name == ".git" {
 			continue
 		}
 		path := filepath.Join(outputDir, name)
