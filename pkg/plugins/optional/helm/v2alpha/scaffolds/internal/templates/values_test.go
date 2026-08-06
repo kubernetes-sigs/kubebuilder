@@ -98,6 +98,49 @@ var _ = Describe("HelmValues", func() {
 		})
 	})
 
+	Describe("Metrics section", func() {
+		It("should default metrics.secure to true when there is no extraction", func() {
+			values := &HelmValues{Extraction: nil}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: true"))
+		})
+
+		It("should default metrics.secure to true when the manager does not set the arg", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasMetrics: true,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: true"))
+		})
+
+		It("should set metrics.secure to false when the manager serves plain HTTP", func() {
+			insecure := false
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasMetrics:    true,
+						MetricsSecure: &insecure,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: false"))
+		})
+	})
+
 	Describe("RoleNamespaces rendering", func() {
 		Context("when no roleNamespaces are detected", func() {
 			It("should not include roleNamespaces section when Extraction is nil", func() {

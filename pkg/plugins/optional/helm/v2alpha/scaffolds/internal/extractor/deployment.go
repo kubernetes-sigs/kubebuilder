@@ -455,6 +455,11 @@ func extractContainerArgs(container map[string]any, config map[string]any) {
 			strings.Contains(strArg, "--metrics-cert-path") {
 			continue
 		}
+		// The chart renders this arg from .Values.metrics.secure, so keeping it
+		// here as well would let the two disagree. The arg itself is filtered out.
+		if _, ok := ExtractMetricsSecureFromArg(strArg); ok {
+			continue
+		}
 		filteredArgs = append(filteredArgs, strArg)
 	}
 
@@ -480,6 +485,28 @@ func ExtractPortFromArg(arg string) int {
 		return 0
 	}
 	return port
+}
+
+// ExtractMetricsSecureFromArg extracts the value of a "--metrics-secure" argument.
+// A bare "--metrics-secure" means true, as for any boolean flag. The second return
+// value is false when arg is a different flag or carries a non-boolean value.
+func ExtractMetricsSecureFromArg(arg string) (bool, bool) {
+	const flagName = "--metrics-secure"
+
+	if arg == flagName {
+		return true, true
+	}
+
+	value, ok := strings.CutPrefix(arg, flagName+"=")
+	if !ok {
+		return false, false
+	}
+
+	secure, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, false
+	}
+	return secure, true
 }
 
 func extractContainerPorts(container map[string]any, config map[string]any) {
