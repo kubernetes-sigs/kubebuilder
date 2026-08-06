@@ -3,11 +3,11 @@ name: Test Alpha Generate
 on:
   push:
     paths:
-      - 'pkg/cli/alpha/**'
+      - 'internal/cli/alpha/**'
       - '.github/workflows/test-alpha-generate.yml'
   pull_request:
     paths:
-      - 'pkg/cli/alpha/**'
+      - 'internal/cli/alpha/**'
       - '.github/workflows/test-alpha-generate.yml'
 
 permissions: {}
