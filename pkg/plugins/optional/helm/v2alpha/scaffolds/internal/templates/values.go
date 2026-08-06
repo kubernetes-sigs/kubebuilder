@@ -562,11 +562,15 @@ serviceAccount:
 func (f *HelmValues) addMetricsSection(buf *bytes.Buffer) {
 	port := 8443
 	enableMetrics := false
+	secure := true
 
 	if f.Extraction != nil {
 		enableMetrics = f.Extraction.Features.HasMetrics
 		if f.Extraction.Features.MetricsPort > 0 {
 			port = f.Extraction.Features.MetricsPort
+		}
+		if f.Extraction.Features.MetricsSecure != nil {
+			secure = *f.Extraction.Features.MetricsSecure
 		}
 	}
 
@@ -581,9 +585,8 @@ metrics:
 	fmt.Fprintf(buf, "  port: %d\n", port)
 	buf.WriteString(`  # Enable secure metrics: HTTPS with certs/auth (true) or HTTP (false).
   # Note: Metrics authn/authz needs ClusterRole access.
-  secure: true
-
 `)
+	fmt.Fprintf(buf, "  secure: %t\n\n", secure)
 }
 
 // addHealthProbeSection adds health probe configuration under the manager section

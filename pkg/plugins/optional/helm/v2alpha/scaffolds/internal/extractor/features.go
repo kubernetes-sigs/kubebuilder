@@ -42,6 +42,7 @@ type FeatureSet struct {
 	WebhookPort             int
 	MetricsPort             int
 	HealthProbePort         int
+	MetricsSecure           *bool // nil when the manager does not set --metrics-secure
 	RoleNamespaces          map[string]string
 }
 
@@ -111,6 +112,13 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	if resources.Deployment != nil {
 		if port := extractHealthProbePortFromDeployment(resources.Deployment); port > 0 {
 			features.HealthProbePort = port
+		}
+	}
+
+	// Whether metrics are served over HTTPS is defined on the manager container's --metrics-secure arg.
+	if resources.Deployment != nil {
+		if secure, found := extractMetricsSecureFromDeployment(resources.Deployment); found {
+			features.MetricsSecure = &secure
 		}
 	}
 
@@ -258,4 +266,40 @@ func extractHealthProbePortFromDeployment(deployment *unstructured.Unstructured)
 	}
 
 	return 0
+}
+
+// extractMetricsSecureFromDeployment extracts whether metrics are served over
+// HTTPS from the manager container's --metrics-secure argument. The second
+// return value reports whether the argument is set.
+func extractMetricsSecureFromDeployment(deployment *unstructured.Unstructured) (bool, bool) {
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return false, false
+	}
+	container := findManagerContainer(deployment, specMap)
+	if container == nil {
+		return false, false
+	}
+
+	argsField, found, err := unstructured.NestedFieldNoCopy(container, "args")
+	if !found || err != nil {
+		return false, false
+	}
+
+	argsList, ok := argsField.([]any)
+	if !ok {
+		return false, false
+	}
+
+	for _, a := range argsList {
+		strArg, ok := a.(string)
+		if !ok {
+			continue
+		}
+		if secure, ok := ExtractMetricsSecureFromArg(strArg); ok {
+			return secure, true
+		}
+	}
+
+	return false, false
 }
