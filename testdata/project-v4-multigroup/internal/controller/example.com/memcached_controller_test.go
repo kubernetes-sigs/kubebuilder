@@ -63,7 +63,7 @@ var _ = Describe("Memcached controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Setting the Image ENV VAR which stores the Operand image")
-			err = os.Setenv("MEMCACHED_IMAGE", "example.com/image:test")
+			err = os.Setenv("MEMCACHED_IMAGE", "example.com/image")
 			Expect(err).NotTo(HaveOccurred())
 
 			By("creating the custom resource for the Kind Memcached")

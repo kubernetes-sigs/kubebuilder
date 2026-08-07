@@ -63,7 +63,7 @@ var _ = Describe("Busybox controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Setting the Image ENV VAR which stores the Operand image")
-			err = os.Setenv("BUSYBOX_IMAGE", "example.com/image:test")
+			err = os.Setenv("BUSYBOX_IMAGE", "example.com/image")
 			Expect(err).NotTo(HaveOccurred())
 
 			By("creating the custom resource for the Kind Busybox")
