@@ -31,12 +31,15 @@ var (
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
-// Plugin implements the plugin.Full interface
+// Plugin implements plugin.Edit and plugin.Delete.
 type Plugin struct {
 	editSubcommand
 }
 
-var _ plugin.Edit = Plugin{}
+var (
+	_ plugin.Edit   = Plugin{}
+	_ plugin.Delete = Plugin{}
+)
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
@@ -49,6 +52,9 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 
 // GetEditSubcommand will return the subcommand which is responsible for adding grafana manifests
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+// GetDeleteSubcommand will return the subcommand which is responsible for removing grafana manifests
+func (Plugin) GetDeleteSubcommand() plugin.DeleteSubcommand { return &deleteSubcommand{} }
 
 type pluginConfig struct{}
 

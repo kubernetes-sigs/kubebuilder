@@ -45,6 +45,7 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 	flagsToParse := pflag.NewFlagSet("flagsFlags", pflag.ContinueOnError)
 	flagsToParse.Bool("init", false, "sets the init flag to true")
 	flagsToParse.Bool("edit", false, "sets the edit flag to true")
+	flagsToParse.Bool("delete", false, "sets the delete flag to true")
 
 	if err := flagsToParse.Parse(pr.Args); err != nil {
 		pluginResponse.Error = true
@@ -56,16 +57,19 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 
 	initFlag, _ := flagsToParse.GetBool("init")
 	editFlag, _ := flagsToParse.GetBool("edit")
+	deleteFlag, _ := flagsToParse.GetBool("delete")
 
 	// Return metadata for the requested subcommand
 	if initFlag {
 		pluginResponse.Metadata = scaffolds.InitMeta
 	} else if editFlag {
 		pluginResponse.Metadata = scaffolds.EditMeta
+	} else if deleteFlag {
+		pluginResponse.Metadata = scaffolds.DeleteMeta
 	} else {
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
-			"no subcommand flag provided; expected --init or --edit",
+			"no subcommand flag provided; expected --init, --edit, or --delete",
 		}
 	}
 
