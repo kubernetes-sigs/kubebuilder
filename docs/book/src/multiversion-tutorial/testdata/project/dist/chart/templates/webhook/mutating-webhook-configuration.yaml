@@ -29,7 +29,9 @@ webhooks:
   matchConditions:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+  {{ with .Values.webhook.timeoutSeconds }}
+  timeoutSeconds: {{ . }}
+  {{ end }}
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io
@@ -62,7 +64,9 @@ webhooks:
   matchConditions:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+  {{ with .Values.webhook.timeoutSeconds }}
+  timeoutSeconds: {{ . }}
+  {{ end }}
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io

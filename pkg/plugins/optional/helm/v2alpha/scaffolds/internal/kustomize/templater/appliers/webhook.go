@@ -16,39 +16,95 @@ limitations under the License.
 
 package appliers
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // TemplateWebhookConfiguration exposes admission webhook settings through Helm values.
 // Fields already present in the Kustomize output are left untouched so that webhook patch
 // markers remain authoritative for projects that have configured them explicitly.
 func TemplateWebhookConfiguration(yamlContent string) string {
-	const webhookRule = "  rules:\n"
-	if !strings.Contains(yamlContent, "webhooks:\n") || !strings.Contains(yamlContent, webhookRule) {
+	lines := strings.Split(yamlContent, "\n")
+	webhooksIndex := slices.Index(lines, "webhooks:")
+	if webhooksIndex == -1 || webhooksIndex+1 >= len(lines) || !isWebhookItem(lines[webhooksIndex+1]) {
 		return yamlContent
 	}
 
-	var additions strings.Builder
-	if !strings.Contains(yamlContent, "  namespaceSelector:") {
-		additions.WriteString("  {{- with .Values.webhook.namespaceSelector }}\n")
-		additions.WriteString("  namespaceSelector:\n")
-		additions.WriteString("    {{- toYaml . | nindent 4 }}\n")
-		additions.WriteString("  {{- end }}\n")
-	}
-	if !strings.Contains(yamlContent, "  objectSelector:") {
-		additions.WriteString("  {{- with .Values.webhook.objectSelector }}\n")
-		additions.WriteString("  objectSelector:\n")
-		additions.WriteString("    {{- toYaml . | nindent 4 }}\n")
-		additions.WriteString("  {{- end }}\n")
-	}
-	if !strings.Contains(yamlContent, "  matchConditions:") {
-		additions.WriteString("  {{- with .Values.webhook.matchConditions }}\n")
-		additions.WriteString("  matchConditions:\n")
-		additions.WriteString("    {{- toYaml . | nindent 4 }}\n")
-		additions.WriteString("  {{- end }}\n")
-	}
-	if !strings.Contains(yamlContent, "  timeoutSeconds:") {
-		additions.WriteString("  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}\n")
+	result := append([]string{}, lines[:webhooksIndex+1]...)
+	for itemStart := webhooksIndex + 1; itemStart < len(lines) && isWebhookItem(lines[itemStart]); {
+		itemEnd := itemStart + 1
+		for itemEnd < len(lines) && (strings.HasPrefix(lines[itemEnd], " ") || lines[itemEnd] == "") {
+			itemEnd++
+		}
+
+		result = append(result, templateWebhookItem(lines[itemStart:itemEnd])...)
+		if itemEnd >= len(lines) || !isWebhookItem(lines[itemEnd]) {
+			result = append(result, lines[itemEnd:]...)
+			break
+		}
+		itemStart = itemEnd
 	}
 
-	return strings.ReplaceAll(yamlContent, webhookRule, additions.String()+webhookRule)
+	return strings.Join(result, "\n")
+}
+
+func isWebhookItem(line string) bool {
+	return strings.HasPrefix(line, "- ")
+}
+
+func templateWebhookItem(lines []string) []string {
+	rulesIndex := slices.Index(lines, "  rules:")
+	if rulesIndex == -1 {
+		return lines
+	}
+
+	var additions []string
+	if !hasWebhookField(lines, "namespaceSelector") {
+		additions = append(additions,
+			"  {{- with .Values.webhook.namespaceSelector }}",
+			"  namespaceSelector:",
+			"    {{- toYaml . | nindent 4 }}",
+			"  {{- end }}",
+		)
+	}
+	if !hasWebhookField(lines, "objectSelector") {
+		additions = append(additions,
+			"  {{- with .Values.webhook.objectSelector }}",
+			"  objectSelector:",
+			"    {{- toYaml . | nindent 4 }}",
+			"  {{- end }}",
+		)
+	}
+	if !hasWebhookField(lines, "matchConditions") {
+		additions = append(additions,
+			"  {{- with .Values.webhook.matchConditions }}",
+			"  matchConditions:",
+			"    {{- toYaml . | nindent 4 }}",
+			"  {{- end }}",
+		)
+	}
+	if !hasWebhookField(lines, "timeoutSeconds") {
+		additions = append(additions,
+			"  {{ with .Values.webhook.timeoutSeconds }}",
+			"  timeoutSeconds: {{ . }}",
+			"  {{ end }}",
+		)
+	}
+
+	result := make([]string, 0, len(lines)+len(additions))
+	result = append(result, lines[:rulesIndex]...)
+	result = append(result, additions...)
+	result = append(result, lines[rulesIndex:]...)
+	return result
+}
+
+func hasWebhookField(lines []string, field string) bool {
+	prefix := "  " + field + ":"
+	for _, line := range lines {
+		if strings.HasPrefix(line, prefix) {
+			return true
+		}
+	}
+	return false
 }

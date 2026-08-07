@@ -18,32 +18,39 @@ package appliers
 
 import (
 	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestTemplateWebhookConfiguration(t *testing.T) {
-	content := `apiVersion: admissionregistration.k8s.io/v1
+var _ = Describe("TemplateWebhookConfiguration", func() {
+	It("templates settings for each webhook independently", func() {
+		content := `apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 webhooks:
-- name: validation.example.com
+- name: configured.example.com
+  namespaceSelector:
+    matchLabels:
+      webhook: enabled
+  rules:
+  - apiGroups:
+    - example.com
+- name: unconfigured.example.com
   rules:
   - apiGroups:
     - example.com
 `
 
-	result := TemplateWebhookConfiguration(content)
-	for _, want := range []string{
-		".Values.webhook.namespaceSelector",
-		".Values.webhook.objectSelector",
-		".Values.webhook.matchConditions",
-		".Values.webhook.timeoutSeconds",
-	} {
-		if !strings.Contains(result, want) {
-			t.Errorf("expected generated template to contain %q", want)
-		}
-	}
+		result := TemplateWebhookConfiguration(content)
 
-	configured := `apiVersion: admissionregistration.k8s.io/v1
+		Expect(strings.Count(result, ".Values.webhook.objectSelector")).To(Equal(2))
+		Expect(strings.Count(result, ".Values.webhook.matchConditions")).To(Equal(2))
+		Expect(strings.Count(result, ".Values.webhook.timeoutSeconds")).To(Equal(2))
+		Expect(strings.Count(result, "  namespaceSelector:")).To(Equal(2))
+	})
+
+	It("does not duplicate fields supplied by a patch marker", func() {
+		content := `apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 webhooks:
 - name: validation.example.com
@@ -54,8 +61,26 @@ webhooks:
   - apiGroups:
     - example.com
 `
-	configuredResult := TemplateWebhookConfiguration(configured)
-	if strings.Count(configuredResult, "  namespaceSelector:") != 1 {
-		t.Fatalf("expected an existing namespaceSelector to be preserved without duplication:\n%s", configuredResult)
-	}
-}
+
+		result := TemplateWebhookConfiguration(content)
+
+		Expect(strings.Count(result, "  namespaceSelector:")).To(Equal(1))
+		Expect(result).To(ContainSubstring(".Values.webhook.objectSelector"))
+	})
+
+	It("omits the timeout when the value is unset", func() {
+		content := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+webhooks:
+- name: validation.example.com
+  rules:
+  - apiGroups:
+    - example.com
+`
+
+		result := TemplateWebhookConfiguration(content)
+
+		Expect(result).To(ContainSubstring("{{ with .Values.webhook.timeoutSeconds }}"))
+		Expect(result).To(ContainSubstring("timeoutSeconds: {{ . }}"))
+	})
+})
