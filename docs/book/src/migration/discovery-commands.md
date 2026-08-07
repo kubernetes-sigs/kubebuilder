@@ -151,7 +151,7 @@ kubebuilder edit --multigroup=true  # only if multi-group
 # External type controllers (--resource=false)
 kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
-  --external-api-path=<path> --external-api-domain=<domain> --external-api-module=<module>
+  --external-api-path=<path> --domain=<domain> --external-api-module=<module>
 
 # Your own APIs (--resource=true)
 kubebuilder create api --group crew --version v1 --kind Captain --controller=true --resource=true
@@ -256,7 +256,7 @@ kubebuilder edit --multigroup=true
 kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io \
+  --domain=io \
   --external-api-module=github.com/cert-manager/cert-manager@v1.19.2
 kubebuilder create api --group apps --version v1 --kind Deployment --controller=true --resource=false
 

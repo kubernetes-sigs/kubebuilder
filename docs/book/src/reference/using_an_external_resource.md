@@ -12,24 +12,35 @@ These external resources fall into two main categories:
 
 To create a controller for an external type without scaffolding a resource,
 use the `create api` command with the `--resource=false` option and specify the path to the
-external API type using the `--external-api-path` and `--external-api-domain` flag options.
+external API type using the `--external-api-path` and `--domain` flag options.
 This generates a controller for types defined outside your project,
 such as CRDs managed by other Operators.
 
 The command looks like this:
 
 ```shell
-kubebuilder create api --group <theirgroup> --version <theirversion> --kind <theirKind> --controller --resource=false --external-api-path=<their Golang path import> --external-api-domain=<theirdomain>
+kubebuilder create api --group <theirgroup> --version <theirversion> --kind <theirKind> --controller --resource=false --external-api-path=<their Golang path import> --domain=<theirdomain>
 ```
 
 - `--external-api-path`: Provide the Go import path where you define the external types.
-- `--external-api-domain`: Provide the domain for the external types. Kubebuilder uses this value to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`
+- `--domain`: Provide the domain for the external types. Kubebuilder uses this value to generate RBAC permissions and create the QualifiedGroup, such as - `apiGroups: <group>.<domain>`. It also tells Kubebuilder which resource a later command works on, when several share the same group, version and kind.
 
 For example, if you are managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group cert-manager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+kubebuilder create api --group cert-manager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --domain=io
 ```
+
+<aside class="note" role="note">
+<p class="note-title">`--external-api-domain` is deprecated</p>
+
+`--domain` replaces `--external-api-domain`, which still works as an alias. The two flags cannot
+disagree: passing different values is refused rather than letting one silently win.
+
+Unlike `--external-api-domain`, `--domain` is accepted by every command that takes a group,
+version and kind, whichever plugin handles it.
+
+</aside>
 
 <aside class="note" role="note">
 <p class="note-title">Pinning External API Versions</p>
@@ -40,7 +51,7 @@ You can pin a specific version of the external API dependency using the `--exter
 kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io \
+  --domain=io \
   --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
 
@@ -100,7 +111,7 @@ You can create webhooks for external types by providing the external API path, d
 kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io
+  --domain=io
 ```
 
 The group and the domain build the API group of the RBAC markers, `cert-manager.io` above.
@@ -111,9 +122,38 @@ You can also pin the version using the `--external-api-module` flag:
 kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io \
+  --domain=io \
   --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
+
+### Working on one of several resources with the same group, version and kind
+
+The domain is part of what identifies a resource, so your project can track two resources that
+share a group, version and kind and differ only by domain — for example a `cert-manager/v1/Issuer`
+under `cert-manager.io` and another under `cert-manager.k8s.io`.
+
+When that happens, a command naming only the group, version and kind does not say which of them to
+work on, and Kubebuilder refuses it rather than picking one:
+
+```shell
+$ kubebuilder create webhook --group cert-manager --version v1 --kind Issuer --defaulting
+Error: failed to create webhook: group "cert-manager", version "v1" and kind "Issuer" match more
+than one resource (cert-manager.cert-manager.io, cert-manager.cert-manager.k8s.io): pass --domain
+to choose the one to work on
+```
+
+Add `--domain` to name the one you mean:
+
+```shell
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer --defaulting \
+  --domain=cert-manager.k8s.io
+```
+
+A `--domain` matching none of them records a new resource beside the existing ones, which
+Kubebuilder allows but warns about, since it is easy to do by accident. Note that project-owned
+APIs cannot be told apart this way: the `go/v4` layout names the API types, the controller and the
+sample after the group, version and kind only, so `create api --resource=true` refuses a second
+resource differing solely by domain.
 
 ## Managing core types
 

@@ -96,6 +96,41 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(err.Error()).To(ContainSubstring("cannot use '--external-api-path'"))
 	})
 
+	Context("layout collisions between resources differing only by domain", func() {
+		const otherDomain = "other.io"
+
+		BeforeEach(func() {
+			tracked := *res
+			tracked.API = &resource.API{CRDVersion: "v1"}
+			Expect(cfg.AddResource(tracked)).To(Succeed())
+
+			subCmd.options.DoAPI = true
+			subCmd.options.DoController = true
+			res.Domain = otherDomain
+		})
+
+		It("should refuse an API the layout cannot hold, naming both qualified groups", func() {
+			err := subCmd.InjectResource(res)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("the layout cannot hold a second one"))
+			Expect(err.Error()).To(ContainSubstring(crewGroup + "." + testIO))
+			Expect(err.Error()).To(ContainSubstring(crewGroup + "." + otherDomain))
+		})
+
+		It("should allow it with --force", func() {
+			subCmd.force = true
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+		})
+
+		It("should allow a controller-only entry, which owns no layout files of the API", func() {
+			subCmd.options.DoAPI = false
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+		})
+	})
+
 	It("should reject --ssa when not creating an API resource (--resource=false)", func() {
 		subCmd.options.SSA = true
 		subCmd.options.DoAPI = false
@@ -256,11 +291,11 @@ var _ = Describe("createAPISubcommand", func() {
 		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 		const externalDomain = "cert-manager.io"
 
-		// Simulate: resource originally scaffolded with --external-api-domain=cert-manager.io,
-		// so PROJECT stores Domain="cert-manager.io". A fresh CLI invocation without
-		// --external-api-domain runs resolveDomain up in cmd_helpers before the GVK reaches
-		// InjectResource, so by this point res.Domain has already been reconciled to the
-		// stored external domain — mirror that here.
+		// Simulate: resource originally scaffolded with --domain=cert-manager.io, so PROJECT
+		// stores Domain="cert-manager.io". A fresh CLI invocation without --domain has the
+		// single tracked group/version/kind match lend its domain up in cmd_helpers before the
+		// GVK reaches InjectResource, so by this point res.Domain is already the stored
+		// external domain — mirror that here.
 		existingExternal := *res
 		existingExternal.External = true
 		existingExternal.Path = externalPath
