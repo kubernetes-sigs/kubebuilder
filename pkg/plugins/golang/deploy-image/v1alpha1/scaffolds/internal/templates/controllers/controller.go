@@ -83,6 +83,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -449,16 +450,26 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsFor{{ .Resource.Kind }}() map[string]string {
-	var imageTag string
-	image, err := imageFor{{ .Resource.Kind }}()
-	if err == nil {
-		imageTag = strings.Split(image, ":")[1]
-	}
-	return map[string]string{
+	labels := map[string]string{
 		"app.kubernetes.io/name": "{{ .ProjectName }}",
-		"app.kubernetes.io/version": imageTag,
 		"app.kubernetes.io/managed-by": "{{ .Resource.Kind }}Controller",
 	}
+
+	image, err := imageFor{{ .Resource.Kind }}()
+	if err != nil {
+		return labels
+	}
+
+	imageName := strings.SplitN(image, "@", 2)[0]
+	lastColon := strings.LastIndex(imageName, ":")
+	if lastColon > strings.LastIndex(imageName, "/") {
+		imageTag := imageName[lastColon+1:]
+		if len(validation.IsValidLabelValue(imageTag)) == 0 {
+			labels["app.kubernetes.io/version"] = imageTag
+		}
+	}
+
+	return labels
 }
 
 // imageFor{{ .Resource.Kind }} gets the Operand image which is managed by this controller
