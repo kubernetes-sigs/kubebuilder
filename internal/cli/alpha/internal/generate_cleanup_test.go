@@ -64,17 +64,16 @@ var _ = Describe("generate: cleanup-helpers", func() {
 			Expect(os.WriteFile(filepath.Join(tmpDir, "file;rm -rf.x"), []byte("y"), 0o644)).To(Succeed())
 		})
 
-		It("preserves .git contents and PROJECT while removing other top-level entries", func() {
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
-			Expect(entryNames(tmpDir)).To(ConsistOf(".git", "PROJECT"))
+		It("preserves .git contents while removing every other top-level entry", func() {
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
+			Expect(entryNames(tmpDir)).To(ConsistOf(".git"))
 
 			head, err := os.ReadFile(filepath.Join(tmpDir, ".git", "HEAD"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(head)).To(Equal("ref: refs/heads/main\n"))
 
-			project, err := os.ReadFile(filepath.Join(tmpDir, "PROJECT"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(project)).To(Equal("version: 3\n"))
+			// init refuses to run when PROJECT still exists, so it must be removed.
+			Expect(filepath.Join(tmpDir, "PROJECT")).NotTo(BeAnExistingFile())
 
 			Expect(filepath.Join(tmpDir, "cmd")).NotTo(BeADirectory())
 			Expect(filepath.Join(tmpDir, "Makefile")).NotTo(BeAnExistingFile())
@@ -85,38 +84,35 @@ var _ = Describe("generate: cleanup-helpers", func() {
 		})
 	})
 
-	Context("when the output directory only has preserved entries", func() {
-		It("succeeds and leaves .git and PROJECT untouched when both exist", func() {
+	Context("when the output directory only has .git and PROJECT", func() {
+		It("leaves .git untouched and removes PROJECT", func() {
 			Expect(os.Mkdir(filepath.Join(tmpDir, ".git"), 0o755)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(tmpDir, ".git", "HEAD"), []byte("ref: refs/heads/main\n"), 0o644)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("version: 3\n"), 0o644)).To(Succeed())
 
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
-			Expect(entryNames(tmpDir)).To(ConsistOf(".git", "PROJECT"))
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
+			Expect(entryNames(tmpDir)).To(ConsistOf(".git"))
 			head, err := os.ReadFile(filepath.Join(tmpDir, ".git", "HEAD"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(head)).To(Equal("ref: refs/heads/main\n"))
-			content, err := os.ReadFile(filepath.Join(tmpDir, "PROJECT"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(Equal("version: 3\n"))
 		})
 
 		It("succeeds when only PROJECT exists", func() {
 			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("version: 3\n"), 0o644)).To(Succeed())
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
-			Expect(entryNames(tmpDir)).To(ConsistOf("PROJECT"))
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
+			Expect(entryNames(tmpDir)).To(BeEmpty())
 		})
 
 		It("succeeds when only .git exists", func() {
 			Expect(os.Mkdir(filepath.Join(tmpDir, ".git"), 0o755)).To(Succeed())
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
 			Expect(entryNames(tmpDir)).To(ConsistOf(".git"))
 		})
 	})
 
 	Context("when the output directory is empty", func() {
 		It("succeeds without error", func() {
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
 			Expect(entryNames(tmpDir)).To(BeEmpty())
 		})
 	})
@@ -126,10 +122,10 @@ var _ = Describe("generate: cleanup-helpers", func() {
 			nested := filepath.Join(tmpDir, "api", "v1", "types.go")
 			Expect(os.MkdirAll(filepath.Dir(nested), 0o755)).To(Succeed())
 			Expect(os.WriteFile(nested, []byte("package v1\n"), 0o644)).To(Succeed())
-			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("version: 3\n"), 0o644)).To(Succeed())
+			Expect(os.Mkdir(filepath.Join(tmpDir, ".git"), 0o755)).To(Succeed())
 
-			Expect(cleanOutputDirPreservingGitAndProject(tmpDir)).To(Succeed())
-			Expect(entryNames(tmpDir)).To(ConsistOf("PROJECT"))
+			Expect(cleanOutputDirPreservingGit(tmpDir)).To(Succeed())
+			Expect(entryNames(tmpDir)).To(ConsistOf(".git"))
 			Expect(filepath.Join(tmpDir, "api")).NotTo(BeADirectory())
 		})
 	})
@@ -137,10 +133,41 @@ var _ = Describe("generate: cleanup-helpers", func() {
 	Context("when the output directory cannot be read", func() {
 		It("returns an error for a non-existent path", func() {
 			missing := filepath.Join(tmpDir, "does-not-exist")
-			err := cleanOutputDirPreservingGitAndProject(missing)
+			err := cleanOutputDirPreservingGit(missing)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("read output directory"))
 			Expect(err.Error()).To(ContainSubstring(missing))
+		})
+	})
+
+	Context("when resolving the output directory", func() {
+		It("uses --output-dir when it is set", func() {
+			dir, err := resolveOutputDir("/some/input", "/some/output")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dir).To(Equal("/some/output"))
+		})
+
+		It("regenerates in the input directory when --output-dir is unset", func() {
+			dir, err := resolveOutputDir("/some/input", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dir).To(Equal("/some/input"))
+		})
+
+		It("never falls back to the working directory when --input-dir points elsewhere", func() {
+			cwd, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			dir, err := resolveOutputDir(tmpDir, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dir).To(Equal(tmpDir))
+			Expect(dir).NotTo(Equal(cwd))
+		})
+
+		It("uses the working directory when both are unset", func() {
+			cwd, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			dir, err := resolveOutputDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dir).To(Equal(cwd))
 		})
 	})
 })
