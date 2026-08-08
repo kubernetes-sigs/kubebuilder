@@ -89,6 +89,20 @@ func (opts *Generate) Generate() error {
 		slog.Info("Preserving existing license header file for regeneration")
 	}
 
+	// Save the customised Grafana config before cleanup for the same reason:
+	// in an in-place run the directory grafanaConfigMigrate reads from is
+	// cleaned first, and by migration time the file on disk is a freshly
+	// scaffolded default rather than the user's customisation.
+	var preservedGrafanaConfig []byte
+	grafanaConfigPath := filepath.Join(opts.InputDir, "grafana", "custom-metrics", "config.yaml")
+	if _, statErr := os.Stat(grafanaConfigPath); statErr == nil {
+		preservedGrafanaConfig, err = os.ReadFile(grafanaConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to read existing Grafana config file %q: %w", grafanaConfigPath, err)
+		}
+		slog.Info("Preserving existing Grafana custom metrics config for regeneration")
+	}
+
 	inPlace := opts.OutputDir == ""
 	if opts.OutputDir, err = resolveOutputDir(opts.InputDir, opts.OutputDir); err != nil {
 		return err
@@ -147,7 +161,7 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error creating project config: %w", err)
 	}
 
-	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
+	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir, preservedGrafanaConfig); err != nil {
 		return fmt.Errorf("error migrating Grafana plugin: %w", err)
 	}
 
@@ -277,7 +291,7 @@ func kubebuilderCreate(s store.Store) error {
 }
 
 // Migrates the Grafana plugin.
-func migrateGrafanaPlugin(s store.Store, src, des string) error {
+func migrateGrafanaPlugin(s store.Store, src, des string, preservedConfig []byte) error {
 	var grafanaPlugin struct{}
 	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), grafanav1alpha.Plugin{})
 	canonicalKey := plugin.KeyFor(grafanav1alpha.Plugin{})
@@ -320,7 +334,7 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 		return fmt.Errorf("error editing Grafana plugin: %w", err)
 	}
 
-	if err = grafanaConfigMigrate(src, des); err != nil {
+	if err = grafanaConfigMigrate(src, des, preservedConfig); err != nil {
 		return fmt.Errorf("error migrating Grafana config: %w", err)
 	}
 
@@ -751,13 +765,25 @@ func copyFile(src, des string) error {
 }
 
 // Migrates Grafana configuration files.
-func grafanaConfigMigrate(src, des string) error {
+// preservedConfig holds the content of <src>/grafana/custom-metrics/config.yaml
+// as it was before the output directory was cleaned. When src and des are the
+// same directory (an in-place regeneration), the file on disk at this point is
+// a freshly scaffolded default, so the preserved content is the one to carry
+// forward.
+func grafanaConfigMigrate(src, des string, preservedConfig []byte) error {
+	desConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des)
+	if len(preservedConfig) > 0 {
+		if err := os.WriteFile(desConfig, preservedConfig, 0o644); err != nil {
+			return fmt.Errorf("failed to write file %q: %w", desConfig, err)
+		}
+		return nil
+	}
 	grafanaConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", src)
 	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
 		slog.Info("Grafana config file not found, skipping file migration", "path", grafanaConfig)
 		return nil // Don't fail if config files don't exist
 	}
-	return copyFile(grafanaConfig, fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des))
+	return copyFile(grafanaConfig, desConfig)
 }
 
 // Edits the project to include the Grafana plugin.
