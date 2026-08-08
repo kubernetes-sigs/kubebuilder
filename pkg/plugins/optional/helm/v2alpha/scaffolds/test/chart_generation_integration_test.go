@@ -30,6 +30,9 @@ import (
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -929,6 +932,59 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			By("linting the generated chart")
 			lintResult := action.NewLint().Run([]string{chartPath}, nil)
 			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+		})
+	})
+
+	Context("Manager environment overrides (rendered)", func() {
+		writeValuesFile := func(content string) string {
+			valuesFile := filepath.Join(tmpDir, "manager-env-values.yaml")
+			Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
+			return valuesFile
+		}
+
+		renderWithEnvOverrides := func(valuesContent string) string {
+			setArgs := []string{"-f", writeValuesFile(valuesContent)}
+			out, err := helmTemplate(createKustomizeWithFullDeploymentConfig("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		managerEnv := func(rendered string) []corev1.EnvVar {
+			for _, document := range strings.Split(rendered, "\n---") {
+				deployment := appsv1.Deployment{}
+				Expect(yaml.Unmarshal([]byte(document), &deployment)).To(Succeed())
+				if deployment.Kind == "Deployment" {
+					Expect(deployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+					return deployment.Spec.Template.Spec.Containers[0].Env
+				}
+			}
+			Fail("rendered chart did not contain a Deployment")
+			return nil
+		}
+
+		It("should replace existing variables without duplicate names", func() {
+			rendered := renderWithEnvOverrides(`manager:
+  envOverrides:
+    TEST_ENV: overridden
+`)
+			env := managerEnv(rendered)
+
+			Expect(env).To(Equal([]corev1.EnvVar{
+				{Name: "TEST_ENV", Value: "overridden"},
+			}))
+		})
+
+		It("should reject overrides for variables that do not exist", func() {
+			valuesFile := writeValuesFile(`manager:
+  envOverrides:
+    TEST_ENV: overridden
+    UNKNOWN_ENV: added
+`)
+			out, err := helmTemplate(createKustomizeWithFullDeploymentConfig("test-project"), "-f", valuesFile)
+
+			Expect(err).To(HaveOccurred())
+			Expect(out).To(ContainSubstring(
+				"manager.envOverrides contains unknown environment variable(s): UNKNOWN_ENV"))
 		})
 	})
 
