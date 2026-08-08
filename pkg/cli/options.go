@@ -162,6 +162,35 @@ func WithCompletion() Option {
 	}
 }
 
+// WithSubcommandsWithoutConfig is an Option that marks subcommands as not requiring the project
+// configuration file. These subcommands work from any directory, even when PROJECT cannot be loaded.
+// The help, version, and completion subcommands are already included by default.
+// Do not register subcommands that read or write the config; their help output already works without it.
+// Pass each subcommand name as the user types it, such as "docs", or "alpha generate" for nested ones.
+func WithSubcommandsWithoutConfig(subcommands ...string) Option {
+	return func(c *CLI) error {
+		for _, subcommand := range subcommands {
+			if strings.TrimSpace(subcommand) == "" {
+				return errors.New("invalid empty subcommand")
+			}
+			c.subcommandsWithoutConfig = append(c.subcommandsWithoutConfig, subcommand)
+		}
+		return nil
+	}
+}
+
+// WithArgs is an Option that sets the command line arguments the CLI reads to resolve the project
+// configuration and the plugin chain. It defaults to the arguments of the running program.
+//
+// Use it when embedding the CLI and running it with Command().SetArgs, so that both are driven by
+// the same arguments. Pass the arguments without the program name, as SetArgs takes them.
+func WithArgs(args []string) Option {
+	return func(c *CLI) error {
+		c.args = slices.Clone(args)
+		return nil
+	}
+}
+
 // WithFilesystem is an Option that allows to set the filesystem used in the CLI.
 func WithFilesystem(filesystem machinery.Filesystem) Option {
 	return func(c *CLI) error {

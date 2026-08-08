@@ -17,6 +17,7 @@ limitations under the License.
 package yaml
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -77,9 +78,124 @@ type versionedConfig struct {
 	Version config.Version `json:"version"`
 }
 
+// pathClass describes what occupies a path.
+type pathClass int
+
+const (
+	pathMissing pathClass = iota
+	pathRegularFile
+	pathDirectory
+	pathIrregularFile
+	pathSymbolicLink
+)
+
+// String describes what occupies a path, and is empty when nothing does.
+func (c pathClass) String() string {
+	switch c {
+	case pathRegularFile:
+		return "a regular file"
+	case pathDirectory:
+		return "a directory"
+	case pathSymbolicLink:
+		return "a symbolic link"
+	case pathIrregularFile:
+		return "not a regular file"
+	case pathMissing:
+		return ""
+	default:
+		return ""
+	}
+}
+
+// classify reports what occupies the path, following a final symbolic link.
+func classify(fs afero.Fs, path string) (pathClass, error) {
+	return classifyInfo(fs.Stat(path))
+}
+
+// classifyNoFollow reports what occupies the path without following a final symbolic link, so that
+// a link with a missing target reads as a link instead of as a missing file.
+func classifyNoFollow(fs afero.Fs, path string) (pathClass, error) {
+	lstater, ok := fs.(afero.Lstater)
+	if !ok {
+		return classify(fs, path)
+	}
+
+	info, _, err := lstater.LstatIfPossible(path)
+
+	return classifyInfo(info, err)
+}
+
+func classifyInfo(info os.FileInfo, err error) (pathClass, error) {
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		return pathMissing, nil
+	case err != nil:
+		return pathMissing, fmt.Errorf("failed to check for file prior existence: %w", err)
+	case info.Mode()&os.ModeSymlink != 0:
+		return pathSymbolicLink, nil
+	case info.Mode().IsRegular():
+		return pathRegularFile, nil
+	case info.IsDir():
+		return pathDirectory, nil
+	default:
+		return pathIrregularFile, nil
+	}
+}
+
+// checkReadable returns an error when the path cannot be read as a configuration file. It reports
+// os.ErrNotExist only when nothing is at the path, so that callers can tell a project that was
+// never initialized from one whose configuration path holds something else.
+func checkReadable(fs afero.Fs, path string) error {
+	// The link is followed, so a link to a configuration file is read as one.
+	class, err := classify(fs, path)
+	if err != nil {
+		return err
+	}
+
+	if class == pathMissing {
+		// A link with a missing target also reads as missing, so report the link instead.
+		linkClass, linkErr := classifyNoFollow(fs, path)
+		if linkErr != nil || linkClass != pathSymbolicLink {
+			return fmt.Errorf("failed to read %q file: %w", path, os.ErrNotExist)
+		}
+		class = linkClass
+	}
+
+	if class != pathRegularFile {
+		return fmt.Errorf("%q is %s", path, class)
+	}
+
+	return nil
+}
+
+// checkCreatable returns an error when a new configuration file cannot be created at the path.
+// A final symbolic link is never followed, so that the configuration is not written through a link
+// and its target created somewhere else.
+func checkCreatable(fs afero.Fs, path string) error {
+	class, err := classifyNoFollow(fs, path)
+	if err != nil {
+		return err
+	}
+
+	switch class {
+	case pathSymbolicLink, pathDirectory, pathIrregularFile:
+		return fmt.Errorf("cannot save configuration to %q: path is %s", path, class)
+	case pathRegularFile:
+		return fmt.Errorf("configuration already exists in %q", path)
+	case pathMissing:
+	}
+
+	return nil
+}
+
 // LoadFrom implements store.Store interface
 func (s *yamlStore) LoadFrom(path string) error {
 	s.mustNotExist = false
+
+	// Only a regular file can carry configuration data.
+	if err := checkReadable(s.fs, path); err != nil {
+		return store.LoadError{Err: err}
+	}
 
 	// Read the file
 	in, err := afero.ReadFile(s.fs, path)
@@ -123,14 +239,8 @@ func (s yamlStore) SaveTo(path string) error {
 
 	// If it is a new configuration, the path should not exist yet
 	if s.mustNotExist {
-		// Check that the file doesn't exist
-		_, err := s.fs.Stat(path)
-		if err == nil || os.IsExist(err) {
-			// File already exists
-			return store.SaveError{Err: fmt.Errorf("configuration already exists in %q", path)}
-		} else if !os.IsNotExist(err) {
-			// Error occurred while checking file existence
-			return store.SaveError{Err: fmt.Errorf("failed to check for file prior existence: %w", err)}
+		if err := checkCreatable(s.fs, path); err != nil {
+			return store.SaveError{Err: err}
 		}
 	}
 

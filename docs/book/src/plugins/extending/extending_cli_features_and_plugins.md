@@ -291,6 +291,10 @@ func GetPluginsCLI() (*cli.CLI) {
 		// Add your own alpha commands to the CLI
 		cli.WithExtraAlphaCommands(alphaCommands...),
 
+		// Marks your own subcommands that do not use the PROJECT config file, so they work
+		// from any directory. See "Subcommands that run without the PROJECT config" below.
+		cli.WithSubcommandsWithoutConfig("my-example-command", "alpha my-example-alpha-command"),
+
 		// Adds the completion option for your CLI
 		cli.WithCompletion(),
 	)
@@ -332,6 +336,67 @@ $ my-bin-builder init --plugins ansible
 $ my-bin-builder create api [flags]
 $ my-bin-builder create webhook [flags]
 ```
+
+### Subcommands that run without the PROJECT config
+
+Every CLI built with this package lets some subcommands run without the
+PROJECT config file:
+
+- The `help`, `version`, and `completion` subcommands never read the file,
+  so they work from any directory.
+- Requesting help with `--help` works for any subcommand, even when the
+  PROJECT file is missing or invalid. When the file loads, the help output
+  reflects the plugin chain configured for the project.
+
+You get this behavior without any option. Use `cli.WithSubcommandsWithoutConfig`
+only to extend the default list with your own commands:
+
+```go
+cli.WithSubcommandsWithoutConfig("my-example-command", "alpha my-example-alpha-command"),
+```
+
+Add only commands registered with `cli.WithExtraCommands` or
+`cli.WithExtraAlphaCommands` that do not read or write the config.
+Do not add commands that scaffold or update projects, such as `init` or
+`create api`. They must keep requiring the PROJECT file. The option only
+adds to the default list. It cannot remove `help`, `version`, or `completion`.
+
+Pass each subcommand name as the user types it after the binary name.
+For example, `"my-example-command"` matches `example-cli my-example-command`.
+For nested subcommands, add a space between the parent and child names,
+such as `"alpha my-example-alpha-command"`.
+
+### Choosing the command with `SetArgs`
+
+`cli.New` reads the PROJECT file and resolves the plugin chain while it builds
+the command tree, which happens before you can choose a command with
+`Command().SetArgs`. By default it reads the arguments of the running program,
+so a CLI driven by `SetArgs` looks at arguments that name a different command.
+
+Tell the CLI which arguments to read with `cli.WithArgs`:
+
+```go
+args := []string{"version"}
+
+c, err := cli.New(
+    // ... your other options
+    cli.WithArgs(args),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+c.Command().SetArgs(args)
+```
+
+Pass the arguments without the program name, as `SetArgs` takes them. You only
+need this when the two differ. A binary that runs the command the user typed
+does not need this option.
+
+A PROJECT file that cannot be read is never fatal on its own. The command tree
+is still built, and the failure is reported when running a command that consumes
+the configuration, so `version`, `help`, `completion`, and your own config-free
+commands keep working.
 
 ### Inputs should be tracked in the PROJECT file
 

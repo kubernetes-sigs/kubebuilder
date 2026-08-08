@@ -46,7 +46,8 @@ func GetInputPath(inputPath string) (string, error) {
 		inputPath = cwd
 	}
 	projectPath := fmt.Sprintf("%s/%s", inputPath, yaml.DefaultPath)
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+	// The link is not followed, so that loading the project reports a link with a missing target.
+	if _, err := os.Lstat(projectPath); err != nil {
 		return "", fmt.Errorf("project path %q does not exist: %w", projectPath, err)
 	}
 	return inputPath, nil

@@ -148,7 +148,7 @@ func (c *CLI) applySubcommandHooks(
 		}
 	}
 
-	showPluginPrefix := c.shouldShowPluginPrefix(os.Args)
+	showPluginPrefix := c.shouldShowPluginPrefix(c.args)
 	result, err := initializationHooks(cmd, subcommands, c.metadata(), showPluginPrefix)
 	if err != nil {
 		cmdErr(cmd, err)
@@ -469,7 +469,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 			}
 		} else {
 			// Load the project configuration.
-			if err := factory.store.Load(); os.IsNotExist(err) {
+			if err := factory.store.Load(); errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("%s: failed to find configuration file, project must be initialized",
 					factory.errorMessage)
 			} else if err != nil {
