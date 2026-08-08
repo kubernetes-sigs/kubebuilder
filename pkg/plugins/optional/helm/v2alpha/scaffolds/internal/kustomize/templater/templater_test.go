@@ -2646,6 +2646,114 @@ spec:
 			Expect(result).NotTo(ContainSubstring(":9091"))
 		})
 
+		// Manager port/probe/argument templating must be scoped to the manager
+		// container: a sidecar that reuses the same ports, probe paths, or
+		// bind-address flags must be left byte-for-byte untouched.
+		const sidecar = `      - name: proxy
+        args:
+        - --metrics-bind-address=:9440
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9440
+        ports:
+        - containerPort: 9440
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9440`
+
+		const managerContainer = `      - name: manager
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081`
+
+		const deploymentHeader = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+`
+
+		assertManagerTemplated := func(result string) {
+			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring("--webhook-port={{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.manager.healthProbe.port }}"))
+		}
+
+		It("should scope templating to the manager container and leave a trailing sidecar untouched", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := deploymentHeader + managerContainer + "\n" + sidecar
+
+			result := templater.templatePorts(content, deployment)
+
+			assertManagerTemplated(result)
+			// The sidecar block must survive verbatim (still literal 9440, no template syntax).
+			Expect(result).To(ContainSubstring(sidecar))
+		})
+
+		It("should scope templating to the manager container regardless of container order", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// Sidecar declared before the manager: range detection must still isolate the manager.
+			content := deploymentHeader + sidecar + "\n" + managerContainer
+
+			result := templater.templatePorts(content, deployment)
+
+			assertManagerTemplated(result)
+			Expect(result).To(ContainSubstring(sidecar))
+		})
+
+		It("should leave the Deployment untouched when no manager container can be located", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// The only container is a sidecar that reuses the manager's ports, probe
+			// paths, and bind-address flags. With no manager container to scope to,
+			// templating must be skipped entirely rather than rewriting the sidecar
+			// document-wide.
+			content := deploymentHeader + sidecar
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(Equal(content))
+		})
+
 		It("should not template non-webhook/metrics resources", func() {
 			regularService := &unstructured.Unstructured{}
 			regularService.SetAPIVersion("v1")
@@ -2733,6 +2841,118 @@ spec:
 
 			Expect(result).To(ContainSubstring("port: 8080"))
 			Expect(result).NotTo(ContainSubstring("{{ .Values"))
+		})
+	})
+
+	// Driven through the full ApplyHelmSubstitutions pipeline (not just templatePorts):
+	// manager-specific templating must never leak into a sidecar container that happens
+	// to reuse the same ports, probes, image pattern, or bind-address flags. Both
+	// container orderings are exercised because range detection is most likely to slip
+	// when the sidecar precedes the manager.
+	Context("when a Deployment has both a manager and a sidecar container", func() {
+		const pipelineManager = `      - name: manager
+        image: controller:latest
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081`
+
+		const pipelineSidecar = `      - name: proxy
+        image: nginx:1.27
+        args:
+        - --metrics-bind-address=:9440
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9440
+        ports:
+        - containerPort: 9440
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9440`
+
+		const pipelineHeader = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+  labels:
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+`
+
+		newManagerDeployment := func() *unstructured.Unstructured {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+			return deployment
+		}
+
+		assertIsolation := func(result string) {
+			By("templating every manager port, probe, and image reference")
+			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring("--webhook-port={{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.webhook.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring(".Values.manager.image.repository"))
+
+			By("leaving the sidecar container free of any manager templating")
+			start := strings.Index(result, "- name: proxy")
+			Expect(start).To(BeNumerically(">=", 0))
+			// Bound the slice to the sidecar container: when the sidecar precedes the
+			// manager, cut at the manager so the (correctly templated) manager block is
+			// excluded; when it trails, the tail holds only the sidecar and the chart footer.
+			sidecar := result[start:]
+			if managerStart := strings.Index(sidecar, "- name: manager"); managerStart >= 0 {
+				sidecar = sidecar[:managerStart]
+			}
+			Expect(sidecar).NotTo(ContainSubstring(".Values.manager"))
+			Expect(sidecar).NotTo(ContainSubstring(".Values.metrics"))
+			Expect(sidecar).NotTo(ContainSubstring(".Values.webhook"))
+			Expect(sidecar).To(ContainSubstring("image: nginx:1.27"))
+			Expect(sidecar).To(ContainSubstring("--metrics-bind-address=:9440"))
+			Expect(sidecar).To(ContainSubstring("containerPort: 9440"))
+			Expect(sidecar).To(ContainSubstring(`            path: /healthz
+            port: 9440`))
+			Expect(sidecar).To(ContainSubstring(`            path: /readyz
+            port: 9440`))
+		}
+
+		It("should not rewrite sidecar values when the sidecar follows the manager", func() {
+			content := pipelineHeader + pipelineManager + "\n" + pipelineSidecar
+			assertIsolation(templater.ApplyHelmSubstitutions(content, newManagerDeployment()))
+		})
+
+		It("should not rewrite sidecar values when the sidecar precedes the manager", func() {
+			content := pipelineHeader + pipelineSidecar + "\n" + pipelineManager
+			assertIsolation(templater.ApplyHelmSubstitutions(content, newManagerDeployment()))
 		})
 	})
 
