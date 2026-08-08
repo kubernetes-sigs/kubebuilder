@@ -17,6 +17,21 @@ webhooks:
       path: /validate-example-com-testproject-org-v1alpha1-memcached
   failurePolicy: Fail
   name: vmemcached-v1alpha1.kb.io
+  {{- with .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.objectSelector }}
+  objectSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.matchConditions }}
+  matchConditions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{ with .Values.webhook.timeoutSeconds }}
+  timeoutSeconds: {{ . }}
+  {{ end }}
   rules:
   - apiGroups:
     - example.com.testproject.org

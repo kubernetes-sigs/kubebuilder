@@ -17,6 +17,21 @@ webhooks:
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: mcronjob-v1.kb.io
+  {{- with .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.objectSelector }}
+  objectSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.matchConditions }}
+  matchConditions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{ with .Values.webhook.timeoutSeconds }}
+  timeoutSeconds: {{ . }}
+  {{ end }}
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io
@@ -37,6 +52,21 @@ webhooks:
       path: /mutate-batch-tutorial-kubebuilder-io-v2-cronjob
   failurePolicy: Fail
   name: mcronjob-v2.kb.io
+  {{- with .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.objectSelector }}
+  objectSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.webhook.matchConditions }}
+  matchConditions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{ with .Values.webhook.timeoutSeconds }}
+  timeoutSeconds: {{ . }}
+  {{ end }}
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io

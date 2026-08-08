@@ -259,6 +259,30 @@ helm install my-operator ./dist/chart --set webhook.port=9444
 
 The default is `9443`, detected from your project configuration.
 
+### Webhook admission configuration
+
+The chart exposes admission webhook filters through `webhook` values. Empty selectors and
+conditions preserve the default Kubernetes behavior:
+
+```yaml
+webhook:
+  namespaceSelector:
+    matchLabels:
+      webhook: enabled
+  objectSelector:
+    matchLabels:
+      managed-by: my-operator
+  matchConditions:
+  - name: skip-system-users
+    expression: 'request.userInfo.username != "system:admin"'
+  timeoutSeconds: 15
+```
+
+These values are applied to the generated mutating and validating webhook configurations.
+For namespace-scoped managers, use `namespaceSelector` or `objectSelector` to keep webhook
+requests aligned with the namespaces watched by the manager. Values already supplied through
+the controller-tools webhook `patch` marker remain unchanged in the generated chart.
+
 ### Health probe port configuration
 
 Set `manager.healthProbe.port` to change the port where the manager serves its health probes. The liveness (`/healthz`) and readiness (`/readyz`) endpoints bind to this port. The chart applies the same value to the `--health-probe-bind-address` argument, the `health` container port, and the `httpGet` port of both probes.
