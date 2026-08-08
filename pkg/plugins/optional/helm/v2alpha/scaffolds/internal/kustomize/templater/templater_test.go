@@ -39,6 +39,9 @@ const (
 	expectedIssuerName = `name: {{ include "test-project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}`
 
 	k8sSpecField = "spec"
+
+	labelControlPlaneKey   = "control-plane"
+	labelControlPlaneValue = "controller-manager"
 )
 
 var _ = Describe("Templater", func() {
@@ -4448,7 +4451,7 @@ metadata:
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
 				deployment.SetName("controller-manager")
-				deployment.SetLabels(map[string]string{"control-plane": "controller-manager"})
+				deployment.SetLabels(map[string]string{labelControlPlaneKey: labelControlPlaneValue})
 
 				content := `apiVersion: apps/v1
 kind: Deployment
@@ -4537,7 +4540,7 @@ metadata:
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
 				deployment.SetName("controller-manager")
-				deployment.SetLabels(map[string]string{"control-plane": "controller-manager"})
+				deployment.SetLabels(map[string]string{labelControlPlaneKey: labelControlPlaneValue})
 
 				content := `apiVersion: apps/v1
 kind: Deployment
@@ -4628,7 +4631,6 @@ spec:
 			})
 
 			It("applies manager-specific templates to a deployment identified only by container name", func() {
-				// Manager identified by container name when the control-plane label is absent.
 				managerDeployment := &unstructured.Unstructured{}
 				managerDeployment.SetAPIVersion("apps/v1")
 				managerDeployment.SetKind("Deployment")
@@ -4660,6 +4662,76 @@ spec:
 
 				Expect(result).To(ContainSubstring("{{ .Values.manager.replicas }}"),
 					"manager replicas template must appear for a deployment with a container named manager")
+			})
+		})
+
+		Context("when a sidecar container is present before the manager", func() {
+			It("does not template sidecar volumeMounts with manager extraVolumeMounts values", func() {
+				deployment := &unstructured.Unstructured{}
+				deployment.SetAPIVersion("apps/v1")
+				deployment.SetKind("Deployment")
+				deployment.SetName("test-project-controller-manager")
+				deployment.SetLabels(map[string]string{labelControlPlaneKey: labelControlPlaneValue})
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - name: sidecar
+        image: sidecar:v1
+        volumeMounts:
+        - name: sidecar-config
+          mountPath: /etc/sidecar
+      - name: manager
+        image: controller:latest
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true`
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				sidecarStart := strings.Index(result, "name: sidecar")
+				managerStart := strings.Index(result, "name: manager")
+				Expect(sidecarStart).To(BeNumerically(">=", 0))
+				Expect(managerStart).To(BeNumerically(">", sidecarStart))
+				sidecarSection := result[sidecarStart:managerStart]
+
+				Expect(sidecarSection).To(ContainSubstring("mountPath: /etc/sidecar"))
+				Expect(sidecarSection).NotTo(ContainSubstring(".Values.manager.extraVolumeMounts"))
+				Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+			})
+		})
+
+		Context("when an external ServiceAccount is present", func() {
+			It("does not apply serviceAccount.enabled or serviceAccount labels to external ServiceAccounts", func() {
+				externalSA := &unstructured.Unstructured{}
+				externalSA.SetAPIVersion("v1")
+				externalSA.SetKind("ServiceAccount")
+				externalSA.SetName("external-sa")
+
+				content := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  name: external-sa
+  namespace: external-namespace`
+
+				result := templater.ApplyHelmSubstitutions(content, externalSA)
+
+				Expect(result).NotTo(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`))
+				Expect(result).NotTo(ContainSubstring(".Values.serviceAccount.labels"))
+				Expect(result).NotTo(ContainSubstring(".Values.serviceAccount.annotations"))
+				Expect(result).To(ContainSubstring("name: external-sa"))
 			})
 		})
 	})

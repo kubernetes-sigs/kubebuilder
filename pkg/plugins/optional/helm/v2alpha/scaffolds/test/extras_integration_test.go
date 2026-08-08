@@ -973,27 +973,49 @@ spec:
 			Expect(productionCount).To(Equal(1), "should have 1 production namespace (subject)")
 			Expect(releaseNsCount).To(BeNumerically(">=", 1), "should have at least 1 templated namespace (manager subject)")
 
-			By("verifying external ServiceAccount preserves its namespace")
-			saFiles, err := afero.ReadDir(fs.FS, rbacDir)
+			By("verifying external ServiceAccount preserves its namespace in extras")
+			extrasDir := filepath.Join("dist", "chart", "templates", "extras")
+			extrasFiles, err := afero.ReadDir(fs.FS, extrasDir)
 			Expect(err).NotTo(HaveOccurred())
 
 			var externalSAFound bool
-			for _, f := range saFiles {
-				if strings.Contains(f.Name(), "external-sa") {
-					externalSAFound = true
-					saPath := filepath.Join(rbacDir, f.Name())
-					saContent, err := afero.ReadFile(fs.FS, saPath)
-					Expect(err).NotTo(HaveOccurred())
-					saStr := string(saContent)
-
-					// External SA namespace should be preserved
-					Expect(saStr).To(ContainSubstring("namespace: external-namespace"),
-						"external ServiceAccount namespace should be preserved")
-					Expect(saStr).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"),
-						"external ServiceAccount should not use Release.Namespace")
+			for _, f := range extrasFiles {
+				if !strings.Contains(f.Name(), "external-sa") {
+					continue
 				}
+				externalSAFound = true
+				saPath := filepath.Join(extrasDir, f.Name())
+				saContent, err := afero.ReadFile(fs.FS, saPath)
+				Expect(err).NotTo(HaveOccurred())
+				saStr := string(saContent)
+
+				Expect(saStr).To(ContainSubstring("namespace: external-namespace"),
+					"external ServiceAccount namespace should be preserved")
+				Expect(saStr).NotTo(ContainSubstring("namespace: {{ .Release.Namespace }}"),
+					"external ServiceAccount should not use Release.Namespace")
+				Expect(saStr).NotTo(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`),
+					"external ServiceAccount must not be gated by serviceAccount.enabled")
 			}
-			Expect(externalSAFound).To(BeTrue(), "external ServiceAccount file should exist")
+			Expect(externalSAFound).To(BeTrue(), "external ServiceAccount file should exist in extras")
+
+			By("verifying manager ServiceAccount is created with serviceAccount.enabled guard in rbac")
+			saFiles, err := afero.ReadDir(fs.FS, rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			var managerSAFound bool
+			for _, f := range saFiles {
+				if !strings.Contains(f.Name(), "controller-manager") {
+					continue
+				}
+				managerSAFound = true
+				saPath := filepath.Join(rbacDir, f.Name())
+				saContent, err := afero.ReadFile(fs.FS, saPath)
+				Expect(err).NotTo(HaveOccurred())
+				saStr := string(saContent)
+				Expect(saStr).To(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`),
+					"manager ServiceAccount must be gated by serviceAccount.enabled")
+			}
+			Expect(managerSAFound).To(BeTrue(), "manager ServiceAccount file should exist in rbac")
 		})
 
 		It("should escape existing Go template syntax in CRD samples", func() {

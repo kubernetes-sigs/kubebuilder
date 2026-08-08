@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -534,3 +535,32 @@ spec:
 		Expect(rangeContent).To(ContainSubstring(".Values.manager.env"))
 	})
 })
+
+var _ = Describe("IsManagerServiceAccount", func() {
+	It("returns false for nil resource", func() {
+		Expect(IsManagerServiceAccount(nil)).To(BeFalse())
+	})
+
+	It("returns true for unprefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns true for prefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("test-project-controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns false for external ServiceAccount names", func() {
+		resource := makeUnstructuredServiceAccount("external-sa")
+		Expect(IsManagerServiceAccount(resource)).To(BeFalse())
+	})
+})
+
+func makeUnstructuredServiceAccount(name string) *unstructured.Unstructured {
+	resource := &unstructured.Unstructured{}
+	resource.SetAPIVersion("v1")
+	resource.SetKind("ServiceAccount")
+	resource.SetName(name)
+	return resource
+}
