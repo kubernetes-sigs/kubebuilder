@@ -187,7 +187,7 @@ var _ = Describe("Cfg", func() {
 					Expect(result.API.CRDVersion).To(Equal(expected.API.CRDVersion))
 					Expect(result.API.Namespaced).To(Equal(expected.API.Namespaced))
 				}
-				Expect(result.Controller).To(Equal(expected.Controller))
+				Expect(result.GetControllerNames()).To(Equal(expected.GetControllerNames()))
 				if expected.Webhooks == nil {
 					Expect(result.Webhooks).To(BeNil())
 				} else {
@@ -597,6 +597,107 @@ version: "3"
 			Entry("for a basic configuration", func() Cfg { return c1 }, func() string { return s1 }),
 			Entry("for a full configuration", func() Cfg { return c2 }, func() string { return s2 }),
 		)
+
+		Context("controller migration", func() {
+			// roundTrip reads a PROJECT body and writes it back out. Migration happens on
+			// write, so this exercises the path a real command takes.
+			roundTrip := func(resources string) string {
+				body := "domain: my.domain\nlayout:\n- go.kubebuilder.io/v4\nprojectName: my-project\n" +
+					"repo: myrepo\nresources:\n" + resources + "version: \"3\"\n"
+
+				var cfg Cfg
+				Expect(cfg.UnmarshalYAML([]byte(body))).To(Succeed())
+				b, err := cfg.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+
+				return string(b)
+			}
+
+			It("should convert a legacy controller to the controllers list", func() {
+				out := roundTrip("- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n")
+
+				Expect(out).To(ContainSubstring("controllers:\n  - name: captain\n"))
+				Expect(out).NotTo(ContainSubstring("controller: true"))
+			})
+
+			It("should leave a project already using controllers byte-identical", func() {
+				// A non-default name only, so a spuriously inserted default would show up.
+				in := "- controllers:\n  - name: captain-backup\n" +
+					"  group: crew\n  kind: Captain\n  version: v1\n"
+
+				Expect(roundTrip(in)).To(Equal(roundTrip(roundTrip(in))),
+					"writing an already-migrated project must not change it")
+				Expect(roundTrip(in)).To(ContainSubstring("- name: captain-backup\n"))
+				Expect(roundTrip(in)).NotTo(ContainSubstring("- name: captain\n"))
+				Expect(roundTrip(in)).NotTo(ContainSubstring("controller:"))
+			})
+
+			It("should be idempotent, so a second write changes nothing", func() {
+				once := roundTrip("- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n")
+
+				var cfg Cfg
+				Expect(cfg.UnmarshalYAML([]byte(once))).To(Succeed())
+				twice, err := cfg.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(twice)).To(Equal(once))
+			})
+
+			It("should keep the controllers list when a hand-edited file carries both", func() {
+				in := "- controller: true\n  controllers:\n  - name: captain-backup\n" +
+					"  group: crew\n  kind: Captain\n  version: v1\n"
+				out := roundTrip(in)
+
+				Expect(out).To(ContainSubstring("- name: captain-backup\n"))
+				Expect(out).To(ContainSubstring("- name: captain\n"),
+					"the legacy controller must be kept under its default name, not dropped")
+				Expect(out).NotTo(ContainSubstring("controller: true"))
+			})
+
+			It("should migrate every resource, not only the ones a command touched", func() {
+				in := "- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n" +
+					"- controller: true\n  group: crew\n  kind: Sailor\n  version: v1\n" +
+					"- controllers:\n  - name: admiral\n  group: crew\n  kind: Admiral\n  version: v1\n"
+				out := roundTrip(in)
+
+				Expect(out).To(ContainSubstring("- name: captain\n"))
+				Expect(out).To(ContainSubstring("- name: sailor\n"))
+				Expect(out).To(ContainSubstring("- name: admiral\n"))
+				Expect(out).NotTo(ContainSubstring("controller: true"))
+			})
+
+			It("should omit an empty controllers list", func() {
+				cfg := Cfg{
+					Version: Version,
+					Resources: []resource.Resource{{
+						GVK:         resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"},
+						Controllers: &resource.Controllers{},
+					}},
+				}
+
+				b, err := cfg.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).NotTo(ContainSubstring("controllers:"))
+			})
+
+			It("should not invent a controller for a resource that has none", func() {
+				out := roundTrip("- group: crew\n  kind: Captain\n  version: v1\n")
+
+				Expect(out).NotTo(ContainSubstring("controller"))
+			})
+
+			It("should report a legacy controller through the accessors before it is written", func() {
+				var cfg Cfg
+				body := "domain: my.domain\nlayout:\n- go.kubebuilder.io/v4\nprojectName: my-project\n" +
+					"repo: myrepo\nresources:\n- controller: true\n  group: crew\n  kind: Captain\n" +
+					"  version: v1\nversion: \"3\"\n"
+				Expect(cfg.UnmarshalYAML([]byte(body))).To(Succeed())
+
+				res, err := cfg.GetResource(resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.HasController()).To(BeTrue())
+				Expect(res.GetControllerNames()).To(Equal([]string{"captain"}))
+			})
+		})
 
 		DescribeTable("UnmarshalYAML should succeed",
 			func(getContent func() string, getCfg func() Cfg) {
