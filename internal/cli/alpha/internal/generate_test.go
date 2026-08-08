@@ -991,7 +991,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("skips migration as Grafana plugin not found", func() {
 			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: grafanaPluginKey}}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest")).To(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil)).To(Succeed())
 		})
 
 		It("returns error if decoding Grafana plugin config fails", func() {
@@ -1000,7 +1000,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 				plugins:   map[string]any{grafanaPluginKey: true},
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest")).NotTo(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil)).NotTo(Succeed())
 		})
 
 		Context("success", func() {
@@ -1022,10 +1022,32 @@ var _ = Describe("generate: migrate-plugins", func() {
 			It("migrates Grafana plugin successfully", func() {
 				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
 				store := &fakeStore{cfg: cfg}
-				Expect(migrateGrafanaPlugin(store, src, dest)).To(Succeed())
+				Expect(migrateGrafanaPlugin(store, src, dest, nil)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal("config"))
+			})
+
+			It("restores the preserved config on an in-place regeneration", func() {
+				// src == dest and the file on disk holds a freshly scaffolded
+				// default: the state after cleanOutputDirPreservingGit and
+				// kubebuilderGrafanaEdit have both run. Only the preserved
+				// content read before the cleanup carries the customisation.
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, src, []byte("customised"))).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("customised"))
+			})
+
+			It("prefers the preserved config over the source file", func() {
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, dest, []byte("customised"))).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("customised"))
 			})
 		})
 	})
