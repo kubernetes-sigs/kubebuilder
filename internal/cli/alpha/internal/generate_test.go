@@ -991,7 +991,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("skips migration as Grafana plugin not found", func() {
 			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: grafanaPluginKey}}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest", nil)).To(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil, false)).To(Succeed())
 		})
 
 		It("returns error if decoding Grafana plugin config fails", func() {
@@ -1000,7 +1000,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 				plugins:   map[string]any{grafanaPluginKey: true},
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest", nil)).NotTo(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil, false)).NotTo(Succeed())
 		})
 
 		Context("success", func() {
@@ -1022,7 +1022,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 			It("migrates Grafana plugin successfully", func() {
 				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
 				store := &fakeStore{cfg: cfg}
-				Expect(migrateGrafanaPlugin(store, src, dest, nil)).To(Succeed())
+				Expect(migrateGrafanaPlugin(store, src, dest, nil, false)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal("config"))
@@ -1035,16 +1035,28 @@ var _ = Describe("generate: migrate-plugins", func() {
 				// content read before the cleanup carries the customisation.
 				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
 				store := &fakeStore{cfg: cfg}
-				Expect(migrateGrafanaPlugin(store, src, src, []byte("customised"))).To(Succeed())
+				Expect(migrateGrafanaPlugin(store, src, src, []byte("customised"), true)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal("customised"))
 			})
 
+			It("restores an empty config on an in-place regeneration", func() {
+				// An existing empty config.yaml is a customisation too: the
+				// user emptied it on purpose, so the restore must not leave
+				// the scaffolded default behind.
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, src, nil, true)).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(b).To(BeEmpty())
+			})
+
 			It("prefers the preserved config over the source file", func() {
 				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
 				store := &fakeStore{cfg: cfg}
-				Expect(migrateGrafanaPlugin(store, src, dest, []byte("customised"))).To(Succeed())
+				Expect(migrateGrafanaPlugin(store, src, dest, []byte("customised"), true)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal("customised"))
