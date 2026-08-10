@@ -110,6 +110,8 @@ var _ = Describe("Resource", func() {
 			Entry("empty path (partial resource)", ""),
 			Entry("simple relative path", "api/v1"),
 			Entry("full module import path", "github.com/org/repo/api/v1"),
+			Entry("mixed-case import path", "GitHub.com/Org/Repo/api/v1"),
+			Entry("versioned domain", "gopkg.in/yaml.v3"),
 			Entry("multi-segment path with hyphen", "github.com/my-org/my-repo/api/v1"),
 			Entry("k8s core path", "k8s.io/api/core/v1"),
 		)
