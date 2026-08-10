@@ -159,7 +159,7 @@ go-apidiff:
 test: test-unit test-integration test-testdata test-book verify-license test-gomod ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
-TEST_PKGS := ./pkg/... ./test/e2e/utils/...
+TEST_PKGS := ./pkg/... $(shell go list ./internal/... | grep -v 'internal/update$$') ./test/e2e/utils/...
 test-unit: ## Run the unit tests
 	go test -race $(TEST_PKGS)
 
