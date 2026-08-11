@@ -17,7 +17,9 @@ limitations under the License.
 package yaml
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/afero"
@@ -77,9 +79,127 @@ type versionedConfig struct {
 	Version config.Version `json:"version"`
 }
 
+// pathClass describes what is at a path.
+type pathClass int
+
+const (
+	pathMissing pathClass = iota
+	pathRegularFile
+	pathDirectory
+	pathIrregularFile
+	pathSymbolicLink
+)
+
+// String returns a human-readable description of the path class.
+func (c pathClass) String() string {
+	switch c {
+	case pathRegularFile:
+		return "a regular file"
+	case pathDirectory:
+		return "a directory"
+	case pathSymbolicLink:
+		return "a symbolic link"
+	case pathIrregularFile:
+		return "not a regular file"
+	default:
+		return ""
+	}
+}
+
+// classify reports what is at the path after following a final symbolic link.
+func classify(fs afero.Fs, path string) (pathClass, error) {
+	info, err := fs.Stat(path)
+
+	return classifyInfo(path, info, err)
+}
+
+// classifyNoFollow reports a final symbolic link without following it when the filesystem supports
+// Lstat. This lets callers distinguish a link with a missing target from a missing path.
+func classifyNoFollow(fs afero.Fs, path string) (pathClass, error) {
+	lstater, ok := fs.(afero.Lstater)
+	if !ok {
+		return classify(fs, path)
+	}
+
+	info, _, err := lstater.LstatIfPossible(path)
+
+	return classifyInfo(path, info, err)
+}
+
+// classifyInfo maps file information and a stat error to a path class.
+func classifyInfo(path string, info os.FileInfo, err error) (pathClass, error) {
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		return pathMissing, nil
+	case err != nil:
+		return pathMissing, fmt.Errorf("failed to check %q: %w", path, err)
+	case info.Mode()&os.ModeSymlink != 0:
+		return pathSymbolicLink, nil
+	case info.Mode().IsRegular():
+		return pathRegularFile, nil
+	case info.IsDir():
+		return pathDirectory, nil
+	default:
+		return pathIrregularFile, nil
+	}
+}
+
+// checkReadable returns an error when the path cannot be read as a configuration file. It reports
+// os.ErrNotExist only when nothing is at the path, so that callers can tell a project that was
+// never initialized from one whose configuration path holds something else.
+func checkReadable(fs afero.Fs, path string) error {
+	// The link is followed, so a link to a configuration file is read as one.
+	class, err := classify(fs, path)
+	if err != nil {
+		return err
+	}
+
+	if class == pathMissing {
+		// A link with a missing target also reads as missing, so report the link instead.
+		linkClass, linkErr := classifyNoFollow(fs, path)
+		if linkErr != nil || linkClass != pathSymbolicLink {
+			return fmt.Errorf("failed to read %q file: %w", path, os.ErrNotExist)
+		}
+		class = linkClass
+	}
+
+	if class != pathRegularFile {
+		return fmt.Errorf("%q is %s", path, class)
+	}
+
+	return nil
+}
+
+// checkSavePath verifies that the path can be used to save a configuration. It accepts a missing
+// path for a new configuration and a regular file for an update. Other path types are rejected
+// when the filesystem can identify them.
+func checkSavePath(fs afero.Fs, path string, mustNotExist bool) error {
+	class, err := classifyNoFollow(fs, path)
+	if err != nil {
+		return err
+	}
+
+	switch class {
+	case pathRegularFile:
+		if mustNotExist {
+			return fmt.Errorf("configuration already exists in %q", path)
+		}
+		return nil
+	case pathSymbolicLink, pathDirectory, pathIrregularFile:
+		return fmt.Errorf("cannot save configuration to %q: path is %s", path, class)
+	default:
+		return nil
+	}
+}
+
 // LoadFrom implements store.Store interface
 func (s *yamlStore) LoadFrom(path string) error {
 	s.mustNotExist = false
+
+	// Only a regular file can carry configuration data.
+	if err := checkReadable(s.fs, path); err != nil {
+		return store.LoadError{Err: err}
+	}
 
 	// Read the file
 	in, err := afero.ReadFile(s.fs, path)
@@ -121,17 +241,10 @@ func (s yamlStore) SaveTo(path string) error {
 		return store.SaveError{Err: fmt.Errorf("undefined config, use one of the initializers: New, Load, LoadFrom")}
 	}
 
-	// If it is a new configuration, the path should not exist yet
-	if s.mustNotExist {
-		// Check that the file doesn't exist
-		_, err := s.fs.Stat(path)
-		if err == nil || os.IsExist(err) {
-			// File already exists
-			return store.SaveError{Err: fmt.Errorf("configuration already exists in %q", path)}
-		} else if !os.IsNotExist(err) {
-			// Error occurred while checking file existence
-			return store.SaveError{Err: fmt.Errorf("failed to check for file prior existence: %w", err)}
-		}
+	// Only a missing path or a regular file can be used for saving. New configurations require
+	// the path to be missing, while existing configurations may update a regular file.
+	if err := checkSavePath(s.fs, path, s.mustNotExist); err != nil {
+		return store.SaveError{Err: err}
 	}
 
 	// Marshall into YAML
@@ -144,12 +257,42 @@ func (s yamlStore) SaveTo(path string) error {
 	content = append([]byte(commentStr), content...)
 
 	// Write the marshalled configuration
-	err = afero.WriteFile(s.fs, path, content, machinery.DefaultFilePermission)
-	if err != nil {
-		return store.SaveError{Err: fmt.Errorf("failed to save configuration to %q: %w", path, err)}
+	// afero.WriteFile uses O_CREATE|O_TRUNC, so it is appropriate when updating an existing regular
+	// file. New configurations need O_EXCL, which afero.WriteFile does not expose, to prevent an
+	// existing path from being overwritten after the path check.
+	var writeErr error
+	if s.mustNotExist {
+		writeErr = s.writeNew(path, content)
+	} else {
+		writeErr = afero.WriteFile(s.fs, path, content, machinery.DefaultFilePermission)
+	}
+	if writeErr != nil {
+		return store.SaveError{Err: fmt.Errorf("failed to save configuration to %q: %w", path, writeErr)}
 	}
 
 	return nil
+}
+
+// writeNew creates a configuration only if the path is still unused. If kubebuilder init sees no
+// PROJECT and another process creates PROJECT before the write—for example, a symbolic link to
+// /tmp/important.yaml—O_EXCL makes the write fail instead of overwriting that file or following
+// the link.
+func (s yamlStore) writeNew(path string, content []byte) error {
+	file, err := s.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, machinery.DefaultFilePermission)
+	if err != nil {
+		return fmt.Errorf("failed to open the file: %w", err)
+	}
+
+	n, err := file.Write(content)
+	if err == nil && n != len(content) {
+		err = io.ErrShortWrite
+	}
+
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+
+	return err
 }
 
 // Config implements store.Store interface

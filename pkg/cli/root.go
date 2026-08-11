@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -33,9 +34,46 @@ var (
 	errHelpDisplayed = errors.New("help displayed")
 )
 
-// isHelpFlag checks if the given string is a help flag
+// isHelpFlagArg reports whether the given command-line argument is a help flag.
+func isHelpFlagArg(arg string) bool {
+	if arg == helpFlagArg || arg == helpShorthandArg {
+		return true
+	}
+
+	value, found := strings.CutPrefix(arg, helpFlagArg+"=")
+	if !found {
+		value, found = strings.CutPrefix(arg, helpShorthandArg+"=")
+	}
+	if !found {
+		return false
+	}
+
+	help, err := strconv.ParseBool(value)
+	return err == nil && help
+}
+
+// isHelpFlag reports whether the given string asks for help. It also accepts the bare word "help", so use
+// it only for values that cannot hold data, such as a plugin key.
 func isHelpFlag(s string) bool {
-	return s == helpFlagArg || s == "-h" || s == kubebuilderSubcommandHelp
+	return isHelpFlagArg(s) || s == kubebuilderSubcommandHelp
+}
+
+// isCompletionRequest reports whether the command is the hidden one Cobra runs to complete a command
+// line. Completions are offered with whatever the command tree holds, so they never fail on the
+// project configuration.
+func isCompletionRequest(cmd *cobra.Command) bool {
+	return cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd
+}
+
+// subcommandPath returns the subcommand names leading from the root command to cmd.
+func subcommandPath(cmd *cobra.Command) []string {
+	var path []string
+	for current := cmd; current.HasParent(); current = current.Parent() {
+		path = append(path, current.Name())
+	}
+	slices.Reverse(path)
+
+	return path
 }
 
 // getShortKey converts a full plugin key to a short display key
@@ -74,7 +112,8 @@ func getPluginDescription(_ string) string {
 	return "External or custom plugin"
 }
 
-func (c CLI) newRootCmd() *cobra.Command {
+// newRootCmd creates the root Cobra command for the CLI.
+func (c *CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     c.commandName,
 		Long:    c.description,
@@ -97,6 +136,27 @@ func (c CLI) newRootCmd() *cobra.Command {
 					}
 				}
 			}
+
+			if isCompletionRequest(cmd) {
+				return nil
+			}
+			// A malformed command line is reported for normal commands. Completion requests are
+			// intentionally allowed to inspect partial input.
+			if c.flagErr != nil {
+				return c.flagErr
+			}
+
+			// Cobra resolved the command, so it is now known whether it consumes the configuration.
+			if isSubcommandPathWithoutConfig(subcommandPath(cmd)) {
+				return nil
+			}
+			if c.configErr != nil {
+				return c.configErr
+			}
+			if c.configSkipped {
+				return c.resolveSkippedConfig()
+			}
+
 			return nil
 		},
 	}
@@ -107,7 +167,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 	// Register --project-version on the root command so that it shows up in help.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), projectVersionFlagDescription)
 
-	// As the root command will be used to shot the help message under some error conditions,
+	// As the root command will be used to show the help message under some error conditions,
 	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
 	cmd.FParseErrWhitelist = cobra.FParseErrWhitelist{UnknownFlags: true}
 

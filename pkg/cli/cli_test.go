@@ -17,23 +17,37 @@ limitations under the License.
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
+)
+
+const (
+	createSubcommand  = "create"
+	apiSubcommand     = "api"
+	webhookSubcommand = "webhook"
+	editSubcommand    = "edit"
+	kindFlagArg       = "--kind"
+	kindValue         = "Captain"
 )
 
 func makeMockPluginsFor(projectVersion config.Version, pluginKeys ...string) []plugin.Plugin {
@@ -69,6 +83,14 @@ func setPluginsFlag(value string) {
 	setFlag(pluginsFlag, value)
 }
 
+// parseFlagsFromArgs resolves the flags of the CLI from the arguments of the running program, the
+// way New does when it builds the CLI.
+func parseFlagsFromArgs(c *CLI) error {
+	c.args = defaultArgs()
+
+	return c.getInfoFromFlags(false)
+}
+
 func hasSubCommand(cmd *cobra.Command, name string) bool {
 	for _, subcommand := range cmd.Commands() {
 		if subcommand.Name() == name {
@@ -78,12 +100,251 @@ func hasSubCommand(cmd *cobra.Command, name string) bool {
 	return false
 }
 
-func filesystemWithInvalidProjectPath() machinery.Filesystem {
-	fs := machinery.Filesystem{FS: afero.NewBasePathFs(afero.NewOsFs(), GinkgoT().TempDir())}
-	Expect(fs.FS.Mkdir("PROJECT", machinery.DefaultDirectoryPermission)).To(Succeed())
+// filesystemWithUnloadableProject returns a filesystem holding a PROJECT file that cannot be loaded
+// because its version is not supported.
+func filesystemWithUnloadableProject() machinery.Filesystem {
+	return filesystemWithProject(`version: "1"
+`)
+}
+
+// filesystemWithInvalidProject returns a filesystem holding a PROJECT file that is not valid YAML.
+func filesystemWithInvalidProject() machinery.Filesystem {
+	return filesystemWithProject(`{ version: "3"
+`)
+}
+
+// filesystemWithUnresolvableProject returns a filesystem holding a valid PROJECT file whose plugin
+// chain cannot be resolved.
+func filesystemWithUnresolvableProject() machinery.Filesystem {
+	return filesystemWithProject(`domain: example.com
+layout:
+- gone.example.com/v1
+projectName: test
+version: "3"
+`)
+}
+
+// filesystemWithProjectChainProject returns a filesystem holding a valid PROJECT file whose plugin
+// chain names a registered plugin that is not one of the CLI defaults.
+func filesystemWithProjectChainProject() machinery.Filesystem {
+	return filesystemWithProject(`domain: example.com
+layout:
+- ` + projectChainPluginKey + `
+projectName: test
+version: "3"
+`)
+}
+
+// filesystemWithResolvableProject returns a filesystem holding a valid PROJECT file whose plugin
+// chain resolves to the go/v4 plugin.
+func filesystemWithResolvableProject() machinery.Filesystem {
+	return filesystemWithProject(`domain: example.com
+layout:
+- base.go.kubebuilder.io/v4
+projectName: test
+version: "3"
+`)
+}
+
+// filesystemWithProject returns a temporary filesystem containing the given PROJECT content.
+func filesystemWithProject(content string) machinery.Filesystem {
+	GinkgoHelper()
+
+	fs := filesystemWithoutProject()
+	Expect(afero.WriteFile(fs.FS, yamlstore.DefaultPath, []byte(content), machinery.DefaultFilePermission)).To(Succeed())
 
 	return fs
 }
+
+// filesystemWithoutProject returns an empty temporary filesystem.
+func filesystemWithoutProject() machinery.Filesystem {
+	return machinery.Filesystem{FS: afero.NewBasePathFs(afero.NewOsFs(), GinkgoT().TempDir())}
+}
+
+func filesystemWithInvalidProjectPath() machinery.Filesystem {
+	fs := filesystemWithoutProject()
+	Expect(fs.FS.Mkdir(yamlstore.DefaultPath, machinery.DefaultDirectoryPermission)).To(Succeed())
+
+	return fs
+}
+
+// filesystemWithNonRegularProject returns a filesystem where PROJECT is not a regular file, which
+// must never be opened.
+func filesystemWithNonRegularProject() machinery.Filesystem {
+	return machinery.Filesystem{FS: &nonRegularProjectFs{Fs: filesystemWithResolvableProject().FS}}
+}
+
+// filesystemWithPopulatedProjectDirectory returns a filesystem where PROJECT is a directory that
+// holds a file.
+func filesystemWithPopulatedProjectDirectory() machinery.Filesystem {
+	GinkgoHelper()
+
+	fs := filesystemWithProjectDirectory()
+	Expect(afero.WriteFile(fs.FS, filepath.Join(yamlstore.DefaultPath, "inner.yaml"),
+		[]byte(`version: "3"`), machinery.DefaultFilePermission)).To(Succeed())
+
+	return fs
+}
+
+// filesystemWithProjectDirectory returns a filesystem where PROJECT is a directory, which holds no
+// configuration and must be handled as a project that was never initialized.
+func filesystemWithProjectDirectory() machinery.Filesystem {
+	GinkgoHelper()
+
+	fs := filesystemWithoutProject()
+	Expect(fs.FS.Mkdir(yamlstore.DefaultPath, machinery.DefaultDirectoryPermission)).To(Succeed())
+
+	return fs
+}
+
+// filesystemWithDanglingProjectSymlink returns a filesystem where PROJECT is a symbolic link whose
+// target does not exist, along with the path that the link points to.
+func filesystemWithDanglingProjectSymlink() (machinery.Filesystem, string) {
+	GinkgoHelper()
+
+	dir := GinkgoT().TempDir()
+	target := filepath.Join(dir, "stolen.yaml")
+	Expect(os.Symlink(target, filepath.Join(dir, yamlstore.DefaultPath))).To(Succeed())
+
+	return machinery.Filesystem{FS: afero.NewBasePathFs(afero.NewOsFs(), dir)}, target
+}
+
+// skipWithoutSymlinks skips the test where creating a symbolic link needs extra privileges.
+func skipWithoutSymlinks() {
+	GinkgoHelper()
+
+	if runtime.GOOS == "windows" {
+		Skip("symlink creation requires elevated privileges on Windows")
+	}
+}
+
+// expectNothingScaffolded asserts that the filesystem holds nothing besides the PROJECT path.
+func expectNothingScaffolded(fs machinery.Filesystem) {
+	GinkgoHelper()
+
+	entries, err := afero.ReadDir(fs.FS, ".")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(entries).To(HaveLen(1))
+	Expect(entries[0].Name()).To(Equal(yamlstore.DefaultPath))
+}
+
+// projectReadCountingFs counts how many times the project configuration file is opened.
+type projectReadCountingFs struct {
+	afero.Fs
+	reads int
+}
+
+// Open counts PROJECT reads before delegating to the wrapped filesystem.
+func (f *projectReadCountingFs) Open(name string) (afero.File, error) {
+	if name == yamlstore.DefaultPath {
+		f.reads++
+	}
+
+	file, err := f.Fs.Open(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %q: %w", name, err)
+	}
+
+	return file, nil
+}
+
+// nonRegularProjectFileInfo reports a named pipe mode on top of the wrapped FileInfo.
+type nonRegularProjectFileInfo struct{ os.FileInfo }
+
+// Mode adds a named-pipe mode to the wrapped file information.
+func (i nonRegularProjectFileInfo) Mode() os.FileMode { return i.FileInfo.Mode() | os.ModeNamedPipe }
+
+// nonRegularProjectFs makes the project configuration file look like a named pipe.
+type nonRegularProjectFs struct {
+	afero.Fs
+}
+
+// Stat reports PROJECT as a named pipe while preserving the wrapped filesystem behavior.
+func (f *nonRegularProjectFs) Stat(name string) (os.FileInfo, error) {
+	info, err := f.Fs.Stat(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat %q: %w", name, err)
+	}
+	if name == yamlstore.DefaultPath {
+		info = nonRegularProjectFileInfo{info}
+	}
+
+	return info, nil
+}
+
+// executeCLI builds a CLI over the given filesystem and runs it with the given arguments, as the
+// binary does when invoked from a project directory.
+func executeCLI(filesystem machinery.Filesystem, args ...string) error {
+	_, err := runCLI(filesystem, args, args)
+
+	return err
+}
+
+// executeEmbeddedCLI builds a CLI while the program was invoked with programArgs, and runs it with
+// commandArgs, as an embedded CLI driven by Command().SetArgs does.
+func executeEmbeddedCLI(
+	filesystem machinery.Filesystem,
+	programArgs, commandArgs []string,
+	options ...Option,
+) error {
+	_, err := runCLI(filesystem, programArgs, commandArgs, options...)
+
+	return err
+}
+
+// completeCLI runs the hidden command that Cobra uses to complete a command line, and returns what
+// it offers.
+func completeCLI(filesystem machinery.Filesystem, args ...string) (string, error) {
+	completionArgs := append([]string{cobra.ShellCompRequestCmd}, args...)
+
+	return runCLI(filesystem, completionArgs, completionArgs)
+}
+
+// runCLI builds a CLI while the program was invoked with programArgs, runs it with commandArgs, and
+// returns what the command wrote.
+func runCLI(
+	filesystem machinery.Filesystem,
+	programArgs, commandArgs []string,
+	options ...Option,
+) (string, error) {
+	GinkgoHelper()
+
+	originalArgs := os.Args
+	DeferCleanup(func() { os.Args = originalArgs })
+	os.Args = append([]string{kubebuilderCommandName}, programArgs...)
+
+	testProjectVersion := config.Version{Number: 3}
+	c, err := New(append([]Option{
+		WithPlugins(&golangv4.Plugin{}),
+		WithDefaultPlugins(testProjectVersion, &golangv4.Plugin{}),
+		WithDefaultProjectVersion(testProjectVersion),
+		WithVersion("version string"),
+		WithCompletion(),
+		WithFilesystem(filesystem),
+	}, options...)...)
+	Expect(err).NotTo(HaveOccurred())
+
+	var out bytes.Buffer
+	c.cmd.SetOut(&out)
+	// Cobra falls back to the arguments of the running program when they are set to nil.
+	if commandArgs == nil {
+		commandArgs = []string{}
+	}
+	c.cmd.SetArgs(commandArgs)
+
+	if err := c.cmd.Execute(); err != nil {
+		return out.String(), fmt.Errorf("failed to execute the command: %w", err)
+	}
+
+	return out.String(), nil
+}
+
+const (
+	projectChainPluginName  = "mock.example.com"
+	projectChainPluginKey   = projectChainPluginName + "/v1"
+	projectChainFlag        = "mock-only"
+	projectChainDescription = "Scaffold with the plugin the project asks for"
+)
 
 type pluginChainCapturingSubcommand struct {
 	pluginChain []string
@@ -113,6 +374,16 @@ func newTestCreateAPIPlugin(name string, version plugin.Version) testCreateAPIPl
 	}
 }
 
+// newDescribedCreateAPIPlugin returns a plugin whose create api subcommand brings a description and
+// a flag of its own, so that the help output tells which plugin chain built it.
+func newDescribedCreateAPIPlugin() testCreateAPIPlugin {
+	p := newTestCreateAPIPlugin(projectChainPluginName, plugin.Version{Number: 1})
+	p.subcommand.description = projectChainDescription
+	p.subcommand.flagName = projectChainFlag
+
+	return p
+}
+
 func (p testCreateAPIPlugin) Name() string                               { return p.name }
 func (p testCreateAPIPlugin) Version() plugin.Version                    { return p.version }
 func (p testCreateAPIPlugin) SupportedProjectVersions() []config.Version { return p.projectVers }
@@ -120,13 +391,31 @@ func (p testCreateAPIPlugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand
 	return p.subcommand
 }
 
-type testCreateAPISubcommand struct{}
+type testCreateAPISubcommand struct {
+	description string
+	flagName    string
+	scaffolded  bool
+}
+
+func (s *testCreateAPISubcommand) UpdateMetadata(_ plugin.CLIMetadata, meta *plugin.SubcommandMetadata) {
+	if s.description != "" {
+		meta.Description = s.description
+	}
+}
+
+func (s *testCreateAPISubcommand) BindFlags(fs *pflag.FlagSet) {
+	if s.flagName != "" {
+		fs.Bool(s.flagName, false, "flag of the plugin the project asks for")
+	}
+}
 
 func (s *testCreateAPISubcommand) InjectResource(*resource.Resource) error {
 	return nil
 }
 
 func (s *testCreateAPISubcommand) Scaffold(machinery.Filesystem) error {
+	s.scaffolded = true
+
 	return nil
 }
 
@@ -269,28 +558,31 @@ plugins:
 
 			_, err = f.WriteString(projectFile)
 			Expect(err).To(Not(HaveOccurred()))
+
+			// A subcommand that consumes the configuration, so that the file is read.
+			c.args = []string{kubebuilderSubcommandInit}
 		})
 
 		When("reading a 3-alpha config", func() {
 			It("should succeed and set the projectVersion", func() {
-				err := c.buildCmd()
-				Expect(err).To(Not(HaveOccurred()))
+				c.buildCmd()
+				Expect(c.configErr).NotTo(HaveOccurred())
 				Expect(c.projectVersion.Compare(
 					config.Version{
 						Number: 3,
 						Stage:  stage.Stable,
 					})).To(Equal(0))
 			})
-			It("should fail when stable is not registered ", func() {
+			It("should fail when stable is not registered", func() {
 				// overwrite project file with fake 4-alpha
 				f, err := c.fs.FS.OpenFile("PROJECT", os.O_WRONLY, 0)
 				Expect(err).To(Not(HaveOccurred()))
 				_, err = f.WriteString(strings.ReplaceAll(projectFile, "3-alpha", "4-alpha"))
 				Expect(err).To(Not(HaveOccurred()))
 
-				// buildCmd should return an error
-				err = c.buildCmd()
-				Expect(err).To(HaveOccurred())
+				c.buildCmd()
+				Expect(c.configErr).To(HaveOccurred())
+				Expect(c.cmd.Commands()).NotTo(BeEmpty())
 			})
 		})
 	})
@@ -349,7 +641,7 @@ plugins:
 
 		When("no flag is set", func() {
 			It("should succeed", func() {
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
 				Expect(c.projectVersion.Compare(config.Version{})).To(Equal(0))
 			})
@@ -360,7 +652,7 @@ plugins:
 				pluginKeys := []string{pluginGoV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(config.Version{})).To(Equal(0))
 			})
@@ -369,7 +661,7 @@ plugins:
 				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(config.Version{})).To(Equal(0))
 			})
@@ -378,7 +670,7 @@ plugins:
 				pluginKeys := []string{pluginGoV1, pluginExampleV2, pluginTestV1}
 				setPluginsFlag(strings.Join(pluginKeys, ", "))
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(config.Version{})).To(Equal(0))
 			})
@@ -386,7 +678,7 @@ plugins:
 			It("should fail for an invalid plugin key", func() {
 				setPluginsFlag("_/v1")
 
-				Expect(c.getInfoFromFlags(false)).NotTo(Succeed())
+				Expect(parseFlagsFromArgs(c)).NotTo(Succeed())
 			})
 		})
 
@@ -394,7 +686,7 @@ plugins:
 			It("should succeed", func() {
 				setProjectVersionFlag(projectVersion.String())
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
 				Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
 			})
@@ -402,7 +694,7 @@ plugins:
 			It("should fail for an invalid project version", func() {
 				setProjectVersionFlag("v_1")
 
-				Expect(c.getInfoFromFlags(false)).NotTo(Succeed())
+				Expect(parseFlagsFromArgs(c)).NotTo(Succeed())
 			})
 		})
 
@@ -412,7 +704,7 @@ plugins:
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 				setProjectVersionFlag(projectVersion.String())
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
 			})
@@ -422,7 +714,7 @@ plugins:
 				setPluginsFlag(strings.Join(pluginKeys, ","))
 				setProjectVersionFlag(projectVersion.String())
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
 			})
@@ -432,7 +724,7 @@ plugins:
 				setPluginsFlag(strings.Join(pluginKeys, ", "))
 				setProjectVersionFlag(projectVersion.String())
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal(pluginKeys))
 				Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
 			})
@@ -442,14 +734,14 @@ plugins:
 			It("should succeed", func() {
 				setFlag("extra-flag", "extra-value")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 			})
 
 			// `--help` is not captured by the allowlist, so we need to special case it
 			It("should not fail for `--help`", func() {
 				setBoolFlag("help")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 			})
 
 			// When --plugins is followed by --help, --help is consumed as plugin value
@@ -457,7 +749,7 @@ plugins:
 			It("should not fail when `--plugins --help` is used together", func() {
 				os.Args = append(os.Args, "edit", pluginsFlagArg, "--help")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
 			})
 
@@ -465,21 +757,21 @@ plugins:
 			It("should not fail when `--plugins -h` is used together", func() {
 				os.Args = append(os.Args, "edit", pluginsFlagArg, "-h")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(BeEmpty())
 			})
 
 			It("should keep the plugin key when `--plugins=<value> --help` is used together", func() {
 				os.Args = append(os.Args, "edit", pluginsFlagArg+"="+pluginGoV1, "--help")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal([]string{pluginGoV1}))
 			})
 
 			It("should keep the plugin key when `--plugins=<value> -h` is used together", func() {
 				os.Args = append(os.Args, "edit", pluginsFlagArg+"="+pluginGoV1, "-h")
 
-				Expect(c.getInfoFromFlags(false)).To(Succeed())
+				Expect(parseFlagsFromArgs(c)).To(Succeed())
 				Expect(c.pluginKeys).To(Equal([]string{pluginGoV1}))
 			})
 		})
@@ -778,6 +1070,31 @@ plugins:
 				Expect(c.cmd.Execute()).To(MatchError("help displayed"))
 			})
 
+			It("should read a loadable PROJECT file so help reflects the project's plugin chain", func() {
+				fs := &projectReadCountingFs{Fs: filesystemWithResolvableProject().FS}
+
+				Expect(executeCLI(machinery.Filesystem{FS: fs},
+					createSubcommand, apiSubcommand, helpFlagArg)).To(Succeed())
+				Expect(fs.reads).NotTo(BeZero())
+			})
+
+			DescribeTable("should display help when it is passed as a plugins value",
+				func(filesystem func() machinery.Filesystem) {
+					err = executeCLI(filesystem(), createSubcommand, apiSubcommand,
+						pluginsFlagArg+"="+kubebuilderSubcommandHelp)
+					Expect(err).To(MatchError(errHelpDisplayed))
+				},
+				Entry("when the PROJECT file is missing", filesystemWithoutProject),
+				Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+				Entry("when the PROJECT file cannot be loaded", filesystemWithUnloadableProject),
+			)
+
+			It("should return a configuration error for commands requiring a project", func() {
+				err = executeCLI(filesystemWithUnloadableProject(),
+					createSubcommand, apiSubcommand, kindFlagArg, kubebuilderSubcommandHelp)
+				Expect(err).To(MatchError(ContainSubstring("version 1 is not supported")))
+			})
+
 			It("should ignore an invalid PROJECT path for the help subcommand", func() {
 				args := os.Args
 				defer func() {
@@ -865,18 +1182,15 @@ plugins:
 				Expect(c.cmd.Execute()).To(Succeed())
 			})
 
-			It("should return a configuration error for commands requiring a project", func() {
-				const (
-					createSubcommand = "create"
-					apiSubcommand    = "api"
-					kindFlagArg      = "--kind"
-				)
-
+			It("should report the current PROJECT path error for commands requiring a project", func() {
 				args := os.Args
 				defer func() {
 					os.Args = args
 				}()
-				os.Args = []string{kubebuilderCommandName, createSubcommand, apiSubcommand, kindFlagArg, kubebuilderSubcommandHelp}
+				os.Args = []string{
+					kubebuilderCommandName, createSubcommand, apiSubcommand,
+					kindFlagArg, kubebuilderSubcommandHelp,
+				}
 
 				fs := filesystemWithInvalidProjectPath()
 
@@ -888,7 +1202,328 @@ plugins:
 				Expect(err).NotTo(HaveOccurred())
 
 				c.cmd.SetArgs([]string{createSubcommand, apiSubcommand, kindFlagArg, kubebuilderSubcommandHelp})
-				Expect(c.cmd.Execute()).To(MatchError(ContainSubstring("failed to read \"PROJECT\" file")))
+				Expect(c.cmd.Execute()).To(MatchError(ContainSubstring(`"PROJECT" is a directory`)))
+			})
+		})
+
+		When("a flag value is spelled as a help flag", func() {
+			// A flag value is data, so it must not become a help request that hides the plugin resolution error.
+			DescribeTable("should report the plugin resolution error",
+				func(flagArg string) {
+					err = executeCLI(filesystemWithUnresolvableProject(),
+						createSubcommand, apiSubcommand, flagArg, kubebuilderSubcommandHelp)
+					Expect(err).To(MatchError(ContainSubstring(
+						`no plugin could be resolved with key "gone.example.com/v1"`)))
+				},
+				Entry("for --kind", kindFlagArg),
+				Entry("for --group", "--group"),
+				Entry("for --version", "--version"),
+			)
+		})
+
+		When("PROJECT is a directory", func() {
+			It("should report what occupies the path instead of reading the configuration", func() {
+				err = executeCLI(filesystemWithProjectDirectory(),
+					createSubcommand, apiSubcommand, kindFlagArg, kindValue)
+				Expect(err).To(MatchError(ContainSubstring(`"PROJECT" is a directory`)))
+			})
+
+			It("should refuse to initialize the project without scaffolding anything", func() {
+				fs := filesystemWithProjectDirectory()
+
+				err = executeCLI(fs, kubebuilderSubcommandInit)
+				Expect(err).To(MatchError(ContainSubstring(`"PROJECT" is a directory`)))
+				Expect(err).NotTo(MatchError(ContainSubstring("already initialized")))
+				expectNothingScaffolded(fs)
+			})
+		})
+
+		When("PROJECT is a symbolic link with a missing target", func() {
+			It("should refuse to initialize without creating the target or scaffolding anything", func() {
+				skipWithoutSymlinks()
+				fs, target := filesystemWithDanglingProjectSymlink()
+
+				err = executeCLI(fs, kubebuilderSubcommandInit)
+				Expect(err).To(MatchError(ContainSubstring(`"PROJECT" is a symbolic link`)))
+				Expect(target).NotTo(BeAnExistingFile())
+				expectNothingScaffolded(fs)
+			})
+
+			It("should report the link instead of reading the configuration", func() {
+				skipWithoutSymlinks()
+				fs, target := filesystemWithDanglingProjectSymlink()
+
+				err = executeCLI(fs, createSubcommand, apiSubcommand, kindFlagArg, kindValue)
+				Expect(err).To(MatchError(ContainSubstring(`"PROJECT" is a symbolic link`)))
+				Expect(target).NotTo(BeAnExistingFile())
+			})
+		})
+
+		When("the PROJECT file names a registered plugin chain that is not the default", func() {
+			var projectPlugin testCreateAPIPlugin
+			var createAPIArgs []string
+
+			BeforeEach(func() {
+				projectPlugin = newDescribedCreateAPIPlugin()
+				createAPIArgs = []string{
+					createSubcommand, apiSubcommand,
+					"--group", "crew", "--version", "v1", kindFlagArg, kindValue,
+				}
+			})
+
+			It("should build the help of a subcommand from that chain", func() {
+				args := []string{createSubcommand, apiSubcommand, helpFlagArg}
+
+				out, helpErr := runCLI(filesystemWithProjectChainProject(), args, args, WithPlugins(projectPlugin))
+				Expect(helpErr).NotTo(HaveOccurred())
+				Expect(out).To(ContainSubstring(projectChainDescription))
+				Expect(out).To(ContainSubstring("--" + projectChainFlag))
+				// A flag of the default plugin, which the project does not ask for.
+				Expect(out).NotTo(ContainSubstring("--controller"))
+			})
+
+			It("should build help requested through the help subcommand from that chain", func() {
+				args := []string{kubebuilderSubcommandHelp, createSubcommand, apiSubcommand}
+
+				out, helpErr := runCLI(filesystemWithProjectChainProject(), args, args, WithPlugins(projectPlugin))
+				Expect(helpErr).NotTo(HaveOccurred())
+				Expect(out).To(ContainSubstring(projectChainDescription))
+				Expect(out).To(ContainSubstring("--" + projectChainFlag))
+				Expect(out).NotTo(ContainSubstring("--controller"))
+			})
+
+			It("should scaffold with that chain", func() {
+				_, runErr := runCLI(filesystemWithProjectChainProject(), createAPIArgs, createAPIArgs,
+					WithPlugins(projectPlugin))
+				Expect(runErr).NotTo(HaveOccurred())
+				Expect(projectPlugin.subcommand.scaffolded).To(BeTrue())
+			})
+
+			It("should fall back to the default plugins only when the configuration cannot be loaded", func() {
+				args := []string{createSubcommand, apiSubcommand, helpFlagArg}
+
+				out, helpErr := runCLI(filesystemWithInvalidProject(), args, args, WithPlugins(projectPlugin))
+				Expect(helpErr).NotTo(HaveOccurred())
+				Expect(out).To(ContainSubstring("--controller"))
+				Expect(out).NotTo(ContainSubstring("--" + projectChainFlag))
+			})
+		})
+
+		When("the PROJECT file names a plugin layout that is no longer supported", func() {
+			var filesystem machinery.Filesystem
+
+			BeforeEach(func() {
+				filesystem = filesystemWithProject(`domain: example.com
+layout:
+- go.kubebuilder.io/v3
+projectName: test
+version: "3"
+`)
+			})
+
+			It("should patch the layout so that alpha generate can read it", func() {
+				// The command scaffolds from the working directory, so only the read matters here.
+				_ = executeCLI(filesystem, alphaCommand, generateSubcommand)
+
+				content, readErr := afero.ReadFile(filesystem.FS, yamlstore.DefaultPath)
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring(pluginGoKubebuilderV4))
+				Expect(string(content)).NotTo(ContainSubstring(pluginGoKubebuilderV3))
+			})
+
+			It("should leave the layout alone for any other command", func() {
+				err = executeCLI(filesystem, createSubcommand, apiSubcommand, kindFlagArg, kindValue)
+				Expect(err).To(MatchError(ContainSubstring(pluginGoKubebuilderV3)))
+
+				content, readErr := afero.ReadFile(filesystem.FS, yamlstore.DefaultPath)
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring(pluginGoKubebuilderV3))
+			})
+
+			It("should not patch through a symbolic link", func() {
+				skipWithoutSymlinks()
+				dir := GinkgoT().TempDir()
+				target := filepath.Join(dir, "project.yaml")
+				link := filepath.Join(dir, yamlstore.DefaultPath)
+				oldProject := []byte(`domain: example.com
+layout:
+- go.kubebuilder.io/v3
+projectName: test
+version: "3"
+`)
+				Expect(os.WriteFile(target, oldProject, 0o644)).To(Succeed())
+				Expect(os.Symlink(target, link)).To(Succeed())
+
+				filesystem := machinery.Filesystem{FS: afero.NewBasePathFs(afero.NewOsFs(), dir)}
+				err = executeCLI(filesystem, alphaCommand, generateSubcommand)
+				Expect(err).To(MatchError(ContainSubstring(pluginGoKubebuilderV3)))
+
+				content, readErr := os.ReadFile(target)
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(content).To(Equal(oldProject))
+			})
+		})
+
+		When("PROJECT is not a regular file", func() {
+			It("should not read it while patching the plugin layout for alpha generate", func() {
+				// Patching reads raw bytes, and opening a named pipe blocks until something writes.
+				fs := &projectReadCountingFs{Fs: &nonRegularProjectFs{Fs: filesystemWithResolvableProject().FS}}
+
+				err = executeCLI(machinery.Filesystem{FS: fs}, alphaCommand, "generate")
+				Expect(err).To(MatchError(ContainSubstring(`"PROJECT" is not a regular file`)))
+				Expect(fs.reads).To(BeZero())
+			})
+		})
+
+		When("the command line is malformed", func() {
+			DescribeTable("should report an invalid project version flag without a subcommand",
+				func(filesystem func() machinery.Filesystem) {
+					err = executeCLI(filesystem(), "--"+projectVersionFlag, "not-a-version")
+					Expect(err).To(MatchError(ContainSubstring("invalid project version flag")))
+				},
+				Entry("when the PROJECT file is missing", filesystemWithoutProject),
+				Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+				Entry("when the PROJECT file is not valid YAML", filesystemWithInvalidProject),
+			)
+
+			It("should report an invalid plugin key without a subcommand", func() {
+				err = executeCLI(filesystemWithoutProject(), pluginsFlagArg, "//")
+				Expect(err).To(MatchError(ContainSubstring("invalid plugin")))
+			})
+
+			DescribeTable("should report it for a subcommand that runs without the configuration",
+				func(command ...string) {
+					err = executeCLI(filesystemWithProjectDirectory(), append(command, pluginsFlagArg, "//")...)
+					Expect(err).To(MatchError(ContainSubstring("invalid plugin")))
+				},
+				Entry("for the version subcommand", kubebuilderSubcommandVersion),
+				Entry("for the help subcommand", kubebuilderSubcommandHelp),
+				Entry("for the completion subcommand", kubebuilderSubcommandCompletion, shellZsh),
+			)
+		})
+
+		When("completing a command line", func() {
+			It("should offer the subcommands of the project", func() {
+				completions, completeErr := completeCLI(filesystemWithResolvableProject(), createSubcommand, "")
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(completions).To(ContainSubstring(apiSubcommand))
+				Expect(completions).To(ContainSubstring(webhookSubcommand))
+			})
+
+			It("should offer the flags of a subcommand", func() {
+				completions, completeErr := completeCLI(filesystemWithResolvableProject(),
+					createSubcommand, apiSubcommand, "--")
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(completions).To(ContainSubstring(kindFlagArg))
+			})
+
+			It("should still offer completions when the PROJECT file cannot be read", func() {
+				completions, completeErr := completeCLI(filesystemWithProjectDirectory(), createSubcommand, "")
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(completions).To(ContainSubstring(apiSubcommand))
+			})
+		})
+
+		DescribeTable("should report what occupies the configuration path",
+			func(filesystem func() machinery.Filesystem, occupant string, command []string) {
+				fs := filesystem()
+
+				err = executeCLI(fs, command...)
+				Expect(err).To(MatchError(ContainSubstring(occupant)))
+				Expect(err).NotTo(MatchError(ContainSubstring("initialized")))
+				expectNothingScaffolded(fs)
+			},
+			Entry("for init when PROJECT is a directory", filesystemWithProjectDirectory,
+				`"PROJECT" is a directory`, []string{kubebuilderSubcommandInit}),
+			Entry("for edit when PROJECT is a directory", filesystemWithProjectDirectory,
+				`"PROJECT" is a directory`, []string{editSubcommand}),
+			Entry("for create api when PROJECT is a directory", filesystemWithProjectDirectory,
+				`"PROJECT" is a directory`, []string{createSubcommand, apiSubcommand, kindFlagArg, kindValue}),
+			Entry("for create webhook when PROJECT is a directory", filesystemWithProjectDirectory,
+				`"PROJECT" is a directory`,
+				[]string{createSubcommand, webhookSubcommand, kindFlagArg, kindValue, "--defaulting"}),
+			Entry("for alpha generate when PROJECT is a directory", filesystemWithProjectDirectory,
+				`"PROJECT" is a directory`, []string{alphaCommand, generateSubcommand}),
+			Entry("for init when PROJECT is not a regular file", filesystemWithNonRegularProject,
+				`"PROJECT" is not a regular file`, []string{kubebuilderSubcommandInit}),
+			Entry("for edit when PROJECT is not a regular file", filesystemWithNonRegularProject,
+				`"PROJECT" is not a regular file`, []string{editSubcommand}),
+			Entry("for alpha generate when PROJECT is not a regular file", filesystemWithNonRegularProject,
+				`"PROJECT" is not a regular file`, []string{alphaCommand, generateSubcommand}),
+		)
+
+		When("no PROJECT file exists", func() {
+			DescribeTable("should ask for an initialized project without scaffolding anything",
+				func(args ...string) {
+					fs := filesystemWithoutProject()
+
+					err = executeCLI(fs, args...)
+					Expect(err).To(MatchError(ContainSubstring("project must be initialized")))
+
+					entries, readErr := afero.ReadDir(fs.FS, ".")
+					Expect(readErr).NotTo(HaveOccurred())
+					Expect(entries).To(BeEmpty())
+				},
+				Entry("for create api", createSubcommand, apiSubcommand, kindFlagArg, kindValue),
+				Entry("for create webhook", createSubcommand, webhookSubcommand, kindFlagArg, kindValue, "--defaulting"),
+				Entry("for edit", editSubcommand),
+			)
+		})
+
+		When("initializing a project", func() {
+			It("should refuse as already initialized when a valid PROJECT file exists", func() {
+				fs := filesystemWithResolvableProject()
+
+				err = executeCLI(fs, kubebuilderSubcommandInit)
+				Expect(err).To(MatchError(ContainSubstring("already initialized")))
+				expectNothingScaffolded(fs)
+			})
+
+			It("should stop at startup without scaffolding when the PROJECT file cannot be loaded", func() {
+				fs := filesystemWithUnloadableProject()
+
+				err = executeCLI(fs, kubebuilderSubcommandInit)
+				Expect(err).To(MatchError(ContainSubstring("version 1 is not supported")))
+				expectNothingScaffolded(fs)
+			})
+		})
+
+		When("the plugin chain comes from a flag", func() {
+			It("should keep it as it was given however often the arguments are read", func() {
+				// Resolving the chain again must not grow it: the CLI reads the arguments once
+				// while it builds the command tree and again when it falls back to the defaults.
+				fs := filesystemWithProjectDirectory()
+
+				pluginKey := plugin.KeyFor(&golangv4.Plugin{})
+
+				originalArgs := os.Args
+				DeferCleanup(func() { os.Args = originalArgs })
+				os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandInit, pluginsFlagArg, pluginKey}
+
+				c, err = New(
+					WithPlugins(&golangv4.Plugin{}),
+					WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
+					WithDefaultProjectVersion(projectVersion),
+					WithFilesystem(fs),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c.pluginKeys).To(ConsistOf(pluginKey))
+				Expect(c.resolvedPlugins).To(HaveLen(1))
+			})
+		})
+
+		When("help was displayed", func() {
+			It("should exit without an error", func() {
+				originalArgs := os.Args
+				DeferCleanup(func() { os.Args = originalArgs })
+				os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandInit, pluginsFlagArg, helpFlagArg}
+
+				c, err = New(WithPlugins(&golangv4.Plugin{}), WithDefaultPlugins(projectVersion, &golangv4.Plugin{}))
+				Expect(err).NotTo(HaveOccurred())
+				c.cmd.SetOut(io.Discard)
+				c.cmd.SetArgs([]string{kubebuilderSubcommandInit, pluginsFlagArg, helpFlagArg})
+
+				Expect(c.Run()).To(Succeed())
 			})
 		})
 
@@ -1018,4 +1653,257 @@ plugins:
 			})
 		})
 	})
+})
+
+var _ = Describe("isSubcommandWithoutConfig", func() {
+	DescribeTable("should not read the project configuration",
+		func(args ...string) {
+			Expect(isSubcommandWithoutConfig(args)).To(BeTrue())
+		},
+		Entry("without arguments"),
+		Entry("with root flags only", pluginsFlagArg, pluginGoKubebuilderV4),
+		Entry("for help without a target", kubebuilderSubcommandHelp),
+		Entry("for the version subcommand", kubebuilderSubcommandVersion),
+		Entry("for the completion subcommand", kubebuilderSubcommandCompletion, shellZsh),
+		Entry("for help on the version subcommand", kubebuilderSubcommandHelp, kubebuilderSubcommandVersion),
+		Entry("for help on the completion subcommand", kubebuilderSubcommandHelp, kubebuilderSubcommandCompletion),
+	)
+
+	DescribeTable("should read the project configuration",
+		func(args ...string) {
+			Expect(isSubcommandWithoutConfig(args)).To(BeFalse())
+		},
+		Entry("with help as a flag value", createSubcommand, apiSubcommand, kindFlagArg, kubebuilderSubcommandHelp),
+		Entry("with help as a flag value in the equals form", createSubcommand, apiSubcommand,
+			kindFlagArg+"="+kubebuilderSubcommandHelp),
+		Entry("with help as an argument of another subcommand", createSubcommand, apiSubcommand, kubebuilderSubcommandHelp),
+		// Help output describes the plugin chain of the project, so the configuration is read.
+		Entry("with the help flag of a subcommand", kubebuilderSubcommandInit, helpFlagArg),
+		Entry("with a dangling plugins flag", kubebuilderSubcommandInit, pluginsFlagArg),
+		Entry("for a subcommand that requires a project", kubebuilderSubcommandInit),
+		Entry("for a subcommand added to the CLI", "docs"),
+	)
+})
+
+var _ = Describe("isHelpFlag", func() {
+	DescribeTable("should recognize a request for help",
+		func(arg string) {
+			Expect(isHelpFlag(arg)).To(BeTrue())
+		},
+		Entry("for the help flag", helpFlagArg),
+		Entry("for the help shorthand", helpShorthandArg),
+		Entry("for the help flag set to a value", helpFlagArg+"=true"),
+		Entry("for the help shorthand set to a value", helpShorthandArg+"=true"),
+		Entry("for the bare help word", kubebuilderSubcommandHelp),
+	)
+
+	DescribeTable("should not recognize a request for help",
+		func(arg string) {
+			Expect(isHelpFlag(arg)).To(BeFalse())
+		},
+		Entry("for the help flag explicitly set to false", helpFlagArg+"=false"),
+		Entry("for the help shorthand explicitly set to false", helpShorthandArg+"=false"),
+		Entry("for a non boolean value", helpFlagArg+"=please"),
+		Entry("for a plugin key", pluginGoKubebuilderV4),
+		Entry("for another flag", pluginsFlagArg),
+	)
+})
+
+type describedFilesystem struct {
+	description string
+	build       func() machinery.Filesystem
+}
+
+type describedCommand struct {
+	description string
+	args        []string
+}
+
+// brokenProjectStates are the project states that must not stop a command that does not consume the
+// project configuration.
+var brokenProjectStates = []describedFilesystem{
+	{"the PROJECT file is missing", filesystemWithoutProject},
+	{"the PROJECT file is not valid YAML", filesystemWithInvalidProject},
+	{"the PROJECT project version is not supported", filesystemWithUnloadableProject},
+	{"the PROJECT plugin chain cannot be resolved", filesystemWithUnresolvableProject},
+	{"PROJECT is a directory", filesystemWithProjectDirectory},
+	{"PROJECT is a directory holding a file", filesystemWithPopulatedProjectDirectory},
+	{"PROJECT is not a regular file", filesystemWithNonRegularProject},
+}
+
+// configFreeCommands are the commands that do not consume the project configuration.
+var configFreeCommands = []describedCommand{
+	{"the root command", nil},
+	{"the version subcommand", []string{kubebuilderSubcommandVersion}},
+	{"the help subcommand", []string{kubebuilderSubcommandHelp}},
+	{"help on the help subcommand", []string{kubebuilderSubcommandHelp, kubebuilderSubcommandHelp}},
+	{"the completion subcommand", []string{kubebuilderSubcommandCompletion, shellZsh}},
+	{"the bash completion subcommand", []string{kubebuilderSubcommandCompletion, "bash"}},
+	{"the fish completion subcommand", []string{kubebuilderSubcommandCompletion, "fish"}},
+	{"the powershell completion subcommand", []string{kubebuilderSubcommandCompletion, "powershell"}},
+	{"the bare completion subcommand", []string{kubebuilderSubcommandCompletion}},
+	{"help on the completion subcommand", []string{kubebuilderSubcommandHelp, kubebuilderSubcommandCompletion}},
+	{"version help", []string{kubebuilderSubcommandVersion, helpFlagArg}},
+	{"version help shorthand", []string{kubebuilderSubcommandVersion, helpShorthandArg}},
+	{"version help set to true", []string{kubebuilderSubcommandVersion, helpFlagArg + "=true"}},
+	{"version help shorthand set to true", []string{kubebuilderSubcommandVersion, helpShorthandArg + "=true"}},
+	{"completion help", []string{kubebuilderSubcommandCompletion, helpFlagArg}},
+	{"completion help shorthand", []string{kubebuilderSubcommandCompletion, helpShorthandArg}},
+	{"completion help set to true", []string{kubebuilderSubcommandCompletion, helpFlagArg + "=true"}},
+	{"completion help shorthand set to true", []string{kubebuilderSubcommandCompletion, helpShorthandArg + "=true"}},
+	{"the help flag of a subcommand", []string{kubebuilderSubcommandInit, helpFlagArg}},
+	{"the help shorthand of a subcommand", []string{kubebuilderSubcommandInit, helpShorthandArg}},
+	{"the help flag of a subcommand set to a value", []string{kubebuilderSubcommandInit, helpFlagArg + "=true"}},
+	{"the help shorthand of a subcommand set to a value", []string{kubebuilderSubcommandInit, helpShorthandArg + "=true"}},
+	{"help for the version subcommand", []string{kubebuilderSubcommandHelp, kubebuilderSubcommandVersion}},
+	{"the help flag of the root command", []string{helpFlagArg}},
+	{"the help shorthand of the root command", []string{helpShorthandArg}},
+	{"the help flag of the root command set to a value", []string{helpFlagArg + "=true"}},
+	{"the help shorthand of the root command set to a value", []string{helpShorthandArg + "=true"}},
+	{"root flags without a subcommand", []string{pluginsFlagArg, pluginGoKubebuilderV4}},
+	{"root flags without a subcommand in the equals form", []string{pluginsFlagArg + "=" + pluginGoKubebuilderV4}},
+	{"the bare create command", []string{createSubcommand}},
+	{"the bare alpha command", []string{alphaCommand}},
+	{"a completion request", []string{cobra.ShellCompRequestCmd, createSubcommand, ""}},
+	{"a completion request for a command group", []string{cobra.ShellCompRequestCmd, alphaCommand, ""}},
+}
+
+func configFreeCommandEntries() []TableEntry {
+	entries := make([]TableEntry, 0, len(brokenProjectStates)*len(configFreeCommands))
+	for _, state := range brokenProjectStates {
+		for _, command := range configFreeCommands {
+			entries = append(entries,
+				Entry(fmt.Sprintf("%s when %s", command.description, state.description), state.build, command.args))
+		}
+	}
+
+	return entries
+}
+
+var _ = Describe("commands that do not consume the project configuration", func() {
+	DescribeTable("should run",
+		func(filesystem func() machinery.Filesystem, args []string) {
+			Expect(executeCLI(filesystem(), args...)).To(Succeed())
+		},
+		configFreeCommandEntries(),
+	)
+
+	It("should not read the PROJECT file", func() {
+		fs := &projectReadCountingFs{Fs: filesystemWithUnresolvableProject().FS}
+
+		Expect(executeCLI(machinery.Filesystem{FS: fs}, kubebuilderSubcommandVersion)).To(Succeed())
+		Expect(fs.reads).To(BeZero())
+	})
+
+	DescribeTable("should not read the PROJECT file for root help or completion",
+		func(args ...string) {
+			fs := &projectReadCountingFs{Fs: filesystemWithUnresolvableProject().FS}
+
+			Expect(executeCLI(machinery.Filesystem{FS: fs}, args...)).To(Succeed())
+			Expect(fs.reads).To(BeZero())
+		},
+		Entry("for root help", helpFlagArg),
+		Entry("for root help shorthand", helpShorthandArg),
+		Entry("for a shell completion request", cobra.ShellCompRequestCmd, createSubcommand, ""),
+		Entry("for a shell completion request without descriptions", cobra.ShellCompNoDescRequestCmd,
+			createSubcommand, ""),
+	)
+})
+
+// An embedded CLI is built before the caller chooses the command with Command().SetArgs, so the
+// arguments of the running program say nothing about the command that will run.
+var _ = Describe("commands driven by Command().SetArgs", func() {
+	// The arguments of the running program, which name a command that consumes the configuration.
+	var programArgs []string
+
+	BeforeEach(func() {
+		programArgs = []string{createSubcommand, apiSubcommand, kindFlagArg, kindValue}
+	})
+
+	DescribeTable("should run",
+		func(filesystem func() machinery.Filesystem, args []string) {
+			Expect(executeEmbeddedCLI(filesystem(), programArgs, args)).To(Succeed())
+		},
+		configFreeCommandEntries(),
+	)
+
+	It("should report the failure for a command added to the CLI", func() {
+		const docsSubcommand = "docs"
+		docs := &cobra.Command{Use: docsSubcommand, RunE: func(*cobra.Command, []string) error { return nil }}
+
+		err := executeEmbeddedCLI(filesystemWithInvalidProject(), programArgs, []string{docsSubcommand},
+			WithExtraCommands(docs))
+		Expect(err).To(MatchError(ContainSubstring("failed to determine config version")))
+	})
+
+	DescribeTable("should report the failure for a command that consumes the configuration",
+		func(filesystem func() machinery.Filesystem, expected string) {
+			err := executeEmbeddedCLI(filesystem(), []string{kubebuilderSubcommandVersion},
+				[]string{createSubcommand, apiSubcommand, kindFlagArg, kindValue})
+			Expect(err).To(MatchError(ContainSubstring(expected)))
+		},
+		Entry("when the PROJECT file is not valid YAML",
+			filesystemWithInvalidProject, "failed to determine config version"),
+		Entry("when the PROJECT project version is not supported",
+			filesystemWithUnloadableProject, "version 1 is not supported"),
+		Entry("when the PROJECT plugin chain cannot be resolved",
+			filesystemWithUnresolvableProject, `no plugin could be resolved with key "gone.example.com/v1"`),
+	)
+
+	It("should refuse to scaffold with a plugin chain the command tree was not built for", func() {
+		// The command tree was built for the CLI defaults, so the plugins the project asks for
+		// cannot be honored anymore.
+		extraPlugin := newTestCreateAPIPlugin(projectChainPluginName, plugin.Version{Number: 1})
+
+		err := executeEmbeddedCLI(filesystemWithResolvableProject(),
+			[]string{kubebuilderSubcommandVersion},
+			[]string{createSubcommand, apiSubcommand, kindFlagArg, kindValue},
+			WithPlugins(extraPlugin),
+			WithDefaultPlugins(config.Version{Number: 3}, extraPlugin),
+		)
+		Expect(err).To(MatchError(ContainSubstring("the command tree was built for the plugin chain")))
+	})
+
+	It("should read the skipped configuration when the command tree was built for its plugin chain", func() {
+		fs := &projectReadCountingFs{Fs: filesystemWithResolvableProject().FS}
+
+		// The command reaches the plugins of the project, so it stops at the missing scaffold and
+		// not at the plugin chain.
+		err := executeEmbeddedCLI(machinery.Filesystem{FS: fs},
+			[]string{kubebuilderSubcommandVersion}, []string{editSubcommand})
+		Expect(err).To(MatchError(ContainSubstring("failed to edit scaffold")))
+		Expect(err).NotTo(MatchError(ContainSubstring("the command tree was built for the plugin chain")))
+		Expect(fs.reads).NotTo(BeZero())
+	})
+})
+
+var _ = Describe("help requested through the plugins flag", func() {
+	DescribeTable("should exit successfully through the binary workflow",
+		func(args []string) {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = append([]string{kubebuilderCommandName}, args...)
+
+			c, err := New(
+				WithPlugins(&golangv4.Plugin{}),
+				WithDefaultPlugins(config.Version{Number: 3}, &golangv4.Plugin{}),
+				WithVersion("version string"),
+				WithFilesystem(filesystemWithInvalidProjectPath()),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			c.cmd.SetOut(io.Discard)
+			c.cmd.SetArgs(args)
+			Expect(c.Run()).To(Succeed())
+		},
+		Entry("for --plugins --help", []string{kubebuilderSubcommandInit, pluginsFlagArg, helpFlagArg}),
+		Entry("for --plugins -h", []string{kubebuilderSubcommandInit, pluginsFlagArg, helpShorthandArg}),
+		Entry("for --plugins help", []string{kubebuilderSubcommandInit, pluginsFlagArg, kubebuilderSubcommandHelp}),
+		Entry("for --plugins=<plugin> --help", []string{
+			kubebuilderSubcommandInit, pluginsFlagArg + "=" + pluginGoKubebuilderV4, helpFlagArg,
+		}),
+		Entry("for --plugins=<plugin> -h", []string{
+			kubebuilderSubcommandInit, pluginsFlagArg + "=" + pluginGoKubebuilderV4, helpShorthandArg,
+		}),
+	)
 })

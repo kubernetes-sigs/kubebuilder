@@ -17,6 +17,7 @@ limitations under the License.
 package v4
 
 import (
+	"errors"
 	"fmt"
 	log "log/slog"
 	"os"
@@ -257,6 +258,18 @@ func (p *initSubcommand) PostScaffold() error {
 	return nil
 }
 
+// describeMode returns a human-readable description of a file mode.
+func describeMode(mode os.FileMode) string {
+	switch {
+	case mode&os.ModeSymlink != 0:
+		return "a symbolic link"
+	case mode.IsDir():
+		return "a directory"
+	default:
+		return "not a regular file"
+	}
+}
+
 // checkDir checks the target directory before scaffolding:
 // 1. Returns error if key kubebuilder files already exist (prevents re-initialization)
 // 2. Warns if directory is not empty (but allows scaffolding to continue)
@@ -273,9 +286,17 @@ func checkDir() error {
 		filepath.Join("cmd", "main.go"), // Controller manager entry point
 	}
 
-	// Check for existing scaffolded files
+	// The link is not followed, so that scaffolding never writes through it.
 	for _, file := range scaffoldedFiles {
-		if _, err := os.Stat(file); err == nil {
+		info, err := os.Lstat(file)
+		switch {
+		case errors.Is(err, os.ErrNotExist):
+		case err != nil:
+			return fmt.Errorf("failed to check %q: %w", file, err)
+		case !info.Mode().IsRegular():
+			return fmt.Errorf("cannot scaffold: %q is %s. "+
+				"Please run this command in a new directory or remove it", file, describeMode(info.Mode()))
+		default:
 			return fmt.Errorf("target directory is already initialized. "+
 				"Found existing kubebuilder file %q. "+
 				"Please run this command in a new directory or remove existing scaffolded files", file)
