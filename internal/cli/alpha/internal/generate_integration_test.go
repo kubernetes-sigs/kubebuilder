@@ -149,7 +149,76 @@ var _ = Describe("alpha generate", func() {
 			Expect(err).NotTo(HaveOccurred(), "missing from the regenerated project: %s", path)
 		}
 	})
+
+	// The regression these two specs guard against: the cleanup deletes the
+	// project directory before the Grafana migration copies the config, so an
+	// in-place run used to replace the user's customisation with the
+	// scaffolded default. The direct migrateGrafanaPlugin tests cannot catch
+	// that ordering, only a run through the command can.
+	It("should preserve a customised Grafana config when regenerating in place", func() {
+		configPath := scaffoldProjectWithCustomisedGrafanaConfig(kbc)
+
+		By("running alpha generate in place")
+		Expect(kbc.Regenerate()).To(Succeed())
+
+		assertGrafanaConfigPreserved(kbc, configPath)
+	})
+
+	It("should preserve a customised Grafana config with --input-dir and no --output-dir", func() {
+		configPath := scaffoldProjectWithCustomisedGrafanaConfig(kbc)
+
+		By("running alpha generate with --input-dir only")
+		Expect(kbc.Regenerate("--input-dir", kbc.Dir)).To(Succeed())
+
+		assertGrafanaConfigPreserved(kbc, configPath)
+	})
 })
+
+// grafanaSentinelConfig is a valid custom-metrics config whose metric name can
+// never appear in a freshly scaffolded default: finding it after a run proves
+// the file is the user's customisation, not a rewritten default.
+const grafanaSentinelConfig = `---
+customMetrics:
+  - metric: sentinel_survives_total
+    type: counter
+`
+
+func scaffoldProjectWithCustomisedGrafanaConfig(kbc *utils.TestContext) string {
+	GinkgoHelper()
+
+	By("scaffolding a project with the Grafana plugin")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
+	Expect(kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")).To(Succeed())
+
+	By("customising the Grafana custom metrics config")
+	configPath := filepath.Join(kbc.Dir, "grafana", "custom-metrics", "config.yaml")
+	Expect(os.WriteFile(configPath, []byte(grafanaSentinelConfig), 0o644)).To(Succeed())
+
+	return configPath
+}
+
+func assertGrafanaConfigPreserved(kbc *utils.TestContext, configPath string) {
+	GinkgoHelper()
+
+	By("checking the customised Grafana config survived the run")
+	preserved, err := os.ReadFile(configPath)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(string(preserved)).To(Equal(grafanaSentinelConfig))
+
+	// The second Grafana edit rebuilds the dashboard from the restored
+	// config, so the sentinel metric showing up there proves the preserved
+	// content actually flowed through the migration, not just back to disk.
+	By("checking the dashboard was rebuilt from the preserved config")
+	dashboard, err := os.ReadFile(
+		filepath.Join(kbc.Dir, "grafana", "custom-metrics", "custom-metrics-dashboard.json"))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(string(dashboard)).To(ContainSubstring("sentinel_survives_total"))
+}
 
 func loadProjectConfig(dir string) (config.Config, error) {
 	store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})

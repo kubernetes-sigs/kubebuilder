@@ -103,6 +103,10 @@ func (opts *Generate) Generate() error {
 			return fmt.Errorf("failed to read existing Grafana config file %q: %w", grafanaConfigPath, err)
 		}
 		slog.Info("Preserving existing Grafana custom metrics config for regeneration")
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		// Only a missing file means there is nothing to preserve. Any other
+		// error must fail the run here, before the cleanup deletes the config.
+		return fmt.Errorf("failed to check the existing Grafana config file %q: %w", grafanaConfigPath, statErr)
 	}
 
 	inPlace := opts.OutputDir == ""
