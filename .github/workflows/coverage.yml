@@ -35,6 +35,6 @@ jobs:
         run: make test-coverage
 
       - name: Upload coverage to Coveralls
-        uses: shogo82148/actions-goveralls@9606dbc5ac5cf888a0e9ef901515c3cd516a2790 # v1.11.0
+        uses: shogo82148/actions-goveralls@8781f5dd05b691c4dd042d5e859c11c73e0104fa # v1.11.1
         with:
           path-to-profile: coverage-all.out

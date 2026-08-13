@@ -171,6 +171,7 @@ var _ = Describe("ChartConverter", func() {
 					"imagePullPolicy":  "IfNotPresent",
 					testYAMLFieldArgs: []any{
 						"--metrics-bind-address=:8443",
+						"--metrics-secure=false",
 						"--leader-elect",
 						"--custom-flag=value",
 						"--health-probe-bind-address=:8081",
@@ -218,6 +219,7 @@ var _ = Describe("ChartConverter", func() {
 			Expect(args).To(ContainElement("--leader-elect"))
 			Expect(args).To(ContainElement("--custom-flag=value"))
 			Expect(args).NotTo(ContainElement("--metrics-bind-address=:8443"))
+			Expect(args).NotTo(ContainElement("--metrics-secure=false"))
 			Expect(args).NotTo(ContainElement("--health-probe-bind-address=:8081"))
 			Expect(args).NotTo(ContainElement("--webhook-port=9443"))
 		})

@@ -793,6 +793,29 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
+	Context("arguments", func() {
+		It("should use the arguments of the running program", func() {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandInit, domainFlagArg, "example.com"}
+
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.args).To(Equal([]string{kubebuilderSubcommandInit, domainFlagArg, "example.com"}))
+		})
+
+		It("should be empty when the program takes no arguments", func() {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = []string{kubebuilderCommandName}
+
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.args).To(BeEmpty())
+		})
+	})
+
 	Context("WithFilesystem", func() {
 		When("providing a valid filesystem", func() {
 			It("should use the provided filesystem", func() {

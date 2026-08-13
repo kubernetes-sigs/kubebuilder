@@ -3,17 +3,20 @@ name: Test Alpha Generate
 on:
   push:
     paths:
-      - 'pkg/cli/alpha/**'
+      - 'internal/cli/alpha/**'
+      - 'hack/test/checkprojectconfig/**'
       - '.github/workflows/test-alpha-generate.yml'
   pull_request:
     paths:
-      - 'pkg/cli/alpha/**'
+      - 'internal/cli/alpha/**'
+      - 'hack/test/checkprojectconfig/**'
       - '.github/workflows/test-alpha-generate.yml'
 
 permissions: {}
-      
+
 jobs:
-  unsupported:
+  regenerate-project:
+    name: Re-scaffold testdata/project-v4 and check its config survives
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -34,13 +37,6 @@ jobs:
       - name: Install dependencies and generate binary
         run: make install
 
-      - name: Navigate to testdata/project-v4
-        run: cd testdata/project-v4
-
-      - name: Update PROJECT file
-        run: |
-          sed -i 's#go.kubebuilder.io/v4#go.kubebuilder.io/v3#g' testdata/project-v4/PROJECT
-
       # Validate if help output is working and workaround to
       # update the PROJECT file in memory to allow upgrade
       # no longer supported layouts did not break the command options
@@ -51,9 +47,49 @@ jobs:
           else
             echo "Help output missing or invalid"
             exit 1
-          fi    
+          fi
+
+      # Keep the committed PROJECT file aside so the regenerated one can be
+      # compared against it once the command has run.
+      - name: Snapshot the original PROJECT file
+        run: |
+          mkdir -p /tmp/original
+          cp testdata/project-v4/PROJECT /tmp/original/PROJECT
+
+      # Only the layout key is rewritten. The project itself stays a v4 scaffold,
+      # which is enough to exercise reading a layout the CLI no longer supports.
+      - name: Mark the project with a layout that is no longer supported
+        run: |
+          sed -i 's#go.kubebuilder.io/v4#go.kubebuilder.io/v3#g' testdata/project-v4/PROJECT
 
       - name: Run kubebuilder alpha generate
         run: |
           cd testdata/project-v4 && kubebuilder alpha generate
 
+      # A re-scaffold must rebuild the project from the same configuration it
+      # started with. The comparison decodes both PROJECT files through the
+      # config store, so formatting and key order cannot mask a real change.
+      - name: Check the PROJECT configuration was preserved
+        run: |
+          go run ./hack/test/checkprojectconfig /tmp/original testdata/project-v4
+
+      - name: Check the layout was upgraded
+        run: |
+          if grep -q 'go.kubebuilder.io/v4' testdata/project-v4/PROJECT; then
+            echo "Layout upgraded to go.kubebuilder.io/v4"
+          else
+            echo "Layout was not upgraded"
+            cat testdata/project-v4/PROJECT
+            exit 1
+          fi
+
+      # A command that exits 0 without writing the scaffold would otherwise pass.
+      - name: Check the scaffold was written
+        run: |
+          for path in Makefile Dockerfile cmd/main.go api/v1 internal/controller config/default; do
+            if [ ! -e "testdata/project-v4/$path" ]; then
+              echo "Missing from the regenerated project: $path"
+              exit 1
+            fi
+          done
+          echo "Scaffold written"

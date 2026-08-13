@@ -43,6 +43,7 @@ const (
 	pluginsFlagArg     = "--plugins"
 	projectVersionFlag = "project-version"
 	helpFlagArg        = "--help"
+	helpShorthandArg   = "-h"
 	shellZsh           = "zsh"
 
 	kubebuilderCommandName          = "kubebuilder"
@@ -51,7 +52,9 @@ const (
 	kubebuilderSubcommandVersion    = "version"
 	kubebuilderSubcommandCompletion = "completion"
 	pluginGoKubebuilderV4           = "go.kubebuilder.io/v4"
+	pluginGoKubebuilderV3           = "go.kubebuilder.io/v3"
 	pluginGoKubebuilderV2           = "go.kubebuilder.io/v2"
+	generateSubcommand              = "generate"
 
 	pluginsFlagDescription = "Comma-separated list of plugin keys to use. " +
 		"If unset, Kubebuilder uses the plugin chain from PROJECT or the CLI default"
@@ -83,6 +86,8 @@ type CLI struct {
 	extraAlphaCommands []*cobra.Command
 	// Whether to add a completion command to the CLI.
 	completionCommand bool
+	// args contains the command-line arguments used to resolve the project configuration and plugin chain.
+	args []string
 
 	/* Internal fields */
 
@@ -90,6 +95,12 @@ type CLI struct {
 	pluginKeys []string
 	// Project version to scaffold.
 	projectVersion config.Version
+	// configErr stores an error found while resolving the project configuration or plugin chain.
+	configErr error
+	// flagErr stores an error found while reading the command line.
+	flagErr error
+	// configSkipped reports whether the project configuration was left unread.
+	configSkipped bool
 
 	// A filtered set of plugins that should be used by command constructors.
 	resolvedPlugins []plugin.Plugin
@@ -105,10 +116,9 @@ type CLI struct {
 //
 // It follows the functional options pattern in order to customize the resulting CLI.
 //
-// It returns an error if any of the provided options fails. As some processing needs
-// to be done, execution errors may be found here. Instead of returning an error, this
-// function will return a valid CLI that errors in Run so that help is provided to the
-// user.
+// It returns an error if any of the provided options fails. A project configuration that cannot be
+// read is not an error here. The command tree is still built, and the failure is reported when
+// running a command that consumes the configuration.
 func New(options ...Option) (*CLI, error) {
 	// Create the CLI.
 	c, err := newCLI(options...)
@@ -117,10 +127,7 @@ func New(options ...Option) (*CLI, error) {
 	}
 
 	// Build the cmd tree.
-	if err := c.buildCmd(); err != nil {
-		c.cmd.RunE = errCmdFunc(err)
-		return c, nil
-	}
+	c.buildCmd()
 
 	// Add extra commands injected by options.
 	if err := c.addExtraCommands(); err != nil {
@@ -149,6 +156,7 @@ func newCLI(options ...Option) (*CLI, error) {
 		plugins:        make(map[string]plugin.Plugin),
 		defaultPlugins: make(map[config.Version][]string),
 		fs:             machinery.Filesystem{FS: afero.NewOsFs()},
+		args:           defaultArgs(),
 	}
 
 	// Apply provided options.
@@ -161,57 +169,147 @@ func newCLI(options ...Option) (*CLI, error) {
 	return c, nil
 }
 
+// defaultArgs returns the command-line arguments of the running program without its name.
+func defaultArgs() []string {
+	if len(os.Args) < 2 {
+		return nil
+	}
+
+	return os.Args[1:]
+}
+
 // buildCmd creates the underlying cobra command and stores it internally.
-func (c *CLI) buildCmd() error {
+func (c *CLI) buildCmd() {
 	c.cmd = c.newRootCmd()
 
+	c.configSkipped = isSubcommandWithoutConfig(c.args)
+
+	if err := c.resolveInfo(!c.configSkipped); err != nil {
+		// Cobra has not parsed the command line yet, so the command that will run is unknown.
+		// Keep a working command tree and let the root hook raise this where it matters.
+		var parseErr flagError
+		if errors.As(err, &parseErr) {
+			c.flagErr = err
+		} else {
+			c.configErr = err
+		}
+		c.resolveWithoutConfig()
+	}
+
+	c.addSubcommands()
+}
+
+// resolveInfo obtains the project version and the plugin keys, and resolves the plugin chain.
+func (c *CLI) resolveInfo(readConfig bool) error {
 	var uve config.UnsupportedVersionError
 
 	// Get project version and plugin keys.
-	switch err := c.getInfo(); {
+	switch err := c.getInfo(readConfig); {
 	case err == nil:
 	case errors.As(err, &uve) && uve.Version.Compare(config.Version{Number: 3, Stage: stage.Alpha}) == 0:
-		// Check if the corresponding stable version exists, set c.projectVersion and break
+		// Use the stable project version when it is registered.
 		stableVersion := config.Version{
 			Number: uve.Version.Number,
 		}
-		if config.IsRegistered(stableVersion) {
-			// Use the stableVersion
-			c.projectVersion = stableVersion
-		} else {
+		if !config.IsRegistered(stableVersion) {
 			// stable version not registered, let's bail out
 			return err
 		}
+		c.projectVersion = stableVersion
 	default:
 		return err
 	}
 
 	// Resolve plugins for project version and plugin keys.
-	if err := c.resolvePlugins(); err != nil {
-		if !shouldIgnoreConfigLoadError(os.Args[1:]) {
-			return err
-		}
+	return c.resolvePlugins()
+}
+
+// resolveSkippedConfig reads the project configuration that was left unread while the command tree
+// was built. The tree cannot be built again, so a plugin chain that differs from the one it was
+// built with is reported as an error instead of scaffolding with the wrong plugins.
+func (c *CLI) resolveSkippedConfig() error {
+	builtWith := slices.Clone(c.pluginKeys)
+	builtForVersion := c.projectVersion
+	c.forgetPluginChain()
+
+	if err := c.resolveInfo(true); err != nil {
+		return err
 	}
 
-	// Add the subcommands
-	c.addSubcommands()
+	if !slices.Equal(c.pluginKeys, builtWith) || c.projectVersion.Compare(builtForVersion) != 0 {
+		return fmt.Errorf("the command tree was built for the plugin chain %q but the project requires %q: "+
+			"run the program with the arguments of the command that Command().SetArgs runs",
+			strings.Join(builtWith, ","), strings.Join(c.pluginKeys, ","))
+	}
 
 	return nil
 }
 
-// getInfo obtains the plugin keys and project version resolving conflicts between the project config file and flags.
-func (c *CLI) getInfo() error {
-	// Get plugin keys and project version from project configuration file
-	// We discard the error if file doesn't exist because not being able to read a project configuration
-	// file is not fatal for some commands. The ones that require it need to check its existence later.
-	hasConfigFile := true
-	if err := c.getInfoFromConfigFile(); errors.Is(err, os.ErrNotExist) {
-		hasConfigFile = false
-	} else if err != nil {
-		if shouldIgnoreConfigLoadError(os.Args[1:]) {
-			hasConfigFile = false
-		} else {
+// resolveWithoutConfig builds a fallback plugin chain without reading the project configuration.
+// It uses valid flag values when possible and otherwise uses the CLI defaults.
+func (c *CLI) resolveWithoutConfig() {
+	const withFlags, withoutFlags = true, false
+
+	if c.resolveDefaultPlugins(withFlags) == nil {
+		return
+	}
+
+	_ = c.resolveDefaultPlugins(withoutFlags)
+}
+
+// resolveDefaultPlugins resolves the plugin chain from the CLI defaults, optionally letting the
+// flags override them. The chain resolved so far is discarded first, so a failed attempt leaves
+// nothing behind for the next one.
+func (c *CLI) resolveDefaultPlugins(withFlags bool) error {
+	c.forgetPluginChain()
+
+	if withFlags {
+		if err := c.getInfoFromFlags(false); err != nil {
 			return err
+		}
+	}
+	c.getInfoFromDefaults()
+
+	if err := c.resolvePlugins(); err != nil {
+		c.resolvedPlugins = nil
+		return err
+	}
+
+	return nil
+}
+
+// forgetPluginChain clears the selected plugin keys, project version, and resolved plugins.
+func (c *CLI) forgetPluginChain() {
+	c.pluginKeys = nil
+	c.projectVersion = config.Version{}
+	c.resolvedPlugins = nil
+}
+
+// flagError stores a command-line parsing error.
+type flagError struct{ err error }
+
+// Error returns the command-line parsing error as a string.
+func (e flagError) Error() string { return e.err.Error() }
+
+// Unwrap returns the command-line parsing error for errors.Is and errors.As.
+func (e flagError) Unwrap() error { return e.err }
+
+// getInfo obtains the plugin keys and project version while resolving conflicts between the project
+// configuration and flags.
+func (c *CLI) getInfo(readConfig bool) error {
+	// A missing PROJECT file is not an error here. Commands that require it check for it later.
+	hasConfigFile := readConfig
+	var configErr error
+	if readConfig {
+		switch err := c.getInfoFromConfigFile(); {
+		case err == nil:
+		case errors.Is(err, os.ErrNotExist):
+			hasConfigFile = false
+		default:
+			// The flags are still read, so that a malformed command line is reported instead of a
+			// configuration the command may not even consume.
+			configErr = err
+			hasConfigFile = false
 		}
 	}
 
@@ -220,7 +318,10 @@ func (c *CLI) getInfo() error {
 
 	// Get project version and plugin info from flags
 	if err := c.getInfoFromFlags(hasConfigFile); err != nil {
-		return err
+		return flagError{err}
+	}
+	if configErr != nil {
+		return configErr
 	}
 
 	// Get project version and plugin info from defaults
@@ -243,10 +344,13 @@ func (c *CLI) getInfoFromConfigFile() error {
 	// before the CLI tries to load it. This avoids errors during config loading
 	// and lets users migrate their project layout from go/v3 to go/v4.
 
-	if isAlphaGenerateCommand(os.Args[1:]) {
-		// Patch raw file bytes before unmarshalling
-		if err := patchProjectFileInMemoryIfNeeded(c.fs.FS, yamlstore.DefaultPath); err != nil {
-			return err
+	if isAlphaGenerateCommand(c.args) {
+		// Only a regular file can be patched. Anything else at the path is classified and reported
+		// by Load, and a named pipe must never be opened: reading it blocks until something writes.
+		if isRegularPathNoFollow(c.fs.FS, yamlstore.DefaultPath) {
+			if err := patchProjectFileInMemoryIfNeeded(c.fs.FS, yamlstore.DefaultPath); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -255,6 +359,18 @@ func (c *CLI) getInfoFromConfigFile() error {
 	}
 
 	return c.getInfoFromConfig(cfg.Config())
+}
+
+// isRegularPathNoFollow reports whether path is a regular file without following a final symbolic
+// link. If the filesystem cannot make that distinction, it is not safe to patch the path.
+func isRegularPathNoFollow(fs afero.Fs, path string) bool {
+	lstater, ok := fs.(afero.Lstater)
+	if !ok {
+		return false
+	}
+
+	info, _, err := lstater.LstatIfPossible(path)
+	return err == nil && info.Mode().IsRegular()
 }
 
 // positionalArgs returns arguments that are not flags or flag values.
@@ -286,13 +402,15 @@ func positionalArgs(args []string) []string {
 func hasOnlyRootFlags(args []string) bool {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case pluginsFlagArg, "--" + projectVersionFlag:
+		case pluginsFlagArg, "--" + projectVersionFlag, helpFlagArg, helpShorthandArg:
 			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 				i++
 			}
 		default:
 			if strings.HasPrefix(args[i], pluginsFlagArg+"=") ||
-				strings.HasPrefix(args[i], "--"+projectVersionFlag+"=") {
+				strings.HasPrefix(args[i], "--"+projectVersionFlag+"=") ||
+				strings.HasPrefix(args[i], helpFlagArg+"=") ||
+				strings.HasPrefix(args[i], helpShorthandArg+"=") {
 				continue
 			}
 			return false
@@ -302,14 +420,13 @@ func hasOnlyRootFlags(args []string) bool {
 	return true
 }
 
-// isAlphaGenerateCommand checks if the command invocation is `kubebuilder alpha generate`
-// by scanning os.Args (excluding global flags). It returns true if "alpha" is followed by "generate".
+// isAlphaGenerateCommand reports whether args invoke `kubebuilder alpha generate`.
 func isAlphaGenerateCommand(args []string) bool {
 	positional := positionalArgs(args)
 
 	// Check for `alpha generate` in positional arguments
 	for i := 0; i < len(positional)-1; i++ {
-		if positional[i] == "alpha" && positional[i+1] == "generate" {
+		if positional[i] == alphaCommand && positional[i+1] == generateSubcommand {
 			return true
 		}
 	}
@@ -317,30 +434,51 @@ func isAlphaGenerateCommand(args []string) bool {
 	return false
 }
 
-// shouldIgnoreConfigLoadError returns true for commands that do not require a valid PROJECT file.
-// This keeps context-free commands like help, version, and completion working from arbitrary directories.
-func shouldIgnoreConfigLoadError(args []string) bool {
-	if slices.ContainsFunc(args, isHelpFlag) {
-		return true
-	}
+// subcommandsWithoutConfig are the subcommands that run without a project configuration file.
+var subcommandsWithoutConfig = []string{
+	kubebuilderSubcommandHelp,
+	kubebuilderSubcommandVersion,
+	kubebuilderSubcommandCompletion,
+	cobra.ShellCompRequestCmd,
+	cobra.ShellCompNoDescRequestCmd,
+}
 
+// isSubcommandWithoutConfig returns true for invocations that do not need the PROJECT file to build
+// their command tree.
+func isSubcommandWithoutConfig(args []string) bool {
 	positional := positionalArgs(args)
 	// With no subcommand, Cobra displays root help. Configuration is not required.
 	if len(positional) == 0 {
 		return len(args) == 0 || hasOnlyRootFlags(args)
 	}
 
-	return positional[0] == kubebuilderSubcommandHelp ||
-		positional[0] == kubebuilderSubcommandVersion ||
-		positional[0] == kubebuilderSubcommandCompletion
+	// The help command consumes the remaining arguments as the command whose help is requested.
+	// A plugin-backed command needs the project chain to build accurate help, while help for a
+	// context-free command does not.
+	if positional[0] == kubebuilderSubcommandHelp {
+		return len(positional) == 1 || isSubcommandPathWithoutConfig(positional[1:])
+	}
+
+	return isSubcommandPathWithoutConfig(positional)
 }
 
-// patchProjectFileInMemoryIfNeeded updates deprecated plugin keys in the PROJECT file in place,
-// so that users can run `kubebuilder alpha generate` even with older plugin layouts.
+// isSubcommandPathWithoutConfig returns true for a subcommand path that never consumes the PROJECT
+// file. The path holds the subcommand names leading to the command, such as "alpha" and "generate".
+// The root command displays help, so it does not require the configuration either.
+func isSubcommandPathWithoutConfig(path []string) bool {
+	if len(path) == 0 {
+		return true
+	}
+
+	return slices.Contains(subcommandsWithoutConfig, path[0])
+}
+
+// patchProjectFileInMemoryIfNeeded updates deprecated plugin keys before the PROJECT file is loaded,
+// so that users can run `kubebuilder alpha generate` with older plugin layouts.
 //
 // See: https://github.com/kubernetes-sigs/kubebuilder/issues/4433
 //
-// This ensures the CLI can successfully load the config without failing on unsupported plugin versions.
+// This lets the CLI load the PROJECT file without failing on unsupported plugin versions.
 func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	type pluginReplacement struct {
 		Old string
@@ -349,8 +487,8 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 
 	replacements := []pluginReplacement{
 		{pluginGoKubebuilderV2, pluginGoKubebuilderV4},
-		{"go.kubebuilder.io/v3", pluginGoKubebuilderV4},
-		{"go.kubebuilder.io/v3-alpha", pluginGoKubebuilderV4},
+		{pluginGoKubebuilderV3, pluginGoKubebuilderV4},
+		{pluginGoKubebuilderV3 + "-alpha", pluginGoKubebuilderV4},
 	}
 
 	content, err := afero.ReadFile(fs, path)
@@ -382,7 +520,7 @@ func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
 	return nil
 }
 
-// getInfoFromConfig obtains the project version and plugin keys from the project config.
+// getInfoFromConfig obtains the project version and plugin keys from the project configuration.
 // It is extracted from getInfoFromConfigFile for testing purposes.
 func (c *CLI) getInfoFromConfig(projectConfig config.Config) error {
 	c.pluginKeys = projectConfig.GetPluginChain()
@@ -401,9 +539,9 @@ func (c *CLI) getInfoFromConfig(projectConfig config.Config) error {
 func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	// Check if --plugins is followed by --help or -h to avoid parsing help as a plugin value
 	// This fixes: kubebuilder init --plugins --help
-	for i := 0; i < len(os.Args)-1; i++ {
-		if os.Args[i] == pluginsFlagArg || os.Args[i] == pluginsFlagArg+"=" {
-			nextArg := os.Args[i+1]
+	for i := 0; i < len(c.args)-1; i++ {
+		if c.args[i] == pluginsFlagArg || c.args[i] == pluginsFlagArg+"=" {
+			nextArg := c.args[i+1]
 			if isHelpFlag(nextArg) {
 				// Help was requested, return early to let Cobra handle it
 				return nil
@@ -414,8 +552,10 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	// Partially parse the command line arguments
 	fs := pflag.NewFlagSet("base", pflag.ContinueOnError)
 
-	// Load the base command global flags
-	fs.AddFlagSet(c.cmd.PersistentFlags())
+	// The global flags are declared again instead of taken from the root command, which holds the
+	// values Cobra parses. A shared value appends what it already holds, so reading the arguments
+	// more than once would grow the plugin chain.
+	fs.StringSlice(pluginsFlag, nil, pluginsFlagDescription)
 
 	// If we were unable to load the project configuration, we should also accept the project version flag
 	var projectVersionStr string
@@ -431,7 +571,7 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 	fs.ParseErrorsAllowlist = pflag.ParseErrorsAllowlist{UnknownFlags: true}
 
 	// Parse the arguments
-	if err := fs.Parse(os.Args[1:]); err != nil {
+	if err := fs.Parse(c.args); err != nil {
 		return fmt.Errorf("could not parse flags: %w", err)
 	}
 

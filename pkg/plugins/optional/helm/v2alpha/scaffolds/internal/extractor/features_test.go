@@ -143,4 +143,72 @@ var _ = Describe("FeaturesExtractor", func() {
 			Expect(features.HealthProbePort).To(Equal(9091))
 		})
 	})
+
+	Describe("DetectFeatures metrics secure", func() {
+		It("should leave the value unset when the arg is absent", func() {
+			features := detect(deploymentWithManagerArgs("--leader-elect"))
+
+			Expect(features.MetricsSecure).To(BeNil())
+		})
+
+		It("should leave the value unset when there is no deployment", func() {
+			features := detect(nil)
+
+			Expect(features.MetricsSecure).To(BeNil())
+		})
+
+		It("should detect metrics served over plain HTTP", func() {
+			features := detect(deploymentWithManagerArgs("--metrics-secure=false"))
+
+			Expect(features.MetricsSecure).To(HaveValue(BeFalse()))
+		})
+
+		It("should detect metrics served over HTTPS", func() {
+			features := detect(deploymentWithManagerArgs("--metrics-secure=true"))
+
+			Expect(features.MetricsSecure).To(HaveValue(BeTrue()))
+		})
+
+		It("should read a bare flag as true", func() {
+			features := detect(deploymentWithManagerArgs("--metrics-secure"))
+
+			Expect(features.MetricsSecure).To(HaveValue(BeTrue()))
+		})
+
+		It("should read a separate value as true, matching boolean flag parsing", func() {
+			features := detect(deploymentWithManagerArgs("--metrics-secure", "false"))
+
+			Expect(features.MetricsSecure).To(HaveValue(BeTrue()))
+		})
+
+		It("should use the first value when the arg is duplicated", func() {
+			features := detect(deploymentWithManagerArgs(
+				"--metrics-secure=false",
+				"--metrics-secure=true",
+			))
+
+			Expect(features.MetricsSecure).To(HaveValue(BeFalse()))
+		})
+
+		It("should read the arg from the manager container, not a sidecar", func() {
+			deployment := makeDeployment(deploymentOpts{
+				containers: []map[string]any{
+					{
+						keyName:  valSidecar,
+						keyImage: valSidecarImage,
+						keyArgs:  []any{"--metrics-secure=true"},
+					},
+					{
+						keyName:  valManager,
+						keyImage: valControllerImage,
+						keyArgs:  []any{"--metrics-secure=false"},
+					},
+				},
+			})
+
+			features := detect(deployment)
+
+			Expect(features.MetricsSecure).To(HaveValue(BeFalse()))
+		})
+	})
 })

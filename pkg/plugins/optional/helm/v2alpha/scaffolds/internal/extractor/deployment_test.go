@@ -417,6 +417,35 @@ var _ = Describe("DeploymentExtractor", func() {
 		)
 	})
 
+	Describe("ExtractMetricsSecureFromArg", func() {
+		DescribeTable("recognized forms",
+			func(arg string, expected bool) {
+				secure, found := ExtractMetricsSecureFromArg(arg)
+
+				Expect(found).To(BeTrue())
+				Expect(secure).To(Equal(expected))
+			},
+			Entry("explicit false", "--metrics-secure=false", false),
+			Entry("explicit true", "--metrics-secure=true", true),
+			Entry("bare flag", "--metrics-secure", true),
+			Entry("uppercase false", "--metrics-secure=FALSE", false),
+			Entry("numeric false", "--metrics-secure=0", false),
+			Entry("numeric true", "--metrics-secure=1", true),
+		)
+
+		DescribeTable("unrecognized forms",
+			func(arg string) {
+				_, found := ExtractMetricsSecureFromArg(arg)
+
+				Expect(found).To(BeFalse())
+			},
+			Entry("another flag", "--metrics-bind-address=:8443"),
+			Entry("prefix of another flag", "--metrics-secure-extra=false"),
+			Entry("non-boolean value", "--metrics-secure=maybe"),
+			Entry("empty value", "--metrics-secure="),
+		)
+	})
+
 	Describe("Webhook port extraction", func() {
 		It("should extract webhook port from --webhook-port argument in deployment args", func() {
 			deployment := makeDeployment(deploymentOpts{
