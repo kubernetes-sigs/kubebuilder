@@ -121,7 +121,14 @@ spec:
           {{- fail (printf "manager.envOverrides contains unknown environment variable(s): %s" (keys $envOverrides | sortAlpha | join ", ")) }}
           {{- end }}
           {{- /* Render the merged environment list. */ -}}
-          {{- toYaml $env | nindent 10 }}
+          {{- range $env }}
+          {{- if hasKey . "value" }}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{- else }}
+          {{- toYaml (list .) | nindent 10 }}
+          {{- end }}
+          {{- end }}
           {{- else }}
           []
           {{- end }}

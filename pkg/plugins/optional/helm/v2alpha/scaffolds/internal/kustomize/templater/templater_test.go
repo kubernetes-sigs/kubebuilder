@@ -2953,7 +2953,7 @@ spec:
 
 			// Env list + envOverrides (--set). Secret refs go in env list.
 			Expect(result).To(ContainSubstring(".Values.manager.env"))
-			Expect(result).To(ContainSubstring("toYaml $env"))
+			Expect(result).To(ContainSubstring(`value: {{ .value | quote }}`))
 			Expect(result).To(ContainSubstring("envOverrides"))
 
 			// Should template args
