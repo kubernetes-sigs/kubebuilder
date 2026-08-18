@@ -61,15 +61,8 @@ func IsManagerServiceAccount(resource *unstructured.Unstructured) bool {
 }
 
 // IsManagerDeployment reports whether resource is the controller-manager Deployment.
-// Annotation is not checked — any extra Deployment may carry it, causing false positives.
 func IsManagerDeployment(resource *unstructured.Unstructured) bool {
-	if resource.GetLabels()["control-plane"] == "controller-manager" {
-		return true
-	}
-	if names := ExtractContainerNames(resource); names["manager"] {
-		return true
-	}
-	return strings.Contains(resource.GetName(), "controller-manager")
+	return common.IsManagerDeployment(resource)
 }
 
 // MakeYamlContent wraps a YAML block with a cert-manager conditional.
