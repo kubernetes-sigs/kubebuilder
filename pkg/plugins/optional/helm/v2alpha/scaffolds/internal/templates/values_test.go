@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
@@ -29,6 +30,104 @@ import (
 const testProjectName = "test-project"
 
 var _ = Describe("HelmValues", func() {
+	Describe("env section", func() {
+		envEntry := func(name string, entry map[string]any) map[string]any {
+			entry["name"] = name
+			return entry
+		}
+		literal := func(name string, value any) map[string]any {
+			return envEntry(name, map[string]any{"value": value})
+		}
+
+		valuesWithEnv := func(env ...any) string {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Values: extractor.ValuesConfig{
+						Manager: extractor.ManagerConfig{Env: env},
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+			return values.generateValues()
+		}
+
+		// The list is the Kubernetes shape, so it is emitted as extracted: same entries, same
+		// order, valueFrom and all. Nothing is converted, so nothing can be lost in converting.
+		It("should emit the source list unchanged and in order", func() {
+			result := valuesWithEnv(
+				literal("ZBASE", "example.com"),
+				literal("APP_URL", "https://$(ZBASE)"),
+				envEntry("WATCH_NAMESPACE", map[string]any{
+					"valueFrom": map[string]any{
+						"fieldRef": map[string]any{"fieldPath": "metadata.namespace"},
+					},
+				}),
+			)
+
+			Expect(result).To(ContainSubstring(`  env:
+    - name: ZBASE
+      value: example.com
+    - name: APP_URL
+      value: https://$(ZBASE)
+    - name: WATCH_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+`))
+		})
+
+		// Both keys exist even with no variables, so --set can reach them without hand-editing
+		// the file first (#5489).
+		DescribeTable("should always emit both keys",
+			func(env []any, wantEnv string) {
+				values := &HelmValues{
+					Extraction: &extractor.Extraction{
+						Values: extractor.ValuesConfig{Manager: extractor.ManagerConfig{Env: env}},
+					},
+				}
+				values.ProjectName = testProjectName
+
+				result := values.generateValues()
+
+				Expect(result).To(ContainSubstring(wantEnv))
+				Expect(result).To(ContainSubstring("  envOverrides: {}"))
+			},
+			Entry("no env at all", nil, "  env: []"),
+			Entry("one variable", []any{literal("FOO", "bar")}, "  env:\n    - name: FOO"),
+		)
+
+		It("should not invent an envOrder key", func() {
+			Expect(valuesWithEnv(literal("FOO", "bar"))).NotTo(ContainSubstring("envOrder"))
+		})
+
+		// A blank line inside a block scalar is part of the value. The generated file is assembled
+		// line by line, so it is exactly the kind of place where one gets quietly dropped - and a
+		// substring assertion would not notice, hence the parse.
+		DescribeTable("should preserve a multiline value through the generated YAML",
+			func(value string) {
+				var parsed struct {
+					Manager struct {
+						Env []struct {
+							Name  string `json:"name"`
+							Value string `json:"value"`
+						} `json:"env"`
+					} `json:"manager"`
+				}
+
+				result := valuesWithEnv(literal("MESSAGE", value))
+
+				Expect(yaml.Unmarshal([]byte(result), &parsed)).To(Succeed(), "generated:\n%s", result)
+				Expect(parsed.Manager.Env).To(HaveLen(1))
+				Expect(parsed.Manager.Env[0].Value).To(Equal(value), "generated:\n%s", result)
+			},
+			Entry("an interior blank line", "first line\n\nthird line"),
+			Entry("several consecutive blank lines", "first\n\n\n\nlast"),
+			Entry("lines that look like YAML keys", "key: not-a-field\n\nother: also-not"),
+			Entry("no blank line at all", "first line\nsecond line"),
+			Entry("a leading blank line", "\nsecond line"),
+		)
+	})
+
 	Describe("NetworkPolicy section", func() {
 		It("should default networkPolicy.enabled to false when no NetworkPolicy resources exist", func() {
 			values := &HelmValues{

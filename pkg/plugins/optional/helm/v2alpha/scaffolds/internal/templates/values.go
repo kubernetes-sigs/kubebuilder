@@ -266,21 +266,29 @@ func (f *HelmValues) addArgsSection(buf *bytes.Buffer) {
 	}
 }
 
-// addEnvSection adds the environment variables configuration
+// addEnvSection adds the environment variables configuration.
+//
+// env keeps the Kubernetes shape - an ordered list of EnvVar - so anything the API accepts can be
+// written here unchanged, valueFrom included, and the order the project authored is the order that
+// renders. envOverrides addresses those entries by name, which is what --set needs.
+//
+// Both keys are always emitted, so a project whose Deployment declares no variables can still add
+// one without hand-writing the key first (#5489).
 func (f *HelmValues) addEnvSection(buf *bytes.Buffer) {
+	buf.WriteString("  ## Environment variables, in the order they render.\n")
+	buf.WriteString("  ##\n")
 	if f.Extraction != nil && len(f.Extraction.Values.Manager.Env) > 0 {
-		buf.WriteString("  ## Environment variables\n")
-		buf.WriteString("  ##\n")
 		buf.WriteString("  env:\n")
 		f.marshalAndIndent(buf, f.Extraction.Values.Manager.Env, "env")
-		buf.WriteString("\n")
-
-		// Add envOverrides when env exists
-		buf.WriteString("  ## Env overrides (--set manager.envOverrides.VAR=value)\n")
-		buf.WriteString("  ## Same name in env above: this value takes precedence.\n")
-		buf.WriteString("  ##\n")
-		buf.WriteString("  envOverrides: {}\n\n")
+	} else {
+		buf.WriteString("  env: []\n")
 	}
+	buf.WriteString("\n")
+
+	buf.WriteString("  ## Add, replace or remove a variable by name, without restating the list:\n")
+	buf.WriteString("  ## --set manager.envOverrides.LOG_LEVEL=debug (=null removes it).\n")
+	buf.WriteString("  ##\n")
+	buf.WriteString("  envOverrides: {}\n\n")
 }
 
 // addImagePullSecretsSection adds image pull secrets configuration
@@ -621,16 +629,24 @@ webhook:
 	fmt.Fprintf(buf, "  port: %d\n\n", port)
 }
 
-// indentYAML indents YAML content by 4 spaces
+// indentYAML indents YAML content by 4 spaces.
+//
+// A blank line is kept, because inside a block scalar it is part of the value and dropping it
+// silently rewrites what the project declared. It is written without the indent: YAML does not
+// require blank lines inside a scalar to be indented, and a line of nothing but spaces would be
+// trailing whitespace. Only the newline that terminates the marshalled document is discarded, so
+// blank lines that really do trail the value survive.
 func (f *HelmValues) indentYAML(buf *bytes.Buffer, yamlContent []byte) {
 	indent := strings.Repeat(" ", 4)
-	lines := strings.SplitSeq(string(yamlContent), "\n")
-	for line := range lines {
-		if line != "" {
-			buf.WriteString(indent)
-			buf.WriteString(line)
+	content := strings.TrimSuffix(string(yamlContent), "\n")
+	for line := range strings.SplitSeq(content, "\n") {
+		if line == "" {
 			buf.WriteString("\n")
+			continue
 		}
+		buf.WriteString(indent)
+		buf.WriteString(line)
+		buf.WriteString("\n")
 	}
 }
 

@@ -293,6 +293,74 @@ The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--hea
 
 </aside>
 
+### Setting environment variables for the manager
+
+`manager.env` is the container's environment, in the Kubernetes shape and in the order it renders. The plugin extracts it from your Deployment and keeps the list as it found it: the `EnvVar` shape, the order the entries were declared in, literal values, and `valueFrom` sources all survive the round trip.
+
+```yaml
+manager:
+  env:
+    - name: ZBASE
+      value: example.com
+    - name: APP_URL
+      value: https://$(ZBASE)
+    - name: WATCH_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+```
+
+Order matters: Kubernetes expands `$(VAR)` only against variables defined earlier in the list. The chart renders the order you give it and never inspects a value, because references can also resolve to names it cannot see — variables from `envFrom`, or anything injected into the Pod. Expansion is Kubernetes' business, not the chart's.
+
+One value form does not survive extraction: Go template syntax. `values.yaml` is itself generated from a template, so a value containing `{{ ... }}` is executed while the chart is written rather than copied into it, and chart generation fails with `failed to execute Helm chart templates`. This affects every field extracted into `values.yaml`, not only `env`. Keep such a value out of `config/manager/manager.yaml` and set it on the rendered chart instead.
+
+#### Overriding one variable by name
+
+Editing a list at install time is awkward, so `manager.envOverrides` addresses entries by name:
+
+```sh
+helm install my-release ./dist/chart \
+  --set manager.envOverrides.LOG_LEVEL=debug \
+  --set manager.envOverrides.WATCH_NAMESPACE=my-namespace \
+  --set manager.envOverrides.BUSYBOX_IMAGE=null
+```
+
+- A name **not** in `manager.env` is **added**, after the list, in alphabetical order among other additions.
+- A name **already** in `manager.env` is **replaced**, keeping its position — so a reference that depends on the order still resolves.
+- `=null` **removes** the variable.
+
+Overrides take scalars. Non-string values are quoted for you, so `--set manager.envOverrides.PORT=8080` renders as `value: "8080"`. Replacing a `valueFrom` entry with an override replaces the whole entry, leaving no source behind. To set a `valueFrom`, edit `manager.env` — that is the field with the Kubernetes shape.
+
+The same works in a values file:
+
+```yaml
+manager:
+  envOverrides:
+    LOG_LEVEL: debug
+    BUSYBOX_IMAGE: null
+```
+
+<aside class="note" role="note">
+<p class="note-title">When =null cancels the override instead of removing the variable</p>
+
+Removal is a tombstone: the key stays with a null value, and the chart reads its presence. The plugin scaffolds `envOverrides: {}`, so `--set manager.envOverrides.NAME=null` normally arrives as exactly that.
+
+Helm's value coalescing deletes such a key outright whenever the values it merges under yours already hold a value for the same name. Two situations reach the chart with no key at all, which is indistinguishable from never having asked:
+
+- You set `envOverrides.NAME` in the chart's own `values.yaml`, then null it on the command line. Set `NAME: null` in that file instead.
+- You run `helm upgrade --reuse-values` and the previous release set `envOverrides.NAME`. Upgrade without `--reuse-values` instead — a plain upgrade passes the tombstone through.
+
+In both, Helm removes your override rather than the variable, so it goes back to its value in `manager.env`. Dropping the entry from `manager.env` removes it in every case.
+
+</aside>
+
+When neither `manager.env` nor `manager.envOverrides` yields a variable, the chart renders **no `env` key at all** rather than an empty list. That is what lets `--set manager.envOverrides.NAME=value` work on a chart whose project declared no variables. If you are upgrading a release generated before this change, the container's `env` goes from `[]` to absent — the same thing to Kubernetes, but Server-Side Apply stops recording the field as owned by the chart.
+
+#### One entry per name
+
+`manager.env` and `manager.envOverrides` are merged by name before rendering, so a variable reaches the Deployment exactly once however many times the sources mention it. This matters because Server-Side Apply rejects a container with duplicate `env` names, which is what an earlier version of this plugin could produce (#5948). A name repeated in `manager.env` keeps its first position and its last value.
+
+
 ### NetworkPolicy configuration
 
 Set `networkPolicy.enabled: true` to install NetworkPolicy resources for the manager pod.
