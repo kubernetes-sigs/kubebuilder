@@ -4135,7 +4135,7 @@ metadata:
 				testManagerRoleUsers:          testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			// Role in infrastructure namespace
 			infraRole := &unstructured.Unstructured{}
@@ -4168,7 +4168,7 @@ rules:
 				testManagerRoleBindingUsers: testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			// RoleBinding in users namespace
 			usersBinding := &unstructured.Unstructured{}
@@ -4207,7 +4207,7 @@ subjects:
 				"manager-role-monitoring":     "monitoring",
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			// Role in monitoring namespace
 			monitoringRole := &unstructured.Unstructured{}
@@ -4238,7 +4238,7 @@ rules:
 				testManagerRoleName: "app-infrastructure",
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			roleResource := &unstructured.Unstructured{}
 			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4268,7 +4268,7 @@ rules:
 				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			configMap := &unstructured.Unstructured{}
 			configMap.SetAPIVersion("v1")
@@ -4293,7 +4293,7 @@ data:
 				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
 
 			// Role that has a reference to a resource in its namespace
 			role := &unstructured.Unstructured{}
@@ -4322,7 +4322,7 @@ rules: []`
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with serviceAccount.enabled flag", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4345,7 +4345,7 @@ metadata:
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4367,7 +4367,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4394,7 +4394,7 @@ metadata:
 			// carries annotations lists annotations before labels. The generator must merge into
 			// that block instead of emitting a second annotations key.
 			It("merges custom annotations with existing annotations without duplication", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4577,7 +4577,7 @@ subjects:
 			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
 				longNameTemplater := NewTemplater("very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation",
-					"very-long-project-name-that-needs-truncation-system", nil)
+					"very-long-project-name-that-needs-truncation-system", nil, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4708,6 +4708,98 @@ spec:
 				Expect(sidecarSection).To(ContainSubstring("mountPath: /etc/sidecar"))
 				Expect(sidecarSection).NotTo(ContainSubstring(".Values.manager.extraVolumeMounts"))
 				Expect(result).To(ContainSubstring(".Values.manager.extraVolumeMounts"))
+			})
+
+			It("templates manager args when a sidecar with args appears before the manager", func() {
+				deployment := &unstructured.Unstructured{}
+				deployment.SetAPIVersion("apps/v1")
+				deployment.SetKind("Deployment")
+				deployment.SetName("test-project-controller-manager")
+				deployment.SetLabels(map[string]string{labelControlPlaneKey: labelControlPlaneValue})
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - name: sidecar
+        image: sidecar:v1
+        args:
+        - --sidecar-flag
+      - name: manager
+        image: controller:latest
+        args:
+        - --leader-elect
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443`
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				sidecarStart := strings.Index(result, "name: sidecar")
+				managerStart := strings.Index(result, "name: manager")
+				Expect(sidecarStart).To(BeNumerically(">=", 0))
+				Expect(managerStart).To(BeNumerically(">", sidecarStart))
+				sidecarSection := result[sidecarStart:managerStart]
+
+				Expect(sidecarSection).To(ContainSubstring("--sidecar-flag"))
+				Expect(sidecarSection).NotTo(ContainSubstring(".Values.manager.args"))
+				Expect(result).To(ContainSubstring(".Values.manager.args"))
+				Expect(result).To(ContainSubstring(".Values.metrics.enabled"))
+			})
+		})
+
+		Context("when an extra deployment contains health, metrics, or webhook fields", func() {
+			It("does not template manager, metrics, or webhook ports on extra deployments", func() {
+				extraDeployment := &unstructured.Unstructured{}
+				extraDeployment.SetAPIVersion("apps/v1")
+				extraDeployment.SetKind("Deployment")
+				extraDeployment.SetName("test-project-worker")
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-worker
+  namespace: test-project-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
+        ports:
+        - containerPort: 8081
+          name: health
+        - containerPort: 9443
+          name: webhook-server
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081`
+
+				result := templater.ApplyHelmSubstitutions(content, extraDeployment)
+
+				Expect(result).NotTo(ContainSubstring(".Values.metrics.port"))
+				Expect(result).NotTo(ContainSubstring(".Values.webhook.port"))
+				Expect(result).NotTo(ContainSubstring(".Values.manager.healthProbe.port"))
+				Expect(result).To(ContainSubstring("--metrics-bind-address=:8443"))
+				Expect(result).To(ContainSubstring("--webhook-port=9443"))
+				Expect(result).To(ContainSubstring("port: 8081"))
 			})
 		})
 

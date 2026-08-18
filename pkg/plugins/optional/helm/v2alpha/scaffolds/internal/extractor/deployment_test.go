@@ -362,15 +362,30 @@ var _ = Describe("DeploymentExtractor", func() {
 				Expect(result).To(Equal(winner))
 			})
 
-			It("should select by pod-template annotation when no label matches", func() {
-				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
-				winner := makeDeployment(deploymentOpts{
+			It("should not select by pod-template annotation alone", func() {
+				annotated := makeDeployment(deploymentOpts{
 					annotations: map[string]string{annotationDefaultContainer: valSidecar},
 					containers:  []map[string]any{{keyName: valSidecar}},
 				})
+				annotated.SetName("annotated-only")
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
 				winner.SetName("winner")
 
-				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				result := FindManagerDeployment([]*unstructured.Unstructured{annotated, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should prefer control-plane label over default-container annotation on another deployment", func() {
+				annotated := makeDeployment(deploymentOpts{
+					annotations: map[string]string{annotationDefaultContainer: valManager},
+					containers:  []map[string]any{{keyName: valSidecar}},
+				})
+				annotated.SetName("annotated-first")
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				winner.SetName("winner")
+				winner.SetLabels(map[string]string{"control-plane": "controller-manager"})
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{annotated, winner})
 				Expect(result).To(Equal(winner))
 			})
 
