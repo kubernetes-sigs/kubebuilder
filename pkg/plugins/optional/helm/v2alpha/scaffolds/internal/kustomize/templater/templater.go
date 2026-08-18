@@ -49,15 +49,18 @@ type Templater struct {
 func NewTemplater(
 	detectedPrefix, chartName, managerNamespace string,
 	roleNamespaces map[string]string,
-	managerServiceAccount *unstructured.Unstructured,
 ) *Templater {
 	return &Templater{
-		detectedPrefix:        detectedPrefix,
-		chartName:             chartName,
-		managerNamespace:      managerNamespace,
-		roleNamespaces:        roleNamespaces,
-		managerServiceAccount: managerServiceAccount,
+		detectedPrefix:   detectedPrefix,
+		chartName:        chartName,
+		managerNamespace: managerNamespace,
+		roleNamespaces:   roleNamespaces,
 	}
+}
+
+// SetManagerServiceAccount configures the manager ServiceAccount resolved during parsing.
+func (t *Templater) SetManagerServiceAccount(sa *unstructured.Unstructured) {
+	t.managerServiceAccount = sa
 }
 
 // GetManagerNamespace returns the manager namespace.
@@ -76,15 +79,15 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 	yamlContent = appliers.SubstituteCertManagerReferences(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.SubstituteResourceNamesWithPrefix(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent, resource)
-	yamlContent = appliers.SubstituteRBACValues(
+	yamlContent = appliers.SubstituteRBACValuesWithManagerServiceAccount(
 		t.detectedPrefix, t.chartName, yamlContent, t.managerServiceAccount)
 	if resource.GetKind() == common.KindServiceAccount {
-		yamlContent = appliers.TemplateServiceAccount(
+		yamlContent = appliers.TemplateServiceAccountForResource(
 			t.detectedPrefix, t.chartName, yamlContent, resource, t.managerServiceAccount)
 	}
 	if resource.GetKind() == common.KindDeployment && appliers.IsManagerDeployment(resource) {
 		yamlContent = appliers.AddCustomLabelsAndAnnotations(yamlContent)
-		yamlContent = appliers.TemplateDeploymentFields(
+		yamlContent = appliers.TemplateDeploymentFieldsWithManagerServiceAccount(
 			t.detectedPrefix, t.chartName, yamlContent, t.managerServiceAccount)
 		yamlContent = appliers.MakeContainerArgsConditional(yamlContent)
 		yamlContent = appliers.MakeWebhookVolumeMountsConditional(yamlContent)

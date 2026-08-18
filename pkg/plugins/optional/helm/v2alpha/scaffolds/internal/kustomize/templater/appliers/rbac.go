@@ -33,7 +33,18 @@ import (
 // helpers.
 
 // SubstituteRBACValues applies RBAC-specific template substitutions.
-func SubstituteRBACValues(
+func SubstituteRBACValues(detectedPrefix, chartName, yamlContent string) string {
+	return substituteRBACValues(detectedPrefix, chartName, yamlContent, nil)
+}
+
+// SubstituteRBACValuesWithManagerServiceAccount applies RBAC substitutions using the resolved manager SA.
+func SubstituteRBACValuesWithManagerServiceAccount(
+	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
+) string {
+	return substituteRBACValues(detectedPrefix, chartName, yamlContent, managerServiceAccount)
+}
+
+func substituteRBACValues(
 	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
 ) string {
 	roleRefBlockPattern := regexp.MustCompile(
@@ -47,13 +58,17 @@ func SubstituteRBACValues(
 	yamlContent = roleRefBlockPatternSimple.ReplaceAllString(
 		yamlContent, `${1}${2}name: `+ResourceNameTemplate(chartName, "manager-role"))
 
-	yamlContent = TemplateServiceAccountNameInBindings(detectedPrefix, chartName, yamlContent, managerServiceAccount)
+	yamlContent = templateServiceAccountNameInBindings(detectedPrefix, chartName, yamlContent, managerServiceAccount)
 
 	return yamlContent
 }
 
 // TemplateServiceAccountNameInBindings templates SA name in RoleBinding/ClusterRoleBinding subjects.
-func TemplateServiceAccountNameInBindings(
+func TemplateServiceAccountNameInBindings(detectedPrefix, chartName, yamlContent string) string {
+	return templateServiceAccountNameInBindings(detectedPrefix, chartName, yamlContent, nil)
+}
+
+func templateServiceAccountNameInBindings(
 	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
 ) string {
 	replacement := `{{ include "` + chartName + `.serviceAccountName" . }}`
@@ -86,7 +101,11 @@ func TemplateServiceAccountNameInBindings(
 }
 
 // TemplateServiceAccountNameInDeployment templates serviceAccountName in Deployment spec.
-func TemplateServiceAccountNameInDeployment(
+func TemplateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlContent string) string {
+	return templateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlContent, nil)
+}
+
+func templateServiceAccountNameInDeployment(
 	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
 ) string {
 	replacement := `serviceAccountName: {{ include "` + chartName + `.serviceAccountName" . }}`
@@ -117,7 +136,19 @@ func TemplateServiceAccountNameInDeployment(
 }
 
 // TemplateServiceAccount applies manager ServiceAccount-specific transformations.
-func TemplateServiceAccount(
+func TemplateServiceAccount(detectedPrefix, chartName, yamlContent string) string {
+	return templateServiceAccount(detectedPrefix, chartName, yamlContent, nil, nil)
+}
+
+// TemplateServiceAccountForResource applies manager ServiceAccount transforms for the resolved manager SA.
+func TemplateServiceAccountForResource(
+	detectedPrefix, chartName, yamlContent string,
+	resource, managerServiceAccount *unstructured.Unstructured,
+) string {
+	return templateServiceAccount(detectedPrefix, chartName, yamlContent, resource, managerServiceAccount)
+}
+
+func templateServiceAccount(
 	detectedPrefix, chartName, yamlContent string,
 	resource, managerServiceAccount *unstructured.Unstructured,
 ) string {
@@ -125,7 +156,7 @@ func TemplateServiceAccount(
 		return yamlContent
 	}
 	yamlContent = AddServiceAccountLabelsAndAnnotations(yamlContent)
-	yamlContent = TemplateServiceAccountName(detectedPrefix, chartName, yamlContent, managerServiceAccount)
+	yamlContent = templateServiceAccountName(detectedPrefix, chartName, yamlContent, managerServiceAccount)
 	yamlContent = WrapServiceAccountWithEnabledConditional(yamlContent)
 	return yamlContent
 }
@@ -144,7 +175,11 @@ func IsResolvedManagerServiceAccount(resource, managerServiceAccount *unstructur
 }
 
 // TemplateServiceAccountName replaces SA name with serviceAccountName helper.
-func TemplateServiceAccountName(
+func TemplateServiceAccountName(detectedPrefix, chartName, yamlContent string) string {
+	return templateServiceAccountName(detectedPrefix, chartName, yamlContent, nil)
+}
+
+func templateServiceAccountName(
 	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
 ) string {
 	replacement := `${1}name: {{ include "` + chartName + `.serviceAccountName" . }}`
