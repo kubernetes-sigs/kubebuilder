@@ -847,6 +847,13 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(managerStr).To(ContainSubstring("runAsNonRoot: true"),
 				"sidecar securityContext must not be templated")
 
+			By("verifying the sidecar's args remain as literals")
+			Expect(managerStr).To(ContainSubstring("--sidecar-flag"))
+			Expect(managerStr).To(ContainSubstring(".Values.manager.args"))
+			Expect(strings.Index(managerStr, "--sidecar-flag")).To(
+				BeNumerically("<", strings.Index(managerStr, ".Values.manager.args")),
+				"sidecar args must appear before manager args templating")
+
 			By("verifying the manager's resources are templated")
 			Expect(managerStr).To(ContainSubstring(".Values.manager.resources"))
 
@@ -900,12 +907,73 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				extraStr := string(extraBytes)
 				Expect(extraStr).NotTo(ContainSubstring(".Values.manager."),
 					"extra deployment must not receive manager values templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.metrics.port"),
+					"extra deployment must not receive metrics port templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.webhook.port"),
+					"extra deployment must not receive webhook port templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.manager.healthProbe.port"),
+					"extra deployment must not receive health probe port templating")
+				Expect(extraStr).To(ContainSubstring("--metrics-bind-address=:8443"))
 				Expect(extraStr).To(ContainSubstring("image: worker:latest"))
 			}
 			Expect(extraDeploymentFound).To(BeTrue(), "extra deployment file should exist in extras")
 
 			lintResult := action.NewLint().Run([]string{chartPath}, nil)
 			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+
+			By("rendering the chart with helm template")
+			rendered, err := helmTemplate(createKustomizeWithExtraDeployment("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("some-operator"))
+			Expect(rendered).To(ContainSubstring("--metrics-bind-address=:8443"))
+			Expect(rendered).NotTo(MatchRegexp(`some-operator[\s\S]*\.Values\.metrics\.port`))
+		})
+	})
+
+	Context("Custom manager ServiceAccount name", func() {
+		It("should keep the custom manager ServiceAccount in rbac and render it with serviceAccount values", func() {
+			kustomizeYAML := createKustomizeWithCustomManagerServiceAccount("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			rbacDir := filepath.Join(chartPath, "templates", "rbac")
+			extrasDir := filepath.Join(chartPath, "templates", "extras")
+
+			var managerSAFound bool
+			rbacFiles, err := os.ReadDir(rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+			for _, f := range rbacFiles {
+				if !strings.Contains(f.Name(), "custom-operator-sa") {
+					continue
+				}
+				managerSAFound = true
+				content, err := os.ReadFile(filepath.Join(rbacDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				saStr := string(content)
+				Expect(saStr).To(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`))
+				Expect(saStr).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+			}
+			Expect(managerSAFound).To(BeTrue(), "custom manager ServiceAccount should stay in rbac templates")
+
+			if _, err := os.Stat(extrasDir); err == nil {
+				extrasFiles, err := os.ReadDir(extrasDir)
+				Expect(err).NotTo(HaveOccurred())
+				for _, f := range extrasFiles {
+					content, err := os.ReadFile(filepath.Join(extrasDir, f.Name()))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(content)).NotTo(ContainSubstring("custom-operator-sa"))
+				}
+			}
+
+			rendered, err := helmTemplate(createKustomizeWithCustomManagerServiceAccount("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
 		})
 	})
 
@@ -1519,7 +1587,37 @@ spec:
       containers:
       - name: worker
         image: worker:latest
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
+        ports:
+        - containerPort: 8081
+          name: health
+        - containerPort: 9443
+          name: webhook-server
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
 `
+}
+
+func createKustomizeWithCustomManagerServiceAccount(projectName string) string {
+	const customSA = "custom-operator-sa"
+	managerSA := projectName + "-controller-manager"
+	base := createKustomizeForServiceAccountRender(projectName)
+	base = strings.Replace(base,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+managerSA,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+customSA,
+		1)
+	base = strings.Replace(base, "serviceAccountName: "+managerSA, "serviceAccountName: "+customSA, 1)
+	base = strings.ReplaceAll(base,
+		"- kind: ServiceAccount\n  name: "+managerSA,
+		"- kind: ServiceAccount\n  name: "+customSA)
+	return base
 }
 
 func createKustomizeWithSidecarBeforeManager(projectName string) string {
@@ -1556,6 +1654,8 @@ spec:
       containers:
       - name: sidecar
         image: sidecar:v1
+        args:
+        - --sidecar-flag
         env:
         - name: SIDECAR_MODE
           value: "active"
