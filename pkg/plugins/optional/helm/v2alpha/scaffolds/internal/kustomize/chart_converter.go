@@ -45,7 +45,8 @@ func NewChartConverter(
 	roleNamespaces map[string]string,
 ) *ChartConverter {
 	categorizer := NewResourceCategorizer(resources)
-	t := templater.NewTemplater(detectedPrefix, chartName, managerNamespace, roleNamespaces, resources.ServiceAccount)
+	t := templater.NewTemplater(detectedPrefix, chartName, managerNamespace, roleNamespaces)
+	t.SetManagerServiceAccount(resources.ServiceAccount)
 	chartGenerator := NewChartGenerator(t, detectedPrefix)
 
 	return &ChartConverter{
