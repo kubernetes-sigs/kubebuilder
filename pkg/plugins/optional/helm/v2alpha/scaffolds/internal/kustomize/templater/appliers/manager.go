@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
@@ -60,10 +62,13 @@ type customFieldsState struct {
 }
 
 // TemplateDeploymentFields applies all Deployment-specific transformations.
-func TemplateDeploymentFields(detectedPrefix, chartName, yamlContent string) string {
+func TemplateDeploymentFields(
+	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
+) string {
 	yamlContent = templateReplicas(yamlContent)
 	yamlContent = templateImageReference(yamlContent)
-	yamlContent = TemplateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlContent)
+	yamlContent = TemplateServiceAccountNameInDeployment(
+		detectedPrefix, chartName, yamlContent, managerServiceAccount)
 	yamlContent = templateEnvironmentVariables(yamlContent)
 	yamlContent = templateImagePullSecrets(yamlContent)
 	yamlContent = templatePodSecurityContext(yamlContent)
@@ -310,7 +315,7 @@ func templateSecurityContexts(yamlContent string) string {
 }
 
 func templateVolumeMounts(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "volumeMounts:") {
+	if !strings.Contains(yamlContent, "volumeMounts:") {
 		return yamlContent
 	}
 
