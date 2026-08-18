@@ -4459,7 +4459,7 @@ metadata:
 				testManagerRoleUsers:          testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role in infrastructure namespace
 			infraRole := &unstructured.Unstructured{}
@@ -4492,7 +4492,7 @@ rules:
 				testManagerRoleBindingUsers: testRoleNamespaceUsers,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// RoleBinding in users namespace
 			usersBinding := &unstructured.Unstructured{}
@@ -4531,7 +4531,7 @@ subjects:
 				"manager-role-monitoring":     "monitoring",
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role in monitoring namespace
 			monitoringRole := &unstructured.Unstructured{}
@@ -4562,7 +4562,7 @@ rules:
 				testManagerRoleName: "app-infrastructure",
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			roleResource := &unstructured.Unstructured{}
 			roleResource.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4592,7 +4592,7 @@ rules:
 				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			configMap := &unstructured.Unstructured{}
 			configMap.SetAPIVersion("v1")
@@ -4617,7 +4617,7 @@ data:
 				testManagerRoleName: testRoleNamespaceInfrastructure,
 			}
 
-			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces, nil)
+			multiNsTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, roleNamespaces)
 
 			// Role that has a reference to a resource in its namespace
 			role := &unstructured.Unstructured{}
@@ -4646,7 +4646,7 @@ rules: []`
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with serviceAccount.enabled flag", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4669,7 +4669,7 @@ metadata:
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4691,7 +4691,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4718,7 +4718,7 @@ metadata:
 			// carries annotations lists annotations before labels. The generator must merge into
 			// that block instead of emitting a second annotations key.
 			It("merges custom annotations with existing annotations without duplication", func() {
-				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4901,7 +4901,7 @@ subjects:
 			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
 				longNameTemplater := NewTemplater("very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation",
-					"very-long-project-name-that-needs-truncation-system", nil, nil)
+					"very-long-project-name-that-needs-truncation-system", nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")

@@ -62,12 +62,23 @@ type customFieldsState struct {
 }
 
 // TemplateDeploymentFields applies all Deployment-specific transformations.
-func TemplateDeploymentFields(
+func TemplateDeploymentFields(detectedPrefix, chartName, yamlContent string) string {
+	return templateDeploymentFields(detectedPrefix, chartName, yamlContent, nil)
+}
+
+// TemplateDeploymentFieldsWithManagerServiceAccount applies Deployment transforms using the resolved manager SA.
+func TemplateDeploymentFieldsWithManagerServiceAccount(
+	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
+) string {
+	return templateDeploymentFields(detectedPrefix, chartName, yamlContent, managerServiceAccount)
+}
+
+func templateDeploymentFields(
 	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
 ) string {
 	yamlContent = templateReplicas(yamlContent)
 	yamlContent = templateImageReference(yamlContent)
-	yamlContent = TemplateServiceAccountNameInDeployment(
+	yamlContent = templateServiceAccountNameInDeployment(
 		detectedPrefix, chartName, yamlContent, managerServiceAccount)
 	yamlContent = templateEnvironmentVariables(yamlContent)
 	yamlContent = templateImagePullSecrets(yamlContent)
