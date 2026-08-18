@@ -559,6 +559,31 @@ var _ = Describe("IsManagerServiceAccount", func() {
 	})
 })
 
+var _ = Describe("templateVolumeMounts", func() {
+	It("does not inject manager extraVolumeMounts when the manager container range is unknown", func() {
+		yamlContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: manager
+      containers:
+      - name: sidecar
+        volumeMounts:
+        - name: sidecar-config
+          mountPath: /etc/sidecar
+`
+
+		result := templateVolumeMounts(yamlContent)
+
+		Expect(result).To(Equal(yamlContent))
+		Expect(result).NotTo(ContainSubstring(".Values.manager.extraVolumeMounts"))
+	})
+})
+
 func makeUnstructuredServiceAccount(name string) *unstructured.Unstructured {
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("v1")

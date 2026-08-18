@@ -41,7 +41,8 @@ func IsManagerDeployment(resource *unstructured.Unstructured) bool {
 	if hasContainerNamed(resource, DefaultManagerContainerName) {
 		return true
 	}
-	return strings.Contains(resource.GetName(), managerNameSubstring)
+	return strings.HasSuffix(resource.GetName(), managerNameSubstring) ||
+		resource.GetName() == managerNameSubstring
 }
 
 // SelectManagerDeployment returns the controller-manager Deployment from the slice using
@@ -58,7 +59,7 @@ func SelectManagerDeployment(deployments []*unstructured.Unstructured) *unstruct
 		}
 	}
 	for _, d := range deployments {
-		if strings.Contains(d.GetName(), managerNameSubstring) {
+		if strings.HasSuffix(d.GetName(), managerNameSubstring) || d.GetName() == managerNameSubstring {
 			return d
 		}
 	}
