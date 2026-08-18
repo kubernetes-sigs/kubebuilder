@@ -338,7 +338,7 @@ func templateVolumeMounts(yamlContent string) string {
 
 	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
 	if rangeStart < 0 {
-		return appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+		return yamlContent
 	}
 
 	lines := strings.Split(yamlContent, "\n")

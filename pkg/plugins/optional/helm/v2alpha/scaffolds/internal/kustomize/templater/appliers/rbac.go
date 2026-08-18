@@ -91,13 +91,40 @@ func templateServiceAccountNameInBindings(
 	yamlContent = subjectPatternSimple.ReplaceAllString(yamlContent, `${1}`+replacement)
 
 	if managerServiceAccount != nil {
-		customPattern := regexp.MustCompile(
-			`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
-				regexp.QuoteMeta(managerServiceAccount.GetName()))
-		yamlContent = customPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+		yamlContent = substituteCustomServiceAccountSubjectInBindings(
+			yamlContent,
+			managerServiceAccount.GetName(),
+			managerServiceAccount.GetNamespace(),
+			replacement,
+		)
 	}
 
 	return yamlContent
+}
+
+func substituteCustomServiceAccountSubjectInBindings(
+	yamlContent, customName, managerNamespace, replacement string,
+) string {
+	subjectFieldLine := `(?:[ \t]+[A-Za-z][\w./-]*:[^\n]*\n)`
+	subjectPattern := regexp.MustCompile(
+		`(?m)- kind: ServiceAccount\n` + subjectFieldLine + `*?[ \t]+name: ` + regexp.QuoteMeta(customName) +
+			`\n` + subjectFieldLine + `*`)
+	return subjectPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		subjectNamespace := subjectServiceAccountNamespace(match)
+		if subjectNamespace != "" && subjectNamespace != managerNamespace {
+			return match
+		}
+		namePattern := regexp.MustCompile(`(?m)([ \t]+name: )` + regexp.QuoteMeta(customName) + `[ \t]*$`)
+		return namePattern.ReplaceAllString(match, `${1}`+replacement)
+	})
+}
+
+func subjectServiceAccountNamespace(subjectBlock string) string {
+	nsPattern := regexp.MustCompile(`(?m)^[ \t]+namespace:\s+(\S+)\s*$`)
+	if match := nsPattern.FindStringSubmatch(subjectBlock); len(match) > 1 {
+		return match[1]
+	}
+	return ""
 }
 
 // TemplateServiceAccountNameInDeployment templates serviceAccountName in Deployment spec.
@@ -195,7 +222,7 @@ func templateServiceAccountName(
 
 	if managerServiceAccount != nil {
 		customNamePattern := regexp.MustCompile(
-			`(?m)^(\s*)name:\s+` + regexp.QuoteMeta(managerServiceAccount.GetName()) + `\s*$`)
+			`(?m)^([ \t]{2})name: ` + regexp.QuoteMeta(managerServiceAccount.GetName()) + `[ \t]*$`)
 		yamlContent = customNamePattern.ReplaceAllString(yamlContent, replacement)
 	}
 

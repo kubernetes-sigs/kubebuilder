@@ -161,10 +161,10 @@ data:
 
 			var configMapFile, secretFile string
 			for _, f := range files {
-				if f.Name() == "custom-config.yaml" {
+				if f.Name() == "configmap-custom-config-test-project-system.yaml" {
 					configMapFile = f.Name()
 				}
-				if f.Name() == "custom-secret.yaml" {
+				if f.Name() == "secret-custom-secret-test-project-system.yaml" {
 					secretFile = f.Name()
 				}
 			}
@@ -276,7 +276,7 @@ spec:
 			files, err := afero.ReadDir(fs.FS, extrasDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(files).To(HaveLen(1))
-			Expect(files[0].Name()).To(Equal("custom-service.yaml"))
+			Expect(files[0].Name()).To(Equal("service-custom-service-test-project-system.yaml"))
 
 			By("verifying Service has proper Helm templating")
 			servicePath := filepath.Join(extrasDir, files[0].Name())

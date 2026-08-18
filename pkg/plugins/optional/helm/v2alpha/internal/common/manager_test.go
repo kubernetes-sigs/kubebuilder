@@ -42,10 +42,16 @@ var _ = Describe("IsManagerDeployment", func() {
 		Expect(IsManagerDeployment(d)).To(BeTrue())
 	})
 
-	It("returns true when the deployment name contains controller-manager", func() {
+	It("returns true when the deployment name ends with controller-manager", func() {
 		d := &unstructured.Unstructured{}
 		d.SetName("my-project-controller-manager")
 		Expect(IsManagerDeployment(d)).To(BeTrue())
+	})
+
+	It("returns false when controller-manager appears only as a substring", func() {
+		d := &unstructured.Unstructured{}
+		d.SetName("controller-manager-backup")
+		Expect(IsManagerDeployment(d)).To(BeFalse())
 	})
 
 	It("returns false for default-container annotation alone", func() {
