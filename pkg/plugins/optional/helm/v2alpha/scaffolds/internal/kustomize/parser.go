@@ -94,6 +94,7 @@ func (p *Parser) Parse() (*ParsedResources, error) {
 func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	decoder := yaml.NewDecoder(reader)
 	var deployments []*unstructured.Unstructured
+	var serviceAccounts []*unstructured.Unstructured
 	resources := &ParsedResources{
 		CustomResourceDefinitions: make([]*unstructured.Unstructured, 0),
 		Roles:                     make([]*unstructured.Unstructured, 0),
@@ -125,9 +126,12 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		}
 
 		obj := &unstructured.Unstructured{Object: doc}
-		if obj.GetKind() == "Deployment" {
+		switch obj.GetKind() {
+		case "Deployment":
 			deployments = append(deployments, obj)
-		} else {
+		case "ServiceAccount":
+			serviceAccounts = append(serviceAccounts, obj)
+		default:
 			p.categorizeResource(obj, resources)
 		}
 	}
@@ -140,6 +144,8 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 			resources.ExtraDeployments = append(resources.ExtraDeployments, d)
 		}
 	}
+
+	resolveServiceAccounts(resources, serviceAccounts)
 
 	return resources, nil
 }
@@ -154,8 +160,6 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.Namespace = obj
 	case kind == "CustomResourceDefinition":
 		resources.CustomResourceDefinitions = append(resources.CustomResourceDefinitions, obj)
-	case kind == "ServiceAccount":
-		classifyServiceAccount(obj, resources)
 	case kind == "Role":
 		resources.Roles = append(resources.Roles, obj)
 	case kind == "ClusterRole":
@@ -181,16 +185,40 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 	}
 }
 
-// classifyServiceAccount routes the manager ServiceAccount to ServiceAccount and others to ExtraServiceAccounts.
-func classifyServiceAccount(obj *unstructured.Unstructured, resources *ParsedResources) {
-	if appliers.IsManagerServiceAccount(obj) {
-		if resources.ServiceAccount != nil {
-			resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, resources.ServiceAccount)
+// resolveServiceAccounts selects the manager ServiceAccount from the manager Deployment
+// reference and routes all other ServiceAccounts to ExtraServiceAccounts.
+func resolveServiceAccounts(resources *ParsedResources, serviceAccounts []*unstructured.Unstructured) {
+	resources.ExtraServiceAccounts = make([]*unstructured.Unstructured, 0, len(serviceAccounts))
+
+	var managerSA *unstructured.Unstructured
+	if resources.Deployment != nil {
+		saName, found, err := unstructured.NestedString(
+			resources.Deployment.Object, "spec", "template", "spec", "serviceAccountName")
+		if found && err == nil && saName != "" {
+			deployNamespace := resources.Deployment.GetNamespace()
+			for _, sa := range serviceAccounts {
+				if sa.GetName() == saName && sa.GetNamespace() == deployNamespace {
+					managerSA = sa
+					break
+				}
+			}
 		}
-		resources.ServiceAccount = obj
-		return
 	}
-	resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, obj)
+
+	if managerSA == nil {
+		for _, sa := range serviceAccounts {
+			if appliers.IsManagerServiceAccount(sa) {
+				managerSA = sa
+			}
+		}
+	}
+
+	resources.ServiceAccount = managerSA
+	for _, sa := range serviceAccounts {
+		if sa != managerSA {
+			resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, sa)
+		}
+	}
 }
 
 // identifyCustomResources moves resources from Other to CustomResources if they are instances of project CRDs.
