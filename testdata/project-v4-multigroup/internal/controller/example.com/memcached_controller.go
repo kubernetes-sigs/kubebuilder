@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/distribution/reference"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +50,10 @@ const (
 	typeAvailableMemcached = "Available"
 	// typeDegradedMemcached represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegradedMemcached = "Degraded"
+	// reasonInvalidImageReferenceMemcached reports an invalid Operand image.
+	reasonInvalidImageReferenceMemcached = "InvalidImageReference"
+	// reasonVersionLabelOmittedMemcached reports that no valid version label could be derived from the Operand image.
+	reasonVersionLabelOmittedMemcached = "VersionLabelOmitted"
 )
 
 // MemcachedReconciler reconciles a Memcached object
@@ -188,12 +193,31 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
+	// Get and validate the Operand image before creating or updating its Deployment.
+	image, err := imageForMemcached()
+	if err != nil {
+		imageErr := err
+		log.Error(imageErr, "Failed to get a valid Operand image")
+
+		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{
+			Type: typeAvailableMemcached, Status: metav1.ConditionFalse,
+			Reason: reasonInvalidImageReferenceMemcached, ObservedGeneration: memcached.Generation,
+			Message: imageErr.Error(),
+		})
+		if err := r.Status().Update(ctx, memcached); err != nil {
+			log.Error(err, "Failed to update Memcached status")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, imageErr
+	}
+
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: memcached.Name, Namespace: memcached.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep, err := r.deploymentForMemcached(memcached)
+		dep, err := r.deploymentForMemcached(memcached, image)
 		if err != nil {
 			log.Error(err, "Failed to define new Deployment resource for Memcached")
 
@@ -273,9 +297,14 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// The following implementation will update the status
-	meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-		Status: metav1.ConditionTrue, Reason: reasonReconciling,
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, desiredReplicas)})
+	condition := metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionTrue,
+		Reason: reasonReconciling, ObservedGeneration: memcached.Generation,
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, desiredReplicas)}
+	if _, ok := versionLabelForMemcached(image); !ok {
+		condition.Reason = reasonVersionLabelOmittedMemcached
+		condition.Message = fmt.Sprintf("Deployment for custom resource (%s) created successfully without a version label because image %q has no Kubernetes label-compatible tag", memcached.Name, image)
+	}
+	meta.SetStatusCondition(&memcached.Status.Conditions, condition)
 
 	if err := r.Status().Update(ctx, memcached); err != nil {
 		log.Error(err, "Failed to update Memcached status")
@@ -307,14 +336,8 @@ func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1
 
 // deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
-	memcached *examplecomv1alpha1.Memcached) (*appsv1.Deployment, error) {
-	ls := labelsForMemcached()
-
-	// Get the Operand image
-	image, err := imageForMemcached()
-	if err != nil {
-		return nil, err
-	}
+	memcached *examplecomv1alpha1.Memcached, image string) (*appsv1.Deployment, error) {
+	ls := labelsForMemcached(image)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -405,17 +428,30 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 
 // labelsForMemcached returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsForMemcached() map[string]string {
-	var imageTag string
-	image, err := imageForMemcached()
-	if err == nil {
-		imageTag = strings.Split(image, ":")[1]
-	}
-	return map[string]string{
+func labelsForMemcached(image string) map[string]string {
+	labels := map[string]string{
 		"app.kubernetes.io/name":       "project-v4-multigroup",
-		"app.kubernetes.io/version":    imageTag,
 		"app.kubernetes.io/managed-by": "MemcachedController",
 	}
+
+	if imageTag, ok := versionLabelForMemcached(image); ok {
+		labels["app.kubernetes.io/version"] = imageTag
+	}
+
+	return labels
+}
+
+// versionLabelForMemcached returns a Kubernetes label-compatible tag from the Operand image.
+func versionLabelForMemcached(image string) (string, bool) {
+	named, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return "", false
+	}
+	tagged, ok := named.(reference.Tagged)
+	if !ok || len(validation.IsValidLabelValue(tagged.Tag())) != 0 {
+		return "", false
+	}
+	return tagged.Tag(), true
 }
 
 // imageForMemcached gets the Operand image which is managed by this controller
@@ -425,6 +461,9 @@ func imageForMemcached() (string, error) {
 	image, found := os.LookupEnv(imageEnvVar)
 	if !found {
 		return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
+	}
+	if _, err := reference.ParseNormalizedNamed(image); err != nil {
+		return "", fmt.Errorf("invalid image reference %q from %s: %w", image, imageEnvVar, err)
 	}
 	return image, nil
 }

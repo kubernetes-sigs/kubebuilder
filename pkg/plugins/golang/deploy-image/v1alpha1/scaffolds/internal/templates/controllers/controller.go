@@ -71,11 +71,11 @@ package controller
 
 import (
 	"context"
-	"strings"
 	"time"
 	"fmt"
 	"os"
 
+	"github.com/distribution/reference"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -83,6 +83,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,6 +105,10 @@ const (
 	typeAvailable{{ .Resource.Kind }} = "Available"
 	// typeDegraded{{ .Resource.Kind }} represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegraded{{ .Resource.Kind }} = "Degraded"
+	// reasonInvalidImageReference{{ .Resource.Kind }} reports an invalid Operand image.
+	reasonInvalidImageReference{{ .Resource.Kind }} = "InvalidImageReference"
+	// reasonVersionLabelOmitted{{ .Resource.Kind }} reports that no valid version label could be derived from the Operand image.
+	reasonVersionLabelOmitted{{ .Resource.Kind }} = "VersionLabelOmitted"
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
@@ -252,12 +257,31 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, nil
 	}
 
+	// Get and validate the Operand image before creating or updating its Deployment.
+	image, err := imageFor{{ .Resource.Kind }}()
+	if err != nil {
+		imageErr := err
+		log.Error(imageErr, "Failed to get a valid Operand image")
+
+		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{
+			Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionFalse,
+			Reason: reasonInvalidImageReference{{ .Resource.Kind }}, ObservedGeneration: {{ lower .Resource.Kind }}.Generation,
+			Message: imageErr.Error(),
+		})
+		if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
+			log.Error(err, "Failed to update {{ .Resource.Kind }} status")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, imageErr
+	}
+
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: {{ lower .Resource.Kind }}.Name, Namespace: {{ lower .Resource.Kind }}.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep, err := r.deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
+		dep, err := r.deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }}, image)
 		if err != nil {
 			log.Error(err, "Failed to define new Deployment resource for {{ .Resource.Kind }}")
 
@@ -337,9 +361,14 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	// The following implementation will update the status
-	meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-		Status: metav1.ConditionTrue, Reason: reasonReconciling,
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, desiredReplicas)})
+	condition := metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionTrue,
+		Reason: reasonReconciling, ObservedGeneration: {{ lower .Resource.Kind }}.Generation,
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, desiredReplicas)}
+	if _, ok := versionLabelFor{{ .Resource.Kind }}(image); !ok {
+		condition.Reason = reasonVersionLabelOmitted{{ .Resource.Kind }}
+		condition.Message = fmt.Sprintf("Deployment for custom resource (%s) created successfully without a version label because image %q has no Kubernetes label-compatible tag", {{ lower .Resource.Kind }}.Name, image)
+	}
+	meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, condition)
 
 	if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 		log.Error(err, "Failed to update {{ .Resource.Kind }} status")
@@ -371,14 +400,8 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 
 // deploymentFor{{ .Resource.Kind }} returns a {{ .Resource.Kind }} Deployment object
 func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
-	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (*appsv1.Deployment, error) {
-	ls := labelsFor{{ .Resource.Kind }}()
-
-	// Get the Operand image
-	image, err := imageFor{{ .Resource.Kind }}()
-	if err != nil {
-    	return nil, err
-	}
+	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}, image string) (*appsv1.Deployment, error) {
+	ls := labelsFor{{ .Resource.Kind }}(image)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -448,17 +471,30 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsFor{{ .Resource.Kind }}() map[string]string {
-	var imageTag string
-	image, err := imageFor{{ .Resource.Kind }}()
-	if err == nil {
-		imageTag = strings.Split(image, ":")[1]
-	}
-	return map[string]string{
+func labelsFor{{ .Resource.Kind }}(image string) map[string]string {
+	labels := map[string]string{
 		"app.kubernetes.io/name": "{{ .ProjectName }}",
-		"app.kubernetes.io/version": imageTag,
 		"app.kubernetes.io/managed-by": "{{ .Resource.Kind }}Controller",
 	}
+
+	if imageTag, ok := versionLabelFor{{ .Resource.Kind }}(image); ok {
+		labels["app.kubernetes.io/version"] = imageTag
+	}
+
+	return labels
+}
+
+// versionLabelFor{{ .Resource.Kind }} returns a Kubernetes label-compatible tag from the Operand image.
+func versionLabelFor{{ .Resource.Kind }}(image string) (string, bool) {
+	named, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return "", false
+	}
+	tagged, ok := named.(reference.Tagged)
+	if !ok || len(validation.IsValidLabelValue(tagged.Tag())) != 0 {
+		return "", false
+	}
+	return tagged.Tag(), true
 }
 
 // imageFor{{ .Resource.Kind }} gets the Operand image which is managed by this controller
@@ -466,10 +502,13 @@ func labelsFor{{ .Resource.Kind }}() map[string]string {
 func imageFor{{ .Resource.Kind }}() (string, error) {
 	var imageEnvVar = "{{ upper .Resource.Kind }}_IMAGE"
     image, found := os.LookupEnv(imageEnvVar)
-    if !found {
-        return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
-    }
-    return image, nil
+	if !found {
+		return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
+	}
+	if _, err := reference.ParseNormalizedNamed(image); err != nil {
+		return "", fmt.Errorf("invalid image reference %q from %s: %w", image, imageEnvVar, err)
+	}
+	return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -41,16 +41,10 @@ var _ = Describe("Memcached controller", func() {
 
 		ctx := context.Background()
 
-		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      MemcachedName,
-				Namespace: MemcachedName,
-			},
-		}
+		namespace := &corev1.Namespace{}
 
 		typeNamespacedName := types.NamespacedName{
-			Name:      MemcachedName,
-			Namespace: MemcachedName,
+			Name: MemcachedName,
 		}
 		memcached := &examplecomv1alpha1.Memcached{}
 
@@ -59,12 +53,13 @@ var _ = Describe("Memcached controller", func() {
 
 		BeforeEach(func() {
 			By("Creating the Namespace to perform the tests")
+			namespace = &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{GenerateName: "memcached-"},
+			}
 			err := k8sClient.Create(ctx, namespace)
 			Expect(err).NotTo(HaveOccurred())
-
-			By("Setting the Image ENV VAR which stores the Operand image")
-			err = os.Setenv("MEMCACHED_IMAGE", "example.com/image:test")
-			Expect(err).NotTo(HaveOccurred())
+			typeNamespacedName.Namespace = namespace.Name
+			memcached = &examplecomv1alpha1.Memcached{}
 
 			By("creating the custom resource for the Kind Memcached")
 			err = k8sClient.Get(ctx, typeNamespacedName, memcached)
@@ -107,44 +102,91 @@ var _ = Describe("Memcached controller", func() {
 			_ = os.Unsetenv("MEMCACHED_IMAGE")
 		})
 
-		It("should successfully reconcile a custom resource for Memcached", func() {
-			By("Checking if the custom resource was successfully created")
-			Eventually(func(g Gomega) {
-				found := &examplecomv1alpha1.Memcached{}
-				Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
-			}).Should(Succeed())
+		DescribeTable("should successfully reconcile a custom resource for Memcached",
+			func(image, expectedVersion, expectedReason string) {
+				By("Setting the Image ENV VAR which stores the Operand image")
+				Expect(os.Setenv("MEMCACHED_IMAGE", image)).To(Succeed())
 
-			By("Reconciling the custom resource created")
+				By("Checking if the custom resource was successfully created")
+				Eventually(func(g Gomega) {
+					found := &examplecomv1alpha1.Memcached{}
+					Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+				}).Should(Succeed())
+
+				By("Reconciling the custom resource created")
+				memcachedReconciler := &MemcachedReconciler{
+					Client: k8sClient,
+					Scheme: k8sClient.Scheme(),
+				}
+
+				_, err := memcachedReconciler.Reconcile(ctx, reconcile.Request{
+					NamespacedName: typeNamespacedName,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking if Deployment was successfully created in the reconciliation")
+				Eventually(func(g Gomega) {
+					found := &appsv1.Deployment{}
+					g.Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+					if expectedVersion == "" {
+						g.Expect(found.Spec.Template.Labels).NotTo(HaveKey("app.kubernetes.io/version"))
+						return
+					}
+					g.Expect(found.Spec.Template.Labels).To(
+						HaveKeyWithValue("app.kubernetes.io/version", expectedVersion))
+				}).Should(Succeed())
+
+				By("Reconciling the custom resource again")
+				_, err = memcachedReconciler.Reconcile(ctx, reconcile.Request{
+					NamespacedName: typeNamespacedName,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking the latest Status Condition added to the Memcached instance")
+				Expect(k8sClient.Get(ctx, typeNamespacedName, memcached)).To(Succeed())
+				var conditions []metav1.Condition
+				Expect(memcached.Status.Conditions).To(ContainElement(
+					HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
+				Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
+				Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
+				Expect(conditions[0].Reason).To(Equal(expectedReason), "condition %s", typeAvailableMemcached)
+				Expect(conditions[0].ObservedGeneration).To(
+					Equal(memcached.Generation), "condition %s", typeAvailableMemcached)
+			},
+			Entry("with a tagged image", "example.com/image:test", "test", reasonReconciling),
+			Entry("with a tagless image", "busybox", "", reasonVersionLabelOmittedMemcached),
+			Entry("with a tag that is not a valid label value",
+				"busybox:_dev", "", reasonVersionLabelOmittedMemcached),
+		)
+
+		It("should report an invalid Operand image", func() {
+			By("Setting an invalid image in the Operand Image ENV VAR")
+			Expect(os.Setenv("MEMCACHED_IMAGE", "busybox:")).To(Succeed())
+
 			memcachedReconciler := &MemcachedReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}
-
 			_, err := memcachedReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 
-			By("Checking if Deployment was successfully created in the reconciliation")
-			Eventually(func(g Gomega) {
-				found := &appsv1.Deployment{}
-				g.Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
-			}).Should(Succeed())
+			By("Checking that the Deployment was not created")
+			found := &appsv1.Deployment{}
+			Expect(errors.IsNotFound(k8sClient.Get(ctx, typeNamespacedName, found))).To(BeTrue())
 
-			By("Reconciling the custom resource again")
-			_, err = memcachedReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Checking the latest Status Condition added to the Memcached instance")
+			By("Checking the invalid image Status Condition")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, memcached)).To(Succeed())
 			var conditions []metav1.Condition
 			Expect(memcached.Status.Conditions).To(ContainElement(
 				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
-			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
-			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailableMemcached)
+			Expect(conditions[0].Status).To(Equal(metav1.ConditionFalse), "condition %s", typeAvailableMemcached)
+			Expect(conditions[0].Reason).To(
+				Equal(reasonInvalidImageReferenceMemcached), "condition %s", typeAvailableMemcached)
+			Expect(conditions[0].ObservedGeneration).To(
+				Equal(memcached.Generation), "condition %s", typeAvailableMemcached)
 		})
 	})
 })
