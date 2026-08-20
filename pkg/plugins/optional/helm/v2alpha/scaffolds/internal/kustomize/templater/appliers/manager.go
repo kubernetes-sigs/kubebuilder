@@ -179,136 +179,177 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 	return strings.Join(result, "\n")
 }
 
+// managerEnvBlock renders the manager's environment. manager.env is the Kubernetes shape - an
+// ordered list of EnvVar, so valueFrom and anything else the API accepts is written there unchanged
+// - and manager.envOverrides addresses those entries by name, which is what --set can reach.
+//
+// The two are merged by name before rendering, so a name appears exactly once in the Deployment
+// however many times the sources mention it. That is what Server-Side Apply requires, and it is why
+// the list may be taken from kustomize output verbatim.
+//
+// Order is the list's own: a repeated name keeps its first position and its last value, and a name
+// introduced only by an override renders after the list, alphabetically. Kubernetes owns $(VAR)
+// expansion - references resolve against the whole container, including envFrom and anything
+// injected into the Pod - so the chart reproduces the order it was given and inspects nothing.
+func managerEnvBlock(indentStr string) []string {
+	childIndent := indentStr + "  "
+	childIndentWidth := strconv.Itoa(len(childIndent))
+
+	return []string{
+		// Kind, not truthiness: an empty list and an empty map are falsy but perfectly valid, while
+		// false/0/"" are shapes to reject rather than treat as unset.
+		indentStr + `{{- if not (or (kindIs "invalid" .Values.manager.env) (kindIs "slice" .Values.manager.env)) }}`,
+		indentStr + `{{- fail (printf "manager.env must be a list of environment variables, got a %s. ` +
+			`Set one variable with --set manager.envOverrides.NAME=value" (kindOf .Values.manager.env)) }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- if not (or (kindIs "invalid" .Values.manager.envOverrides) ` +
+			`(kindIs "map" .Values.manager.envOverrides)) }}`,
+		indentStr + `{{- fail (printf "manager.envOverrides must be a map keyed by variable name, got a %s" ` +
+			`(kindOf .Values.manager.envOverrides)) }}`,
+		indentStr + `{{- end }}`,
+		// $order carries the list's order; $byName carries the entry each name resolves to.
+		indentStr + `{{- $byName := dict }}`,
+		indentStr + `{{- $order := list }}`,
+		indentStr + `{{- range $entry := .Values.manager.env }}`,
+		indentStr + `{{- if not (kindIs "map" $entry) }}`,
+		indentStr + `{{- fail (printf "manager.env entries must be maps with a name, got a %s" (kindOf $entry)) }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- $name := get $entry "name" }}`,
+		indentStr + `{{- if not (and (kindIs "string" $name) $name) }}`,
+		indentStr + `{{- fail "every manager.env entry needs a non-empty name" }}`,
+		indentStr + `{{- end }}`,
+		// First position, last value: the position a reader sees, the value Kubernetes would use.
+		indentStr + `{{- if not (hasKey $byName $name) }}`,
+		indentStr + `{{- $order = append $order $name }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- $_ := set $byName $name $entry }}`,
+		indentStr + `{{- end }}`,
+		// Presence, not truthiness: --set manager.envOverrides.NAME=null leaves the key with a nil
+		// value, and that tombstone is the only way the chart learns the variable was removed.
+		indentStr + `{{- range $name, $value := .Values.manager.envOverrides }}`,
+		indentStr + `{{- if kindIs "invalid" $value }}`,
+		indentStr + `{{- $_ := unset $byName $name }}`,
+		indentStr + `{{- else if or (kindIs "map" $value) (kindIs "slice" $value) }}`,
+		indentStr + `{{- fail (printf "manager.envOverrides.%s must be a scalar or null, got a %s. ` +
+			`A valueFrom entry belongs on manager.env" $name (kindOf $value)) }}`,
+		indentStr + `{{- else }}`,
+		// An override replaces the whole entry, so a scalar over a valueFrom leaves no source behind.
+		indentStr + `{{- $_ := set $byName $name (dict "name" $name "value" (toString $value)) }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- $envVars := list }}`,
+		indentStr + `{{- range $name := $order }}`,
+		indentStr + `{{- if hasKey $byName $name }}`,
+		indentStr + `{{- $envVars = append $envVars (get $byName $name) }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- end }}`,
+		// Names the list never mentioned follow it, alphabetically, so additions are deterministic.
+		indentStr + `{{- range $name := (keys $byName | sortAlpha) }}`,
+		indentStr + `{{- if not (has $name $order) }}`,
+		indentStr + `{{- $envVars = append $envVars (get $byName $name) }}`,
+		indentStr + `{{- end }}`,
+		indentStr + `{{- end }}`,
+		// `with` owns the env: key, so a chart whose project declares no variables renders no env
+		// block at all while still accepting --set manager.envOverrides.NAME=value.
+		indentStr + `{{- with $envVars }}`,
+		indentStr + "env:",
+		childIndent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
+		indentStr + `{{- end }}`,
+	}
+}
+
+// envBlockMarker is a generated action, so detecting it cannot be confused with a source Deployment
+// that merely mentions .Values.manager.env in a value, an arg, or an annotation. It is matched as a
+// whole line at the container's child indent - see hasManagerEnvBlock - never as a substring.
+const envBlockMarker = `{{- $envVars := list }}`
+
+// envBlockMarkerEscaped is what EscapeExistingTemplateSyntax makes of the marker. Escaping runs
+// before the appliers, so a pass over already-generated output sees the escaped form; without this
+// the block would be generated a second time. Derived, so the two cannot drift apart.
+var envBlockMarkerEscaped = EscapeExistingTemplateSyntax(envBlockMarker)
+
+// blockValueEnd returns the first line past a block-form value - a nested sequence or mapping -
+// given the indent of the field that owns it. The block ends at the first non-blank line that is
+// outdented past the field, or sits at the field's own indent without being a sequence item.
+//
+// A blank line is never a boundary by itself: inside a block scalar it is content, and ending there
+// would truncate the value and leave its tail behind at an indent nothing owns. Blank lines are
+// therefore skipped, and the returned position tracks the last line that actually belonged to the
+// block - so blanks between two owned lines are included, while blanks trailing the block (the
+// empty element every newline-terminated document splits into, among them) are left alone.
+func blockValueEnd(lines []string, from, indentLen int) int {
+	end := from
+	for i := from; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "" {
+			continue
+		}
+		lineIndent := len(lines[i]) - len(strings.TrimLeft(lines[i], " \t"))
+		if lineIndent < indentLen {
+			break
+		}
+		if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
+			break
+		}
+		end = i + 1
+	}
+	return end
+}
+
+// templateEnvironmentVariables replaces the manager container's env declaration with the templated
+// block, in whichever form the serializer produced it: a block list, or an inline `env: []`/`env:
+// null`, either of which may be folded onto the sequence dash. When the container declares no env
+// at all - the default Go scaffold does not - the block is appended as the container's last field,
+// so --set manager.env.NAME=value works on every generated chart rather than only on projects that
+// already ship a variable.
 func templateEnvironmentVariables(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) {
+	if !isManagerContainerPresent(yamlContent) || hasManagerEnvBlock(yamlContent) {
 		return yamlContent
 	}
 
-	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
-
-	lines := strings.Split(yamlContent, "\n")
-	for i := range lines {
-		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
-			continue
-		}
-		if strings.TrimSpace(lines[i]) != "env:" {
-			continue
-		}
-
-		indentStr, indentLen := LeadingWhitespace(lines[i])
-		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent < indentLen {
-				break
-			}
-			if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
-				break
-			}
-		}
-
-		nextLine := ""
-		if i+1 < len(lines) {
-			nextLine = lines[i+1]
-		}
-		if strings.Contains(nextLine, ".Values.manager.env") || strings.Contains(nextLine, "envOverrides") {
-			return yamlContent
-		}
-
-		childIndent := indentStr + "  "
-		childIndentWidth := strconv.Itoa(len(childIndent))
-		// Env list + envOverrides (CLI --set). Secret refs go in env list.
-		hasEnv := `{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) ` +
-			`(not (empty .Values.manager.envOverrides))) }}`
-		block := make([]string, 0, 22)
-		block = append(block,
-			indentStr+"env:",
-			indentStr+hasEnv,
-			childIndent+`{{- if .Values.manager.env }}`,
-			childIndent+"{{- toYaml .Values.manager.env | nindent "+childIndentWidth+" }}",
-			childIndent+`{{- end }}`,
-			childIndent+`{{- if kindIs "map" .Values.manager.envOverrides }}`,
-			childIndent+`{{- range $k, $v := .Values.manager.envOverrides }}`,
-			childIndent+`- name: {{ $k }}`,
-			childIndent+`  value: {{ $v | quote }}`,
-			childIndent+`{{ end }}`,
-			childIndent+`{{- end }}`,
-			childIndent+`{{- else }}`,
-			childIndent+"[]",
-			childIndent+`{{- end }}`,
-		)
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, block...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
+	if field, ok := FindManagerField(yamlContent, "env"); ok {
+		return ReplaceManagerField(yamlContent, field, managerEnvBlock(field.Indent))
 	}
 
-	return yamlContent
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+	if rangeStart < 0 || rangeEnd < rangeStart {
+		return yamlContent
+	}
+
+	// Append as the container's last field. Anchoring on a named field is not safe: the serializer
+	// sorts keys, and a field whose value is a nested list would swallow the block.
+	lines := strings.Split(yamlContent, "\n")
+	dashIndent, _ := LeadingWhitespace(lines[rangeStart])
+	at := min(rangeEnd+1, len(lines))
+
+	newLines := append([]string{}, lines[:at]...)
+	newLines = append(newLines, managerEnvBlock(dashIndent+"  ")...)
+	newLines = append(newLines, lines[at:]...)
+	return strings.Join(newLines, "\n")
 }
 
 func templateResources(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "resources:") {
+	field, ok := FindManagerField(yamlContent, "resources")
+	if !ok {
 		return yamlContent
 	}
 
-	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
-
 	lines := strings.Split(yamlContent, "\n")
-	for i := range lines {
-		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
-			continue
-		}
-		if strings.TrimSpace(lines[i]) != "resources:" {
-			continue
-		}
-
-		indentStr, indentLen := LeadingWhitespace(lines[i])
-		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent < indentLen {
-				break
-			}
-			if lineIndent == indentLen && !strings.Contains(trimmed, ":") {
-				break
-			}
-			if lineIndent == indentLen && strings.HasSuffix(trimmed, ":") {
-				break
-			}
-		}
-
-		if i+1 < len(lines) && strings.Contains(lines[i+1], ".Values.manager.resources") {
-			return yamlContent
-		}
-
-		childIndent := indentStr + "  "
-		childIndentWidth := strconv.Itoa(len(childIndent))
-
-		block := []string{
-			indentStr + "resources:",
-			childIndent + "{{- if .Values.manager.resources }}",
-			childIndent + "{{- toYaml .Values.manager.resources | nindent " + childIndentWidth + " }}",
-			childIndent + "{{- else }}",
-			childIndent + "{}",
-			childIndent + "{{- end }}",
-		}
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, block...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
+	if field.Line+1 < len(lines) && strings.Contains(lines[field.Line+1], ".Values.manager.resources") {
+		return yamlContent
 	}
 
-	return yamlContent
+	childIndent := field.Indent + "  "
+	childIndentWidth := strconv.Itoa(len(childIndent))
+
+	return ReplaceManagerField(yamlContent, field, []string{
+		field.Indent + "resources:",
+		childIndent + "{{- if .Values.manager.resources }}",
+		childIndent + "{{- toYaml .Values.manager.resources | nindent " + childIndentWidth + " }}",
+		childIndent + "{{- else }}",
+		childIndent + "{}",
+		childIndent + "{{- end }}",
+	})
 }
 
 func templateSecurityContexts(yamlContent string) string {
@@ -361,6 +402,12 @@ func appendToListFromValues(yamlContent string, keyColon string, valuesPath stri
 			continue
 		}
 
+		// Deliberately not blockValueEnd. This end is an insertion point, not the end of a range
+		// being replaced: getting it wrong moves the block within a list whose order is not
+		// significant, where the replacing callers would strand content instead. It also stops at
+		// items sitting at the field's own indent, which is what puts the block ahead of the
+		// scaffolded entries; adopting the shared rule would reorder every generated chart for no
+		// behavioural gain.
 		end := i + 1
 		for ; end < len(lines); end++ {
 			tLine := strings.TrimSpace(lines[end])
@@ -401,20 +448,7 @@ func templateImagePullSecrets(yamlContent string) string {
 			}
 
 			indentStr, indentLen := LeadingWhitespace(lines[i])
-			end := i + 1
-			for ; end < len(lines); end++ {
-				trimmed := strings.TrimSpace(lines[end])
-				if trimmed == "" {
-					break
-				}
-				lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-				if lineIndent < indentLen {
-					break
-				}
-				if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
-					break
-				}
-			}
+			end := blockValueEnd(lines, i+1, indentLen)
 
 			childIndent := indentStr + "  "
 			childIndentWidth := strconv.Itoa(len(childIndent))
@@ -481,17 +515,7 @@ func templatePodSecurityContext(yamlContent string) string {
 		}
 
 		indentStr, indentLen := LeadingWhitespace(lines[i])
-		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent <= indentLen {
-				break
-			}
-		}
+		end := blockValueEnd(lines, i+1, indentLen)
 
 		if end >= len(lines) {
 			break
@@ -526,127 +550,94 @@ func templatePodSecurityContext(yamlContent string) string {
 	return yamlContent
 }
 
+// templateContainerSecurityContext templates the manager container's securityContext. The pod's own
+// securityContext is a different field: it lives outside the container item, so the locator cannot
+// reach it and no disambiguation is needed here.
 func templateContainerSecurityContext(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "securityContext:") {
+	field, ok := FindManagerField(yamlContent, "securityContext")
+	if !ok {
 		return yamlContent
 	}
-
-	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := range lines {
-		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
-			continue
-		}
-		if strings.TrimSpace(lines[i]) != "securityContext:" {
-			continue
-		}
-
-		indentStr, indentLen := LeadingWhitespace(lines[i])
-		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent <= indentLen {
-				break
-			}
-		}
-
-		if end >= len(lines) {
-			break
-		}
-
-		if strings.HasPrefix(strings.TrimSpace(lines[end]), "serviceAccountName:") {
-			continue
-		}
-
-		lookAheadEnd := min(end+5, len(lines))
-		joined := strings.Join(lines[i:lookAheadEnd], "\n")
-		if strings.Contains(joined, ".Values.manager.securityContext") {
-			return yamlContent
-		}
-
-		childIndent := indentStr + "  "
-		childIndentWidth := strconv.Itoa(len(childIndent))
-
-		block := []string{
-			indentStr + "securityContext:",
-			childIndent + "{{- if .Values.manager.securityContext }}",
-			childIndent + "{{- toYaml .Values.manager.securityContext | nindent " + childIndentWidth + " }}",
-			childIndent + "{{- else }}",
-			childIndent + "{}",
-			childIndent + "{{- end }}",
-		}
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, block...)
-		newLines = append(newLines, lines[end:]...)
-		return strings.Join(newLines, "\n")
+	lookAheadEnd := min(field.Line+6, len(lines))
+	if strings.Contains(strings.Join(lines[field.Line:lookAheadEnd], "\n"), ".Values.manager.securityContext") {
+		return yamlContent
 	}
 
-	return yamlContent
+	childIndent := field.Indent + "  "
+	childIndentWidth := strconv.Itoa(len(childIndent))
+
+	return ReplaceManagerField(yamlContent, field, []string{
+		field.Indent + "securityContext:",
+		childIndent + "{{- if .Values.manager.securityContext }}",
+		childIndent + "{{- toYaml .Values.manager.securityContext | nindent " + childIndentWidth + " }}",
+		childIndent + "{{- else }}",
+		childIndent + "{}",
+		childIndent + "{{- end }}",
+	})
 }
 
+// templateControllerManagerArgs rewrites the manager's argument list so the flags the chart exposes
+// as values become conditionals on those values, and everything else reaches the container through
+// .Values.manager.args.
+//
+// Line space throughout. Locating the field structurally and then replacing it with a regexp meant
+// carrying line indices and two sets of byte offsets at once, and asking whether a match began on
+// the field's own line by looking for a newline in the text before it.
+//
+// ReplaceManagerField is deliberately not used: it re-emits a folded field's dash on a line of its
+// own, which is right for a block that opens with a Helm action but would rewrite the `- args:` of
+// every generated chart for no gain. Keeping the declaration line verbatim leaves it folded.
 func templateControllerManagerArgs(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) {
+	field, ok := FindManagerField(yamlContent, "args")
+	// An inline `args: []` has no items to rewrite, and the values-driven block would be the whole
+	// list rather than an addition to it.
+	if !ok || field.Inline {
 		return yamlContent
 	}
 
-	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
-
-	argsPattern := regexp.MustCompile(`(?m)([ \t]+)args:\n((?:[ \t]+-.*\n)+)`)
-	loc := argsPattern.FindStringSubmatchIndex(yamlContent)
-	if loc == nil {
+	lines := strings.Split(yamlContent, "\n")
+	itemsEnd := blockValueEnd(lines, field.Line+1, len(field.Indent))
+	items := lines[field.Line+1 : itemsEnd]
+	if len(items) == 0 {
+		return yamlContent
+	}
+	if strings.Contains(strings.Join(lines[field.Line:itemsEnd], "\n"), ".Values.manager.args") {
 		return yamlContent
 	}
 
-	if rangeStart >= 0 {
-		matchLine := strings.Count(yamlContent[:loc[0]], "\n")
-		if matchLine < rangeStart || matchLine > rangeEnd {
-			return yamlContent
-		}
-	}
+	out := append([]string{}, lines[:field.Line+1]...)
+	out = append(out, managerArgsBlock(items)...)
+	out = append(out, lines[itemsEnd:]...)
+	return strings.Join(out, "\n")
+}
 
-	match := yamlContent[loc[0]:loc[1]]
-	if strings.Contains(match, ".Values.manager.args") {
-		return yamlContent
-	}
+// managerArgsBlock rewrites the manager's argument items. The three flags the chart owns as values
+// are re-emitted under their own conditionals, the certificate paths are carried through for the
+// cert-manager conditionals a later applier wraps them in, and every other argument is dropped in
+// favour of .Values.manager.args.
+func managerArgsBlock(items []string) []string {
+	// Sequence items of one list share an indent, so the first item's is the block's.
+	itemIndent, _ := LeadingWhitespace(items[0])
 
-	indent := yamlContent[loc[2]:loc[3]]
-	itemsBlock := yamlContent[loc[4]:loc[5]]
-
-	itemIndent := indent + "  "
-	lines := strings.Split(itemsBlock, "\n")
 	var (
 		metricsLine    string
-		metricsIndent  string
 		healthLine     string
 		webhookLine    string
 		preservedLines []string
 	)
 
-	for _, rawLine := range lines {
+	for _, rawLine := range items {
 		line := strings.TrimRight(rawLine, "\r")
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
 		}
 
-		if itemIndent == indent+"  " {
-			if idx := strings.Index(line, "-"); idx > 0 {
-				itemIndent = line[:idx]
-			}
-		}
-
 		switch {
 		case strings.Contains(trimmed, "--metrics-bind-address"):
 			metricsLine = line
-			if idx := strings.Index(line, "-"); idx > 0 {
-				metricsIndent = line[:idx]
-			}
 		case strings.Contains(trimmed, "--health-probe-bind-address"):
 			healthLine = line
 		case strings.Contains(trimmed, "--webhook-port"):
@@ -659,134 +650,68 @@ func templateControllerManagerArgs(yamlContent string) string {
 		}
 	}
 
-	var builder strings.Builder
-	builder.WriteString(indent)
-	builder.WriteString("args:\n")
-
+	block := make([]string, 0, len(items)+12)
 	if metricsLine != "" {
-		if metricsIndent == "" {
-			metricsIndent = itemIndent
-		}
-		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- if .Values.metrics.enabled }}\n")
-		builder.WriteString(metricsLine)
-		builder.WriteString("\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- if not .Values.metrics.secure }}\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("- --metrics-secure=false\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- end }}\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- else }}\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("# Bind to :0 to disable the controller-runtime managed metrics server\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("- --metrics-bind-address=0\n")
-		builder.WriteString(metricsIndent)
-		builder.WriteString("{{- end }}\n")
+		block = append(block,
+			itemIndent+"{{- if .Values.metrics.enabled }}",
+			metricsLine,
+			itemIndent+"{{- if not .Values.metrics.secure }}",
+			itemIndent+"- --metrics-secure=false",
+			itemIndent+"{{- end }}",
+			itemIndent+"{{- else }}",
+			itemIndent+"# Bind to :0 to disable the controller-runtime managed metrics server",
+			itemIndent+"- --metrics-bind-address=0",
+			itemIndent+"{{- end }}",
+		)
 	}
 	if healthLine != "" {
-		builder.WriteString(healthLine)
-		builder.WriteString("\n")
+		block = append(block, healthLine)
 	}
 	if webhookLine != "" {
-		builder.WriteString(itemIndent)
-		builder.WriteString("{{- if .Values.webhook.enabled }}\n")
-		builder.WriteString(webhookLine)
-		builder.WriteString("\n")
-		builder.WriteString(itemIndent)
-		builder.WriteString("{{- end }}\n")
+		block = append(block,
+			itemIndent+"{{- if .Values.webhook.enabled }}",
+			webhookLine,
+			itemIndent+"{{- end }}",
+		)
 	}
 
-	builder.WriteString(itemIndent)
-	builder.WriteString("{{- range .Values.manager.args }}\n")
-	builder.WriteString(itemIndent)
-	builder.WriteString("- {{ tpl . $ }}\n")
-	builder.WriteString(itemIndent)
-	builder.WriteString("{{- end }}\n")
+	block = append(block,
+		itemIndent+"{{- range .Values.manager.args }}",
+		itemIndent+"- {{ tpl . $ }}",
+		itemIndent+"{{- end }}",
+	)
 
-	for _, line := range preservedLines {
-		builder.WriteString(line)
-		builder.WriteString("\n")
-	}
-
-	newBlock := strings.TrimRight(builder.String(), "\n") + "\n"
-
-	return yamlContent[:loc[0]] + newBlock + yamlContent[loc[1]:]
+	return append(block, preservedLines...)
 }
 
 func templateImageReference(yamlContent string) string {
-	if !isManagerContainerPresent(yamlContent) {
+	field, ok := FindManagerField(yamlContent, "image")
+	if !ok {
+		return yamlContent
+	}
+	if strings.Contains(strings.Split(yamlContent, "\n")[field.Line], ".Values.manager.image.repository") {
 		return yamlContent
 	}
 
-	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
-
-	lines := strings.Split(yamlContent, "\n")
-	for i := 0; i < len(lines); i++ {
-		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
-			continue
-		}
-		trimmed := strings.TrimSpace(lines[i])
-		if !strings.HasPrefix(trimmed, "image:") {
-			continue
-		}
-
-		if strings.Contains(lines[i], ".Values.manager.image.repository") {
+	// The generated block renders imagePullPolicy from values, so the scaffolded field has to go
+	// first: dropping it afterwards would find the generated line instead. Removing it shifts the
+	// image field, hence the second lookup.
+	if pullPolicy, found := FindManagerField(yamlContent, "imagePullPolicy"); found {
+		yamlContent = ReplaceManagerField(yamlContent, pullPolicy, nil)
+		if field, ok = FindManagerField(yamlContent, "image"); !ok {
 			return yamlContent
 		}
-
-		indentStr, indentLen := LeadingWhitespace(lines[i])
-
-		end := i + 1
-		for ; end < len(lines); end++ {
-			nextTrimmed := strings.TrimSpace(lines[end])
-			if nextTrimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent <= indentLen {
-				break
-			}
-			if lineIndent == indentLen+2 && strings.HasSuffix(nextTrimmed, ":") {
-				if strings.Contains(nextTrimmed, "imagePullPolicy") {
-					continue
-				}
-				break
-			}
-		}
-
-		blockLines := lines[i+1 : end]
-		filtered := make([]string, 0, len(blockLines))
-		for _, line := range blockLines {
-			if strings.Contains(strings.TrimSpace(line), "imagePullPolicy") {
-				continue
-			}
-			filtered = append(filtered, line)
-		}
-		lines = append(lines[:i+1], append(filtered, lines[end:]...)...)
-		end = i + 1 + len(filtered)
-
-		imageLine := indentStr + "image: \"{{ .Values.manager.image.repository | default \"controller\" }}" +
-			"{{- if not (contains \"@\" (.Values.manager.image.repository | default \"controller\")) }}" +
-			":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\""
-		pullPolicyLineStart := indentStr + "{{- with .Values.manager.image.pullPolicy }}"
-		pullPolicyLine := indentStr + "imagePullPolicy: {{ . }}"
-		pullPolicyLineEnd := indentStr + "{{- end }}"
-
-		remainder := lines[end:]
-		if len(remainder) > 0 && strings.HasPrefix(strings.TrimSpace(remainder[0]), "imagePullPolicy:") {
-			remainder = remainder[1:]
-		}
-
-		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, imageLine, pullPolicyLineStart, pullPolicyLine, pullPolicyLineEnd)
-		newLines = append(newLines, remainder...)
-		return strings.Join(newLines, "\n")
 	}
 
-	return yamlContent
+	indentStr := field.Indent
+	return ReplaceManagerField(yamlContent, field, []string{
+		indentStr + "image: \"{{ .Values.manager.image.repository | default \"controller\" }}" +
+			"{{- if not (contains \"@\" (.Values.manager.image.repository | default \"controller\")) }}" +
+			":{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}\"",
+		indentStr + "{{- with .Values.manager.image.pullPolicy }}",
+		indentStr + "imagePullPolicy: {{ . }}",
+		indentStr + "{{- end }}",
+	})
 }
 
 func templateBasicWithStatement(

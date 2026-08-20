@@ -487,6 +487,179 @@ var _ = Describe("FindManagerContainerRange", func() {
 	})
 })
 
+// The pod spec's containers list is identified by its mapping path, never by the first line that
+// reads like "containers:". A Deployment carries that text as ordinary data in several places, and
+// each of these fixtures puts one of them ahead of the real list: taking the lookalike aims every
+// applier at whatever follows it, so the manager keeps its literal fields and something the user
+// wrote gets rewritten instead.
+var _ = Describe("FindManagerContainerRange with containers lookalikes", func() {
+	// expectManagerFound asserts the range is exactly the real container - the one whose image is
+	// controller:latest - rather than the lookalike, which always names its image stale:v0. The
+	// boundary is pinned by index as well as by content: a range that merely excludes the lookalike
+	// could still start in the wrong place.
+	expectManagerFound := func(yamlContent string, wantStart, wantEnd int) {
+		GinkgoHelper()
+		start, end := FindManagerContainerRange(yamlContent)
+		Expect(start).To(Equal(wantStart), "wrong range start in:\n%s", yamlContent)
+		Expect(end).To(Equal(wantEnd), "wrong range end in:\n%s", yamlContent)
+
+		lines := strings.Split(yamlContent, "\n")
+		rangeContent := strings.Join(lines[start:end+1], "\n")
+		Expect(rangeContent).To(ContainSubstring("image: controller:latest"))
+		Expect(rangeContent).NotTo(ContainSubstring("stale:v0"))
+	}
+
+	It("should ignore a containers list inside a Deployment metadata annotation", func() {
+		expectManagerFound(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      spec:
+        template:
+          spec:
+            containers:
+            - name: manager
+              image: stale:v0
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`, 16, 17)
+	})
+
+	It("should ignore a containers list inside a pod template annotation", func() {
+		expectManagerFound(`apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        example.com/previous-spec: |
+          spec:
+            template:
+              spec:
+                containers:
+                - name: manager
+                  image: stale:v0
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`, 16, 17)
+	})
+
+	It("should ignore a containers list inside a folded block scalar", func() {
+		expectManagerFound(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    example.com/notes: >-
+      containers:
+      - name: manager
+      image: stale:v0
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`, 12, 13)
+	})
+
+	It("should ignore a containers key that is not a child of the pod spec", func() {
+		expectManagerFound(`apiVersion: apps/v1
+kind: Deployment
+spec:
+  containers:
+  - name: manager
+    image: stale:v0
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest`, 9, 10)
+	})
+
+	It("should ignore a containers key nested below the pod spec", func() {
+		expectManagerFound(`apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      volumes:
+      - name: rendered
+        downwardAPI:
+          containers:
+          - name: manager
+            image: stale:v0
+      containers:
+      - name: manager
+        image: controller:latest`, 12, 13)
+	})
+
+	It("should template the manager's own fields when a lookalike precedes a sidecar", func() {
+		yamlContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      spec:
+        template:
+          spec:
+            containers:
+            - name: manager
+              image: stale:v0
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - args:
+        - --sidecar-only
+        image: sidecar:v1
+        name: sidecar
+        resources:
+          limits:
+            cpu: 100m
+        securityContext:
+          runAsNonRoot: false
+      - args:
+        - --leader-elect
+        env:
+        - name: MY_VAR
+          value: hello
+        image: controller:latest
+        name: manager
+        resources:
+          limits:
+            cpu: 500m
+        securityContext:
+          runAsNonRoot: true`
+
+		result := TemplateDeploymentFields("", "test-project", yamlContent)
+
+		By("the manager's fields are templated")
+		Expect(result).To(ContainSubstring(".Values.manager.env"))
+		Expect(result).To(ContainSubstring(".Values.manager.image.repository"))
+		Expect(result).To(ContainSubstring(".Values.manager.resources"))
+		Expect(result).To(ContainSubstring(".Values.manager.securityContext"))
+		Expect(result).To(ContainSubstring(".Values.manager.args"))
+		Expect(result).NotTo(ContainSubstring("cpu: 500m"))
+		Expect(result).NotTo(ContainSubstring("controller:latest"))
+
+		By("the sidecar and the annotation are left exactly as they were")
+		Expect(result).To(ContainSubstring("image: sidecar:v1"))
+		Expect(result).To(ContainSubstring("cpu: 100m"))
+		Expect(result).To(ContainSubstring("- --sidecar-only"))
+		Expect(result).To(ContainSubstring("runAsNonRoot: false"))
+		Expect(result).To(ContainSubstring("image: stale:v0"))
+	})
+})
+
 var _ = Describe("templateEnvironmentVariables", func() {
 	It("should not break FindManagerContainerRange for subsequent callers", func() {
 		yaml := `apiVersion: apps/v1
@@ -532,5 +705,65 @@ spec:
 		rangeContent := strings.Join(lines[start:end+1], "\n")
 		Expect(rangeContent).To(ContainSubstring("name: manager"))
 		Expect(rangeContent).To(ContainSubstring(".Values.manager.env"))
+	})
+
+	// env sorts before image and name, so a container with no args or command has it folded onto
+	// the sequence dash. Replacing it leaves a bare "-" as the item start, which the range scan has
+	// to accept: otherwise the manager stops being found and every later applier loses its scope.
+	It("should keep the manager findable when env was folded onto the sequence dash", func() {
+		yaml := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - env: []
+        image: controller:latest
+        name: manager
+        resources:
+          limits:
+            cpu: 500m`
+
+		result := templateEnvironmentVariables(yaml)
+
+		By("the replacement leaves a bare dash sequence entry")
+		Expect(result).To(MatchRegexp(`(?m)^\s+-$`))
+
+		start, end := FindManagerContainerRange(result)
+		Expect(start).To(BeNumerically(">=", 0),
+			"manager container lost after folded env replacement:\n%s", result)
+
+		lines := strings.Split(result, "\n")
+		rangeContent := strings.Join(lines[start:end+1], "\n")
+		Expect(rangeContent).To(ContainSubstring("name: manager"))
+		Expect(rangeContent).To(ContainSubstring(".Values.manager.env"))
+	})
+
+	// With the manager unfindable, every applier falls back to unscoped processing and templates
+	// whichever container it meets first - the sidecar.
+	It("should template only the manager's fields when a sidecar precedes an env-first manager", func() {
+		yaml := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - image: sidecar:v1
+        name: sidecar
+        resources:
+          limits:
+            cpu: 100m
+      - env: []
+        image: controller:latest
+        name: manager
+        resources:
+          limits:
+            cpu: 500m`
+
+		result := TemplateDeploymentFields("", "test-project", yaml)
+
+		Expect(result).To(ContainSubstring("cpu: 100m"), "the sidecar's resources must stay literal")
+		Expect(result).To(ContainSubstring(".Values.manager.resources"))
+		Expect(result).NotTo(ContainSubstring("cpu: 500m"), "the manager's resources must be templated")
 	})
 })

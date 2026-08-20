@@ -2951,10 +2951,20 @@ spec:
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 			Expect(result).To(ContainSubstring("{{- toYaml .Values.manager.resources | nindent"))
 
-			// Env list + envOverrides (--set). Secret refs go in env list.
-			Expect(result).To(ContainSubstring(".Values.manager.env"))
-			Expect(result).To(ContainSubstring("toYaml .Values.manager.env"))
-			Expect(result).To(ContainSubstring("envOverrides"))
+			// env is the Kubernetes list; envOverrides addresses it by name. The two are merged
+			// into $byName so a name reaches the Deployment exactly once.
+			Expect(result).To(ContainSubstring("{{- range $entry := .Values.manager.env }}"))
+			Expect(result).To(ContainSubstring("{{- range $name, $value := .Values.manager.envOverrides }}"))
+			Expect(result).To(ContainSubstring(
+				`{{- $_ := set $byName $name (dict "name" $name "value" (toString $value)) }}`))
+			// A nil override is the tombstone that removes a variable the list declares.
+			Expect(result).To(ContainSubstring(`{{- if kindIs "invalid" $value }}`))
+			Expect(result).To(ContainSubstring("{{- $_ := unset $byName $name }}"))
+			// The list's order first, then anything only an override introduced, alphabetically.
+			Expect(result).To(ContainSubstring("{{- range $name := $order }}"))
+			Expect(result).To(ContainSubstring("{{- range $name := (keys $byName | sortAlpha) }}"))
+			Expect(result).To(ContainSubstring("{{- with $envVars }}"))
+			Expect(result).To(ContainSubstring("{{- toYaml . | nindent"))
 
 			// Should template args
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
@@ -3250,6 +3260,109 @@ spec:
 				"Expected exactly one {{- with .Values.manager.tolerations }} after two passes")
 			Expect(strings.Count(second, "tolerations:")).To(Equal(1),
 				"Expected exactly one tolerations: line after two passes")
+		})
+
+		// The env block is skipped when the manager container is already templated, so a second pass
+		// cannot append a duplicate, which is all this spec claims.
+		//
+		// Byte equality is deliberately not asserted. EscapeExistingTemplateSyntax runs first and
+		// keeps only templates starting with a Helm keyword, so it rewrites this block's variable
+		// assignments and fail calls into literals - as it already does to {{ $k }} and {{ . }}
+		// elsewhere in the generated Deployment. Re-templating generated output is not a real path:
+		// chart templates are OverwriteFile, so they are always rebuilt from the kustomize output.
+		// The serializer decides how env reaches us: a block list, an inline `env: []`/`env: null`,
+		// and either folded onto the sequence dash when env sorts first among the container's keys.
+		// Every shape must end up templated exactly once - a second env: key is a duplicate mapping
+		// key that strict consumers reject.
+		DescribeTable("should template the manager env exactly once whatever shape the source declares",
+			func(containerLines string) {
+				deployment := &unstructured.Unstructured{}
+				deployment.SetAPIVersion("apps/v1")
+				deployment.SetKind("Deployment")
+				deployment.SetName("test-project-controller-manager")
+
+				result := templater.ApplyHelmSubstitutions(`apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+`+containerLines, deployment)
+
+				envKeys := 0
+				for line := range strings.SplitSeq(result, "\n") {
+					trimmed := strings.TrimSpace(line)
+					if trimmed == "env:" || strings.HasPrefix(trimmed, "env: ") ||
+						strings.HasPrefix(trimmed, "- env:") {
+						envKeys++
+					}
+				}
+				Expect(result).To(ContainSubstring("{{- $envVars := list }}"), "env was not templated")
+				Expect(envKeys).To(Equal(1), "expected exactly one env key, got %d:\n%s", envKeys, result)
+			},
+			Entry("block list", `      - args:
+        - --leader-elect
+        env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager`),
+			Entry("inline empty list", `      - args:
+        - --leader-elect
+        env: []
+        image: controller:latest
+        name: manager`),
+			Entry("inline null", `      - args:
+        - --leader-elect
+        env: null
+        image: controller:latest
+        name: manager`),
+			Entry("inline empty list folded onto the dash", `      - env: []
+        image: controller:latest
+        name: manager`),
+			Entry("block list folded onto the dash", `      - env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager`),
+			// A value may legitimately mention the values path; that is not a generated block.
+			Entry("a value mentioning .Values.manager.env", `      - args:
+        - --leader-elect
+        env:
+        - name: DOC
+          value: see .Values.manager.env for overrides
+        image: controller:latest
+        name: manager`),
+		)
+
+		It("should not duplicate the env block when applied twice", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+        env:
+        - name: BUSYBOX_IMAGE
+          value: busybox:1.36.1
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace`
+
+			first := templater.ApplyHelmSubstitutions(content, deployment)
+			second := templater.ApplyHelmSubstitutions(first, deployment)
+
+			Expect(strings.Count(second, "range $name, $value := .Values.manager.env")).To(Equal(1))
+			Expect(strings.Count(second, "env:")).To(Equal(1))
+			Expect(second).NotTo(ContainSubstring("value: busybox:1.36.1"), "raw env entries must not reappear")
 		})
 
 		It("should correctly template nodeSelector (map type) without regression", func() {

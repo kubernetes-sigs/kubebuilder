@@ -30,6 +30,12 @@ import (
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/strvals"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -351,6 +357,21 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	// writeValuesFile writes a values override into the test's temp dir and returns its path.
+	writeValuesFile := func(name, content string) string {
+		valuesFile := filepath.Join(tmpDir, name)
+		Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
+		return valuesFile
+	}
+
+	// renderChartAt renders an already-scaffolded chart. It owns the release name and namespace
+	// so specs that render without re-scaffolding do not restate them.
+	renderChartAt := func(chartPath string, setArgs ...string) (string, error) {
+		args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
+		out, err := exec.Command("helm", args...).CombinedOutput()
+		return string(out), err
+	}
+
 	// helmTemplate scaffolds kustomizeYAML into a chart and runs `helm template`, returning the
 	// combined output. Specs are skipped when helm is not on PATH.
 	helmTemplate := func(kustomizeYAML string, setArgs ...string) (string, error) {
@@ -364,10 +385,64 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		scaffolderBase.InjectFS(fs)
 		Expect(scaffolderBase.Scaffold()).To(Succeed())
 
-		chartPath := filepath.Join(tmpDir, outputDir, "chart")
-		args := append([]string{"template", "my-release", chartPath, "--namespace", "my-namespace"}, setArgs...)
-		out, err := exec.Command("helm", args...).CombinedOutput()
-		return string(out), err
+		return renderChartAt(filepath.Join(tmpDir, outputDir, "chart"), setArgs...)
+	}
+
+	// containerNamed decodes the rendered manager Deployment with the Kubernetes API types and
+	// returns the named container. UnmarshalStrict rejects fields the API does not know, so an
+	// invalid valueFrom source fails here rather than at apply time.
+	containerNamed := func(rendered, name string) *corev1.Container {
+		var deployment appsv1.Deployment
+		found := false
+		for doc := range strings.SplitSeq(rendered, "\n---") {
+			if !strings.Contains(doc, "\nkind: Deployment\n") {
+				continue
+			}
+			Expect(yaml.UnmarshalStrict([]byte(doc), &deployment)).To(Succeed(), "rendered Deployment: %s", doc)
+			found = true
+			break
+		}
+		Expect(found).To(BeTrue(), "no Deployment in rendered output: %s", rendered)
+
+		var container *corev1.Container
+		for i := range deployment.Spec.Template.Spec.Containers {
+			if deployment.Spec.Template.Spec.Containers[i].Name == name {
+				container = &deployment.Spec.Template.Spec.Containers[i]
+			}
+		}
+		Expect(container).NotTo(BeNil(), "no %s container in rendered Deployment", name)
+		return container
+	}
+
+	managerContainer := func(rendered string) *corev1.Container {
+		return containerNamed(rendered, "manager")
+	}
+
+	managerEnv := func(rendered string) []corev1.EnvVar {
+		container := managerContainer(rendered)
+
+		// Every render must satisfy the two API rules the map shape exists to guarantee:
+		// unique names, and names Kubernetes accepts.
+		seen := map[string]struct{}{}
+		for _, envVar := range container.Env {
+			_, duplicate := seen[envVar.Name]
+			Expect(duplicate).To(BeFalse(), "duplicate environment variable %q in %v", envVar.Name, container.Env)
+			seen[envVar.Name] = struct{}{}
+			// Relaxed, not strict: Kubernetes accepts any printable ASCII except "=", and the
+			// chart deliberately does not re-implement the name rule. The strict form would
+			// fail renders the API accepts.
+			Expect(validation.IsRelaxedEnvVarName(envVar.Name)).To(BeEmpty(),
+				"invalid env var name %q", envVar.Name)
+		}
+		return container.Env
+	}
+
+	envNames := func(env []corev1.EnvVar) []string {
+		names := make([]string, 0, len(env))
+		for _, envVar := range env {
+			names = append(names, envVar.Name)
+		}
+		return names
 	}
 
 	// serviceAccountDoc returns the ServiceAccount YAML document from a multi-document render.
@@ -940,12 +1015,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	// literal args mixed in the same list, and a templated arg that calls a Helm template
 	// function.
 	Context("Manager args templating (rendered)", func() {
-		writeValuesFile := func(content string) string {
-			valuesFile := filepath.Join(tmpDir, "manager-args-values.yaml")
-			Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
-			return valuesFile
-		}
-
 		// renderWithArgs scaffolds the chart and renders it with `helm template`. When
 		// valuesContent is empty, no `-f` override is passed, so the chart renders with its own
 		// generated values.yaml (i.e. the default manager.args extracted from the kustomize
@@ -954,7 +1023,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		renderWithArgs := func(valuesContent string) string {
 			var setArgs []string
 			if valuesContent != "" {
-				setArgs = []string{"-f", writeValuesFile(valuesContent)}
+				setArgs = []string{"-f", writeValuesFile("manager-args-values.yaml", valuesContent)}
 			}
 			out, err := helmTemplate(createKustomizeWithFullDeploymentConfig("test-project"), setArgs...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
@@ -1037,6 +1106,672 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				[]string{"{{ printf"},
 			),
 		)
+	})
+	// manager.env is the Kubernetes list, kept in the order the project authored, and
+	// manager.envOverrides addresses it by name so --set can reach one variable. The two are merged
+	// by name before rendering, so a name reaches the Deployment exactly once.
+	Context("Manager env source shapes (rendered)", func() {
+		renderShape := func(containerFields string, setArgs ...string) []corev1.EnvVar {
+			out, err := helmTemplate(createKustomizeWithEnvShape("test-project", containerFields), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return managerEnv(out)
+		}
+
+		DescribeTable("should honour an override whatever shape the source declared",
+			func(containerFields string) {
+				env := renderShape(containerFields, "--set", "manager.envOverrides.LOG_LEVEL=debug")
+
+				Expect(env).To(ContainElement(corev1.EnvVar{Name: "LOG_LEVEL", Value: "debug"}))
+			},
+			Entry("env absent", `      - args:
+        - --leader-elect
+        image: controller:latest
+        name: manager`),
+			Entry("env inline empty list", `      - args:
+        - --leader-elect
+        env: []
+        image: controller:latest
+        name: manager`),
+			Entry("env inline null", `      - args:
+        - --leader-elect
+        env: null
+        image: controller:latest
+        name: manager`),
+			Entry("env block list", `      - args:
+        - --leader-elect
+        env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager`),
+			Entry("env folded onto the dash, inline empty", `      - env: []
+        image: controller:latest
+        name: manager`),
+			Entry("env folded onto the dash, block list", `      - env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager`),
+			// A block scalar's blank line is content, so the shape table has to carry it too: the
+			// line-based replacement must find the end of a value that contains one.
+			Entry("env with a multiline value", `      - args:
+        - --leader-elect
+        env:
+        - name: MESSAGE
+          value: |-
+            first line
+
+            third line
+        image: controller:latest
+        name: manager`),
+			Entry("env folded onto the dash, multiline value", `      - env:
+        - name: MESSAGE
+          value: |-
+            first line
+
+            third line
+        image: controller:latest
+        name: manager`),
+		)
+
+		It("should render no env at all when the source had none and nothing is set", func() {
+			Expect(renderShape(`      - args:
+        - --leader-elect
+        image: controller:latest
+        name: manager`)).To(BeEmpty())
+		})
+
+		It("should keep a scaffolded variable alongside one added at install time", func() {
+			env := renderShape(`      - env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager`, "--set", "manager.envOverrides.LOG_LEVEL=debug")
+
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "FOO", Value: "bar"}))
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "LOG_LEVEL", Value: "debug"}))
+		})
+	})
+
+	// The default Go scaffold declares no env on the manager container, so the chart used to omit
+	// the keys entirely and silently ignore install-time additions (#5489).
+	Context("Manager env for a project with no env in its Deployment (rendered)", func() {
+		renderNoEnvSource := func(setArgs ...string) string {
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("should accept an override even though the Deployment declares none", func() {
+			Expect(managerEnv(renderNoEnvSource("--set", "manager.envOverrides.LOG_LEVEL=debug"))).
+				To(ContainElement(corev1.EnvVar{Name: "LOG_LEVEL", Value: "debug"}))
+		})
+
+		It("should render no env block at all when no variable is set", func() {
+			Expect(renderNoEnvSource()).NotTo(MatchRegexp(`(?m)^\s+env:`))
+		})
+
+		It("should scaffold both keys so they are discoverable", func() {
+			renderNoEnvSource()
+
+			values, err := os.ReadFile(filepath.Join(tmpDir, outputDir, "chart", "values.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(values)).To(ContainSubstring("  env: []"))
+			Expect(string(values)).To(ContainSubstring("  envOverrides: {}"))
+		})
+	})
+
+	// Overrides add, replace and remove by name. Every assertion decodes the rendered Deployment
+	// with the Kubernetes types, so a duplicate name or a malformed source fails here.
+	Context("Manager env overrides (rendered)", func() {
+		render := func(setArgs ...string) []corev1.EnvVar {
+			out, err := helmTemplate(createKustomizeWithManagerEnv("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return managerEnv(out)
+		}
+
+		watchNamespace := corev1.EnvVar{
+			Name: "WATCH_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+			},
+		}
+
+		It("should render the scaffolded list untouched when nothing is overridden", func() {
+			env := render()
+
+			Expect(envNames(env)).To(Equal([]string{"BUSYBOX_IMAGE", "MEMCACHED_IMAGE", "WATCH_NAMESPACE"}))
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "BUSYBOX_IMAGE", Value: "busybox:1.36.1"}))
+			Expect(env).To(ContainElement(watchNamespace))
+		})
+
+		It("should add a variable the chart never scaffolded", func() {
+			env := render("--set", "manager.envOverrides.LOG_LEVEL=debug")
+
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "LOG_LEVEL", Value: "debug"}))
+			Expect(env).To(ContainElement(watchNamespace), "the scaffolded entries survive")
+		})
+
+		It("should replace a scaffolded literal in place rather than append a second entry", func() {
+			env := render("--set", "manager.envOverrides.BUSYBOX_IMAGE=busybox:latest")
+
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "BUSYBOX_IMAGE", Value: "busybox:latest"}))
+			Expect(envNames(env)).To(Equal([]string{"BUSYBOX_IMAGE", "MEMCACHED_IMAGE", "WATCH_NAMESPACE"}))
+		})
+
+		// #5948: the old shape appended a second entry with the same name, which the API server
+		// rejects under Server-Side Apply.
+		It("should replace a scaffolded valueFrom entry with a literal value", func() {
+			env := render("--set", "manager.envOverrides.WATCH_NAMESPACE=pinned-ns")
+
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "WATCH_NAMESPACE", Value: "pinned-ns"}))
+			Expect(env).NotTo(ContainElement(watchNamespace), "the source was left behind")
+		})
+
+		It("should remove a scaffolded variable when the override is null", func() {
+			Expect(envNames(render("--set", "manager.envOverrides.BUSYBOX_IMAGE=null"))).
+				To(Equal([]string{"MEMCACHED_IMAGE", "WATCH_NAMESPACE"}))
+		})
+
+		It("should ignore a null override for a name the list never declared", func() {
+			Expect(envNames(render("--set", "manager.envOverrides.NEVER_SET=null"))).
+				To(Equal([]string{"BUSYBOX_IMAGE", "MEMCACHED_IMAGE", "WATCH_NAMESPACE"}))
+		})
+
+		DescribeTable("should coerce a non-string value to the string the API requires",
+			func(setArg, want string) {
+				Expect(render("--set", setArg)).To(ContainElement(corev1.EnvVar{Name: "PORT", Value: want}))
+			},
+			Entry("numeric", "manager.envOverrides.PORT=8080", "8080"),
+			Entry("boolean", "manager.envOverrides.PORT=true", "true"),
+			Entry("empty string", "manager.envOverrides.PORT=", ""),
+		)
+
+		It("should accept overrides from a values file as well as --set", func() {
+			valuesFile := writeValuesFile("env-overrides.yaml",
+				"manager:\n  envOverrides:\n    BUSYBOX_IMAGE: from-file\n    WATCH_NAMESPACE: null\n")
+
+			env := render("-f", valuesFile)
+
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "BUSYBOX_IMAGE", Value: "from-file"}))
+			Expect(envNames(env)).NotTo(ContainElement("WATCH_NAMESPACE"))
+		})
+
+		DescribeTable("should name what is wrong rather than leak a template error",
+			func(setArgs []string, wantMessage string) {
+				out, err := helmTemplate(createKustomizeWithManagerEnv("test-project"), setArgs...)
+
+				Expect(err).To(HaveOccurred(), "helm template should have failed, got: %s", out)
+				Expect(out).To(ContainSubstring(wantMessage))
+			},
+			Entry("env as a map", []string{"--set", "manager.env.FOO=bar"},
+				"manager.env must be a list of environment variables, got a map"),
+			Entry("env as a scalar", []string{"--set", "manager.env=nope"},
+				"manager.env must be a list of environment variables, got a string"),
+			Entry("envOverrides as a list", []string{"--set", "manager.envOverrides={a,b}"},
+				"manager.envOverrides must be a map keyed by variable name, got a slice"),
+			Entry("an override that is a map", []string{"--set", "manager.envOverrides.FOO.bar=baz"},
+				"manager.envOverrides.FOO must be a scalar or null"),
+		)
+	})
+
+	// Ordering is the list's own. Kubernetes expands $(VAR) against variables defined earlier, so
+	// the order the project authored has to survive - and the chart never inspects a value to
+	// decide it, because references can resolve to names only the kubelet sees.
+	Context("Manager env ordering (rendered)", func() {
+		render := func(setArgs ...string) []corev1.EnvVar {
+			out, err := helmTemplate(createKustomizeWithEnvOrder("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return managerEnv(out)
+		}
+
+		// Not the alphabetical order: sorting would move APP_URL ahead of the ZBASE it references.
+		sourceOrder := []string{"ZBASE", "APP_URL", "APP_NAME"}
+
+		It("should preserve the source list's order", func() {
+			Expect(envNames(render())).To(Equal(sourceOrder))
+		})
+
+		It("should render a forward $(VAR) alongside envFrom untouched", func() {
+			Expect(render()).To(ContainElement(corev1.EnvVar{Name: "APP_URL", Value: "https://$(ZBASE)"}))
+		})
+
+		It("should append a name only an override introduced, alphabetically after the list", func() {
+			Expect(envNames(render(
+				"--set", "manager.envOverrides.ZZ_LAST=z",
+				"--set", "manager.envOverrides.AA_FIRST=a",
+			))).To(Equal(append(append([]string{}, sourceOrder...), "AA_FIRST", "ZZ_LAST")))
+		})
+
+		It("should keep a replaced variable in its original position", func() {
+			Expect(envNames(render("--set", "manager.envOverrides.ZBASE=elsewhere.example"))).
+				To(Equal(sourceOrder))
+		})
+
+		It("should close the gap when a variable is removed", func() {
+			Expect(envNames(render("--set", "manager.envOverrides.APP_URL=null"))).
+				To(Equal([]string{"ZBASE", "APP_NAME"}))
+		})
+	})
+
+	// The list may come from kustomize output verbatim, so it can carry a name twice. Merging by
+	// name is what keeps that out of the rendered Deployment.
+	Context("Manager env duplicates (rendered)", func() {
+		It("should render a repeated name once, at its first position with its last value", func() {
+			out, err := helmTemplate(createKustomizeWithEnvShape("test-project", `      - env:
+        - name: DUPE
+          value: first
+        - name: MIDDLE
+          value: m
+        - name: DUPE
+          value: last
+        image: controller:latest
+        name: manager`))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			env := managerEnv(out)
+
+			Expect(envNames(env)).To(Equal([]string{"DUPE", "MIDDLE"}))
+			Expect(env).To(ContainElement(corev1.EnvVar{Name: "DUPE", Value: "last"}))
+		})
+	})
+
+	// A blank line inside a block scalar is content, not structure. The env replacement is
+	// line-based, so treating that line as the end of the block strands the rest of the value after
+	// the generated block at an indent nothing owns.
+	Context("Manager env with a multiline value (rendered)", func() {
+		const manager = `      - env:
+        - name: MESSAGE
+          value: |-
+            first line
+
+            third line
+        image: controller:latest
+        name: manager
+`
+
+		It("should carry the block scalar through the round trip unchanged", func() {
+			out, err := helmTemplate(createKustomizeWithEnvShape("test-project", manager))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			// |- chomps the trailing newline, so the interior blank survives and the trailing one
+			// does not.
+			Expect(managerEnv(out)).To(ContainElement(corev1.EnvVar{
+				Name: "MESSAGE", Value: "first line\n\nthird line",
+			}))
+			Expect(out).To(MatchRegexp(`image: "controller:`), "the manager image was lost")
+		})
+	})
+
+	// valueFrom lives on the list, in the Kubernetes shape, so every source the API defines works
+	// without the chart knowing anything about it. fileKeyRef is the newest and the easiest to drop.
+	Context("Manager env valueFrom sources (rendered)", func() {
+		It("should carry a fileKeyRef entry through untouched", func() {
+			out, err := helmTemplate(createKustomizeWithEnvShape("test-project", `      - env:
+        - name: FROM_FILE
+          valueFrom:
+            fileKeyRef:
+              volumeName: config
+              path: config.env
+              key: MY_KEY
+        image: controller:latest
+        name: manager`))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			env := managerEnv(out)
+
+			Expect(envNames(env)).To(Equal([]string{"FROM_FILE"}))
+			Expect(env[0].ValueFrom).NotTo(BeNil())
+			Expect(env[0].ValueFrom.FileKeyRef).NotTo(BeNil(), "the source was dropped or rewritten")
+			Expect(env[0].ValueFrom.FileKeyRef.Key).To(Equal("MY_KEY"))
+		})
+
+		It("should let an override replace a fileKeyRef with a literal", func() {
+			out, err := helmTemplate(createKustomizeWithEnvShape("test-project", `      - env:
+        - name: FROM_FILE
+          valueFrom:
+            fileKeyRef:
+              volumeName: config
+              path: config.env
+              key: MY_KEY
+        image: controller:latest
+        name: manager`), "--set", "manager.envOverrides.FROM_FILE=literal")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			Expect(managerEnv(out)).To(Equal([]corev1.EnvVar{{Name: "FROM_FILE", Value: "literal"}}))
+		})
+	})
+
+	// Every fix in this area has its own focused spec, which means each is only ever exercised in
+	// isolation. This fixture carries them at once: a whole pod spec written into an annotation
+	// ahead of the real one, a sidecar declared before the manager, arguments and a command spelled
+	// to look like fields, a nested document inside a block scalar, the generated marker and other
+	// Go-template syntax as literal text, a multiline value with an interior blank line, a valueFrom
+	// entry, a relaxed variable name, a literal .Values reference, and a duplicate name.
+	Context("Manager container with everything at once (rendered)", func() {
+		const compound = `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-project-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      spec:
+        template:
+          spec:
+            containers:
+            - name: manager
+              image: stale:v0
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --sidecar-only
+        image: sidecar:v1
+        name: sidecar
+        resources:
+          limits:
+            cpu: 100m
+      - args:
+        - --leader-elect
+        - env:production
+        command:
+        - |-
+          env:
+          - name: NESTED
+            value: nested
+          resources:
+            limits:
+              cpu: 9
+          {{- $envVars := list }}
+          {{ .Spec.replicas }}
+        env:
+        - name: ZBASE
+          value: example.com
+        - name: APP_URL
+          value: https://$(ZBASE)
+        - name: MESSAGE
+          value: |-
+            first line
+
+            third line
+        - name: not-a.valid.name!
+          value: relaxed
+        - name: DOC
+          value: see .Values.manager.env for overrides
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ZBASE
+          value: example.com
+        image: controller:latest
+        name: manager
+        resources:
+          limits:
+            cpu: 500m
+`
+
+		render := func(setArgs ...string) string {
+			out, err := helmTemplate(compound, setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		watchNamespaceFromField := corev1.EnvVar{
+			Name: "WATCH_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+			},
+		}
+
+		It("should template the manager and leave every lookalike and the sidecar alone", func() {
+			out := render()
+
+			By("rendering the whole list: source order, every value form, the repeat collapsed")
+			Expect(managerEnv(out)).To(Equal([]corev1.EnvVar{
+				{Name: "ZBASE", Value: "example.com"},
+				{Name: "APP_URL", Value: "https://$(ZBASE)"},
+				{Name: "MESSAGE", Value: "first line\n\nthird line"},
+				{Name: "not-a.valid.name!", Value: "relaxed"},
+				{Name: "DOC", Value: "see .Values.manager.env for overrides"},
+				watchNamespaceFromField,
+			}))
+
+			By("returning the arguments and the command byte for byte")
+			manager := managerContainer(out)
+			Expect(manager.Args).To(Equal([]string{"--leader-elect", "env:production"}))
+			Expect(manager.Command).To(Equal([]string{
+				"env:\n- name: NESTED\n  value: nested\nresources:\n  limits:\n    cpu: 9\n" +
+					"{{- $envVars := list }}\n{{ .Spec.replicas }}",
+			}))
+
+			By("returning the sidecar field for field")
+			sidecar := containerNamed(out, "sidecar")
+			Expect(sidecar.Image).To(Equal("sidecar:v1"))
+			Expect(sidecar.ImagePullPolicy).To(BeEmpty())
+			Expect(sidecar.Args).To(Equal([]string{"--sidecar-only"}))
+			Expect(sidecar.Command).To(BeEmpty())
+			Expect(sidecar.Env).To(BeEmpty())
+			Expect(sidecar.SecurityContext).To(BeNil())
+			Expect(sidecar.Resources.Limits.Cpu().String()).To(Equal("100m"))
+
+			By("leaving the pod spec written into the annotation as text")
+			Expect(out).To(ContainSubstring("image: stale:v0"))
+
+			By("templating the manager's own fields, and only the manager's")
+			Expect(manager.Image).To(HavePrefix("controller:"))
+			values, err := os.ReadFile(filepath.Join(tmpDir, outputDir, "chart", "values.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(values)).To(ContainSubstring("cpu: 500m"), "the manager's resources were not extracted")
+			Expect(string(values)).NotTo(ContainSubstring("cpu: 100m"), "the sidecar's resources were extracted")
+			Expect(string(values)).NotTo(ContainSubstring("cpu: 9"), "a nested lookalike was extracted")
+			Expect(string(values)).NotTo(ContainSubstring("stale:v0"), "the annotation's pod spec was extracted")
+		})
+
+		It("should still accept install-time overrides on that container", func() {
+			env := managerEnv(render(
+				"--set", "manager.envOverrides.ZBASE=elsewhere.example",
+				"--set", "manager.envOverrides.MESSAGE=null",
+				"--set", "manager.envOverrides.PORT=8080",
+				"--set", "manager.envOverrides.LOG_LEVEL=debug",
+			))
+
+			// Replaced in place, removed, and the two additions after the list in alphabetical order.
+			Expect(env).To(Equal([]corev1.EnvVar{
+				{Name: "ZBASE", Value: "elsewhere.example"},
+				{Name: "APP_URL", Value: "https://$(ZBASE)"},
+				{Name: "not-a.valid.name!", Value: "relaxed"},
+				{Name: "DOC", Value: "see .Values.manager.env for overrides"},
+				watchNamespaceFromField,
+				{Name: "LOG_LEVEL", Value: "debug"},
+				{Name: "PORT", Value: "8080"},
+			}))
+		})
+	})
+
+	// The marker that says "this container's env is already generated" is a Helm action. Matched as
+	// a substring of the document, any user data carrying that text claims the block already exists
+	// and the container keeps its literal env - so the generated chart ignores every override.
+	Context("Manager env when user data contains the generated marker", func() {
+		const marker = `{{- $envVars := list }}`
+		const withMarkerEverywhere = `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-project-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        example.com/note: '{{- $envVars := list }}'
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - command:
+        - |-
+          {{- $envVars := list }}
+        env:
+        - name: FOO
+          value: bar
+        image: controller:latest
+        name: manager
+`
+
+		// The marker is deliberately only in the annotation and the command here. It is equally
+		// dangerous in an env value or an argument, and the applier specs cover those - but both of
+		// those are extracted into values.yaml, which is itself rendered as a Go template, so any
+		// "{{" in them fails chart generation outright. That is a separate, pre-existing defect.
+		It("should template the env and keep the user's copies of the text", func() {
+			out, err := helmTemplate(withMarkerEverywhere, "--set", "manager.envOverrides.FOO=changed")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			By("honouring the override, which only happens if the env was templated at all")
+			Expect(managerEnv(out)).To(Equal([]corev1.EnvVar{{Name: "FOO", Value: "changed"}}))
+
+			By("returning the user's copies of the marker text verbatim")
+			Expect(managerContainer(out).Command).To(Equal([]string{marker}))
+			Expect(out).To(ContainSubstring("example.com/note:"))
+		})
+
+		It("should still render the scaffolded value when nothing overrides it", func() {
+			out, err := helmTemplate(withMarkerEverywhere)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			Expect(managerEnv(out)).To(Equal([]corev1.EnvVar{{Name: "FOO", Value: "bar"}}))
+			Expect(managerContainer(out).Command).To(Equal([]string{marker}))
+		})
+	})
+
+	// A value carrying Go template syntax is the one thing manager.env does not round-trip. It is
+	// extracted into values.yaml, and values.yaml is itself scaffolded from a Go template, so the
+	// user's braces are executed against the scaffolder rather than written out. This is a
+	// pre-existing defect of every field extracted into values.yaml, not of the env shape - pinned
+	// here so the documented limitation stays true and a fix cannot land unnoticed.
+	Context("Manager env value containing Go template syntax", func() {
+		It("should fail chart generation rather than render something else", func() {
+			Expect(setupKustomizeFile(manifestsFile, createKustomizeWithEnvShape("test-project",
+				`      - env:
+        - name: TPL
+          value: "{{ .Spec.replicas }}"
+        image: controller:latest
+        name: manager`))).To(Succeed())
+
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+
+			err := scaffolder.Scaffold()
+			Expect(err).To(HaveOccurred(), "chart generation unexpectedly succeeded")
+			Expect(err.Error()).To(ContainSubstring("failed to execute Helm chart templates"))
+		})
+	})
+
+	// Removal is a tombstone: the key stays, with a nil value, and the template reads its presence.
+	// helm upgrade --reuse-values coalesces this invocation's values over the previous release's,
+	// and coalescing deletes a key whose new value is nil when the old values held a value for it -
+	// so on that one path the tombstone never reaches the template. The chart cannot detect this:
+	// what arrives is a map with no such key, which is indistinguishable from never asking. These
+	// specs pin what actually happens so the documented limitation cannot drift away from it.
+	Context("Manager env removal under helm upgrade --reuse-values", func() {
+		// reuseValues reproduces action.Upgrade.reuseValues: this invocation's --set values are
+		// coalesced over the previous release's stored values, dst authoritative. Parsing the flags
+		// with helm's own strvals is what makes "=null" a nil here rather than by assertion.
+		reuseValues := func(previous map[string]any, setArgs ...string) string {
+			newVals := map[string]any{}
+			for _, arg := range setArgs {
+				Expect(strvals.ParseInto(arg, newVals)).To(Succeed())
+			}
+
+			merged, err := yaml.Marshal(chartutil.CoalesceTables(newVals, previous))
+			Expect(err).NotTo(HaveOccurred())
+			return writeValuesFile("reused-values.yaml", string(merged))
+		}
+
+		renderReusing := func(previous map[string]any, setArgs ...string) []corev1.EnvVar {
+			out, err := helmTemplate(createKustomizeWithManagerEnv("test-project"),
+				"-f", reuseValues(previous, setArgs...))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return managerEnv(out)
+		}
+
+		It("should remove the variable when the previous release set no such override", func() {
+			env := renderReusing(
+				map[string]any{"manager": map[string]any{"envOverrides": map[string]any{}}},
+				"manager.envOverrides.BUSYBOX_IMAGE=null",
+			)
+
+			Expect(envNames(env)).To(Equal([]string{"MEMCACHED_IMAGE", "WATCH_NAMESPACE"}))
+		})
+
+		// The limitation. Not a workaround, and not a bug the template can fix: drop the entry from
+		// manager.env, or put BUSYBOX_IMAGE: null in a values file passed with -f.
+		It("should cancel the previous override rather than remove the variable", func() {
+			env := renderReusing(
+				map[string]any{"manager": map[string]any{"envOverrides": map[string]any{
+					"BUSYBOX_IMAGE": "pinned:1.0",
+				}}},
+				"manager.envOverrides.BUSYBOX_IMAGE=null",
+			)
+
+			// The whole list, so a change to the fixture's own values cannot quietly turn this into
+			// a presence check: what it pins is the fall back to the manager.env value.
+			Expect(env).To(Equal([]corev1.EnvVar{
+				{Name: "BUSYBOX_IMAGE", Value: "busybox:1.36.1"},
+				{Name: "MEMCACHED_IMAGE", Value: "memcached:1.6.26-alpine3.19"},
+				{
+					Name: "WATCH_NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+					},
+				},
+			}))
+		})
+	})
+
+	// Regenerating over a chart whose values.yaml already holds a list is an ordinary run now:
+	// the shape never changed, so there is nothing to migrate and nothing to reject.
+	Context("Regeneration over existing values", func() {
+		It("should regenerate without complaint and keep rendering the chart", func() {
+			Expect(setupKustomizeFile(manifestsFile, createKustomizeWithManagerEnv("test-project"))).To(Succeed())
+
+			first := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			first.InjectFS(fs)
+			Expect(first.Scaffold()).To(Succeed())
+
+			again := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			again.InjectFS(fs)
+			Expect(again.Scaffold()).To(Succeed())
+
+			out, err := renderChartAt(filepath.Join(tmpDir, outputDir, "chart"),
+				"--set", "manager.envOverrides.LOG_LEVEL=debug")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			Expect(managerEnv(out)).To(ContainElement(corev1.EnvVar{Name: "LOG_LEVEL", Value: "debug"}))
+		})
 	})
 })
 
@@ -1557,6 +2292,122 @@ spec:
         secret:
           secretName: my-secret
       serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+// createKustomizeWithEnvShape builds a manager Deployment whose container fields are exactly
+// containerFields, so a spec can pick how the serializer spelled env: absent, inline empty, inline
+// null, a block list, or any of those folded onto the sequence dash when env sorts first.
+func createKustomizeWithEnvShape(projectName, containerFields string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+` + containerFields
+}
+
+// createKustomizeWithManagerEnv carries the two env shapes the manager.env map has to round-trip:
+// plain literals and a valueFrom entry (WATCH_NAMESPACE, the variable that broke in #5948).
+func createKustomizeWithManagerEnv(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: myrepo/controller:v1.2.3
+        args:
+        - --leader-elect
+        env:
+        - name: BUSYBOX_IMAGE
+          value: busybox:1.36.1
+        - name: MEMCACHED_IMAGE
+          value: memcached:1.6.26-alpine3.19
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+`
+}
+
+// createKustomizeWithEnvOrder declares its variables in an order the map cannot reproduce on its
+// own: APP_URL references $(ZBASE) and both are declared before the alphabetically earlier
+// APP_NAME. envFrom is there too, so a reference can resolve to a name the chart never sees -
+// which is why expansion is Kubernetes' business and not something the chart may validate.
+func createKustomizeWithEnvOrder(projectName string) string {
+	return `---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ` + projectName + `-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - name: manager
+        image: myrepo/controller:v1.2.3
+        envFrom:
+        - configMapRef:
+            name: manager-config
+        env:
+        - name: ZBASE
+          value: example.com
+        - name: APP_URL
+          value: https://$(ZBASE)
+        - name: APP_NAME
+          value: ` + projectName + `
 `
 }
 

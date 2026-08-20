@@ -34,6 +34,15 @@ manager:
     # Health probe server port
     port: 8081
 
+  ## Environment variables, in the order they render.
+  ##
+  env: []
+
+  ## Add, replace or remove a variable by name, without restating the list:
+  ## --set manager.envOverrides.LOG_LEVEL=debug (=null removes it).
+  ##
+  envOverrides: {}
+
   ## Image pull secrets
   ##
   # imagePullSecrets:

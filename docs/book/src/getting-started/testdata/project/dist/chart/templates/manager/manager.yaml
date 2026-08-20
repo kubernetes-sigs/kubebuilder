@@ -128,6 +128,51 @@ spec:
           {{- else }}
           []
           {{- end }}
+        {{- if not (or (kindIs "invalid" .Values.manager.env) (kindIs "slice" .Values.manager.env)) }}
+        {{- fail (printf "manager.env must be a list of environment variables, got a %s. Set one variable with --set manager.envOverrides.NAME=value" (kindOf .Values.manager.env)) }}
+        {{- end }}
+        {{- if not (or (kindIs "invalid" .Values.manager.envOverrides) (kindIs "map" .Values.manager.envOverrides)) }}
+        {{- fail (printf "manager.envOverrides must be a map keyed by variable name, got a %s" (kindOf .Values.manager.envOverrides)) }}
+        {{- end }}
+        {{- $byName := dict }}
+        {{- $order := list }}
+        {{- range $entry := .Values.manager.env }}
+        {{- if not (kindIs "map" $entry) }}
+        {{- fail (printf "manager.env entries must be maps with a name, got a %s" (kindOf $entry)) }}
+        {{- end }}
+        {{- $name := get $entry "name" }}
+        {{- if not (and (kindIs "string" $name) $name) }}
+        {{- fail "every manager.env entry needs a non-empty name" }}
+        {{- end }}
+        {{- if not (hasKey $byName $name) }}
+        {{- $order = append $order $name }}
+        {{- end }}
+        {{- $_ := set $byName $name $entry }}
+        {{- end }}
+        {{- range $name, $value := .Values.manager.envOverrides }}
+        {{- if kindIs "invalid" $value }}
+        {{- $_ := unset $byName $name }}
+        {{- else if or (kindIs "map" $value) (kindIs "slice" $value) }}
+        {{- fail (printf "manager.envOverrides.%s must be a scalar or null, got a %s. A valueFrom entry belongs on manager.env" $name (kindOf $value)) }}
+        {{- else }}
+        {{- $_ := set $byName $name (dict "name" $name "value" (toString $value)) }}
+        {{- end }}
+        {{- end }}
+        {{- $envVars := list }}
+        {{- range $name := $order }}
+        {{- if hasKey $byName $name }}
+        {{- $envVars = append $envVars (get $byName $name) }}
+        {{- end }}
+        {{- end }}
+        {{- range $name := (keys $byName | sortAlpha) }}
+        {{- if not (has $name $order) }}
+        {{- $envVars = append $envVars (get $byName $name) }}
+        {{- end }}
+        {{- end }}
+        {{- with $envVars }}
+        env:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       securityContext:
         {{- if .Values.manager.podSecurityContext }}
         {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
