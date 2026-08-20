@@ -987,6 +987,30 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 		})
 
+		It("should expose webhook admission settings through values", func() {
+			resource := &unstructured.Unstructured{}
+			resource.SetAPIVersion("admissionregistration.k8s.io/v1")
+			resource.SetKind("ValidatingWebhookConfiguration")
+			resource.SetName("test-project-validating-webhook-configuration")
+
+			content := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: test-project-validating-webhook-configuration
+webhooks:
+- name: validation.example.com
+  rules:
+  - apiGroups:
+    - example.com`
+
+			result := templater.ApplyHelmSubstitutions(content, resource)
+
+			Expect(result).To(ContainSubstring(".Values.webhook.namespaceSelector"))
+			Expect(result).To(ContainSubstring(".Values.webhook.objectSelector"))
+			Expect(result).To(ContainSubstring(".Values.webhook.matchConditions"))
+			Expect(result).To(ContainSubstring(".Values.webhook.timeoutSeconds"))
+		})
+
 		It("should add crd.enabled conditional and resource-policy annotation for CRDs", func() {
 			crdResource := &unstructured.Unstructured{}
 			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
