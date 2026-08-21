@@ -99,7 +99,10 @@ var (
 )
 
 // FindManagerContainerRange returns the 0-based inclusive line range [start, end]
-// of the manager container in yamlContent.
+// of the manager container in yamlContent. The manager container is the one named by
+// the kubectl.kubernetes.io/default-container annotation, falling back to "manager"
+// when the annotation is absent (see GetDefaultContainerName) — the same detection the
+// manager values extractor uses, so both passes scope to the same container.
 // Returns (-1, -1) when not found; callers use this to restrict substitutions to the manager only.
 func FindManagerContainerRange(yamlContent string) (int, int) {
 	name := GetDefaultContainerName(yamlContent)
@@ -145,6 +148,33 @@ func FindManagerContainerRange(yamlContent string) (int, int) {
 		return itemStart, len(lines) - 1
 	}
 	return -1, -1
+}
+
+// applyToManagerContainer runs transform on only the manager container's block within
+// yamlContent, leaving sidecar containers and the rest of the Deployment untouched.
+// The manager container is located via FindManagerContainerRange (the
+// kubectl.kubernetes.io/default-container annotation, falling back to "manager").
+// When it cannot be located, yamlContent is returned unchanged: templating is skipped
+// rather than applied document-wide, so brittle detection can never leak manager
+// substitutions into sidecar containers.
+func applyToManagerContainer(yamlContent string, transform func(string) string) string {
+	start, end := FindManagerContainerRange(yamlContent)
+	if start < 0 {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	before := lines[:start]
+	block := strings.Join(lines[start:end+1], "\n")
+	after := lines[end+1:]
+
+	transformed := strings.Split(transform(block), "\n")
+
+	result := make([]string, 0, len(before)+len(transformed)+len(after))
+	result = append(result, before...)
+	result = append(result, transformed...)
+	result = append(result, after...)
+	return strings.Join(result, "\n")
 }
 
 func findListField(lines []string, field string) (int, int) {
