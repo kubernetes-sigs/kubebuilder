@@ -200,6 +200,7 @@ Plugins implement interfaces from `pkg/plugin/`:
 - `CreateAPI` - API creation (`kubebuilder create api`)
 - `CreateWebhook` - webhook creation (`kubebuilder create webhook`)
 - `Edit` - post-init modifications (`kubebuilder edit`)
+- `Delete` - optional plugin removal (`kubebuilder delete --plugins=<key>`)
 - `Bundle` - groups multiple plugins
 
 **Plugin Bundles:**
@@ -249,7 +250,8 @@ Controllers implement `Reconcile(ctx, req) (ctrl.Result, error)`:
 - **Requeue on pending work** - Return `ctrl.Result{Requeue: true}`
 
 ### Testing Pattern
-E2E tests use `utils.TestContext` from `test/e2e/utils/test_context.go`:
+
+**Integration Tests** use `utils.TestContext` from `test/e2e/utils/test_context.go`:
 
 ```go
 ctx := utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
@@ -264,10 +266,22 @@ ctx.LoadImageToKindCluster()
 After `make install`:
 
 ```bash
+# Initialize project
 kubebuilder init --domain example.com --repo github.com/example/myproject
+
+# Create resources
 kubebuilder create api --group batch --version v1 --kind CronJob
 kubebuilder create webhook --group batch --version v1 --kind CronJob
-kubebuilder edit --plugins=helm/v2-alpha
+
+# Delete optional plugin features
+kubebuilder delete --plugins helm/v2-alpha
+kubebuilder delete --plugins grafana/v1-alpha
+kubebuilder delete --plugins autoupdate/v1-alpha
+
+# Edit project
+kubebuilder edit --plugins helm/v2-alpha
+
+# Alpha commands
 kubebuilder alpha generate    # Experimental: generate from PROJECT file
 kubebuilder alpha update      # Experimental: update to latest plugin versions
 ```

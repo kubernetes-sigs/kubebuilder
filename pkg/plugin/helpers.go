@@ -127,6 +127,24 @@ func validateName(name string) error {
 	return nil
 }
 
+// RemovePluginConfig removes the config entry for plugin p from cfg.
+// It tries the key derived from the project's plugin chain first, then falls back to the canonical key.
+// Treat return values as advisory — callers should log and continue on error.
+func RemovePluginConfig(cfg config.Config, p Plugin) error {
+	key := GetPluginKeyForConfig(cfg.GetPluginChain(), p)
+	if err := cfg.DeletePluginConfig(key); err != nil {
+		canonicalKey := KeyFor(p)
+		if key != canonicalKey {
+			if err2 := cfg.DeletePluginConfig(canonicalKey); err2 != nil {
+				return fmt.Errorf("remove plugin config: %w", err2)
+			}
+			return nil
+		}
+		return fmt.Errorf("remove plugin config: %w", err)
+	}
+	return nil
+}
+
 // SupportsVersion checks if a plugin supports a project version.
 func SupportsVersion(p Plugin, projectVersion config.Version) bool {
 	for _, version := range p.SupportedProjectVersions() {
