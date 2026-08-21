@@ -97,6 +97,7 @@ func (f *fakeStore) Config() config.Config { return f.cfg }
 const (
 	exampleDomain      = "example.com"
 	fooKind            = "Foo"
+	fooPlural          = "foos"
 	exampleKind        = "Example"
 	fixtureTest        = "test"
 	certManagerAPIPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -479,14 +480,25 @@ var _ = Describe("generate: get-args-helpers", func() {
 	// getGVKFlags
 	Context("getGVKFlags", func() {
 		It("returns correct flags", func() {
-			res := resource.Resource{Plural: "foos"}
+			res := resource.Resource{Plural: fooPlural}
 			res.Group = exampleDomain
 			res.Version = "v1"
 			res.Kind = fooKind
 			flags := getGVKFlags(res)
 			Expect(flags).To(ContainElements(
-				"--plural", "foos", "--group", exampleDomain, "--version", "v1", "--kind", fooKind,
+				"--plural", fooPlural, "--group", exampleDomain, "--version", "v1", "--kind", fooKind,
 			))
+			Expect(flags).NotTo(ContainElement("--domain"))
+		})
+
+		It("replays the domain so an ambiguous group, version and kind stays resolved", func() {
+			res := resource.Resource{Plural: fooPlural}
+			res.Group = exampleDomain
+			res.Domain = "cert-manager.io"
+			res.Version = "v1"
+			res.Kind = fooKind
+			flags := getGVKFlags(res)
+			Expect(flags).To(ContainElements("--domain", "cert-manager.io"))
 		})
 	})
 
@@ -584,9 +596,10 @@ var _ = Describe("generate: get-args-helpers", func() {
 			flags := getWebhookResourceFlags(res)
 			Expect(flags).To(ContainElements(
 				"--external-api-path", certManagerAPIPath,
-				"--external-api-domain", fixtureTest,
 				"--programmatic-validation", "--defaulting", "--conversion", "--spoke", "v2",
 			))
+			// The domain is replayed as --domain by getGVKFlags, not here.
+			Expect(flags).NotTo(ContainElement("--external-api-domain"))
 		})
 
 		It("returns correct flags for external resources with module version", func() {
@@ -602,8 +615,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			flags := getWebhookResourceFlags(res)
 			Expect(flags).To(ContainElement("--external-api-path"))
 			Expect(flags).To(ContainElement(certManagerAPIPath))
-			Expect(flags).To(ContainElement("--external-api-domain"))
-			Expect(flags).To(ContainElement("io"))
+			Expect(flags).NotTo(ContainElement("--external-api-domain"))
 			Expect(flags).To(ContainElement("--external-api-module"))
 			Expect(flags).To(ContainElement("github.com/cert-manager/cert-manager@v1.18.2"))
 			Expect(flags).To(ContainElement("--defaulting"))
@@ -622,8 +634,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			flags := getWebhookResourceFlags(res)
 			Expect(flags).To(ContainElement("--external-api-path"))
 			Expect(flags).To(ContainElement(certManagerAPIPath))
-			Expect(flags).To(ContainElement("--external-api-domain"))
-			Expect(flags).To(ContainElement("io"))
+			Expect(flags).NotTo(ContainElement("--external-api-domain"))
 			Expect(flags).NotTo(ContainElement("--external-api-module"))
 			Expect(flags).To(ContainElement("--defaulting"))
 		})
@@ -836,7 +847,7 @@ var _ = Describe("generate: kubebuilder", func() {
 		It("runs kubebuilder create successfully for resources", func() {
 			cfg := &fakeConfig{
 				resources: []resource.Resource{
-					{Plural: "foos", GVK: resource.GVK{Group: exampleDomain, Version: "v1", Kind: fooKind}},
+					{Plural: fooPlural, GVK: resource.GVK{Group: exampleDomain, Version: "v1", Kind: fooKind}},
 					{Plural: "bars", GVK: resource.GVK{Group: exampleDomain, Version: "v1", Kind: "Bar"}},
 				},
 			}

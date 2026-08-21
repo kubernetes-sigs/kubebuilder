@@ -332,7 +332,7 @@ kubebuilder create api --group apps --version v1 --kind Deployment --resource=fa
 Or for CRDs from other projects, i.e. `cert-manager`'s `Certificate` type:
 
 ```bash
-kubebuilder create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
+kubebuilder create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --domain=io --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
 
 Use `--resource=false` to skip creating the API definition and only scaffold the controller.

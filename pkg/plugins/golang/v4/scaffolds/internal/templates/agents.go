@@ -177,7 +177,7 @@ Watch resources from external APIs (cert-manager, Argo CD, Istio, etc.):
   --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io \
+  --domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ` + "```" + `
 
@@ -191,7 +191,7 @@ Watch resources from external APIs (cert-manager, Argo CD, Istio, etc.):
   --group cert-manager --version v1 --kind Issuer \
   --defaulting \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=io \
+  --domain=io \
   --external-api-module=github.com/cert-manager/cert-manager
 ` + "```" + `
 
