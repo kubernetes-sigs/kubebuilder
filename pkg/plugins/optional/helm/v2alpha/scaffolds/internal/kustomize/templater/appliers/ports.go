@@ -40,8 +40,11 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured) stri
 			strings.HasSuffix(resourceName, "-metrics-service"))) ||
 		(resourceKind == common.KindNetworkPolicy && strings.HasSuffix(resourceName, "allow-metrics-traffic"))
 
-	// For Deployments, detect webhook ports from content
+	// For Deployments, detect webhook ports from content on the manager Deployment only.
 	if resourceKind == common.KindDeployment {
+		if !IsManagerDeployment(resource) {
+			return yamlContent
+		}
 		if strings.Contains(yamlContent, "webhook-server") || strings.Contains(yamlContent, "name: webhook") {
 			isWebhook = true
 		}

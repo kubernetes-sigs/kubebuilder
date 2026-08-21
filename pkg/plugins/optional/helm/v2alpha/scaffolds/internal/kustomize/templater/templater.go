@@ -39,14 +39,16 @@ type TemplatedResource struct {
 // The templater preserves the structure of the original resources while making them
 // configurable through Helm values.
 type Templater struct {
-	detectedPrefix   string
-	chartName        string
-	managerNamespace string
-	roleNamespaces   map[string]string
+	detectedPrefix        string
+	chartName             string
+	managerNamespace      string
+	roleNamespaces        map[string]string
+	managerServiceAccount *unstructured.Unstructured
 }
 
 func NewTemplater(
-	detectedPrefix, chartName, managerNamespace string, roleNamespaces map[string]string,
+	detectedPrefix, chartName, managerNamespace string,
+	roleNamespaces map[string]string,
 ) *Templater {
 	return &Templater{
 		detectedPrefix:   detectedPrefix,
@@ -54,6 +56,11 @@ func NewTemplater(
 		managerNamespace: managerNamespace,
 		roleNamespaces:   roleNamespaces,
 	}
+}
+
+// SetManagerServiceAccount configures the manager ServiceAccount resolved during parsing.
+func (t *Templater) SetManagerServiceAccount(sa *unstructured.Unstructured) {
+	t.managerServiceAccount = sa
 }
 
 // GetManagerNamespace returns the manager namespace.
@@ -72,13 +79,16 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 	yamlContent = appliers.SubstituteCertManagerReferences(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.SubstituteResourceNamesWithPrefix(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent, resource)
-	yamlContent = appliers.SubstituteRBACValues(t.detectedPrefix, t.chartName, yamlContent)
+	yamlContent = appliers.SubstituteRBACValuesWithManagerServiceAccount(
+		t.detectedPrefix, t.chartName, yamlContent, t.managerServiceAccount)
 	if resource.GetKind() == common.KindServiceAccount {
-		yamlContent = appliers.TemplateServiceAccount(t.detectedPrefix, t.chartName, yamlContent)
+		yamlContent = appliers.TemplateServiceAccountForResource(
+			t.detectedPrefix, t.chartName, yamlContent, resource, t.managerServiceAccount)
 	}
 	if resource.GetKind() == common.KindDeployment && appliers.IsManagerDeployment(resource) {
 		yamlContent = appliers.AddCustomLabelsAndAnnotations(yamlContent)
-		yamlContent = appliers.TemplateDeploymentFields(t.detectedPrefix, t.chartName, yamlContent)
+		yamlContent = appliers.TemplateDeploymentFieldsWithManagerServiceAccount(
+			t.detectedPrefix, t.chartName, yamlContent, t.managerServiceAccount)
 		yamlContent = appliers.MakeContainerArgsConditional(yamlContent)
 		yamlContent = appliers.MakeWebhookVolumeMountsConditional(yamlContent)
 		yamlContent = appliers.MakeWebhookVolumesConditional(yamlContent)
@@ -86,8 +96,8 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 		yamlContent = appliers.MakeMetricsVolumesConditional(yamlContent)
 	}
 	if resource.GetKind() == common.KindService ||
-		resource.GetKind() == common.KindDeployment ||
-		resource.GetKind() == common.KindNetworkPolicy {
+		resource.GetKind() == common.KindNetworkPolicy ||
+		(resource.GetKind() == common.KindDeployment && appliers.IsManagerDeployment(resource)) {
 		yamlContent = appliers.TemplatePorts(yamlContent, resource)
 	}
 	if resource.GetKind() == common.KindServiceMonitor {
