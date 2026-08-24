@@ -17,7 +17,7 @@ require (
 	golang.org/x/text v0.41.0
 	golang.org/x/tools v0.48.0
 	helm.sh/helm/v3 v3.21.4
-	k8s.io/apimachinery v0.36.3
+	k8s.io/apimachinery v0.36.4
 	sigs.k8s.io/yaml v1.6.0
 )
 
