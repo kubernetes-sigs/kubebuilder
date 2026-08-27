@@ -141,6 +141,42 @@ var _ = Describe("HelmValues", func() {
 		})
 	})
 
+	Describe("Environment variables section", func() {
+		It("should omit env settings when the deployment has no environment variables", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).NotTo(ContainSubstring("  envOverrides: {}"))
+			Expect(result).NotTo(ContainSubstring("\n  env:\n"))
+		})
+
+		It("should emit extracted environment variables before envOverrides", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Values: extractor.ValuesConfig{
+						Manager: extractor.ManagerConfig{
+							Env: []any{
+								map[string]any{"name": "EXISTING_VAR", "value": "existing-value"},
+							},
+						},
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  env:\n"))
+			Expect(result).To(ContainSubstring("    - name: EXISTING_VAR"))
+			Expect(result).To(ContainSubstring("  envOverrides: {}"))
+			Expect(strings.Index(result, "  env:\n")).To(BeNumerically("<", strings.Index(result, "  envOverrides: {}")))
+		})
+	})
+
 	Describe("RoleNamespaces rendering", func() {
 		Context("when no roleNamespaces are detected", func() {
 			It("should not include roleNamespaces section when Extraction is nil", func() {
