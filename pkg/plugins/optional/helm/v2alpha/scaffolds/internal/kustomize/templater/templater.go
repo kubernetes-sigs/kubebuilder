@@ -91,6 +91,7 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 		yamlContent = appliers.TemplatePorts(yamlContent, resource, t.detectedPrefix)
 	}
 	if resource.GetKind() == common.KindServiceMonitor {
+		yamlContent = appliers.AddServiceMonitorLabelsAndAnnotations(yamlContent)
 		yamlContent = appliers.TemplateServiceMonitor(yamlContent)
 	}
 	yamlContent = appliers.CollapseBlankLineAfterIf(yamlContent)

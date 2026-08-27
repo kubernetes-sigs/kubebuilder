@@ -185,6 +185,52 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 	})
 })
 
+// A ServiceMonitor's metadata.labels always carries the standard Helm/chart labels added by
+// AddStandardHelmLabels before this applier runs.
+const smStandardLabelsOnly = `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "test-project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: controller-manager-metrics-monitor
+  namespace: system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "test-project.name" . }}
+      control-plane: controller-manager`
+
+var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
+	It("merges .Values.prometheus.labels into metadata.labels, omitting the standard keys", func() {
+		rendered := AddServiceMonitorLabelsAndAnnotations(smStandardLabelsOnly)
+
+		Expect(countMetadataHeader(rendered, "labels:")).To(Equal(1))
+		Expect(rendered).To(ContainSubstring(valuesPrometheusLabels))
+		Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/managed-by" ` +
+			`"app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}`))
+	})
+
+	It("injects a guarded .Values.prometheus.annotations block since none existed", func() {
+		rendered := AddServiceMonitorLabelsAndAnnotations(smStandardLabelsOnly)
+
+		Expect(countMetadataHeader(rendered, "annotations:")).To(Equal(1))
+		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
+	})
+
+	It("leaves the spec.selector.matchLabels block untouched", func() {
+		rendered := AddServiceMonitorLabelsAndAnnotations(smStandardLabelsOnly)
+
+		Expect(rendered).To(ContainSubstring(
+			"  selector:\n    matchLabels:\n      app.kubernetes.io/name: " +
+				`{{ include "test-project.name" . }}` + "\n      control-plane: controller-manager"))
+		Expect(strings.Count(rendered, valuesPrometheusLabels)).To(Equal(1))
+	})
+})
+
 // The Deployment metadata reaching AddCustomLabelsAndAnnotations depends on what config/kustomize
 // produced. The scaffold ships block-style labels on both the Deployment and pod template; edits or
 // commonAnnotations can add annotations at either scope in either order. These fixtures cover the
