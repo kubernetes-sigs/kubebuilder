@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/distribution/reference"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +50,10 @@ const (
 	typeAvailableBusybox = "Available"
 	// typeDegradedBusybox represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegradedBusybox = "Degraded"
+	// reasonInvalidImageReferenceBusybox reports an invalid Operand image.
+	reasonInvalidImageReferenceBusybox = "InvalidImageReference"
+	// reasonVersionLabelOmittedBusybox reports that no valid version label could be derived from the Operand image.
+	reasonVersionLabelOmittedBusybox = "VersionLabelOmitted"
 )
 
 // BusyboxReconciler reconciles a Busybox object
@@ -188,12 +193,31 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
+	// Get and validate the Operand image before creating or updating its Deployment.
+	image, err := imageForBusybox()
+	if err != nil {
+		imageErr := err
+		log.Error(imageErr, "Failed to get a valid Operand image")
+
+		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{
+			Type: typeAvailableBusybox, Status: metav1.ConditionFalse,
+			Reason: reasonInvalidImageReferenceBusybox, ObservedGeneration: busybox.Generation,
+			Message: imageErr.Error(),
+		})
+		if err := r.Status().Update(ctx, busybox); err != nil {
+			log.Error(err, "Failed to update Busybox status")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, imageErr
+	}
+
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep, err := r.deploymentForBusybox(busybox)
+		dep, err := r.deploymentForBusybox(busybox, image)
 		if err != nil {
 			log.Error(err, "Failed to define new Deployment resource for Busybox")
 
@@ -273,9 +297,14 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// The following implementation will update the status
-	meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
-		Status: metav1.ConditionTrue, Reason: reasonReconciling,
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, desiredReplicas)})
+	condition := metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionTrue,
+		Reason: reasonReconciling, ObservedGeneration: busybox.Generation,
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, desiredReplicas)}
+	if _, ok := versionLabelForBusybox(image); !ok {
+		condition.Reason = reasonVersionLabelOmittedBusybox
+		condition.Message = fmt.Sprintf("Deployment for custom resource (%s) created successfully without a version label because image %q has no Kubernetes label-compatible tag", busybox.Name, image)
+	}
+	meta.SetStatusCondition(&busybox.Status.Conditions, condition)
 
 	if err := r.Status().Update(ctx, busybox); err != nil {
 		log.Error(err, "Failed to update Busybox status")
@@ -307,14 +336,8 @@ func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alph
 
 // deploymentForBusybox returns a Busybox Deployment object
 func (r *BusyboxReconciler) deploymentForBusybox(
-	busybox *examplecomv1alpha1.Busybox) (*appsv1.Deployment, error) {
-	ls := labelsForBusybox()
-
-	// Get the Operand image
-	image, err := imageForBusybox()
-	if err != nil {
-		return nil, err
-	}
+	busybox *examplecomv1alpha1.Busybox, image string) (*appsv1.Deployment, error) {
+	ls := labelsForBusybox(image)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -399,17 +422,30 @@ func (r *BusyboxReconciler) deploymentForBusybox(
 
 // labelsForBusybox returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsForBusybox() map[string]string {
-	var imageTag string
-	image, err := imageForBusybox()
-	if err == nil {
-		imageTag = strings.Split(image, ":")[1]
-	}
-	return map[string]string{
+func labelsForBusybox(image string) map[string]string {
+	labels := map[string]string{
 		"app.kubernetes.io/name":       "project-v4-with-plugins",
-		"app.kubernetes.io/version":    imageTag,
 		"app.kubernetes.io/managed-by": "BusyboxController",
 	}
+
+	if imageTag, ok := versionLabelForBusybox(image); ok {
+		labels["app.kubernetes.io/version"] = imageTag
+	}
+
+	return labels
+}
+
+// versionLabelForBusybox returns a Kubernetes label-compatible tag from the Operand image.
+func versionLabelForBusybox(image string) (string, bool) {
+	named, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return "", false
+	}
+	tagged, ok := named.(reference.Tagged)
+	if !ok || len(validation.IsValidLabelValue(tagged.Tag())) != 0 {
+		return "", false
+	}
+	return tagged.Tag(), true
 }
 
 // imageForBusybox gets the Operand image which is managed by this controller
@@ -419,6 +455,9 @@ func imageForBusybox() (string, error) {
 	image, found := os.LookupEnv(imageEnvVar)
 	if !found {
 		return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
+	}
+	if _, err := reference.ParseNormalizedNamed(image); err != nil {
+		return "", fmt.Errorf("invalid image reference %q from %s: %w", image, imageEnvVar, err)
 	}
 	return image, nil
 }

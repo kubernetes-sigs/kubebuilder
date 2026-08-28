@@ -82,8 +82,17 @@ var _ = Describe("createAPISubcommand", func() {
 			Expect(err.Error()).To(ContainSubstring("you MUST inform the image"))
 		})
 
+		It("should reject an invalid image reference", func() {
+			subCmd.image = "INVALID IMAGE"
+
+			err := subCmd.PreScaffold(fs)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid --image value"))
+		})
+
 		It("should succeed when image is provided", func() {
-			subCmd.image = "memcached:1.6.15-alpine"
+			subCmd.image = "memcached"
 
 			tmpDir, err := os.MkdirTemp("", "deploy-image-test")
 			Expect(err).NotTo(HaveOccurred())

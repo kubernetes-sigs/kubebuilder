@@ -5,6 +5,7 @@ go 1.26.0
 retract v4.10.0 // invalid filename causes go get/install failure (#5211)
 
 require (
+	github.com/distribution/reference v0.6.0
 	github.com/gobuffalo/flect v1.0.3
 	github.com/h2non/gock v1.2.0
 	github.com/onsi/ginkgo/v2 v2.32.1

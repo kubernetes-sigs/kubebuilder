@@ -92,16 +92,10 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 		ctx := context.Background()
 
-		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      {{ .Resource.Kind }}Name,
-				Namespace: {{ .Resource.Kind }}Name,
-			},
-		}
+		namespace := &corev1.Namespace{}
 
 		typeNamespacedName := types.NamespacedName{
-			Name:      {{ .Resource.Kind }}Name,
-			Namespace: {{ .Resource.Kind }}Name,
+			Name: {{ .Resource.Kind }}Name,
 		}
 		{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
@@ -110,12 +104,13 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 		BeforeEach(func() {
 			By("Creating the Namespace to perform the tests")
+			namespace = &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{GenerateName: "{{ lower .Resource.Kind }}-"},
+			}
 			err := k8sClient.Create(ctx, namespace);
 			Expect(err).NotTo(HaveOccurred())
-
-			By("Setting the Image ENV VAR which stores the Operand image")
-			err= os.Setenv("{{ upper .Resource.Kind }}_IMAGE", "example.com/image:test")
-			Expect(err).NotTo(HaveOccurred())
+			typeNamespacedName.Namespace = namespace.Name
+			{{ lower .Resource.Kind }} = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
 			By("creating the custom resource for the Kind {{ .Resource.Kind }}")
 			err = k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})
@@ -160,7 +155,11 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			_ = os.Unsetenv("{{ upper .Resource.Kind }}_IMAGE")
 		})
 
-		It("should successfully reconcile a custom resource for {{ .Resource.Kind }}", func() {
+		DescribeTable("should successfully reconcile a custom resource for {{ .Resource.Kind }}",
+			func(image, expectedVersion, expectedReason string) {
+			By("Setting the Image ENV VAR which stores the Operand image")
+			Expect(os.Setenv("{{ upper .Resource.Kind }}_IMAGE", image)).To(Succeed())
+
 			By("Checking if the custom resource was successfully created")
 			Eventually(func(g Gomega) {
 				found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
@@ -182,6 +181,12 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			Eventually(func(g Gomega) {
 				found := &appsv1.Deployment{}
 				g.Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+				if expectedVersion == "" {
+					g.Expect(found.Spec.Template.Labels).NotTo(HaveKey("app.kubernetes.io/version"))
+					return
+				}
+				g.Expect(found.Spec.Template.Labels).To(
+					HaveKeyWithValue("app.kubernetes.io/version", expectedVersion))
 			}).Should(Succeed())
 
 			By("Reconciling the custom resource again")
@@ -197,7 +202,44 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})
 			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailable{{ .Resource.Kind }})
-			Expect(conditions[0].Reason).To(Equal(reasonReconciling), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Reason).To(Equal(expectedReason), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].ObservedGeneration).To(
+				Equal({{ lower .Resource.Kind }}.Generation), "condition %s", typeAvailable{{ .Resource.Kind }})
+		},
+			Entry("with a tagged image", "example.com/image:test", "test", reasonReconciling),
+			Entry("with a tagless image", "busybox", "", reasonVersionLabelOmitted{{ .Resource.Kind }}),
+			Entry("with a tag that is not a valid label value",
+				"busybox:_dev", "", reasonVersionLabelOmitted{{ .Resource.Kind }}),
+		)
+
+		It("should report an invalid Operand image", func() {
+			By("Setting an invalid image in the Operand Image ENV VAR")
+			Expect(os.Setenv("{{ upper .Resource.Kind }}_IMAGE", "busybox:")).To(Succeed())
+
+			{{ lower .Resource.Kind }}Reconciler := &{{ .Resource.Kind }}Reconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
+			_, err := {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).To(HaveOccurred())
+
+			By("Checking that the Deployment was not created")
+			found := &appsv1.Deployment{}
+			Expect(errors.IsNotFound(k8sClient.Get(ctx, typeNamespacedName, found))).To(BeTrue())
+
+			By("Checking the invalid image Status Condition")
+			Expect(k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})).To(Succeed())
+			var conditions []metav1.Condition
+			Expect({{ lower .Resource.Kind }}.Status.Conditions).To(ContainElement(
+				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
+			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Status).To(Equal(metav1.ConditionFalse), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Reason).To(
+				Equal(reasonInvalidImageReference{{ .Resource.Kind }}), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].ObservedGeneration).To(
+				Equal({{ lower .Resource.Kind }}.Generation), "condition %s", typeAvailable{{ .Resource.Kind }})
 		})
 	})
 })
