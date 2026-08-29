@@ -43,6 +43,8 @@ func bindResourceFlags(fs *pflag.FlagSet) *resourceOptions {
 	fs.StringVar(&options.Group, "group", "", "Resource Group (e.g., batch, apps)")
 	fs.StringVar(&options.Version, "version", "", "Resource Version (e.g., v1, v1beta1)")
 	fs.StringVar(&options.Kind, "kind", "", "Resource Kind (e.g., CronJob, Deployment)")
+	fs.StringVar(&options.Domain, "domain", "",
+		"Resource Domain (e.g., example.com). Overrides the project domain for this resource")
 
 	return options
 }

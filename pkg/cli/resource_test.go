@@ -159,4 +159,73 @@ var _ = Describe("resourceOptions", func() {
 			Expect(res.QualifiedGroup()).To(Equal(group + "." + externalDomain))
 		})
 	})
+
+	Context("domain flag precedence", func() {
+		const (
+			customDomain  = "custom.example.com"
+			projectDomain = "project-default.io"
+			trackedDomain = "tracked.io"
+			otherDomain   = "other.io"
+			otherGroup    = "other-group"
+			newGroup      = "new-group"
+		)
+
+		simulateCmdHelpers := func(opts *resourceOptions, cfg *cfgv3.Cfg) {
+			if opts.Domain == "" {
+				opts.Domain = cfg.GetDomain()
+				opts.Domain = opts.resolveDomain(cfg)
+			}
+		}
+
+		It("should use the --domain flag when provided, ignoring resolveDomain", func() {
+			opts := resourceOptions{GVK: resource.GVK{
+				Group: group, Domain: customDomain, Version: version, Kind: kind,
+			}}
+			cfg := &cfgv3.Cfg{Version: cfgv3.Version, Domain: projectDomain}
+			Expect(cfg.AddResource(resource.Resource{
+				GVK: resource.GVK{Group: group, Domain: trackedDomain, Version: version, Kind: kind},
+			})).To(Succeed())
+
+			simulateCmdHelpers(&opts, cfg)
+
+			Expect(opts.Domain).To(Equal(customDomain))
+			res := opts.newResource()
+			Expect(res.Domain).To(Equal(customDomain))
+			Expect(res.QualifiedGroup()).To(Equal(group + "." + customDomain))
+		})
+
+		It("should fallback to resolveDomain when --domain flag is empty", func() {
+			opts := resourceOptions{GVK: resource.GVK{
+				Group: group, Domain: "", Version: version, Kind: kind,
+			}}
+			cfg := &cfgv3.Cfg{Version: cfgv3.Version, Domain: projectDomain}
+			Expect(cfg.AddResource(resource.Resource{
+				GVK: resource.GVK{Group: group, Domain: trackedDomain, Version: version, Kind: kind},
+			})).To(Succeed())
+
+			simulateCmdHelpers(&opts, cfg)
+
+			Expect(opts.Domain).To(Equal(trackedDomain))
+			res := opts.newResource()
+			Expect(res.Domain).To(Equal(trackedDomain))
+			Expect(res.QualifiedGroup()).To(Equal(group + "." + trackedDomain))
+		})
+
+		It("should fallback to project domain when no matching resource exists", func() {
+			opts := resourceOptions{GVK: resource.GVK{
+				Group: newGroup, Domain: "", Version: version, Kind: kind,
+			}}
+			cfg := &cfgv3.Cfg{Version: cfgv3.Version, Domain: projectDomain}
+			Expect(cfg.AddResource(resource.Resource{
+				GVK: resource.GVK{Group: otherGroup, Domain: otherDomain, Version: version, Kind: kind},
+			})).To(Succeed())
+
+			simulateCmdHelpers(&opts, cfg)
+
+			Expect(opts.Domain).To(Equal(projectDomain))
+			res := opts.newResource()
+			Expect(res.Domain).To(Equal(projectDomain))
+			Expect(res.QualifiedGroup()).To(Equal(newGroup + "." + projectDomain))
+		})
+	})
 })
