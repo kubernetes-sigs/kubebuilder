@@ -50,6 +50,8 @@ const (
 	valMetricsCert       = "metrics-certs"
 	valWebhookSecretName = "webhook-server-cert"
 	valSidecar           = "sidecar"
+	valOther             = "other"
+	valOtherImage        = "other:v1"
 	valMountConfig       = "/etc/config"
 	valMountCerts        = "/certs"
 	valMountMetrics      = "/metrics"
@@ -182,17 +184,28 @@ var _ = Describe("DeploymentExtractor", func() {
 			Expect(c[keyName]).To(Equal("custom-manager"))
 		})
 
-		It("should fall back to the first container when no name matches", func() {
+		It("should return nil when no container name matches", func() {
 			d := makeDeployment(deploymentOpts{
 				containers: []map[string]any{
 					{keyName: valSidecar, keyImage: valSidecarImage},
-					{keyName: "other", keyImage: "other:v1"},
+					{keyName: valOther, keyImage: valOtherImage},
 				},
 			})
 			spec := podSpec(d)
 			c := findManagerContainer(d, spec)
-			Expect(c).NotTo(BeNil())
-			Expect(c[keyName]).To(Equal(valSidecar))
+			Expect(c).To(BeNil())
+		})
+
+		It("should error when extracting config from a deployment without a manager container", func() {
+			d := makeDeployment(deploymentOpts{
+				containers: []map[string]any{
+					{keyName: valSidecar, keyImage: valSidecarImage},
+					{keyName: valOther, keyImage: valOtherImage},
+				},
+			})
+			_, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(d)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no manager container found"))
 		})
 	})
 
@@ -349,15 +362,30 @@ var _ = Describe("DeploymentExtractor", func() {
 				Expect(result).To(Equal(winner))
 			})
 
-			It("should select by pod-template annotation when no label matches", func() {
-				other := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
-				winner := makeDeployment(deploymentOpts{
+			It("should not select by pod-template annotation alone", func() {
+				annotated := makeDeployment(deploymentOpts{
 					annotations: map[string]string{annotationDefaultContainer: valSidecar},
 					containers:  []map[string]any{{keyName: valSidecar}},
 				})
+				annotated.SetName("annotated-only")
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valManager}}})
 				winner.SetName("winner")
 
-				result := FindManagerDeployment([]*unstructured.Unstructured{other, winner})
+				result := FindManagerDeployment([]*unstructured.Unstructured{annotated, winner})
+				Expect(result).To(Equal(winner))
+			})
+
+			It("should prefer control-plane label over default-container annotation on another deployment", func() {
+				annotated := makeDeployment(deploymentOpts{
+					annotations: map[string]string{annotationDefaultContainer: valManager},
+					containers:  []map[string]any{{keyName: valSidecar}},
+				})
+				annotated.SetName("annotated-first")
+				winner := makeDeployment(deploymentOpts{containers: []map[string]any{{keyName: valSidecar}}})
+				winner.SetName("winner")
+				winner.SetLabels(map[string]string{"control-plane": "controller-manager"})
+
+				result := FindManagerDeployment([]*unstructured.Unstructured{annotated, winner})
 				Expect(result).To(Equal(winner))
 			})
 
@@ -607,16 +635,16 @@ var _ = Describe("DeploymentExtractor", func() {
 			Expect(config.Manager.Image.Repository).To(Equal("controller"))
 		})
 
-		It("should fall back to containers[0] when no name matches", func() {
+		It("should error when no container name matches manager or annotation", func() {
 			deployment := makeDeployment(deploymentOpts{
 				containers: []map[string]any{
-					{keyName: "custom-name", keyImage: valControllerImage},
+					{keyName: valOther, keyImage: valOtherImage},
 				},
 			})
 
-			config, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(config.Manager.Image.Repository).To(Equal("controller"))
+			_, err := (&DeploymentExtractor{}).ExtractDeploymentConfig(deployment)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no manager container found"))
 		})
 
 		It("should error when the deployment has no containers", func() {

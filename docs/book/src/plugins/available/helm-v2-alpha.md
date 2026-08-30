@@ -124,7 +124,7 @@ The plugin generates a chart layout that mirrors your `config/` directory:
 <aside class="note" role="note">
 <p class="note-title">What is templates/extras/</p>
 
-Standard resources (RBAC, manager, webhooks, CRDs) use dedicated template directories. Other resources go in `templates/extras/`.
+Standard resources (RBAC, manager, webhooks, CRDs) use dedicated template directories. Other resources go in `templates/extras/`, including extra Deployments and non-manager ServiceAccounts. The controller-manager ServiceAccount stays in `templates/rbac/` and remains configurable through `serviceAccount.*` values. The manager ServiceAccount is resolved from the manager Deployment's `spec.template.spec.serviceAccountName`, matched by name and namespace.
 
 Custom Resource instances from `config/samples/` are not included. The plugin ignores CR instances even if you add them to kustomize output.
 

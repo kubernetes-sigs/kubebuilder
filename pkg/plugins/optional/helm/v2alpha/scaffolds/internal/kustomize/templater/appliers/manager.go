@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
@@ -61,9 +63,23 @@ type customFieldsState struct {
 
 // TemplateDeploymentFields applies all Deployment-specific transformations.
 func TemplateDeploymentFields(detectedPrefix, chartName, yamlContent string) string {
+	return templateDeploymentFields(detectedPrefix, chartName, yamlContent, nil)
+}
+
+// TemplateDeploymentFieldsWithManagerServiceAccount applies Deployment transforms using the resolved manager SA.
+func TemplateDeploymentFieldsWithManagerServiceAccount(
+	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
+) string {
+	return templateDeploymentFields(detectedPrefix, chartName, yamlContent, managerServiceAccount)
+}
+
+func templateDeploymentFields(
+	detectedPrefix, chartName, yamlContent string, managerServiceAccount *unstructured.Unstructured,
+) string {
 	yamlContent = templateReplicas(yamlContent)
 	yamlContent = templateImageReference(yamlContent)
-	yamlContent = TemplateServiceAccountNameInDeployment(detectedPrefix, chartName, yamlContent)
+	yamlContent = templateServiceAccountNameInDeployment(
+		detectedPrefix, chartName, yamlContent, managerServiceAccount)
 	yamlContent = templateEnvironmentVariables(yamlContent)
 	yamlContent = templateImagePullSecrets(yamlContent)
 	yamlContent = templatePodSecurityContext(yamlContent)
@@ -316,7 +332,31 @@ func templateSecurityContexts(yamlContent string) string {
 }
 
 func templateVolumeMounts(yamlContent string) string {
-	return appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+	if !isManagerContainerPresent(yamlContent) || !strings.Contains(yamlContent, "volumeMounts:") {
+		return yamlContent
+	}
+
+	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+	if rangeStart < 0 {
+		return appendToListFromValues(yamlContent, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	before := strings.Join(lines[:rangeStart], "\n")
+	rangeSection := strings.Join(lines[rangeStart:rangeEnd+1], "\n")
+	after := strings.Join(lines[rangeEnd+1:], "\n")
+
+	rangeSection = appendToListFromValues(rangeSection, "volumeMounts:", ".Values.manager.extraVolumeMounts")
+
+	parts := make([]string, 0, 3)
+	if before != "" {
+		parts = append(parts, before)
+	}
+	parts = append(parts, rangeSection)
+	if after != "" {
+		parts = append(parts, after)
+	}
+	return strings.Join(parts, "\n")
 }
 
 func templateVolumes(yamlContent string) string {
@@ -596,30 +636,36 @@ func templateControllerManagerArgs(yamlContent string) string {
 	}
 
 	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+	if rangeStart < 0 {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	managerYAML := strings.Join(lines[rangeStart:rangeEnd+1], "\n")
 
 	argsPattern := regexp.MustCompile(`(?m)([ \t]+)args:\n((?:[ \t]+-.*\n)+)`)
-	loc := argsPattern.FindStringSubmatchIndex(yamlContent)
+	loc := argsPattern.FindStringSubmatchIndex(managerYAML)
 	if loc == nil {
 		return yamlContent
 	}
 
-	if rangeStart >= 0 {
-		matchLine := strings.Count(yamlContent[:loc[0]], "\n")
-		if matchLine < rangeStart || matchLine > rangeEnd {
-			return yamlContent
-		}
+	prefixLen := 0
+	if rangeStart > 0 {
+		prefixLen = len(strings.Join(lines[:rangeStart], "\n")) + 1
 	}
+	absStart := prefixLen + loc[0]
+	absEnd := prefixLen + loc[1]
 
-	match := yamlContent[loc[0]:loc[1]]
+	match := managerYAML[loc[0]:loc[1]]
 	if strings.Contains(match, ".Values.manager.args") {
 		return yamlContent
 	}
 
-	indent := yamlContent[loc[2]:loc[3]]
-	itemsBlock := yamlContent[loc[4]:loc[5]]
+	indent := managerYAML[loc[2]:loc[3]]
+	itemsBlock := managerYAML[loc[4]:loc[5]]
 
 	itemIndent := indent + "  "
-	lines := strings.Split(itemsBlock, "\n")
+	argLines := strings.Split(itemsBlock, "\n")
 	var (
 		metricsLine    string
 		metricsIndent  string
@@ -628,7 +674,7 @@ func templateControllerManagerArgs(yamlContent string) string {
 		preservedLines []string
 	)
 
-	for _, rawLine := range lines {
+	for _, rawLine := range argLines {
 		line := strings.TrimRight(rawLine, "\r")
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
@@ -713,7 +759,7 @@ func templateControllerManagerArgs(yamlContent string) string {
 
 	newBlock := strings.TrimRight(builder.String(), "\n") + "\n"
 
-	return yamlContent[:loc[0]] + newBlock + yamlContent[loc[1]:]
+	return yamlContent[:absStart] + newBlock + yamlContent[absEnd:]
 }
 
 func templateImageReference(yamlContent string) string {
