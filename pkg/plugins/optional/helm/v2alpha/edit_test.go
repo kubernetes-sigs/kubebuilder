@@ -75,6 +75,7 @@ version: "3"
 
 			Expect(meta.Description).To(ContainSubstring("Generate a Helm chart"))
 			Expect(meta.Description).To(ContainSubstring("kustomize"))
+			Expect(meta.Examples).To(ContainSubstring("prometheus/controller-manager-metrics-monitor.yaml"))
 			Expect(meta.Examples).NotTo(BeEmpty())
 		})
 	})

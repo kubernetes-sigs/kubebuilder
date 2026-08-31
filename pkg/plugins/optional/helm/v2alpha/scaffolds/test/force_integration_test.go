@@ -136,7 +136,7 @@ spec:
 	})
 
 	Context("when --force flag is NOT used", func() {
-		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, test-chart.yml, and allow-metrics-traffic.yaml", func() {
+		It("should NOT overwrite existing Chart.yaml, values.yaml, .helmignore, _helpers.tpl, NOTES.txt, test-chart.yml, allow-metrics-traffic.yaml, and controller-manager-metrics-monitor.yaml", func() {
 			// First generation with force=false
 			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
 			scaffolder.InjectFS(fs)
@@ -151,6 +151,9 @@ spec:
 			notesPath := filepath.Join(tmpDir, outputDir, "chart", "templates", "NOTES.txt")
 			networkPolicyPath := filepath.Join(
 				tmpDir, outputDir, "chart", "templates", "network-policy", "allow-metrics-traffic.yaml",
+			)
+			serviceMonitorPath := filepath.Join(
+				tmpDir, outputDir, "chart", "templates", "prometheus", "controller-manager-metrics-monitor.yaml",
 			)
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
@@ -167,6 +170,8 @@ spec:
 			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(networkPolicyPath)
 			Expect(err).NotTo(HaveOccurred())
+			_, err = os.ReadFile(serviceMonitorPath)
+			Expect(err).NotTo(HaveOccurred())
 			_, err = os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -177,6 +182,7 @@ spec:
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
 			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
 			customNetworkPolicyContent := "# CUSTOM NETWORK POLICY\n"
+			customServiceMonitorContent := "# CUSTOM SERVICE MONITOR\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -190,6 +196,8 @@ spec:
 			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(networkPolicyPath, []byte(customNetworkPolicyContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(serviceMonitorPath, []byte(customServiceMonitorContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
@@ -228,6 +236,13 @@ spec:
 				"allow-metrics-traffic.yaml should not be overwritten without --force",
 			)
 
+			serviceMonitorContent, err := os.ReadFile(serviceMonitorPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(serviceMonitorContent)).To(
+				Equal(customServiceMonitorContent),
+				"controller-manager-metrics-monitor.yaml should not be overwritten without --force",
+			)
+
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(testChartContent)).To(Equal(customTestChartContent), "test-chart.yml should not be overwritten without --force")
@@ -251,6 +266,9 @@ spec:
 			networkPolicyPath := filepath.Join(
 				tmpDir, outputDir, "chart", "templates", "network-policy", "allow-metrics-traffic.yaml",
 			)
+			serviceMonitorPath := filepath.Join(
+				tmpDir, outputDir, "chart", "templates", "prometheus", "controller-manager-metrics-monitor.yaml",
+			)
 			testChartPath := filepath.Join(tmpDir, ".github", "workflows", "test-chart.yml")
 
 			// Modify all protected files with custom content
@@ -260,6 +278,7 @@ spec:
 			customHelpersContent := "# CUSTOM HELPERS TPL\n{{/* custom helper */}}\n"
 			customNotesContent := "# CUSTOM NOTES\nMy custom install notes\n"
 			customNetworkPolicyContent := "# CUSTOM NETWORK POLICY\n"
+			customServiceMonitorContent := "# CUSTOM SERVICE MONITOR\n"
 			customTestChartContent := "# CUSTOM TEST CHART\nname: Custom Workflow\n"
 
 			err = os.WriteFile(chartPath, []byte(customChartContent), 0o644)
@@ -273,6 +292,8 @@ spec:
 			err = os.WriteFile(notesPath, []byte(customNotesContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(networkPolicyPath, []byte(customNetworkPolicyContent), 0o644)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.WriteFile(serviceMonitorPath, []byte(customServiceMonitorContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
 			err = os.WriteFile(testChartPath, []byte(customTestChartContent), 0o644)
 			Expect(err).NotTo(HaveOccurred())
@@ -317,6 +338,17 @@ spec:
 			Expect(string(networkPolicyContent)).To(
 				ContainSubstring("kind: NetworkPolicy"),
 				"allow-metrics-traffic.yaml should contain the generated policy",
+			)
+
+			serviceMonitorContent, err := os.ReadFile(serviceMonitorPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(serviceMonitorContent)).NotTo(
+				Equal(customServiceMonitorContent),
+				"controller-manager-metrics-monitor.yaml should be overwritten with --force",
+			)
+			Expect(string(serviceMonitorContent)).To(
+				ContainSubstring("kind: ServiceMonitor"),
+				"controller-manager-metrics-monitor.yaml should contain the generated monitor",
 			)
 
 			testChartContent, err := os.ReadFile(testChartPath)
