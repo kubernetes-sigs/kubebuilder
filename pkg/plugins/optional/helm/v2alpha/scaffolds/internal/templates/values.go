@@ -618,7 +618,16 @@ webhook:
   enabled: true
   # Webhook server port
 `)
-	fmt.Fprintf(buf, "  port: %d\n\n", port)
+	fmt.Fprintf(buf, `  port: %d
+  # Optional namespace and object selectors. Empty values do not filter requests.
+  namespaceSelector: {}
+  objectSelector: {}
+  # Optional CEL admission conditions.
+  matchConditions: []
+  # Maximum time in seconds the webhook has to respond.
+  timeoutSeconds: 10
+
+`, port)
 }
 
 // indentYAML indents YAML content by 4 spaces
