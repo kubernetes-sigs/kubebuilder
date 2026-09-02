@@ -372,7 +372,7 @@ For more information, see the Kubernetes documentation on [Owners and Dependents
 
 ### Granting permissions
 
-It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
+It's important to ensure that the Controller has the necessary permissions (i.e., to create, get, update, and list)
 the resources it manages.
 
 You configure the [RBAC permissions][k8s-rbac] via [RBAC markers][rbac-markers], which [controller-gen][controller-gen] uses to generate and update the

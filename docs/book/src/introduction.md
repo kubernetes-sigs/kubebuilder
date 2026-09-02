@@ -2,7 +2,7 @@
 >Impatient readers may head straight to [Quick Start](quick-start.md).
 
 >[!Important]
->Using previous version of Kubebuilder? Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io), [v2](https://book-v2.book.kubebuilder.io) or [v3](https://book-v3.book.kubebuilder.io).
+>Using a previous version of Kubebuilder? Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io), [v2](https://book-v2.book.kubebuilder.io) or [v3](https://book-v3.book.kubebuilder.io).
 
 ## Who is this for
 
@@ -41,7 +41,7 @@ Including:
 
 ## Why Kubernetes APIs
 
-Kubernetes APIs provide consistent and well defined endpoints for
+Kubernetes APIs provide consistent and well-defined endpoints for
 objects adhering to a consistent and rich structure.
 
 This approach has fostered a rich ecosystem of tools and libraries for working
@@ -65,7 +65,7 @@ running Kubernetes clusters.
 
 ## Contribution
 
-If you like to contribute to either this book or the code, please be so kind
+If you like to contribute to either this book or the code, please be kind enough
 to read our [Contribution](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md) guidelines first.
 
 ## Resources

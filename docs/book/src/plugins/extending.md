@@ -22,7 +22,7 @@ Kubebuilder and SDK are both broadly adopted projects which leverage the [contro
 
 Adopting these standards can bring significant benefits, such as joining forces on maintaining the common standards as the features provided by Kubebuilder and take advantage of the contributions made by the community. This allows you to focus on the specific needs and requirements for your plugin and use-case.
 
-And then, you will also be able to use custom plugins and options currently or in the future which might to be provided by these projects as any other which decides to persuade the same standards.
+And then, you will also be able to use custom plugins and options currently or in the future which might be provided by these projects, as well as any other that decides to pursue the same standards.
 
 </aside>
 
@@ -35,8 +35,8 @@ Extending Kubebuilder can be achieved in two main ways:
    its features and plugins][extending-cli]. This is useful when you need to add specific
    features to a tool that already benefits from Kubebuilder's scaffolding system.
    For example, [Operator SDK][sdk] leverages the [kustomize plugin][kustomize-plugin]
-   to provide language support for tools like Ansible or Helm. So that the project
-   can be focused to keep maintained only what is specific language based.
+   to provide language support for tools like Ansible or Helm. This allows the project
+   to focus strictly on maintaining what is language-specific.
 
 2. **Creating External Plugins**:
    You can build standalone, independent plugins as binaries. These plugins can be written in any
