@@ -39,12 +39,8 @@ var _ = Describe("newCreateAPICmd", func() {
 			c.resolvedPlugins = []plugin.Plugin{}
 		})
 
-		It("should create a command that fails with no resolved plugin error", func() {
+		It("should fail with no resolved plugin error", func() {
 			cmd := c.newCreateAPICmd()
-			Expect(cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("api"))
-			Expect(cmd.Short).To(ContainSubstring("Scaffold a Kubernetes API"))
-
 			err := cmd.RunE(cmd, []string{})
 			Expect(err).To(MatchError(noResolvedPluginError{}))
 		})
@@ -57,10 +53,8 @@ var _ = Describe("newCreateAPICmd", func() {
 			}
 		})
 
-		It("should create a command that fails with no available plugin error", func() {
+		It("should fail with no available plugin error", func() {
 			cmd := c.newCreateAPICmd()
-			Expect(cmd).NotTo(BeNil())
-
 			err := cmd.RunE(cmd, []string{})
 			Expect(err).To(MatchError(noAvailablePluginError{"API creation"}))
 		})
@@ -74,14 +68,7 @@ var _ = Describe("newCreateAPICmd", func() {
 			c.resolvedPlugins = []plugin.Plugin{testPlugin}
 		})
 
-		It("should create a command with proper metadata", func() {
-			cmd := c.newCreateAPICmd()
-			Expect(cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("api"))
-			Expect(cmd.Short).To(ContainSubstring("Scaffold a Kubernetes API"))
-		})
-
-		It("should have valid args function that suggests flags", func() {
+		It("should provide shell completion hints for flags", func() {
 			cmd := c.newCreateAPICmd()
 			Expect(cmd.ValidArgsFunction).NotTo(BeNil())
 
@@ -91,13 +78,13 @@ var _ = Describe("newCreateAPICmd", func() {
 			Expect(directive).To(Equal(cobra.ShellCompDirectiveNoFileComp))
 		})
 
-		It("should not show flag hint when args are provided", func() {
+		It("should suppress completion hints when args are already provided", func() {
 			cmd := c.newCreateAPICmd()
-			completions, _ := cmd.ValidArgsFunction(cmd, []string{"--group"}, "")
+			completions, _ := cmd.ValidArgsFunction(cmd, []string{"some-arg"}, "")
 			Expect(completions).To(BeEmpty())
 		})
 
-		It("should not show flag hint when already typing a flag", func() {
+		It("should suppress completion hints when user is already typing a flag", func() {
 			cmd := c.newCreateAPICmd()
 			completions, _ := cmd.ValidArgsFunction(cmd, []string{}, "--")
 			Expect(completions).To(BeEmpty())

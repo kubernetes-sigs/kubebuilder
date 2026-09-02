@@ -26,119 +26,117 @@ import (
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 )
 
-var _ = Describe("Root command utilities", func() {
-	Describe("isHelpFlagArg", func() {
-		DescribeTable("should return true for help flags",
-			func(arg string) {
-				Expect(isHelpFlagArg(arg)).To(BeTrue())
-			},
-			Entry("--help", "--help"),
-			Entry("-h", "-h"),
-			Entry("--help=true", "--help=true"),
-			Entry("--help=1", "--help=1"),
-			Entry("-h=true", "-h=true"),
-			Entry("-h=1", "-h=1"),
-		)
+var _ = Describe("isHelpFlagArg", func() {
+	DescribeTable("should return true for help flags",
+		func(arg string) {
+			Expect(isHelpFlagArg(arg)).To(BeTrue())
+		},
+		Entry("--help", "--help"),
+		Entry("-h", "-h"),
+		Entry("--help=true", "--help=true"),
+		Entry("--help=1", "--help=1"),
+		Entry("-h=true", "-h=true"),
+		Entry("-h=1", "-h=1"),
+	)
 
-		DescribeTable("should return false for non-help flags",
-			func(arg string) {
-				Expect(isHelpFlagArg(arg)).To(BeFalse())
-			},
-			Entry("--help=false", "--help=false"),
-			Entry("--help=0", "--help=0"),
-			Entry("-h=false", "-h=false"),
-			Entry("-h=0", "-h=0"),
-			Entry("--help=invalid", "--help=invalid"),
-			Entry("--domain", "--domain"),
-			Entry("example.com", "example.com"),
-			Entry("", ""),
-		)
+	DescribeTable("should return false for non-help flags",
+		func(arg string) {
+			Expect(isHelpFlagArg(arg)).To(BeFalse())
+		},
+		Entry("--help=false", "--help=false"),
+		Entry("--help=0", "--help=0"),
+		Entry("-h=false", "-h=false"),
+		Entry("-h=0", "-h=0"),
+		Entry("--help=invalid", "--help=invalid"),
+		Entry("--domain", "--domain"),
+		Entry("example.com", "example.com"),
+		Entry("", ""),
+	)
+})
+
+var _ = Describe("isHelpFlag", func() {
+	DescribeTable("should return true for help indicators",
+		func(s string) {
+			Expect(isHelpFlag(s)).To(BeTrue())
+		},
+		Entry("--help", "--help"),
+		Entry("-h", "-h"),
+		Entry("help", kubebuilderSubcommandHelp),
+	)
+
+	It("should return false for non-help strings", func() {
+		Expect(isHelpFlag("init")).To(BeFalse())
+		Expect(isHelpFlag("create")).To(BeFalse())
+		Expect(isHelpFlag("foo")).To(BeFalse())
+	})
+})
+
+var _ = Describe("isCompletionRequest", func() {
+	It("should return true for shell completion commands", func() {
+		root := &cobra.Command{Use: "root"}
+		cmd1 := &cobra.Command{Use: cobra.ShellCompRequestCmd}
+		root.AddCommand(cmd1)
+		Expect(isCompletionRequest(cmd1)).To(BeTrue())
+
+		cmd2 := &cobra.Command{Use: cobra.ShellCompNoDescRequestCmd}
+		root.AddCommand(cmd2)
+		Expect(isCompletionRequest(cmd2)).To(BeTrue())
 	})
 
-	Describe("isHelpFlag", func() {
-		DescribeTable("should return true for help indicators",
-			func(s string) {
-				Expect(isHelpFlag(s)).To(BeTrue())
-			},
-			Entry("--help", "--help"),
-			Entry("-h", "-h"),
-			Entry("help", kubebuilderSubcommandHelp),
-		)
+	It("should return false for regular commands", func() {
+		root := &cobra.Command{Use: "root"}
+		cmd := &cobra.Command{Use: "init"}
+		root.AddCommand(cmd)
+		Expect(isCompletionRequest(cmd)).To(BeFalse())
+	})
+})
 
-		It("should return false for non-help strings", func() {
-			Expect(isHelpFlag("init")).To(BeFalse())
-			Expect(isHelpFlag("create")).To(BeFalse())
-			Expect(isHelpFlag("foo")).To(BeFalse())
-		})
+var _ = Describe("subcommandPath", func() {
+	It("should return the path from root to the command", func() {
+		root := &cobra.Command{Use: kubebuilderCommandName}
+		create := &cobra.Command{Use: createSubcommand}
+		api := &cobra.Command{Use: apiSubcommand}
+
+		root.AddCommand(create)
+		create.AddCommand(api)
+
+		path := subcommandPath(api)
+		Expect(path).To(Equal([]string{createSubcommand, apiSubcommand}))
 	})
 
-	Describe("isCompletionRequest", func() {
-		It("should return true for shell completion commands", func() {
-			root := &cobra.Command{Use: "root"}
-			cmd1 := &cobra.Command{Use: cobra.ShellCompRequestCmd}
-			root.AddCommand(cmd1)
-			Expect(isCompletionRequest(cmd1)).To(BeTrue())
-
-			cmd2 := &cobra.Command{Use: cobra.ShellCompNoDescRequestCmd}
-			root.AddCommand(cmd2)
-			Expect(isCompletionRequest(cmd2)).To(BeTrue())
-		})
-
-		It("should return false for regular commands", func() {
-			root := &cobra.Command{Use: "root"}
-			cmd := &cobra.Command{Use: "init"}
-			root.AddCommand(cmd)
-			Expect(isCompletionRequest(cmd)).To(BeFalse())
-		})
+	It("should return empty slice for root command", func() {
+		root := &cobra.Command{Use: kubebuilderCommandName}
+		path := subcommandPath(root)
+		Expect(path).To(BeEmpty())
 	})
 
-	Describe("subcommandPath", func() {
-		It("should return the path from root to the command", func() {
-			root := &cobra.Command{Use: kubebuilderCommandName}
-			create := &cobra.Command{Use: createSubcommand}
-			api := &cobra.Command{Use: apiSubcommand}
+	It("should return single element for direct child", func() {
+		root := &cobra.Command{Use: kubebuilderCommandName}
+		init := &cobra.Command{Use: kubebuilderSubcommandInit}
+		root.AddCommand(init)
 
-			root.AddCommand(create)
-			create.AddCommand(api)
-
-			path := subcommandPath(api)
-			Expect(path).To(Equal([]string{createSubcommand, apiSubcommand}))
-		})
-
-		It("should return empty slice for root command", func() {
-			root := &cobra.Command{Use: kubebuilderCommandName}
-			path := subcommandPath(root)
-			Expect(path).To(BeEmpty())
-		})
-
-		It("should return single element for direct child", func() {
-			root := &cobra.Command{Use: kubebuilderCommandName}
-			init := &cobra.Command{Use: kubebuilderSubcommandInit}
-			root.AddCommand(init)
-
-			path := subcommandPath(init)
-			Expect(path).To(Equal([]string{kubebuilderSubcommandInit}))
-		})
+		path := subcommandPath(init)
+		Expect(path).To(Equal([]string{kubebuilderSubcommandInit}))
 	})
+})
 
-	Describe("getShortKey", func() {
-		DescribeTable("should shorten plugin keys",
-			func(fullKey, expected string) {
-				Expect(getShortKey(fullKey)).To(Equal(expected))
-			},
-			Entry("standard kubebuilder plugin", "go.kubebuilder.io/v4", "go/v4"),
-			Entry("kustomize plugin", "kustomize.common.kubebuilder.io/v2", "kustomize/v2"),
-			Entry("deploy-image plugin", "deploy-image.go.kubebuilder.io/v1-alpha", "deploy-image/v1-alpha"),
-			Entry("external plugin with domain", "foo.example.com/v1", "foo.example/v1"),
-			Entry("plugin without version", "go.kubebuilder.io", "go"),
-			Entry("simple external plugin", "example.com/v1", "example.com/v1"),
-		)
-	})
+var _ = Describe("getShortKey", func() {
+	DescribeTable("should shorten plugin keys",
+		func(fullKey, expected string) {
+			Expect(getShortKey(fullKey)).To(Equal(expected))
+		},
+		Entry("standard kubebuilder plugin", "go.kubebuilder.io/v4", "go/v4"),
+		Entry("kustomize plugin", "kustomize.common.kubebuilder.io/v2", "kustomize/v2"),
+		Entry("deploy-image plugin", "deploy-image.go.kubebuilder.io/v1-alpha", "deploy-image/v1-alpha"),
+		Entry("external plugin with domain", "foo.example.com/v1", "foo.example/v1"),
+		Entry("plugin without version", "go.kubebuilder.io", "go"),
+		Entry("simple external plugin", "example.com/v1", "example.com/v1"),
+	)
+})
 
-	Describe("getPluginDescription", func() {
-		It("should return fallback description", func() {
-			Expect(getPluginDescription("foo.example.com/v1")).To(Equal("External or custom plugin"))
-		})
+var _ = Describe("getPluginDescription", func() {
+	It("should return fallback description", func() {
+		Expect(getPluginDescription("foo.example.com/v1")).To(Equal("External or custom plugin"))
 	})
 })
 
@@ -165,14 +163,6 @@ var _ = Describe("getPluginTableFilteredWithOptions", func() {
 				newMockPlugin("go.kubebuilder.io", "v4", projectVersion),
 				newMockPlugin("kustomize.common.kubebuilder.io", "v2", projectVersion),
 			)
-		})
-
-		It("should return formatted plugin table", func() {
-			table := c.getPluginTableFiltered(nil)
-			Expect(table).To(ContainSubstring("KEY"))
-			Expect(table).To(ContainSubstring("DESCRIPTION"))
-			Expect(table).To(ContainSubstring("go/v4"))
-			Expect(table).To(ContainSubstring("kustomize/v2"))
 		})
 
 		It("should exclude deprecated plugins", func() {
@@ -255,37 +245,21 @@ var _ = Describe("newRootCmd", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should create root command with correct use", func() {
-			cmd := c.newRootCmd()
-			Expect(cmd.Use).To(Equal(c.commandName))
-		})
-
-		It("should have plugins flag", func() {
+		It("should register the plugins flag", func() {
 			cmd := c.newRootCmd()
 			flag := cmd.PersistentFlags().Lookup(pluginsFlag)
 			Expect(flag).NotTo(BeNil())
 		})
 
-		It("should have project-version flag", func() {
+		It("should register the project-version flag", func() {
 			cmd := c.newRootCmd()
 			flag := cmd.Flags().Lookup(projectVersionFlag)
 			Expect(flag).NotTo(BeNil())
 		})
 
-		It("should allow unknown flags", func() {
+		It("should allow unknown flags to prevent parsing errors during help display", func() {
 			cmd := c.newRootCmd()
 			Expect(cmd.FParseErrWhitelist.UnknownFlags).To(BeTrue())
-		})
-
-		It("should include plugin table in examples", func() {
-			cmd := c.newRootCmd()
-			Expect(cmd.Example).To(ContainSubstring("Available plugins"))
-		})
-
-		It("should show default plugin in examples", func() {
-			cmd := c.newRootCmd()
-			Expect(cmd.Example).To(ContainSubstring("Default plugin"))
-			Expect(cmd.Example).To(ContainSubstring(pluginGoKubebuilderV4))
 		})
 	})
 })

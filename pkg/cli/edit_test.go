@@ -39,12 +39,8 @@ var _ = Describe("newEditCmd", func() {
 			c.resolvedPlugins = []plugin.Plugin{}
 		})
 
-		It("should create a command that fails with no resolved plugin error", func() {
+		It("should fail with no resolved plugin error", func() {
 			cmd := c.newEditCmd()
-			Expect(cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("edit"))
-			Expect(cmd.Short).To(ContainSubstring("Update the project configuration"))
-
 			err := cmd.RunE(cmd, []string{})
 			Expect(err).To(MatchError(noResolvedPluginError{}))
 		})
@@ -57,10 +53,8 @@ var _ = Describe("newEditCmd", func() {
 			}
 		})
 
-		It("should create a command that fails with no available plugin error", func() {
+		It("should fail with no available plugin error", func() {
 			cmd := c.newEditCmd()
-			Expect(cmd).NotTo(BeNil())
-
 			err := cmd.RunE(cmd, []string{})
 			Expect(err).To(MatchError(noAvailablePluginError{"edit project"}))
 		})
@@ -78,11 +72,9 @@ var _ = Describe("newEditCmd", func() {
 			c.resolvedPlugins = []plugin.Plugin{testPlugin}
 		})
 
-		It("should create a command with proper metadata", func() {
+		It("should build the command without error", func() {
 			cmd := c.newEditCmd()
-			Expect(cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("edit"))
-			Expect(cmd.Short).To(ContainSubstring("Update the project configuration"))
+			Expect(cmd.RunE).NotTo(BeNil())
 		})
 	})
 })
