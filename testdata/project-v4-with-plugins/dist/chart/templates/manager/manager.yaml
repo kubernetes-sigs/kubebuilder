@@ -90,7 +90,7 @@ spec:
         {{- range .Values.manager.args }}
         - {{ tpl . $ }}
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
         command:
@@ -149,7 +149,7 @@ spec:
           {{- if .Values.manager.extraVolumeMounts }}
           {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
           {{- end }}
-          {{- if .Values.certManager.enabled }}
+          {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
@@ -168,7 +168,7 @@ spec:
         {{- if .Values.manager.extraVolumes }}
         {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - name: webhook-certs
           secret:
             secretName: webhook-server-cert

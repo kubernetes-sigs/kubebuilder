@@ -50,7 +50,6 @@ jobs:
         run: |
           helm lint ./dist/chart
 
-
       - name: Install cert-manager via Helm (wait for readiness)
         run: |
           helm repo add jetstack https://charts.jetstack.io

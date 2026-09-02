@@ -307,6 +307,24 @@ var _ = Describe("HelmValues", func() {
 				healthProbeSection := extractSection(result, "healthProbe:")
 				Expect(healthProbeSection).To(ContainSubstring("port: 8081"))
 			})
+
+			It("should emit the webhook section disabled so templates can reference webhook.enabled", func() {
+				values := &HelmValues{
+					Extraction: &extractor.Extraction{
+						Features: extractor.FeatureSet{
+							HasMetrics:  false,
+							HasWebhooks: false,
+						},
+					},
+				}
+				values.ProjectName = testProjectName
+
+				result := values.generateValues()
+
+				webhookSection := extractSection(result, "webhook:")
+				Expect(webhookSection).To(ContainSubstring("enabled: false"))
+				Expect(webhookSection).To(ContainSubstring("port: 9443"))
+			})
 		})
 
 		Context("healthProbe placement", func() {

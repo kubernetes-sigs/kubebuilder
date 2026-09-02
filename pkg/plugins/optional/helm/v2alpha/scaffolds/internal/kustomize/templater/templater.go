@@ -65,7 +65,7 @@ func (t *Templater) GetManagerNamespace() string {
 // This is the main transformation orchestrator that coordinates all template substitutions.
 func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstructured.Unstructured) string {
 	yamlContent = appliers.EscapeExistingTemplateSyntax(yamlContent)
-	yamlContent = appliers.AddConditionalWrappers(yamlContent, resource)
+	yamlContent = appliers.AddConditionalWrappers(yamlContent, resource, t.detectedPrefix)
 	yamlContent = appliers.SubstituteProjectNames(yamlContent, resource)
 	yamlContent = appliers.SubstituteNamespace(
 		t.detectedPrefix, t.chartName, t.managerNamespace, t.roleNamespaces, yamlContent, resource)
@@ -88,7 +88,7 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 	if resource.GetKind() == common.KindService ||
 		resource.GetKind() == common.KindDeployment ||
 		resource.GetKind() == common.KindNetworkPolicy {
-		yamlContent = appliers.TemplatePorts(yamlContent, resource)
+		yamlContent = appliers.TemplatePorts(yamlContent, resource, t.detectedPrefix)
 	}
 	if resource.GetKind() == common.KindServiceMonitor {
 		yamlContent = appliers.TemplateServiceMonitor(yamlContent)
@@ -100,5 +100,5 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 
 // templatePorts is a wrapper for testing purposes, exposing the appliers.TemplatePorts function
 func (t *Templater) templatePorts(yamlContent string, resource *unstructured.Unstructured) string {
-	return appliers.TemplatePorts(yamlContent, resource)
+	return appliers.TemplatePorts(yamlContent, resource, t.detectedPrefix)
 }

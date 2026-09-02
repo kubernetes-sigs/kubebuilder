@@ -352,19 +352,31 @@ project to use certificates managed by CertManager.
     integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
     in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
-### **(Optional)** By using network policy (disabled by default)
+### **(Optional)** Use a NetworkPolicy (disabled by default)
 
-NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
-flow at the IP address or port level. However, it does not handle `authn/authz`.
+NetworkPolicy controls network traffic to and from pods. It does not provide authentication or
+authorization.
 
 Uncomment the following line in the `config/default/kustomization.yaml`:
 
 ```yaml
-# [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' are able to gather the metrics.
-# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' are able to work properly.
+# [NETWORK POLICY] Control ingress to metrics and webhook ports.
+# Allow metrics traffic from pods in namespaces labeled 'metrics: enabled'.
+# Allow webhook traffic from all sources.
 #- ../network-policy
 ```
+
+Then, label each namespace whose pods should scrape metrics:
+
+```bash
+$ kubectl label namespace <namespace> metrics=enabled
+```
+
+The webhook NetworkPolicy allows ingress from all sources to the manager pod's webhook port.
+The Kubernetes API server reaches this port through the webhook Service for admission and CRD
+conversion webhooks. To restrict admission requests by namespace, set `namespaceSelector` on the
+`MutatingWebhookConfiguration` or `ValidatingWebhookConfiguration`. This setting controls which
+requests invoke an admission webhook; it does not restrict NetworkPolicy traffic.
 
 ## Exporting metrics for Prometheus
 

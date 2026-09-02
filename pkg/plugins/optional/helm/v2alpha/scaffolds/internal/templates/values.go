@@ -146,10 +146,8 @@ certManager:
 `)
 	}
 
-	// Webhook configuration
-	if f.Extraction != nil && f.Extraction.Features.HasWebhooks {
-		f.addWebhookSection(&buf)
-	}
+	// Webhook configuration (always present so templates can reference webhook.enabled)
+	f.addWebhookSection(&buf)
 
 	// Prometheus configuration (always present, enabled when the kustomize output provides a ServiceMonitor)
 	prometheusEnabled := f.Extraction != nil && f.Extraction.Features.HasPrometheus
@@ -161,7 +159,7 @@ prometheus:
 `)
 	fmt.Fprintf(&buf, "  enabled: %t\n\n", prometheusEnabled)
 
-	// NetworkPolicy configuration (always present, enabled when NetworkPolicy resources exist)
+	// NetworkPolicy configuration (always present, enabled when the kustomize output provides a NetworkPolicy)
 	networkPolicyEnabled := f.Extraction != nil && f.Extraction.Features.HasNetworkPolicy
 
 	buf.WriteString(`## Network policies for controlling traffic flow.
@@ -608,16 +606,20 @@ func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
 // addWebhookSection adds webhook configuration
 func (f *HelmValues) addWebhookSection(buf *bytes.Buffer) {
 	port := 9443
-	if f.Extraction != nil && f.Extraction.Features.WebhookPort > 0 {
-		port = f.Extraction.Features.WebhookPort
+	enabled := false
+	if f.Extraction != nil {
+		enabled = f.Extraction.Features.HasWebhooks
+		if f.Extraction.Features.WebhookPort > 0 {
+			port = f.Extraction.Features.WebhookPort
+		}
 	}
 
 	buf.WriteString(`## Webhook server configuration
 ##
 webhook:
-  enabled: true
-  # Webhook server port
 `)
+	fmt.Fprintf(buf, "  enabled: %t\n", enabled)
+	buf.WriteString("  # Webhook server port\n")
 	fmt.Fprintf(buf, "  port: %d\n\n", port)
 }
 

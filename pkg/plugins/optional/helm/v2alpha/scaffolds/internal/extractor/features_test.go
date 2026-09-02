@@ -211,4 +211,113 @@ var _ = Describe("FeaturesExtractor", func() {
 			Expect(features.MetricsSecure).To(HaveValue(BeFalse()))
 		})
 	})
+
+	Describe("DetectFeatures webhook port", func() {
+		It("uses the webhook Service targetPort, not the exposed port, when the deployment omits it", func() {
+			deployment := makeDeployment(deploymentOpts{
+				containers: []map[string]any{{keyName: valManager, keyImage: valControllerImage}},
+			})
+
+			features := featuresExtractor.DetectFeatures(&ResourceSet{
+				Deployment:            deployment,
+				Services:              []*unstructured.Unstructured{newWebhookService(9443)},
+				WebhookConfigurations: []*unstructured.Unstructured{newValidatingWebhookConfig()},
+			}, "test-project", "test-system")
+
+			Expect(features.WebhookPort).To(Equal(9443))
+		})
+
+		It("prefers the webhook port declared on the manager container args", func() {
+			deployment := makeDeployment(deploymentOpts{
+				containers: []map[string]any{{
+					keyName:  valManager,
+					keyImage: valControllerImage,
+					keyArgs:  []any{"--webhook-port=9444"},
+				}},
+			})
+
+			features := featuresExtractor.DetectFeatures(&ResourceSet{
+				Deployment:            deployment,
+				Services:              []*unstructured.Unstructured{newWebhookService(9443)},
+				WebhookConfigurations: []*unstructured.Unstructured{newValidatingWebhookConfig()},
+			}, "test-project", "test-system")
+
+			Expect(features.WebhookPort).To(Equal(9444))
+		})
+
+		It("detects a conversion webhook when no admission webhook configurations exist", func() {
+			deployment := makeDeployment(deploymentOpts{
+				containers: []map[string]any{{keyName: valManager, keyImage: valControllerImage}},
+			})
+
+			features := featuresExtractor.DetectFeatures(&ResourceSet{
+				Deployment:                deployment,
+				Services:                  []*unstructured.Unstructured{newWebhookService(9443)},
+				CustomResourceDefinitions: []*unstructured.Unstructured{newConversionCRD()},
+			}, "test-project", "test-system")
+
+			Expect(features.HasWebhooks).To(BeTrue())
+			Expect(features.WebhookPort).To(Equal(9443))
+		})
+
+		It("does not treat an unused webhook Service as a webhook", func() {
+			features := featuresExtractor.DetectFeatures(&ResourceSet{
+				Services: []*unstructured.Unstructured{newWebhookService(9443)},
+			}, "test-project", "test-system")
+
+			Expect(features.HasWebhooks).To(BeFalse())
+		})
+
+		It("keeps the default webhook port when the targetPort is a named port", func() {
+			deployment := makeDeployment(deploymentOpts{
+				containers: []map[string]any{{keyName: valManager, keyImage: valControllerImage}},
+			})
+
+			// A named targetPort can't be resolved to a number, so the default (9443) is kept
+			// rather than the exposed Service port (443), which is not the pod's webhook port.
+			features := featuresExtractor.DetectFeatures(&ResourceSet{
+				Deployment:            deployment,
+				Services:              []*unstructured.Unstructured{newWebhookService("webhook-server")},
+				WebhookConfigurations: []*unstructured.Unstructured{newValidatingWebhookConfig()},
+			}, "test-project", "test-system")
+
+			Expect(features.WebhookPort).To(Equal(9443))
+		})
+	})
 })
+
+// newValidatingWebhookConfig builds a minimal ValidatingWebhookConfiguration for feature detection.
+func newValidatingWebhookConfig() *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]any{
+		keyAPIVersion: "admissionregistration.k8s.io/v1",
+		keyKind:       "ValidatingWebhookConfiguration",
+		keyMetadata:   map[string]any{keyName: "test-project-validating-webhook-configuration"},
+	}}
+}
+
+// newWebhookService builds a webhook Service exposing 443 and forwarding to targetPort.
+// targetPort is any so tests can pass a named (string) port to exercise the numeric fallback.
+func newWebhookService(targetPort any) *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]any{
+		keyAPIVersion: "v1",
+		keyKind:       "Service",
+		keyMetadata:   map[string]any{keyName: "test-project-webhook-service"},
+		keySpec: map[string]any{
+			"ports": []any{map[string]any{
+				"port":       int64(443),
+				"targetPort": targetPort,
+			}},
+		},
+	}}
+}
+
+func newConversionCRD() *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]any{
+		keyAPIVersion: "apiextensions.k8s.io/v1",
+		keyKind:       "CustomResourceDefinition",
+		keyMetadata:   map[string]any{keyName: "widgets.example.io"},
+		keySpec: map[string]any{
+			"conversion": map[string]any{"strategy": "Webhook"},
+		},
+	}}
+}

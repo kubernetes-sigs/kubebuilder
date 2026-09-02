@@ -183,25 +183,34 @@ make helm-status
 Install manually with all features enabled:
 
 ```bash
-helm install my-release ./dist/chart --namespace my-project-system --create-namespace
+$ helm install my-release ./dist/chart --namespace my-project-system --create-namespace
 ```
 
-Install only CRDs and RBAC:
+For charts without conversion webhooks, disable the manager and all optional
+components by setting all of these values to `false`:
 
 ```bash
-helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enabled=false
+$ helm install my-release ./dist/chart \
+  --set manager.enabled=false \
+  --set metrics.enabled=false \
+  --set webhook.enabled=false \
+  --set prometheus.enabled=false \
+  --set certManager.enabled=false \
+  --set networkPolicy.enabled=false
 ```
 
-Install without webhooks:
+For charts without conversion webhooks, install without webhooks:
 
 ```bash
-helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
+$ helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
 ```
+
+Charts with CR version conversion reject `webhook.enabled=false`. The API server needs the webhook Service to convert custom resources.
 
 Install with NetworkPolicy resources:
 
 ```bash
-helm install my-release ./dist/chart --set networkPolicy.enabled=true
+$ helm install my-release ./dist/chart --set networkPolicy.enabled=true
 ```
 
 ### Extra volumes
@@ -249,7 +258,7 @@ The `metrics-auth-role` and `metrics-reader` are always ClusterRoles, even when 
 
 ### Webhook port configuration
 
-Set `webhook.port` to change the port used by the manager webhook server. The chart applies the same value to the manager argument, container port, webhook service, and webhook NetworkPolicy.
+Set `webhook.port` to change the manager argument, container port, Service target port, and NetworkPolicy. The Service's exposed port remains unchanged (`443` in the default manifests).
 
 For example, install the chart with the webhook server on port `9444`:
 
@@ -297,7 +306,19 @@ The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--hea
 
 Set `networkPolicy.enabled: true` to install NetworkPolicy resources for the manager pod.
 
-When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enabled: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
+When the kustomize output includes `NetworkPolicy` resources, the plugin converts and enables them. Otherwise, it generates a default metrics policy and, when it detects an admission or CRD conversion webhook, a default webhook policy.
+
+The plugin preserves default NetworkPolicy templates unless you pass `--force`. Policies from the kustomize output always regenerate, so edit them in `config/network-policy/`.
+
+The generated metrics policy is rendered only when both `networkPolicy.enabled` and `metrics.enabled` are `true`. The generated webhook policy is rendered only when both `networkPolicy.enabled` and `webhook.enabled` are `true`.
+
+The metrics policy allows ingress only from pods in namespaces labeled `metrics: enabled`. Label each namespace whose pods should scrape metrics:
+
+```bash
+$ kubectl label namespace <namespace> metrics=enabled
+```
+
+The default webhook policy allows ingress from all sources to the manager pod's webhook port. The API server reaches this port through the webhook Service for admission and CRD conversion webhooks. To restrict admission requests by namespace, set `namespaceSelector` on the `MutatingWebhookConfiguration` or `ValidatingWebhookConfiguration`. This setting controls which requests invoke an admission webhook; it does not restrict NetworkPolicy traffic.
 
 ### Custom labels and annotations
 

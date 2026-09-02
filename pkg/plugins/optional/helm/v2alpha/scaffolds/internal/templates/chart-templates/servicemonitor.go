@@ -53,7 +53,12 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	chartName := f.ProjectName
 	f.TemplateBody = fmt.Sprintf(serviceMonitorTemplate, chartName, chartName, chartName, chartName)
 
-	f.IfExistsAction = machinery.OverwriteFile
+	// User-owned file: preserve local edits on regeneration unless --force is set.
+	if f.Force {
+		f.IfExistsAction = machinery.OverwriteFile
+	} else {
+		f.IfExistsAction = machinery.SkipFile
+	}
 
 	return nil
 }

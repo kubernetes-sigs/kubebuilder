@@ -161,6 +161,32 @@ var _ = Describe("ChartConverter", func() {
 		})
 	})
 
+	Context("kustomize-derived templates regenerate", func() {
+		It("always regenerates kustomize-provided templates to match the source", func() {
+			networkPolicy := &unstructured.Unstructured{}
+			networkPolicy.SetAPIVersion("networking.k8s.io/v1")
+			networkPolicy.SetKind("NetworkPolicy")
+			networkPolicy.SetName("test-project-allow-metrics-traffic")
+			resources.NetworkPolicies = []*unstructured.Unstructured{networkPolicy}
+
+			serviceMonitor := &unstructured.Unstructured{}
+			serviceMonitor.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitor.SetKind("ServiceMonitor")
+			serviceMonitor.SetName("test-project-controller-manager-metrics-monitor")
+			resources.ServiceMonitors = []*unstructured.Unstructured{serviceMonitor}
+
+			builders := converter.GetChartBuilders()
+
+			for _, b := range builders {
+				dynamicTemplate, ok := b.(*DynamicTemplate)
+				Expect(ok).To(BeTrue())
+				Expect(dynamicTemplate.SetTemplateDefaults()).To(Succeed())
+				Expect(dynamicTemplate.IfExistsAction).To(Equal(machinery.OverwriteFile),
+					"kustomize-derived template %q must always regenerate", dynamicTemplate.RelativePath)
+			}
+		})
+	})
+
 	Context("ExtractDeploymentConfig", func() {
 		It("should extract deployment configuration correctly", func() {
 			// Set up deployment with environment variables
