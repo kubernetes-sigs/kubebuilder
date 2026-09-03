@@ -587,7 +587,93 @@ plugins:
 		})
 	})
 
-	// TODO: test CLI.getInfoFromConfigFile using a mock filesystem
+	Context("getInfoFromConfigFile", func() {
+		When("the project configuration file does not exist", func() {
+			It("should fail with error loading configuration", func() {
+				c.fs = filesystemWithoutProject()
+				err := c.getInfoFromConfigFile()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("error loading configuration"))
+			})
+		})
+
+		When("the project configuration file is invalid YAML", func() {
+			It("should fail with error loading configuration", func() {
+				c.fs = filesystemWithInvalidProject()
+				err := c.getInfoFromConfigFile()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("error loading configuration"))
+			})
+		})
+
+		When("the project configuration file version is not supported", func() {
+			It("should fail with error loading configuration", func() {
+				c.fs = filesystemWithUnloadableProject()
+				err := c.getInfoFromConfigFile()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("error loading configuration"))
+			})
+		})
+
+		When("the project configuration file is valid", func() {
+			It("should succeed and populate pluginKeys and projectVersion", func() {
+				c.fs = filesystemWithResolvableProject()
+				Expect(c.getInfoFromConfigFile()).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{"base.go.kubebuilder.io/v4"}))
+				Expect(c.projectVersion.Compare(config.Version{Number: 3})).To(Equal(0))
+			})
+		})
+
+		When("the project configuration file has multiple plugins in layout", func() {
+			It("should succeed and populate all pluginKeys", func() {
+				c.fs = filesystemWithProject(`domain: example.com
+layout:
+- ` + pluginGoKubebuilderV2 + `
+- deploy-image.go.kubebuilder.io/v1-alpha
+projectName: test
+version: "3"
+`)
+				Expect(c.getInfoFromConfigFile()).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{pluginGoKubebuilderV2, "deploy-image.go.kubebuilder.io/v1-alpha"}))
+				Expect(c.projectVersion.Compare(config.Version{Number: 3})).To(Equal(0))
+			})
+		})
+
+		When("the project configuration file contains invalid plugin keys", func() {
+			It("should fail to parse the plugin key", func() {
+				c.fs = filesystemWithProject(`domain: example.com
+layout:
+- _/v1
+projectName: test
+version: "3"
+`)
+				Expect(c.getInfoFromConfigFile()).NotTo(Succeed())
+			})
+		})
+
+		When("running alpha generate on an older go/v3 project", func() {
+			It("should patch the project in memory to go/v4 and succeed", func() {
+				c.args = []string{alphaCommand, generateSubcommand}
+				c.fs = filesystemWithProject(`domain: example.com
+layout:
+- go.kubebuilder.io/v3
+projectName: test
+version: "3"
+`)
+				Expect(c.getInfoFromConfigFile()).To(Succeed())
+				Expect(c.pluginKeys).To(Equal([]string{pluginGoKubebuilderV4}))
+			})
+		})
+
+		When("running alpha generate on a non-regular project file", func() {
+			It("should skip in-memory patching and report an error", func() {
+				c.args = []string{alphaCommand, generateSubcommand}
+				c.fs = filesystemWithNonRegularProject()
+				err := c.getInfoFromConfigFile()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 
 	Context("getInfoFromConfig", func() {
 		When("having a single plugin in the layout field", func() {
@@ -1906,4 +1992,144 @@ var _ = Describe("help requested through the plugins flag", func() {
 			kubebuilderSubcommandInit, pluginsFlagArg + "=" + pluginGoKubebuilderV4, helpShorthandArg,
 		}),
 	)
+})
+
+var _ = Describe("CLI argument and path helpers", func() {
+	Context("positionalArgs", func() {
+		It("should return empty slice for empty args", func() {
+			Expect(positionalArgs([]string{})).To(BeEmpty())
+		})
+
+		It("should return only positional arguments", func() {
+			args := []string{alphaCommand, generateSubcommand, "--flag=val", "subarg"}
+			Expect(positionalArgs(args)).To(Equal([]string{alphaCommand, generateSubcommand, "subarg"}))
+		})
+
+		It("should skip flag arguments and their values", func() {
+			args := []string{pluginsFlagArg, pluginGoKubebuilderV4, kubebuilderSubcommandInit, "--custom", "value"}
+			Expect(positionalArgs(args)).To(Equal([]string{kubebuilderSubcommandInit}))
+		})
+
+		It("should handle consecutive flags properly", func() {
+			args := []string{"--flag1", "--flag2", "val"}
+			Expect(positionalArgs(args)).To(BeEmpty())
+		})
+	})
+
+	Context("hasOnlyRootFlags", func() {
+		It("should return true for empty args", func() {
+			Expect(hasOnlyRootFlags([]string{})).To(BeTrue())
+		})
+
+		It("should return true for root flags with separate values", func() {
+			Expect(hasOnlyRootFlags([]string{pluginsFlagArg, pluginGoKubebuilderV4})).To(BeTrue())
+			Expect(hasOnlyRootFlags([]string{"--" + projectVersionFlag, "3"})).To(BeTrue())
+			Expect(hasOnlyRootFlags([]string{helpShorthandArg})).To(BeTrue())
+			Expect(hasOnlyRootFlags([]string{helpFlagArg})).To(BeTrue())
+		})
+
+		It("should return true for root flags with = syntax", func() {
+			Expect(hasOnlyRootFlags([]string{pluginsFlagArg + "=" + pluginGoKubebuilderV4})).To(BeTrue())
+			Expect(hasOnlyRootFlags([]string{"--" + projectVersionFlag + "=3"})).To(BeTrue())
+			Expect(hasOnlyRootFlags([]string{helpFlagArg + "=true"})).To(BeTrue())
+		})
+
+		It("should return false when non-root flags or commands are present", func() {
+			Expect(hasOnlyRootFlags([]string{"--unknown"})).To(BeFalse())
+			cmdWithFlag := []string{kubebuilderSubcommandInit, pluginsFlagArg + "=" + pluginGoKubebuilderV4}
+			Expect(hasOnlyRootFlags(cmdWithFlag)).To(BeFalse())
+			Expect(hasOnlyRootFlags([]string{"--domain", "test.domain"})).To(BeFalse())
+		})
+	})
+
+	Context("isAlphaGenerateCommand", func() {
+		It("should return true when alpha generate is invoked", func() {
+			Expect(isAlphaGenerateCommand([]string{alphaCommand, generateSubcommand})).To(BeTrue())
+			Expect(isAlphaGenerateCommand([]string{kubebuilderCommandName, alphaCommand, generateSubcommand})).To(BeTrue())
+			pluginAndAlpha := []string{pluginsFlagArg + "=" + pluginGoKubebuilderV4, alphaCommand, generateSubcommand}
+			Expect(isAlphaGenerateCommand(pluginAndAlpha)).To(BeTrue())
+			Expect(isAlphaGenerateCommand([]string{alphaCommand, generateSubcommand, "--force"})).To(BeTrue())
+		})
+
+		It("should return false for other commands", func() {
+			Expect(isAlphaGenerateCommand([]string{})).To(BeFalse())
+			Expect(isAlphaGenerateCommand([]string{kubebuilderSubcommandInit})).To(BeFalse())
+			Expect(isAlphaGenerateCommand([]string{createSubcommand, apiSubcommand})).To(BeFalse())
+			Expect(isAlphaGenerateCommand([]string{alphaCommand, "other"})).To(BeFalse())
+			Expect(isAlphaGenerateCommand([]string{generateSubcommand, alphaCommand})).To(BeFalse())
+		})
+	})
+
+	Context("isRegularPathNoFollow", func() {
+		It("should return true for a regular file", func() {
+			fs := afero.NewMemMapFs()
+			Expect(afero.WriteFile(fs, "test.txt", []byte("hello"), 0o644)).To(Succeed())
+			Expect(isRegularPathNoFollow(fs, "test.txt")).To(BeTrue())
+		})
+
+		It("should return false for a non-existent file", func() {
+			fs := afero.NewMemMapFs()
+			Expect(isRegularPathNoFollow(fs, "nonexistent.txt")).To(BeFalse())
+		})
+
+		It("should return false for a directory", func() {
+			fs := afero.NewMemMapFs()
+			Expect(fs.Mkdir("testdir", 0o755)).To(Succeed())
+			Expect(isRegularPathNoFollow(fs, "testdir")).To(BeFalse())
+		})
+	})
+
+	Context("patchProjectFileInMemoryIfNeeded", func() {
+		It("should patch go/v2 to go/v4 in memory", func() {
+			fs := afero.NewMemMapFs()
+			content := `domain: example.com
+layout:
+- go.kubebuilder.io/v2
+version: "3"
+`
+			Expect(afero.WriteFile(fs, yamlstore.DefaultPath, []byte(content), machinery.DefaultFilePermission)).To(Succeed())
+			Expect(patchProjectFileInMemoryIfNeeded(fs, yamlstore.DefaultPath)).To(Succeed())
+
+			updated, err := afero.ReadFile(fs, yamlstore.DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(updated)).To(ContainSubstring(pluginGoKubebuilderV4))
+			Expect(string(updated)).NotTo(ContainSubstring(pluginGoKubebuilderV2))
+		})
+
+		It("should patch go/v3 to go/v4 in memory", func() {
+			fs := afero.NewMemMapFs()
+			content := `domain: example.com
+layout:
+- go.kubebuilder.io/v3
+version: "3"
+`
+			Expect(afero.WriteFile(fs, yamlstore.DefaultPath, []byte(content), machinery.DefaultFilePermission)).To(Succeed())
+			Expect(patchProjectFileInMemoryIfNeeded(fs, yamlstore.DefaultPath)).To(Succeed())
+
+			updated, err := afero.ReadFile(fs, yamlstore.DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(updated)).To(ContainSubstring(pluginGoKubebuilderV4))
+			Expect(string(updated)).NotTo(ContainSubstring(pluginGoKubebuilderV3))
+		})
+
+		It("should not modify files that do not need patching", func() {
+			fs := afero.NewMemMapFs()
+			content := `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+version: "3"
+`
+			Expect(afero.WriteFile(fs, yamlstore.DefaultPath, []byte(content), machinery.DefaultFilePermission)).To(Succeed())
+			Expect(patchProjectFileInMemoryIfNeeded(fs, yamlstore.DefaultPath)).To(Succeed())
+
+			updated, err := afero.ReadFile(fs, yamlstore.DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(updated)).To(Equal(content))
+		})
+
+		It("should return nil if file does not exist", func() {
+			fs := afero.NewMemMapFs()
+			Expect(patchProjectFileInMemoryIfNeeded(fs, "nonexistent.yaml")).To(Succeed())
+		})
+	})
 })
