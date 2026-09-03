@@ -22,7 +22,6 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
-	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -181,17 +180,23 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		return errors.New("'--ssa' can only be used when creating an API resource ('--resource=true')")
 	}
 
+	// Check the requested API and controller against the project before building the
+	// resource, so nothing is recorded on it when the command is going to fail.
+	if err := p.validateAPI(); err != nil {
+		return err
+	}
+	if err := p.validateController(); err != nil {
+		return err
+	}
+
 	p.options.UpdateResource(p.resource, p.config)
 
+	// Now that the resource is complete, check it as a whole.
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
 	}
 
-	if err := p.validateAPI(); err != nil {
-		return err
-	}
-
-	return p.validateController()
+	return nil
 }
 
 func (p *createAPISubcommand) validateAPI() error {
@@ -220,78 +225,112 @@ func (p *createAPISubcommand) validateController() error {
 		return nil
 	}
 
+	// Reject the name here, while the command can still fail. Later the resource simply
+	// records no controller, and the scaffold would silently produce nothing.
+	if p.options.ControllerName != "" {
+		if err := (resource.Controller{Name: p.options.ControllerName}).Validate(); err != nil {
+			return fmt.Errorf("invalid '--controller-name': %w", err)
+		}
+	}
+
+	if err := p.validateControllerAcrossResources(); err != nil {
+		return err
+	}
+
 	existingRes, err := p.config.GetResource(p.resource.GVK)
 	if err != nil {
 		// Resource does not exist yet, no validation needed
 		return nil
 	}
 
-	// Require --controller-name when adding a controller to a resource that already has controllers.
-	// Exception: if --resource=true (creating/recreating API), allow --controller=true without
-	// a name for backward compatibility.
-	if p.options.ControllerName == "" && !p.options.DoAPI &&
-		existingRes.Controllers != nil && !existingRes.Controllers.IsEmpty() {
+	// Covers both the controllers list and a legacy controller: true entry.
+	existing := existingRes.GetControllerNames()
+	if len(existing) == 0 {
+		return nil
+	}
+
+	if p.options.ControllerName == "" {
+		// --resource=true is recreating the API, so keep allowing it without a name.
+		if p.options.DoAPI {
+			return nil
+		}
+		// Re-scaffolding the single default controller is unambiguous.
+		if len(existing) == 1 && existing[0] == resource.DefaultControllerName(p.resource.Kind) {
+			return nil
+		}
 		return errors.New(
 			"resource already has controllers defined; please specify '--controller-name' " +
 				"to add another controller, or use '--controller=false' to skip controller scaffolding",
 		)
 	}
 
-	// No controller name specified: using legacy mode, no further validation needed
-	if p.options.ControllerName == "" {
-		return nil
-	}
-
-	// Check that the controller name does not already exist
-	if existingRes.Controllers != nil && existingRes.Controllers.HasController(p.options.ControllerName) {
-		return fmt.Errorf(
-			"controller with name %q already exists for resource %s/%s/%s",
-			p.options.ControllerName,
-			p.resource.Group,
-			p.resource.Version,
-			p.resource.Kind,
-		)
-	}
-
-	// Check for name collisions after normalization (e.g., "foo-bar" vs "foobar")
-	if existingRes.Controllers != nil {
-		newNormalized := normalizeForCollisionCheck(p.options.ControllerName)
-		for _, existing := range *existingRes.Controllers {
-			if newNormalized == normalizeForCollisionCheck(existing.Name) {
-				return fmt.Errorf(
-					"controller name %q conflicts with existing controller %q: "+
-						"both would generate the same reconciler struct name",
-					p.options.ControllerName,
-					existing.Name,
-				)
-			}
+	newReconciler := resource.NormalizeReconcilerName(p.options.ControllerName, p.resource.Kind)
+	for _, name := range existing {
+		if name == p.options.ControllerName {
+			return fmt.Errorf(
+				"controller with name %q already exists for resource %s/%s/%s",
+				p.options.ControllerName,
+				p.resource.Group,
+				p.resource.Version,
+				p.resource.Kind,
+			)
 		}
-	}
 
-	// Also check legacy controller: true case
-	if existingRes.Controller && p.options.ControllerName == strings.ToLower(p.resource.Kind) {
-		return fmt.Errorf(
-			"controller with name %q already exists for resource %s/%s/%s",
-			p.options.ControllerName,
-			p.resource.Group,
-			p.resource.Version,
-			p.resource.Kind,
-		)
+		if resource.NormalizeReconcilerName(name, p.resource.Kind) == newReconciler {
+			return fmt.Errorf(
+				"controller name %q conflicts with existing controller %q: both generate %s",
+				p.options.ControllerName,
+				name,
+				newReconciler,
+			)
+		}
 	}
 
 	return nil
 }
 
-// normalizeForCollisionCheck normalizes a controller name to detect potential collisions.
-// Different names that normalize to the same value would generate conflicting code.
-func normalizeForCollisionCheck(name string) string {
-	var result strings.Builder
-	for _, r := range name {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-			result.WriteRune(r)
+// validateControllerAcrossResources rejects a controller that would generate the same
+// reconciler as a controller of another resource scaffolded into the same package, which
+// would collide on both the struct name and the file name. The default kind-based name is
+// checked too: another version of the same kind resolves to the same reconciler.
+func (p *createAPISubcommand) validateControllerAcrossResources() error {
+	resources, err := p.config.GetResources()
+	if err != nil {
+		return nil
+	}
+
+	newName := p.options.ControllerName
+	if newName == "" {
+		newName = resource.DefaultControllerName(p.resource.Kind)
+	}
+	newReconciler := resource.NormalizeReconcilerName(newName, p.resource.Kind)
+
+	for _, res := range resources {
+		if res.IsEqualTo(p.resource.GVK) || !p.sharesControllerPackage(res) {
+			continue
+		}
+
+		for _, name := range res.GetControllerNames() {
+			if resource.NormalizeReconcilerName(name, res.Kind) != newReconciler {
+				continue
+			}
+
+			return fmt.Errorf(
+				"controller %q conflicts with controller %q of %s/%s/%s: "+
+					"both generate %s in the same package; use '--controller-name' to pick "+
+					"another name, or '--controller=false' if that controller already reconciles this resource",
+				newName, name, res.Group, res.Version, res.Kind, newReconciler,
+			)
 		}
 	}
-	return strings.ToLower(result.String())
+
+	return nil
+}
+
+// sharesControllerPackage reports whether both resources scaffold their controllers into the
+// same directory. Only multigroup projects split them, and then only by group.
+func (p *createAPISubcommand) sharesControllerPackage(other resource.Resource) bool {
+	return !p.config.IsMultiGroup() || p.resource.Group == other.Group
 }
 
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {

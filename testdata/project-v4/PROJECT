@@ -27,7 +27,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: firstmate
   domain: testproject.org
   group: crew
   kind: FirstMate
@@ -49,7 +50,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: sailor
   domain: testproject.org
   group: crew
   kind: Sailor
@@ -63,7 +65,8 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
-  controller: true
+  controllers:
+  - name: admiral
   domain: testproject.org
   group: crew
   kind: Admiral
@@ -75,7 +78,8 @@ resources:
     validation: true
     validationPath: /custom-validate-admiral
     webhookVersion: v1
-- controller: true
+- controllers:
+  - name: certificate
   domain: io
   external: true
   group: cert-manager
@@ -114,7 +118,8 @@ resources:
     crdVersion: v1
     namespaced: true
     ssa: true
-  controller: true
+  controllers:
+  - name: navigator
   domain: testproject.org
   group: crew
   kind: Navigator
