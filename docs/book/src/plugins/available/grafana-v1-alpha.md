@@ -236,7 +236,7 @@ The following scaffolds is created or updated by this plugin:
 [kube-prometheus]: https://github.com/prometheus-operator/kube-prometheus
 [prometheus]: https://prometheus.io/docs/introduction/overview/
 [prom-operator]: https://prometheus-operator.dev/docs/prologue/introduction/
-[servicemonitor]: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#related-resources
+[servicemonitor]: https://github.com/prometheus-operator/prometheus-operator/tree/main/Documentation/user-guides
 [grafana-install]: https://grafana.com/docs/grafana/latest/setup-grafana/installation/
 [grafana-permissions]: https://grafana.com/docs/grafana/next/administration/roles-and-permissions/#dashboard-permissions
 [prometheus-data-source]: https://user-images.githubusercontent.com/18136486/176119794-f6d69b0b-93f0-4f9e-a53c-daf9f77dadae.gif
@@ -245,7 +245,7 @@ The following scaffolds is created or updated by this plugin:
 [show-case]: https://user-images.githubusercontent.com/18136486/186933170-d2e0de71-e079-4d1b-906a-99a549d66ebf.gif
 [controller-metrics]: ./../../reference/metrics-reference.md
 [kustomize-plugin]: ./../../../../../testdata/project-v4-with-plugins/config/prometheus/monitor.yaml
-[plugin-implementation]: ./../../../../../pkg/plugins/optional/grafana/
+[plugin-implementation]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/optional/grafana
 [reference-metrics-doc]: ./../../reference/metrics.md#exporting-metrics-for-prometheus
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins
 

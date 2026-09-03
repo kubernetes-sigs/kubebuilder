@@ -402,7 +402,7 @@ rules are only enabled for the `default` and `kube-system namespaces`. See its
 guide to know [how to configure kube-prometheus to monitor other namespaces using the `.jsonnet` file](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/monitoring-other-namespaces.md).
 
 Alternatively, you can give the Prometheus Operator permissions to monitor other namespaces using RBAC. See the Prometheus Operator
-[Enable RBAC rules for Prometheus pods](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#enable-rbac-rules-for-prometheus-pods)
+[Enable RBAC rules for Prometheus pods](https://github.com/prometheus-operator/prometheus-operator#kube-prometheus)
 documentation to know how to enable the permissions on the namespace where the
 `ServiceMonitor` and manager exist.
 </aside>
