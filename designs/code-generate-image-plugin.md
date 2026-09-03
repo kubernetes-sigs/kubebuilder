@@ -62,7 +62,7 @@ Add the new plugin code generated which will scaffold code implementation to dep
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return and requeue
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 ```
 
@@ -142,7 +142,7 @@ func (r *{{ resource }}.Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
@@ -158,7 +158,7 @@ func (r *{{ resource }}.Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return and requeue
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 
     // TODO: add here code implementation to update/manage the status
