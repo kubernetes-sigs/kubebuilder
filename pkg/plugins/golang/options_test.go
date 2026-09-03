@@ -70,7 +70,7 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					Expect(options.UpdateResource(&res, cfg)).To(Succeed())
 					Expect(res.Validate()).To(Succeed())
 					Expect(res.GVK.IsEqualTo(gvk)).To(BeTrue())
 					if options.Plural != "" {
@@ -142,7 +142,7 @@ var _ = Describe("Options", func() {
 					Webhooks: &resource.Webhooks{},
 				}
 
-				Options{DoController: true}.UpdateResource(&res, cfg)
+				Expect(Options{DoController: true}.UpdateResource(&res, cfg)).To(Succeed())
 
 				Expect(res.External).To(BeTrue())
 				Expect(res.Path).To(Equal(externalPath))
@@ -169,7 +169,7 @@ var _ = Describe("Options", func() {
 				}
 
 				// DoDefaulting without ExternalAPIPath — simulates webhook flow without re-providing the flag
-				Options{DoDefaulting: true}.UpdateResource(&res, cfg)
+				Expect(Options{DoDefaulting: true}.UpdateResource(&res, cfg)).To(Succeed())
 
 				Expect(res.External).To(BeTrue())
 				Expect(res.GVK.Domain).To(Equal(externalDomain),
@@ -201,7 +201,7 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					Expect(options.UpdateResource(&res, cfg)).To(Succeed())
 					Expect(res.Validate()).To(Succeed())
 
 					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
@@ -241,7 +241,7 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					Expect(options.UpdateResource(&res, cfg)).To(Succeed())
 					Expect(res.Validate()).To(Succeed())
 
 					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
@@ -252,5 +252,41 @@ var _ = Describe("Options", func() {
 			Entry("for `apps`", "apps", "apps"),
 			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
 		)
+
+		Context("ControllerName validation", func() {
+			const backupControllerName = "backup-controller"
+
+			var res resource.Resource
+
+			BeforeEach(func() {
+				res = resource.Resource{
+					GVK:      gvk,
+					Plural:   plural,
+					API:      &resource.API{},
+					Webhooks: &resource.Webhooks{},
+				}
+			})
+
+			It("should add the named controller and succeed for a valid name", func() {
+				options := Options{DoController: true, ControllerName: backupControllerName}
+				Expect(options.UpdateResource(&res, cfg)).To(Succeed())
+				Expect(res.Controllers.GetControllerNames()).To(ConsistOf(backupControllerName))
+			})
+
+			It("should return an error and not silently fall back for an invalid name", func() {
+				options := Options{DoController: true, ControllerName: "Backup_Controller"}
+				err := options.UpdateResource(&res, cfg)
+				Expect(err).To(HaveOccurred())
+				Expect(res.Controllers.IsEmpty()).To(BeTrue())
+			})
+
+			It("should return an error for a duplicate controller name", func() {
+				options := Options{DoController: true, ControllerName: backupControllerName}
+				Expect(options.UpdateResource(&res, cfg)).To(Succeed())
+
+				dup := Options{DoController: true, ControllerName: backupControllerName}
+				Expect(dup.UpdateResource(&res, cfg)).NotTo(Succeed())
+			})
+		})
 	})
 })
