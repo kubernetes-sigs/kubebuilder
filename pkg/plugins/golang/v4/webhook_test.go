@@ -294,11 +294,16 @@ var _ = Describe("createWebhookSubcommand", func() {
 			Expect(err.Error()).To(ContainSubstring(domainIO))
 			Expect(err.Error()).To(ContainSubstring(domainK8s))
 
-			// Both entries keep their path and domain.
+			// Both entries keep their path, domain and (empty) webhooks: #5931 is about the
+			// webhook being silently bound to the first entry, so none may have gained one.
 			byDomain := storedByDomain()
 			Expect(byDomain).To(HaveLen(2))
 			Expect(byDomain[domainIO].Path).To(Equal(pathIO))
+			Expect(byDomain[domainIO].Domain).To(Equal(domainIO))
+			Expect(byDomain[domainIO].Webhooks == nil || byDomain[domainIO].Webhooks.IsEmpty()).To(BeTrue())
 			Expect(byDomain[domainK8s].Path).To(Equal(pathK8sIO))
+			Expect(byDomain[domainK8s].Domain).To(Equal(domainK8s))
+			Expect(byDomain[domainK8s].Webhooks == nil || byDomain[domainK8s].Webhooks.IsEmpty()).To(BeTrue())
 		})
 
 		It("should refuse regardless of the order the resources are recorded", func() {
@@ -359,6 +364,9 @@ var _ = Describe("createWebhookSubcommand", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("match more than one resource"))
+			// The empty domain is rendered explicitly so the list is not "(domains: , cert-manager.io)".
+			Expect(err.Error()).To(ContainSubstring("<empty>"))
+			Expect(err.Error()).To(ContainSubstring(domainIO))
 		})
 
 		It("should prefer the non-external entry when no domain is given", func() {

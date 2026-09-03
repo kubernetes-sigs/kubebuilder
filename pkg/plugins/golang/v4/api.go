@@ -118,7 +118,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 			"Used to scaffold controllers for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
+		"Domain suffix for the external API, combined with --group to form the qualified group "+
+			"(e.g., --group cert-manager --external-api-domain io => cert-manager.io). "+
 			"Used to generate accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
