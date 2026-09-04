@@ -212,7 +212,7 @@ Charts with CR version conversion reject `webhook.enabled=false` while `crd.enab
 
 Setting `webhook.enabled=false` prevents the chart from rendering the webhook `Service`, admission webhook configurations, and `NetworkPolicy`. It does not prevent the scaffolded manager from registering its webhooks or starting its webhook server.
 
-When `webhook.enabled=false`, the chart does not pass `--webhook-port` to the manager. The scaffolded manager therefore listens on its compiled default port, `9443`, regardless of `webhook.port`. The `Deployment` still declares `webhook.port` as the `webhook-server` container port, but this declaration does not configure the listener. No `webhook.port` value disables the server.
+When `webhook.enabled=false`, the chart does not pass `--webhook-port` to the manager. The scaffolded manager therefore listens on its compiled default port, `9443`, regardless of `webhook.port`. The `Deployment` still declares `webhook.port` as the `webhook-server` container port, but this declaration does not configure the listener. With the controller-runtime version the scaffold currently pins, no `webhook.port` value disables the server.
 
 To stop the scaffolded manager from registering webhooks and starting the server, set the `ENABLE_WEBHOOKS` environment variable that the generated manager honors to `false`:
 
