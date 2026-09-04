@@ -560,6 +560,7 @@ var _ = Describe("Cfg", func() {
 							Version: "v1",
 							Kind:    resourceKind,
 						},
+						Path: "otherrepo/api/v1",
 						API: &resource.API{
 							CRDVersion: "v1",
 							Namespaced: true,
@@ -580,11 +581,10 @@ var _ = Describe("Cfg", func() {
 					"plugin-y/v1": map[string]any{
 						dataKey1: pluginValue1,
 						"data-2": pluginValue2,
-						"data-3": []string{"plugin value 3", "plugin value 4"},
+						"data-3": []any{"plugin value 3", "plugin value 4"},
 					},
 				},
 			}
-			// TODO: include cases with Path when added
 			s1 = `domain: my.domain
 layout:
 - go.kubebuilder.io/v2
@@ -637,6 +637,7 @@ resources:
   - name: kind
   group: group2
   kind: Kind
+  path: otherrepo/api/v1
   version: v1
   webhooks:
     conversion: true
@@ -670,7 +671,10 @@ version: "3"
 				Expect(unmarshalled.MultiGroup).To(Equal(c.MultiGroup))
 				Expect(unmarshalled.Resources).To(Equal(c.Resources))
 				Expect(unmarshalled.Plugins).To(HaveLen(len(c.Plugins)))
-				// TODO: fully test Plugins field and not on its length
+				for key, expectedConfig := range c.Plugins {
+					Expect(unmarshalled.Plugins).To(HaveKey(key))
+					Expect(unmarshalled.Plugins[key]).To(BeEquivalentTo(expectedConfig))
+				}
 			},
 			Entry("basic", func() string { return s1 }, func() Cfg { return c1 }),
 			Entry("full", func() string { return s2 }, func() Cfg { return c2 }),
