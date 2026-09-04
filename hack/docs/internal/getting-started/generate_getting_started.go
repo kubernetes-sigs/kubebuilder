@@ -444,7 +444,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 		// Now, that we update the size we want to requeue the reconciliation
 		// so that we can ensure that we have the latest state of the resource before
 		// update. Also, it will help ensure the desired state on the cluster
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 
 	// The following implementation will update the status

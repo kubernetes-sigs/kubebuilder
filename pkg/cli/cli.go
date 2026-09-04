@@ -187,8 +187,7 @@ func (c *CLI) buildCmd() {
 	if err := c.resolveInfo(!c.configSkipped); err != nil {
 		// Cobra has not parsed the command line yet, so the command that will run is unknown.
 		// Keep a working command tree and let the root hook raise this where it matters.
-		var parseErr flagError
-		if errors.As(err, &parseErr) {
+		if _, ok := errors.AsType[flagError](err); ok {
 			c.flagErr = err
 		} else {
 			c.configErr = err

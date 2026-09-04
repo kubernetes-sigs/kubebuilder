@@ -246,7 +246,7 @@ Controllers implement `Reconcile(ctx, req) (ctrl.Result, error)`:
 
 - **Idempotent** - Safe to run multiple times
 - **Level-triggered** - React to current state, not events
-- **Requeue on pending work** - Return `ctrl.Result{Requeue: true}`
+- **Requeue on pending work** - Return `ctrl.Result{RequeueAfter: time.Minute}` to retry after a delay
 
 ### Testing Pattern
 E2E tests use `utils.TestContext` from `test/e2e/utils/test_context.go`:
