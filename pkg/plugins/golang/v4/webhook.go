@@ -115,8 +115,10 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 			"Used to scaffold webhooks for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
-			"Used to generate accurate RBAC markers and permissions for the external resources")
+		"Domain suffix for the external API, combined with --group to form the qualified group "+
+			"(e.g., --group cert-manager --external-api-domain io => cert-manager.io). Selects the "+
+			"recorded resource when several share a group, version, and kind, and is used to generate "+
+			"accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
 		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
@@ -241,30 +243,135 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	return nil
 }
 
-// updateResourceFromConfig copies existing resource configuration from PROJECT file.
+// updateResourceFromConfig fills res with the configuration recorded for its
+// Group/Version/Kind in the PROJECT file: Domain, Path, Plural, External, Core and Module.
+//
+// The lookup matches on Group/Version/Kind rather than the full GVK so that a single query
+// surfaces every recorded entry for that G/V/K, since more than one can share it under different
+// domains: two external variants, or a core type and a project API that collide. When several
+// match, --external-api-domain selects the intended one; without it resolution falls to the
+// non-external (core/project) entry via selectNonExternal.
+//
+// selectNonExternal breaks a core-vs-project tie by preferring the candidate whose domain equals
+// res.Domain. This relies on resolveDomain (pkg/cli/cmd_helpers.go) leaving res.Domain as the
+// project domain when several records match; revisit that tie-break if resolveDomain changes.
 func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
-	// Match by Group, Version, and Kind because external APIs may have
-	// a different domain than the project domain.
 	resources, err := p.config.GetResources()
 	if err != nil {
 		return fmt.Errorf("failed to load resources from project configuration: %w", err)
 	}
 
-	for _, existingRes := range resources {
-		if existingRes.Group == res.Group &&
-			existingRes.Version == res.Version &&
-			existingRes.Kind == res.Kind {
-			p.resource.Domain = existingRes.Domain
-			p.resource.Path = existingRes.Path
-			p.resource.Plural = existingRes.Plural
-			p.resource.External = existingRes.External
-			p.resource.Core = existingRes.Core
-			p.resource.Module = existingRes.Module
-			break
+	// Collect every recorded resource sharing this Group/Version/Kind.
+	var candidates []resource.Resource
+	for _, r := range resources {
+		if r.Group == res.Group && r.Version == res.Version && r.Kind == res.Kind {
+			candidates = append(candidates, r)
 		}
 	}
 
+	domain := p.options.ExternalAPIDomain
+	var selected *resource.Resource
+	switch {
+	case len(candidates) == 0:
+		return nil // nothing recorded for this GVK; keep res as built from the flags
+	case domain != "":
+		selected, err = selectByDomain(candidates, domain, p.options.ExternalAPIPath)
+	case len(candidates) == 1:
+		selected = &candidates[0] // recover the single record
+	default:
+		selected, err = selectNonExternal(candidates, res.Domain)
+	}
+	if err != nil {
+		return err
+	}
+	if selected == nil {
+		return nil // the flags describe a new resource
+	}
+
+	res.Domain = selected.Domain
+	res.Path = selected.Path
+	res.Plural = selected.Plural
+	res.External = selected.External
+	res.Core = selected.Core
+	res.Module = selected.Module
+
 	return nil
+}
+
+// selectByDomain resolves the candidate carrying the given --external-api-domain, for any number
+// of candidates. When none carries it, a non-empty external path means the flags describe a new
+// resource (nil, nil); otherwise the request is refused.
+func selectByDomain(candidates []resource.Resource, domain, externalPath string) (*resource.Resource, error) {
+	for i := range candidates {
+		if candidates[i].Domain == domain {
+			return &candidates[i], nil
+		}
+	}
+	if externalPath != "" {
+		return nil, nil
+	}
+	return nil, resolutionError(candidates, domain)
+}
+
+// selectNonExternal resolves several same-GVK candidates when no domain is given: the target is
+// the non-external (core/project) entry. When a core and project entry collide it keeps the
+// project (its domain equals projectDomain); when every candidate is external it refuses.
+//
+// Unlike selectByDomain, there is no --external-api-path escape hatch here: adding a new external
+// variant to an already-ambiguous G/V/K requires --external-api-domain. Without a domain,
+// resolveDomain (pkg/cli/resource.go) leaves res.Domain as the project domain when several records
+// match, and UpdateResource only overrides the domain when --external-api-domain is set. So a
+// path-only "new resource" would be recorded as external yet stamped with the project domain -- a
+// malformed entry. Refusing here forces the caller to name the variant with a domain.
+func selectNonExternal(candidates []resource.Resource, projectDomain string) (*resource.Resource, error) {
+	var nonExternal []resource.Resource
+	for _, c := range candidates {
+		if !c.External {
+			nonExternal = append(nonExternal, c)
+		}
+	}
+
+	switch len(nonExternal) {
+	case 0:
+		return nil, resolutionError(candidates, "")
+	case 1:
+		return &nonExternal[0], nil
+	default:
+		// A core and a project resource share the GVK; keep the project one.
+		for i := range nonExternal {
+			if nonExternal[i].Domain == projectDomain {
+				return &nonExternal[i], nil
+			}
+		}
+		return nil, resolutionError(candidates, "")
+	}
+}
+
+// resolutionError reports why the candidates could not be resolved to one, naming their domains.
+// With a named domain it reports that none matched; without one it asks for --external-api-domain.
+func resolutionError(candidates []resource.Resource, domain string) error {
+	g, v, k := candidates[0].Group, candidates[0].Version, candidates[0].Kind
+	domains := make([]string, len(candidates))
+	for i, c := range candidates {
+		if c.Domain == "" {
+			domains[i] = "<empty>"
+		} else {
+			domains[i] = c.Domain
+		}
+	}
+
+	if domain != "" {
+		return fmt.Errorf(
+			"no resource matches --external-api-domain %q for group %q, version %q and kind %q "+
+				"(recorded domains: %s)",
+			domain, g, v, k, strings.Join(domains, ", "),
+		)
+	}
+	return fmt.Errorf(
+		"group %q, version %q and kind %q match more than one resource (domains: %s): "+
+			"pass --external-api-domain to choose the one to work on",
+		g, v, k, strings.Join(domains, ", "),
+	)
 }
 
 // Helper function to validate spoke versions
