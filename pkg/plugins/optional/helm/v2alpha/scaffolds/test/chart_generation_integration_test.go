@@ -599,6 +599,108 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	// serviceMonitorDoc returns the ServiceMonitor document from a multi-document render,
+	// or "" when it was not rendered.
+	serviceMonitorDoc := func(rendered string) string {
+		for _, doc := range strings.Split(rendered, "\n---") {
+			if strings.Contains(doc, "\nkind: ServiceMonitor\n") {
+				return doc
+			}
+		}
+		return ""
+	}
+
+	Context("ServiceMonitor labels and annotations (rendered, kustomize-derived)", func() {
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithServiceMonitor("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("renders user-supplied labels on the kustomize-derived ServiceMonitor", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.labels.team=platform",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			Expect(strings.Count(sm, "labels:")).To(Equal(1),
+				"ServiceMonitor must keep a single labels: block, got:\n%s", sm)
+			Expect(sm).To(ContainSubstring("team: platform"))
+		})
+
+		It("renders user-supplied annotations on the kustomize-derived ServiceMonitor", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.annotations.example\\.com/env=staging",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			Expect(strings.Count(sm, "annotations:")).To(Equal(1),
+				"ServiceMonitor must keep a single annotations: block, got:\n%s", sm)
+			Expect(sm).To(ContainSubstring("example.com/env: staging"))
+		})
+
+		It("does not duplicate a scaffolded label a user tries to override", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.labels.control-plane=myvalue",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			// omit strips keys already defined by the scaffolded labels block, so
+			// the user value must not appear; only the scaffolded value remains.
+			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
+				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+		})
+	})
+
+	Context("ServiceMonitor labels and annotations (rendered, static fallback)", func() {
+		// No ServiceMonitor in the kustomize input — the static fallback template is scaffolded.
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("renders user-supplied labels on the static fallback ServiceMonitor", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.labels.team=platform",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			Expect(strings.Count(sm, "labels:")).To(Equal(1),
+				"ServiceMonitor must keep a single labels: block, got:\n%s", sm)
+			Expect(sm).To(ContainSubstring("team: platform"))
+		})
+
+		It("renders user-supplied annotations on the static fallback ServiceMonitor", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.annotations.example\\.com/env=staging",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			Expect(strings.Count(sm, "annotations:")).To(Equal(1),
+				"ServiceMonitor must keep a single annotations: block, got:\n%s", sm)
+			Expect(sm).To(ContainSubstring("example.com/env: staging"))
+		})
+
+		It("does not duplicate a scaffolded label a user tries to override", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.labels.control-plane=myvalue",
+			))
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			// omit strips keys already defined by the scaffolded labels block, so
+			// the user value must not appear; only the scaffolded value remains.
+			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
+				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+		})
+	})
+
 	Context("NetworkPolicy (rendered)", func() {
 		// networkPolicyDoc returns the NetworkPolicy document whose name ends with the given
 		// suffix from a multi-document render, or "" when it was not rendered.
@@ -2073,5 +2175,30 @@ spec:
         secret:
           secretName: my-secret
       serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+// createKustomizeWithServiceMonitor extends createBasicKustomizeOutput with a ServiceMonitor
+// resource that carries the labels kustomize typically emits, so the kustomize-derived
+// (rather than the static fallback) ServiceMonitor template is scaffolded.
+func createKustomizeWithServiceMonitor(projectName string) string {
+	return createBasicKustomizeOutput(projectName) + `---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ` + projectName + `
+    control-plane: controller-manager
+  name: ` + projectName + `-controller-manager-metrics-monitor
+spec:
+  endpoints:
+  - path: /metrics
+    port: http
+    scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ` + projectName + `
+      control-plane: controller-manager
 `
 }

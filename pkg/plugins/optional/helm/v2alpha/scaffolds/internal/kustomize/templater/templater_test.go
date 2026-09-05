@@ -570,6 +570,25 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
+		It("should honor .Values.prometheus.labels and .Values.prometheus.annotations for ServiceMonitor", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  name: test-project-controller-manager-metrics-monitor`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.prometheus.labels }}"))
+			Expect(result).To(ContainSubstring("{{- with .Values.prometheus.annotations }}"))
+		})
+
 		It("should add networkPolicy conditional for NetworkPolicy resources", func() {
 			networkPolicyResource := &unstructured.Unstructured{}
 			networkPolicyResource.SetAPIVersion("networking.k8s.io/v1")

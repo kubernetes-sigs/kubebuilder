@@ -73,6 +73,15 @@ metadata:
     helm.sh/chart: {{ "{{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}" }}
     app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
     control-plane: controller-manager
+    {{ "{{- with .Values.prometheus.labels }}" }}
+` + `    {{ "{{- with omit . \"app.kubernetes.io/managed-by\" \"app.kubernetes.io/name\" \"helm.sh/chart\" \"app.kubernetes.io/instance\" \"control-plane\" }}" }}` + "\n" + //nolint:lll
+	`    {{ "{{- toYaml . | nindent 4 }}" }}
+    {{ "{{- end }}" }}
+    {{ "{{- end }}" }}
+  {{ "{{- with .Values.prometheus.annotations }}" }}
+  annotations:
+    {{ "{{- toYaml . | nindent 4 }}" }}
+  {{ "{{- end }}" }}
   name: ` +
 	`{{ "{{ include \"%s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-monitor\" \"context\" $) }}" }}

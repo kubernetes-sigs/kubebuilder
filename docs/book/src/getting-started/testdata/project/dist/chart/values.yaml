@@ -185,6 +185,14 @@ webhook:
 prometheus:
   enabled: false
 
+  ## Custom ServiceMonitor labels
+  ##
+  # labels: {}
+
+  ## Custom ServiceMonitor annotations
+  ##
+  # annotations: {}
+
 ## Network policies for controlling traffic flow.
 ## Enable to restrict ingress to the controller manager.
 ##

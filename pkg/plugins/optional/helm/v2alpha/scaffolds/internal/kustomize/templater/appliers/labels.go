@@ -30,6 +30,8 @@ import (
 const (
 	valuesServiceAccountLabels      = ".Values.serviceAccount.labels"
 	valuesServiceAccountAnnotations = ".Values.serviceAccount.annotations"
+	valuesPrometheusLabels          = ".Values.prometheus.labels"
+	valuesPrometheusAnnotations     = ".Values.prometheus.annotations"
 )
 
 // AddHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents.
@@ -178,6 +180,20 @@ func AddStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) str
 // labels and annotations blocks Kustomize already emitted, in either order, and injects the block
 // that is missing. User-supplied values therefore always render and no metadata key is duplicated.
 func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(yamlContent, valuesServiceAccountLabels, valuesServiceAccountAnnotations)
+}
+
+// AddServiceMonitorLabelsAndAnnotations makes the ServiceMonitor metadata honor
+// .Values.prometheus.labels and .Values.prometheus.annotations, using the same merge
+// semantics as AddServiceAccountLabelsAndAnnotations.
+func AddServiceMonitorLabelsAndAnnotations(yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(yamlContent, valuesPrometheusLabels, valuesPrometheusAnnotations)
+}
+
+// addMetadataLabelsAndAnnotations merges into whichever labels and annotations blocks Kustomize
+// already emitted under metadata, in either order, and injects the block that is missing.
+// User-supplied values therefore always render and no metadata key is duplicated.
+func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsValuePath string) string {
 	lines := strings.Split(yamlContent, "\n")
 	merged := make([]string, 0, len(lines))
 
@@ -194,11 +210,11 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 			merged = append(merged, lines[lineIndex])
 		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyLabels, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
-				merged, lines, lineIndex, common.YamlKeyLabels, valuesServiceAccountLabels)
+				merged, lines, lineIndex, common.YamlKeyLabels, labelsValuePath)
 			labelsBlockEnd = len(merged)
 		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyAnnotations, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
-				merged, lines, lineIndex, common.YamlKeyAnnotations, valuesServiceAccountAnnotations)
+				merged, lines, lineIndex, common.YamlKeyAnnotations, annotationsValuePath)
 			annotationsBlockEnd = len(merged)
 		default:
 			merged = append(merged, lines[lineIndex])
@@ -210,7 +226,9 @@ func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
 		childIndent = metadataIndent + 2
 	}
 
-	merged = injectMissingMetadataBlocks(merged, childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd)
+	merged = injectMissingMetadataBlocks(
+		merged, childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd,
+		labelsValuePath, annotationsValuePath)
 	return strings.Join(merged, "\n")
 }
 
@@ -240,11 +258,12 @@ func isMetadataMapChildHeader(line, mapKey string, metadataIndent int) bool {
 func injectMissingMetadataBlocks(
 	merged []string,
 	childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd int,
+	labelsValuePath, annotationsValuePath string,
 ) []string {
 	labelsBlock := buildGuardedMetadataMapBlock(
-		childIndent, common.YamlKeyLabels, valuesServiceAccountLabels)
+		childIndent, common.YamlKeyLabels, labelsValuePath)
 	annotationsBlock := buildGuardedMetadataMapBlock(
-		childIndent, common.YamlKeyAnnotations, valuesServiceAccountAnnotations)
+		childIndent, common.YamlKeyAnnotations, annotationsValuePath)
 
 	switch {
 	case labelsBlockEnd >= 0 && annotationsBlockEnd < 0:

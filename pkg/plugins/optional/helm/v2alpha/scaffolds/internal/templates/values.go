@@ -158,6 +158,15 @@ certManager:
 prometheus:
 `)
 	fmt.Fprintf(&buf, "  enabled: %t\n\n", prometheusEnabled)
+	buf.WriteString(`  ## Custom ServiceMonitor labels
+  ##
+  # labels: {}
+
+  ## Custom ServiceMonitor annotations
+  ##
+  # annotations: {}
+
+`)
 
 	// NetworkPolicy configuration (always present, enabled when the kustomize output provides a NetworkPolicy)
 	networkPolicyEnabled := f.Extraction != nil && f.Extraction.Features.HasNetworkPolicy
