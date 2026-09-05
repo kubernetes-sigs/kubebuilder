@@ -30,6 +30,9 @@ import (
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
+	helmChartUtil "helm.sh/helm/v3/pkg/chartutil"
+	helmEngine "helm.sh/helm/v3/pkg/engine"
+	"helm.sh/helm/v3/pkg/strvals"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -205,6 +208,38 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			valuesContent, err := afero.ReadFile(afero.NewOsFs(), valuesPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(valuesContent)).To(ContainSubstring("certManager:\n  enabled: true"))
+			Expect(string(valuesContent)).NotTo(ContainSubstring("envOverrides:"))
+
+			By("rendering the chart without an env field by default")
+			chart, err := helmChartLoader.LoadDir(chartPath)
+			Expect(err).NotTo(HaveOccurred())
+			releaseOptions := helmChartUtil.ReleaseOptions{
+				Name:      "test-release",
+				Namespace: "test-namespace",
+				Revision:  1,
+				IsInstall: true,
+			}
+			defaultRenderValues, err := helmChartUtil.ToRenderValues(
+				chart, nil, releaseOptions, helmChartUtil.DefaultCapabilities)
+			Expect(err).NotTo(HaveOccurred())
+			defaultRendered, err := helmEngine.Render(chart, defaultRenderValues)
+			Expect(err).NotTo(HaveOccurred())
+			managerTemplateName := "e2e-test/templates/manager/manager.yaml"
+			Expect(defaultRendered[managerTemplateName]).NotTo(ContainSubstring("\n        env:"))
+
+			By("disabling the scaffolded webhook server through an explicit env override")
+			overrides := map[string]any{}
+			Expect(strvals.ParseInto(
+				"webhook.enabled=false,manager.envOverrides.ENABLE_WEBHOOKS=false", overrides,
+			)).To(Succeed())
+			renderValues, err := helmChartUtil.ToRenderValues(
+				chart, overrides, releaseOptions, helmChartUtil.DefaultCapabilities)
+			Expect(err).NotTo(HaveOccurred())
+			rendered, err := helmEngine.Render(chart, renderValues)
+			Expect(err).NotTo(HaveOccurred())
+			renderedManager := rendered[managerTemplateName]
+			Expect(renderedManager).To(ContainSubstring("name: ENABLE_WEBHOOKS"))
+			Expect(renderedManager).To(ContainSubstring(`value: "false"`))
 
 			By("linting the generated chart")
 			lintResult := action.NewLint().Run([]string{chartPath}, nil)
