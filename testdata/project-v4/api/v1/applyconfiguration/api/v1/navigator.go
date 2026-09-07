@@ -31,7 +31,7 @@ import (
 //
 // Navigator is the Schema for the navigators API
 type NavigatorApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration `json:",inline"`
+	metav1.TypeMetaApplyConfiguration `json:""`
 	// metadata is a standard object metadata
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	// spec defines the desired state of Navigator

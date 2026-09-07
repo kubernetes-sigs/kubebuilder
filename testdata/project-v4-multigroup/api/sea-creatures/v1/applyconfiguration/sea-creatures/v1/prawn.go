@@ -31,7 +31,7 @@ import (
 //
 // Prawn is the Schema for the prawns API
 type PrawnApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration `json:",inline"`
+	metav1.TypeMetaApplyConfiguration `json:""`
 	// metadata is a standard object metadata
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	// spec defines the desired state of Prawn
