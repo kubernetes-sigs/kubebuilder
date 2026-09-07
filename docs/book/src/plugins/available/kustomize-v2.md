@@ -89,7 +89,7 @@ The following scaffolds is created or updated by this plugin:
 
 ## Further resources
 
-* Check the kustomize [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/common/kustomize)
+* Check the kustomize [plugin implementation](./../../../../../pkg/plugins/common/kustomize)
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
 
@@ -101,5 +101,5 @@ The following scaffolds is created or updated by this plugin:
 [release-notes-v5]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
 [release-notes-v4]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0
 [testdata]: ./../../../../../testdata/
-[bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
-[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go
+[bundle]: ./../../../../../pkg/plugin/bundle.go
+[kustomize-create-api]: ./../../../../../pkg/plugins/common/kustomize/v2/scaffolds/api.go

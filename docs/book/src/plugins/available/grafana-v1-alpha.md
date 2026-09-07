@@ -245,7 +245,7 @@ The following scaffolds is created or updated by this plugin:
 [show-case]: https://user-images.githubusercontent.com/18136486/186933170-d2e0de71-e079-4d1b-906a-99a549d66ebf.gif
 [controller-metrics]: ./../../reference/metrics-reference.md
 [kustomize-plugin]: ./../../../../../testdata/project-v4-with-plugins/config/prometheus/monitor.yaml
-[plugin-implementation]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/optional/grafana
+[plugin-implementation]: ./../../../../../pkg/plugins/optional/grafana
 [reference-metrics-doc]: ./../../reference/metrics.md#exporting-metrics-for-prometheus
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins
 
