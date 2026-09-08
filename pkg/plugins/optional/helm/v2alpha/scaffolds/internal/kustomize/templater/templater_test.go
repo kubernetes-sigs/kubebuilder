@@ -565,8 +565,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
 
-			// Should be wrapped with prometheus enabled conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.prometheus.enabled }}"))
+			// Should be wrapped with prometheus and metrics enabled conditional
+			Expect(result).To(ContainSubstring("{{- if and .Values.prometheus.enabled .Values.metrics.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 

@@ -19,6 +19,8 @@ limitations under the License.
 package test
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,6 +32,8 @@ import (
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -611,8 +615,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	}
 
 	Context("ServiceMonitor labels and annotations (rendered, kustomize-derived)", func() {
+		// The ServiceMonitor is gated on metrics.enabled, which the fixtures leave off.
 		renderChart := func(setArgs ...string) string {
-			out, err := helmTemplate(createKustomizeWithServiceMonitor("test-project"), setArgs...)
+			args := append([]string{"--set", "metrics.enabled=true"}, setArgs...)
+			out, err := helmTemplate(createKustomizeWithServiceMonitor("test-project"), args...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 			return out
 		}
@@ -653,12 +659,24 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
 				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
 		})
+
+		It("does not render the ServiceMonitor when metrics are disabled", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+			))
+
+			Expect(sm).To(BeEmpty(),
+				"the ServiceMonitor scrapes the metrics Service, so it must not render without it")
+		})
 	})
 
 	Context("ServiceMonitor labels and annotations (rendered, static fallback)", func() {
 		// No ServiceMonitor in the kustomize input — the static fallback template is scaffolded.
+		// The ServiceMonitor is gated on metrics.enabled, which the fixture leaves off.
 		renderChart := func(setArgs ...string) string {
-			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), setArgs...)
+			args := append([]string{"--set", "metrics.enabled=true"}, setArgs...)
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), args...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 			return out
 		}
@@ -698,6 +716,16 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			// the user value must not appear; only the scaffolded value remains.
 			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
 				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+		})
+
+		It("does not render the ServiceMonitor when metrics are disabled", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+			))
+
+			Expect(sm).To(BeEmpty(),
+				"the ServiceMonitor scrapes the metrics Service, so it must not render without it")
 		})
 	})
 
@@ -1285,9 +1313,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	// literal args mixed in the same list, and a templated arg that calls a Helm template
 	// function.
 	Context("Manager args templating (rendered)", func() {
-		writeValuesFile := func(content string) string {
+		writeValuesFile := func(valuesContent string) string {
 			valuesFile := filepath.Join(tmpDir, "manager-args-values.yaml")
-			Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
+			Expect(os.WriteFile(valuesFile, []byte(valuesContent), 0o600)).To(Succeed())
 			return valuesFile
 		}
 
@@ -1296,7 +1324,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		// generated values.yaml (i.e. the default manager.args extracted from the kustomize
 		// output), exercising the same code path production users hit before ever touching
 		// manager.args themselves.
-		renderWithArgs := func(valuesContent string) string {
+		renderWithManagerArgs := func(valuesContent string) string {
 			var setArgs []string
 			if valuesContent != "" {
 				setArgs = []string{"-f", writeValuesFile(valuesContent)}
@@ -1306,48 +1334,128 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			return out
 		}
 
-		// managerArgsLines extracts every rendered "- --flag..." list item so assertions do not
-		// depend on indentation and are not confused by other list items in the manifest.
-		managerArgsLines := func(rendered string) []string {
-			var args []string
-			for _, line := range strings.Split(rendered, "\n") {
-				trimmed := strings.TrimSpace(line)
-				if strings.HasPrefix(trimmed, "- --") {
-					args = append(args, strings.TrimPrefix(trimmed, "- "))
-				}
-			}
-			return args
+		renderedManagerArgs := func(renderedManifest string) []string {
+			managerArgs, err := renderedContainerArgs(renderedManifest, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			return managerArgs
 		}
 
 		It("should render the manager Deployment successfully when manager.args uses the chart's own "+
 			"default values (no values override)", func() {
-			rendered := renderWithArgs("")
+			rendered := renderWithManagerArgs("")
 
 			By("the default extracted arg renders as a literal, unaffected by tpl")
-			Expect(managerArgsLines(rendered)).To(ContainElement("--leader-elect"))
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--leader-elect"))
+		})
+
+		It("should connect metrics values to a manager that omits the metrics bind argument", func() {
+			renderWithoutMetricsBindAddressArg := func(setArgs ...string) string {
+				out, err := helmTemplate(
+					createKustomizeWithMetricsServiceWithoutManagerArg("test-project"), setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				return out
+			}
+
+			By("using the metrics Service port when metrics are enabled")
+			rendered := renderWithoutMetricsBindAddressArg("--set", "metrics.enabled=true")
+			renderedArgs := renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:7443"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=0"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-secure=false"))
+
+			By("using an explicitly configured metrics port")
+			rendered = renderWithoutMetricsBindAddressArg(
+				"--set", "metrics.enabled=true",
+				"--set", "metrics.port=9000",
+			)
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:9000"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=:7443"))
+
+			By("disabling the manager metrics server when metrics are disabled")
+			rendered = renderWithoutMetricsBindAddressArg("--set", "metrics.enabled=false")
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=0"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=:7443"))
+
+			By("passing the secure setting to the manager")
+			rendered = renderWithoutMetricsBindAddressArg(
+				"--set", "metrics.enabled=true", "--set", "metrics.secure=false")
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:7443"))
+			Expect(renderedArgs).To(ContainElement("--metrics-secure=false"))
+		})
+
+		It("should add metrics arguments when the source manager has no args field", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndNoManagerArgs("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("serving metrics on the Service port")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+		})
+
+		It("should add metrics arguments when the source manager has an empty args list", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndEmptyManagerArgs("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("serving metrics on the Service port")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+		})
+
+		It("should accept manager.args overrides when the source manager has no args field", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndNoManagerArgs("test-project"),
+				"--set", "manager.args[0]=--leader-elect",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("keeping the user-provided argument alongside the generated metrics argument")
+			Expect(renderedManagerArgs(rendered)).To(ContainElements(
+				"--metrics-bind-address=:7443",
+				"--leader-elect",
+			))
+		})
+
+		It("should preserve sidecar arguments while configuring the manager container", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithSidecarBeforeManagerAndMetricsService("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("configuring metrics on the manager")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+
+			By("leaving the sidecar's command-line arguments unchanged")
+			sidecarArgs, err := renderedContainerArgs(rendered, "sidecar")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sidecarArgs).To(Equal([]string{"--sidecar-flag"}))
 		})
 
 		DescribeTable("should resolve manager.args entries through tpl when values are provided",
-			func(valuesContent string, wantArgs []string, unwantedSubstrings []string) {
-				rendered := renderWithArgs(valuesContent)
+			func(valuesContent string, additionalManagerArgs []string) {
+				rendered := renderWithManagerArgs(valuesContent)
 
-				args := managerArgsLines(rendered)
-				for _, want := range wantArgs {
-					Expect(args).To(ContainElement(want), "rendered manager args: %v", args)
-				}
-				for _, unwanted := range unwantedSubstrings {
-					Expect(rendered).NotTo(ContainSubstring(unwanted))
-				}
+				expectedManagerArgs := append([]string{
+					"--metrics-bind-address=0",
+					"--health-probe-bind-address=:8081",
+				}, additionalManagerArgs...)
+				renderedArgs := renderedManagerArgs(rendered)
+				Expect(renderedArgs).To(Equal(expectedManagerArgs), "rendered manager args: %v", renderedArgs)
 			},
 			Entry("should keep plain literal args unchanged when no template syntax is used (backwards compatible)",
 				"manager:\n  args:\n  - --leader-elect\n  - --zap-log-level=info\n",
 				[]string{"--leader-elect", "--zap-log-level=info"},
-				[]string(nil),
 			),
 			Entry("should resolve to the release namespace when an arg references .Release.Namespace",
 				"manager:\n  args:\n  - --leader-election-namespace={{ .Release.Namespace }}\n",
 				[]string{"--leader-election-namespace=my-namespace"},
-				[]string{"{{ .Release.Namespace }}"},
 			),
 			Entry("should resolve every arg independently and keep list order when multiple args are templated",
 				"manager:\n  args:\n"+
@@ -1359,7 +1467,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 					"--release-name=my-release",
 					"--chart-name=test-project",
 				},
-				[]string{"{{ .Release", "{{ .Chart"},
 			),
 			Entry("should resolve templated args and keep literal args unchanged when both appear in the same list",
 				"manager:\n  args:\n"+
@@ -1371,7 +1478,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 					"--leader-election-namespace=my-namespace",
 					"--zap-log-level=info",
 				},
-				[]string(nil),
 			),
 			Entry("should resolve an arg when it calls a Helm template function",
 				`manager:
@@ -1379,9 +1485,115 @@ var _ = Describe("Chart Generation Integration Tests", func() {
   - --extra-flag={{ printf "%s-%s" .Release.Name .Release.Namespace }}
 `,
 				[]string{"--extra-flag=my-release-my-namespace"},
-				[]string{"{{ printf"},
 			),
 		)
+	})
+
+	Context("Metrics feature toggles (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithMetricsResources("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("should enable the manager and metrics resources together", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=true",
+				"--set", "prometheus.enabled=true",
+				"--set", "networkPolicy.enabled=true",
+			)
+
+			By("binding the manager to the metrics Service port")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(ContainElement("--metrics-bind-address=:7443"))
+
+			By("rendering the metrics Service")
+			metricsServices, err := renderedResourcesByKind(rendered, "Service")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsServices).To(HaveLen(1))
+
+			By("rendering the ServiceMonitor")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(HaveLen(1))
+
+			By("rendering the metrics NetworkPolicy")
+			metricsPolicies, err := renderedResourcesByKind(rendered, "NetworkPolicy")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsPolicies).To(HaveLen(1))
+		})
+
+		It("should disable the manager and metrics resources together", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+				"--set", "networkPolicy.enabled=true",
+			)
+
+			By("disabling the manager metrics server")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(Equal([]string{
+				"--metrics-bind-address=0",
+				"--health-probe-bind-address=:8081",
+				"--leader-elect",
+			}))
+
+			By("removing the metrics Service")
+			metricsServices, err := renderedResourcesByKind(rendered, "Service")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsServices).To(BeEmpty())
+
+			By("removing the ServiceMonitor even though prometheus stays enabled")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(BeEmpty())
+
+			By("removing the metrics NetworkPolicy")
+			metricsPolicies, err := renderedResourcesByKind(rendered, "NetworkPolicy")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsPolicies).To(BeEmpty())
+		})
+
+		It("should use insecure metrics settings consistently in the manager and ServiceMonitor", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=true",
+				"--set", "metrics.secure=false",
+				"--set", "prometheus.enabled=true",
+			)
+
+			By("passing the insecure metrics flag to the manager")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(ContainElements(
+				"--metrics-bind-address=:7443",
+				"--metrics-secure=false",
+			))
+
+			By("configuring the ServiceMonitor for HTTP")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(HaveLen(1))
+			endpoints, found, err := unstructured.NestedSlice(serviceMonitors[0].Object, "spec", "endpoints")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(endpoints).To(HaveLen(1))
+			endpoint, ok := endpoints[0].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+			endpointPort, _, err := unstructured.NestedString(endpoint, "port")
+			Expect(err).NotTo(HaveOccurred())
+			endpointScheme, _, err := unstructured.NestedString(endpoint, "scheme")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(endpointPort).To(Equal("http"))
+			Expect(endpointScheme).To(Equal("http"))
+			_, hasBearerToken, err := unstructured.NestedString(endpoint, "bearerTokenFile")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBearerToken).To(BeFalse())
+			_, hasTLSConfig, err := unstructured.NestedMap(endpoint, "tlsConfig")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasTLSConfig).To(BeFalse())
+		})
 	})
 })
 
@@ -1775,6 +1987,89 @@ spec:
 `
 }
 
+// createKustomizeWithMetricsServiceWithoutManagerArg represents a project whose metrics
+// Service is present but whose manager args do not include --metrics-bind-address.
+func createKustomizeWithMetricsServiceWithoutManagerArg(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithFullDeploymentConfig(projectName),
+		"        - --metrics-bind-address=:8443\n",
+		"",
+		1,
+	)
+
+	return kustomizeYAML + `---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ` + projectName + `-controller-manager-metrics-service
+  namespace: ` + projectName + `-system
+spec:
+  ports:
+  - name: https
+    port: 7443
+    protocol: TCP
+    targetPort: 7443
+  selector:
+    control-plane: controller-manager
+`
+}
+
+// createKustomizeWithMetricsResources represents a project with the metrics Service and the
+// scaffolded metrics NetworkPolicy. The chart adds the fallback ServiceMonitor during scaffolding.
+func createKustomizeWithMetricsResources(projectName string) string {
+	return createKustomizeWithMetricsServiceWithoutManagerArg(projectName) + `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-metrics-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          metrics: enabled
+    ports:
+    - port: 7443
+      protocol: TCP
+`
+}
+
+// createKustomizeWithMetricsServiceAndNoManagerArgs represents a project whose manager has no
+// args field at all, while its metrics Service still exposes the configured endpoint.
+func createKustomizeWithMetricsServiceAndNoManagerArgs(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithMetricsServiceWithoutManagerArg(projectName),
+		`        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+`,
+		"",
+		1,
+	)
+	return kustomizeYAML
+}
+
+// createKustomizeWithMetricsServiceAndEmptyManagerArgs represents a project whose manager
+// explicitly declares an empty args list.
+func createKustomizeWithMetricsServiceAndEmptyManagerArgs(projectName string) string {
+	return strings.Replace(
+		createKustomizeWithMetricsServiceWithoutManagerArg(projectName),
+		`        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+`,
+		`        args: []
+`,
+		1,
+	)
+}
+
 // createKustomizeForServiceAccountRender extends createBasicKustomizeOutput (Namespace +
 // ServiceAccount + Deployment) for the serviceAccountName render tests. It adds:
 //   - a pod-template annotations block, otherwise the chart nil-pointers on
@@ -1915,6 +2210,94 @@ func setupKustomizeFile(filePath, content string) error {
 		return err
 	}
 	return os.WriteFile(filePath, []byte(content), 0o644)
+}
+
+// decodeRenderedResources returns the non-empty Kubernetes objects from a Helm render.
+// Keeping render assertions at the Kubernetes object level makes tests independent of Helm
+// template layout and YAML indentation.
+func decodeRenderedResources(renderedManifest string) ([]*unstructured.Unstructured, error) {
+	decoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(renderedManifest), 4096)
+	var renderedResources []*unstructured.Unstructured
+
+	for {
+		resource := &unstructured.Unstructured{}
+		err := decoder.Decode(resource)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("decode rendered resource: %w", err)
+		}
+		if len(resource.Object) == 0 {
+			continue
+		}
+		renderedResources = append(renderedResources, resource)
+	}
+
+	return renderedResources, nil
+}
+
+func renderedResourcesByKind(
+	renderedManifest, resourceKind string,
+) ([]*unstructured.Unstructured, error) {
+	allResources, err := decodeRenderedResources(renderedManifest)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingResources []*unstructured.Unstructured
+	for _, resource := range allResources {
+		if resource.GetKind() == resourceKind {
+			matchingResources = append(matchingResources, resource)
+		}
+	}
+	return matchingResources, nil
+}
+
+// renderedContainerArgs returns the effective args from a named container in a rendered
+// Deployment.
+func renderedContainerArgs(renderedManifest, containerName string) ([]string, error) {
+	deployments, err := renderedResourcesByKind(renderedManifest, "Deployment")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deployment := range deployments {
+		containers, found, err := unstructured.NestedSlice(
+			deployment.Object, "spec", "template", "spec", "containers")
+		if err != nil {
+			return nil, fmt.Errorf("read deployment containers: %w", err)
+		}
+		if !found {
+			continue
+		}
+
+		for _, rawContainer := range containers {
+			container, ok := rawContainer.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			containerNameFromManifest, _, err := unstructured.NestedString(container, "name")
+			if err != nil {
+				return nil, fmt.Errorf("read container name: %w", err)
+			}
+			if containerNameFromManifest != containerName {
+				continue
+			}
+
+			containerArgs, found, err := unstructured.NestedStringSlice(container, "args")
+			if err != nil {
+				return nil, fmt.Errorf("read %s container args: %w", containerName, err)
+			}
+			if !found {
+				return nil, fmt.Errorf("%s container has no args", containerName)
+			}
+			return containerArgs, nil
+		}
+	}
+
+	return nil, fmt.Errorf("rendered Deployment container %q not found", containerName)
 }
 
 // createKustomizeWithTolerationsAndSchedulingFields simulates a manager.yaml that already
@@ -2126,6 +2509,48 @@ spec:
         configMap:
           name: my-config
       serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+// createKustomizeWithSidecarBeforeManagerAndMetricsService represents a sidecar-first Pod whose
+// manager has no args field. The fixture verifies that manager-specific defaults do not leak into
+// the sidecar when the templater has to add the manager args block.
+func createKustomizeWithSidecarBeforeManagerAndMetricsService(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithSidecarBeforeManager(projectName),
+		`        args:
+        - --leader-elect
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+`,
+		"",
+		1,
+	)
+	kustomizeYAML = strings.Replace(
+		kustomizeYAML,
+		`        image: sidecar:v1
+        env:`,
+		`        image: sidecar:v1
+        args:
+        - --sidecar-flag
+        env:`,
+		1,
+	)
+
+	return kustomizeYAML + `---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ` + projectName + `-controller-manager-metrics-service
+  namespace: ` + projectName + `-system
+spec:
+  ports:
+  - name: https
+    port: 7443
+    protocol: TCP
+    targetPort: 7443
+  selector:
+    control-plane: controller-manager
 `
 }
 
