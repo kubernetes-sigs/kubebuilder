@@ -82,8 +82,8 @@ func GetControllerPodName(kbc *utils.TestContext) string {
 	return controllerPodName
 }
 
-// healthProbePort is the scaffolded health probe port; no NetworkPolicy allows it
-const healthProbePort = 8081
+// defaultHealthProbePort is the scaffolded health probe port; no NetworkPolicy allows it
+const defaultHealthProbePort = 8081
 
 // defaultMetricsPort is the scaffolded metrics port
 const defaultMetricsPort = 8443
@@ -310,13 +310,76 @@ func removeCurlPod(kbc *utils.TestContext) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-// ValidateNetworkPolicyEnforcement checks allowed and blocked manager traffic.
-func ValidateNetworkPolicyEnforcement(
+// validateNetworkPolicyEnforcement proves the cluster enforces the scaffolded NetworkPolicies:
+// the manager pod only accepts the traffic they allow. The metrics checks need the metrics
+// Service, so they run only when metrics are exposed. It returns the unlabeled namespace it
+// created so later checks can send traffic from it.
+func validateNetworkPolicyEnforcement(
 	controllerPodName, namePrefix string,
+	opts RunOptions,
+	kbc *utils.TestContext,
+) string {
+	By("ensuring the controller pod is ready so a blocked request cannot be mistaken for a slow start")
+	Eventually(func(g Gomega) {
+		output, err := kbc.Kubectl.Get(
+			true,
+			"pod", controllerPodName,
+			"-o", "jsonpath={.status.conditions[?(@.type=='Ready')].status}",
+		)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(output).To(Equal("True"), "Controller pod not ready")
+	}, defaultTimeout, defaultPollingInterval).Should(Succeed())
+
+	By("creating a namespace without the metrics or webhook labels")
+	unlabeledNamespace := fmt.Sprintf("test-np-denied-%s", kbc.TestSuffix)
+	_, err := kbc.Kubectl.Command("create", "namespace", unlabeledNamespace)
+	Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
+	DeferCleanup(func() {
+		_, _ = kbc.Kubectl.Command("delete", "namespace", unlabeledNamespace, "--ignore-not-found")
+	})
+
+	if opts.HasMetrics {
+		validateMetricsNetworkPolicyDenied(namePrefix, unlabeledNamespace, kbc)
+	}
+
+	By("proving the NetworkPolicies deny ingress to a manager port they do not allow")
+	podIP, err := kbc.Kubectl.Get(
+		true,
+		"pod", controllerPodName,
+		"-o", "jsonpath={.status.podIP}",
+	)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(podIP).NotTo(BeEmpty(), "controller pod should have an IP assigned")
+
+	healthURL := fmt.Sprintf("http://%s:%d/healthz", podIP, opts.healthProbePort())
+	expectRequestTimedOut(kbc, "np-denied-port", kbc.Kubectl.Namespace, healthURL)
+
+	return unlabeledNamespace
+}
+
+// validateWebhookNetworkPolicyAllowed proves the webhook NetworkPolicy lets an unlabeled
+// namespace reach the webhook port. Call it only once the webhook endpoints are ready.
+func validateWebhookNetworkPolicyAllowed(
+	controllerPodName, unlabeledNamespace string,
 	webhookPort int,
-	hasWebhook bool,
 	kbc *utils.TestContext,
 ) {
+	By("proving the webhook NetworkPolicy allows traffic from an unlabeled namespace")
+	podIP, err := kbc.Kubectl.Get(
+		true,
+		"pod", controllerPodName,
+		"-o", "jsonpath={.status.podIP}",
+	)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(podIP).NotTo(BeEmpty(), "controller pod should have an IP assigned")
+
+	webhookURL := fmt.Sprintf("https://%s:%d/", podIP, webhookPort)
+	expectRequestAllowed(kbc, "np-allowed-webhook", unlabeledNamespace, webhookURL)
+}
+
+// validateMetricsNetworkPolicyDenied proves the metrics NetworkPolicy drops scrapes from a
+// namespace without the 'metrics: enabled' label.
+func validateMetricsNetworkPolicyDenied(namePrefix, unlabeledNamespace string, kbc *utils.TestContext) {
 	metricsServiceName := fmt.Sprintf("%s-controller-manager-metrics-service", namePrefix)
 	metricsPort := GetMetricsServicePort(namePrefix, kbc)
 
@@ -332,46 +395,10 @@ func ValidateNetworkPolicyEnforcement(
 		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
 	}, 2*time.Minute, time.Second).Should(Succeed())
 
-	By("ensuring the controller pod is ready")
-	Eventually(func(g Gomega) {
-		output, err := kbc.Kubectl.Get(
-			true,
-			"pod", controllerPodName,
-			"-o", "jsonpath={.status.conditions[?(@.type=='Ready')].status}",
-		)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(output).To(Equal("True"), "Controller pod not ready")
-	}, defaultTimeout, defaultPollingInterval).Should(Succeed())
-
 	By("proving the metrics NetworkPolicy blocks scrapes from namespaces without the 'metrics: enabled' label")
-	unlabeledNamespace := fmt.Sprintf("test-np-denied-%s", kbc.TestSuffix)
-	_, err := kbc.Kubectl.Command("create", "namespace", unlabeledNamespace)
-	Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
-	DeferCleanup(func() {
-		_, _ = kbc.Kubectl.Command("delete", "namespace", unlabeledNamespace, "--ignore-not-found")
-	})
-
 	metricsURL := fmt.Sprintf("https://%s.%s.svc.cluster.local:%d/metrics",
 		metricsServiceName, kbc.Kubectl.Namespace, metricsPort)
 	expectRequestTimedOut(kbc, "np-denied-metrics", unlabeledNamespace, metricsURL)
-
-	By("proving the NetworkPolicies deny ingress to a manager port they do not allow")
-	podIP, err := kbc.Kubectl.Get(
-		true,
-		"pod", controllerPodName,
-		"-o", "jsonpath={.status.podIP}",
-	)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(podIP).NotTo(BeEmpty(), "controller pod should have an IP assigned")
-
-	healthURL := fmt.Sprintf("http://%s:%d/healthz", podIP, healthProbePort)
-	expectRequestTimedOut(kbc, "np-denied-port", kbc.Kubectl.Namespace, healthURL)
-
-	if hasWebhook {
-		By("proving the webhook NetworkPolicy allows traffic from an unlabeled namespace")
-		webhookURL := fmt.Sprintf("https://%s:%d/", podIP, webhookPort)
-		expectRequestAllowed(kbc, "np-allowed-webhook", unlabeledNamespace, webhookURL)
-	}
 }
 
 // expectRequestTimedOut runs a curl pod against url and expects the request to time out

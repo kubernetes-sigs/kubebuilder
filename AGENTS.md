@@ -53,10 +53,14 @@ docs/book/          mdBook documentation (https://book.kubebuilder.io)
     **/testdata/    Sample projects used in docs (regenerated)
 test/
   e2e/              E2E tests requiring Kubernetes cluster
-    v4/             Tests for v4 plugin
-    helm/           Tests for Helm plugin
-    deployimage/    Tests for deploy-image plugin
-    utils/          Test helpers (TestContext, etc.)
+    all/            One Ginkgo suite; one file per plugin or feature
+      plugin_<name>_test.go   Specs for a plugin (v4, helm, deployimage)
+      feature_<name>_test.go  Specs for a cross-plugin feature (networkpolicy)
+    internal/helpers/  Shared spec helpers
+      plugin_test_helper.go       Run and RunOptions, the common deploy-and-verify flow
+      generate_v4.go              go/v4 project generators
+      networkpolicies_generate.go Generators used only by the NetworkPolicy specs
+    utils/          Test helpers (TestContext, Kubectl, etc.)
   testdata/         Scripts to generate testdata projects
     generate.sh     Main generation script
     test.sh         Tests all testdata projects
@@ -77,7 +81,7 @@ main.go             Application entry point
 - Add new template → `pkg/plugins/<plugin>/scaffolds/internal/templates/`
 - Modify CLI commands → `pkg/cli/`
 - Add scaffolding machinery → `pkg/machinery/`
-- Add tests → `test/e2e/all/plugin_<name>_test.go` or `pkg/<package>/*_test.go`
+- Add tests → `test/e2e/all/plugin_<name>_test.go` (per plugin), `test/e2e/all/feature_<name>_test.go` (per feature), or `pkg/<package>/*_test.go`
 
 ## Critical Rules
 
@@ -335,10 +339,11 @@ log.Error(err, "Failed to create Pod", "name", name)
   - Must have `//go:build integration` tag at the top
   - May create temp dirs, download binaries, or scaffold files
   - Examples: alpha update, grafana scaffolding, helm chart generation
-- **E2E tests** (`test/e2e/`) - **ONLY** for tests requiring a Kubernetes cluster (KIND)
-  - `v4/plugin_cluster_test.go` - Test v4 plugin deployment
-  - `helm/plugin_cluster_test.go` - Test Helm chart deployment
-  - `deployimage/plugin_cluster_test.go` - Test deploy-image plugin
+- **E2E tests** (`test/e2e/all/`) - **ONLY** for tests requiring a Kubernetes cluster (KIND)
+  - `plugin_<name>_test.go` - Specs for one plugin (`plugin_v4_test.go`, `plugin_helm_test.go`, `plugin_deployimage_test.go`)
+  - `feature_<name>_test.go` - Specs for one feature that spans plugins (`feature_networkpolicy_test.go`)
+  - Keep every scenario for a feature in its `feature_` file so coverage is easy to audit; do not spread it across plugin files
+  - Shared flow lives in `test/e2e/internal/helpers/` (`Run`, `RunOptions`, project generators)
 
 ### Scaffolding
 - Use library helpers from `pkg/plugin/util/`
