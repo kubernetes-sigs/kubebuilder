@@ -63,7 +63,8 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	return nil
 }
 
-const serviceMonitorTemplate = `{{` + "`" + `{{- if .Values.prometheus.enabled }}` + "`" + `}}
+const serviceMonitorTemplate = `{{` + "`" +
+	`{{- if and .Values.prometheus.enabled .Values.metrics.enabled }}` + "`" + `}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

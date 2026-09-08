@@ -153,7 +153,7 @@ certManager:
 	prometheusEnabled := f.Extraction != nil && f.Extraction.Features.HasPrometheus
 
 	buf.WriteString(`## Prometheus ServiceMonitor for metrics scraping.
-## Requires prometheus-operator to be installed in the cluster.
+## Requires prometheus-operator to be installed in the cluster and metrics.enabled set to true.
 ##
 prometheus:
 `)
