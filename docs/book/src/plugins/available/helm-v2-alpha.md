@@ -226,6 +226,7 @@ Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed 
 #### `metrics.port`
 
 Set `metrics.port` to change the port used by the metrics endpoint. The chart applies the same value to the manager `--metrics-bind-address` argument, the metrics Service port and targetPort, and the metrics NetworkPolicy.
+If the input manager does not define a metrics bind-address argument, the chart adds one so this setting still controls the endpoint.
 
 For example, install the chart with the metrics endpoint on port `8444`:
 
