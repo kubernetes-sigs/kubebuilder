@@ -185,29 +185,37 @@ func templateEnvironmentVariables(yamlContent string) string {
 	}
 
 	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
+	if rangeStart < 0 {
+		return yamlContent
+	}
 
 	lines := strings.Split(yamlContent, "\n")
-	for i := range lines {
-		if rangeStart >= 0 && (i < rangeStart || i > rangeEnd) {
-			continue
-		}
-		if strings.TrimSpace(lines[i]) != "env:" {
+	for i := rangeStart; i <= rangeEnd; i++ {
+		trimmedEnv := strings.TrimSpace(lines[i])
+		isListItem := strings.HasPrefix(trimmedEnv, "- ")
+		trimmedEnv = strings.TrimPrefix(trimmedEnv, "- ")
+		if trimmedEnv != "env:" && !strings.HasPrefix(trimmedEnv, "env: ") {
 			continue
 		}
 
 		indentStr, indentLen := LeadingWhitespace(lines[i])
+		if isListItem {
+			indentLen += 2
+		}
 		end := i + 1
-		for ; end < len(lines); end++ {
-			trimmed := strings.TrimSpace(lines[end])
-			if trimmed == "" {
-				break
-			}
-			lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
-			if lineIndent < indentLen {
-				break
-			}
-			if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
-				break
+		if trimmedEnv == "env:" {
+			for ; end < len(lines); end++ {
+				trimmed := strings.TrimSpace(lines[end])
+				if trimmed == "" {
+					break
+				}
+				lineIndent := len(lines[end]) - len(strings.TrimLeft(lines[end], " \t"))
+				if lineIndent < indentLen {
+					break
+				}
+				if lineIndent == indentLen && !strings.HasPrefix(trimmed, "-") {
+					break
+				}
 			}
 		}
 
@@ -219,36 +227,89 @@ func templateEnvironmentVariables(yamlContent string) string {
 			return yamlContent
 		}
 
-		childIndent := indentStr + "  "
-		childIndentWidth := strconv.Itoa(len(childIndent))
-		// Env list + envOverrides (CLI --set). Secret refs go in env list.
-		hasEnv := `{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) ` +
-			`(not (empty .Values.manager.envOverrides))) }}`
-		block := make([]string, 0, 22)
-		block = append(block,
-			indentStr+"env:",
-			indentStr+hasEnv,
-			childIndent+`{{- if .Values.manager.env }}`,
-			childIndent+"{{- toYaml .Values.manager.env | nindent "+childIndentWidth+" }}",
-			childIndent+`{{- end }}`,
-			childIndent+`{{- if kindIs "map" .Values.manager.envOverrides }}`,
-			childIndent+`{{- range $k, $v := .Values.manager.envOverrides }}`,
-			childIndent+`- name: {{ $k }}`,
-			childIndent+`  value: {{ $v | quote }}`,
-			childIndent+`{{ end }}`,
-			childIndent+`{{- end }}`,
-			childIndent+`{{- else }}`,
-			childIndent+"[]",
-			childIndent+`{{- end }}`,
-		)
-
 		newLines := append([]string{}, lines[:i]...)
-		newLines = append(newLines, block...)
+		newLines = append(newLines, managerEnvironmentVariablesBlock(indentStr, isListItem)...)
 		newLines = append(newLines, lines[end:]...)
 		return strings.Join(newLines, "\n")
 	}
 
+	for i := rangeStart; i <= rangeEnd; i++ {
+		trimmedImage := strings.TrimSpace(lines[i])
+		isListItem := strings.HasPrefix(trimmedImage, "- ")
+		trimmedImage = strings.TrimPrefix(trimmedImage, "- ")
+		if !strings.HasPrefix(trimmedImage, "image:") {
+			continue
+		}
+
+		indentStr, _ := LeadingWhitespace(lines[i])
+		insertAt := i
+		if isListItem {
+			indentStr += "  "
+			insertAt++
+		}
+		newLines := append([]string{}, lines[:insertAt]...)
+		newLines = append(newLines, optionalManagerEnvironmentVariablesBlock(indentStr)...)
+		newLines = append(newLines, lines[insertAt:]...)
+		return strings.Join(newLines, "\n")
+	}
+
 	return yamlContent
+}
+
+const managerEnvironmentVariablesCondition = `{{- if or .Values.manager.env ` +
+	`(and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}`
+
+func managerEnvironmentVariablesBlock(indentStr string, isListItem bool) []string {
+	return buildManagerEnvironmentVariablesBlock(indentStr, isListItem, false)
+}
+
+func optionalManagerEnvironmentVariablesBlock(indentStr string) []string {
+	return buildManagerEnvironmentVariablesBlock(indentStr, false, true)
+}
+
+func buildManagerEnvironmentVariablesBlock(indentStr string, isListItem, omitWhenEmpty bool) []string {
+	envLine := indentStr + "env:"
+	fieldIndent := indentStr
+	if isListItem {
+		envLine = indentStr + "- env:"
+		fieldIndent += "  "
+	}
+
+	childIndent := fieldIndent + "  "
+	childIndentWidth := strconv.Itoa(len(childIndent))
+
+	var builder strings.Builder
+	writeLine := func(indent, content string) {
+		builder.WriteString(indent)
+		builder.WriteString(content)
+		builder.WriteString("\n")
+	}
+
+	if omitWhenEmpty {
+		writeLine(fieldIndent, managerEnvironmentVariablesCondition)
+	}
+	writeLine("", envLine)
+	if !omitWhenEmpty {
+		writeLine(fieldIndent, managerEnvironmentVariablesCondition)
+	}
+	writeLine(childIndent, `{{- if .Values.manager.env }}`)
+	writeLine(childIndent, "{{- toYaml .Values.manager.env | nindent "+childIndentWidth+" }}")
+	writeLine(childIndent, `{{- end }}`)
+	writeLine(childIndent, `{{- if kindIs "map" .Values.manager.envOverrides }}`)
+	writeLine(childIndent, `{{- range $k, $v := .Values.manager.envOverrides }}`)
+	writeLine(childIndent, `- name: {{ $k }}`)
+	writeLine(childIndent, `  value: {{ $v | quote }}`)
+	writeLine(childIndent, `{{ end }}`)
+	writeLine(childIndent, `{{- end }}`)
+	if !omitWhenEmpty {
+		writeLine(childIndent, `{{- else }}`)
+		writeLine(childIndent, "[]")
+		writeLine(childIndent, `{{- end }}`)
+	} else {
+		writeLine(fieldIndent, `{{- end }}`)
+	}
+
+	return strings.Split(strings.TrimSuffix(builder.String(), "\n"), "\n")
 }
 
 func templateResources(yamlContent string) string {

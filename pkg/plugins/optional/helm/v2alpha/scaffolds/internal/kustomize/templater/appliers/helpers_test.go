@@ -490,6 +490,81 @@ var _ = Describe("FindManagerContainerRange", func() {
 })
 
 var _ = Describe("templateEnvironmentVariables", func() {
+	It("should add configurable environment variables when the manager has no env field", func() {
+		yaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - args:
+        - --leader-elect
+        image: controller:latest
+        name: manager`
+
+		result := templateEnvironmentVariables(yaml)
+
+		Expect(result).To(ContainSubstring(managerEnvironmentVariablesCondition + "\n        env:\n"))
+		Expect(result).To(ContainSubstring(".Values.manager.envOverrides"))
+		Expect(strings.Index(result, managerEnvironmentVariablesCondition)).To(BeNumerically("<", strings.Index(result, "env:\n")))
+		Expect(strings.Index(result, "env:\n")).To(BeNumerically("<", strings.Index(result, "image:")))
+		Expect(result).NotTo(ContainSubstring("\n          []"))
+
+		By("remaining idempotent when the generated template is processed again")
+		Expect(templateEnvironmentVariables(result)).To(Equal(result))
+	})
+
+	It("should replace an inline empty env field instead of adding a duplicate", func() {
+		yaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - env: []
+        image: controller:latest
+        name: manager`
+
+		result := templateEnvironmentVariables(yaml)
+
+		Expect(strings.Count(result, "env:")).To(Equal(1))
+		Expect(result).NotTo(ContainSubstring("env: []"))
+		Expect(result).To(ContainSubstring(".Values.manager.envOverrides"))
+	})
+
+	It("should keep the container list item when image is the first field", func() {
+		yaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - image: controller:latest
+        name: manager`
+
+		result := templateEnvironmentVariables(yaml)
+
+		Expect(result).To(ContainSubstring("      - image: controller:latest\n        " +
+			managerEnvironmentVariablesCondition + "\n        env:\n"))
+		Expect(result).To(ContainSubstring(".Values.manager.envOverrides"))
+		Expect(strings.Count(result, "- image: controller:latest")).To(Equal(1))
+	})
+
 	It("should not break FindManagerContainerRange for subsequent callers", func() {
 		yaml := `apiVersion: apps/v1
 kind: Deployment
