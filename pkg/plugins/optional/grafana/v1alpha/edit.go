@@ -19,6 +19,8 @@ package v1alpha
 import (
 	"fmt"
 
+	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
@@ -34,10 +36,15 @@ type editSubcommand struct {
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = metaDataDescription
 
-	subcmdMeta.Examples = fmt.Sprintf(`  # Edit a common project with this plugin
+	subcmdMeta.Examples = fmt.Sprintf(`  # Scaffold Grafana dashboards into the project
   %[1]s edit --plugins=%[2]s
+
+  # Remove Grafana dashboards from the project
+  %[1]s delete --plugins=%[2]s
 `, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
+
+func (p *editSubcommand) BindFlags(_ *pflag.FlagSet) {}
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c

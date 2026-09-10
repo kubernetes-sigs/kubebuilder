@@ -59,6 +59,13 @@ var _ = Describe("Plugin", func() {
 		})
 	})
 
+	Context("GetDeleteSubcommand", func() {
+		It("should return a delete subcommand", func() {
+			subcommand := p.GetDeleteSubcommand()
+			Expect(subcommand).NotTo(BeNil())
+		})
+	})
+
 	Context("DeprecationWarning", func() {
 		It("should return empty string since v2-alpha is not deprecated", func() {
 			warning := p.DeprecationWarning()

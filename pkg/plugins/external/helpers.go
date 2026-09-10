@@ -199,6 +199,15 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 	for filename, data := range res.Universe {
 		file := filepath.Join(currentDir, filename)
+
+		// An empty value signals that the plugin wants the file deleted.
+		if data == "" {
+			if rmErr := fs.FS.Remove(file); rmErr != nil && !os.IsNotExist(rmErr) {
+				return fmt.Errorf("error removing file %q: %w", file, rmErr)
+			}
+			continue
+		}
+
 		dir := filepath.Dir(file)
 
 		// create the directory if it does not exist

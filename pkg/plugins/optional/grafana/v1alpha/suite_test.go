@@ -17,29 +17,13 @@ limitations under the License.
 package v1alpha
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 )
 
-var _ = Describe("Plugin", func() {
-	var p Plugin
-
-	It("should have correct version and support v3 projects", func() {
-		Expect(p.Version().Number).To(Equal(1))
-		Expect(p.SupportedProjectVersions()).To(ContainElement(cfgv3.Version))
-	})
-
-	It("should not be deprecated", func() {
-		Expect(p.DeprecationWarning()).To(BeEmpty())
-	})
-
-	It("should return an edit subcommand", func() {
-		Expect(p.GetEditSubcommand()).NotTo(BeNil())
-	})
-
-	It("should return a delete subcommand", func() {
-		Expect(p.GetDeleteSubcommand()).NotTo(BeNil())
-	})
-})
+func TestGrafanaV1Alpha(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Grafana V1Alpha Plugin Suite")
+}
