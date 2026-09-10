@@ -85,7 +85,7 @@ func (sp *Sample) GenerateSampleProject() {
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomValidator struct {`,
+type CronJobValidator struct {`,
 		`// +kubebuilder:docs-gen:collapse=Remaining Webhook Code`)
 	hackutils.CheckError("adding marker collapse", err)
 }
@@ -99,13 +99,6 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateAPIV1()
 	sp.updateAPIV2()
 	sp.updateWebhookV2()
-
-	path := "internal/webhook/v1/cronjob_webhook_test.go"
-	err := pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
-		`// TODO (user): Add any additional imports if needed`,
-		`
-	"k8s.io/utils/ptr"`)
-	hackutils.CheckError("add import for webhook tests", err)
 
 	sp.updateConversionFiles()
 	sp.updateSampleV2()

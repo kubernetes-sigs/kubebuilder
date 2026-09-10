@@ -17,7 +17,6 @@ package machinery
 import (
 	"errors"
 	"os"
-	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -109,16 +108,57 @@ var _ = Describe("Scaffold", func() {
 	})
 
 	Describe("SubstituteYear", func() {
-		It("should replace YEAR with the current UTC year", func() {
-			currentYear := strconv.Itoa(time.Now().UTC().Year())
+		BeforeEach(func() {
+			nowFunc = func() time.Time {
+				return time.Date(2025, time.January, 1, 0, 30, 0, 0, time.FixedZone("UTC+1", 60*60))
+			}
+		})
+
+		AfterEach(func() {
+			nowFunc = time.Now
+		})
+
+		It("should replace YEAR with the current local year", func() {
 			Expect(SubstituteYear("Copyright YEAR The Authors.")).
-				To(Equal("Copyright " + currentYear + " The Authors."))
+				To(Equal("Copyright 2025 The Authors."))
 		})
 
 		It("should leave strings without YEAR unchanged", func() {
 			Expect(SubstituteYear("Copyright 2024 The Authors.")).
 				To(Equal("Copyright 2024 The Authors."))
 		})
+
+		It("should return an empty string unchanged", func() {
+			Expect(SubstituteYear("")).To(Equal(""))
+		})
+
+		It("should substitute YEAR when boilerplate is provided via WithBoilerplate", func() {
+			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()},
+				WithBoilerplate("Copyright YEAR The Authors."))
+			Expect(s.injector.boilerplate).To(Equal("Copyright 2025 The Authors."))
+		})
+
+		DescribeTable("should replace only standalone YEAR placeholders",
+			func(input, expected string) {
+				Expect(SubstituteYear(input)).To(Equal(expected))
+			},
+			Entry("replaces multiple standalone placeholders",
+				"Copyright YEAR-YEAR The Authors.",
+				"Copyright 2025-2025 The Authors.",
+			),
+			Entry("replaces standalone placeholders next to punctuation",
+				"Copyright (YEAR), The Authors.",
+				"Copyright (2025), The Authors.",
+			),
+			Entry("does not replace YEAR inside another word",
+				"Copyright YEAR GOODYEAR PREYEAR YEARLY Authors.",
+				"Copyright 2025 GOODYEAR PREYEAR YEARLY Authors.",
+			),
+			Entry("does not replace YEAR next to digits or underscores",
+				"Copyright YEAR YEAR2024 2024YEAR YEAR_2024 Authors.",
+				"Copyright 2025 YEAR2024 2024YEAR YEAR_2024 Authors.",
+			),
+		)
 	})
 
 	Describe("Scaffold.Execute", func() {

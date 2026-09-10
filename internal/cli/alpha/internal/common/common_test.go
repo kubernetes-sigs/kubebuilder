@@ -21,6 +21,7 @@ package common
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -81,6 +82,28 @@ var _ = Describe("LoadProjectConfig", func() {
 			_, err := LoadProjectConfig(kbc.Dir)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to load PROJECT file"))
+		})
+	})
+
+	Context("when PROJECT is not a regular file", func() {
+		It("should report a directory instead of a missing file", func() {
+			Expect(os.Mkdir(projectFile, 0o755)).To(Succeed())
+
+			_, err := LoadProjectConfig(kbc.Dir)
+			Expect(err).To(MatchError(ContainSubstring("is a directory")))
+			Expect(err).NotTo(MatchError(ContainSubstring("does not exist")))
+		})
+
+		It("should report a dangling symbolic link instead of a missing file", func() {
+			if runtime.GOOS == "windows" {
+				Skip("symlink creation requires elevated privileges on Windows")
+			}
+			target := filepath.Join(kbc.Dir, "stolen.yaml")
+			Expect(os.Symlink(target, projectFile)).To(Succeed())
+
+			_, err := LoadProjectConfig(kbc.Dir)
+			Expect(err).To(MatchError(ContainSubstring("is a symbolic link")))
+			Expect(target).NotTo(BeAnExistingFile())
 		})
 	})
 })
@@ -149,6 +172,19 @@ var _ = Describe("GetInputPath", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(inputPath).To(Equal(""))
 			Expect(err.Error()).To(ContainSubstring("does not exist"))
+		})
+	})
+
+	Context("when PROJECT is a dangling symbolic link", func() {
+		It("should accept the path so that loading it reports the link", func() {
+			if runtime.GOOS == "windows" {
+				Skip("symlink creation requires elevated privileges on Windows")
+			}
+			Expect(os.Symlink(filepath.Join(kbc.Dir, "stolen.yaml"), projectFile)).To(Succeed())
+
+			inputPath, err := GetInputPath(kbc.Dir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(inputPath).To(Equal(kbc.Dir))
 		})
 	})
 })

@@ -106,7 +106,7 @@ func (s *apiScaffolder) Scaffold() error {
 	)
 
 	if err := scaffold.Execute(
-		&api.Types{Port: s.port},
+		&api.Types{Port: s.port, SkipApplyConfig: s.hasSSAInPackage()},
 	); err != nil {
 		return fmt.Errorf("error updating APIs: %w", err)
 	}
@@ -149,6 +149,25 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return s.addEnvVarIntoManager()
+}
+
+// hasSSAInPackage checks if another kind in the same group/version has SSA enabled.
+func (s *apiScaffolder) hasSSAInPackage() bool {
+	resources, err := s.config.GetResources()
+	if err != nil {
+		return false
+	}
+
+	for _, res := range resources {
+		if res.GVK == s.resource.GVK {
+			continue
+		}
+		if res.Group == s.resource.Group && res.Version == s.resource.Version &&
+			res.API != nil && res.API.SSA {
+			return true
+		}
+	}
+	return false
 }
 
 // addEnvVarIntoManager will update the config/manager/manager.yaml by adding
@@ -229,8 +248,8 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 		res = strings.TrimLeft(res, " ")
 
 		if err := util.InsertCode(controller.Path, `SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             ptr.To(true),
-							AllowPrivilegeEscalation: ptr.To(false),
+							RunAsNonRoot:             new(true),
+							AllowPrivilegeEscalation: new(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",
@@ -247,8 +266,8 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 		if err := util.InsertCode(
 			controller.Path,
 			`SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             ptr.To(true),
-							AllowPrivilegeEscalation: ptr.To(false),
+							RunAsNonRoot:             new(true),
+							AllowPrivilegeEscalation: new(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",
@@ -269,7 +288,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 	if len(s.runAsUser) > 0 {
 		if err := util.InsertCode(
 			controller.Path,
-			`RunAsNonRoot:             ptr.To(true),`,
+			`RunAsNonRoot:             new(true),`,
 			fmt.Sprintf(runAsUserTemplate, s.runAsUser),
 		); err != nil {
 			return fmt.Errorf("error scaffolding user-id in the controller path %q: %w",
@@ -314,8 +333,8 @@ const containerTemplate = `Containers: []corev1.Container{{
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             ptr.To(true),
-							AllowPrivilegeEscalation: ptr.To(false),
+							RunAsNonRoot:             new(true),
+							AllowPrivilegeEscalation: new(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",
@@ -325,7 +344,7 @@ const containerTemplate = `Containers: []corev1.Container{{
 					}}`
 
 const runAsUserTemplate = `
-							RunAsUser:                ptr.To(int64(%s)),`
+							RunAsUser:                new(int64(%s)),`
 
 const commandTemplate = `
 						Command: []string{%s},`

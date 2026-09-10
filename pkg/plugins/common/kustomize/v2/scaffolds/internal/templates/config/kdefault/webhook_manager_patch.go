@@ -59,6 +59,11 @@ const managerWebhookPatchTemplate = `# This patch ensures the webhook certificat
   path: /spec/template/spec/containers/0/args/-
   value: --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
 
+# Add the --webhook-port argument to match the webhook Service target port
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --webhook-port=9443
+
 # Add the volumeMount for the webhook certificates
 - op: add
   path: /spec/template/spec/containers/0/volumeMounts/-

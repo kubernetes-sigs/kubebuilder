@@ -29,17 +29,14 @@ const (
 	alphaCommand = "alpha"
 )
 
-var alphaCommands = []*cobra.Command{
-	newAlphaCommand(),
-	alpha.NewScaffoldCommand(),
-	alpha.NewUpdateCommand(),
-}
-
-func newAlphaCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		// TODO: If we need to create alpha commands please add a new file for each command
+// newAlphaSubcommands returns the built-in subcommands of the alpha command. Each CLI gets its own:
+// Cobra records the parent on a command when it is added, so a command shared by several CLIs in
+// one process would run the hooks of the CLI built last.
+func newAlphaSubcommands() []*cobra.Command {
+	return []*cobra.Command{
+		alpha.NewScaffoldCommand(),
+		alpha.NewUpdateCommand(),
 	}
-	return cmd
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
@@ -54,17 +51,12 @@ Alpha subcommands are for unstable features.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
 	}
-	// TODO: Add alpha commands here if we need to have them
-	for i := range alphaCommands {
-		cmd.AddCommand(alphaCommands[i])
-	}
+	cmd.AddCommand(newAlphaSubcommands()...)
 	return cmd
 }
 
 func (c *CLI) addAlphaCmd() {
-	if (len(alphaCommands) + len(c.extraAlphaCommands)) > 0 {
-		c.cmd.AddCommand(c.newAlphaCmd())
-	}
+	c.cmd.AddCommand(c.newAlphaCmd())
 }
 
 func (c *CLI) addExtraAlphaCommands() error {
@@ -86,6 +78,7 @@ func (c *CLI) addExtraAlphaCommands() error {
 				return fmt.Errorf("command %q already exists", fmt.Sprintf("%s %s", alphaCommand, cmd.Name()))
 			}
 		}
+		c.checkCommandLineBeforeHooks(cmd)
 		cmds.AddCommand(cmd)
 	}
 	return nil

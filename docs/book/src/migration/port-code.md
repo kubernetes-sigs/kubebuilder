@@ -62,7 +62,7 @@ Controller files (typically *_controller.go):
 
 Webhook files (typically *_webhook.go):
 - OLD pattern: func (r *<Name>) Default(), func (r *<Name>) ValidateCreate() error
-- NEW pattern: type <Name>CustomDefaulter struct, func (d *<Name>CustomDefaulter) Default(ctx context.Context, obj *<Name>) error
+- NEW pattern: type <Name>Defaulter struct, func (d *<Name>Defaulter) Default(ctx context.Context, obj *<Name>) error
 - Conversion: func (*<Name>) Hub(), func (r *<Name>) ConvertTo(...), func (r *<Name>) ConvertFrom(...)
 
 Main file:
@@ -169,7 +169,7 @@ PORT CUSTOM CODE (in this order):
 
    Detect pattern by reading backup file:
    - Has "func (r *<Kind>) Default() {": OLD pattern (needs adaptation)
-   - Has "func (d *<Kind>CustomDefaulter) Default(ctx": NEW pattern (direct copy)
+   - Has "func (d *<Kind>Defaulter) Default(ctx": NEW pattern (direct copy)
 
    IF OLD pattern - ADAPT:
    - Default(): Extract logic, paste after type assertion, change 'r.' to '<kind>.', add return nil, REMOVE TODO
@@ -177,7 +177,7 @@ PORT CUSTOM CODE (in this order):
    - Conversion: Copy Hub/ConvertTo/ConvertFrom directly (no change needed)
 
    IF NEW pattern - DIRECT COPY:
-   - Copy CustomDefaulter/CustomValidator structs and all methods
+   - Copy Defaulter/Validator structs and all methods
    - Copy helper functions and imports
 
    After each: go mod tidy && make manifests && make build
@@ -368,7 +368,7 @@ func (r *Captain) Default() {
 
 **To go/v4 new project**:
 ```go
-func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj *crewv1.Captain) error {
+func (d *CaptainDefaulter) Default(ctx context.Context, obj *crewv1.Captain) error {
     // Ported logic adapted (obj is type-safe, no assertion needed):
     if obj.Spec.Replicas == 0 {
         obj.Spec.Replicas = 1

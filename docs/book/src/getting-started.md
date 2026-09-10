@@ -182,9 +182,9 @@ reconcile App {
   // Look for Database CR/CRD
   // Check the Database Deployment's replicas size
   // If deployment.replicas size does not match cr.size, then update it
-  // Then, restart from the beginning of the reconcile. For example, by returning `reconcile.Result{Requeue: true}, nil`.
+  // Then, requeue the reconciliation to ensure the desired state is reached. For example, by returning `reconcile.Result{RequeueAfter: time.Minute}, nil`.
   if err != nil {
-    return reconcile.Result{Requeue: true}, nil
+    return reconcile.Result{RequeueAfter: time.Minute}, nil
   }
   ...
 
@@ -205,19 +205,13 @@ The following are a few possible return options to restart the Reconcile:
 ```go
 return ctrl.Result{}, err
 ```
-- Without an error:
+- Without an error (requeue after a delay):
 
 ```go
-return ctrl.Result{Requeue: true}, nil
+return ctrl.Result{RequeueAfter: time.Minute}, nil
 ```
 
-- Therefore, to stop the Reconcile, use:
-
-```go
-return ctrl.Result{}, nil
-```
-
-- Reconcile again after X time:
+- Reconcile again after a computed duration:
 
 ```go
 return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
@@ -372,7 +366,7 @@ For more information, see the Kubernetes documentation on [Owners and Dependents
 
 ### Granting permissions
 
-It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
+It's important to ensure that the Controller has the necessary permissions (i.e., to create, get, update, and list)
 the resources it manages.
 
 You configure the [RBAC permissions][k8s-rbac] via [RBAC markers][rbac-markers], which [controller-gen][controller-gen] uses to generate and update the

@@ -392,13 +392,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 func (sp *Sample) updateWebhookTests() {
 	file := filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook_test.go")
 
-	err := pluginutil.InsertCode(file,
-		`// TODO (user): Add any additional imports if needed`,
-		`
-	"k8s.io/utils/ptr"`)
-	hackutils.CheckError("add import for webhook tests", err)
-
-	err = pluginutil.ReplaceInFile(file,
+	err := pluginutil.ReplaceInFile(file,
 		webhookTestCreateDefaultingFragment,
 		webhookTestCreateDefaultingReplaceFragment)
 	hackutils.CheckError("replace create defaulting test", err)
@@ -484,8 +478,8 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
-		`WithDefaulter(&CronJobCustomDefaulter{}).`,
-		`WithDefaulter(&CronJobCustomDefaulter{
+		`WithDefaulter(&CronJobDefaulter{}).`,
+		`WithDefaulter(&CronJobDefaulter{
         DefaultConcurrencyPolicy:      batchv1.AllowConcurrent,
         DefaultSuspend:                false,
         DefaultSuccessfulJobsHistoryLimit: 3,
@@ -519,7 +513,7 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
-		`// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.`,
+		`// Default implements admission.Defaulter so a webhook will be registered for the Kind CronJob.`,
 		customInterfaceDefaultInfo)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
@@ -540,7 +534,7 @@ func (sp *Sample) updateSuiteTest() {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-	"time"
+	"testing"
 `, `
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -603,9 +597,8 @@ var (
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 `, suiteTestCleanup)
 	hackutils.CheckError("updating suite_test.go to cleanup tests", err)

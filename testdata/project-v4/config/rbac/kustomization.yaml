@@ -22,6 +22,9 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the project-v4 itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- navigator_admin_role.yaml
+- navigator_editor_role.yaml
+- navigator_viewer_role.yaml
 - admiral_admin_role.yaml
 - admiral_editor_role.yaml
 - admiral_viewer_role.yaml

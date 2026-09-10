@@ -18,7 +18,6 @@ package update
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -92,8 +91,6 @@ type Update struct {
 	// CLI (`gh`) to be installed and authenticated in the local environment.
 	OpenGhIssue bool
 
-	UseGhModels bool
-
 	// GitConfig holds per-invocation Git settings applied to every `git` command via
 	// `git -c key=value`.
 	//
@@ -128,12 +125,6 @@ type Update struct {
 // Update a project using a default three-way Git merge.
 // This helps apply new scaffolding changes while preserving custom code.
 func (opts *Update) Update() error {
-	// Inform users about GitHub Models if they're opening an issue but not using AI summary
-	if opts.OpenGhIssue && !opts.UseGhModels {
-		log.Info("Consider enabling GitHub Models to get an AI summary to help with the update")
-		log.Info("Use the --use-gh-models flag if your project/organization has permission to use GitHub Models")
-	}
-
 	log.Info("Checking out base branch", "branch", opts.FromBranch)
 	checkoutCmd := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch)
 	if err := checkoutCmd.Run(); err != nil {
@@ -159,6 +150,9 @@ func (opts *Update) Update() error {
 	// 3. Installs old release
 	// 4. Runs alpha generate with old release binary
 	// 5. Commits the result
+	// Always remove temporary branches, including on error paths.
+	defer opts.cleanupTempBranches()
+
 	log.Info("Preparing Ancestor branch", "branch_name", opts.AncestorBranch)
 	if err := opts.prepareAncestorBranch(); err != nil {
 		return fmt.Errorf("failed to prepare ancestor branch: %w", err)
@@ -215,7 +209,6 @@ func (opts *Update) Update() error {
 		}
 	}
 
-	opts.cleanupTempBranches()
 	log.Info("Update completed successfully")
 
 	if opts.OpenGhIssue {
@@ -293,56 +286,6 @@ func (opts *Update) openGitHubIssue(hasConflicts bool) error {
 	}
 	log.Info("GitHub Issue created to track the update", "url", issueURL, "compare", createPRURL)
 
-	if opts.UseGhModels {
-		log.Info("Generating AI summary with gh models")
-
-		if issueURL == "" {
-			return fmt.Errorf("issue created but URL could not be determined")
-		}
-
-		releaseURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/tag/%s",
-			opts.ToVersion)
-
-		ctx := helpers.BuildFullPrompet(
-			opts.FromVersion, opts.ToVersion, opts.FromBranch, out,
-			createPRURL, releaseURL)
-
-		var outBuf, errBuf bytes.Buffer
-		cmd := exec.Command(
-			"gh", "models", "run", "openai/gpt-5",
-			"--system-prompt", helpers.AiPRPrompt,
-		)
-		cmd.Stdin = strings.NewReader(ctx)
-		cmd.Stdout = &outBuf
-		cmd.Stderr = &errBuf
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("gh models run failed: %w\nstderr:\n%s", err, errBuf.String())
-		}
-
-		summary := strings.TrimSpace(outBuf.String())
-		if summary != "" {
-			num := helpers.IssueNumberFromURL(issueURL)
-			target := issueURL
-			args := make([]string, 4, 7)
-			args[0] = "issue"
-			args[1] = "comment"
-			args[2] = "--repo"
-			args[3] = repo
-			if num != "" {
-				target = num
-			}
-			args = append(args, target, "--body", summary)
-			commentCmd := exec.Command("gh", args...)
-			commentCmd.Stdout = os.Stdout
-			commentCmd.Stderr = os.Stderr
-			if err := commentCmd.Run(); err != nil {
-				return fmt.Errorf("failed to add AI summary comment: %s", err)
-			}
-			log.Info("AI summary comment added to the issue")
-		} else {
-			log.Warn("AI summary was empty, no comment added")
-		}
-	}
 	return nil
 }
 
@@ -434,8 +377,13 @@ func regenerateProjectWithVersion(version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download release %s binary: %w", version, err)
 	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Warn("failed to remove temporary directory", "dir", tempDir, "error", err)
+		}
+	}()
 	if err := runAlphaGenerate(tempDir, version); err != nil {
-		return fmt.Errorf("failed to run alpha generate on ancestor branch: %w", err)
+		return fmt.Errorf("failed to run alpha generate for version %s: %w", version, err)
 	}
 	return nil
 }
@@ -518,9 +466,9 @@ func runMakeTargets(skipConflicts bool) {
 	}
 }
 
-// runAlphaGenerate executes the old Kubebuilder version's 'alpha generate' command
-// to create clean scaffolding in the ancestor branch. This uses the downloaded
-// binary with the original PROJECT file to recreate the project's initial state.
+// runAlphaGenerate executes the specified Kubebuilder version's 'alpha generate' command
+// to create clean scaffolding. This uses the downloaded binary with the original
+// PROJECT file to recreate the project state for the given version.
 func runAlphaGenerate(tempDir, version string) error {
 	log.Info("Generating project", "version", version)
 

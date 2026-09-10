@@ -146,9 +146,7 @@ func (c *ResourceCategorizer) collectMetricsResources() []*unstructured.Unstruct
 
 // collectPrometheusResources gathers prometheus related resources.
 func (c *ResourceCategorizer) collectPrometheusResources() []*unstructured.Unstructured {
-	prometheusResources := make([]*unstructured.Unstructured, 0, len(c.resources.ServiceMonitors))
-	prometheusResources = append(prometheusResources, c.resources.ServiceMonitors...)
-	return prometheusResources
+	return c.resources.ServiceMonitors
 }
 
 // collectNetworkPolicyResources gathers network policy related resources.
@@ -181,6 +179,8 @@ func (c *ResourceCategorizer) isMetricsService(service *unstructured.Unstructure
 // collectExtrasResources gathers uncategorized resources that don't fit standard categories.
 func (c *ResourceCategorizer) collectExtrasResources() []*unstructured.Unstructured {
 	var extrasResources []*unstructured.Unstructured
+
+	extrasResources = append(extrasResources, c.resources.ExtraDeployments...)
 
 	for _, service := range c.resources.Services {
 		if !c.isWebhookService(service) && !c.isMetricsService(service) {

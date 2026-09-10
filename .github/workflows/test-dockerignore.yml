@@ -1,0 +1,54 @@
+name: Docker Build Context
+
+on:
+  push:
+    paths:
+      - '**/.dockerignore'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerignore.go'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerfile.go'
+      - 'test/verify-docker-build-context.sh'
+      - '.github/workflows/test-dockerignore.yml'
+  pull_request:
+    paths:
+      - '**/.dockerignore'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerignore.go'
+      - 'pkg/plugins/golang/v4/scaffolds/internal/templates/dockerfile.go'
+      - 'test/verify-docker-build-context.sh'
+      - '.github/workflows/test-dockerignore.yml'
+
+permissions: {}
+
+jobs:
+  # The scaffolded .dockerignore re-includes every Go source with !**/*.go, so the
+  # image builds no matter which directories hold the code. Only docker (BuildKit)
+  # evaluates that re-include; podman and buildah do not (containers/buildah#6417)
+  # and are best effort, documented in the FAQ. project-v4 already carries an API
+  # and webhooks, so it exercises cmd/, api/ and internal/.
+  build-context:
+    name: docker
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # testdata go.sum is gitignored; generate it so the context is complete and the
+      # image can build.
+      - name: Generate the sample go.sum
+        working-directory: testdata/project-v4
+        run: go mod tidy
+
+      - name: Verify the build context holds only the manager sources
+        run: make test-docker-build-context
+
+      - name: Build the manager image
+        working-directory: testdata/project-v4
+        run: make docker-build IMG=controller:ci

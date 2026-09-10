@@ -33,7 +33,7 @@ var memcachedlog = logf.Log.WithName("memcached-resource")
 // SetupMemcachedWebhookWithManager registers the webhook for Memcached in the manager.
 func SetupMemcachedWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &examplecomv1alpha1.Memcached{}).
-		WithValidator(&MemcachedCustomValidator{}).
+		WithValidator(&MemcachedValidator{}).
 		Complete()
 }
 
@@ -43,17 +43,17 @@ func SetupMemcachedWebhookWithManager(mgr ctrl.Manager) error {
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-example-com-testproject-org-v1alpha1-memcached,mutating=false,failurePolicy=fail,sideEffects=None,groups=example.com.testproject.org,resources=memcacheds,verbs=create;update,versions=v1alpha1,name=vmemcached-v1alpha1.kb.io,admissionReviewVersions=v1
 
-// MemcachedCustomValidator struct is responsible for validating the Memcached resource
+// MemcachedValidator struct is responsible for validating the Memcached resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type MemcachedCustomValidator struct {
+type MemcachedValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
-func (v *MemcachedCustomValidator) ValidateCreate(_ context.Context, obj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Memcached.
+func (v *MemcachedValidator) ValidateCreate(_ context.Context, obj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
 	memcachedlog.Info("Validation for Memcached upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -61,8 +61,8 @@ func (v *MemcachedCustomValidator) ValidateCreate(_ context.Context, obj *exampl
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
-func (v *MemcachedCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Memcached.
+func (v *MemcachedValidator) ValidateUpdate(_ context.Context, oldObj, newObj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
 	memcachedlog.Info("Validation for Memcached upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -70,8 +70,8 @@ func (v *MemcachedCustomValidator) ValidateUpdate(_ context.Context, oldObj, new
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
-func (v *MemcachedCustomValidator) ValidateDelete(_ context.Context, obj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Memcached.
+func (v *MemcachedValidator) ValidateDelete(_ context.Context, obj *examplecomv1alpha1.Memcached) (admission.Warnings, error) {
 	memcachedlog.Info("Validation for Memcached upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

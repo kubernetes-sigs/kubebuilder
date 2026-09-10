@@ -106,14 +106,6 @@ func dedupeResources(resources []*unstructured.Unstructured) []*unstructured.Uns
 	return out
 }
 
-// ExtractDeploymentConfig extracts configuration values from the deployment for values.yaml.
-func (c *ChartConverter) ExtractDeploymentConfig() map[string]any {
-	deploymentExtractor := extractor.DeploymentExtractor{}
-	valuesConfig := deploymentExtractor.ExtractDeploymentConfig(c.resources.Deployment)
-
-	return convertValuesConfigToMap(valuesConfig)
-}
-
 // convertValuesConfigToMap converts ValuesConfig struct to map[string]any.
 func convertValuesConfigToMap(vc extractor.ValuesConfig) map[string]any {
 	config := make(map[string]any)

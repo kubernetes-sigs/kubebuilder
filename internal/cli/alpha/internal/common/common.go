@@ -17,6 +17,7 @@ limitations under the License.
 package common
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -27,7 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-// LoadProjectConfig load the project config.
+// LoadProjectConfig loads the project configuration.
 func LoadProjectConfig(inputDir string) (store.Store, error) {
 	projectConfig := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
 	if err := projectConfig.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
@@ -36,7 +37,7 @@ func LoadProjectConfig(inputDir string) (store.Store, error) {
 	return projectConfig, nil
 }
 
-// GetInputPath will return the input path for the project.
+// GetInputPath returns the input path for the project.
 func GetInputPath(inputPath string) (string, error) {
 	if inputPath == "" {
 		cwd, err := os.Getwd()
@@ -46,8 +47,11 @@ func GetInputPath(inputPath string) (string, error) {
 		inputPath = cwd
 	}
 	projectPath := fmt.Sprintf("%s/%s", inputPath, yaml.DefaultPath)
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+	// The link is not followed, so that loading the project reports a link with a missing target.
+	if _, err := os.Lstat(projectPath); errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("project path %q does not exist: %w", projectPath, err)
+	} else if err != nil {
+		return "", fmt.Errorf("failed to check project path %q: %w", projectPath, err)
 	}
 	return inputPath, nil
 }

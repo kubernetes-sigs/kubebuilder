@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
@@ -112,5 +113,50 @@ var _ = Describe("resourceOptions", func() {
 			Entry("for `Fish`", "Fish", "fish"),
 			Entry("for `Helmswoman`", "Helmswoman", "helmswomen"),
 		)
+	})
+
+	Context("resolveDomain", func() {
+		const externalDomain = "cert-manager.io"
+
+		external := func(d string) resource.Resource {
+			return resource.Resource{
+				GVK:      resource.GVK{Group: group, Domain: d, Version: version, Kind: kind},
+				External: true,
+			}
+		}
+
+		newCfg := func(tracked ...resource.Resource) *cfgv3.Cfg {
+			c := &cfgv3.Cfg{Version: cfgv3.Version, Domain: domain}
+			for _, r := range tracked {
+				Expect(c.AddResource(r)).To(Succeed())
+			}
+			return c
+		}
+
+		DescribeTable("keeps the project domain",
+			func(getCfg func() *cfgv3.Cfg) {
+				opts := resourceOptions{GVK: fullGVK}
+				Expect(opts.resolveDomain(getCfg())).To(Equal(domain))
+			},
+			Entry("when nothing is tracked", func() *cfgv3.Cfg { return newCfg() }),
+			Entry("when the exact GVK is tracked", func() *cfgv3.Cfg {
+				return newCfg(resource.Resource{GVK: fullGVK})
+			}),
+			Entry("when multiple G+V+K matches are ambiguous", func() *cfgv3.Cfg {
+				return newCfg(external(externalDomain), external("other-vendor.io"))
+			}),
+		)
+
+		It("adopts the stored external domain and flows it through newResource", func() {
+			opts := resourceOptions{GVK: fullGVK}
+			cfg := newCfg(external(externalDomain))
+
+			opts.Domain = opts.resolveDomain(cfg)
+			res := opts.newResource()
+
+			Expect(opts.Domain).To(Equal(externalDomain))
+			Expect(res.Domain).To(Equal(externalDomain))
+			Expect(res.QualifiedGroup()).To(Equal(group + "." + externalDomain))
+		})
 	})
 })

@@ -84,7 +84,7 @@ func (f *WebhookUpdater) SetTemplateDefaults() error {
 	var newCode strings.Builder
 
 	// Add defaulting webhook if requested and not already present
-	defaulterType := fmt.Sprintf("%sCustomDefaulter", f.Resource.Kind)
+	defaulterType := fmt.Sprintf("%sDefaulter", f.Resource.Kind)
 	if f.Resource.HasDefaultingWebhook() {
 		typeDefPattern := regexp.MustCompile(fmt.Sprintf(`type\s+%s\s+struct`, defaulterType))
 		if typeDefPattern.MatchString(string(content)) {
@@ -103,7 +103,7 @@ func (f *WebhookUpdater) SetTemplateDefaults() error {
 	}
 
 	// Add validation webhook if requested and not already present
-	validatorType := fmt.Sprintf("%sCustomValidator", f.Resource.Kind)
+	validatorType := fmt.Sprintf("%sValidator", f.Resource.Kind)
 	if f.Resource.HasValidationWebhook() {
 		typeDefPattern := regexp.MustCompile(fmt.Sprintf(`type\s+%s\s+struct`, validatorType))
 		if typeDefPattern.MatchString(string(content)) {
@@ -127,6 +127,7 @@ func (f *WebhookUpdater) SetTemplateDefaults() error {
 
 	// Append new webhook code at the end of the file
 	if newCode.Len() > 0 {
+		fileContent = f.addContextImport(fileContent)
 		fileContent = strings.TrimRight(fileContent, "\n") + "\n" + newCode.String()
 	}
 
@@ -243,9 +244,27 @@ func (f *WebhookUpdater) addAdmissionImport(content string) string {
 	return content
 }
 
+// addContextImport adds the context package import required by admission webhooks.
+func (f *WebhookUpdater) addContextImport(content string) string {
+	const contextImport = `"context"`
+	if strings.Contains(content, contextImport) {
+		return content
+	}
+
+	importBlockPattern := regexp.MustCompile(`(?s)(import\s*\()`)
+	if match := importBlockPattern.FindStringSubmatch(content); len(match) > 1 {
+		return strings.Replace(content, match[1], match[1]+"\n\t"+contextImport, 1)
+	}
+
+	log.Warn("Could not add context import",
+		"kind", f.Resource.Kind,
+		"suggestion", "Manually add: context")
+	return content
+}
+
 // generateDefaulterSetupCode generates the setup code for defaulting webhook
 func (f *WebhookUpdater) generateDefaulterSetupCode() string {
-	code := fmt.Sprintf("\t\tWithDefaulter(&%sCustomDefaulter{}).", f.Resource.Kind)
+	code := fmt.Sprintf("\t\tWithDefaulter(&%sDefaulter{}).", f.Resource.Kind)
 	if f.Resource.Webhooks.DefaultingPath != "" {
 		code += fmt.Sprintf("\n\t\tWithDefaulterCustomPath(\"%s\").", f.Resource.Webhooks.DefaultingPath)
 	}
@@ -254,7 +273,7 @@ func (f *WebhookUpdater) generateDefaulterSetupCode() string {
 
 // generateValidatorSetupCode generates the setup code for validation webhook
 func (f *WebhookUpdater) generateValidatorSetupCode() string {
-	code := fmt.Sprintf("\t\tWithValidator(&%sCustomValidator{}).", f.Resource.Kind)
+	code := fmt.Sprintf("\t\tWithValidator(&%sValidator{}).", f.Resource.Kind)
 	if f.Resource.Webhooks.ValidationPath != "" {
 		code += fmt.Sprintf("\n\t\tWithValidatorCustomPath(\"%s\").", f.Resource.Webhooks.ValidationPath)
 	}
@@ -281,12 +300,12 @@ func (f *WebhookUpdater) generateDefaultingWebhookCode() string {
 	fmt.Fprintf(&code, `
 // +kubebuilder:webhook:path=%s,mutating=true,failurePolicy=fail,sideEffects=None,groups=%s,resources=%s,verbs=create;update,versions=%s,name=m%s-%s.kb.io,admissionReviewVersions=%s
 
-// %sCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// %sDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind %s when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type %sCustomDefaulter struct {
+type %sDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
@@ -299,8 +318,8 @@ type %sCustomDefaulter struct {
 	// Default method
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
-	fmt.Fprintf(&code, `// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind %s.
-func (d *%sCustomDefaulter) Default(_ context.Context, obj *%s) error {
+	fmt.Fprintf(&code, `// Default implements admission.Defaulter so a webhook will be registered for the Kind %s.
+func (d *%sDefaulter) Default(_ context.Context, obj *%s) error {
 	%slog.Info("Defaulting for %s", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -337,12 +356,12 @@ func (f *WebhookUpdater) generateValidationWebhookCode() string {
 	//nolint:lll
 	fmt.Fprintf(&code, `// +kubebuilder:webhook:path=%s,mutating=false,failurePolicy=fail,sideEffects=None,groups=%s,resources=%s,verbs=create;update,versions=%s,name=v%s-%s.kb.io,admissionReviewVersions=%s
 
-// %sCustomValidator struct is responsible for validating the %s resource
+// %sValidator struct is responsible for validating the %s resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type %sCustomValidator struct{
+type %sValidator struct{
 	// TODO(user): Add more fields as needed for validation
 }
 
@@ -355,8 +374,8 @@ type %sCustomValidator struct{
 	objType := f.Resource.ImportAlias() + "." + f.Resource.Kind
 
 	fmt.Fprintf(&code,
-		`// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj *%s) (admission.Warnings, error) {
+		`// ValidateCreate implements admission.Validator so a webhook will be registered for the type %s.
+func (v *%sValidator) ValidateCreate(_ context.Context, obj *%s) (admission.Warnings, error) {
 	%slog.Info("Validation for %s upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -364,8 +383,8 @@ func (v *%sCustomValidator) ValidateCreate(_ context.Context, obj *%s) (admissio
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *%s) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type %s.
+func (v *%sValidator) ValidateUpdate(_ context.Context, oldObj, newObj *%s) (admission.Warnings, error) {
 	%slog.Info("Validation for %s upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -373,8 +392,8 @@ func (v *%sCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *%s
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type %s.
-func (v *%sCustomValidator) ValidateDelete(_ context.Context, obj *%s) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type %s.
+func (v *%sValidator) ValidateDelete(_ context.Context, obj *%s) (admission.Warnings, error) {
 	%slog.Info("Validation for %s upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

@@ -47,19 +47,14 @@ type webhookScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
-
-	// Deprecated - TODO: remove it for go/v5
-	// isLegacy indicates that the resource should be created in the legacy path under the api
-	isLegacy bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(cfg config.Config, res resource.Resource, force bool, isLegacy bool) plugins.Scaffolder {
+func NewWebhookScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:   cfg,
 		resource: res,
 		force:    force,
-		isLegacy: isLegacy,
 	}
 }
 
@@ -126,7 +121,7 @@ func (s *webhookScaffolder) Scaffold() error {
 
 		// Update main.go to wire webhook setup function (for all webhook types)
 		if err = scaffold.Execute(
-			&cmd.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
+			&cmd.MainUpdater{WireWebhook: true},
 		); err != nil {
 			return fmt.Errorf("error updating main.go: %w", err)
 		}
@@ -170,22 +165,19 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 	// Scaffold webhook suite test for all webhook types
 	// Note: Conversion webhooks also need the suite to register with envtest
 	if doDefaulting || doValidation || doConversion {
-		if err = scaffold.Execute(&webhooks.WebhookSuite{IsLegacyPath: s.isLegacy}); err != nil {
+		if err = scaffold.Execute(&webhooks.WebhookSuite{}); err != nil {
 			return fmt.Errorf("error scaffold webhook suite: %w", err)
 		}
 	}
 
-	// TODO: remove for go/v5
-	if !s.isLegacy {
-		if hasInternalController, err := pluginutil.HasFileContentWith("Dockerfile", "internal/controller"); err != nil {
-			log.Error("failed to read Dockerfile to check if webhook(s) will be properly copied", "error", err)
-		} else if hasInternalController {
-			log.Warn("Dockerfile is copying internal/controller; to allow copying webhooks, " +
-				"it will be edited, and `internal/controller` will be replaced by `internal/`")
+	if hasInternalController, err := pluginutil.HasFileContentWith("Dockerfile", "internal/controller"); err != nil {
+		log.Error("failed to read Dockerfile to check if webhook(s) will be properly copied", "error", err)
+	} else if hasInternalController {
+		log.Warn("Dockerfile is copying internal/controller; to allow copying webhooks, " +
+			"it will be edited, and `internal/controller` will be replaced by `internal/`")
 
-			if err = pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
-				log.Error("failed to replace \"internal/controller\" with \"internal/\" in the Dockerfile", "error", err)
-			}
+		if err = pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
+			log.Error("failed to replace \"internal/controller\" with \"internal/\" in the Dockerfile", "error", err)
 		}
 	}
 	return nil
@@ -193,10 +185,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 // getWebhookFilePath returns the path to the webhook file
 func (s *webhookScaffolder) getWebhookFilePath() string {
-	baseDir := "api"
-	if !s.isLegacy {
-		baseDir = "internal/webhook"
-	}
+	baseDir := "internal/webhook"
 
 	var path string
 	if s.config.IsMultiGroup() && s.resource.Group != "" {
@@ -212,10 +201,7 @@ func (s *webhookScaffolder) getWebhookFilePath() string {
 
 // getWebhookTestFilePath returns the path to the webhook test file
 func (s *webhookScaffolder) getWebhookTestFilePath() string {
-	baseDir := "api"
-	if !s.isLegacy {
-		baseDir = "internal/webhook"
-	}
+	baseDir := "internal/webhook"
 
 	var path string
 	if s.config.IsMultiGroup() && s.resource.Group != "" {
@@ -233,11 +219,11 @@ func (s *webhookScaffolder) getWebhookTestFilePath() string {
 func (s *webhookScaffolder) scaffoldWebhookFile(scaffold *machinery.Scaffold, fileExists bool) error {
 	if !fileExists || s.force {
 		if err := scaffold.Execute(
-			&webhooks.Webhook{Force: s.force, IsLegacyPath: s.isLegacy},
+			&webhooks.Webhook{Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error creating webhook: %w", err)
 		}
-	} else if fileExists && !s.force && !s.isLegacy {
+	} else if fileExists && !s.force {
 		log.Info("Adding new webhook type to existing file")
 		if err := scaffold.Execute(
 			&webhooks.WebhookUpdater{},
@@ -252,11 +238,11 @@ func (s *webhookScaffolder) scaffoldWebhookFile(scaffold *machinery.Scaffold, fi
 func (s *webhookScaffolder) scaffoldWebhookTestFile(scaffold *machinery.Scaffold, fileExists bool) error {
 	if !fileExists || s.force {
 		if err := scaffold.Execute(
-			&webhooks.WebhookTest{Force: s.force, IsLegacyPath: s.isLegacy},
+			&webhooks.WebhookTest{Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error creating webhook test: %w", err)
 		}
-	} else if fileExists && !s.force && !s.isLegacy {
+	} else if fileExists && !s.force {
 		if err := scaffold.Execute(
 			&webhooks.WebhookTestUpdater{},
 		); err != nil {

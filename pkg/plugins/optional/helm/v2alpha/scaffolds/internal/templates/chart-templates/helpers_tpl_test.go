@@ -37,10 +37,13 @@ var _ = Describe("HelmHelpers", func() {
 
 			Expect(templateBody).To(ContainSubstring(`{{- define "test-project.serviceAccountName" -}}`))
 			Expect(templateBody).To(ContainSubstring(
-				`{{- if and (not (.Values.serviceAccount.enabled | default true)) .Values.serviceAccount.name }}`))
-			Expect(templateBody).To(ContainSubstring(`{{- .Values.serviceAccount.name }}`))
+				`{{- if .Values.serviceAccount.enabled }}`))
 			Expect(templateBody).To(ContainSubstring(
 				`{{- include "test-project.resourceName" (dict "suffix" "controller-manager" "context" .) }}`))
+			Expect(templateBody).To(ContainSubstring(
+				`{{- required "serviceAccount.name is required when serviceAccount.enabled=false ` +
+					`(set name: default explicitly to use the namespace default ServiceAccount)" ` +
+					`.Values.serviceAccount.name }}`))
 		})
 
 		It("generates resourceName helper with 63-character limit truncation logic", func() {
@@ -59,7 +62,7 @@ var _ = Describe("HelmHelpers", func() {
 			Expect(templateBody).To(ContainSubstring(`| trunc 63 | trimSuffix "-"`))
 		})
 
-		It("allows external ServiceAccount name to bypass nameOverride/fullnameOverride", func() {
+		It("requires an explicit ServiceAccount name when disabled", func() {
 			helpers := &HelmHelpers{
 				ProjectNameMixin: machinery.ProjectNameMixin{ProjectName: "test-project"},
 			}
@@ -69,10 +72,9 @@ var _ = Describe("HelmHelpers", func() {
 
 			templateBody := helpers.TemplateBody
 
-			Expect(templateBody).To(ContainSubstring(
-				`{{- if and (not (.Values.serviceAccount.enabled | default true)) .Values.serviceAccount.name }}`))
-			Expect(templateBody).To(ContainSubstring(
-				`{{- .Values.serviceAccount.name }}`))
+			Expect(templateBody).To(ContainSubstring(`{{- else }}`))
+			Expect(templateBody).To(ContainSubstring(`{{- required "serviceAccount.name is required`))
+			Expect(templateBody).NotTo(ContainSubstring(`| default "default"`))
 		})
 	})
 })

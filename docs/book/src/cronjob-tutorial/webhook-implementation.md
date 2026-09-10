@@ -1,8 +1,8 @@
 # Implementing defaulting/validating webhooks
 
 If you want to implement [admission webhooks](../reference/admission-webhook.md)
-for your CRD, the only thing you need to do is to implement the `CustomDefaulter`
-and (or) the `CustomValidator` interface.
+for your CRD, the only thing you need to do is to implement the `admission.Defaulter`
+and (or) the `admission.Validator` interface.
 
 Kubebuilder takes care of the rest for you, such as
 

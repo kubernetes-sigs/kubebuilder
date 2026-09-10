@@ -34,8 +34,8 @@ var captainlog = logf.Log.WithName("captain-resource")
 // SetupCaptainWebhookWithManager registers the webhook for Captain in the manager.
 func SetupCaptainWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Captain{}).
-		WithDefaulter(&CaptainCustomDefaulter{}).
-		WithValidator(&CaptainCustomValidator{}).
+		WithDefaulter(&CaptainDefaulter{}).
+		WithValidator(&CaptainValidator{}).
 		Complete()
 }
 
@@ -43,17 +43,17 @@ func SetupCaptainWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-captain,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=mcaptain-v1.kb.io,admissionReviewVersions=v1
 
-// CaptainCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// CaptainDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Captain when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type CaptainCustomDefaulter struct {
+type CaptainDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Captain.
-func (d *CaptainCustomDefaulter) Default(_ context.Context, obj *crewv1.Captain) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Captain.
+func (d *CaptainDefaulter) Default(_ context.Context, obj *crewv1.Captain) error {
 	captainlog.Info("Defaulting for Captain", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -65,17 +65,17 @@ func (d *CaptainCustomDefaulter) Default(_ context.Context, obj *crewv1.Captain)
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-crew-testproject-org-v1-captain,mutating=false,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=vcaptain-v1.kb.io,admissionReviewVersions=v1
 
-// CaptainCustomValidator struct is responsible for validating the Captain resource
+// CaptainValidator struct is responsible for validating the Captain resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type CaptainCustomValidator struct {
+type CaptainValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Captain.
+func (v *CaptainValidator) ValidateCreate(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
 	captainlog.Info("Validation for Captain upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -83,8 +83,8 @@ func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.C
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Captain) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Captain.
+func (v *CaptainValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Captain) (admission.Warnings, error) {
 	captainlog.Info("Validation for Captain upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -92,8 +92,8 @@ func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Captain.
+func (v *CaptainValidator) ValidateDelete(_ context.Context, obj *crewv1.Captain) (admission.Warnings, error) {
 	captainlog.Info("Validation for Captain upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

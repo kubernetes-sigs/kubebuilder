@@ -73,8 +73,8 @@ version: "3"
 
 Following some examples of motivations to track the input used:
 - check if a plugin can or cannot be scaffolded on top of an existing plugin (i.e.) plugin compatibility while chaining multiple of them together.
-- what operations can or cannot be done such as verify if the layout allow API(s) for different groups to be scaffolded for the current configuration or not.
-- verify what data can or not be used in the CLI operations such as to ensure that WebHooks can only be created for pre-existent API(s)
+- what operations can or cannot be done such as verify if the layout allows API(s) for different groups to be scaffolded for the current configuration or not.
+- verify what data can or cannot be used in the CLI operations such as to ensure that WebHooks can only be created for pre-existent API(s)
 
 Note that KubeBuilder is not only a CLI tool but can also be used as a library to allow users to create their plugins/tools, provide helpers and customizations on top of their existing projects - an example of which is [Operator-SDK][operator-sdk]. SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with, for example, the [Operator Framework solutions/OLM][olm]. You can check the [plugin's documentation][plugins-doc] to know more about creating custom plugins.
 
@@ -162,6 +162,7 @@ Now let us check its layout fields definition:
 | `resources.api`                     | The API scaffolded in the project via the sub-command `create api`.                                                                                                                                                                                                             |
 | `resources.api.crdVersion`          | The Kubernetes API version (`apiVersion`) used to do the scaffolding for the CRD resource.                                                                                                                                                                                      |
 | `resources.api.namespaced`          | The API RBAC permissions which can be namespaced or cluster scoped.                                                                                                                                                                                                             |
+| `resources.api.ssa`                 | **(Optional, Alpha)** When set to `true`, the API was scaffolded with Server-Side Apply support via `create api --ssa`. The scaffold adds the `+genclient` marker and generates apply configurations for the type. Alpha feature: it may change in future releases. Default is `false` (omitted from the PROJECT file). |
 | `resources.controller`              | Indicates whether you scaffolded a controller for the API.                                                                                                                                                                                                                      |
 | `resources.domain`                  | The domain of the resource that you provided by the `--domain` flag when you initialized the project or via the flag `--external-api-domain` when you used it to scaffold controllers for an [External Type][external-type].                                                   |
 | `resources.group`                   | The GKV group of the resource that you provide by the `--group` flag when you use the sub-command `create api`.                                                                                                                                                                |

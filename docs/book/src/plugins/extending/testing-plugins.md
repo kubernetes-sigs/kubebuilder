@@ -83,7 +83,7 @@ Here’s a general workflow to create a sample project using the `go/v4` plugin 
   	"--defaulting",
   	"--programmatic-validation",
   )
-  Expect(err).NotTo(HaveOccurred(), "Failed to create an webhook")
+  Expect(err).NotTo(HaveOccurred(), "Failed to create a webhook")
   ```
 
 [cert-manager-install]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/test/e2e/utils#TestContext.InstallCertManager

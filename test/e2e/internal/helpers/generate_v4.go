@@ -167,10 +167,68 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		"#- ../network-policy", "#")).To(Succeed())
 }
 
+// EnableWebhookNamespaceGating adds the namespaceSelector emitted by the controller-tools patch marker.
+// The kustomize patch can be removed after Kubebuilder updates to a release that includes the marker.
+func EnableWebhookNamespaceGating(kbc *utils.TestContext) {
+	By("patching the webhook configurations to only admit resources from labeled namespaces")
+	const anchor = `- path: manager_metrics_patch.yaml
+  target:
+    kind: Deployment`
+	const gatingPatches = anchor + `
+- patch: |-
+    - op: add
+      path: /webhooks/0/namespaceSelector
+      value:
+        matchLabels:
+          webhook: enabled
+  target:
+    kind: MutatingWebhookConfiguration
+- patch: |-
+    - op: add
+      path: /webhooks/0/namespaceSelector
+      value:
+        matchLabels:
+          webhook: enabled
+  target:
+    kind: ValidatingWebhookConfiguration`
+	ExpectWithOffset(1, pluginutil.ReplaceInFile(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		anchor, gatingPatches)).To(Succeed())
+}
+
 // GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
 func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 	initingTheProject(kbc)
 	creatingAPI(kbc)
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+}
+
+// GenerateV4WithoutConversionWebhook implements a go/v4 plugin project with admission webhooks only.
+// A Helm chart generated from it accepts webhook.enabled=false, which charts with CRD conversion reject.
+func GenerateV4WithoutConversionWebhook(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+	creatingAPI(kbc)
+
+	By("scaffolding mutating and validating webhooks")
+	err := kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold admission webhooks")
+
+	By("implementing the mutating and validating webhooks")
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
@@ -238,6 +296,75 @@ func GenerateV4WithCustomWebhookPath(kbc *utils.TestContext) {
 	)
 	Expect(err).To(HaveOccurred(), "Should fail when --validation-path is used without --programmatic-validation")
 	Expect(err.Error()).To(ContainSubstring("--validation-path can only be used with --programmatic-validation"))
+}
+
+// GenerateV4WithSSA implements a go/v4 plugin project with Server-Side Apply enabled.
+func GenerateV4WithSSA(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+
+	By("creating API with Server-Side Apply (--ssa)")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--ssa",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API with SSA")
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+`, kbc.Kind),
+		`	// +optional
+Count int `+"`"+`json:"count,omitempty"`+"`"+`
+`)).Should(Succeed())
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+}
+
+// GenerateV4WithSSAClusterScoped implements a go/v4 plugin project with cluster-scoped Server-Side Apply enabled.
+func GenerateV4WithSSAClusterScoped(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+
+	By("creating cluster-scoped API with Server-Side Apply (--ssa --namespaced=false)")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced=false",
+		"--resource",
+		"--controller",
+		"--ssa",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to create cluster-scoped API with SSA")
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+	`, kbc.Kind),
+		`	// +optional
+	Count int `+"`"+`json:"count,omitempty"`+"`"+`
+	`)).Should(Succeed())
+
+	By("verifying +genclient:nonNamespaced marker is present")
+	typesFilePath := filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind)))
+	content, err := os.ReadFile(typesFilePath)
+	Expect(err).NotTo(HaveOccurred(), "Failed to read types file")
+	Expect(string(content)).To(ContainSubstring("+genclient:nonNamespaced"),
+		"Types file should contain +genclient:nonNamespaced marker for cluster-scoped SSA")
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
 }
 
 func creatingAPI(kbc *utils.TestContext) {

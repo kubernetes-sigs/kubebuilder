@@ -146,21 +146,29 @@ certManager:
 `)
 	}
 
-	// Webhook configuration
-	if f.Extraction != nil && f.Extraction.Features.HasWebhooks {
-		f.addWebhookSection(&buf)
-	}
+	// Webhook configuration (always present so templates can reference webhook.enabled)
+	f.addWebhookSection(&buf)
 
-	// Prometheus configuration (always present)
+	// Prometheus configuration (always present, enabled when the kustomize output provides a ServiceMonitor)
+	prometheusEnabled := f.Extraction != nil && f.Extraction.Features.HasPrometheus
+
 	buf.WriteString(`## Prometheus ServiceMonitor for metrics scraping.
 ## Requires prometheus-operator to be installed in the cluster.
 ##
 prometheus:
-  enabled: false
+`)
+	fmt.Fprintf(&buf, "  enabled: %t\n\n", prometheusEnabled)
+	buf.WriteString(`  ## Custom ServiceMonitor labels
+  ##
+  # labels: {}
+
+  ## Custom ServiceMonitor annotations
+  ##
+  # annotations: {}
 
 `)
 
-	// NetworkPolicy configuration (always present, enabled when NetworkPolicy resources exist)
+	// NetworkPolicy configuration (always present, enabled when the kustomize output provides a NetworkPolicy)
 	networkPolicyEnabled := f.Extraction != nil && f.Extraction.Features.HasNetworkPolicy
 
 	buf.WriteString(`## Network policies for controlling traffic flow.
@@ -207,6 +215,9 @@ func (f *HelmValues) addImageSection(buf *bytes.Buffer) {
 func (f *HelmValues) addDeploymentConfig(buf *bytes.Buffer) {
 	// Args
 	f.addArgsSection(buf)
+
+	// Health probe (always present; every manager exposes liveness/readiness probes)
+	f.addHealthProbeSection(buf)
 
 	// Environment variables
 	f.addEnvSection(buf)
@@ -537,7 +548,8 @@ serviceAccount:
   # Install default ServiceAccount provided
   enabled: true
 
-  ## Existing ServiceAccount name (only when enabled=false)
+  ## Existing ServiceAccount name (required when enabled=false)
+  ## Set to "default" to use the namespace default ServiceAccount
   ## Note: When enabled=true, respects nameOverride/fullnameOverride
   ##
   # name: ""
@@ -557,11 +569,15 @@ serviceAccount:
 func (f *HelmValues) addMetricsSection(buf *bytes.Buffer) {
 	port := 8443
 	enableMetrics := false
+	secure := true
 
 	if f.Extraction != nil {
 		enableMetrics = f.Extraction.Features.HasMetrics
 		if f.Extraction.Features.MetricsPort > 0 {
 			port = f.Extraction.Features.MetricsPort
+		}
+		if f.Extraction.Features.MetricsSecure != nil {
+			secure = *f.Extraction.Features.MetricsSecure
 		}
 	}
 
@@ -576,24 +592,43 @@ metrics:
 	fmt.Fprintf(buf, "  port: %d\n", port)
 	buf.WriteString(`  # Enable secure metrics: HTTPS with certs/auth (true) or HTTP (false).
   # Note: Metrics authn/authz needs ClusterRole access.
-  secure: true
-
 `)
+	fmt.Fprintf(buf, "  secure: %t\n\n", secure)
+}
+
+// addHealthProbeSection adds health probe configuration under the manager section
+func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
+	port := 8081
+	if f.Extraction != nil && f.Extraction.Features.HealthProbePort > 0 {
+		port = f.Extraction.Features.HealthProbePort
+	}
+
+	buf.WriteString(`  ## Health probes.
+  ## The manager serves the liveness (/healthz) and readiness (/readyz) endpoints on this port.
+  ##
+  healthProbe:
+`)
+	buf.WriteString("    # Health probe server port\n")
+	fmt.Fprintf(buf, "    port: %d\n\n", port)
 }
 
 // addWebhookSection adds webhook configuration
 func (f *HelmValues) addWebhookSection(buf *bytes.Buffer) {
 	port := 9443
-	if f.Extraction != nil && f.Extraction.Features.WebhookPort > 0 {
-		port = f.Extraction.Features.WebhookPort
+	enabled := false
+	if f.Extraction != nil {
+		enabled = f.Extraction.Features.HasWebhooks
+		if f.Extraction.Features.WebhookPort > 0 {
+			port = f.Extraction.Features.WebhookPort
+		}
 	}
 
 	buf.WriteString(`## Webhook server configuration
 ##
 webhook:
-  enabled: true
-  # Webhook server port
 `)
+	fmt.Fprintf(buf, "  enabled: %t\n", enabled)
+	buf.WriteString("  # Webhook server port\n")
 	fmt.Fprintf(buf, "  port: %d\n\n", port)
 }
 

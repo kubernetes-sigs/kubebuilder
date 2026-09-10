@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/external"
 )
 
 var _ = Describe("cmd_helpers", func() {
@@ -116,6 +117,30 @@ var _ = Describe("cmd_helpers", func() {
 			chain := []string{flagKey1, flagKey2, flagKey2}
 			result := moveKeyToFront(chain, flagKey2)
 			Expect(result).To(Equal([]string{flagKey2, flagKey1}))
+		})
+	})
+
+	Context("shouldShowPluginPrefix", func() {
+		It("should return true if --plugins flag is used", func() {
+			c := &CLI{resolvedPlugins: []plugin.Plugin{mockPlugin{}}}
+			Expect(c.shouldShowPluginPrefix([]string{
+				kubebuilderCommandName, kubebuilderSubcommandInit, "--plugins",
+			})).To(BeTrue())
+			Expect(c.shouldShowPluginPrefix([]string{
+				kubebuilderCommandName, kubebuilderSubcommandInit, "--plugins=go/v4",
+			})).To(BeTrue())
+		})
+
+		It("should return true if an external plugin is present", func() {
+			c := &CLI{resolvedPlugins: []plugin.Plugin{mockPlugin{}, external.Plugin{}}}
+			Expect(c.shouldShowPluginPrefix([]string{kubebuilderCommandName, kubebuilderSubcommandInit})).To(BeTrue())
+		})
+
+		It("should return false if neither --plugins flag nor external plugin is used", func() {
+			c := &CLI{resolvedPlugins: []plugin.Plugin{mockPlugin{}}}
+			Expect(c.shouldShowPluginPrefix([]string{
+				kubebuilderCommandName, kubebuilderSubcommandInit, domainFlagArg, "my-test.example.com",
+			})).To(BeFalse())
 		})
 	})
 
@@ -280,7 +305,7 @@ var _ = Describe("cmd_helpers", func() {
 			dest.BoolVar(&destBool, "force", false, "overwrite files (plugin A)")
 			src.BoolVar(&srcBool, "force", false, "regenerate all files (plugin B)")
 
-			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag, true)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dest.Lookup("force")).NotTo(BeNil())
 			Expect(duplicateValues["force"]).To(HaveLen(1))
@@ -296,7 +321,7 @@ var _ = Describe("cmd_helpers", func() {
 			dest.BoolVar(&a, "force", false, "overwrite files (plugin A)")
 			src.BoolVar(&b, "force", false, "regenerate all files (plugin B)")
 
-			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag, true)
 			Expect(err).NotTo(HaveOccurred())
 
 			flag := dest.Lookup("force")
@@ -317,8 +342,8 @@ var _ = Describe("cmd_helpers", func() {
 			pluginA.BoolVar(&a, "force", false, "overwrite files (plugin A)")
 			pluginB.BoolVar(&b, "force", false, "regenerate all files (plugin B)")
 
-			Expect(mergeFlagSetInto(dest, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag)).NotTo(HaveOccurred())
-			Expect(mergeFlagSetInto(dest, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(dest, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag, true)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(dest, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag, true)).NotTo(HaveOccurred())
 
 			flag := dest.Lookup("force")
 			Expect(flag).NotTo(BeNil())
@@ -337,10 +362,51 @@ var _ = Describe("cmd_helpers", func() {
 			goPlugin.BoolVar(&a, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
 			helmPlugin.BoolVar(&b, "force", false, "if true, regenerates all the files")
 
-			Expect(mergeFlagSetInto(dest, goPlugin, duplicateValues, "base.go.kubebuilder.io/v4", firstPluginByFlag)).
+			Expect(mergeFlagSetInto(dest, goPlugin, duplicateValues, "base.go.kubebuilder.io/v4", firstPluginByFlag, true)).
 				NotTo(HaveOccurred())
-			Expect(mergeFlagSetInto(dest, helmPlugin, duplicateValues, "helm.kubebuilder.io/v2-alpha", firstPluginByFlag)).
+			Expect(mergeFlagSetInto(dest, helmPlugin, duplicateValues, "helm.kubebuilder.io/v2-alpha", firstPluginByFlag, true)).
 				NotTo(HaveOccurred())
+
+			flag := dest.Lookup("force")
+			Expect(flag).NotTo(BeNil())
+			expectedUsage := "For plugin (base.go.kubebuilder.io/v4): overwrite scaffolded files to apply changes " +
+				"(manual edits may be lost) AND for plugin (helm.kubebuilder.io/v2-alpha): if true, regenerates all the files"
+			Expect(flag.Usage).To(Equal(expectedUsage))
+		})
+
+		It("should not show For plugin prefix when showPluginPrefix is false for a single flag", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			goPlugin := pflag.NewFlagSet("go", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var a bool
+			goPlugin.BoolVar(&a, "force", false, "overwrite scaffolded files to apply changes")
+
+			Expect(mergeFlagSetInto(dest, goPlugin, duplicateValues, "base.go.kubebuilder.io/v4", firstPluginByFlag, false)).
+				NotTo(HaveOccurred())
+
+			flag := dest.Lookup("force")
+			Expect(flag).NotTo(BeNil())
+			Expect(flag.Usage).To(Equal("overwrite scaffolded files to apply changes"))
+		})
+
+		It("should rewrite with For plugin prefixes when flags collide and showPluginPrefix is false", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ExitOnError)
+			goPlugin := pflag.NewFlagSet("go", pflag.ExitOnError)
+			helmPlugin := pflag.NewFlagSet("helm", pflag.ExitOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			var a, b bool
+			goPlugin.BoolVar(&a, "force", false, "overwrite scaffolded files to apply changes (manual edits may be lost)")
+			helmPlugin.BoolVar(&b, "force", false, "if true, regenerates all the files")
+
+			Expect(mergeFlagSetInto(dest, goPlugin, duplicateValues, "base.go.kubebuilder.io/v4", firstPluginByFlag, false)).
+				NotTo(HaveOccurred())
+
+			Expect(mergeFlagSetInto(dest, helmPlugin, duplicateValues,
+				"helm.kubebuilder.io/v2-alpha", firstPluginByFlag, false)).NotTo(HaveOccurred())
 
 			flag := dest.Lookup("force")
 			Expect(flag).NotTo(BeNil())
@@ -361,7 +427,7 @@ var _ = Describe("cmd_helpers", func() {
 			dest.BoolVar(&a, "flag", false, "bool usage (plugin A)")
 			src.StringVar(&b, "flag", "", "string usage (plugin B)")
 
-			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag)
+			err := mergeFlagSetInto(dest, src, duplicateValues, "pluginB/v1", firstPluginByFlag, true)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("same flag name"))
 			Expect(err.Error()).To(ContainSubstring("different value types"))
@@ -400,8 +466,10 @@ var _ = Describe("cmd_helpers", func() {
 
 			duplicateValues := make(map[string][]pflag.Value)
 			firstPluginByFlag := make(map[string]string)
-			Expect(mergeFlagSetInto(cmdFlags, pluginA, duplicateValues, "pluginA/v1", firstPluginByFlag)).NotTo(HaveOccurred())
-			Expect(mergeFlagSetInto(cmdFlags, pluginB, duplicateValues, "pluginB/v1", firstPluginByFlag)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(cmdFlags, pluginA, duplicateValues,
+				"pluginA/v1", firstPluginByFlag, true)).NotTo(HaveOccurred())
+			Expect(mergeFlagSetInto(cmdFlags, pluginB, duplicateValues,
+				"pluginB/v1", firstPluginByFlag, true)).NotTo(HaveOccurred())
 
 			Expect(cmdFlags.Parse([]string{flagForce, flagValueTrue})).NotTo(HaveOccurred())
 			syncDuplicateFlags(cmdFlags, duplicateValues)
@@ -434,7 +502,7 @@ var _ = Describe("cmd_helpers", func() {
 			}
 			meta := plugin.CLIMetadata{}
 
-			result, err := initializationHooks(cmd, tuples, meta)
+			result, err := initializationHooks(cmd, tuples, meta, false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.duplicateFlagValues["force"]).To(HaveLen(1), "second plugin's Value recorded as duplicate")
 

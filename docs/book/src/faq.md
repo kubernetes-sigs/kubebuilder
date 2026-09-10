@@ -105,9 +105,7 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration does not have to be stored as an annotation (last-applied-configuration) on the server. However, it is worth noting that as of now, it is not supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
-
-Therefore, you have a few options to workround this scenario such as:
+You have a few options to work around this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
@@ -126,6 +124,26 @@ Therefore, you have a few options to workround this scenario such as:
 **By re-design your APIs:**
 
 You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
+
+**By using Server-Side Apply for CRD installation:**
+
+Since this issue happens when CRDs are installed with client-side apply, another option is to install or update the CRDs with Server-Side Apply instead, for example by using `kubectl apply --server-side -f ...`. This avoids storing the full manifest in the `kubectl.kubernetes.io/last-applied-configuration` annotation and can prevent the size-limit failure.
+
+If you are updating existing CRDs, `kubectl replace -f ...` may also help, depending on your workflow.
+
+<aside class="note warning" role="note">
+<p class="note-title">Server-Side Apply Flag vs kubectl Server-Side Apply</p>
+
+Don't confuse the `kubectl apply --server-side` command mentioned above with the `--ssa` flag in Kubebuilder. They are different concepts:
+
+- **`kubectl apply --server-side`** (discussed above): A kubectl flag that changes how CRDs are installed to avoid the annotation size limit. This is about CRD installation only.
+
+- **`--ssa` flag**: A Kubebuilder flag (e.g., `kubebuilder create api --ssa`) that scaffolds controllers with runtime behavior for managing resource fields using Server-Side Apply patterns. This is about controller runtime behavior, specifically for scenarios where your controller shares field ownership with users or other controllers. It does NOT change how `make install` applies CRDs.
+
+See the [Kubernetes Server-Side Apply documentation][k8s-ssa-docs] to learn more about the Server-Side Apply concept in general.
+
+If you have APIs that do not use Server-Side Apply, ensure they have the `+kubebuilder:ac:generate=false` marker. If you added APIs manually to your project, review them to ensure every kind that should not use Server-Side Apply has this marker. See the [Server-Side Apply](./reference/server-side-apply.md) reference for details.
+</aside>
 
 ## How can I validate and parse fields in CRDs effectively?
 
@@ -158,7 +176,56 @@ type StructName struct {
 - Users still receive error notifications from the Kubernetes API for invalid `timeField` values.
 - Developers can directly use the parsed TimeField in their code without additional parsing, reducing errors and improving efficiency.
 
+## When I build the image with Podman or Buildah, the build fails with `cmd/main.go: no such file or directory`. How to solve it?
 
+While we do our best to keep the scaffold working with other container tools, Kubebuilder is officially tested and supported with **Docker**.
+
+The scaffolded `.dockerignore` re-includes all Go source files with `!**/*.go`. Docker honors this pattern. Podman and Buildah do not: they skip ignored directories, so no Go source reaches the build context. This is tracked upstream in [buildah#6417][dockerignore-buildah-issue] and was reported in [kubebuilder#5181][dockerignore-kb-issue].
+
+If you use Podman, re-include your source directories by name in `.dockerignore`:
+
+```text
+!cmd
+!api
+!internal
+```
+
+Add any other directory in your project that holds Go source files.
+
+## When I build the image with Podman or Buildah I get `short-name "golang:1.26" did not resolve to an alias and no unqualified-search registries are defined`. How to solve it?
+
+While we do our best to keep the scaffold working with other container tools, Kubebuilder is officially tested and supported with **Docker**.
+
+Docker resolves short image names to Docker Hub. Podman and Buildah resolve them from the host, using either the [short-name aliases][podman-shortnames] in [`registries.conf.d`][podman-registries-conf-d] or `unqualified-search-registries` in [`registries.conf`][podman-registries-conf]. You hit this error when the host has neither. Debian 12, for example, ships neither.
+
+Use one of the options below.
+
+**Override the base image.** The scaffolded `Dockerfile` exposes it as a [build argument][docker-arg-from]:
+
+```dockerfile
+ARG BASE_IMAGE=golang:1.26
+FROM ${BASE_IMAGE} AS builder
+```
+
+```sh
+# From Docker Hub
+make docker-build IMG=<some-registry>/<project>:tag BASE_IMAGE=docker.io/library/golang:1.26
+
+# From your own registry or mirror
+make docker-build IMG=<some-registry>/<project>:tag BASE_IMAGE=<myregistry>/golang:1.26
+```
+
+`make docker-buildx` accepts `BASE_IMAGE` too.
+
+**Or add an alias on the host** for the `golang` short name:
+
+```toml
+# /etc/containers/registries.conf.d/golang.conf
+[aliases]
+"golang" = "docker.io/library/golang"
+```
+
+A matching alias is used without consulting `unqualified-search-registries`, so it works even when that list is empty. It also ignores the tag, so one entry covers all `golang` tags. Prefer it over adding `docker.io` to the search list, which changes how every unqualified image name resolves on the host. For rootless Podman, use `$HOME/.config/containers/registries.conf.d/golang.conf`.
 
 [k8s-obj-creation]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
 [gvk]: ./cronjob-tutorial/gvks.md
@@ -168,4 +235,10 @@ type StructName struct {
 [permission-issue]: https://github.com/kubernetes/kubernetes/issues/82573
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
-[controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[k8s-ssa-docs]: https://kubernetes.io/docs/reference/using-api/server-side-apply/
+[dockerignore-kb-issue]: https://github.com/kubernetes-sigs/kubebuilder/issues/5181
+[dockerignore-buildah-issue]: https://github.com/containers/buildah/issues/6417
+[podman-registries-conf]: https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md
+[podman-registries-conf-d]: https://github.com/containers/image/blob/main/docs/containers-registries.conf.d.5.md
+[podman-shortnames]: https://github.com/containers/shortnames
+[docker-arg-from]: https://docs.docker.com/reference/dockerfile/#understand-how-arg-and-from-interact

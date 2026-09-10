@@ -25,14 +25,17 @@ import (
 
 	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
 
 // ParsedResources holds Kubernetes resources organized by type for Helm chart generation.
 type ParsedResources struct {
 	// Core Kubernetes resources
-	Namespace  *unstructured.Unstructured
-	Deployment *unstructured.Unstructured
-	Services   []*unstructured.Unstructured
+	Namespace        *unstructured.Unstructured
+	Deployment       *unstructured.Unstructured
+	ExtraDeployments []*unstructured.Unstructured
+	Services         []*unstructured.Unstructured
 
 	// RBAC resources
 	ServiceAccount      *unstructured.Unstructured
@@ -88,6 +91,7 @@ func (p *Parser) Parse() (*ParsedResources, error) {
 // ParseFromReader parses multi-document YAML from a reader and categorizes resources by type.
 func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	decoder := yaml.NewDecoder(reader)
+	var deployments []*unstructured.Unstructured
 	resources := &ParsedResources{
 		CustomResourceDefinitions: make([]*unstructured.Unstructured, 0),
 		Roles:                     make([]*unstructured.Unstructured, 0),
@@ -113,17 +117,26 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 			return nil, fmt.Errorf("failed to decode YAML document: %w", err)
 		}
 
-		// Skip empty documents
 		if doc == nil {
 			continue
 		}
 
 		obj := &unstructured.Unstructured{Object: doc}
-		p.categorizeResource(obj, resources)
+		if obj.GetKind() == "Deployment" {
+			deployments = append(deployments, obj)
+		} else {
+			p.categorizeResource(obj, resources)
+		}
 	}
 
-	// After parsing all resources, identify Custom Resources by matching against CRD API groups
 	p.identifyCustomResources(resources)
+
+	resources.Deployment = extractor.FindManagerDeployment(deployments)
+	for _, d := range deployments {
+		if d != resources.Deployment {
+			resources.ExtraDeployments = append(resources.ExtraDeployments, d)
+		}
+	}
 
 	return resources, nil
 }
@@ -150,8 +163,6 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.ClusterRoleBindings = append(resources.ClusterRoleBindings, obj)
 	case kind == "Service":
 		resources.Services = append(resources.Services, obj)
-	case kind == "Deployment":
-		resources.Deployment = obj
 	case kind == "Certificate" && apiVersion == "cert-manager.io/v1":
 		resources.Certificates = append(resources.Certificates, obj)
 	case kind == "Issuer" && apiVersion == "cert-manager.io/v1":
@@ -182,18 +193,12 @@ func (p *Parser) identifyCustomResources(resources *ParsedResources) {
 		return
 	}
 
-	// Separate Custom Resources from Other resources
 	var remainingOther []*unstructured.Unstructured
 	for _, resource := range resources.Other {
 		if resource == nil {
 			continue
 		}
-
-		// Extract API group from the resource's apiVersion (format: group/version or just version)
-		apiVersion := resource.GetAPIVersion()
-		apiGroup := extractAPIGroup(apiVersion)
-
-		// If this resource's API group matches one of our CRDs, it's a Custom Resource
+		apiGroup := extractAPIGroup(resource.GetAPIVersion())
 		if crdAPIGroups[apiGroup] {
 			resources.CustomResources = append(resources.CustomResources, resource)
 		} else {

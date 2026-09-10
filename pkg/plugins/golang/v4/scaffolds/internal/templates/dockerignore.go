@@ -43,6 +43,9 @@ const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/re
 **
 
 # Re-include Go source files (but not *_test.go)
+# If you use Podman, re-include your source directories by name,
+# such as !cmd, !api, and !internal.
+# See https://github.com/containers/buildah/issues/6417
 !**/*.go
 **/*_test.go
 

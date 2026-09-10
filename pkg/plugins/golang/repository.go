@@ -40,8 +40,7 @@ func findGoModulePath() (string, error) {
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	out, err := cmd.Output()
 	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
 		}
 		return "", err
@@ -79,8 +78,7 @@ func FindCurrentRepo() (string, error) {
 	cmd := exec.Command("go", "mod", "init")
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	if _, err := cmd.Output(); err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
 		}
 		// give up, let the user figure it out

@@ -119,8 +119,8 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
             log.Error(err, "Failed to update Deployment size", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
             return ctrl.Result{}, err
         }
-        // Requeue the request to ensure the correct state is achieved
-        return ctrl.Result{Requeue: true}, nil
+        // Requeue to ensure the correct state is achieved
+        return ctrl.Result{RequeueAfter: time.Minute}, nil
     }
 
     // Update Busybox status to reflect that the Deployment is available

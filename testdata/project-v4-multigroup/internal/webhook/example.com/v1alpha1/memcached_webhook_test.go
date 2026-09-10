@@ -28,13 +28,13 @@ var _ = Describe("Memcached Webhook", func() {
 	var (
 		obj       *examplecomv1alpha1.Memcached
 		oldObj    *examplecomv1alpha1.Memcached
-		validator MemcachedCustomValidator
+		validator MemcachedValidator
 	)
 
 	BeforeEach(func() {
 		obj = &examplecomv1alpha1.Memcached{}
 		oldObj = &examplecomv1alpha1.Memcached{}
-		validator = MemcachedCustomValidator{}
+		validator = MemcachedValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

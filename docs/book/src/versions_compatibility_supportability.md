@@ -13,7 +13,7 @@ Therefore, the versions defined in the `Makefile` and `go.mod` files are the one
 
 Each minor version of Kubebuilder is tested with a specific minor version of client-go.
 While a Kubebuilder minor version *may* be compatible with other client-go minor versions,
-or other tools this compatibility is not guaranteed, supported, or tested.
+or other tools, this compatibility is not guaranteed, supported, or tested.
 
 The minimum Go version required by Kubebuilder is determined by the highest minimum
 Go version required by its dependencies. This is usually aligned with the minimum
@@ -36,12 +36,12 @@ Contributions towards supporting Windows are not planned.
 <aside class="warning" role="note">
     <p class="note-title">Project customizations</p>
 
-After using the CLI to create your project, you are free to customize how
+After using the CLI to create your project, you are free to customize it as
 you see fit. Bear in mind, that it is not recommended to deviate from
 the proposed layout unless you know what you are doing.
 
-For example, you should refrain from moving the scaffolded files,
-doing so makes it difficult in upgrading your project in the future.
+For example, you should refrain from moving the scaffolded files;
+doing so makes it difficult to upgrade your project in the future.
 You may also lose the ability to use some of the CLI features and helpers.
 For further information on the project layout, see the doc [What's in a basic project?][basic-project-doc]
 

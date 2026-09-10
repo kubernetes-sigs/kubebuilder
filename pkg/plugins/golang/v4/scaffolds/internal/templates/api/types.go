@@ -35,6 +35,11 @@ type Types struct {
 	machinery.ResourceMixin
 
 	Force bool
+
+	// SkipApplyConfig adds the +kubebuilder:ac:generate=false marker so this kind is
+	// excluded from ApplyConfiguration generation when another kind in the same
+	// group/version has SSA enabled.
+	SkipApplyConfig bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -109,6 +114,15 @@ type {{ .Resource.Kind }}Status struct {
 	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty"` + "`" + `
 }
 
+{{- if .Resource.API.SSA }}
+// +genclient
+{{- if not .Resource.API.Namespaced }}
+// +genclient:nonNamespaced
+{{- end }}
+// +kubebuilder:ac:generate=true
+{{- else if .SkipApplyConfig }}
+// +kubebuilder:ac:generate=false
+{{- end }}
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 {{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}

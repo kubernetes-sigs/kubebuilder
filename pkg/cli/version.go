@@ -24,10 +24,10 @@ import (
 
 func (c CLI) newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "version",
+		Use:     kubebuilderSubcommandVersion,
 		Short:   fmt.Sprintf("Print the %s version", c.commandName),
 		Long:    fmt.Sprintf("Print the %s version", c.commandName),
-		Example: fmt.Sprintf("%s version", c.commandName),
+		Example: fmt.Sprintf("%s %s", c.commandName, kubebuilderSubcommandVersion),
 		RunE: func(_ *cobra.Command, _ []string) error {
 			fmt.Println(c.version)
 			return nil

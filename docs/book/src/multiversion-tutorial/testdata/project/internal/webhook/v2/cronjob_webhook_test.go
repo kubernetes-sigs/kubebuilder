@@ -28,16 +28,16 @@ var _ = Describe("CronJob Webhook", func() {
 	var (
 		obj       *batchv2.CronJob
 		oldObj    *batchv2.CronJob
-		validator CronJobCustomValidator
-		defaulter CronJobCustomDefaulter
+		validator CronJobValidator
+		defaulter CronJobDefaulter
 	)
 
 	BeforeEach(func() {
 		obj = &batchv2.CronJob{}
 		oldObj = &batchv2.CronJob{}
-		validator = CronJobCustomValidator{}
+		validator = CronJobValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
-		defaulter = CronJobCustomDefaulter{}
+		defaulter = CronJobDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

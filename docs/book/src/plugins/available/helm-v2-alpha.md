@@ -183,25 +183,43 @@ make helm-status
 Install manually with all features enabled:
 
 ```bash
-helm install my-release ./dist/chart --namespace my-project-system --create-namespace
+$ helm install my-release ./dist/chart --namespace my-project-system --create-namespace
 ```
 
-Install only CRDs and RBAC:
+For charts without conversion webhooks, disable the manager and all optional
+components by setting all of these values to `false`:
 
 ```bash
-helm install my-release ./dist/chart --set manager.enabled=false --set webhook.enabled=false
+$ helm install my-release ./dist/chart \
+  --set manager.enabled=false \
+  --set metrics.enabled=false \
+  --set webhook.enabled=false \
+  --set prometheus.enabled=false \
+  --set certManager.enabled=false \
+  --set networkPolicy.enabled=false
 ```
 
-Install without webhooks:
+For charts without conversion webhooks, install without webhooks:
 
 ```bash
-helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
+$ helm install my-release ./dist/chart --set webhook.enabled=false --set certManager.enabled=false
 ```
+
+`webhook.enabled=false` skips the webhook Service, the webhook configurations, the webhook NetworkPolicy, and the `webhook-server` container port. It also sets `--webhook-port=-1` to disable the webhook server. This works like `metrics.enabled=false`, which passes `--metrics-bind-address=0`.
+
+<aside class="note warning" role="note">
+<p class="note-title">Requires controller-runtime v0.25.0 or later</p>
+
+Older controller-runtime releases treat `--webhook-port=-1` as the default `9443`. The manager then tries to start the webhook server without a certificate and fails. See [Disabling the webhook server](../../reference/webhook-overview.md#disabling-the-webhook-server).
+
+</aside>
+
+Charts with CR version conversion reject `webhook.enabled=false`. The API server needs the webhook Service to convert custom resources.
 
 Install with NetworkPolicy resources:
 
 ```bash
-helm install my-release ./dist/chart --set networkPolicy.enabled=true
+$ helm install my-release ./dist/chart --set networkPolicy.enabled=true
 ```
 
 ### Extra volumes
@@ -213,6 +231,18 @@ Volumes in your kustomize configuration (`config/manager/manager.yaml` or patche
 Webhook and metrics certificates (`webhook-certs`, `metrics-certs`) are managed separately and controlled by `certManager.enabled` and (for metrics TLS) `metrics.enabled` + `metrics.secure`.
 
 ### Metrics configuration
+
+#### `metrics.port`
+
+Set `metrics.port` to change the port used by the metrics endpoint. The chart applies the same value to the manager `--metrics-bind-address` argument, the metrics Service port and targetPort, and the metrics NetworkPolicy.
+
+For example, install the chart with the metrics endpoint on port `8444`:
+
+```bash
+helm install my-operator ./dist/chart --set metrics.port=8444
+```
+
+The default is `8443`, detected from your project configuration.
 
 #### `metrics.secure`
 
@@ -235,19 +265,114 @@ The `metrics-auth-role` and `metrics-reader` are always ClusterRoles, even when 
 
 </aside>
 
+### Webhook port configuration
+
+Set `webhook.port` to change the manager argument, container port, Service target port, and NetworkPolicy. The Service's exposed port remains unchanged (`443` in the default manifests).
+
+For example, install the chart with the webhook server on port `9444`:
+
+```bash
+helm install my-operator ./dist/chart --set webhook.port=9444
+```
+
+The default is `9443`, detected from your project configuration. To disable the webhook server, set `webhook.enabled=false` instead of changing the port.
+
+### Health probe port configuration
+
+Set `manager.healthProbe.port` to change the port where the manager serves its health probes. The liveness (`/healthz`) and readiness (`/readyz`) endpoints bind to this port. The chart applies the same value to the `--health-probe-bind-address` argument, the `health` container port, and the `httpGet` port of both probes.
+
+For example, install the chart with the health probes on port `8082`:
+
+```bash
+helm install my-operator ./dist/chart --set manager.healthProbe.port=8082
+```
+
+The default is `8081`, detected from your project configuration.
+
+### Passing args for the manager
+
+Use `manager.args` in `values.yaml` to pass extra flags to the manager container that the chart does not expose as dedicated values. The chart renders each entry through Helm's `tpl` function, evaluated against the chart's root context, so an arg can reference other values, release information, or chart template functions instead of only a static string.
+
+For example, set the leader election namespace from the release namespace and add a plain flag:
+
+```yaml
+manager:
+  args:
+  - --leader-election-namespace={{ .Release.Namespace }}
+  - --leader-elect
+```
+
+Helm evaluates `{{ .Release.Namespace }}` at render time, so the manager container receives `--leader-election-namespace=<release-namespace>`. The `--leader-elect` flag has no template syntax, so it renders unchanged.
+
+<aside class="note" role="note">
+<p class="note-title">Do not set the metrics, webhook, or health probe flags in manager.args</p>
+
+The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--health-probe-bind-address` as `metrics.port`, `webhook.port`, and `manager.healthProbe.port`. Set those values instead of adding the flags to `manager.args`. The plugin removes these flags from the extracted args when it generates the chart, so adding one back through `manager.args`, templated or not, creates a duplicate flag alongside the value-driven one. The Service, NetworkPolicy, and probes keep using the configured port, so traffic and probes then target the wrong port.
+
+</aside>
+
 ### NetworkPolicy configuration
 
 Set `networkPolicy.enabled: true` to install NetworkPolicy resources for the manager pod.
 
-When the kustomize output includes `NetworkPolicy` resources, the plugin converts them into chart templates and sets `networkPolicy.enabled: true`. When no `NetworkPolicy` resources are present in the kustomize output, the plugin generates default templates for metrics traffic, and also for webhook traffic when webhooks are detected in the provided kustomize input files.
+When the kustomize output includes `NetworkPolicy` resources, the plugin converts and enables them. Otherwise, it generates a default metrics policy and, when it detects an admission or CRD conversion webhook, a default webhook policy.
+
+The plugin preserves default NetworkPolicy templates unless you pass `--force`. Policies from the kustomize output always regenerate, so edit them in `config/network-policy/`.
+
+The generated metrics policy is rendered only when both `networkPolicy.enabled` and `metrics.enabled` are `true`. The generated webhook policy is rendered only when both `networkPolicy.enabled` and `webhook.enabled` are `true`.
+
+The metrics policy allows ingress only from pods in namespaces labeled `metrics: enabled`. Label each namespace whose pods should scrape metrics:
+
+```bash
+$ kubectl label namespace <namespace> metrics=enabled
+```
+
+The default webhook policy allows ingress from all sources to the manager pod's webhook port. The API server reaches this port through the webhook Service for admission and CRD conversion webhooks. To restrict admission requests by namespace, set `namespaceSelector` on the `MutatingWebhookConfiguration` or `ValidatingWebhookConfiguration`. This setting controls which requests invoke an admission webhook; it does not restrict NetworkPolicy traffic.
 
 ### Custom labels and annotations
 
 Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
 
+The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`.
+
 ### ServiceAccount configuration
 
-Set `serviceAccount.enabled: true` (default) to create a ServiceAccount. Set `serviceAccount.enabled: false` to use an existing one.
+Set `serviceAccount.enabled: true` (default) to create a ServiceAccount. Set `serviceAccount.enabled: false` to use an existing one:
+
+```yaml
+serviceAccount:
+  enabled: false
+  name: my-existing-sa
+```
+
+The chart ships with the toggle enabled:
+
+```yaml
+serviceAccount:
+  enabled: true
+```
+
+Helm merges this default into any values file that omits the section, so omitting it keeps creating the account.
+
+When `serviceAccount.enabled: false`, `serviceAccount.name` is required and the chart fails to render without it. Set `name: default` explicitly to use the namespace default ServiceAccount.
+
+The resolved name is used consistently in the Deployment and in all RBAC bindings, for both cluster-scoped and namespaced RBAC modes:
+
+| `serviceAccount.enabled` | `serviceAccount.name` | ServiceAccount created | Name used (Deployment + RBAC bindings) |
+|--------------------------|-----------------------|------------------------|----------------------------------------|
+| `true` (default) | any | Yes | Generated (`<fullname>-controller-manager`, name is ignored) |
+| `false` | set | No | The provided name |
+| `false` | `default` | No | Namespace default ServiceAccount |
+| `false` | unset | No | Render fails with a clear error |
+
+The generated name is built from the chart fullname, typically `<release>-<chart>`, plus the `-controller-manager` suffix, truncated to the 63-character Kubernetes limit. It respects `nameOverride` and `fullnameOverride`.
+
+<aside class="note warning" role="note">
+<p class="note-title">Why an explicit name is required</p>
+
+Falling back to the namespace default ServiceAccount silently would bind the operator RBAC permissions to a shared identity. Requiring `serviceAccount.name` makes that choice explicit and catches misconfiguration at render time.
+
+</aside>
 
 Add annotations for cloud provider integrations:
 

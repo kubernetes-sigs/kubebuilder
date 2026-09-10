@@ -22,15 +22,14 @@ import (
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	// TODO (user): Add any additional imports if needed
-	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("CronJob Webhook", func() {
 	var (
 		obj       *batchv1.CronJob
 		oldObj    *batchv1.CronJob
-		validator CronJobCustomValidator
-		defaulter CronJobCustomDefaulter
+		validator CronJobValidator
+		defaulter CronJobDefaulter
 	)
 
 	const validCronJobName = "valid-cronjob-name"
@@ -41,8 +40,8 @@ var _ = Describe("CronJob Webhook", func() {
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -52,15 +51,15 @@ var _ = Describe("CronJob Webhook", func() {
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
 		*oldObj.Spec.FailedJobsHistoryLimit = 1
 
-		validator = CronJobCustomValidator{}
-		defaulter = CronJobCustomDefaulter{
+		validator = CronJobValidator{}
+		defaulter = CronJobDefaulter{
 			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
 			DefaultSuspend:                    false,
 			DefaultSuccessfulJobsHistoryLimit: 3,
@@ -96,9 +95,9 @@ var _ = Describe("CronJob Webhook", func() {
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
 			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			obj.Spec.Suspend = ptr.To(true)
-			obj.Spec.SuccessfulJobsHistoryLimit = ptr.To(int32(5))
-			obj.Spec.FailedJobsHistoryLimit = ptr.To(int32(2))
+			obj.Spec.Suspend = new(true)
+			obj.Spec.SuccessfulJobsHistoryLimit = new(int32(5))
+			obj.Spec.FailedJobsHistoryLimit = new(int32(2))
 
 			By("calling the Default method to apply defaults")
 			_ = defaulter.Default(ctx, obj)

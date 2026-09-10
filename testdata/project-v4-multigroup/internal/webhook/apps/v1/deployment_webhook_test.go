@@ -28,18 +28,18 @@ var _ = Describe("Deployment Webhook", func() {
 	var (
 		obj       *appsv1.Deployment
 		oldObj    *appsv1.Deployment
-		defaulter DeploymentCustomDefaulter
-		validator DeploymentCustomValidator
+		defaulter DeploymentDefaulter
+		validator DeploymentValidator
 	)
 
 	BeforeEach(func() {
 		obj = &appsv1.Deployment{}
 		oldObj = &appsv1.Deployment{}
-		defaulter = DeploymentCustomDefaulter{}
+		defaulter = DeploymentDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		validator = DeploymentCustomValidator{}
+		validator = DeploymentValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 	})
 

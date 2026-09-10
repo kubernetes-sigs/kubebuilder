@@ -89,34 +89,40 @@ func (opts *Generate) Generate() error {
 		slog.Info("Preserving existing license header file for regeneration")
 	}
 
-	if opts.OutputDir == "" {
-		cwd, getWdErr := os.Getwd()
-		if getWdErr != nil {
-			return fmt.Errorf("failed to get working directory: %w", getWdErr)
+	// Save the customised Grafana config before cleanup for the same reason:
+	// in an in-place run the directory grafanaConfigMigrate reads from is
+	// cleaned first, and by migration time the file on disk is a freshly
+	// scaffolded default rather than the user's customisation.
+	var preservedGrafanaConfig []byte
+	var grafanaConfigExists bool
+	grafanaConfigPath := filepath.Join(opts.InputDir, "grafana", "custom-metrics", "config.yaml")
+	if _, statErr := os.Stat(grafanaConfigPath); statErr == nil {
+		grafanaConfigExists = true
+		preservedGrafanaConfig, err = os.ReadFile(grafanaConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to read existing Grafana config file %q: %w", grafanaConfigPath, err)
 		}
-		opts.OutputDir = cwd
-		if _, err = os.Stat(opts.OutputDir); err == nil {
-			slog.Warn("Using current working directory to re-scaffold the project")
+		slog.Info("Preserving existing Grafana custom metrics config for regeneration")
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		// Only a missing file means there is nothing to preserve. Any other
+		// error must fail the run here, before the cleanup deletes the config.
+		return fmt.Errorf("failed to check the existing Grafana config file %q: %w", grafanaConfigPath, statErr)
+	}
+
+	inPlace := opts.OutputDir == ""
+	if opts.OutputDir, err = resolveOutputDir(opts.InputDir, opts.OutputDir); err != nil {
+		return err
+	}
+
+	if inPlace {
+		if _, statErr := os.Stat(opts.OutputDir); statErr == nil {
+			slog.Warn("Re-scaffolding the project in place", "dir", opts.OutputDir)
 			slog.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
-			// Ensure we clean the correct directory
+			// Ensure we clean the correct directory without shell interpolation
+			// of --output-dir (paths with metacharacters must not reach sh -c).
 			slog.Info("Cleaning directory", "dir", opts.OutputDir)
-
-			// Use an absolute path to target files directly
-			cleanupCmd := fmt.Sprintf("rm -rf %s/*", opts.OutputDir)
-			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
-			if err != nil {
-				slog.Error("Cleanup failed", "error", err)
-				return fmt.Errorf("cleanup failed: %w", err)
-			}
-
-			// Note that we should remove ALL files except the PROJECT file and .git directory
-			cleanupCmd = fmt.Sprintf(
-				`find %q -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {} +`,
-				opts.OutputDir,
-			)
-			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
-			if err != nil {
+			if err = cleanOutputDirPreservingGit(opts.OutputDir); err != nil {
 				slog.Error("Cleanup failed", "error", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
@@ -161,7 +167,8 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error creating project config: %w", err)
 	}
 
-	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
+	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir,
+		preservedGrafanaConfig, grafanaConfigExists); err != nil {
 		return fmt.Errorf("error migrating Grafana plugin: %w", err)
 	}
 
@@ -291,7 +298,7 @@ func kubebuilderCreate(s store.Store) error {
 }
 
 // Migrates the Grafana plugin.
-func migrateGrafanaPlugin(s store.Store, src, des string) error {
+func migrateGrafanaPlugin(s store.Store, src, des string, preservedConfig []byte, preservedConfigExists bool) error {
 	var grafanaPlugin struct{}
 	key := plugin.GetPluginKeyForConfig(s.Config().GetPluginChain(), grafanav1alpha.Plugin{})
 	canonicalKey := plugin.KeyFor(grafanav1alpha.Plugin{})
@@ -334,7 +341,7 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 		return fmt.Errorf("error editing Grafana plugin: %w", err)
 	}
 
-	if err = grafanaConfigMigrate(src, des); err != nil {
+	if err = grafanaConfigMigrate(src, des, preservedConfig, preservedConfigExists); err != nil {
 		return fmt.Errorf("error migrating Grafana config: %w", err)
 	}
 
@@ -382,9 +389,6 @@ func migrateAutoUpdatePlugin(s store.Store) error {
 	}
 
 	args := []string{kubebuilderSubcommandEdit, flagPlugins, plugin.KeyFor(autoupdatev1alpha.Plugin{})}
-	if autoUpdatePlugin.UseGHModels {
-		args = append(args, "--use-gh-models")
-	}
 	if err = util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
 		return fmt.Errorf("failed to run edit subcommand for Auto plugin: %w", err)
 	}
@@ -650,6 +654,10 @@ func getAPIResourceFlags(res resource.Resource) []string {
 		} else {
 			args = append(args, "--namespaced=false")
 		}
+		// Add --ssa flag if Server-Side Apply is enabled
+		if res.API.SSA {
+			args = append(args, "--ssa")
+		}
 	}
 
 	// Always disable controller creation in the API scaffolding step
@@ -709,13 +717,54 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 	return args
 }
 
+// resolveOutputDir returns the directory the new scaffold is written to.
+// With --output-dir unset the project is regenerated in place, which means the
+// directory it was read from. Falling back to the working directory here would
+// clean an unrelated tree whenever --input-dir points elsewhere.
+func resolveOutputDir(inputDir, outputDir string) (string, error) {
+	if outputDir != "" {
+		return outputDir, nil
+	}
+	if inputDir != "" {
+		return inputDir, nil
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get working directory: %w", err)
+	}
+	return cwd, nil
+}
+
+// cleanOutputDirPreservingGit removes all top-level entries under outputDir
+// except `.git`, using Go filesystem APIs only.
+// PROJECT must go too: `kubebuilder init` refuses to run when a config file is
+// already present, and it re-creates PROJECT from the config loaded in memory.
+func cleanOutputDirPreservingGit(outputDir string) error {
+	entries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return fmt.Errorf("read output directory %q: %w", outputDir, err)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if name == ".git" {
+			continue
+		}
+		path := filepath.Join(outputDir, name)
+		if removeErr := os.RemoveAll(path); removeErr != nil {
+			return fmt.Errorf("remove %q: %w", path, removeErr)
+		}
+	}
+	return nil
+}
+
 // Copies files from source to destination.
 func copyFile(src, des string) error {
 	bytesRead, err := os.ReadFile(src)
 	if err != nil {
 		return fmt.Errorf("source file path %q does not exist: %w", src, err)
 	}
-	if err = os.WriteFile(des, bytesRead, 0o755); err != nil {
+	// Data files (YAML, manifests) must not be world-executable.
+	if err = os.WriteFile(des, bytesRead, 0o644); err != nil {
 		return fmt.Errorf("failed to write file %q: %w", des, err)
 	}
 
@@ -723,13 +772,27 @@ func copyFile(src, des string) error {
 }
 
 // Migrates Grafana configuration files.
-func grafanaConfigMigrate(src, des string) error {
+// preservedConfig holds the content of <src>/grafana/custom-metrics/config.yaml
+// as it was before the output directory was cleaned, and preservedConfigExists
+// records whether that file was present at all: an existing empty file must be
+// restored as empty, not left as the scaffolded default. When src and des are
+// the same directory (an in-place regeneration), the file on disk at this
+// point is a freshly scaffolded default, so the preserved content is the one
+// to carry forward.
+func grafanaConfigMigrate(src, des string, preservedConfig []byte, preservedConfigExists bool) error {
+	desConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des)
+	if preservedConfigExists {
+		if err := os.WriteFile(desConfig, preservedConfig, 0o644); err != nil {
+			return fmt.Errorf("failed to write file %q: %w", desConfig, err)
+		}
+		return nil
+	}
 	grafanaConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", src)
 	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
 		slog.Info("Grafana config file not found, skipping file migration", "path", grafanaConfig)
 		return nil // Don't fail if config files don't exist
 	}
-	return copyFile(grafanaConfig, fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des))
+	return copyFile(grafanaConfig, desConfig)
 }
 
 // Edits the project to include the Grafana plugin.

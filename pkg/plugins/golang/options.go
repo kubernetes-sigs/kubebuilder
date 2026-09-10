@@ -72,6 +72,11 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
+	// SSA is true if Server-Side Apply should be enabled for the API.
+	//
+	// Alpha: part of the Server-Side Apply (--ssa) alpha feature and may change in future releases.
+	SSA bool
+
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
 	DoController bool
@@ -106,6 +111,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.API = &resource.API{
 			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
+			SSA:        opts.SSA,
 		}
 	}
 
@@ -114,7 +120,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		if !res.External {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		}
 
 		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
@@ -158,8 +166,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
 			if res.External {
-				res.Path = opts.ExternalAPIPath
-				res.Domain = opts.ExternalAPIDomain
+				if len(opts.ExternalAPIPath) > 0 {
+					res.Path = opts.ExternalAPIPath
+				}
+				if len(opts.ExternalAPIDomain) > 0 {
+					res.Domain = opts.ExternalAPIDomain
+				}
 			} else {
 				// Handle core types
 				if domain, found := coreGroups[res.Group]; found {

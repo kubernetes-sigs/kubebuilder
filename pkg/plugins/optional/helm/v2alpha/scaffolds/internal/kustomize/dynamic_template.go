@@ -62,7 +62,7 @@ func (f *DynamicTemplate) SetTemplateDefaults() error {
 	// This prevents machinery from trying to execute Helm templates as Go templates
 	f.SetDelim("<%", "%>")
 
-	// Always overwrite - these are generated files that should match current kustomize output
+	// Kustomize-derived files always regenerate; user-owned defaults have their own builders.
 	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil

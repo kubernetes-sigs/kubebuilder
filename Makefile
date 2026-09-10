@@ -103,8 +103,7 @@ generate-charts: build ## Re-generate the helm chart testdata and docs samples
 .PHONY: fix-docs
 fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
 	./hack/docs/fix_note_accessibility.sh
-	@echo "Removing trailing spaces from markdown files..."
-	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
+	$(MAKE) remove-spaces
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
@@ -160,7 +159,7 @@ go-apidiff:
 test: test-unit test-integration test-testdata test-book verify-license test-gomod ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
-TEST_PKGS := ./pkg/... ./test/e2e/utils/...
+TEST_PKGS := ./pkg/... $(shell go list ./internal/... | grep -v 'internal/update$$') ./test/e2e/utils/...
 test-unit: ## Run the unit tests
 	go test -race $(TEST_PKGS)
 
@@ -213,17 +212,14 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 test-gomod:  ## Run the Go module compatibility check
 	go run ./hack/test/check_go_module.go
 
+.PHONY: test-docker-build-context
+test-docker-build-context: ## Check the scaffolded .dockerignore ships only the manager sources to the image build
+	./test/verify-docker-build-context.sh testdata/project-v4
+
 .PHONY: test-external-plugin
 test-external-plugin: install  ## Run tests for external plugin
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 test-plugin
-
-## TODO: Remove me when go/v4 plugin be removed
-## Deprecated
-.PHONY: test-legacy
-test-legacy:  ## Run the tests to validate legacy path for webhooks
-	rm -rf  ./testdata/**legacy**/
-	./test/testdata/legacy-webhook-path.sh
 
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm locally
@@ -292,7 +288,7 @@ KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
-GOLANGCI_LINT_VERSION ?= v2.12.2
+GOLANGCI_LINT_VERSION ?= v2.13.1
 KUBE_LINTER_VERSION ?= v0.8.3
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist

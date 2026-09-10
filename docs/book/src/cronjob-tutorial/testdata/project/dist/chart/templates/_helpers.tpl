@@ -51,13 +51,13 @@ Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 
 {{/*
 ServiceAccount name to use.
-If serviceAccount.enabled is false and serviceAccount.name is set, use that name.
-Otherwise, use the standard resourceName helper with "controller-manager" suffix.
+When enabled, use the chart's ServiceAccount name.
+When disabled, serviceAccount.name must be set; use "default" to pick the namespace default ServiceAccount.
 */}}
 {{- define "project.serviceAccountName" -}}
-{{- if and (not (.Values.serviceAccount.enabled | default true)) .Values.serviceAccount.name }}
-{{- .Values.serviceAccount.name }}
-{{- else }}
+{{- if .Values.serviceAccount.enabled }}
 {{- include "project.resourceName" (dict "suffix" "controller-manager" "context" .) }}
+{{- else }}
+{{- required "serviceAccount.name is required when serviceAccount.enabled=false (set name: default explicitly to use the namespace default ServiceAccount)" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}

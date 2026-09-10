@@ -17,9 +17,6 @@ You can reduce the burden of keeping your project up to date by using the
 automates the process of running `kubebuilder alpha update` on a schedule
 workflow when new Kubebuilder releases are available.
 
-Moreover, you is able to get help from [AI models][ai-gh-models] to understand what changes are needed to keep your project up to date
-and how to solve conflicts if any are faced.
-
 </aside>
 
 ## When to use it
@@ -69,7 +66,6 @@ The command creates three temporary branches:
     - `--push`: push the result to `origin` automatically.
     - `--git-config`: sets git configurations.
     - `--open-gh-issue`: create a GitHub issue with a checklist and compare link (requires `gh`).
-    - `--use-gh-models`: add an AI overview **comment** to that issue using `gh models`
 
 ### Step 5: Cleanup
 - Once the output branch is ready, all the temporary working branches are deleted.
@@ -157,12 +153,10 @@ make manifests generate fmt vet lint-fix
 make all
 ```
 
-## Using with GitHub Issues (`--open-gh-issue`) and AI (`--use-gh-models`) assistance
+## Using with GitHub Issues (`--open-gh-issue`)
 
 Pass `--open-gh-issue` to have the command create a GitHub **Issue** in your repository
-to assist with the update. Also, if you also pass `--use-gh-models`, the tool posts a follow-up comment
-on that Issue with an AI-generated overview of the most important changes plus brief conflict-resolution
-guidance.
+to assist with the update.
 
 ### Examples
 
@@ -171,23 +165,11 @@ Create an Issue with a compare link:
 kubebuilder alpha update --open-gh-issue
 ```
 
-Create an Issue **and** add an AI summary:
-```shell
-kubebuilder alpha update --open-gh-issue --use-gh-models
-```
-
 ### What you’ll see
 
 The command opens an Issue that links to the diff so you can create the PR and review it, for example:
 
 <img width="638" height="482" alt="Example Issue" src="https://github.com/user-attachments/assets/589fd16b-7709-4cd5-b169-fd53d69790d4" />
-
-With `--use-gh-models`, an AI comment highlights key changes and suggests how to resolve any conflicts:
-
-<img width="740" height="425" alt="Comment" src="https://github.com/user-attachments/assets/fb5f214e-be0e-43b8-a3fb-b5744ac8f66e" />
-
-Moreover, AI models are used to help you understand what changes are needed to keep your project up to date,
-and to suggest resolutions if conflicts are encountered, as in the following example:
 
 ### Automation
 
@@ -247,7 +229,6 @@ The command uses that value to pick the correct CLI for re-scaffolding.
 | `--restore-path`   | Repeatable. Paths to preserve from the base branch when squashing (e.g., `.github/workflows`). **Not supported** with `--show-commits`.                                                                                                 |
 | `--show-commits`   | Keep full history (do not squash). **Not compatible** with `--restore-path`.                                                                                                                                                            |
 | `--to-version`     | Kubebuilder release to update **to** (e.g., `v4.7.0`). If unset, defaults to the latest available release.                                                                                                                              |
-| `--use-gh-models`  | Post an AI overview as an issue comment using `gh models`. Requires `gh` + `gh-models` extension. Effective only when `--open-gh-issue` is also set.                                                                                    |
 | `-h, --help`       | Show help for this command.                                                                                                                                                                                                             |
 
 ## Demonstration
@@ -272,4 +253,3 @@ so the current behavior may differ slightly from what is shown in the demo.
 [project-config]: ../../reference/project-config.md
 [autoupdate-plugin]: ./../../plugins/available/autoupdate-v1-alpha.md
 [design-proposal]: ./../../../../../designs/update_action.md
-[ai-gh-models]: https://docs.github.com/en/github-models/about-github-models

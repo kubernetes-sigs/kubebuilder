@@ -30,7 +30,7 @@ const cronJobDefaultingLogic = `// Set default values
 
 const cronJobDefaultFunction = `
 // applyDefaults applies default values to CronJob fields.
-func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
+func (d *CronJobDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 	if cronJob.Spec.ConcurrencyPolicy == "" {
 		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}
@@ -113,16 +113,16 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 const originalSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &batchv2.CronJob{}).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{}).
+		WithValidator(&CronJobValidator{}).
+		WithDefaulter(&CronJobDefaulter{}).
 		Complete()
 }`
 
 const replaceSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &batchv2.CronJob{}).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{
+		WithValidator(&CronJobValidator{}).
+		WithDefaulter(&CronJobDefaulter{
 			DefaultConcurrencyPolicy:          batchv2.AllowConcurrent,
 			DefaultSuspend:                    false,
 			DefaultSuccessfulJobsHistoryLimit: 3,

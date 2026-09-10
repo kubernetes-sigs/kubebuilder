@@ -14,7 +14,14 @@ directory for diff-based inspection and manual integration.
 
 <aside class="warning" role="note">
     <p class="note-title">Deletes files during scaffold regeneration</p>
-When executed in-place, this command deletes all files except `.git` and `PROJECT`.
+When executed in-place, this command deletes all files except `.git`. Any file that is not part of the
+scaffold, including your own code, is removed and only comes back if you restore it yourself.
+
+Two things are carried across. Your [PROJECT][project-config] file is read before the cleanup, so the
+project configuration is preserved and the new scaffold writes it again from that configuration. Expect
+it to change when the layout changes, for example when migrating from `go.kubebuilder.io/v3` to
+`go.kubebuilder.io/v4`. The license header in `hack/boilerplate.go.txt` is preserved the same way and
+reapplied to the regenerated files.
 
 Always back up your project or use version control before running this command.
 </aside>
@@ -78,8 +85,8 @@ After running the command, you can inspect the generated scaffold in the specifi
 
 | Flag            | Description                                                                 |
 |------------------|-----------------------------------------------------------------------------|
-| `--input-dir`    | Path to the directory containing the `PROJECT` file. Defaults to CWD. Deletes all files except `.git` and `PROJECT`. |
-| `--output-dir`   | Directory where the new scaffold is written. If unset, re-scaffolds in-place. |
+| `--input-dir`    | Path to the directory containing the `PROJECT` file. Defaults to CWD.       |
+| `--output-dir`   | Directory where the new scaffold is written. If unset, re-scaffolds in-place in the input directory, which is cleaned first: all files except `.git` are deleted. |
 | `--plugins`      | Plugin keys to use for this generation.                                     |
 | `-h, --help`     | Show help for this command.                                                 |
 

@@ -48,8 +48,8 @@ Then, we set up the webhook with the manager.
 // SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &batchv1.CronJob{}).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{
+		WithValidator(&CronJobValidator{}).
+		WithDefaulter(&CronJobDefaulter{
 			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
 			DefaultSuspend:                    false,
 			DefaultSuccessfulJobsHistoryLimit: 3,
@@ -71,12 +71,12 @@ This marker is responsible for generating a mutation webhook manifest.
 
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob-v1.kb.io,admissionReviewVersions=v1
 
-// CronJobCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// CronJobDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind CronJob when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomDefaulter struct {
+type CronJobDefaulter struct {
 
 	// Default values for various CronJob fields
 	DefaultConcurrencyPolicy          batchv1.ConcurrencyPolicy
@@ -86,14 +86,14 @@ type CronJobCustomDefaulter struct {
 }
 
 /*
-We use the `webhook.CustomDefaulter`interface to set defaults to our CRD.
+We use the `admission.Defaulter`interface to set defaults to our CRD.
 A webhook will automatically be served that calls this defaulting.
 
 The `Default`method is expected to mutate the receiver, setting the defaults.
 */
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
-func (d *CronJobCustomDefaulter) Default(_ context.Context, obj *batchv1.CronJob) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind CronJob.
+func (d *CronJobDefaulter) Default(_ context.Context, obj *batchv1.CronJob) error {
 	cronjoblog.Info("Defaulting for CronJob", "name", obj.GetName())
 
 	// Set default values
@@ -102,7 +102,7 @@ func (d *CronJobCustomDefaulter) Default(_ context.Context, obj *batchv1.CronJob
 }
 
 // applyDefaults applies default values to CronJob fields.
-func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
+func (d *CronJobDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
 	if cronJob.Spec.ConcurrencyPolicy == "" {
 		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}
@@ -128,7 +128,7 @@ sometimes more advanced use cases call for complex validation.
 For instance, we'll see below that we use this to validate a well-formed cron
 schedule without making up a long regular expression.
 
-If `webhook.CustomValidator` interface is implemented, a webhook will automatically be
+If `admission.Validator` interface is implemented, a webhook will automatically be
 served that calls the validation.
 
 The `ValidateCreate`, `ValidateUpdate` and `ValidateDelete` methods are expected
@@ -149,31 +149,31 @@ This marker is responsible for generating a validation webhook manifest.
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob-v1.kb.io,admissionReviewVersions=v1
 
-// CronJobCustomValidator struct is responsible for validating the CronJob resource
+// CronJobValidator struct is responsible for validating the CronJob resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomValidator struct {
+type CronJobValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateCreate(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon creation", "name", obj.GetName())
 
 	return nil, validateCronJob(obj)
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *batchv1.CronJob) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateUpdate(_ context.Context, oldObj, newObj *batchv1.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon update", "name", newObj.GetName())
 
 	return nil, validateCronJob(newObj)
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateDelete(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateDelete(_ context.Context, obj *batchv1.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

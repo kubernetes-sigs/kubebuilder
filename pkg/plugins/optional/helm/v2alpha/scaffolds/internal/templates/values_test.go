@@ -17,6 +17,7 @@ limitations under the License.
 package templates
 
 import (
+	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -68,6 +69,75 @@ var _ = Describe("HelmValues", func() {
 			result := values.generateValues()
 
 			Expect(result).To(ContainSubstring("networkPolicy:\n  enabled: false"))
+		})
+	})
+
+	Describe("Prometheus section", func() {
+		It("should default prometheus.enabled to false when no ServiceMonitor exists", func() {
+			values := &HelmValues{Extraction: nil}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("prometheus:\n  enabled: false"))
+		})
+
+		It("should set prometheus.enabled to true when a ServiceMonitor is detected", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasPrometheus: true,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("prometheus:\n  enabled: true"))
+		})
+	})
+
+	Describe("Metrics section", func() {
+		It("should default metrics.secure to true when there is no extraction", func() {
+			values := &HelmValues{Extraction: nil}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: true"))
+		})
+
+		It("should default metrics.secure to true when the manager does not set the arg", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasMetrics: true,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: true"))
+		})
+
+		It("should set metrics.secure to false when the manager serves plain HTTP", func() {
+			insecure := false
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{
+						HasMetrics:    true,
+						MetricsSecure: &insecure,
+					},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("  secure: false"))
 		})
 	})
 
@@ -189,15 +259,16 @@ var _ = Describe("HelmValues", func() {
 	})
 
 	Describe("Custom ports extraction", func() {
-		Context("when using default ports", func() {
-			It("should use default metrics port 8443 and webhook port 9443", func() {
+		DescribeTable("port values emitted from detected features",
+			func(metricsPort, webhookPort, healthProbePort, wantMetrics, wantWebhook, wantHealthProbe int) {
 				values := &HelmValues{
 					Extraction: &extractor.Extraction{
 						Features: extractor.FeatureSet{
-							HasMetrics:  true,
-							HasWebhooks: true,
-							MetricsPort: 0,
-							WebhookPort: 0,
+							HasMetrics:      true,
+							HasWebhooks:     true,
+							MetricsPort:     metricsPort,
+							WebhookPort:     webhookPort,
+							HealthProbePort: healthProbePort,
 						},
 					},
 				}
@@ -205,83 +276,66 @@ var _ = Describe("HelmValues", func() {
 
 				result := values.generateValues()
 
-				metricsSection := extractSection(result, "metrics:")
-				Expect(metricsSection).To(ContainSubstring("port: 8443"))
+				Expect(extractSection(result, "metrics:")).To(
+					ContainSubstring(fmt.Sprintf("port: %d", wantMetrics)))
+				Expect(extractSection(result, "webhook:")).To(
+					ContainSubstring(fmt.Sprintf("port: %d", wantWebhook)))
+				Expect(extractSection(result, "healthProbe:")).To(
+					ContainSubstring(fmt.Sprintf("port: %d", wantHealthProbe)))
+			},
+			Entry("default ports", 0, 0, 0, 8443, 9443, 8081),
+			Entry("custom metrics port", 8080, 0, 0, 8080, 9443, 8081),
+			Entry("custom webhook port", 0, 9090, 0, 8443, 9090, 8081),
+			Entry("custom health probe port", 0, 0, 9091, 8443, 9443, 9091),
+			Entry("all custom ports", 8888, 9999, 7777, 8888, 9999, 7777),
+		)
+
+		Context("when the project has no webhooks or metrics", func() {
+			It("should still emit the healthProbe section with the default port", func() {
+				values := &HelmValues{
+					Extraction: &extractor.Extraction{
+						Features: extractor.FeatureSet{
+							HasMetrics:  false,
+							HasWebhooks: false,
+						},
+					},
+				}
+				values.ProjectName = testProjectName
+
+				result := values.generateValues()
+
+				healthProbeSection := extractSection(result, "healthProbe:")
+				Expect(healthProbeSection).To(ContainSubstring("port: 8081"))
+			})
+
+			It("should emit the webhook section disabled so templates can reference webhook.enabled", func() {
+				values := &HelmValues{
+					Extraction: &extractor.Extraction{
+						Features: extractor.FeatureSet{
+							HasMetrics:  false,
+							HasWebhooks: false,
+						},
+					},
+				}
+				values.ProjectName = testProjectName
+
+				result := values.generateValues()
 
 				webhookSection := extractSection(result, "webhook:")
+				Expect(webhookSection).To(ContainSubstring("enabled: false"))
 				Expect(webhookSection).To(ContainSubstring("port: 9443"))
 			})
 		})
 
-		Context("when using custom metrics port", func() {
-			It("should use custom metrics port 8080", func() {
-				values := &HelmValues{
-					Extraction: &extractor.Extraction{
-						Features: extractor.FeatureSet{
-							HasMetrics:  true,
-							HasWebhooks: true,
-							MetricsPort: 8080,
-							WebhookPort: 0,
-						},
-					},
-				}
+		Context("healthProbe placement", func() {
+			It("should nest the healthProbe block under the manager section", func() {
+				values := &HelmValues{}
 				values.ProjectName = testProjectName
 
 				result := values.generateValues()
 
-				metricsSection := extractSection(result, "metrics:")
-				Expect(metricsSection).To(ContainSubstring("port: 8080"))
-
-				webhookSection := extractSection(result, "webhook:")
-				Expect(webhookSection).To(ContainSubstring("port: 9443"))
-			})
-		})
-
-		Context("when using custom webhook port", func() {
-			It("should use custom webhook port 9090", func() {
-				values := &HelmValues{
-					Extraction: &extractor.Extraction{
-						Features: extractor.FeatureSet{
-							HasMetrics:  true,
-							HasWebhooks: true,
-							MetricsPort: 0,
-							WebhookPort: 9090,
-						},
-					},
-				}
-				values.ProjectName = testProjectName
-
-				result := values.generateValues()
-
-				metricsSection := extractSection(result, "metrics:")
-				Expect(metricsSection).To(ContainSubstring("port: 8443"))
-
-				webhookSection := extractSection(result, "webhook:")
-				Expect(webhookSection).To(ContainSubstring("port: 9090"))
-			})
-		})
-
-		Context("when using both custom ports", func() {
-			It("should use custom metrics port 8888 and webhook port 9999", func() {
-				values := &HelmValues{
-					Extraction: &extractor.Extraction{
-						Features: extractor.FeatureSet{
-							HasMetrics:  true,
-							HasWebhooks: true,
-							MetricsPort: 8888,
-							WebhookPort: 9999,
-						},
-					},
-				}
-				values.ProjectName = testProjectName
-
-				result := values.generateValues()
-
-				metricsSection := extractSection(result, "metrics:")
-				Expect(metricsSection).To(ContainSubstring("port: 8888"))
-
-				webhookSection := extractSection(result, "webhook:")
-				Expect(webhookSection).To(ContainSubstring("port: 9999"))
+				Expect(result).To(ContainSubstring("  healthProbe:\n    # Health probe server port\n    port: 8081\n"))
+				Expect(result).NotTo(ContainSubstring("\nhealthProbe:"))
 			})
 		})
 	})

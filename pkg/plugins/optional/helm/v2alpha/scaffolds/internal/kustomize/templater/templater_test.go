@@ -37,6 +37,8 @@ const (
 
 	// Test expectation constants for test-project.resourceName templates
 	expectedIssuerName = `name: {{ include "test-project.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}`
+
+	k8sSpecField = "spec"
 )
 
 var _ = Describe("Templater", func() {
@@ -161,6 +163,7 @@ spec:
       - args:
         - --metrics-bind-address=:8443
         - --health-probe-bind-address=:8081
+        - --webhook-port=9443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt
         - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs/tls.crt
         - --leader-elect
@@ -196,18 +199,75 @@ spec:
 			Expect(result).To(ContainSubstring("{{- if not .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("- --metrics-secure=false"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
-			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:8081"))
+			Expect(result).To(ContainSubstring("- --health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring(`{{- if .Values.webhook.enabled }}
+        - --webhook-port={{ .Values.webhook.port }}
+        {{- else }}
+        # Set -1 to disable the webhook server
+        - --webhook-port=-1
+        {{- end }}`))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}\n" +
+					"        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs/tls.crt"))
 			Expect(result).To(ContainSubstring("{{- range .Values.manager.args }}"))
 			Expect(result).NotTo(ContainSubstring("BUSYBOX_IMAGE"))
 			Expect(result).NotTo(ContainSubstring("MEMCACHED_IMAGE"))
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).To(ContainSubstring(`{{- with .Values.manager.image.pullPolicy }}
         imagePullPolicy: {{ . }}
         {{- end }}`))
 			Expect(result).NotTo(ContainSubstring("controller:latest"))
+		})
+
+		It("should not template a webhook port when the project has no webhook", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        name: manager`
+
+			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
+
+			Expect(result).NotTo(ContainSubstring("--webhook-port"))
+			Expect(result).NotTo(ContainSubstring("{{- if .Values.webhook.enabled }}"))
+		})
+
+		It("keeps a single webhook.enabled guard when a templated Deployment is templated again", func() {
+			deploymentResource := &unstructured.Unstructured{}
+			deploymentResource.SetAPIVersion("apps/v1")
+			deploymentResource.SetKind("Deployment")
+			deploymentResource.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP`
+
+			once := templater.ApplyHelmSubstitutions(content, deploymentResource)
+			twice := templater.ApplyHelmSubstitutions(once, deploymentResource)
+
+			Expect(strings.Count(twice, "{{- if .Values.webhook.enabled }}")).To(Equal(1))
 		})
 
 		It("should handle volume mounts with proper indentation", func() {
@@ -232,8 +292,9 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, deploymentResource)
 
-			// Should have conditional blocks for webhook certs
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			// Webhook certificates require both features.
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("mountPath: /tmp/k8s-webhook-server/serving-certs"))
 
 			// Should have conditional blocks for metrics certs
@@ -536,6 +597,25 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
+		It("should honor .Values.prometheus.labels and .Values.prometheus.annotations for ServiceMonitor", func() {
+			serviceMonitorResource := &unstructured.Unstructured{}
+			serviceMonitorResource.SetAPIVersion("monitoring.coreos.com/v1")
+			serviceMonitorResource.SetKind("ServiceMonitor")
+			serviceMonitorResource.SetName("test-project-controller-manager-metrics-monitor")
+
+			content := `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: test-project
+  name: test-project-controller-manager-metrics-monitor`
+
+			result := templater.ApplyHelmSubstitutions(content, serviceMonitorResource)
+
+			Expect(result).To(ContainSubstring("{{- with .Values.prometheus.labels }}"))
+			Expect(result).To(ContainSubstring("{{- with .Values.prometheus.annotations }}"))
+		})
+
 		It("should add networkPolicy conditional for NetworkPolicy resources", func() {
 			networkPolicyResource := &unstructured.Unstructured{}
 			networkPolicyResource.SetAPIVersion("networking.k8s.io/v1")
@@ -554,7 +634,8 @@ spec:
 
 			result := templater.ApplyHelmSubstitutions(content, networkPolicyResource)
 
-			Expect(result).To(ContainSubstring("{{- if .Values.networkPolicy.enabled }}"))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.networkPolicy.enabled .Values.metrics.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -841,7 +922,7 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
-		It("should add cert-manager conditional for Certificate resources", func() {
+		It("should add cert-manager and webhook conditionals for webhook certificates", func() {
 			certResource := &unstructured.Unstructured{}
 			certResource.SetAPIVersion("cert-manager.io/v1")
 			certResource.SetKind("Certificate")
@@ -854,8 +935,8 @@ metadata:
 
 			result := templater.ApplyHelmSubstitutions(content, certResource)
 
-			// Should be wrapped with certManager enabled conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			Expect(result).To(ContainSubstring(
+				"{{- if and .Values.certManager.enabled .Values.webhook.enabled }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
 		})
 
@@ -877,6 +958,23 @@ metadata:
 			Expect(result).To(ContainSubstring(
 				"{{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("{{- end }}"))
+		})
+
+		It("should not tie a custom certificate to webhook.enabled", func() {
+			certResource := &unstructured.Unstructured{}
+			certResource.SetAPIVersion("cert-manager.io/v1")
+			certResource.SetKind("Certificate")
+			certResource.SetName("test-project-database-cert")
+
+			content := `apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-project-database-cert`
+
+			result := templater.ApplyHelmSubstitutions(content, certResource)
+
+			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
+			Expect(result).NotTo(ContainSubstring(".Values.webhook.enabled"))
 		})
 
 		It("should add kind conditionals to essential ClusterRole resources", func() {
@@ -2412,8 +2510,143 @@ spec:
 
 			result := templater.templatePorts(content, deployment)
 
-			Expect(result).To(ContainSubstring("port: 8081"))
-			Expect(result).NotTo(ContainSubstring("{{ .Values"))
+			Expect(result).To(ContainSubstring("port: {{ .Values.manager.healthProbe.port }}"))
+			Expect(result).NotTo(ContainSubstring("port: 8081"))
+		})
+
+		// Regression test for #5865: the health probe port must be templated in all
+		// four places it appears in the manager Deployment (bind-address arg, the
+		// "health" containerPort, and the liveness and readiness httpGet ports), so it
+		// can be configured from values.yaml like the metrics and webhook ports.
+		It("should template every health probe port reference in the manager Deployment", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --health-probe-bind-address=:8081
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring(`            path: /healthz
+            port: {{ .Values.manager.healthProbe.port }}`))
+			Expect(result).To(ContainSubstring(`            path: /readyz
+            port: {{ .Values.manager.healthProbe.port }}`))
+			Expect(result).NotTo(ContainSubstring("8081"))
+		})
+
+		It("should leave probes using the named health port untouched", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --health-probe-bind-address=:8081
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring("containerPort: {{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring(`            path: /healthz
+            port: health`))
+			Expect(result).To(ContainSubstring(`            path: /readyz
+            port: health`))
+		})
+
+		It("should preserve the host when templating bind-address args in HOST:PORT form", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --metrics-bind-address=localhost:8443
+        - --health-probe-bind-address=localhost:8081`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--metrics-bind-address=localhost:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=localhost:{{ .Values.manager.healthProbe.port }}"))
+		})
+
+		It("should preserve the host when templating bind-address args in IPv6 form", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --metrics-bind-address=[::1]:8443
+        - --health-probe-bind-address=[::1]:8081`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).To(ContainSubstring("--metrics-bind-address=[::1]:{{ .Values.metrics.port }}"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=[::1]:{{ .Values.manager.healthProbe.port }}"))
 		})
 
 		It("should template port-related args in Deployment", func() {
@@ -2440,7 +2673,7 @@ spec:
 
 			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
 			Expect(result).NotTo(ContainSubstring("--metrics-bind-address=:8443"))
-			Expect(result).To(ContainSubstring("--health-probe-bind-address=:8081"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
 			Expect(result).To(ContainSubstring("--leader-elect"))
 		})
 
@@ -2468,6 +2701,7 @@ spec:
           name: webhook-server
         livenessProbe:
           httpGet:
+            path: /healthz
             port: 9091`
 
 			result := templater.templatePorts(content, deployment)
@@ -2475,8 +2709,9 @@ spec:
 			Expect(result).To(ContainSubstring("--metrics-bind-address=:{{ .Values.metrics.port }}"))
 			Expect(result).To(ContainSubstring("--webhook-port={{ .Values.webhook.port }}"))
 			Expect(result).To(ContainSubstring("containerPort: {{ .Values.webhook.port }}"))
-			Expect(result).To(ContainSubstring("--health-probe-bind-address=:9091"))
-			Expect(result).To(ContainSubstring("port: 9091"))
+			Expect(result).To(ContainSubstring("--health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}"))
+			Expect(result).To(ContainSubstring("port: {{ .Values.manager.healthProbe.port }}"))
+			Expect(result).NotTo(ContainSubstring(":9091"))
 		})
 
 		It("should not template non-webhook/metrics resources", func() {
@@ -2537,13 +2772,13 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: 443
+    - port: 9443
       protocol: TCP`
 
 			result := templater.templatePorts(content, networkPolicy)
 
 			Expect(result).To(ContainSubstring("port: {{ .Values.webhook.port }}"))
-			Expect(result).NotTo(ContainSubstring("port: 443"))
+			Expect(result).NotTo(ContainSubstring("port: 9443"))
 		})
 
 		It("should not template custom NetworkPolicy ports", func() {
@@ -2769,8 +3004,8 @@ spec:
 
 			// Should template image reference (not hardcoded)
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).NotTo(ContainSubstring("image: controller:latest"))
 
@@ -2855,10 +3090,39 @@ spec:
 		})
 
 		It("should append only extraVolumes from values and keep webhook/metrics conditional", func() {
-			deployment := &unstructured.Unstructured{}
-			deployment.SetAPIVersion("apps/v1")
-			deployment.SetKind("Deployment")
-			deployment.SetName("test-project-controller-manager")
+			deployment := &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]any{
+						"name": "test-project-controller-manager", //nolint:goconst
+					},
+					k8sSpecField: map[string]any{
+						"template": map[string]any{
+							k8sSpecField: map[string]any{
+								"volumes": []any{
+									map[string]any{"name": "webhook-certs", "secret": map[string]any{"secretName": "webhook-server-cert"}},
+									map[string]any{"name": "metrics-certs", "secret": map[string]any{"secretName": "metrics-server-cert"}},
+								},
+								"containers": []any{
+									map[string]any{
+										"name":  "manager",
+										"image": "controller:latest",
+										"volumeMounts": []any{
+											map[string]any{
+												"name": "webhook-certs", "mountPath": "/tmp/k8s-webhook-server/serving-certs", "readOnly": true,
+											},
+											map[string]any{
+												"name": "metrics-certs", "mountPath": "/tmp/k8s-metrics-server/metrics-certs", "readOnly": true,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
 			content := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2873,27 +3137,22 @@ spec:
       - name: metrics-certs
         secret:
           secretName: metrics-server-cert
-      - name: app-secret-1
-        secret:
-          secretName: app-secret-1
       containers:
       - name: manager
         image: controller:latest
         volumeMounts:
-        - name: webhook-certs
-          mountPath: /tmp/k8s-webhook-server/serving-certs
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
           readOnly: true
-        - name: metrics-certs
-          mountPath: /tmp/k8s-metrics-server/metrics-certs
-          readOnly: true
-        - name: app-secret-1
-          mountPath: /etc/secrets
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
           readOnly: true
 `
 			result := templater.ApplyHelmSubstitutions(content, deployment)
 			Expect(result).To(ContainSubstring(".Values.certManager.enabled"))
 			Expect(result).To(ContainSubstring(".Values.manager.extraVolumes"))
-			Expect(result).To(ContainSubstring("app-secret-1"))
+			Expect(result).To(ContainSubstring("webhook-certs"))
+			Expect(result).To(ContainSubstring("metrics-certs"))
 		})
 
 		It("should fall back to 'manager' when default-container annotation is missing", func() {
@@ -2922,8 +3181,8 @@ spec:
 
 			// Should still template fields for "manager" container
 			Expect(result).To(ContainSubstring(
-				`image: "{{ .Values.manager.image.repository }}` +
-					`{{- if not (contains "@" .Values.manager.image.repository) }}` +
+				`image: "{{ .Values.manager.image.repository | default "controller" }}` +
+					`{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}` +
 					`:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"`))
 			Expect(result).To(ContainSubstring("{{- if .Values.manager.resources }}"))
 		})
@@ -4128,7 +4387,7 @@ rules: []`
 	Context("ServiceAccount configuration", func() {
 		Context("when managing ServiceAccount creation via values.yaml", func() {
 			It("allows toggling ServiceAccount installation with serviceAccount.enabled flag", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4144,14 +4403,14 @@ metadata:
   name: controller-manager
   namespace: system`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
-				Expect(result).To(ContainSubstring("{{- if ne .Values.serviceAccount.enabled false }}"))
+				Expect(result).To(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`))
 				Expect(result).To(ContainSubstring("{{- end }}"))
 			})
 
 			It("supports custom annotations for cloud provider integrations", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4165,7 +4424,7 @@ metadata:
     app.kubernetes.io/name: test-project
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
 				Expect(result).To(ContainSubstring("annotations:"))
@@ -4173,7 +4432,7 @@ metadata:
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4188,7 +4447,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
 				Expect(result).To(ContainSubstring(`{{- with omit .`))
@@ -4196,8 +4455,11 @@ metadata:
 				Expect(result).To(ContainSubstring(`"app.kubernetes.io/managed-by"`))
 			})
 
+			// Kustomize emits metadata keys alphabetically, so a ServiceAccount that already
+			// carries annotations lists annotations before labels. The generator must merge into
+			// that block instead of emitting a second annotations key.
 			It("merges custom annotations with existing annotations without duplication", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+				saTemplater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
 
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
@@ -4207,13 +4469,13 @@ metadata:
 				content := `apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/name: test-project
   annotations:
     existing.annotation/key: "existing-value"
+  labels:
+    app.kubernetes.io/name: test-project
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				// Should NOT have duplicate annotations: keys
 				annotationsCount := strings.Count(result, "annotations:")
@@ -4222,17 +4484,18 @@ metadata:
 				// Should preserve existing annotation
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
-				// Should add template for custom annotations with duplicate filtering
+				// Should merge into the existing block and omit the scaffolded key so overrides never duplicate
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit .`))
-				Expect(result).To(ContainSubstring(`"existing.annotation/key"`))
+				Expect(result).To(ContainSubstring(`{{- with omit . "existing.annotation/key" }}`))
+
+				// Labels still merge independently of the annotations ordering
+				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
+				Expect(result).To(MatchRegexp(`{{- with omit \. .*"app.kubernetes.io/name".* }}`))
 			})
 		})
 
 		Context("when using default ServiceAccount with nameOverride/fullnameOverride", func() {
 			It("respects nameOverride and fullnameOverride for default ServiceAccount name", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
 				serviceAccount.SetKind("ServiceAccount")
@@ -4249,8 +4512,6 @@ metadata:
 			})
 
 			It("ensures ServiceAccount name matches across all resource references", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
@@ -4272,8 +4533,6 @@ spec:
 
 		Context("when binding RBAC permissions to ServiceAccount", func() {
 			It("references ServiceAccount consistently in RoleBinding subjects", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				roleBinding.SetKind("RoleBinding")
@@ -4299,8 +4558,6 @@ subjects:
 			})
 
 			It("references ServiceAccount consistently in ClusterRoleBinding subjects", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				clusterRoleBinding := &unstructured.Unstructured{}
 				clusterRoleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				clusterRoleBinding.SetKind("ClusterRoleBinding")
@@ -4328,8 +4585,6 @@ subjects:
 
 		Context("when handling project names with prefixes", func() {
 			It("templates ServiceAccount name correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				serviceAccount := &unstructured.Unstructured{}
 				serviceAccount.SetAPIVersion("v1")
 				serviceAccount.SetKind("ServiceAccount")
@@ -4346,8 +4601,6 @@ metadata:
 			})
 
 			It("templates Deployment serviceAccountName field correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				deployment := &unstructured.Unstructured{}
 				deployment.SetAPIVersion("apps/v1")
 				deployment.SetKind("Deployment")
@@ -4367,8 +4620,6 @@ spec:
 			})
 
 			It("templates RoleBinding subjects correctly with project prefix", func() {
-				templater := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
-
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
 				roleBinding.SetKind("RoleBinding")
@@ -4389,7 +4640,7 @@ subjects:
 
 		Context("when ensuring Kubernetes resource name limits", func() {
 			It("delegates truncation to resourceName helper for 63-character limit compliance", func() {
-				templater := NewTemplater("very-long-project-name-that-needs-truncation",
+				longNameTemplater := NewTemplater("very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation",
 					"very-long-project-name-that-needs-truncation-system", nil)
 
@@ -4403,10 +4654,80 @@ kind: ServiceAccount
 metadata:
   name: controller-manager`
 
-				result := templater.ApplyHelmSubstitutions(content, serviceAccount)
+				result := longNameTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring(
 					`name: {{ include "very-long-project-name-that-needs-truncation.serviceAccountName" . }}`))
+			})
+		})
+
+		Context("when a non-manager deployment is present alongside the manager", func() {
+			It("does not apply manager templates to an extra deployment with only the default-container annotation", func() {
+				// The annotation alone must not identify the manager — extra deployments with multiple containers carry it too.
+				extraDeployment := &unstructured.Unstructured{}
+				extraDeployment.SetAPIVersion("apps/v1")
+				extraDeployment.SetKind("Deployment")
+				extraDeployment.SetName("test-project-some-operator")
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-some-operator
+  namespace: test-project-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: worker
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
+`
+				result := templater.ApplyHelmSubstitutions(content, extraDeployment)
+
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager.replicas }}"),
+					"manager replicas template must not appear in a non-manager deployment")
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager.image.repository }}"),
+					"manager image template must not appear in a non-manager deployment")
+				Expect(result).NotTo(ContainSubstring("{{ .Values.manager."),
+					"no manager values must be injected into a non-manager deployment")
+			})
+
+			It("applies manager-specific templates to a deployment identified only by container name", func() {
+				// Manager identified by container name when the control-plane label is absent.
+				managerDeployment := &unstructured.Unstructured{}
+				managerDeployment.SetAPIVersion("apps/v1")
+				managerDeployment.SetKind("Deployment")
+				managerDeployment.SetName("test-project-controller-manager")
+				managerDeployment.Object[k8sSpecField] = map[string]any{
+					"template": map[string]any{
+						k8sSpecField: map[string]any{
+							"containers": []any{
+								map[string]any{"name": "manager", "image": "controller:latest"},
+							},
+						},
+					},
+				}
+
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+  namespace: test-project-system
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+`
+				result := templater.ApplyHelmSubstitutions(content, managerDeployment)
+
+				Expect(result).To(ContainSubstring("{{ .Values.manager.replicas }}"),
+					"manager replicas template must appear for a deployment with a container named manager")
 			})
 		})
 	})

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -33,9 +34,46 @@ var (
 	errHelpDisplayed = errors.New("help displayed")
 )
 
-// isHelpFlag checks if the given string is a help flag
+// isHelpFlagArg reports whether the given command-line argument is a help flag.
+func isHelpFlagArg(arg string) bool {
+	if arg == helpFlagArg || arg == helpShorthandArg {
+		return true
+	}
+
+	value, found := strings.CutPrefix(arg, helpFlagArg+"=")
+	if !found {
+		value, found = strings.CutPrefix(arg, helpShorthandArg+"=")
+	}
+	if !found {
+		return false
+	}
+
+	help, err := strconv.ParseBool(value)
+	return err == nil && help
+}
+
+// isHelpFlag reports whether the given string asks for help. It also accepts the bare word "help", so use
+// it only for values that cannot hold data, such as a plugin key.
 func isHelpFlag(s string) bool {
-	return s == "--help" || s == "-h" || s == "help"
+	return isHelpFlagArg(s) || s == kubebuilderSubcommandHelp
+}
+
+// isCompletionRequest reports whether the command is the hidden one Cobra runs to complete a command
+// line. Completions are offered with whatever the command tree holds, so they never fail on the
+// project configuration.
+func isCompletionRequest(cmd *cobra.Command) bool {
+	return cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd
+}
+
+// subcommandPath returns the subcommand names leading from the root command to cmd.
+func subcommandPath(cmd *cobra.Command) []string {
+	var path []string
+	for current := cmd; current.HasParent(); current = current.Parent() {
+		path = append(path, current.Name())
+	}
+	slices.Reverse(path)
+
+	return path
 }
 
 // getShortKey converts a full plugin key to a short display key
@@ -74,7 +112,8 @@ func getPluginDescription(_ string) string {
 	return "External or custom plugin"
 }
 
-func (c CLI) newRootCmd() *cobra.Command {
+// newRootCmd creates the root Cobra command for the CLI.
+func (c *CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     c.commandName,
 		Long:    c.description,
@@ -82,58 +121,115 @@ func (c CLI) newRootCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
-		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			// Check if --plugins flag contains help flags (--help, -h, help)
-			// This handles cases like: kubebuilder init --plugins --help
-			if pluginKeys, err := cmd.Flags().GetStringSlice(pluginsFlag); err == nil {
-				for _, key := range pluginKeys {
-					key = strings.TrimSpace(key)
-					if isHelpFlag(key) {
-						// Help was requested, show help and stop execution
-						cmd.SilenceUsage = true
-						cmd.SilenceErrors = true
-						_ = cmd.Help()
-						return errHelpDisplayed
-					}
-				}
-			}
-			return nil
-		},
+		PersistentPreRunE: c.checkCommandLine,
 	}
 
 	// Global flags for all subcommands.
-	cmd.PersistentFlags().StringSlice(pluginsFlag, nil,
-		"Comma-separated list of plugin keys to use (e.g., go/v4, helm/v2-alpha). "+
-			"Defaults to the built-in go/v4 bundle if unset")
+	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, pluginsFlagDescription)
 
 	// Register --project-version on the root command so that it shows up in help.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
-		"Project version (e.g., 3). Defaults to CLI version if unset")
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), projectVersionFlagDescription)
 
-	// As the root command will be used to shot the help message under some error conditions,
+	// As the root command will be used to show the help message under some error conditions,
 	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
 	cmd.FParseErrWhitelist = cobra.FParseErrWhitelist{UnknownFlags: true}
 
 	return cmd
 }
 
+// checkCommandLine runs before any command. It answers a help request made through the plugins
+// flag, reports a malformed command line, and reports a project configuration that the command
+// about to run cannot use.
+func (c *CLI) checkCommandLine(cmd *cobra.Command, _ []string) error {
+	// Handles command lines like: kubebuilder init --plugins --help
+	if pluginKeys, err := cmd.Flags().GetStringSlice(pluginsFlag); err == nil {
+		for _, key := range pluginKeys {
+			key = strings.TrimSpace(key)
+			if isHelpFlag(key) {
+				cmd.SilenceUsage = true
+				cmd.SilenceErrors = true
+				_ = cmd.Help()
+				return errHelpDisplayed
+			}
+		}
+	}
+
+	if isCompletionRequest(cmd) {
+		return nil
+	}
+	// A malformed command line is reported for normal commands. Completion requests are
+	// intentionally allowed to inspect partial input.
+	if c.flagErr != nil {
+		return c.flagErr
+	}
+
+	// Cobra resolved the command, so it is now known whether it consumes the configuration.
+	if isSubcommandPathWithoutConfig(subcommandPath(cmd)) {
+		return nil
+	}
+	if c.configErr != nil {
+		return c.configErr
+	}
+	if c.configSkipped {
+		return c.resolveSkippedConfig()
+	}
+
+	return nil
+}
+
+// checkCommandLineBeforeHooks makes checkCommandLine run before the persistent pre-run hook of the
+// command and of every command below it. Cobra runs only the nearest persistent pre-run hook, so an
+// extra command with a hook of its own would otherwise skip the check of the root command. That
+// hook still runs afterwards. Subcommands added after the CLI is built are not wrapped.
+func (c *CLI) checkCommandLineBeforeHooks(cmd *cobra.Command) {
+	for _, subcommand := range cmd.Commands() {
+		c.checkCommandLineBeforeHooks(subcommand)
+	}
+
+	switch {
+	case cmd.PersistentPreRunE != nil:
+		ownHook := cmd.PersistentPreRunE
+		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+			if err := c.checkCommandLine(cmd, args); err != nil {
+				return err
+			}
+
+			return ownHook(cmd, args)
+		}
+	case cmd.PersistentPreRun != nil:
+		ownHook := cmd.PersistentPreRun
+		// Cobra runs PersistentPreRunE instead of PersistentPreRun when both are set, so the hook
+		// moves there to keep running.
+		cmd.PersistentPreRun = nil
+		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+			if err := c.checkCommandLine(cmd, args); err != nil {
+				return err
+			}
+			ownHook(cmd, args)
+
+			return nil
+		}
+	}
+}
+
 // rootExamples builds the examples string for the root command before resolving plugins
 func (c CLI) rootExamples() string {
 	str := fmt.Sprintf(`Get started by initializing a new project:
 
-    %[1]s init --domain <YOUR_DOMAIN>
+    %[1]s init --domain example.org
 
-The default plugin scaffold includes everything you need. To use optional plugins:
+Use optional plugins when you want extra scaffolding during init:
 
-    %[1]s init --plugins=<PLUGIN_KEYS>
+    %[1]s init --domain example.org --plugins <PLUGIN_KEYS>
 
 Available plugins:
 
 %[2]s
 
-To see which plugins support a specific command:
+To see help for a command with a specific plugin:
 
     %[1]s <init|edit|create> --help
+    %[1]s init --help --plugins <PLUGIN_KEYS> [--project-version <PROJECT_VERSION>]
 `,
 		c.commandName, c.getPluginTable())
 

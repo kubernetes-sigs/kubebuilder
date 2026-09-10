@@ -44,14 +44,14 @@ MacOS:
 
 func (c CLI) newZshCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "zsh",
+		Use:   shellZsh,
 		Short: "Load zsh completions",
 		Example: fmt.Sprintf(`# If shell completion is not already enabled in your environment you will need
 # to enable it. You can execute the following once:
 $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 # To load completions for each session, execute once:
-$ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+$ %[1]s completion `+shellZsh+` > "${fpath[1]}/_%[1]s"
 
 # You will need to start a new shell for this setup to take effect.
 `, c.commandName),

@@ -28,13 +28,13 @@ var _ = Describe("Pod Webhook", func() {
 	var (
 		obj       *corev1.Pod
 		oldObj    *corev1.Pod
-		validator PodCustomValidator
+		validator PodValidator
 	)
 
 	BeforeEach(func() {
 		obj = &corev1.Pod{}
 		oldObj = &corev1.Pod{}
-		validator = PodCustomValidator{}
+		validator = PodValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

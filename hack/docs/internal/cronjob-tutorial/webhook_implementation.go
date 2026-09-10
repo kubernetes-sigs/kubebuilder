@@ -33,7 +33,7 @@ const webhookDefaultingSettings = `// Set default values
 }
 
 // applyDefaults applies default values to CronJob fields.
-func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
+func (d *CronJobDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
 	if cronJob.Spec.ConcurrencyPolicy == "" {
 		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}
@@ -74,7 +74,7 @@ sometimes more advanced use cases call for complex validation.
 For instance, we'll see below that we use this to validate a well-formed cron
 schedule without making up a long regular expression.
 
-If` + " `" + `webhook.CustomValidator` + "`" + ` interface is implemented, a webhook will automatically be
+If` + " `" + `admission.Validator` + "`" + ` interface is implemented, a webhook will automatically be
 served that calls the validation.
 
 The` + " `" + `ValidateCreate` + "`" + `, ` + "`" + `ValidateUpdate` + "`" + ` and` + " `" + `ValidateDelete` + "`" + ` methods are expected
@@ -95,13 +95,13 @@ This marker is responsible for generating a validation webhook manifest.
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.`
 
 const customInterfaceDefaultInfo = `/*
-We use the ` + "`" + `webhook.CustomDefaulter` + "`" + `interface to set defaults to our CRD.
+We use the ` + "`" + `admission.Defaulter` + "`" + `interface to set defaults to our CRD.
 A webhook will automatically be served that calls this defaulting.
 
 The ` + "`" + `Default` + "`" + `method is expected to mutate the receiver, setting the defaults.
 */
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.`
+// Default implements admission.Defaulter so a webhook will be registered for the Kind CronJob.`
 
 const webhookValidateSpecMethods = `
 /*
@@ -219,9 +219,9 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
 			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			obj.Spec.Suspend = ptr.To(true)
-			obj.Spec.SuccessfulJobsHistoryLimit = ptr.To(int32(5))
-			obj.Spec.FailedJobsHistoryLimit = ptr.To(int32(2))
+			obj.Spec.Suspend = new(true)
+			obj.Spec.SuccessfulJobsHistoryLimit = new(int32(5))
+			obj.Spec.FailedJobsHistoryLimit = new(int32(2))
 
 			By("calling the Default method to apply defaults")
 			_ = defaulter.Default(ctx, obj)
@@ -312,15 +312,15 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 const webhookTestsVars = `var (
 		obj       *batchv1.CronJob
 		oldObj    *batchv1.CronJob
-		validator CronJobCustomValidator
-		defaulter CronJobCustomDefaulter
+		validator CronJobValidator
+		defaulter CronJobDefaulter
 	)`
 
 const webhookTestsConstants = `	var (
 		obj       *batchv1.CronJob
 		oldObj    *batchv1.CronJob
-		validator CronJobCustomValidator
-		defaulter CronJobCustomDefaulter
+		validator CronJobValidator
+		defaulter CronJobDefaulter
 	)
 
 	const validCronJobName = "valid-cronjob-name"
@@ -328,9 +328,9 @@ const webhookTestsConstants = `	var (
 
 const webhookTestsBeforeEachOriginal = `obj = &batchv1.CronJob{}
 		oldObj = &batchv1.CronJob{}
-		validator = CronJobCustomValidator{}
+		validator = CronJobValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
-		defaulter = CronJobCustomDefaulter{}
+		defaulter = CronJobDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")`
@@ -339,8 +339,8 @@ const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
@@ -350,15 +350,15 @@ const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
 				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
-				SuccessfulJobsHistoryLimit: ptr.To(int32(3)),
-				FailedJobsHistoryLimit:     ptr.To(int32(1)),
+				SuccessfulJobsHistoryLimit: new(int32(3)),
+				FailedJobsHistoryLimit:     new(int32(1)),
 			},
 		}
 		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
 		*oldObj.Spec.FailedJobsHistoryLimit = 1
 
-		validator = CronJobCustomValidator{}
-		defaulter = CronJobCustomDefaulter{
+		validator = CronJobValidator{}
+		defaulter = CronJobDefaulter{
 			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
 			DefaultSuspend:                    false,
 			DefaultSuccessfulJobsHistoryLimit: 3,

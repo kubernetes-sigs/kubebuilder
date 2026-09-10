@@ -34,8 +34,8 @@ var admirallog = logf.Log.WithName("admiral-resource")
 // SetupAdmiralWebhookWithManager registers the webhook for Admiral in the manager.
 func SetupAdmiralWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Admiral{}).
-		WithDefaulter(&AdmiralCustomDefaulter{}).
-		WithValidator(&AdmiralCustomValidator{}).
+		WithDefaulter(&AdmiralDefaulter{}).
+		WithValidator(&AdmiralValidator{}).
 		WithValidatorCustomPath("/custom-validate-admiral").
 		Complete()
 }
@@ -44,17 +44,17 @@ func SetupAdmiralWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-admiral,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=madmiral-v1.kb.io,admissionReviewVersions=v1
 
-// AdmiralCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// AdmiralDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Admiral when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type AdmiralCustomDefaulter struct {
+type AdmiralDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral.
-func (d *AdmiralCustomDefaulter) Default(_ context.Context, obj *crewv1.Admiral) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Admiral.
+func (d *AdmiralDefaulter) Default(_ context.Context, obj *crewv1.Admiral) error {
 	admirallog.Info("Defaulting for Admiral", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -66,17 +66,17 @@ func (d *AdmiralCustomDefaulter) Default(_ context.Context, obj *crewv1.Admiral)
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/custom-validate-admiral,mutating=false,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=vadmiral-v1.kb.io,admissionReviewVersions=v1
 
-// AdmiralCustomValidator struct is responsible for validating the Admiral resource
+// AdmiralValidator struct is responsible for validating the Admiral resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type AdmiralCustomValidator struct {
+type AdmiralValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Admiral.
+func (v *AdmiralValidator) ValidateCreate(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
 	admirallog.Info("Validation for Admiral upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -84,8 +84,8 @@ func (v *AdmiralCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.A
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Admiral) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Admiral.
+func (v *AdmiralValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Admiral) (admission.Warnings, error) {
 	admirallog.Info("Validation for Admiral upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -93,8 +93,8 @@ func (v *AdmiralCustomValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Admiral.
-func (v *AdmiralCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Admiral.
+func (v *AdmiralValidator) ValidateDelete(_ context.Context, obj *crewv1.Admiral) (admission.Warnings, error) {
 	admirallog.Info("Validation for Admiral upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

@@ -31,7 +31,7 @@ var issuerlog = logf.Log.WithName("issuer-resource")
 // SetupIssuerWebhookWithManager registers the webhook for Issuer in the manager.
 func SetupIssuerWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &certmanagerv1.Issuer{}).
-		WithDefaulter(&IssuerCustomDefaulter{}).
+		WithDefaulter(&IssuerDefaulter{}).
 		Complete()
 }
 
@@ -39,17 +39,17 @@ func SetupIssuerWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-cert-manager-io-v1-issuer,mutating=true,failurePolicy=fail,sideEffects=None,groups=cert-manager.io,resources=issuers,verbs=create;update,versions=v1,name=missuer-v1.kb.io,admissionReviewVersions=v1
 
-// IssuerCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// IssuerDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Issuer when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type IssuerCustomDefaulter struct {
+type IssuerDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Issuer.
-func (d *IssuerCustomDefaulter) Default(_ context.Context, obj *certmanagerv1.Issuer) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Issuer.
+func (d *IssuerDefaulter) Default(_ context.Context, obj *certmanagerv1.Issuer) error {
 	issuerlog.Info("Defaulting for Issuer", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.

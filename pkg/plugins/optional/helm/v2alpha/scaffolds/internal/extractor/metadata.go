@@ -146,23 +146,16 @@ func extractDeployManagerVersion(deployment *unstructured.Unstructured) string {
 		return ""
 	}
 
-	// Extract containers using NestedFieldNoCopy to avoid deep copy issues with integer fields
-	containers, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "template", "spec", "containers")
-	if !found || err != nil {
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return ""
+	}
+	container := findManagerContainer(deployment, specMap)
+	if container == nil {
 		return ""
 	}
 
-	containersList, ok := containers.([]any)
-	if !ok || len(containersList) == 0 {
-		return ""
-	}
-
-	firstContainer, ok := containersList[0].(map[string]any)
-	if !ok {
-		return ""
-	}
-
-	image, found, err := unstructured.NestedString(firstContainer, "image")
+	image, found, err := unstructured.NestedString(container, "image")
 	if !found || err != nil || image == "" {
 		return ""
 	}
@@ -170,7 +163,7 @@ func extractDeployManagerVersion(deployment *unstructured.Unstructured) string {
 	// Strip digest suffix if present (e.g., repository:tag@sha256:... or repository@sha256:...)
 	// appVersion must be a semantic version, not a digest
 	imageWithoutDigest := image
-	if before, _, ok0 := strings.Cut(image, "@"); ok0 {
+	if before, _, hasDigest := strings.Cut(image, "@"); hasDigest {
 		imageWithoutDigest = before
 	}
 

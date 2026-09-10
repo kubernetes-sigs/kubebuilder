@@ -47,10 +47,6 @@ type createWebhookSubcommand struct {
 	// force indicates that the resource should be created even if it already exists
 	force bool
 
-	// Deprecated - TODO: remove it for go/v5
-	// isLegacyPath indicates that the resource should be created in the legacy path under the api
-	isLegacyPath bool
-
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
 }
@@ -73,12 +69,12 @@ validating and/or conversion webhooks.
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting \
     --defaulting-path=/my-custom-mutate-path
-  
+
   # Create validation webhook with custom path for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --programmatic-validation --validation-path=/my-custom-validate-path
-  
+
   # Create both defaulting and validation webhooks with different custom paths
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate \
     --defaulting --programmatic-validation \
@@ -96,11 +92,11 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"Resource irregular plural form (e.g., 'people' for 'Person'); auto-detected from resource kind if not provided")
 
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
-		"If set, scaffold defaulting webhook")
+		"If set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
-		"If set, scaffold validating webhook")
+		"If set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
-		"If set, scaffold conversion webhook")
+		"If set, scaffold the conversion webhook")
 
 	fs.StringSliceVar(&p.options.Spoke, "spoke",
 		nil,
@@ -114,18 +110,15 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"[Optional] Custom path for the validation webhook (e.g., /my-custom-validate-path). "+
 			"Only valid with --programmatic-validation")
 
-	// TODO: remove for go/v5
-	fs.BoolVar(&p.isLegacyPath, "legacy", false,
-		"[DEPRECATED] If set, attempts to create resource under the API directory (legacy path). "+
-			"This option will be removed in future versions")
-
 	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
 		"Go package import path for the external API (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1). "+
 			"Used to scaffold webhooks for resources defined outside this project")
 
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
-		"Domain name for the external API (e.g., cert-manager.io). "+
-			"Used to generate accurate RBAC markers and permissions for the external resources")
+		"Domain suffix for the external API, combined with --group to form the qualified group "+
+			"(e.g., --group cert-manager --external-api-domain io => cert-manager.io). Selects the "+
+			"recorded resource when several share a group, version, and kind, and is used to generate "+
+			"accurate RBAC markers and permissions for the external resources")
 
 	fs.StringVar(&p.options.ExternalAPIModule, "external-api-module", "",
 		"External API module with optional version (e.g., github.com/cert-manager/cert-manager@v1.18.2)")
@@ -142,8 +135,8 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
-		return errors.New("you cannot scaffold webhooks for external types using the legacy path")
+	if err := p.updateResourceFromConfig(res); err != nil {
+		return err
 	}
 
 	for _, spoke := range p.options.Spoke {
@@ -183,7 +176,13 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	res = &resValue
 	if err != nil {
 		if !p.resource.External && !p.resource.Core {
-			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+			return fmt.Errorf(
+				"no API found for %s/%s, Kind %s: run 'create api' first, "+
+					"or pass --external-api-path for an external type",
+				p.resource.QualifiedGroup(),
+				p.resource.Version,
+				p.resource.Kind,
+			)
 		}
 	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
 		// Check if user is trying to add a webhook type that already exists
@@ -207,7 +206,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("failed to scaffold webhook: %w", err)
@@ -242,6 +241,137 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
 
 	return nil
+}
+
+// updateResourceFromConfig fills res with the configuration recorded for its
+// Group/Version/Kind in the PROJECT file: Domain, Path, Plural, External, Core and Module.
+//
+// The lookup matches on Group/Version/Kind rather than the full GVK so that a single query
+// surfaces every recorded entry for that G/V/K, since more than one can share it under different
+// domains: two external variants, or a core type and a project API that collide. When several
+// match, --external-api-domain selects the intended one; without it resolution falls to the
+// non-external (core/project) entry via selectNonExternal.
+//
+// selectNonExternal breaks a core-vs-project tie by preferring the candidate whose domain equals
+// res.Domain. This relies on resolveDomain (pkg/cli/cmd_helpers.go) leaving res.Domain as the
+// project domain when several records match; revisit that tie-break if resolveDomain changes.
+func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
+	resources, err := p.config.GetResources()
+	if err != nil {
+		return fmt.Errorf("failed to load resources from project configuration: %w", err)
+	}
+
+	// Collect every recorded resource sharing this Group/Version/Kind.
+	var candidates []resource.Resource
+	for _, r := range resources {
+		if r.Group == res.Group && r.Version == res.Version && r.Kind == res.Kind {
+			candidates = append(candidates, r)
+		}
+	}
+
+	domain := p.options.ExternalAPIDomain
+	var selected *resource.Resource
+	switch {
+	case len(candidates) == 0:
+		return nil // nothing recorded for this GVK; keep res as built from the flags
+	case domain != "":
+		selected, err = selectByDomain(candidates, domain, p.options.ExternalAPIPath)
+	case len(candidates) == 1:
+		selected = &candidates[0] // recover the single record
+	default:
+		selected, err = selectNonExternal(candidates, res.Domain)
+	}
+	if err != nil {
+		return err
+	}
+	if selected == nil {
+		return nil // the flags describe a new resource
+	}
+
+	res.Domain = selected.Domain
+	res.Path = selected.Path
+	res.Plural = selected.Plural
+	res.External = selected.External
+	res.Core = selected.Core
+	res.Module = selected.Module
+
+	return nil
+}
+
+// selectByDomain resolves the candidate carrying the given --external-api-domain, for any number
+// of candidates. When none carries it, a non-empty external path means the flags describe a new
+// resource (nil, nil); otherwise the request is refused.
+func selectByDomain(candidates []resource.Resource, domain, externalPath string) (*resource.Resource, error) {
+	for i := range candidates {
+		if candidates[i].Domain == domain {
+			return &candidates[i], nil
+		}
+	}
+	if externalPath != "" {
+		return nil, nil
+	}
+	return nil, resolutionError(candidates, domain)
+}
+
+// selectNonExternal resolves several same-GVK candidates when no domain is given: the target is
+// the non-external (core/project) entry. When a core and project entry collide it keeps the
+// project (its domain equals projectDomain); when every candidate is external it refuses.
+//
+// Unlike selectByDomain, there is no --external-api-path escape hatch here: adding a new external
+// variant to an already-ambiguous G/V/K requires --external-api-domain. Without a domain,
+// resolveDomain (pkg/cli/resource.go) leaves res.Domain as the project domain when several records
+// match, and UpdateResource only overrides the domain when --external-api-domain is set. So a
+// path-only "new resource" would be recorded as external yet stamped with the project domain -- a
+// malformed entry. Refusing here forces the caller to name the variant with a domain.
+func selectNonExternal(candidates []resource.Resource, projectDomain string) (*resource.Resource, error) {
+	var nonExternal []resource.Resource
+	for _, c := range candidates {
+		if !c.External {
+			nonExternal = append(nonExternal, c)
+		}
+	}
+
+	switch len(nonExternal) {
+	case 0:
+		return nil, resolutionError(candidates, "")
+	case 1:
+		return &nonExternal[0], nil
+	default:
+		// A core and a project resource share the GVK; keep the project one.
+		for i := range nonExternal {
+			if nonExternal[i].Domain == projectDomain {
+				return &nonExternal[i], nil
+			}
+		}
+		return nil, resolutionError(candidates, "")
+	}
+}
+
+// resolutionError reports why the candidates could not be resolved to one, naming their domains.
+// With a named domain it reports that none matched; without one it asks for --external-api-domain.
+func resolutionError(candidates []resource.Resource, domain string) error {
+	g, v, k := candidates[0].Group, candidates[0].Version, candidates[0].Kind
+	domains := make([]string, len(candidates))
+	for i, c := range candidates {
+		if c.Domain == "" {
+			domains[i] = "<empty>"
+		} else {
+			domains[i] = c.Domain
+		}
+	}
+
+	if domain != "" {
+		return fmt.Errorf(
+			"no resource matches --external-api-domain %q for group %q, version %q and kind %q "+
+				"(recorded domains: %s)",
+			domain, g, v, k, strings.Join(domains, ", "),
+		)
+	}
+	return fmt.Errorf(
+		"group %q, version %q and kind %q match more than one resource (domains: %s): "+
+			"pass --external-api-domain to choose the one to work on",
+		g, v, k, strings.Join(domains, ", "),
+	)
 }
 
 // Helper function to validate spoke versions

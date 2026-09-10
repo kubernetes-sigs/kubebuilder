@@ -52,6 +52,52 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 		kbc.Destroy()
 	})
 
+	Context("When multiple kinds share the same webhook suite", func() {
+		It("should register the scheme of every kind in the suite", func() {
+			By("creating two APIs in the same group and version, each with a defaulting webhook")
+			for _, kind := range []string{"Captain", "FirstMate"} {
+				err := kbc.CreateAPI(
+					"--group", "crew",
+					"--version", "v1",
+					"--kind", kind,
+					"--resource", "--controller",
+					"--make=false",
+				)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = kbc.CreateWebhook(
+					"--group", "crew",
+					"--version", "v1",
+					"--kind", kind,
+					"--defaulting",
+					"--make=false",
+				)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			By("creating a webhook for an external type in the same version")
+			err := kbc.CreateWebhook(
+				"--group", "cert-manager.io",
+				"--version", "v1",
+				"--kind", "Issuer",
+				"--defaulting",
+				"--external-api-path", "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+				"--external-api-domain", "cert-manager.io",
+				"--make=false",
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying the suite registers the scheme of the local and the external kinds")
+			suiteFile := filepath.Join(kbc.Dir, "internal/webhook/v1/webhook_suite_test.go")
+			content, err := os.ReadFile(suiteFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(string(content)).To(ContainSubstring("err = crewv1.AddToScheme(scheme.Scheme)"))
+			Expect(string(content)).To(ContainSubstring("err = certmanageriov1.AddToScheme(scheme.Scheme)"))
+			Expect(strings.Count(string(content), "crewv1.AddToScheme(scheme.Scheme)")).To(Equal(1))
+		})
+	})
+
 	Context("When creating webhooks incrementally", func() {
 		It("should support adding validation to existing defaulting webhook", func() {
 			By("creating an API")
@@ -89,8 +135,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			content, err := os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(content)).To(ContainSubstring("defaulter TestIncrementalCustomDefaulter"))
-			Expect(string(content)).To(ContainSubstring("validator TestIncrementalCustomValidator"))
+			Expect(string(content)).To(ContainSubstring("defaulter TestIncrementalDefaulter"))
+			Expect(string(content)).To(ContainSubstring("validator TestIncrementalValidator"))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestIncremental under Defaulting Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating or updating TestIncremental under Validating Webhook\""))
 		})
@@ -131,8 +177,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			content, err := os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(content)).To(ContainSubstring("validator TestReverseCustomValidator"))
-			Expect(string(content)).To(ContainSubstring("defaulter TestReverseCustomDefaulter"))
+			Expect(string(content)).To(ContainSubstring("validator TestReverseValidator"))
+			Expect(string(content)).To(ContainSubstring("defaulter TestReverseDefaulter"))
 		})
 
 		It("should support conversion-only webhooks without defaulting/validation", func() {
@@ -184,8 +230,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(webhookContent)).To(ContainSubstring("SetupTestConversionWebhookWithManager"))
 			Expect(string(webhookContent)).To(ContainSubstring("NewWebhookManagedBy(mgr, &testv1.TestConversion{})"))
 			Expect(string(webhookContent)).To(ContainSubstring("Complete()"))
-			Expect(string(webhookContent)).NotTo(ContainSubstring("CustomDefaulter"))
-			Expect(string(webhookContent)).NotTo(ContainSubstring("CustomValidator"))
+			Expect(string(webhookContent)).NotTo(ContainSubstring("TestConversionDefaulter"))
+			Expect(string(webhookContent)).NotTo(ContainSubstring("TestConversionValidator"))
 
 			By("verifying conversion webhook IS wired in main.go")
 			mainFile := filepath.Join(kbc.Dir, "cmd/main.go")
@@ -255,8 +301,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			content, err := os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(content)).To(ContainSubstring("defaulter TestMultiCustomDefaulter"))
-			Expect(string(content)).To(ContainSubstring("validator TestMultiCustomValidator"))
+			Expect(string(content)).To(ContainSubstring("defaulter TestMultiDefaulter"))
+			Expect(string(content)).To(ContainSubstring("validator TestMultiValidator"))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestMulti under Conversion Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestMulti under Defaulting Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating or updating TestMulti under Validating Webhook\""))
@@ -346,7 +392,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			testContent, err = os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(testContent)).To(ContainSubstring("validator TestCustomCustomValidator"))
+			Expect(string(testContent)).To(ContainSubstring("validator TestCustomValidator"))
 			Expect(string(testContent)).To(ContainSubstring("Context(\"When creating or updating TestCustom under Validating Webhook\""))
 
 			By("verifying user's renamed variables are preserved")
@@ -366,8 +412,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(webhookContent)).To(ContainSubstring("testcustom.Spec.Replicas = &replicas"))
 
 			By("verifying validator implementation was added")
-			Expect(string(webhookContent)).To(ContainSubstring("type TestCustomCustomValidator struct"))
-			Expect(string(webhookContent)).To(ContainSubstring("func (v *TestCustomCustomValidator) ValidateCreate"))
+			Expect(string(webhookContent)).To(ContainSubstring("type TestCustomValidator struct"))
+			Expect(string(webhookContent)).To(ContainSubstring("func (v *TestCustomValidator) ValidateCreate"))
 		})
 
 		It("should work when user removes TODO comments", func() {
@@ -416,7 +462,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			content, err = os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(content)).To(ContainSubstring("defaulter TestNoTODOCustomDefaulter"))
+			Expect(string(content)).To(ContainSubstring("defaulter TestNoTODODefaulter"))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestNoTODO under Defaulting Webhook\""))
 		})
 
@@ -436,7 +482,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 				"--group", "test",
 				"--version", "v2",
 				"--kind", "TestMultiversion",
-				"--resource=false", "--controller=false",
+				"--resource", "--controller=false",
 				"--make=false",
 			)
 			Expect(err).NotTo(HaveOccurred())
@@ -476,11 +522,21 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			content, err = os.ReadFile(testFile)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(content)).To(ContainSubstring("defaulter TestMultiversionCustomDefaulter"))
-			Expect(string(content)).To(ContainSubstring("validator TestMultiversionCustomValidator"))
+			Expect(string(content)).To(ContainSubstring("defaulter TestMultiversionDefaulter"))
+			Expect(string(content)).To(ContainSubstring("validator TestMultiversionValidator"))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestMultiversion under Conversion Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestMultiversion under Defaulting Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating or updating TestMultiversion under Validating Webhook\""))
+
+			By("verifying the webhook implementation imports context")
+			webhookFile := filepath.Join(kbc.Dir, "internal/webhook/v1/testmultiversion_webhook.go")
+			content, err = os.ReadFile(webhookFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring(`"context"`))
+
+			By("building and linting the project with all webhook types")
+			Expect(kbc.Make("all")).To(Succeed())
+			Expect(kbc.Make("lint")).To(Succeed())
 		})
 
 		It("should correctly scaffold conversion webhook and storage version marker", func() {

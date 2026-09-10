@@ -5,4 +5,5 @@ resources:
 - crew_v2_firstmate.yaml
 - crew_v1_sailor.yaml
 - crew_v1_admiral.yaml
+- crew_v1_navigator.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

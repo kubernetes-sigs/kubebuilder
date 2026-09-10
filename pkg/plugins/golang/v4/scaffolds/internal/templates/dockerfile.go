@@ -39,7 +39,9 @@ func (f *Dockerfile) SetTemplateDefaults() error {
 }
 
 const dockerfileTemplate = `# Build the manager binary
-FROM golang:1.26 AS builder
+# Override BASE_IMAGE to build from another registry, e.g. docker.io/library/golang:1.26
+ARG BASE_IMAGE=golang:1.26
+FROM ${BASE_IMAGE} AS builder
 ARG TARGETOS
 ARG TARGETARCH
 

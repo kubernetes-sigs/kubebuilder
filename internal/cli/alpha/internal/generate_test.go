@@ -540,13 +540,38 @@ var _ = Describe("generate: get-args-helpers", func() {
 				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource", "--namespaced=false", "--controller=false"))
 			})
 		})
+
+		Context("for Server-Side Apply", func() {
+			It("includes --ssa only when SSA is enabled on the resource", func() {
+				res.API.CRDVersion = "v1"
+				res.API.Namespaced = true
+				res.API.SSA = true
+				Expect(getAPIResourceFlags(res)).To(ContainElements(
+					"--resource", "--namespaced", "--ssa", "--controller=false"))
+			})
+
+			It("omits --ssa when SSA is disabled on the resource", func() {
+				res.API.CRDVersion = "v1"
+				res.API.Namespaced = true
+				res.API.SSA = false
+				Expect(getAPIResourceFlags(res)).NotTo(ContainElement("--ssa"))
+			})
+
+			It("omits --ssa for resource-less entries (--resource=false)", func() {
+				// A nil API means --resource=false; --ssa must never be emitted.
+				res.API = nil
+				flags := getAPIResourceFlags(res)
+				Expect(flags).To(ContainElement("--resource=false"))
+				Expect(flags).NotTo(ContainElement("--ssa"))
+			})
+		})
 	})
 
 	// getWebhookResourceFlags
 	Context("getWebhookResourceFlags", func() {
 		It("returns correct flags for specified resources", func() {
 			res := resource.Resource{
-				Path:     "external/test",
+				Path:     certManagerAPIPath,
 				GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
 				External: true,
 				Webhooks: &resource.Webhooks{
@@ -558,7 +583,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 			}
 			flags := getWebhookResourceFlags(res)
 			Expect(flags).To(ContainElements(
-				"--external-api-path", "external/test",
+				"--external-api-path", certManagerAPIPath,
 				"--external-api-domain", fixtureTest,
 				"--programmatic-validation", "--defaulting", "--conversion", "--spoke", "v2",
 			))
@@ -652,7 +677,7 @@ var _ = Describe("generate: create-helpers", func() {
 					API:        &resource.API{Namespaced: true},
 					Controller: true,
 					External:   true,
-					Path:       "external/path",
+					Path:       certManagerAPIPath,
 				}
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
@@ -816,7 +841,6 @@ var _ = Describe("generate: kubebuilder", func() {
 				},
 			}
 			store := &fakeStore{cfg: cfg}
-			// Run kubebuilderCreate and verify no errors
 			Expect(kubebuilderCreate(store)).To(Succeed())
 		})
 	})
@@ -967,7 +991,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("skips migration as Grafana plugin not found", func() {
 			cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: grafanaPluginKey}}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest")).To(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil, false)).To(Succeed())
 		})
 
 		It("returns error if decoding Grafana plugin config fails", func() {
@@ -976,7 +1000,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 				plugins:   map[string]any{grafanaPluginKey: true},
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(migrateGrafanaPlugin(store, "src", "dest")).NotTo(Succeed())
+			Expect(migrateGrafanaPlugin(store, "src", "dest", nil, false)).NotTo(Succeed())
 		})
 
 		Context("success", func() {
@@ -998,10 +1022,44 @@ var _ = Describe("generate: migrate-plugins", func() {
 			It("migrates Grafana plugin successfully", func() {
 				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
 				store := &fakeStore{cfg: cfg}
-				Expect(migrateGrafanaPlugin(store, src, dest)).To(Succeed())
+				Expect(migrateGrafanaPlugin(store, src, dest, nil, false)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal("config"))
+			})
+
+			It("restores the preserved config on an in-place regeneration", func() {
+				// src == dest and the file on disk holds a freshly scaffolded
+				// default: the state after cleanOutputDirPreservingGit and
+				// kubebuilderGrafanaEdit have both run. Only the preserved
+				// content read before the cleanup carries the customisation.
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, src, []byte("customised"), true)).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("customised"))
+			})
+
+			It("restores an empty config on an in-place regeneration", func() {
+				// An existing empty config.yaml is a customisation too: the
+				// user emptied it on purpose, so the restore must not leave
+				// the scaffolded default behind.
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, src, nil, true)).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(b).To(BeEmpty())
+			})
+
+			It("prefers the preserved config over the source file", func() {
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				store := &fakeStore{cfg: cfg}
+				Expect(migrateGrafanaPlugin(store, src, dest, []byte("customised"), true)).To(Succeed())
+				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(b)).To(Equal("customised"))
 			})
 		})
 	})
@@ -1022,20 +1080,10 @@ var _ = Describe("generate: migrate-plugins", func() {
 			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
 		})
 
-		It("migrates Auto Update plugin successfully without UseGHModels", func() {
+		It("migrates Auto Update plugin successfully", func() {
 			cfg := &fakeConfig{
 				plugins: map[string]any{
-					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{UseGHModels: false},
-				},
-			}
-			store := &fakeStore{cfg: cfg}
-			Expect(migrateAutoUpdatePlugin(store)).To(Succeed())
-		})
-
-		It("migrates Auto Update plugin successfully with UseGHModels enabled", func() {
-			cfg := &fakeConfig{
-				plugins: map[string]any{
-					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{UseGHModels: true},
+					autoupdatePluginKey: autoupdatev1alpha.PluginConfig{},
 				},
 			}
 			store := &fakeStore{cfg: cfg}

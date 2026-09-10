@@ -28,13 +28,13 @@ var _ = Describe("Cruiser Webhook", func() {
 	var (
 		obj       *shipv2alpha1.Cruiser
 		oldObj    *shipv2alpha1.Cruiser
-		validator CruiserCustomValidator
+		validator CruiserValidator
 	)
 
 	BeforeEach(func() {
 		obj = &shipv2alpha1.Cruiser{}
 		oldObj = &shipv2alpha1.Cruiser{}
-		validator = CruiserCustomValidator{}
+		validator = CruiserValidator{}
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

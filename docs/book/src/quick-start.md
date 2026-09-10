@@ -17,7 +17,7 @@ This Quick Start guide will cover:
 <aside class="note" role="note">
 <p class="note-title">Versions Compatibility and Supportability</p>
 
-Please, ensure that you see the [guidance](./versions_compatibility_supportability.md).
+Please ensure that you see the [guidance](./versions_compatibility_supportability.md).
 
 </aside>
 
@@ -48,7 +48,7 @@ Kubebuilder provides autocompletion support via the command `kubebuilder complet
 
 ## Create a project
 
-Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
+Create a directory, and then run the init command inside of it to initialize a new project. Below is an example:
 
 ```bash
 mkdir -p ~/projects/guestbook
@@ -319,4 +319,3 @@ kubebuilder edit --plugins="autoupdate/v1-alpha"
 [markers]: reference/markers.md
 [controller-gen]: https://sigs.k8s.io/controller-tools/cmd/controller-gen
 [scaffolding-markers]: reference/markers/scaffold.md
-[ai-gh-models]: https://docs.github.com/en/github-models/about-github-models

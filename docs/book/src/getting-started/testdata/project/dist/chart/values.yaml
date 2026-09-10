@@ -27,6 +27,13 @@ manager:
   args:
     - --leader-elect
 
+  ## Health probes.
+  ## The manager serves the liveness (/healthz) and readiness (/readyz) endpoints on this port.
+  ##
+  healthProbe:
+    # Health probe server port
+    port: 8081
+
   ## Image pull secrets
   ##
   # imagePullSecrets:
@@ -126,7 +133,8 @@ serviceAccount:
   # Install default ServiceAccount provided
   enabled: true
 
-  ## Existing ServiceAccount name (only when enabled=false)
+  ## Existing ServiceAccount name (required when enabled=false)
+  ## Set to "default" to use the namespace default ServiceAccount
   ## Note: When enabled=true, respects nameOverride/fullnameOverride
   ##
   # name: ""
@@ -164,11 +172,26 @@ metrics:
 certManager:
   enabled: false
 
+## Webhook server configuration
+##
+webhook:
+  enabled: false
+  # Webhook server port
+  port: 9443
+
 ## Prometheus ServiceMonitor for metrics scraping.
 ## Requires prometheus-operator to be installed in the cluster.
 ##
 prometheus:
   enabled: false
+
+  ## Custom ServiceMonitor labels
+  ##
+  # labels: {}
+
+  ## Custom ServiceMonitor annotations
+  ##
+  # annotations: {}
 
 ## Network policies for controlling traffic flow.
 ## Enable to restrict ingress to the controller manager.

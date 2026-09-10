@@ -43,19 +43,21 @@ func NewScaffoldCommand() *cobra.Command {
 	scaffoldCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Re-scaffold a Kubebuilder project from its PROJECT file",
-		Long: `The 'generate' command re-creates a Kubebuilder project scaffold based on the configuration 
+		Long: `The 'generate' command re-creates a Kubebuilder project scaffold based on the configuration
 defined in the PROJECT file, using the latest installed Kubebuilder version and plugins.
 
-This is helpful for migrating projects to a newer Kubebuilder layout or plugin version (e.g., v3 to v4)
-as update your project from any previous version to the current one.
+This is useful for migrating a project to a newer Kubebuilder layout or plugin version, such as from v3 to v4.
 
-If no output directory is provided, the current working directory will be cleaned (except .git and PROJECT).`,
+If no output directory is provided, the project is re-scaffolded in place, in the input directory
+(the current working directory unless --input-dir is set). That directory is cleaned first and only
+.git is kept. The PROJECT file is read before the cleanup, and the new scaffold writes it again from
+that configuration.`,
 		Example: `
-  # **WARNING**(will delete all files to allow the re-scaffold except .git and PROJECT)
-  # Re-scaffold the project in-place 
+  # **WARNING**: will delete all files except .git
+  # Re-scaffold the current project in-place
   kubebuilder alpha generate
 
-  # Re-scaffold the project from ./test into ./my-output
+  # Re-scaffold the project from ./path/to/project into ./my-output
   kubebuilder alpha generate --input-dir="./path/to/project" --output-dir="./my-output"
 `,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
@@ -71,12 +73,12 @@ If no output directory is provided, the current working directory will be cleane
 
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
 		"Path to the directory containing the PROJECT file (e.g., ./my-project). "+
-			"Defaults to the current working directory if unset. "+
-			"WARNING: deletes existing files except .git and PROJECT")
+			"Defaults to the current working directory if unset")
 
 	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
 		"Directory where the new project scaffold will be written. "+
-			"If unset, re-scaffolding occurs in-place and deletes existing files except .git and PROJECT")
+			"If unset, re-scaffolding occurs in-place in the input directory, "+
+			"which is cleaned first. WARNING: deletes existing files except .git")
 
 	scaffoldCmd.Flags().BoolVar(&opts.SkipGoVersionCheck, "skip-go-version-check", true,
 		"Skip the Go version check during project generation "+

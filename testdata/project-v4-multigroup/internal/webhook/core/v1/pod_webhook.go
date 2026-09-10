@@ -32,7 +32,7 @@ var podlog = logf.Log.WithName("pod-resource")
 // SetupPodWebhookWithManager registers the webhook for Pod in the manager.
 func SetupPodWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &corev1.Pod{}).
-		WithValidator(&PodCustomValidator{}).
+		WithValidator(&PodValidator{}).
 		Complete()
 }
 
@@ -42,17 +42,17 @@ func SetupPodWebhookWithManager(mgr ctrl.Manager) error {
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate--v1-pod,mutating=false,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=vpod-v1.kb.io,admissionReviewVersions=v1
 
-// PodCustomValidator struct is responsible for validating the Pod resource
+// PodValidator struct is responsible for validating the Pod resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type PodCustomValidator struct {
+type PodValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateCreate(_ context.Context, obj *corev1.Pod) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Pod.
+func (v *PodValidator) ValidateCreate(_ context.Context, obj *corev1.Pod) (admission.Warnings, error) {
 	podlog.Info("Validation for Pod upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -60,8 +60,8 @@ func (v *PodCustomValidator) ValidateCreate(_ context.Context, obj *corev1.Pod) 
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *corev1.Pod) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Pod.
+func (v *PodValidator) ValidateUpdate(_ context.Context, oldObj, newObj *corev1.Pod) (admission.Warnings, error) {
 	podlog.Info("Validation for Pod upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -69,8 +69,8 @@ func (v *PodCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *c
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateDelete(_ context.Context, obj *corev1.Pod) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Pod.
+func (v *PodValidator) ValidateDelete(_ context.Context, obj *corev1.Pod) (admission.Warnings, error) {
 	podlog.Info("Validation for Pod upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

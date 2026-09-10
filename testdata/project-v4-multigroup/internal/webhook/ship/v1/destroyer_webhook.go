@@ -32,7 +32,7 @@ var destroyerlog = logf.Log.WithName("destroyer-resource")
 // SetupDestroyerWebhookWithManager registers the webhook for Destroyer in the manager.
 func SetupDestroyerWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &shipv1.Destroyer{}).
-		WithDefaulter(&DestroyerCustomDefaulter{}).
+		WithDefaulter(&DestroyerDefaulter{}).
 		Complete()
 }
 
@@ -40,17 +40,17 @@ func SetupDestroyerWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-ship-testproject-org-v1-destroyer,mutating=true,failurePolicy=fail,sideEffects=None,groups=ship.testproject.org,resources=destroyers,verbs=create;update,versions=v1,name=mdestroyer-v1.kb.io,admissionReviewVersions=v1
 
-// DestroyerCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// DestroyerDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Destroyer when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type DestroyerCustomDefaulter struct {
+type DestroyerDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer.
-func (d *DestroyerCustomDefaulter) Default(_ context.Context, obj *shipv1.Destroyer) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Destroyer.
+func (d *DestroyerDefaulter) Default(_ context.Context, obj *shipv1.Destroyer) error {
 	destroyerlog.Info("Defaulting for Destroyer", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.

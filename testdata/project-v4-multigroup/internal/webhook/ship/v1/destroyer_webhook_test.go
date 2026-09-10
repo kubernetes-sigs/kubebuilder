@@ -28,13 +28,13 @@ var _ = Describe("Destroyer Webhook", func() {
 	var (
 		obj       *shipv1.Destroyer
 		oldObj    *shipv1.Destroyer
-		defaulter DestroyerCustomDefaulter
+		defaulter DestroyerDefaulter
 	)
 
 	BeforeEach(func() {
 		obj = &shipv1.Destroyer{}
 		oldObj = &shipv1.Destroyer{}
-		defaulter = DestroyerCustomDefaulter{}
+		defaulter = DestroyerDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

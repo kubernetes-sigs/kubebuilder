@@ -659,7 +659,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 		})
 	})
 
-	// TODO(everettraven): Add tests for an external plugin setting the Metadata and Examples
 	Context("Successfully retrieving metadata and examples from external plugin", func() {
 		var (
 			pluginFileName string

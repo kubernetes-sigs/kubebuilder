@@ -27,7 +27,7 @@ import (
 const (
 	unknown                 = "unknown"
 	develVersion            = "(devel)"
-	kubernetesVendorVersion = "1.36.0"
+	kubernetesVendorVersion = "1.37.0"
 
 	vcsKeyRevision = "vcs.revision"
 	vcsKeyTime     = "vcs.time"

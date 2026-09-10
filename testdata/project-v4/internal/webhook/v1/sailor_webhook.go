@@ -34,9 +34,9 @@ var sailorlog = logf.Log.WithName("sailor-resource")
 // SetupSailorWebhookWithManager registers the webhook for Sailor in the manager.
 func SetupSailorWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &crewv1.Sailor{}).
-		WithDefaulter(&SailorCustomDefaulter{}).
+		WithDefaulter(&SailorDefaulter{}).
 		WithDefaulterCustomPath("/custom-mutate-sailor").
-		WithValidator(&SailorCustomValidator{}).
+		WithValidator(&SailorValidator{}).
 		WithValidatorCustomPath("/custom-validate-sailor").
 		Complete()
 }
@@ -45,17 +45,17 @@ func SetupSailorWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/custom-mutate-sailor,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=sailors,verbs=create;update,versions=v1,name=msailor-v1.kb.io,admissionReviewVersions=v1
 
-// SailorCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// SailorDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Sailor when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type SailorCustomDefaulter struct {
+type SailorDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Sailor.
-func (d *SailorCustomDefaulter) Default(_ context.Context, obj *crewv1.Sailor) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Sailor.
+func (d *SailorDefaulter) Default(_ context.Context, obj *crewv1.Sailor) error {
 	sailorlog.Info("Defaulting for Sailor", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -67,17 +67,17 @@ func (d *SailorCustomDefaulter) Default(_ context.Context, obj *crewv1.Sailor) e
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/custom-validate-sailor,mutating=false,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=sailors,verbs=create;update,versions=v1,name=vsailor-v1.kb.io,admissionReviewVersions=v1
 
-// SailorCustomValidator struct is responsible for validating the Sailor resource
+// SailorValidator struct is responsible for validating the Sailor resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type SailorCustomValidator struct {
+type SailorValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Sailor.
+func (v *SailorValidator) ValidateCreate(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
 	sailorlog.Info("Validation for Sailor upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -85,8 +85,8 @@ func (v *SailorCustomValidator) ValidateCreate(_ context.Context, obj *crewv1.Sa
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Sailor) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Sailor.
+func (v *SailorValidator) ValidateUpdate(_ context.Context, oldObj, newObj *crewv1.Sailor) (admission.Warnings, error) {
 	sailorlog.Info("Validation for Sailor upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -94,8 +94,8 @@ func (v *SailorCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Sailor.
-func (v *SailorCustomValidator) ValidateDelete(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Sailor.
+func (v *SailorValidator) ValidateDelete(_ context.Context, obj *crewv1.Sailor) (admission.Warnings, error) {
 	sailorlog.Info("Validation for Sailor upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

@@ -31,6 +31,8 @@ type HelmChartCI struct {
 
 	// Force if true allows overwriting the scaffolded file
 	Force bool
+	// HasWebhooks enables cert-manager installation in the workflow
+	HasWebhooks bool
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -101,7 +103,18 @@ jobs:
       - name: Lint Helm Chart
         run: |
           helm lint ./dist/chart
-
+{{ if .HasWebhooks }}
+      - name: Install cert-manager via Helm (wait for readiness)
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --wait \
+            --timeout 300s
+{{ else }}
 # TODO: Uncomment if cert-manager is enabled
 #      - name: Install cert-manager via Helm (wait for readiness)
 #        run: |
@@ -113,7 +126,7 @@ jobs:
 #            --set crds.enabled=true \
 #            --wait \
 #            --timeout 300s
-
+{{ end }}
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs
 #        run: |

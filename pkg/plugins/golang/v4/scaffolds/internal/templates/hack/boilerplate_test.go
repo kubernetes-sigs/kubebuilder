@@ -17,22 +17,27 @@ limitations under the License.
 package hack_test
 
 import (
-	"strings"
 	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
-func TestBoilerplateTemplateContainsYEAR(t *testing.T) {
-	bp := &hack.Boilerplate{
-		Owner:   "The Kubernetes Authors",
-		License: "apache2",
-	}
-	if err := bp.SetTemplateDefaults(); err != nil {
-		t.Fatalf("SetTemplateDefaults() error: %v", err)
-	}
-	body := bp.GetBody()
-	if !strings.Contains(body, "YEAR") {
-		t.Errorf("boilerplate template body must contain literal YEAR token; got:\n%s", body)
-	}
+func TestBoilerplate(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Boilerplate Template Suite")
 }
+
+var _ = Describe("Boilerplate", func() {
+	It("should keep the literal YEAR placeholder instead of a hardcoded year", func() {
+		bp := &hack.Boilerplate{
+			Owner:   "The Kubernetes Authors",
+			License: "apache2",
+		}
+		Expect(bp.SetTemplateDefaults()).To(Succeed())
+		Expect(bp.GetBody()).To(ContainSubstring("YEAR"))
+		Expect(bp.GetBody()).NotTo(MatchRegexp(`Copyright \d{4}`))
+	})
+})

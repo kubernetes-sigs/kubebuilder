@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -31,6 +32,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/external"
 )
 
 // noResolvedPluginError is returned by subcommands that require a plugin when none was resolved.
@@ -146,7 +148,8 @@ func (c *CLI) applySubcommandHooks(
 		}
 	}
 
-	result, err := initializationHooks(cmd, subcommands, c.metadata())
+	showPluginPrefix := c.shouldShowPluginPrefix(c.args)
+	result, err := initializationHooks(cmd, subcommands, c.metadata(), showPluginPrefix)
 	if err != nil {
 		cmdErr(cmd, err)
 		return
@@ -174,6 +177,19 @@ func (c *CLI) appendPluginTable(cmd *cobra.Command, filter func(plugin.Plugin) b
 	cmd.Long = fmt.Sprintf("%s\n%s:\n\n%s\n", cmd.Long, title, pluginTable)
 }
 
+// shouldShowPluginPrefix returns true if the plugin prefix should be shown in help output.
+// The prefix is shown if the user explicitly requested it via the --plugins flag, or if
+// any of the resolved plugins is an external plugin.
+func (c *CLI) shouldShowPluginPrefix(args []string) bool {
+	if slices.ContainsFunc(args, isPluginsFlag) {
+		return true
+	}
+	return slices.ContainsFunc(c.resolvedPlugins, func(p plugin.Plugin) bool {
+		_, isExternal := p.(external.Plugin)
+		return isExternal
+	})
+}
+
 // initHooksResult holds the result of initializationHooks: resource options and
 // duplicate-flag values to sync after parse.
 type initHooksResult struct {
@@ -190,6 +206,7 @@ func mergeFlagSetInto(
 	duplicateValues map[string][]pflag.Value,
 	pluginKey string,
 	firstPluginByFlag map[string]string,
+	showPluginPrefix bool,
 ) error {
 	destNames := make(map[string]struct{})
 	dest.VisitAll(func(f *pflag.Flag) {
@@ -205,7 +222,11 @@ func mergeFlagSetInto(
 		existing := dest.Lookup(flag.Name)
 		if _, wasInDest := destNames[flag.Name]; !wasInDest {
 			firstPluginByFlag[flag.Name] = pluginKey
-			existing.Usage = "For plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
+			if showPluginPrefix {
+				existing.Usage = "For plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
+			} else {
+				existing.Usage = strings.TrimSpace(flag.Usage)
+			}
 			return
 		}
 		if existing.Value.Type() != flag.Value.Type() {
@@ -217,6 +238,16 @@ func mergeFlagSetInto(
 			return
 		}
 		duplicateValues[flag.Name] = append(duplicateValues[flag.Name], flag.Value)
+
+		if !showPluginPrefix && len(duplicateValues[flag.Name]) == 1 {
+			// This is the first time we realize the flag is duplicated. We must rewrite the
+			// first plugin's usage to include its prefix for disambiguation.
+			firstKey := firstPluginByFlag[flag.Name]
+			if firstKey != "" {
+				existing.Usage = "For plugin (" + firstKey + "): " + existing.Usage
+			}
+		}
+
 		existing.Usage += " AND for plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
 	})
 	return err
@@ -244,6 +275,7 @@ func initializationHooks(
 	cmd *cobra.Command,
 	subcommands []keySubcommandTuple,
 	meta plugin.CLIMetadata,
+	showPluginPrefix bool,
 ) (*initHooksResult, error) {
 	// Update metadata hook.
 	subcmdMeta := plugin.SubcommandMetadata{
@@ -280,13 +312,27 @@ func initializationHooks(
 	// duplicate names do not panic; values are synced after parse and help text is aggregated.
 	duplicateValues := make(map[string][]pflag.Value)
 	firstPluginByFlag := make(map[string]string)
+
+	type pluginFlagSet struct {
+		key   string
+		flags *pflag.FlagSet
+	}
+	var flagSets []pluginFlagSet
+
 	for _, tuple := range subcommands {
 		if subcommand, hasFlags := tuple.subcommand.(plugin.HasFlags); hasFlags {
 			tmpSet := pflag.NewFlagSet(cmd.Name(), pflag.ExitOnError)
 			subcommand.BindFlags(tmpSet)
-			if err := mergeFlagSetInto(cmd.Flags(), tmpSet, duplicateValues, tuple.key, firstPluginByFlag); err != nil {
-				return nil, err
+			if tmpSet.HasFlags() {
+				flagSets = append(flagSets, pluginFlagSet{key: tuple.key, flags: tmpSet})
 			}
+		}
+	}
+
+	for _, pfs := range flagSets {
+		err := mergeFlagSetInto(cmd.Flags(), pfs.flags, duplicateValues, pfs.key, firstPluginByFlag, showPluginPrefix)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -423,7 +469,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 			}
 		} else {
 			// Load the project configuration.
-			if err := factory.store.Load(); os.IsNotExist(err) {
+			if err := factory.store.Load(); errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("%s: failed to find configuration file, project must be initialized",
 					factory.errorMessage)
 			} else if err != nil {
@@ -445,8 +491,9 @@ func (factory *executionHooksFactory) preRunEFunc(
 		// Create the resource if non-nil options provided
 		var res *resource.Resource
 		if options != nil {
-			// TODO: offer a flag instead of hard-coding project-wide domain
+			// TODO: offer a --domain flag so a fresh resource can set it directly.
 			options.Domain = cfg.GetDomain()
+			options.Domain = options.resolveDomain(cfg)
 			if err := options.validate(); err != nil {
 				return fmt.Errorf("%s: failed to create resource: %w", factory.errorMessage, err)
 			}

@@ -43,8 +43,8 @@ var cronjoblog = logf.Log.WithName("cronjob-resource")
 // SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
 func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &batchv2.CronJob{}).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{
+		WithValidator(&CronJobValidator{}).
+		WithDefaulter(&CronJobDefaulter{
 			DefaultConcurrencyPolicy:          batchv2.AllowConcurrent,
 			DefaultSuspend:                    false,
 			DefaultSuccessfulJobsHistoryLimit: 3,
@@ -57,12 +57,12 @@ func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v2-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v2,name=mcronjob-v2.kb.io,admissionReviewVersions=v1
 
-// CronJobCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// CronJobDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind CronJob when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomDefaulter struct {
+type CronJobDefaulter struct {
 	// Default values for various CronJob fields
 	DefaultConcurrencyPolicy          batchv2.ConcurrencyPolicy
 	DefaultSuspend                    bool
@@ -70,8 +70,8 @@ type CronJobCustomDefaulter struct {
 	DefaultFailedJobsHistoryLimit     int32
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
-func (d *CronJobCustomDefaulter) Default(_ context.Context, obj *batchv2.CronJob) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind CronJob.
+func (d *CronJobDefaulter) Default(_ context.Context, obj *batchv2.CronJob) error {
 	cronjoblog.Info("Defaulting for CronJob", "name", obj.GetName())
 
 	// Set default values
@@ -84,31 +84,31 @@ func (d *CronJobCustomDefaulter) Default(_ context.Context, obj *batchv2.CronJob
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v2-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v2,name=vcronjob-v2.kb.io,admissionReviewVersions=v1
 
-// CronJobCustomValidator struct is responsible for validating the CronJob resource
+// CronJobValidator struct is responsible for validating the CronJob resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type CronJobCustomValidator struct {
+type CronJobValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj *batchv2.CronJob) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateCreate(_ context.Context, obj *batchv2.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon creation", "name", obj.GetName())
 
 	return nil, validateCronJob(obj)
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *batchv2.CronJob) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateUpdate(_ context.Context, oldObj, newObj *batchv2.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon update", "name", newObj.GetName())
 
 	return nil, validateCronJob(newObj)
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateDelete(_ context.Context, obj *batchv2.CronJob) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type CronJob.
+func (v *CronJobValidator) ValidateDelete(_ context.Context, obj *batchv2.CronJob) (admission.Warnings, error) {
 	cronjoblog.Info("Validation for CronJob upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
@@ -117,7 +117,7 @@ func (v *CronJobCustomValidator) ValidateDelete(_ context.Context, obj *batchv2.
 }
 
 // applyDefaults applies default values to CronJob fields.
-func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
+func (d *CronJobDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 	if cronJob.Spec.ConcurrencyPolicy == "" {
 		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}

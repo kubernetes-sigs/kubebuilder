@@ -69,3 +69,40 @@ updates:
       prefix: ":book:"
     labels:
       - "ok-to-test"
+
+  # Maintain dependencies for scaffolded GitHub Actions in the projects
+  - package-ecosystem: "github-actions"
+    directory: "/testdata/project-v4"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
+    commit-message:
+      prefix: ":seedling:"
+    labels:
+      - "ok-to-test"
+
+  - package-ecosystem: "github-actions"
+    directory: "/testdata/project-v4-multigroup"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
+    commit-message:
+      prefix: ":seedling:"
+    labels:
+      - "ok-to-test"
+
+  - package-ecosystem: "github-actions"
+    directory: "/testdata/project-v4-with-plugins"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 0
+    commit-message:
+      prefix: ":seedling:"
+    labels:
+      - "ok-to-test"

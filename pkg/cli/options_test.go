@@ -35,7 +35,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
-const domainFlagArg = "--domain"
+const (
+	domainFlagArg = "--domain"
+	exampleDomain = "example.com"
+)
 
 var _ = Describe("Discover external plugins", func() {
 	Context("with valid plugins root path", func() {
@@ -474,7 +477,7 @@ var _ = Describe("Discover external plugins", func() {
 				pluginsFlagArg,
 				"myexternalplugin/v1",
 				domainFlagArg,
-				"example.com",
+				exampleDomain,
 				"--binary-flag",
 				"--license",
 				"apache2",
@@ -484,7 +487,7 @@ var _ = Describe("Discover external plugins", func() {
 			args := parseExternalPluginArgs()
 			Expect(args).Should(ContainElements(
 				domainFlagArg,
-				"example.com",
+				exampleDomain,
 				"--binary-flag",
 				"--license",
 				"apache2",
@@ -530,13 +533,13 @@ var _ = Describe("Discover external plugins", func() {
 				kubebuilderSubcommandInit,
 				"--plugins=myexternalplugin/v1",
 				domainFlagArg,
-				"example.com",
+				exampleDomain,
 			}
 
 			args := parseExternalPluginArgs()
 			Expect(args).Should(ContainElements(
 				domainFlagArg,
-				"example.com",
+				exampleDomain,
 			))
 			Expect(args).ShouldNot(ContainElement("--plugins=myexternalplugin/v1"))
 		})
@@ -787,6 +790,29 @@ var _ = Describe("CLI options", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
 			Expect(c.completionCommand).To(BeTrue())
+		})
+	})
+
+	Context("arguments", func() {
+		It("should use the arguments of the running program", func() {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandInit, domainFlagArg, "example.com"}
+
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.args).To(Equal([]string{kubebuilderSubcommandInit, domainFlagArg, "example.com"}))
+		})
+
+		It("should be empty when the program takes no arguments", func() {
+			originalArgs := os.Args
+			DeferCleanup(func() { os.Args = originalArgs })
+			os.Args = []string{kubebuilderCommandName}
+
+			c, err = newCLI()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.args).To(BeEmpty())
 		})
 	})
 

@@ -27,6 +27,13 @@ manager:
   args:
     - --leader-elect
 
+  ## Health probes.
+  ## The manager serves the liveness (/healthz) and readiness (/readyz) endpoints on this port.
+  ##
+  healthProbe:
+    # Health probe server port
+    port: 8081
+
   ## Environment variables
   ##
   env:
@@ -143,7 +150,8 @@ serviceAccount:
   # Install default ServiceAccount provided
   enabled: true
 
-  ## Existing ServiceAccount name (only when enabled=false)
+  ## Existing ServiceAccount name (required when enabled=false)
+  ## Set to "default" to use the namespace default ServiceAccount
   ## Note: When enabled=true, respects nameOverride/fullnameOverride
   ##
   # name: ""
@@ -193,6 +201,14 @@ webhook:
 ##
 prometheus:
   enabled: false
+
+  ## Custom ServiceMonitor labels
+  ##
+  # labels: {}
+
+  ## Custom ServiceMonitor annotations
+  ##
+  # annotations: {}
 
 ## Network policies for controlling traffic flow.
 ## Enable to restrict ingress to the controller manager.

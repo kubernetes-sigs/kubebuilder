@@ -17,6 +17,7 @@ limitations under the License.
 package v4
 
 import (
+	"errors"
 	"fmt"
 	log "log/slog"
 	"os"
@@ -81,10 +82,11 @@ Configuration flags:
   --license: License to use (apache2 or none, default: apache2)
 
 Plugin flags:
-  --plugins: Comma-separated list of plugins to use (default: go/v4)
-             Plugins scaffold files during init and are saved to the PROJECT layout
-             Future operations (i.e. create api, create webhook) call all plugins in the chain
-             Run 'kubebuilder init --plugins --help' to see available plugins
+  --plugins: Comma-separated list of plugins to use (e.g., go/v4,<PLUGIN_KEY>).
+             If unset, Kubebuilder uses the default go/v4 scaffold.
+             Plugins used during init are saved to the PROJECT layout.
+             Future operations, such as create api and create webhook, use that plugin chain.
+             Run 'kubebuilder init --plugins --help' to see available plugins.
 
 Layout flags:
   --multigroup: Enable multigroup layout to organize APIs by group
@@ -109,7 +111,7 @@ Note: Layout settings can be changed later with 'kubebuilder edit'.
 
   # Initialize with optional plugins
   %[1]s init --plugins go/v4,autoupdate/v1-alpha --domain example.org
-  %[1]s init --plugins go/v4,helm/v2-alpha --domain example.org
+  %[1]s init --plugins go/v4,<PLUGIN_KEY> --domain example.org
 
   # Initialize with custom settings
   %[1]s init --domain example.org --owner "Your Name" --license apache2
@@ -256,6 +258,18 @@ func (p *initSubcommand) PostScaffold() error {
 	return nil
 }
 
+// describeMode returns a human-readable description of a file mode.
+func describeMode(mode os.FileMode) string {
+	switch {
+	case mode&os.ModeSymlink != 0:
+		return "a symbolic link"
+	case mode.IsDir():
+		return "a directory"
+	default:
+		return "not a regular file"
+	}
+}
+
 // checkDir checks the target directory before scaffolding:
 // 1. Returns error if key kubebuilder files already exist (prevents re-initialization)
 // 2. Warns if directory is not empty (but allows scaffolding to continue)
@@ -272,9 +286,17 @@ func checkDir() error {
 		filepath.Join("cmd", "main.go"), // Controller manager entry point
 	}
 
-	// Check for existing scaffolded files
+	// The link is not followed, so that scaffolding never writes through it.
 	for _, file := range scaffoldedFiles {
-		if _, err := os.Stat(file); err == nil {
+		info, err := os.Lstat(file)
+		switch {
+		case errors.Is(err, os.ErrNotExist):
+		case err != nil:
+			return fmt.Errorf("failed to check %q: %w", file, err)
+		case !info.Mode().IsRegular():
+			return fmt.Errorf("cannot scaffold: %q is %s. "+
+				"Please run this command in a new directory or remove it", file, describeMode(info.Mode()))
+		default:
 			return fmt.Errorf("target directory is already initialized. "+
 				"Found existing kubebuilder file %q. "+
 				"Please run this command in a new directory or remove existing scaffolded files", file)

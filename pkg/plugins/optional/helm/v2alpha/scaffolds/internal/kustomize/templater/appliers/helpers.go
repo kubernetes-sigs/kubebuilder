@@ -22,20 +22,23 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
+)
+
+var defaultContainerPattern = regexp.MustCompile(
+	`(?m)^\s*` + regexp.QuoteMeta(common.DefaultContainerAnnotation) + `:\s+(\S+)`,
 )
 
 // GetDefaultContainerName extracts the container name from kubectl.kubernetes.io/default-container annotation.
 // This allows the Helm plugin to work with any container name, not just "manager".
 // If the annotation is not found, it falls back to "manager" for backward compatibility.
 func GetDefaultContainerName(yamlContent string) string {
-	// Look for kubectl.kubernetes.io/default-container annotation
-	pattern := regexp.MustCompile(`(?m)^\s*kubectl\.kubernetes\.io/default-container:\s+(\S+)`)
-	matches := pattern.FindStringSubmatch(yamlContent)
+	matches := defaultContainerPattern.FindStringSubmatch(yamlContent)
 	if len(matches) > 1 {
 		return matches[1]
 	}
-	// Fallback to "manager" for backward compatibility with older scaffolds
-	return "manager"
+	return common.DefaultManagerContainerName
 }
 
 // LeadingWhitespace extracts the leading whitespace from a line.
@@ -46,65 +49,115 @@ func LeadingWhitespace(line string) (string, int) {
 	return line[:indentLen], indentLen
 }
 
-// IsManagerDeployment checks if a Deployment is the controller manager.
-// It returns true if either the deployment name contains "controller-manager"
-// OR the deployment has the label "control-plane: controller-manager".
+// IsManagerDeployment reports whether resource is the controller-manager Deployment.
+// Annotation is not checked — any extra Deployment may carry it, causing false positives.
 func IsManagerDeployment(resource *unstructured.Unstructured) bool {
-	name := resource.GetName()
-	labels := resource.GetLabels()
-	return strings.Contains(name, "controller-manager") ||
-		(labels != nil && labels["control-plane"] == "controller-manager")
+	if resource.GetLabels()["control-plane"] == "controller-manager" {
+		return true
+	}
+	if names := ExtractContainerNames(resource); names["manager"] {
+		return true
+	}
+	return strings.Contains(resource.GetName(), "controller-manager")
 }
 
-// MakeYamlContent wraps YAML content with conditional cert-manager wrappers.
-// This function is used as a callback for regexp.ReplaceAllStringFunc.
-// It shifts the block by 2 additional spaces so that items align with the
-// child indent used by appendToListFromValues for extraVolumes/extraVolumeMounts.
-func MakeYamlContent(match string) string {
+// wrapWebhookCertificateBlock wraps a webhook certificate block with its feature conditions.
+// Shifts by 2 spaces to align with the child indent used by appendToListFromValues.
+func wrapWebhookCertificateBlock(match string) string {
+	return wrapBlock(match, "{{- if and .Values.certManager.enabled .Values.webhook.enabled }}")
+}
+
+// wrapBlock wraps a YAML block match with the given Helm conditional string.
+func wrapBlock(match, condition string) string {
 	lines := strings.Split(match, "\n")
-	if len(lines) > 0 {
-		var indent strings.Builder
-		if len(lines[0]) > 0 && lines[0][0] == ' ' {
-			// Count leading spaces
-			for _, char := range lines[0] {
-				if char == ' ' {
-					indent.WriteString(" ")
-				} else {
-					break
-				}
-			}
-		}
-
-		childIndent := indent.String() + "  "
-
-		// Reconstruct the block with conditional wrapper at child indent
-		var result strings.Builder
-		fmt.Fprintf(&result, "%s{{- if .Values.certManager.enabled }}\n", childIndent)
-		for _, line := range lines {
-			result.WriteString("  " + line + "\n")
-		}
-		fmt.Fprintf(&result, "%s{{- end }}", childIndent)
-		return result.String()
+	indent, _ := LeadingWhitespace(lines[0])
+	childIndent := indent + "  "
+	var result strings.Builder
+	fmt.Fprintf(&result, "%s%s\n", childIndent, condition)
+	for _, line := range lines {
+		result.WriteString("  ")
+		result.WriteString(line)
+		result.WriteByte('\n')
 	}
-	return match
+	fmt.Fprintf(&result, "%s{{- end }}", childIndent)
+	return result.String()
 }
 
 const (
 	k8sObjectSpecField     = "spec"
 	k8sObjectTemplateField = "template"
+	k8sContainersFieldName = "containers"
 )
 
 var (
 	podTemplateContainersPath = []string{
-		k8sObjectSpecField, k8sObjectTemplateField, k8sObjectSpecField, "containers",
+		k8sObjectSpecField, k8sObjectTemplateField, k8sObjectSpecField, k8sContainersFieldName,
 	}
 	podTemplateInitContainersPath = []string{
 		k8sObjectSpecField, k8sObjectTemplateField, k8sObjectSpecField, "initContainers",
 	}
 )
 
-// ExtractContainerNames returns the set of container and initContainer names declared in a
-// Deployment (or any Pod-template-bearing resource).
+// FindManagerContainerRange returns the 0-based inclusive line range [start, end]
+// of the manager container in yamlContent.
+// Returns (-1, -1) when not found; callers use this to restrict substitutions to the manager only.
+func FindManagerContainerRange(yamlContent string) (int, int) {
+	name := GetDefaultContainerName(yamlContent)
+	lines := strings.Split(yamlContent, "\n")
+
+	listLine, listIndent := findListField(lines, k8sContainersFieldName+":")
+	if listLine < 0 {
+		return -1, -1
+	}
+
+	nameField := "name: " + name
+	itemStart := -1
+	itemChildIndent := -1
+	found := false
+
+	for i := listLine + 1; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "" {
+			continue
+		}
+		_, indent := LeadingWhitespace(lines[i])
+
+		if indent > listIndent {
+			if itemStart >= 0 && indent == itemChildIndent && trimmed == nameField {
+				found = true
+			}
+			continue
+		}
+
+		if found {
+			return itemStart, i - 1
+		}
+		if indent < listIndent || !strings.HasPrefix(trimmed, "- ") {
+			break
+		}
+		itemStart = i
+		itemChildIndent = indent + 2
+		if trimmed == "- "+nameField {
+			found = true
+		}
+	}
+	if found {
+		return itemStart, len(lines) - 1
+	}
+	return -1, -1
+}
+
+func findListField(lines []string, field string) (int, int) {
+	for i, line := range lines {
+		if strings.TrimSpace(line) == field {
+			_, indent := LeadingWhitespace(line)
+			return i, indent
+		}
+	}
+	return -1, -1
+}
+
+// ExtractContainerNames returns all container and initContainer names from a Deployment.
 func ExtractContainerNames(resource *unstructured.Unstructured) map[string]bool {
 	names := map[string]bool{}
 	for _, fieldPath := range [][]string{

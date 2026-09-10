@@ -206,6 +206,38 @@ exit 0`, logFile, out)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("cleans up temp directory after success", func() {
+			tmpBase := GinkgoT().TempDir()
+			GinkgoT().Setenv("TMPDIR", tmpBase)
+
+			err = regenerateProjectWithVersion(opts.FromVersion)
+			Expect(err).ToNot(HaveOccurred())
+
+			entries, err := filepath.Glob(filepath.Join(tmpBase, "kubebuilder*"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(entries).To(BeEmpty(), "temp directory should be removed after success")
+		})
+
+		It("cleans up temp directory after failure", func() {
+			fail := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+exit 1`
+			gock.Off()
+			gock.New("https://github.com").
+				Get("/kubernetes-sigs/kubebuilder/releases/download").
+				Times(2).Reply(200).Body(strings.NewReader(fail))
+
+			tmpBase := GinkgoT().TempDir()
+			GinkgoT().Setenv("TMPDIR", tmpBase)
+
+			err = regenerateProjectWithVersion(opts.FromVersion)
+			Expect(err).To(HaveOccurred())
+
+			entries, err := filepath.Glob(filepath.Join(tmpBase, "kubebuilder*"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(entries).To(BeEmpty(), "temp directory should be removed after failure")
+		})
+
 		It("fails downloading binary", func() {
 			gock.Off()
 			gock.New("https://github.com").
@@ -231,7 +263,7 @@ exit 1`
 			err = regenerateProjectWithVersion(opts.FromVersion)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(
-				"failed to run alpha generate on ancestor branch",
+				fmt.Sprintf("failed to run alpha generate for version %s", opts.FromVersion),
 			))
 		})
 	})

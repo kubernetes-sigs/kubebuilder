@@ -83,40 +83,48 @@ spec:
         # Bind to :0 to disable the controller-runtime managed metrics server
         - --metrics-bind-address=0
         {{- end }}
-        - --health-probe-bind-address=:8081
+        - --health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}
+        {{- if .Values.webhook.enabled }}
+        - --webhook-port={{ .Values.webhook.port }}
+        {{- else }}
+        # Set -1 to disable the webhook server
+        - --webhook-port=-1
+        {{- end }}
         {{- range .Values.manager.args }}
-        - {{ . }}
+        - {{ tpl . $ }}
         {{- end }}
         {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
         - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
         command:
         - /manager
-        image: "{{ .Values.manager.image.repository }}{{- if not (contains "@" .Values.manager.image.repository) }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"
+        image: "{{ .Values.manager.image.repository | default "controller" }}{{- if not (contains "@" (.Values.manager.image.repository | default "controller")) }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"
         {{- with .Values.manager.image.pullPolicy }}
         imagePullPolicy: {{ . }}
         {{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8081
+            port: {{ .Values.manager.healthProbe.port }}
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
         ports:
-        - containerPort: 8081
+        - containerPort: {{ .Values.manager.healthProbe.port }}
           name: health
           protocol: TCP
+        {{- if .Values.webhook.enabled }}
         - containerPort: {{ .Values.webhook.port }}
           name: webhook-server
           protocol: TCP
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 8081
+            port: {{ .Values.manager.healthProbe.port }}
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
@@ -140,7 +148,7 @@ spec:
             name: metrics-certs
             readOnly: true
           {{- end }}
-          {{- if .Values.certManager.enabled }}
+          {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
@@ -172,7 +180,7 @@ spec:
             optional: false
             secretName: metrics-server-cert
         {{- end }}
-        {{- if .Values.certManager.enabled }}
+        {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - name: webhook-certs
           secret:
             secretName: webhook-server-cert

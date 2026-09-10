@@ -24,16 +24,22 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
 
 const (
-	crewGroup   = "crew"
-	testIO      = "test.io"
-	captainKind = "Captain"
-	captains    = "captains"
-	shipGroup   = "ship"
-	frigateKind = "Frigate"
+	crewGroup       = "crew"
+	testIO          = "test.io"
+	testCommandName = "kubebuilder"
+	captainKind     = "Captain"
+	captains        = "captains"
+	shipGroup       = "ship"
+	frigateKind     = "Frigate"
+	frigates        = "frigates"
+
+	externalAPIModuleWithVersion = "github.com/external/api@v1.0.0"
+	relativeAPIPath              = "api/v1"
 )
 
 var _ = Describe("createAPISubcommand", func() {
@@ -67,6 +73,19 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(subCmd.InjectConfig(cfg)).To(Succeed())
 	})
 
+	Context("UpdateMetadata", func() {
+		It("should provide concise API examples", func() {
+			meta := &plugin.SubcommandMetadata{}
+
+			subCmd.UpdateMetadata(plugin.CLIMetadata{CommandName: testCommandName}, meta)
+
+			Expect(meta.Examples).To(ContainSubstring("kubebuilder create api --group crew --version v1 --kind Captain"))
+			Expect(meta.Examples).To(ContainSubstring("--namespaced=false --controller=false"))
+			Expect(meta.Examples).To(ContainSubstring("--external-api-path"))
+			Expect(meta.Examples).NotTo(ContainSubstring("nano "))
+		})
+	})
+
 	It("should reject external API options when creating API in project", func() {
 		subCmd.options.DoAPI = true
 		subCmd.options.ExternalAPIPath = "github.com/external/api"
@@ -77,15 +96,206 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(err.Error()).To(ContainSubstring("cannot use '--external-api-path'"))
 	})
 
+	It("should reject --ssa when not creating an API resource (--resource=false)", func() {
+		subCmd.options.SSA = true
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(
+			"'--ssa' can only be used when creating an API resource ('--resource=true')"))
+	})
+
+	It("should allow --ssa when creating an API resource (--resource=true)", func() {
+		subCmd.options.SSA = true
+		subCmd.options.DoAPI = true
+		subCmd.options.DoController = true
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(res.API.SSA).To(BeTrue())
+	})
+
+	DescribeTable("should keep the SSA value tracked in the PROJECT file",
+		func(storedSSA, flagSSA, expected bool) {
+			existing := *res
+			existing.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: storedSSA}
+			Expect(cfg.AddResource(existing)).To(Succeed())
+
+			subCmd.force = true
+			subCmd.options.DoAPI = true
+			subCmd.options.Namespaced = true
+			subCmd.options.SSA = flagSSA
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+			Expect(res.API.SSA).To(Equal(expected))
+		},
+		Entry("when the flag is not provided for an API scaffolded with SSA", true, false, true),
+		Entry("when the flag is provided for an API scaffolded with SSA", true, true, true),
+		Entry("when the flag is provided for an API scaffolded without SSA", false, true, true),
+		Entry("when the flag is not provided for an API scaffolded without SSA", false, false, false),
+	)
+
+	It("should not enable SSA for a new API when another one has it enabled", func() {
+		other := *res
+		other.Kind = frigateKind
+		other.Plural = frigates
+		other.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+		Expect(cfg.AddResource(other)).To(Succeed())
+
+		subCmd.options.DoAPI = true
+		subCmd.options.Namespaced = true
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+		Expect(res.API.SSA).To(BeFalse())
+	})
+
+	It("should not reject --resource=false for an API scaffolded with SSA", func() {
+		existing := *res
+		existing.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+		Expect(cfg.AddResource(existing)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+
+		Expect(subCmd.InjectResource(res)).To(Succeed())
+	})
+
 	It("should require external-api-path when using external-api-module", func() {
 		subCmd.options.DoAPI = false
-		subCmd.options.ExternalAPIModule = "github.com/external/api@v1.0.0"
+		subCmd.options.ExternalAPIModule = externalAPIModuleWithVersion
 		subCmd.options.ExternalAPIPath = ""
 
 		err := subCmd.InjectResource(res)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("requires '--external-api-path'"))
+	})
+
+	It("should reject external-api-path with module version", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = externalAPIModuleWithVersion
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("version specifiers belong in the module field"))
+	})
+
+	It("should reject bare relative external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = relativeAPIPath
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject bare domain external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = "example.com"
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must include a package sub-path"))
+	})
+
+	It("should reject leading-dot pseudo-domain external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ".com/org/repo/api/v1"
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+	})
+
+	It("should reject malformed external-api-path", func() {
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = "a//b"
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("malformed import path"))
+		Expect(err.Error()).To(ContainSubstring("double slash"))
+	})
+
+	It("should allow adding a controller to existing external resource without re-providing --external-api-path", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		existingExternal := *res
+		existingExternal.External = true
+		existingExternal.Path = externalPath
+		Expect(cfg.AddResource(existingExternal)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ""
+		res.External = true
+		res.Path = externalPath
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should find existing external resource when stored Domain differs from project domain", func() {
+		const externalPath = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+		const externalDomain = "cert-manager.io"
+
+		// Simulate: resource originally scaffolded with --external-api-domain=cert-manager.io,
+		// so PROJECT stores Domain="cert-manager.io". A fresh CLI invocation without
+		// --external-api-domain runs resolveDomain up in cmd_helpers before the GVK reaches
+		// InjectResource, so by this point res.Domain has already been reconciled to the
+		// stored external domain — mirror that here.
+		existingExternal := *res
+		existingExternal.External = true
+		existingExternal.Path = externalPath
+		existingExternal.Domain = externalDomain
+		Expect(cfg.AddResource(existingExternal)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ""
+		res.Domain = externalDomain
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.External).To(BeTrue())
+		Expect(res.Path).To(Equal(externalPath))
+	})
+
+	It("should return an actionable error for --resource=false on old project with relative external path", func() {
+		// Simulate an old PROJECT file that stored a relative path instead of a Go import path
+		existingExternal := *res
+		existingExternal.External = true
+		existingExternal.Path = relativeAPIPath
+		Expect(cfg.AddResource(existingExternal)).To(Succeed())
+
+		subCmd.options.DoAPI = false
+		subCmd.options.DoController = true
+		subCmd.options.ExternalAPIPath = ""
+
+		err := subCmd.InjectResource(res)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("invalid Path"))
+		Expect(err.Error()).To(ContainSubstring("must be a fully-qualified Go import path"))
+		Expect(err.Error()).To(ContainSubstring("github.com/org/repo/api/v1"))
 	})
 
 	It("should prevent duplicate API without force flag", func() {
@@ -128,7 +338,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigates,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())
@@ -155,7 +365,7 @@ var _ = Describe("createAPISubcommand", func() {
 				Version: "v1",
 				Kind:    frigateKind,
 			},
-			Plural: "frigates",
+			Plural: frigates,
 			API:    &resource.API{CRDVersion: "v1"},
 		}
 		Expect(cfg.AddResource(firstRes)).To(Succeed())

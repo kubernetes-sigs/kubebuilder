@@ -68,12 +68,6 @@ type MainUpdater struct {
 	// ControllerName is the specific name for the controller being wired.
 	// If empty, the default name based on the resource kind will be used.
 	ControllerName string
-
-	// Deprecated - The flag should be removed from go/v5
-	// IsLegacyPath indicates if webhooks should be scaffolded under the API.
-	// Webhooks are now decoupled from APIs based on controller-runtime updates and community feedback.
-	// This flag ensures backward compatibility by allowing scaffolding in the legacy/deprecated path.
-	IsLegacyPath bool
 }
 
 // ReconcilerName returns the name for the reconciler struct.
@@ -135,15 +129,6 @@ const (
 		os.Exit(1)
 	}
 `
-	webhookSetupCodeFragmentLegacy = `// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "%s")
-			os.Exit(1)
-		}
-	}
-`
-
 	webhookSetupCodeFragment = `// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := %s.Setup%sWebhookWithManager(mgr); err != nil {
@@ -168,7 +153,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	if f.WireResource || f.Resource.IsExternal() {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
-	if f.WireWebhook && !f.IsLegacyPath {
+	if f.WireWebhook {
 		if !f.MultiGroup || f.Resource.Group == "" {
 			importPath := fmt.Sprintf("webhook%s", f.Resource.Version)
 			imports = append(imports, fmt.Sprintf(webhookImportCodeFragment, importPath, f.Repo, f.Resource.Version))
@@ -209,17 +194,12 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 		}
 	}
 	if f.WireWebhook {
-		if f.IsLegacyPath {
-			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragmentLegacy,
-				f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+		if !f.MultiGroup || f.Resource.Group == "" {
+			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+				"webhook"+f.Resource.Version, f.Resource.Kind, f.Resource.Kind))
 		} else {
-			if !f.MultiGroup || f.Resource.Group == "" {
-				setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
-					"webhook"+f.Resource.Version, f.Resource.Kind, f.Resource.Kind))
-			} else {
-				setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
-					"webhook"+f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
-			}
+			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+				"webhook"+f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 
@@ -316,6 +296,7 @@ func main() {
 	var metricsAddr string
 	var metricsCertPath, metricsCertName, metricsCertKey string
 	var webhookCertPath, webhookCertName, webhookCertKey string
+	var webhookPort int
 	var enableLeaderElection bool
 	var probeAddr string
 	var secureMetrics bool
@@ -332,6 +313,8 @@ func main() {
 	flag.StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
 	flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
 	flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
+	flag.IntVar(&webhookPort, "webhook-port", 9443, "Port the webhook server listens on. " +
+		"Defaults to 9443. Set -1 to disable the webhook server.")
 	flag.StringVar(&metricsCertPath, "metrics-cert-path", "",
 		"The directory that contains the metrics server certificate.")
 	flag.StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
@@ -365,6 +348,7 @@ func main() {
 	webhookTLSOpts := tlsOpts
 	webhookServerOptions := webhook.Options{
 		TLSOpts: webhookTLSOpts,
+		Port:    webhookPort,
 	}
 
 	if len(webhookCertPath) > 0 {

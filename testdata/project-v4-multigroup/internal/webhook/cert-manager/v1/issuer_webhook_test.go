@@ -28,13 +28,13 @@ var _ = Describe("Issuer Webhook", func() {
 	var (
 		obj       *certmanagerv1.Issuer
 		oldObj    *certmanagerv1.Issuer
-		defaulter IssuerCustomDefaulter
+		defaulter IssuerDefaulter
 	)
 
 	BeforeEach(func() {
 		obj = &certmanagerv1.Issuer{}
 		oldObj = &certmanagerv1.Issuer{}
-		defaulter = IssuerCustomDefaulter{}
+		defaulter = IssuerDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

@@ -28,7 +28,7 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 For example, if you are managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+kubebuilder create api --group cert-manager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
 <aside class="note" role="note">
@@ -37,7 +37,7 @@ kubebuilder create api --group certmanager --version v1 --kind Certificate --con
 You can pin a specific version of the external API dependency using the `--external-api-module` flag:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate \
+kubebuilder create api --group cert-manager --version v1 --kind Certificate \
   --controller=true --resource=false \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
   --external-api-domain=io \
@@ -97,19 +97,21 @@ definitions since an external project defines the type.
 You can create webhooks for external types by providing the external API path, domain, and optionally the module:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=cert-manager.io
+  --external-api-domain=io
 ```
+
+The group and the domain build the API group of the RBAC markers, `cert-manager.io` above.
 
 You can also pin the version using the `--external-api-module` flag:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer \
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer \
   --defaulting --programmatic-validation \
   --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 \
-  --external-api-domain=cert-manager.io \
+  --external-api-domain=io \
   --external-api-module=github.com/cert-manager/cert-manager@v1.18.2
 ```
 

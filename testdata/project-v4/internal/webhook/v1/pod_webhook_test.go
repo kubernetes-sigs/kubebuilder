@@ -28,13 +28,13 @@ var _ = Describe("Pod Webhook", func() {
 	var (
 		obj       *corev1.Pod
 		oldObj    *corev1.Pod
-		defaulter PodCustomDefaulter
+		defaulter PodDefaulter
 	)
 
 	BeforeEach(func() {
 		obj = &corev1.Pod{}
 		oldObj = &corev1.Pod{}
-		defaulter = PodCustomDefaulter{}
+		defaulter = PodDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")

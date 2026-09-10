@@ -135,14 +135,14 @@ resources:
   external: true
   group: cert-manager
   kind: Certificate
-  module: github.com/cert-manager/cert-manager@v1.20.2
+  module: github.com/cert-manager/cert-manager@v1.21.1
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
 - domain: io
   external: true
   group: cert-manager
   kind: Issuer
-  module: github.com/cert-manager/cert-manager@v1.20.2
+  module: github.com/cert-manager/cert-manager@v1.21.1
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
   webhooks:
@@ -156,6 +156,16 @@ resources:
   webhooks:
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+    ssa: true
+  controller: true
+  domain: testproject.org
+  group: sea-creatures
+  kind: Prawn
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/sea-creatures/v1
+  version: v1
 - api:
     crdVersion: v1
     namespaced: true

@@ -33,8 +33,8 @@ var deploymentlog = logf.Log.WithName("deployment-resource")
 // SetupDeploymentWebhookWithManager registers the webhook for Deployment in the manager.
 func SetupDeploymentWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &appsv1.Deployment{}).
-		WithDefaulter(&DeploymentCustomDefaulter{}).
-		WithValidator(&DeploymentCustomValidator{}).
+		WithDefaulter(&DeploymentDefaulter{}).
+		WithValidator(&DeploymentValidator{}).
 		Complete()
 }
 
@@ -42,17 +42,17 @@ func SetupDeploymentWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-apps-v1-deployment,mutating=true,failurePolicy=fail,sideEffects=None,groups=apps,resources=deployments,verbs=create;update,versions=v1,name=mdeployment-v1.kb.io,admissionReviewVersions=v1
 
-// DeploymentCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// DeploymentDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Deployment when those are created or updated.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as it is used only for temporary operations and does not need to be deeply copied.
-type DeploymentCustomDefaulter struct {
+type DeploymentDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Deployment.
-func (d *DeploymentCustomDefaulter) Default(_ context.Context, obj *appsv1.Deployment) error {
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Deployment.
+func (d *DeploymentDefaulter) Default(_ context.Context, obj *appsv1.Deployment) error {
 	deploymentlog.Info("Defaulting for Deployment", "name", obj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -64,17 +64,17 @@ func (d *DeploymentCustomDefaulter) Default(_ context.Context, obj *appsv1.Deplo
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
 // +kubebuilder:webhook:path=/validate-apps-v1-deployment,mutating=false,failurePolicy=fail,sideEffects=None,groups=apps,resources=deployments,verbs=create;update,versions=v1,name=vdeployment-v1.kb.io,admissionReviewVersions=v1
 
-// DeploymentCustomValidator struct is responsible for validating the Deployment resource
+// DeploymentValidator struct is responsible for validating the Deployment resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
-type DeploymentCustomValidator struct {
+type DeploymentValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateCreate(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Deployment.
+func (v *DeploymentValidator) ValidateCreate(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
 	deploymentlog.Info("Validation for Deployment upon creation", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -82,8 +82,8 @@ func (v *DeploymentCustomValidator) ValidateCreate(_ context.Context, obj *appsv
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj *appsv1.Deployment) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Deployment.
+func (v *DeploymentValidator) ValidateUpdate(_ context.Context, oldObj, newObj *appsv1.Deployment) (admission.Warnings, error) {
 	deploymentlog.Info("Validation for Deployment upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -91,8 +91,8 @@ func (v *DeploymentCustomValidator) ValidateUpdate(_ context.Context, oldObj, ne
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Deployment.
-func (v *DeploymentCustomValidator) ValidateDelete(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Deployment.
+func (v *DeploymentValidator) ValidateDelete(_ context.Context, obj *appsv1.Deployment) (admission.Warnings, error) {
 	deploymentlog.Info("Validation for Deployment upon deletion", "name", obj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
