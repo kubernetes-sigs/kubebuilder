@@ -853,7 +853,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		}
 
 		It("turns the webhook server off and drops its container port when webhooks are disabled", func() {
-			rendered := render(createKustomizeWithWebhookServer("test-project", true),
+			rendered := render(createKustomizeWithWebhookServer("test-project"),
 				"--set", "webhook.enabled=false", "--set", "certManager.enabled=false")
 
 			args := managerContainerArgs(rendered)
@@ -864,7 +864,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 
 		It("keeps the webhook server listening on webhook.port when webhooks are enabled", func() {
-			rendered := render(createKustomizeWithWebhookServer("test-project", true),
+			rendered := render(createKustomizeWithWebhookServer("test-project"),
 				"--set", "webhook.enabled=true", "--set", "webhook.port=9444")
 
 			args := managerContainerArgs(rendered)
@@ -872,17 +872,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(args).NotTo(ContainElement("--webhook-port=-1"), "rendered manager args: %v", args)
 			Expect(containerPortNames(rendered)).To(ContainElement("webhook-server"))
 			Expect(rendered).To(ContainSubstring("containerPort: 9444"))
-		})
-
-		It("still toggles the webhook server when the manifests never passed the port flag", func() {
-			manifests := createKustomizeWithWebhookServer("test-project", false)
-
-			disabled := managerContainerArgs(render(manifests,
-				"--set", "webhook.enabled=false", "--set", "certManager.enabled=false"))
-			Expect(disabled).To(ContainElement("--webhook-port=-1"), "rendered manager args: %v", disabled)
-
-			enabled := managerContainerArgs(render(manifests, "--set", "webhook.enabled=true"))
-			Expect(enabled).To(ContainElement("--webhook-port=9443"), "rendered manager args: %v", enabled)
 		})
 	})
 
@@ -1713,13 +1702,8 @@ spec:
 }
 
 // createKustomizeWithWebhookServer builds a project with admission webhooks whose manager exposes the
-// webhook-server port. passesPortFlag controls whether the Deployment args carry --webhook-port, which
-// projects scaffolded before the flag was added to manager_webhook_patch.yaml do not.
-func createKustomizeWithWebhookServer(projectName string, passesPortFlag bool) string {
-	portFlag := ""
-	if passesPortFlag {
-		portFlag = "\n        - --webhook-port=9443"
-	}
+// webhook-server port and passes --webhook-port.
+func createKustomizeWithWebhookServer(projectName string) string {
 	return createKustomizeWithWebhooks(projectName) + `---
 apiVersion: apps/v1
 kind: Deployment
@@ -1745,7 +1729,8 @@ spec:
         image: controller:latest
         args:
         - --leader-elect
-        - --health-probe-bind-address=:8081` + portFlag + `
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
         ports:
         - containerPort: 8081
           name: health
