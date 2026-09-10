@@ -174,3 +174,40 @@ var _ = Describe("NewMarkerFor with unsupported extensions", func() {
 		Expect(func() { NewMarkerFor("file.md", "test") }).To(Panic())
 	})
 })
+
+var _ = Describe("EqualsLine edge cases", func() {
+	It("should match a marker with an empty value", func() {
+		marker := NewMarkerFor("test.go", "")
+		Expect(marker.EqualsLine("// +kubebuilder:scaffold:")).To(BeTrue())
+	})
+
+	It("should not match an empty line", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("")).To(BeFalse())
+	})
+
+	It("should not match a line with only the comment prefix", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("// ")).To(BeFalse())
+	})
+
+	It("should not match a line with a different prefix", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("// +kubebuilder:scaffold:other")).To(BeFalse())
+	})
+
+	It("should not match a line with extra trailing content", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("// +kubebuilder:scaffold:test extra")).To(BeFalse())
+	})
+
+	It("should not match a line with the wrong comment character", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("# +kubebuilder:scaffold:test")).To(BeFalse())
+	})
+
+	It("should match a line with leading whitespace before the comment", func() {
+		marker := NewMarkerFor("test.go", "test")
+		Expect(marker.EqualsLine("   // +kubebuilder:scaffold:test")).To(BeTrue())
+	})
+})
