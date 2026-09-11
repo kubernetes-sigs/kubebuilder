@@ -17,6 +17,7 @@ limitations under the License.
 package golang
 
 import (
+	"fmt"
 	log "log/slog"
 	"path"
 	"strings"
@@ -100,7 +101,7 @@ type Options struct {
 }
 
 // UpdateResource updates the provided resource with the options
-func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
+func (opts Options) UpdateResource(res *resource.Resource, c config.Config) error {
 	if opts.Plural != "" {
 		res.Plural = opts.Plural
 	}
@@ -116,7 +117,9 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoController {
-		opts.updateControllers(res)
+		if err := opts.updateControllers(res); err != nil {
+			return err
+		}
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
@@ -182,11 +185,13 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			}
 		}
 	}
+
+	return nil
 }
 
 // updateControllers applies controller-related options to the resource.
 // It handles both legacy (--controller) and new (--controller-name) controller creation.
-func (opts Options) updateControllers(res *resource.Resource) {
+func (opts Options) updateControllers(res *resource.Resource) error {
 	if opts.ControllerName == "" {
 		// No controller name specified: use legacy mode
 		if res.Controllers == nil || res.Controllers.IsEmpty() {
@@ -195,7 +200,7 @@ func (opts Options) updateControllers(res *resource.Resource) {
 			// Warn when trying to use legacy mode on a resource with named controllers
 			log.Warn("resource already has named controllers; use --controller-name to add another controller")
 		}
-		return
+		return nil
 	}
 
 	// Controller name specified: migrate from legacy format if needed
@@ -205,7 +210,9 @@ func (opts Options) updateControllers(res *resource.Resource) {
 		}
 		// Convert the legacy controller: true to a named controller
 		defaultName := strings.ToLower(res.Kind)
-		_ = res.Controllers.AddController(defaultName)
+		if err := res.Controllers.AddController(defaultName); err != nil {
+			return fmt.Errorf("error adding default controller %q: %w", defaultName, err)
+		}
 		res.Controller = false
 	}
 
@@ -215,5 +222,8 @@ func (opts Options) updateControllers(res *resource.Resource) {
 	}
 
 	// Add the new named controller (AddController validates and checks for duplicates)
-	_ = res.Controllers.AddController(opts.ControllerName)
+	if err := res.Controllers.AddController(opts.ControllerName); err != nil {
+		return fmt.Errorf("error adding controller %q: %w", opts.ControllerName, err)
+	}
+	return nil
 }

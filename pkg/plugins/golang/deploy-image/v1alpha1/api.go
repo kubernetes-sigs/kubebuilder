@@ -146,7 +146,9 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.DoController = true
 	p.options.Namespaced = true
 
-	p.options.UpdateResource(p.resource, p.config)
+	if err := p.options.UpdateResource(p.resource, p.config); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
 
 	if err := p.resource.Validate(); err != nil {
 		return fmt.Errorf("error validating resource: %w", err)
