@@ -67,6 +67,8 @@ type RunOptions struct {
 	MetricsPort int
 	// WebhookPort is the expected webhook port the webhook NetworkPolicy must allow (defaults to 9443)
 	WebhookPort int
+	// HealthProbePort is the manager health probe port; no NetworkPolicy allows it (defaults to 8081)
+	HealthProbePort int
 	// WebhookNamespaceGating indicates the webhook configurations were patched with a
 	// namespaceSelector so admission only runs for namespaces labeled 'webhook: enabled'
 	WebhookNamespaceGating bool
@@ -78,6 +80,27 @@ type RunOptions struct {
 	HelmFullnameOverride string
 	// SkipChartGeneration skips build-installer and chart generation (chart already prepared externally)
 	SkipChartGeneration bool
+}
+
+func (o RunOptions) metricsPort() int {
+	if o.MetricsPort == 0 {
+		return defaultMetricsPort
+	}
+	return o.MetricsPort
+}
+
+func (o RunOptions) webhookPort() int {
+	if o.WebhookPort == 0 {
+		return defaultWebhookPort
+	}
+	return o.WebhookPort
+}
+
+func (o RunOptions) healthProbePort() int {
+	if o.HealthProbePort == 0 {
+		return defaultHealthProbePort
+	}
+	return o.HealthProbePort
 }
 
 // Run executes common e2e tests for a scaffolded project.
@@ -184,16 +207,8 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 		"ServiceMonitor")
 	Expect(err).NotTo(HaveOccurred())
 
+	var unlabeledNamespace string
 	if opts.HasNetworkPolicies {
-		metricsPort := opts.MetricsPort
-		if metricsPort == 0 {
-			metricsPort = defaultMetricsPort
-		}
-		webhookPort := opts.WebhookPort
-		if webhookPort == 0 {
-			webhookPort = defaultWebhookPort
-		}
-
 		if opts.HasMetrics {
 			By("labeling the namespace to allow metrics access")
 			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
@@ -218,7 +233,7 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 					"-o", "jsonpath={.spec.ingress[*].ports[*].port}",
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(port).To(Equal(strconv.Itoa(metricsPort)),
+				Expect(port).To(Equal(strconv.Itoa(opts.metricsPort())),
 					"metrics NetworkPolicy must allow the metrics port")
 			})
 		}
@@ -242,15 +257,21 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 					"-o", "jsonpath={.spec.ingress[*].ports[*].port}",
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(port).To(Equal(strconv.Itoa(webhookPort)),
+				Expect(port).To(Equal(strconv.Itoa(opts.webhookPort())),
 					"webhook NetworkPolicy must allow the webhook container port")
 			})
 		}
 
-		if opts.HasMetrics {
-			ValidateNetworkPolicyEnforcement(
-				controllerPodName, namePrefix, webhookPort, opts.HasWebhook, kbc)
+		if opts.InstallMethod == InstallMethodHelm && !opts.HasMetrics {
+			By("ensuring the chart renders no metrics NetworkPolicy when metrics are disabled")
+			var policies string
+			policies, err = kbc.Kubectl.Get(true, "networkpolicy", "-o", "name")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(policies).NotTo(ContainSubstring("allow-metrics-traffic"),
+				"the metrics NetworkPolicy must not exist when metrics are disabled")
 		}
+
+		unlabeledNamespace = validateNetworkPolicyEnforcement(controllerPodName, namePrefix, opts, kbc)
 	}
 
 	if opts.HasWebhook && opts.WebhookNamespaceGating {
@@ -356,6 +377,12 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 
 		By("waiting additional time for webhook server to stabilize")
 		time.Sleep(5 * time.Second)
+
+		// Runs only after the endpoints are ready: pod readiness reflects healthz alone,
+		// so probing earlier could race the webhook listener coming up.
+		if opts.HasNetworkPolicies {
+			validateWebhookNetworkPolicyAllowed(controllerPodName, unlabeledNamespace, opts.webhookPort(), kbc)
+		}
 	}
 
 	By("creating an instance of the CR")
@@ -540,5 +567,24 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 		By("cleaning up the test namespace")
 		_, err = kbc.Kubectl.Command("delete", "namespace", testNamespace, "--timeout=60s")
 		Expect(err).NotTo(HaveOccurred(), "test namespace should be deleted successfully")
+	}
+}
+
+// CleanupHelmRelease uninstalls the Helm release and deletes the CRDs that crd.keep=true
+// leaves behind, so the next spec starts from a clean cluster.
+func CleanupHelmRelease(kbc *utils.TestContext) {
+	By("uninstalling Helm Release (if installed)")
+	_ = kbc.UninstallHelmRelease()
+
+	By("cleaning up CRDs that were preserved by crd.keep=true")
+	domainSuffix := fmt.Sprintf(".example.com%s", kbc.TestSuffix)
+	listCmd := exec.Command("kubectl", "get", "crds", "-o", "name")
+	if output, err := kbc.Run(listCmd); err == nil {
+		for crdName := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+			if crdName != "" && strings.Contains(crdName, domainSuffix) {
+				deleteCmd := exec.Command("kubectl", "delete", crdName, "--ignore-not-found")
+				_, _ = kbc.Run(deleteCmd)
+			}
+		}
 	}
 }

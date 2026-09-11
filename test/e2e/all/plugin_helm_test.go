@@ -51,20 +51,7 @@ var _ = Describe("kubebuilder", func() {
 			By("removing restricted namespace label")
 			_ = kbc.RemoveNamespaceLabelToEnforceRestricted()
 
-			By("uninstalling Helm Release (if installed)")
-			_ = kbc.UninstallHelmRelease()
-
-			By("cleaning up CRDs that were preserved by crd.keep=true")
-			domainSuffix := fmt.Sprintf(".example.com%s", kbc.TestSuffix)
-			listCmd := exec.Command("kubectl", "get", "crds", "-o", "name")
-			if output, err := kbc.Run(listCmd); err == nil {
-				for crdName := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
-					if crdName != "" && strings.Contains(crdName, domainSuffix) {
-						deleteCmd := exec.Command("kubectl", "delete", crdName, "--ignore-not-found")
-						_, _ = kbc.Run(deleteCmd)
-					}
-				}
-			}
+			helpers.CleanupHelmRelease(kbc)
 
 			By("removing controller image and working dir")
 			kbc.Destroy()
@@ -108,30 +95,6 @@ var _ = Describe("kubebuilder", func() {
 			})
 		})
 
-		It("should generate a runnable project with metrics protected by network policies", func() {
-			helpers.GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-
-			helpers.Run(kbc, helpers.RunOptions{
-				HasWebhook:         false,
-				HasMetrics:         true,
-				HasNetworkPolicies: true,
-				InstallMethod:      helpers.InstallMethodHelm,
-			})
-		})
-
-		It("should deploy admission and conversion webhooks protected by network policies", func() {
-			helpers.GenerateV4WithNetworkPolicies(kbc)
-			helpers.EnableWebhookNamespaceGating(kbc)
-
-			helpers.Run(kbc, helpers.RunOptions{
-				HasWebhook:             true,
-				HasMetrics:             true,
-				HasNetworkPolicies:     true,
-				WebhookNamespaceGating: true,
-				InstallMethod:          helpers.InstallMethodHelm,
-			})
-		})
-
 		It("should generate a runnable project with the manager running as restricted and without webhooks", func() {
 			helpers.GenerateV4WithoutWebhooks(kbc)
 
@@ -168,72 +131,6 @@ var _ = Describe("kubebuilder", func() {
 				HelmFullnameOverride: "custom-operator",
 				SkipChartGeneration:  true, // Chart already generated and customized above
 			})
-		})
-
-		It("should install the HelmChart with custom metrics, health probe, and webhook ports", func() {
-			By("generating a full-featured project with webhooks, metrics and conversion webhooks")
-			helpers.GenerateV4(kbc)
-
-			By("building installer and generating helm chart")
-			Expect(kbc.Make("build-installer")).To(Succeed())
-			Expect(kbc.EditHelmPlugin()).To(Succeed())
-
-			// Each port value is wired into the manager, so overriding it in values.yaml
-			// changes both the manager listener and the Kubernetes resources that target it.
-			const (
-				customMetricsPort     = 8444
-				customHealthProbePort = 8082
-				customWebhookPort     = 9444
-			)
-
-			By("overriding ports and enabling network policies in values.yaml")
-			valuesPath := filepath.Join(kbc.Dir, "dist", "chart", "values.yaml")
-			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"port: 8443", fmt.Sprintf("port: %d", customMetricsPort))).To(Succeed())
-			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"port: 8081", fmt.Sprintf("port: %d", customHealthProbePort))).To(Succeed())
-			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"port: 9443", fmt.Sprintf("port: %d", customWebhookPort))).To(Succeed())
-			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"networkPolicy:\n  enabled: false", "networkPolicy:\n  enabled: true")).To(Succeed())
-
-			By("deploying with the customized ports and validating the manager runs correctly")
-			// helpers.Run drives the full runtime verification against the customized chart:
-			// the pod only reaches Ready if the health probe answers on customHealthProbePort,
-			// the defaulting, validating, and conversion webhook flows work through
-			// customWebhookPort, and the metrics are scraped through the Service port,
-			// which is asserted below to be customMetricsPort.
-			helpers.Run(kbc, helpers.RunOptions{
-				HasWebhook:          true,
-				HasMetrics:          true,
-				HasNetworkPolicies:  true,
-				MetricsPort:         customMetricsPort,
-				WebhookPort:         customWebhookPort,
-				InstallMethod:       helpers.InstallMethodHelm,
-				SkipChartGeneration: true, // Chart already generated and customized above
-			})
-
-			By("verifying the manager binds probes, metrics, and webhooks to the custom ports")
-			controllerPodName := helpers.GetControllerPodName(kbc)
-			args, err := kbc.Kubectl.Get(true,
-				"pod", controllerPodName, "-o", "jsonpath={.spec.containers[0].args}")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(args).To(ContainSubstring(
-				fmt.Sprintf("--health-probe-bind-address=:%d", customHealthProbePort)))
-			Expect(args).To(ContainSubstring(
-				fmt.Sprintf("--metrics-bind-address=:%d", customMetricsPort)))
-			Expect(args).To(ContainSubstring(fmt.Sprintf("--webhook-port=%d", customWebhookPort)))
-
-			By("verifying the container declares the custom health probe port")
-			ports, err := kbc.Kubectl.Get(true,
-				"pod", controllerPodName, "-o", "jsonpath={.spec.containers[0].ports}")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ports).To(ContainSubstring(strconv.Itoa(customHealthProbePort)))
-			Expect(ports).To(ContainSubstring(strconv.Itoa(customWebhookPort)))
-
-			By("verifying the metrics Service exposes the custom port")
-			namePrefix := fmt.Sprintf("e2e-%s", kbc.TestSuffix)
-			Expect(helpers.GetMetricsServicePort(namePrefix, kbc)).To(Equal(customMetricsPort))
 		})
 
 		It("should not run the webhook server when installed with webhook.enabled=false", func() {
