@@ -167,7 +167,7 @@ For further guidance, you can refer to examples in the `testdata/` directory in 
 <aside class="note" role="note">
 <p class="note-title">Creating Your Own Markers</p>
 
-If you are using Kubebuilder as a library to create [your own plugins](./../../plugins/creating-plugins.md) and extend its CLI functionalities,
+If you are using Kubebuilder as a library to create [your own plugins](./../../plugins/extending/extending_cli_features_and_plugins.md) and extend its CLI functionalities,
 you have the flexibility to define and use your own markers. To implement your own markers, refer to the [kubebuilder/v4/pkg/machinery](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/machinery),
 which provides tools to create and manage markers effectively.
 
