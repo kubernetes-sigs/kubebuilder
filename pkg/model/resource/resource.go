@@ -38,8 +38,11 @@ type Resource struct {
 	// API holds the information related to the resource API.
 	API *API `json:"api,omitempty"`
 
-	// Controller specifies if a controller has been scaffolded (legacy, deprecated).
-	// Deprecated: Use Controllers for multiple controller support.
+	// Controller specifies if a controller has been scaffolded.
+	// It cannot be removed while config v3 is the current version: PROJECT files written
+	// before Controllers existed still carry it, and dropping it would stop them parsing.
+	//
+	// Deprecated: use Controllers. This field reads false once a project is migrated.
 	Controller bool `json:"controller,omitempty"`
 
 	// Controllers holds named controllers for this resource.
@@ -114,28 +117,79 @@ func (r Resource) Validate() error {
 	}
 
 	// Validate the Controllers
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		if err := r.Controllers.Validate(); err != nil {
-			return fmt.Errorf("invalid Controllers: %w", err)
-		}
+	if err := r.Controllers.Validate(); err != nil {
+		return fmt.Errorf("invalid Controllers: %w", err)
+	}
+	if err := r.validateReconcilerNames(); err != nil {
+		return fmt.Errorf("invalid Controllers: %w", err)
 	}
 
 	return nil
 }
 
-// Normalize handles the edge case where both controller: true and controllers: are set.
-// This can only occur if someone manually edits the PROJECT file.
-// The new controllers array format takes precedence, and the legacy flag is cleared.
-func (r *Resource) Normalize() {
-	if r == nil {
-		return
+// validateReconcilerNames rejects controllers whose names generate the same reconciler
+// struct, such as "captain-backup" and "captain--backup". A name matching the lowercase
+// kind resolves to {Kind}Reconciler, so the kind is needed to compare them.
+func (r Resource) validateReconcilerNames() error {
+	if r.Controllers.IsEmpty() {
+		return nil
 	}
 
-	// If both controller: true and controllers: are set (manual edit),
-	// keep the explicit controllers array and clear the legacy flag
-	if r.Controller && r.Controllers != nil && !r.Controllers.IsEmpty() {
-		r.Controller = false
+	reconcilers := make(map[string]string, len(*r.Controllers))
+	for _, controller := range *r.Controllers {
+		reconciler := NormalizeReconcilerName(controller.Name, r.Kind)
+		if existing, found := reconcilers[reconciler]; found {
+			return fmt.Errorf("controller name %q conflicts with %q: both generate %s",
+				controller.Name, existing, reconciler)
+		}
+		reconcilers[reconciler] = controller.Name
 	}
+
+	return nil
+}
+
+// Migrate rewrites deprecated fields into the format Kubebuilder currently writes.
+// Deprecated fields are read so that existing PROJECT files keep working, but they are
+// never written back, so this runs whenever the PROJECT file is written. Add a call here
+// for each new deprecation so a project is migrated in one place.
+func (r *Resource) Migrate() error {
+	if r == nil {
+		return nil
+	}
+
+	return r.migrateControllers()
+}
+
+// Normalize resolves a resource carrying both the legacy controller field and Controllers.
+// It now delegates to Migrate, so it also converts a resource carrying only the legacy
+// field, where it used to do nothing, and it records that controller in Controllers rather
+// than discarding it.
+//
+// Deprecated: use Migrate, which reports failures.
+func (r *Resource) Normalize() {
+	_ = r.Migrate()
+}
+
+// migrateControllers records a legacy controller under its default kind-based name.
+func (r *Resource) migrateControllers() error {
+	if !r.Controller {
+		return nil
+	}
+
+	if r.Controllers == nil {
+		r.Controllers = &Controllers{}
+	}
+
+	// A hand-edited file can carry both fields, so the default name may already be recorded.
+	name := DefaultControllerName(r.Kind)
+	if !r.Controllers.HasController(name) {
+		if err := r.Controllers.AddController(name); err != nil {
+			return fmt.Errorf("cannot migrate controller of %s: %w", r.Kind, err)
+		}
+	}
+	r.Controller = false
+
+	return nil
 }
 
 // PackageName returns a name valid to be used for Go packages.
@@ -162,17 +216,9 @@ func (r Resource) HasAPI() bool {
 }
 
 // HasController returns true if the resource has at least one associated controller.
-// It checks both the legacy Controller bool field and the new Controllers field.
+// The legacy Controller field is still honoured so that existing PROJECT files work.
 func (r Resource) HasController() bool {
-	// Check legacy field first for backward compatibility
-	if r.Controller {
-		return true
-	}
-	// Check new Controllers field
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		return true
-	}
-	return false
+	return r.Controller || !r.Controllers.IsEmpty()
 }
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
@@ -201,21 +247,18 @@ func (r Resource) IsRegularPlural() bool {
 }
 
 // GetControllerNames returns the names of all controllers for this resource.
-// For resources using the new Controllers field, it returns the actual controller names.
-// For resources using the legacy Controller bool field, it returns a default name (lowercase kind).
+// A legacy Controller bool is reported under its default kind-based name.
 // Returns nil if the resource has no controllers.
 func (r Resource) GetControllerNames() []string {
-	// New format: return explicit controller names
-	if r.Controllers != nil && !r.Controllers.IsEmpty() {
-		return r.Controllers.GetControllerNames()
+	names := r.Controllers.GetControllerNames()
+
+	// A hand-edited file can carry both fields. Report the legacy controller too, so this
+	// agrees with Migrate and re-scaffolding cannot drop it.
+	if name := DefaultControllerName(r.Kind); r.Controller && !r.Controllers.HasController(name) {
+		names = append(names, name)
 	}
 
-	// Legacy format: generate default name from kind
-	if r.Controller {
-		return []string{strings.ToLower(r.Kind)}
-	}
-
-	return nil
+	return names
 }
 
 // Copy returns a deep copy of the Resource that can be safely modified without affecting the original.
@@ -270,35 +313,25 @@ func (r *Resource) Update(other Resource) error {
 		return err
 	}
 
-	// Update controllers
-	if other.Controllers != nil && !other.Controllers.IsEmpty() {
-		// Migrate legacy controller: true to the new controllers array format
-		if r.Controller {
-			if r.Controllers == nil {
-				r.Controllers = &Controllers{}
-			}
-			// Add a default controller with a kind-based name
-			defaultName := strings.ToLower(r.Kind)
-			if !r.Controllers.HasController(defaultName) {
-				_ = r.Controllers.AddController(defaultName)
-			}
-		}
-
-		// Initialize controllers array if not yet created
+	// Update controllers.
+	if err := r.Migrate(); err != nil {
+		return err
+	}
+	if other.Controller || !other.Controllers.IsEmpty() {
 		if r.Controllers == nil {
 			r.Controllers = &Controllers{}
 		}
-
-		// Merge controllers from the other resource
+		if other.Controller {
+			name := DefaultControllerName(r.Kind)
+			if !r.Controllers.HasController(name) {
+				if err := r.Controllers.AddController(name); err != nil {
+					return fmt.Errorf("cannot add controller of %s: %w", r.Kind, err)
+				}
+			}
+		}
 		if err := r.Controllers.Update(other.Controllers); err != nil {
 			return err
 		}
-
-		// Clear the legacy flag now that we're using the new format
-		r.Controller = false
-	} else {
-		// Only update the legacy field if not using the new format
-		r.Controller = r.Controller || other.Controller
 	}
 
 	// Update Webhooks.

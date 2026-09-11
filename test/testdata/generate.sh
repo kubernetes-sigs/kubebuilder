@@ -38,9 +38,12 @@ function scaffold_test_project {
 
   if [ $project == "project-v4" ] ; then
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --controller-name=captain
+    # Captain covers both ways of naming a controller. Without --controller-name the
+    # controller is recorded under the default name, the lowercase kind: `captain`.
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
-    # Create a second controller for the Captain resource to test multiple controllers per API
+    # A second controller for the same API. --controller-name gives it its own name,
+    # reconciler struct and file, so one GVK ends up with two controllers.
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=false --make=false --controller-name=captain-backup
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false
     $kb create webhook --group crew --version v1 --kind Captain --programmatic-validation --make=false
@@ -75,8 +78,11 @@ function scaffold_test_project {
 
   if [[ $project =~ multigroup ]]; then
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --controller-name=captain
-    # Create a second controller for the Captain resource to test multiple controllers per API
+    # Captain covers both ways of naming a controller. Without --controller-name the
+    # controller is recorded under the default name, the lowercase kind: `captain`.
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    # A second controller for the same API. In a multigroup project the group is
+    # prefixed in Named(), so these become `crew-captain` and `crew-captain-backup`.
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=false --make=false --controller-name=captain-backup
     # Test incremental webhook additions
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --make=false

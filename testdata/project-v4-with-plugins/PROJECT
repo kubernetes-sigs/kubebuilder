@@ -36,7 +36,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: memcached
   domain: testproject.org
   group: example.com
   kind: Memcached
@@ -48,7 +49,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: busybox
   domain: testproject.org
   group: example.com
   kind: Busybox
@@ -57,7 +59,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: wordpress
   domain: testproject.org
   group: example.com
   kind: Wordpress
