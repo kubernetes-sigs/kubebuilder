@@ -96,6 +96,17 @@ var _ = Describe("HelmValues", func() {
 
 			Expect(result).To(ContainSubstring("prometheus:\n  enabled: true"))
 		})
+
+		It("should document the optional labels and annotations keys as commented placeholders", func() {
+			values := &HelmValues{Extraction: nil}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring("prometheus:\n  enabled: false\n\n" +
+				"  ## Custom ServiceMonitor labels\n  ##\n  # labels: {}\n\n" +
+				"  ## Custom ServiceMonitor annotations\n  ##\n  # annotations: {}\n"))
+		})
 	})
 
 	Describe("Metrics section", func() {

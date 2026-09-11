@@ -333,7 +333,16 @@ The default webhook policy allows ingress from all sources to the manager pod's 
 
 Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
 
-The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`.
+The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. For example, to match a Prometheus Operator `serviceMonitorSelector`:
+
+```yaml
+prometheus:
+  enabled: true
+  labels:
+    release: prometheus
+  annotations:
+    example.com/owner: sre
+```
 
 ### ServiceAccount configuration
 

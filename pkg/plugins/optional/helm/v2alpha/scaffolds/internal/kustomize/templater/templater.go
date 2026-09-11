@@ -71,7 +71,7 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 		t.detectedPrefix, t.chartName, t.managerNamespace, t.roleNamespaces, yamlContent, resource)
 	yamlContent = appliers.SubstituteCertManagerReferences(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.SubstituteResourceNamesWithPrefix(t.detectedPrefix, t.chartName, yamlContent, resource)
-	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent, resource)
+	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent)
 	yamlContent = appliers.SubstituteRBACValues(t.detectedPrefix, t.chartName, yamlContent)
 	if resource.GetKind() == common.KindServiceAccount {
 		yamlContent = appliers.TemplateServiceAccount(t.detectedPrefix, t.chartName, yamlContent)
