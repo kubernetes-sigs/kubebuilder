@@ -22,8 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
@@ -32,14 +30,13 @@ const (
 	valuesServiceAccountAnnotations = ".Values.serviceAccount.annotations"
 	valuesPrometheusLabels          = ".Values.prometheus.labels"
 	valuesPrometheusAnnotations     = ".Values.prometheus.annotations"
+
+	// How many lines to scan around a label for its siblings before giving up.
+	labelScanWindow = 10
 )
 
 // AddHelmLabelsAndAnnotations replaces kustomize managed-by labels with Helm equivalents.
-func AddHelmLabelsAndAnnotations(
-	detectedPrefix, chartName string, yamlContent string, resource *unstructured.Unstructured,
-) string {
-	// Replace app.kubernetes.io/managed-by: kustomize with Helm template
-	// Use regex to handle different whitespace patterns
+func AddHelmLabelsAndAnnotations(detectedPrefix, chartName, yamlContent string) string {
 	managedByRegex := regexp.MustCompile(`(\s*)app\.kubernetes\.io/managed-by:\s+kustomize`)
 	yamlContent = managedByRegex.ReplaceAllString(yamlContent, "${1}app.kubernetes.io/managed-by: {{ .Release.Service }}")
 
@@ -47,68 +44,57 @@ func AddHelmLabelsAndAnnotations(
 	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + chartName + ".name\" . }}"
 	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
 
-	// Add standard Helm labels to labels sections, excluding selectors/matchLabels.
-	yamlContent = AddStandardHelmLabels(yamlContent, resource)
-
-	return yamlContent
+	return AddStandardHelmLabels(yamlContent)
 }
 
 // CheckExistingLabels checks if standard Helm labels already exist in a labels section.
 func CheckExistingLabels(lines []string, currentIndex int, indent string) (hasChart, hasInstance, hasManagedBy bool) {
-	// Look backward from current position (managed-by often appears before name in kustomize output)
-	for j := currentIndex - 1; j >= 0 && j >= currentIndex-10; j-- {
-		backLine := lines[j]
-		backTrimmed := strings.TrimSpace(backLine)
-		backIndent, _ := LeadingWhitespace(backLine)
-
-		// Stop if we've moved out of the labels section
-		if backTrimmed == common.YamlKeyLabels {
-			break
-		}
-		if backTrimmed != "" && len(backIndent) < len(indent) {
-			break
-		}
-
-		if strings.Contains(backLine, common.LabelKeyHelmChart) {
+	markFound := func(line string) {
+		if strings.Contains(line, common.LabelKeyHelmChart) {
 			hasChart = true
 		}
-		if strings.Contains(backLine, common.LabelKeyAppInstance) {
+		if strings.Contains(line, common.LabelKeyAppInstance) {
 			hasInstance = true
 		}
-		if strings.Contains(backLine, common.LabelKeyAppManagedBy) {
+		if strings.Contains(line, common.LabelKeyAppManagedBy) {
 			hasManagedBy = true
 		}
 	}
 
-	// Look ahead from current position
-	for j := currentIndex + 1; j < len(lines) && j < currentIndex+10; j++ {
-		nextLine := lines[j]
-		nextTrimmed := strings.TrimSpace(nextLine)
-		nextIndent, _ := LeadingWhitespace(nextLine)
+	// Look backward from current position (managed-by often appears before name in kustomize output)
+	for j := currentIndex - 1; j >= 0 && j >= currentIndex-labelScanWindow; j-- {
+		trimmed := strings.TrimSpace(lines[j])
+		lineIndent, _ := LeadingWhitespace(lines[j])
 
-		// Stop if we've moved to a new section
-		if nextTrimmed != "" && len(nextIndent) < len(indent) {
+		// Stop if we've moved out of the labels section
+		if trimmed == common.YamlKeyLabels {
 			break
 		}
+		if trimmed != "" && len(lineIndent) < len(indent) {
+			break
+		}
+		markFound(lines[j])
+	}
 
-		if strings.Contains(nextLine, common.LabelKeyHelmChart) {
-			hasChart = true
+	// Look ahead from current position
+	for j := currentIndex + 1; j < len(lines) && j < currentIndex+labelScanWindow; j++ {
+		trimmed := strings.TrimSpace(lines[j])
+		lineIndent, _ := LeadingWhitespace(lines[j])
+
+		// Stop if we've moved to a new section
+		if trimmed != "" && len(lineIndent) < len(indent) {
+			break
 		}
-		if strings.Contains(nextLine, common.LabelKeyAppInstance) {
-			hasInstance = true
-		}
-		if strings.Contains(nextLine, common.LabelKeyAppManagedBy) {
-			hasManagedBy = true
-		}
+		markFound(lines[j])
 	}
 
 	return hasChart, hasInstance, hasManagedBy
 }
 
 // AddStandardHelmLabels adds standard Helm labels to all labels sections except selectors.
-func AddStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) string {
+func AddStandardHelmLabels(yamlContent string) string {
 	lines := strings.Split(yamlContent, "\n")
-	result := make([]string, 0, len(lines)+10) // Pre-allocate with extra space for added labels
+	result := make([]string, 0, len(lines)+10) // slack for the labels added below
 	inSelector := false
 
 	for i := range lines {
@@ -135,7 +121,6 @@ func AddStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) str
 		if !inSelector && strings.Contains(line, common.LabelKeyAppName) {
 			indent, _ := LeadingWhitespace(line)
 
-			// Check if we're in a labels section by looking backwards
 			isInLabelsSection := false
 			for j := i - 1; j >= 0 && j >= i-5; j-- {
 				if strings.TrimSpace(lines[j]) == common.YamlKeyLabels {
@@ -151,16 +136,13 @@ func AddStandardHelmLabels(yamlContent string, _ *unstructured.Unstructured) str
 				continue
 			}
 
-			// Check if standard labels already exist in this labels section
 			hasHelmChart, hasInstance, hasManagedBy := CheckExistingLabels(lines, i, indent)
 
-			// Add helm.sh/chart if it doesn't exist
 			if !hasHelmChart {
 				result = append(result,
 					indent+common.LabelKeyHelmChart+` {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}`)
 			}
 
-			// Add app.kubernetes.io/instance if it doesn't exist
 			if !hasInstance {
 				result = append(result, indent+common.LabelKeyAppInstance+" {{ .Release.Name }}")
 			}
@@ -325,12 +307,7 @@ func buildGuardedMetadataMapBlock(headerIndent int, mapKey, valuePath string) []
 }
 
 // appendHelmMapBlock appends Helm template blocks for custom labels/annotations.
-func appendHelmMapBlock(
-	result []string,
-	indent string,
-	valuePath string,
-	existingKeys []string,
-) []string {
+func appendHelmMapBlock(result []string, indent, valuePath string, existingKeys []string) []string {
 	childIndentWidth := strconv.Itoa(len(indent))
 
 	if len(existingKeys) > 0 {
@@ -352,13 +329,7 @@ func appendHelmMapBlock(
 }
 
 // appendNestedHelmMapBlock appends nested Helm template blocks (e.g., .Values.manager.pod -> .labels).
-func appendNestedHelmMapBlock(
-	result []string,
-	indent string,
-	outerPath string,
-	innerPath string,
-	existingKeys []string,
-) []string {
+func appendNestedHelmMapBlock(result []string, indent, outerPath, innerPath string, existingKeys []string) []string {
 	childIndentWidth := strconv.Itoa(len(indent))
 
 	if len(existingKeys) > 0 {
@@ -387,16 +358,13 @@ func appendNestedHelmMapBlock(
 func extractKeysFromLines(lines []string) []string {
 	keys := []string{}
 
-	// Find section start by scanning backwards to the nearest header
 	sectionStart := 0
 	for i, v := range slices.Backward(lines) {
 		trimmed := strings.TrimSpace(v)
-		// Stop at section headers - this is where our current section began
 		if trimmed == common.YamlKeyLabels || trimmed == common.YamlKeyAnnotations {
-			sectionStart = i + 1 // Start extracting from the line after the header
+			sectionStart = i + 1
 			break
 		}
-		// Also stop at other major structural boundaries
 		if trimmed == common.YamlKeyMetadata || trimmed == common.YamlKeySpec || trimmed == common.YamlKeyTemplate {
 			sectionStart = i + 1
 			break
@@ -416,13 +384,11 @@ func extractKeysFromLines(lines []string) []string {
 			continue
 		}
 
-		// Stop if we hit another section header
 		if trimmed == common.YamlKeyLabels || trimmed == common.YamlKeyAnnotations ||
 			trimmed == common.YamlKeyMetadata || trimmed == common.YamlKeySpec || trimmed == common.YamlKeyTemplate {
 			break
 		}
 
-		// Extract the key name from "key: value" patterns
 		if matches := keyPattern.FindStringSubmatch(line); len(matches) > 1 {
 			keys = append(keys, matches[1])
 		}
