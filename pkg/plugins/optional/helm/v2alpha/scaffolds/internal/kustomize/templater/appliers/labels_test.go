@@ -186,8 +186,10 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 })
 
 // A ServiceMonitor's metadata.labels always carries the standard Helm/chart labels added by
-// AddStandardHelmLabels before this applier runs.
-const smStandardLabelsOnly = `apiVersion: monitoring.coreos.com/v1
+// AddStandardHelmLabels before this applier runs. Kustomize commonAnnotations add an annotations
+// block, which sorts before labels.
+const (
+	smStandardLabelsOnly = `apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
@@ -204,6 +206,21 @@ spec:
       app.kubernetes.io/name: {{ include "test-project.name" . }}
       control-plane: controller-manager`
 
+	smAnnotationsThenLabels = `apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    example.com/existing-annotation: keep
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "test-project.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    control-plane: controller-manager
+  name: controller-manager-metrics-monitor
+  namespace: system`
+)
+
 var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 	It("merges .Values.prometheus.labels into metadata.labels, omitting the standard keys", func() {
 		rendered := AddServiceMonitorLabelsAndAnnotations(smStandardLabelsOnly)
@@ -219,6 +236,18 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 
 		Expect(countMetadataHeader(rendered, "annotations:")).To(Equal(1))
 		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
+	})
+
+	It("merges into an existing annotations block (commonAnnotations) without duplicating it", func() {
+		rendered := AddServiceMonitorLabelsAndAnnotations(smAnnotationsThenLabels)
+
+		Expect(countMetadataHeader(rendered, "annotations:")).To(Equal(1),
+			"want exactly one annotations: header in:\n%s", rendered)
+		Expect(countMetadataHeader(rendered, "labels:")).To(Equal(1),
+			"want exactly one labels: header in:\n%s", rendered)
+		Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
+		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
+		Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
 	})
 
 	It("leaves the spec.selector.matchLabels block untouched", func() {

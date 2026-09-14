@@ -653,6 +653,21 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
 				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
 		})
+
+		It("merges into an existing annotations block instead of duplicating it", func() {
+			out, err := helmTemplate(createKustomizeWithServiceMonitorAnnotations("test-project"),
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.annotations.team=platform",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			sm := serviceMonitorDoc(out)
+
+			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
+			Expect(strings.Count(sm, "annotations:")).To(Equal(1),
+				"ServiceMonitor must keep a single annotations: block, got:\n%s", sm)
+			Expect(sm).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
+			Expect(sm).To(ContainSubstring("team: platform"))
+		})
 	})
 
 	Context("ServiceMonitor labels and annotations (rendered, static fallback)", func() {
@@ -2295,4 +2310,23 @@ spec:
       app.kubernetes.io/name: ` + projectName + `
       control-plane: controller-manager
 `
+}
+
+// createKustomizeWithServiceMonitorAnnotations gives the ServiceMonitor pre-existing annotations,
+// as kustomize commonAnnotations would. Kustomize sorts metadata keys alphabetically, so
+// annotations lands before labels: the ordering that must merge into the existing annotations
+// block rather than emit a duplicate key.
+func createKustomizeWithServiceMonitorAnnotations(projectName string) string {
+	return strings.Replace(
+		createKustomizeWithServiceMonitor(projectName),
+		`kind: ServiceMonitor
+metadata:
+  labels:`,
+		`kind: ServiceMonitor
+metadata:
+  annotations:
+    example.com/existing-annotation: preserved-value
+  labels:`,
+		1,
+	)
 }

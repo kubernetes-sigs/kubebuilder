@@ -46,5 +46,13 @@ var _ = Describe("ServiceMonitor", func() {
 			Expect(serviceMonitor.SetTemplateDefaults()).To(Succeed())
 			Expect(serviceMonitor.IfExistsAction).To(Equal(machinery.OverwriteFile))
 		})
+
+		It("merges .Values.prometheus.labels and .Values.prometheus.annotations into metadata", func() {
+			Expect(serviceMonitor.SetTemplateDefaults()).To(Succeed())
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`{{ "{{- with .Values.prometheus.labels }}" }}`))
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`omit . \"app.kubernetes.io/managed-by\"`))
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`\"control-plane\" }}`))
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`{{ "{{- with .Values.prometheus.annotations }}" }}`))
+		})
 	})
 })
