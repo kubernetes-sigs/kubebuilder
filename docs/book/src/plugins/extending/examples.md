@@ -1,4 +1,4 @@
-# Examples of External Plugins
+# Examples of external plugins
 
 This page tracks examples of external plugins built by the community that integrate with
 Kubebuilder. These plugins extend or complement Kubebuilder's scaffolding
@@ -14,20 +14,17 @@ repository for documentation, support, and compatibility information.
 
 ---
 
-## What Counts as a Kubebuilder Plugin?
+## What counts as a Kubebuilder plugin?
 
-A Kubebuilder **plugin** implements the
-[`plugin.Plugin`][plugin-interface] interface and integrates with the
-Kubebuilder CLI via the [External Plugins][external-plugins] mechanism.
-This allows it to be invoked as a sub-step during `kubebuilder init`,
-`kubebuilder create api`, etc.
+A Kubebuilder **plugin** integrates with the Kubebuilder CLI either as an in-process Go plugin implementing the [`plugin.Plugin`][plugin-interface] interface, or as an external plugin executable using the [External Plugins][external-plugins] protocol.
 
-Projects that are *built on top of* Kubebuilder but do not plug into its CLI
-(e.g. operators that use controller-runtime directly) are not listed here.
+This design allows projects to build solutions that generate code with the Kubebuilder CLI, provide new scaffolds, or customize existing scaffolding by chaining with default subcommands (such as `kubebuilder init` or `kubebuilder create api`). See the [plugins][plugins-page] page for details.
+
+Note that Kubebuilder can also be used as a library by other tooling. For example, Kubebuilder provides core functionality for tools like Operator SDK. This is different from creating a plugin that integrates directly with the Kubebuilder CLI. Because of that distinction, projects that use Kubebuilder solely as a library are not listed here.
 
 ---
 
-## Community Plugins
+## Community plugins
 
 | Plugin | Language | Description |
 |--------|----------|-------------|
@@ -37,7 +34,7 @@ Projects that are *built on top of* Kubebuilder but do not plug into its CLI
 
 ---
 
-## Experimental / Proof-of-Concept Plugins
+## Experimental / proof of concept plugins
 
 The following repositories demonstrate the Kubebuilder plugin interface and
 may serve as useful references when building your own plugin, but are not
@@ -45,17 +42,18 @@ actively maintained for production use.
 
 | Plugin | Language | Description |
 |--------|----------|-------------|
-| [kb-js-plugin][js-plugin] | JavaScript | PoC for scaffolding JavaScript-based operators |
-| [POC-Phase2-Plugins][poc-phase2] | Go | Early proof-of-concept for the Kubebuilder plugin system |
-| [plugin-testing-poc][plugin-testing-poc] | Go | PoC for plugin testing infrastructure |
+| [kb-js-plugin][js-plugin] | JavaScript | Proof of concept for scaffolding JavaScript-based operators |
+| [POC-Phase2-Plugins][poc-phase2] | Go | Early proof of concept for the Kubebuilder plugin system |
+| [plugin-testing-poc][plugin-testing-poc] | Go | Proof of concept for plugin testing infrastructure |
 
 ---
 
 [plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Plugin
 [external-plugins]: ./external-plugins.md
+[plugins-page]: ../plugins.md
 [rust-plugin]: https://github.com/SystemCraftsman/rust-operator-plugins
 [initializer-plugin]: https://github.com/astrokube/kubebuilder-initializer-plugin
-[operator-builder]: https://github.com/vmware-tanzu-labs/operator-builder
+[operator-builder]: https://github.com/nukleros/operator-builder
 [js-plugin]: https://github.com/Eileen-Yu/kb-js-plugin
 [poc-phase2]: https://github.com/rashmigottipati/POC-Phase2-Plugins
 [plugin-testing-poc]: https://github.com/everettraven/plugin-testing-poc
