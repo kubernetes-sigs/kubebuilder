@@ -97,6 +97,12 @@ func templateServiceAccountNameInBindings(
 			managerServiceAccount.GetNamespace(),
 			replacement,
 		)
+		if suffix := managerServiceAccountResourceSuffix(detectedPrefix, managerServiceAccount); suffix != "" {
+			templatedCustomPattern := regexp.MustCompile(
+				`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
+					regexp.QuoteMeta(ResourceNameTemplate(chartName, suffix)))
+			yamlContent = templatedCustomPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+		}
 	}
 
 	return yamlContent
@@ -123,6 +129,19 @@ func subjectServiceAccountNamespace(subjectBlock string) string {
 	nsPattern := regexp.MustCompile(`(?m)^[ \t]+namespace:\s+(\S+)\s*$`)
 	if match := nsPattern.FindStringSubmatch(subjectBlock); len(match) > 1 {
 		return match[1]
+	}
+	return ""
+}
+
+// managerServiceAccountResourceSuffix returns the resourceName dict suffix for a prefixed manager SA.
+func managerServiceAccountResourceSuffix(
+	detectedPrefix string, managerServiceAccount *unstructured.Unstructured,
+) string {
+	if managerServiceAccount == nil {
+		return ""
+	}
+	if after, ok := strings.CutPrefix(managerServiceAccount.GetName(), detectedPrefix+"-"); ok && after != "" {
+		return after
 	}
 	return ""
 }
@@ -157,6 +176,12 @@ func templateServiceAccountNameInDeployment(
 		customPattern := regexp.MustCompile(
 			`(?m)^(\s*)serviceAccountName:\s+` + regexp.QuoteMeta(managerServiceAccount.GetName()) + `\s*$`)
 		yamlContent = customPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+
+		if suffix := managerServiceAccountResourceSuffix(detectedPrefix, managerServiceAccount); suffix != "" {
+			templatedCustomPattern := regexp.MustCompile(
+				`(?m)^(\s*)serviceAccountName:\s+` + regexp.QuoteMeta(ResourceNameTemplate(chartName, suffix)))
+			yamlContent = templatedCustomPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+		}
 	}
 
 	return yamlContent

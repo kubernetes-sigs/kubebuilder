@@ -68,6 +68,47 @@ subjects:
 		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
 		Expect(result).To(Equal(yamlContent))
 	})
+
+	It("templates prefixed custom manager SA subjects already converted to resourceName", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("test-project-operator-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		templatedName := ResourceNameTemplate(chartName, "operator-sa")
+		yamlContent := `subjects:
+- kind: ServiceAccount
+  name: ` + templatedName + `
+  namespace: test-project-system
+`
+
+		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+		Expect(result).NotTo(ContainSubstring(templatedName))
+	})
+})
+
+var _ = Describe("templateServiceAccountNameInDeployment", func() {
+	const chartName = "test-project"
+
+	It("templates prefixed custom manager SA serviceAccountName already converted to resourceName", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("test-project-operator-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		templatedName := ResourceNameTemplate(chartName, "operator-sa")
+		yamlContent := `spec:
+  template:
+    spec:
+      serviceAccountName: ` + templatedName + `
+`
+
+		result := templateServiceAccountNameInDeployment("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(
+			`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+		Expect(result).NotTo(ContainSubstring(templatedName))
+	})
 })
 
 var _ = Describe("templateServiceAccountName", func() {
