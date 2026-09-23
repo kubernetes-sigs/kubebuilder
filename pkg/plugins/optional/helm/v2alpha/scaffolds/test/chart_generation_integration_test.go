@@ -1389,6 +1389,47 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
 			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
 		})
+
+		It("should template prefixed custom manager ServiceAccount references to serviceAccountName", func() {
+			kustomizeYAML := createKustomizeWithPrefixedCustomManagerServiceAccount("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			Expect(managerStr).To(ContainSubstring(
+				`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+			Expect(managerStr).NotTo(ContainSubstring(`resourceName" (dict "suffix" "operator-sa"`))
+
+			rbacDir := filepath.Join(chartPath, "templates", "rbac")
+			rbacFiles, err := os.ReadDir(rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+			var bindingFound bool
+			for _, f := range rbacFiles {
+				if !strings.Contains(f.Name(), "manager-rolebinding") {
+					continue
+				}
+				content, err := os.ReadFile(filepath.Join(rbacDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				bindingStr := string(content)
+				bindingFound = true
+				Expect(bindingStr).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+				Expect(bindingStr).NotTo(ContainSubstring(`resourceName" (dict "suffix" "operator-sa"`))
+			}
+			Expect(bindingFound).To(BeTrue())
+
+			rendered, err := helmTemplate(createKustomizeWithPrefixedCustomManagerServiceAccount("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+		})
 	})
 
 	// A project that already has hand-authored tolerations, nodeSelector, and affinity in
@@ -2309,6 +2350,23 @@ spec:
 
 func createKustomizeWithCustomManagerServiceAccount(projectName string) string {
 	const customSA = "custom-operator-sa"
+	managerSA := projectName + "-controller-manager"
+	base := createKustomizeForServiceAccountRender(projectName)
+	base = strings.Replace(base,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+managerSA,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+customSA,
+		1)
+	base = strings.Replace(base, "serviceAccountName: "+managerSA, "serviceAccountName: "+customSA, 1)
+	base = strings.ReplaceAll(base,
+		"- kind: ServiceAccount\n  name: "+managerSA,
+		"- kind: ServiceAccount\n  name: "+customSA)
+	return base
+}
+
+func createKustomizeWithPrefixedCustomManagerServiceAccount(projectName string) string {
+	customSA := projectName + "-operator-sa"
 	managerSA := projectName + "-controller-manager"
 	base := createKustomizeForServiceAccountRender(projectName)
 	base = strings.Replace(base,
