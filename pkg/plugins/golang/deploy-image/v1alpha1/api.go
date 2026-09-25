@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/distribution/reference"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -164,6 +165,9 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 	if len(p.image) == 0 {
 		return fmt.Errorf("you MUST inform the image that will be used in the reconciliation")
+	}
+	if _, err := reference.ParseNormalizedNamed(p.image); err != nil {
+		return fmt.Errorf("invalid --image value %q: %w", p.image, err)
 	}
 
 	// Validate imageContainerPort is a valid integer if provided
