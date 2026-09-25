@@ -78,6 +78,12 @@ func Run() {
 		// Most common use case for external plugins (optional enhancements)
 		response = scaffolds.EditCmd(pluginRequest)
 
+	case "delete":
+		// Called during: kubebuilder delete --plugins sampleexternalplugin/v1
+		// Purpose: Remove files and configuration added by this plugin
+		// Only reached when PSupportsDelete:true is set on the external.Plugin struct
+		response = scaffolds.DeleteCmd(pluginRequest)
+
 	case "flags":
 		// Called by: kubebuilder internally before running subcommands
 		// Purpose: Inform Kubebuilder which flags this plugin accepts

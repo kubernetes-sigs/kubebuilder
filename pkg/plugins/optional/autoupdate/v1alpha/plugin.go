@@ -53,7 +53,10 @@ type Plugin struct {
 	editSubcommand
 }
 
-var _ plugin.Edit = Plugin{}
+var (
+	_ plugin.Edit   = Plugin{}
+	_ plugin.Delete = Plugin{}
+)
 
 // PluginConfig defines the structure that will be used to track the data
 type PluginConfig struct{}
@@ -69,6 +72,9 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 
 // GetEditSubcommand will return the subcommand which is responsible for adding and/or edit a autoupdate
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+// GetDeleteSubcommand will return the subcommand which is responsible for removing the auto-update workflow
+func (Plugin) GetDeleteSubcommand() plugin.DeleteSubcommand { return &deleteSubcommand{} }
 
 // Description returns a short description of the plugin
 func (Plugin) Description() string {

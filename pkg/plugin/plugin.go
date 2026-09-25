@@ -16,9 +16,7 @@ limitations under the License.
 
 package plugin
 
-import (
-	"sigs.k8s.io/kubebuilder/v4/pkg/config"
-)
+import "sigs.k8s.io/kubebuilder/v4/pkg/config"
 
 // Plugin is an interface that defines the common base for all plugins.
 type Plugin interface {
@@ -74,6 +72,17 @@ type Edit interface {
 	Plugin
 	// GetEditSubcommand returns the underlying EditSubcommand interface.
 	GetEditSubcommand() EditSubcommand
+}
+
+// Delete is an interface for optional plugins that support a `delete` subcommand.
+// Implement this on plugins that scaffold files users may later want to cleanly remove
+// (e.g. helm charts, grafana dashboards, autoupdate workflows).
+// The subcommand pattern mirrors Edit, CreateAPI, etc. — the CLI wires config loading,
+// flag binding, and config saving automatically.
+type Delete interface {
+	Plugin
+	// GetDeleteSubcommand returns the subcommand that removes this plugin's scaffolded content.
+	GetDeleteSubcommand() DeleteSubcommand
 }
 
 // Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands.
