@@ -47,7 +47,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: frigate
   domain: testproject.org
   group: ship
   kind: Frigate
@@ -55,7 +56,8 @@ resources:
   version: v1beta1
 - api:
     crdVersion: v1
-  controller: true
+  controllers:
+  - name: destroyer
   domain: testproject.org
   group: ship
   kind: Destroyer
@@ -66,7 +68,8 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
-  controller: true
+  controllers:
+  - name: cruiser
   domain: testproject.org
   group: ship
   kind: Cruiser
@@ -78,7 +81,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: kraken
   domain: testproject.org
   group: sea-creatures
   kind: Kraken
@@ -87,7 +91,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: leviathan
   domain: testproject.org
   group: sea-creatures
   kind: Leviathan
@@ -96,13 +101,15 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: healthcheckpolicy
   domain: testproject.org
   group: foo.policy
   kind: HealthCheckPolicy
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1
   version: v1
-- controller: true
+- controllers:
+  - name: deployment
   core: true
   group: apps
   kind: Deployment
@@ -115,7 +122,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: bar
   domain: testproject.org
   group: foo
   kind: Bar
@@ -124,13 +132,15 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: bar
   domain: testproject.org
   group: fiz
   kind: Bar
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1
   version: v1
-- controller: true
+- controllers:
+  - name: certificate
   domain: io
   external: true
   group: cert-manager
@@ -160,7 +170,8 @@ resources:
     crdVersion: v1
     namespaced: true
     ssa: true
-  controller: true
+  controllers:
+  - name: prawn
   domain: testproject.org
   group: sea-creatures
   kind: Prawn
@@ -169,7 +180,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: memcached
   domain: testproject.org
   group: example.com
   kind: Memcached
@@ -181,7 +193,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: busybox
   domain: testproject.org
   group: example.com
   kind: Busybox
@@ -190,7 +203,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: wordpress
   domain: testproject.org
   group: example.com
   kind: Wordpress

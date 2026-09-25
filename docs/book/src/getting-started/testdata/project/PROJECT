@@ -17,7 +17,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: memcached
   domain: example.com
   group: cache
   kind: Memcached

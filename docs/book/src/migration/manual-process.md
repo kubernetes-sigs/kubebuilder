@@ -276,7 +276,8 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: cronjob
     group: batch
     kind: CronJob
     version: v1

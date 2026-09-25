@@ -129,24 +129,12 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if doController {
-		// Get the controller name to scaffold
-		// If using the new Controllers field, get the last added controller name
-		// Otherwise, use empty string to generate default name
-		controllerName := ""
-		if s.resource.Controllers != nil && !s.resource.Controllers.IsEmpty() {
-			names := s.resource.Controllers.GetControllerNames()
-			if len(names) > 0 {
-				// Use the last controller name (the one just added)
-				controllerName = names[len(names)-1]
-			}
-		}
-
 		if err := scaffold.Execute(
 			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{
 				ControllerRuntimeVersion: ControllerRuntimeVersion,
 				Force:                    s.force,
-				ControllerName:           controllerName,
+				ControllerName:           s.controllerName(),
 			},
 			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
 		); err != nil {
@@ -158,21 +146,24 @@ func (s *apiScaffolder) Scaffold() error {
 		&cmd.MainUpdater{
 			WireResource:   doAPI,
 			WireController: doController,
-			ControllerName: func() string {
-				if s.resource.Controllers != nil && !s.resource.Controllers.IsEmpty() {
-					names := s.resource.Controllers.GetControllerNames()
-					if len(names) > 0 {
-						return names[len(names)-1]
-					}
-				}
-				return ""
-			}(),
+			ControllerName: s.controllerName(),
 		},
 	); err != nil {
 		return fmt.Errorf("error updating cmd/main.go: %w", err)
 	}
 
 	return nil
+}
+
+// controllerName returns the controller this invocation scaffolds. The resource is
+// built for a single create api call, so it carries exactly the controller being added.
+func (s *apiScaffolder) controllerName() string {
+	names := s.resource.GetControllerNames()
+	if len(names) == 0 {
+		return ""
+	}
+
+	return names[0]
 }
 
 // apiPackageDir returns the directory of the resource group/version package.

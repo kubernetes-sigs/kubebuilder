@@ -41,7 +41,8 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: memcached
     domain: testproject.org
     group: example.com
     kind: Memcached
@@ -53,13 +54,15 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: busybox
     domain: testproject.org
     group: example.com
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
-  - controller: true
+  - controllers:
+      - name: certificate
     domain: io
     external: true
     group: cert-manager
@@ -117,7 +120,8 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: memcached
     domain: testproject.org
     group: example.com
     kind: Memcached
@@ -129,13 +133,15 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    controller: true
+    controllers:
+      - name: busybox
     domain: testproject.org
     group: example.com
     kind: Busybox
     path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
     version: v1alpha1
-  - controller: true
+  - controllers:
+      - name: certificate
     domain: io
     external: true
     group: cert-manager
@@ -163,7 +169,8 @@ Now let us check its layout fields definition:
 | `resources.api.crdVersion`          | The Kubernetes API version (`apiVersion`) used to do the scaffolding for the CRD resource.                                                                                                                                                                                      |
 | `resources.api.namespaced`          | The API RBAC permissions which can be namespaced or cluster scoped.                                                                                                                                                                                                             |
 | `resources.api.ssa`                 | **(Optional, Alpha)** When set to `true`, the API was scaffolded with Server-Side Apply support via `create api --ssa`. The scaffold adds the `+genclient` marker and generates apply configurations for the type. Alpha feature: it may change in future releases. Default is `false` (omitted from the PROJECT file). |
-| `resources.controller`              | Indicates whether you scaffolded a controller for the API.                                                                                                                                                                                                                      |
+| `resources.controllers`             | The list of controllers you scaffolded for the API. Each entry holds a `name`, and a resource can have more than one.                                                                                                                                                            |
+| `resources.controller`              | **(Deprecated)** Indicates whether you scaffolded a controller for the API. Replaced by `resources.controllers`. Kubebuilder still reads it, so projects using it keep working, but no longer writes it. The migration is automatic and transparent: the next command that writes the PROJECT file converts every resource to `resources.controllers`, and nothing else about your project changes. |
 | `resources.domain`                  | The domain of the resource that you provided by the `--domain` flag when you initialized the project or via the flag `--external-api-domain` when you used it to scaffold controllers for an [External Type][external-type].                                                   |
 | `resources.group`                   | The GKV group of the resource that you provide by the `--group` flag when you use the sub-command `create api`.                                                                                                                                                                |
 | `resources.version`                 | The GKV version of the resource that you provide by the `--version` flag when you use the sub-command `create api`.                                                                                                                                                            |

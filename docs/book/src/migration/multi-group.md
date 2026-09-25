@@ -198,7 +198,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: cronjob
   group: batch
   kind: CronJob
   path: tutorial.kubebuilder.io/project/api/v1  # Old path
@@ -211,7 +212,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
+  controllers:
+  - name: cronjob
   group: batch
   kind: CronJob
   path: tutorial.kubebuilder.io/project/api/batch/v1  # New path with group
@@ -351,7 +353,8 @@ Steps to execute:
      - api:
          crdVersion: v1
          namespaced: true
-       controller: true
+       controllers:
+       - name: cronjob
        domain: tutorial.kubebuilder.io
        group: batch
        kind: CronJob
