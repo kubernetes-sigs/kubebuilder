@@ -136,7 +136,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		uncommentCodeForConversionWebhooks(s.resource)
 	}
 
-	const helmPluginKey = "helm.kubebuilder.io/v1-alpha"
+	const helmPluginKey = "helm.kubebuilder.io/v2-alpha"
 	var helmPlugin any
 	err := s.config.DecodePluginConfig(helmPluginKey, &helmPlugin)
 	if !errors.As(err, &config.PluginKeyNotFoundError{}) {
