@@ -184,7 +184,7 @@ Now let us check its layout fields definition:
 [core-types]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/options.go
 [deploy-image-plugin]: ../plugins/available/deploy-image-plugin-v1-alpha.md
 [olm]: https://olm.operatorframework.io/
-[plugins-doc]: ../plugins/creating-plugins.html#why-use-the-kubebuilder-style
+[plugins-doc]: ../plugins/extending/extending_cli_features_and_plugins.md#why-use-the-kubebuilder-style
 [doc-design-helper]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md
 [operator-sdk]: https://sdk.operatorframework.io/
 [external-type]: ./using_an_external_resource.md

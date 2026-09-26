@@ -97,7 +97,7 @@ The following scaffolds is created or updated by this plugin:
 
 ## Further resources
 
-* Check the kustomize [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/common/kustomize)
+* Check the kustomize [plugin implementation](./../../../../pkg/plugins/common/kustomize)
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
 * Check the [release notes][release-notes-v5] for Kustomize v5.0.0
@@ -106,8 +106,8 @@ The following scaffolds is created or updated by this plugin:
 
 [sdk]:https://github.com/operator-framework/operator-sdk
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
-[bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
-[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go#L72-L84
+[bundle]: ./../../../../pkg/plugin/bundle.go
+[kustomize-create-api]: ./../../../../pkg/plugins/common/kustomize/v2/scaffolds/api.go
 [kustomize-docs]: https://kustomize.io/
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/
