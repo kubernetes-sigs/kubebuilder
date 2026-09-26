@@ -57,19 +57,32 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured, dete
 		if strings.Contains(yamlContent, "webhook-server") || strings.Contains(yamlContent, "name: webhook") {
 			isWebhook = true
 		}
+
+		yamlContent = applyToManagerContainer(yamlContent, func(managerContainer string) string {
+			if isWebhook && strings.Contains(managerContainer, "webhook-server") {
+				managerContainer = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*webhook-server)`).
+					ReplaceAllString(managerContainer, "${1}containerPort: {{ .Values.webhook.port }}${2}")
+				managerContainer = makeWebhookContainerPortConditional(managerContainer)
+			}
+
+			// Replace --metrics-bind-address with templated port
+			// Supports :PORT, HOST:PORT, and IPv6 [::1]:PORT formats
+			managerContainer = regexp.MustCompile(`--metrics-bind-address=(\[[^\]]*\]|[^\s:]*):([0-9]+)`).
+				ReplaceAllString(managerContainer, "--metrics-bind-address=$1:{{ .Values.metrics.port }}")
+
+			// Replace --webhook-port with templated version. Port -1 is the disabled branch and stays as is.
+			managerContainer = regexp.MustCompile(`--webhook-port=[1-9][0-9]*`).
+				ReplaceAllString(managerContainer, "--webhook-port={{ .Values.webhook.port }}")
+
+			return templateHealthProbePort(managerContainer)
+		})
+		return yamlContent
 	}
 
 	// Template webhook ports
 	if isWebhook {
 		if resourceKind == common.KindNetworkPolicy {
 			return templateNetworkPolicyIngressPort(yamlContent, "{{ .Values.webhook.port }}")
-		}
-
-		// Replace containerPort for webhook-server with template (matches any numeric port)
-		if strings.Contains(yamlContent, "webhook-server") {
-			yamlContent = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*webhook-server)`).
-				ReplaceAllString(yamlContent, "${1}containerPort: {{ .Values.webhook.port }}${2}")
-			yamlContent = makeWebhookContainerPortConditional(yamlContent)
 		}
 
 		// Replace targetPort with webhook.port template (matches any numeric port)
@@ -96,20 +109,6 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured, dete
 			yamlContent = regexp.MustCompile(`(\s*)- name:\s*https(\s+port:)`).
 				ReplaceAllString(yamlContent, `${1}- name: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}${2}`)
 		}
-	}
-
-	// Template port-related arguments in Deployment
-	if resource.GetKind() == common.KindDeployment {
-		// Replace --metrics-bind-address with templated port
-		// Supports :PORT, HOST:PORT, and IPv6 [::1]:PORT formats
-		yamlContent = regexp.MustCompile(`--metrics-bind-address=(\[[^\]]*\]|[^\s:]*):([0-9]+)`).
-			ReplaceAllString(yamlContent, "--metrics-bind-address=$1:{{ .Values.metrics.port }}")
-
-		// Replace --webhook-port with templated version. Port -1 is the disabled branch and stays as is.
-		yamlContent = regexp.MustCompile(`--webhook-port=[1-9][0-9]*`).
-			ReplaceAllString(yamlContent, "--webhook-port={{ .Values.webhook.port }}")
-
-		yamlContent = templateHealthProbePort(yamlContent)
 	}
 
 	return yamlContent
