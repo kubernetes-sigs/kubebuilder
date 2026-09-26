@@ -140,8 +140,10 @@ func (g *TemplatesGenerator) shouldSplitFiles(groupName string) bool {
 // generateFileName creates a unique filename for a resource based on its metadata.
 // For namespace-scoped resources (Role, RoleBinding) in non-manager namespaces, includes
 // namespace in filename to prevent collisions and distinguish cross-namespace resources.
+// For extras/, prefixes with kind and includes namespace to avoid collisions between
+// ServiceAccounts, Deployments, and other resources sharing a name.
 func (g *TemplatesGenerator) generateFileName(
-	resource *unstructured.Unstructured, index int, _ string, detectedPrefix string, managerNamespace string,
+	resource *unstructured.Unstructured, index int, groupName string, detectedPrefix string, managerNamespace string,
 ) string {
 	resourceName := resource.GetName()
 	kind := resource.GetKind()
@@ -150,6 +152,20 @@ func (g *TemplatesGenerator) generateFileName(
 	// Strip the detected prefix from the resource name for the filename
 	if after, ok := strings.CutPrefix(resourceName, detectedPrefix+"-"); ok {
 		resourceName = after
+	}
+
+	if groupName == "extras" {
+		kindSlug := strings.ToLower(kind)
+		if kindSlug == "" {
+			kindSlug = "resource"
+		}
+		if resourceName == "" {
+			return fmt.Sprintf("%s-%d.yaml", kindSlug, index)
+		}
+		if namespace != "" {
+			return fmt.Sprintf("%s-%s-%s.yaml", kindSlug, resourceName, namespace)
+		}
+		return fmt.Sprintf("%s-%s.yaml", kindSlug, resourceName)
 	}
 
 	// For namespace-scoped RBAC resources, include namespace suffix only if NOT in manager namespace.
