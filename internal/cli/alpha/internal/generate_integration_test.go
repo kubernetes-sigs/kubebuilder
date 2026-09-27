@@ -150,6 +150,30 @@ var _ = Describe("alpha generate", func() {
 		}
 	})
 
+	It("should restore the project when its plugin layout cannot be resolved", func() {
+		project := []byte("version: \"3\"\nlayout:\n- gone.example.com/v1\n")
+		projectFile := filepath.Join(kbc.Dir, "PROJECT")
+		notesFile := filepath.Join(kbc.Dir, "notes.txt")
+		Expect(os.WriteFile(projectFile, project, 0o644)).To(Succeed())
+		Expect(os.WriteFile(notesFile, []byte("keep me\n"), 0o644)).To(Succeed())
+
+		By("running alpha generate with a replacement plugin")
+		_, err := kbc.Run(exec.Command(
+			kbc.BinaryName,
+			"alpha", "generate",
+			"--plugins", "go.kubebuilder.io/v4",
+		))
+		Expect(err).To(HaveOccurred())
+
+		By("checking every original file was restored")
+		restoredProject, err := os.ReadFile(projectFile)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(restoredProject).To(Equal(project))
+		restoredNotes, err := os.ReadFile(notesFile)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(restoredNotes)).To(Equal("keep me\n"))
+	})
+
 	// The regression these two specs guard against: the cleanup deletes the
 	// project directory before the Grafana migration copies the config, so an
 	// in-place run used to replace the user's customisation with the
