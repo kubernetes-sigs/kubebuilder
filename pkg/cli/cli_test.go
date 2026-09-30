@@ -1481,6 +1481,15 @@ version: "3"
 				Expect(out).NotTo(ContainSubstring("--controller"))
 			})
 
+			It("should complete the flags of a subcommand from that chain", func() {
+				args := []string{cobra.ShellCompRequestCmd, createSubcommand, apiSubcommand, "--mock"}
+
+				completions, completeErr := runCLI(filesystemWithProjectChainProject(), args, args,
+					WithPlugins(projectPlugin))
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(completions).To(ContainSubstring("--" + projectChainFlag))
+			})
+
 			It("should scaffold with that chain", func() {
 				_, runErr := runCLI(filesystemWithProjectChainProject(), createAPIArgs(), createAPIArgs(),
 					WithPlugins(projectPlugin))
@@ -1588,6 +1597,8 @@ version: "3"
 				Entry("for the version subcommand", kubebuilderSubcommandVersion),
 				Entry("for the help subcommand", kubebuilderSubcommandHelp),
 				Entry("for the completion subcommand", kubebuilderSubcommandCompletion, shellZsh),
+				Entry("for the create command group", createSubcommand),
+				Entry("for the alpha command group", alphaCommand),
 			)
 		})
 
@@ -1856,6 +1867,10 @@ var _ = Describe("isSubcommandWithoutConfig", func() {
 		Entry("for the completion subcommand", kubebuilderSubcommandCompletion, shellZsh),
 		Entry("for help on the version subcommand", kubebuilderSubcommandHelp, kubebuilderSubcommandVersion),
 		Entry("for help on the completion subcommand", kubebuilderSubcommandHelp, kubebuilderSubcommandCompletion),
+		Entry("for completing a command group", cobra.ShellCompRequestCmd, createSubcommand, ""),
+		Entry("for completing a subcommand name", cobra.ShellCompRequestCmd, createSubcommand, "a"),
+		Entry("for completing the flags of alpha generate", cobra.ShellCompRequestCmd, alphaCommand,
+			generateSubcommand, "--"),
 	)
 
 	DescribeTable("should read the project configuration",
@@ -1871,6 +1886,12 @@ var _ = Describe("isSubcommandWithoutConfig", func() {
 		Entry("with a dangling plugins flag", kubebuilderSubcommandInit, pluginsFlagArg),
 		Entry("for a subcommand that requires a project", kubebuilderSubcommandInit),
 		Entry("for a subcommand added to the CLI", "docs"),
+		// The flags of these commands come from the plugin chain the project names.
+		Entry("for completing the flags of create api", cobra.ShellCompRequestCmd, createSubcommand, apiSubcommand, "--"),
+		Entry("for completing the flags of create webhook without descriptions", cobra.ShellCompNoDescRequestCmd,
+			createSubcommand, webhookSubcommand, "--"),
+		Entry("for completing the flags of edit", cobra.ShellCompRequestCmd, editSubcommand, ""),
+		Entry("for completing the flags of init", cobra.ShellCompRequestCmd, kubebuilderSubcommandInit, "--"),
 	)
 })
 
