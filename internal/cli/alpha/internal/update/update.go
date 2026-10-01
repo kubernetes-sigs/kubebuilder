@@ -414,7 +414,7 @@ func (opts *Update) prepareAncestorBranch() error {
 // cleanupBranch removes all files and folders in the current directory
 // except for the .git directory and the PROJECT file.
 // This is necessary to ensure the ancestor branch starts with a clean slate
-// TODO: Analise if this command is still needed in the future.
+// TODO: Analyse if this command is still needed in the future.
 // It is required because the alpha generate command in versions prior to v4.7.0 do not properly
 // handle the removal of files in the ancestor branch.
 func cleanupBranch() error {
