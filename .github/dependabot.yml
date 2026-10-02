@@ -16,7 +16,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
 
@@ -29,7 +29,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
 
@@ -42,7 +42,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
 
@@ -55,7 +55,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
 
   # Maintain dependencies for go in external plugin sample
   - package-ecosystem: "gomod"
@@ -66,7 +66,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":book:"
+      prefix: "📖"
     labels:
       - "ok-to-test"
 
@@ -79,7 +79,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
 
@@ -91,7 +91,7 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
 
@@ -103,6 +103,6 @@ updates:
       default-days: 7
       semver-patch-days: 0
     commit-message:
-      prefix: ":seedling:"
+      prefix: "🌱"
     labels:
       - "ok-to-test"
