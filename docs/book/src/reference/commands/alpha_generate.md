@@ -94,7 +94,7 @@ After running the command, you can inspect the generated scaffold in the specifi
 ## Further resources
 
 - [Video demo on how it works](https://youtu.be/7997RIbx8kw?si=ODYMud5lLycz7osp)
-- [Design proposal documentation](../../../../../designs/helper_to_upgrade_projects_by_rescaffolding.md)
+- [Design proposal documentation](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md)
 
 [example]: ../../../../../testdata/project-v4-with-plugins/PROJECT
 [project-config]: ../../reference/project-config.md
