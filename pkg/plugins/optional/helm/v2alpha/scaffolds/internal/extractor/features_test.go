@@ -52,65 +52,65 @@ var _ = Describe("FeaturesExtractor", func() {
 		It("should default all ports when there is no deployment", func() {
 			features := detect(nil)
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 			Expect(features.MetricsPort).To(Equal(8443))
 			Expect(features.WebhookPort).To(Equal(9443))
 		})
 	})
 
-	Describe("DetectFeatures health probe port", func() {
-		It("should default to 8081 when the bind-address arg is absent", func() {
+	Describe("DetectFeatures health probe bind address", func() {
+		It("should be empty when the bind-address arg is absent", func() {
 			features := detect(deploymentWithManagerArgs("--leader-elect"))
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
-		It("should detect a custom port from :PORT form", func() {
+		It("should keep the :PORT form", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=:9091"))
 
-			Expect(features.HealthProbePort).To(Equal(9091))
+			Expect(features.HealthProbeBindAddress).To(Equal(":9091"))
 		})
 
-		It("should detect a custom port from HOST:PORT form", func() {
-			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=localhost:9091"))
+		It("should keep the host of the HOST:PORT form", func() {
+			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=localhost:9440"))
 
-			Expect(features.HealthProbePort).To(Equal(9091))
+			Expect(features.HealthProbeBindAddress).To(Equal("localhost:9440"))
 		})
 
-		It("should detect a custom port from IPv6 [::1]:PORT form", func() {
+		It("should keep the IPv6 [::1]:PORT form", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=[::1]:9091"))
 
-			Expect(features.HealthProbePort).To(Equal(9091))
+			Expect(features.HealthProbeBindAddress).To(Equal("[::1]:9091"))
 		})
 
-		It("should default to 8081 when the port is not numeric", func() {
+		It("should be empty when the port is not numeric", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=:invalid"))
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
-		It("should default to 8081 when the port is out of range", func() {
+		It("should be empty when the port is out of range", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=:99999"))
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
-		It("should default to 8081 when probes are disabled with bind address 0", func() {
+		It("should be empty when probes are disabled with bind address 0", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=0"))
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
 		It("should accept the maximum valid port 65535", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=:65535"))
 
-			Expect(features.HealthProbePort).To(Equal(65535))
+			Expect(features.HealthProbeBindAddress).To(Equal(":65535"))
 		})
 
-		It("should default to 8081 when the flag and address are separate args", func() {
+		It("should be empty when the flag and address are separate args", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address", ":9091"))
 
-			Expect(features.HealthProbePort).To(Equal(8081))
+			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
 		It("should use the first valid value when the arg is duplicated", func() {
@@ -119,7 +119,7 @@ var _ = Describe("FeaturesExtractor", func() {
 				"--health-probe-bind-address=:9092",
 			))
 
-			Expect(features.HealthProbePort).To(Equal(9091))
+			Expect(features.HealthProbeBindAddress).To(Equal(":9091"))
 		})
 
 		It("should read the arg from the manager container, not a sidecar", func() {
@@ -140,7 +140,7 @@ var _ = Describe("FeaturesExtractor", func() {
 
 			features := detect(deployment)
 
-			Expect(features.HealthProbePort).To(Equal(9091))
+			Expect(features.HealthProbeBindAddress).To(Equal(":9091"))
 		})
 	})
 

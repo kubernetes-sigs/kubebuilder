@@ -157,25 +157,32 @@ func templateNetworkPolicyIngressPort(yamlContent, portTemplate string) string {
 	return strings.Join(lines, "\n")
 }
 
-// templateHealthProbePort templates the manager health probe port so it can be
-// configured from values.yaml, mirroring how metrics and webhook ports are handled.
-// It rewrites the four places the port appears in the manager Deployment: the
-// --health-probe-bind-address arg, the "health" containerPort, and the liveness
-// and readiness httpGet ports.
+// healthProbePortTemplate is the port of .Values.manager.healthProbeBindAddress, or the
+// manager's default 8081 when the value is empty. It works for ":PORT", "HOST:PORT"
+// and "[::1]:PORT".
+const healthProbePortTemplate = `{{ .Values.manager.healthProbeBindAddress | default ":8081"` +
+	` | splitList ":" | last | int }}`
+
+// templateHealthProbePort derives the manager's health probe ports from
+// .Values.manager.healthProbeBindAddress, so they follow the address the manager binds to.
+// The --health-probe-bind-address arg itself is rendered by templateControllerManagerArgs.
+// The "health" containerPort takes the port of the address, and the liveness and readiness
+// httpGet probes point at that named port, or at the same port when the container does
+// not declare it.
 func templateHealthProbePort(yamlContent string) string {
-	const healthPortTemplate = "{{ .Values.manager.healthProbe.port }}"
-
-	// --health-probe-bind-address=:PORT (also HOST:PORT and IPv6 [::1]:PORT)
-	yamlContent = regexp.MustCompile(`--health-probe-bind-address=(\[[^\]]*\]|[^\s:]*):([0-9]+)`).
-		ReplaceAllString(yamlContent, "--health-probe-bind-address=$1:"+healthPortTemplate)
-
 	// containerPort for the port named "health"
-	yamlContent = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*health\b)`).
-		ReplaceAllString(yamlContent, "${1}containerPort: "+healthPortTemplate+"${2}")
+	healthContainerPort := regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*health\b)`)
+	hasHealthPort := healthContainerPort.MatchString(yamlContent)
+	yamlContent = healthContainerPort.
+		ReplaceAllString(yamlContent, "${1}containerPort: "+healthProbePortTemplate+"${2}")
 
 	// liveness (/healthz) and readiness (/readyz) httpGet ports
+	probePort := healthProbePortTemplate
+	if hasHealthPort {
+		probePort = "health"
+	}
 	yamlContent = regexp.MustCompile(`(path:\s*/(?:healthz|readyz)[ \t]*\n\s*port:\s*)\d+`).
-		ReplaceAllString(yamlContent, "${1}"+healthPortTemplate)
+		ReplaceAllString(yamlContent, "${1}"+probePort)
 
 	return yamlContent
 }

@@ -277,17 +277,17 @@ helm install my-operator ./dist/chart --set webhook.port=9444
 
 The default is `9443`, detected from your project configuration. To disable the webhook server, set `webhook.enabled=false` instead of changing the port.
 
-### Health probe port configuration
+### Health probe address configuration
 
-Set `manager.healthProbe.port` to change the port where the manager serves its health probes. The liveness (`/healthz`) and readiness (`/readyz`) endpoints bind to this port. The chart applies the same value to the `--health-probe-bind-address` argument, the `health` container port, and the `httpGet` port of both probes.
+Set `manager.healthProbeBindAddress` to change the address where the manager serves its health probes, the liveness (`/healthz`) and readiness (`/readyz`) endpoints. The chart passes the value to the manager as `--health-probe-bind-address`, so you can set the host and the port together. The `health` container port takes the port of the address, and both probes use that named port.
 
 For example, install the chart with the health probes on port `8082`:
 
 ```bash
-helm install my-operator ./dist/chart --set manager.healthProbe.port=8082
+helm install my-operator ./dist/chart --set manager.healthProbeBindAddress=:8082
 ```
 
-The default is `8081`, detected from your project configuration.
+The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag, the manager keeps its own default, and the container port and probes use `8081`.
 
 ### Passing args for the manager
 
@@ -307,7 +307,7 @@ Helm evaluates `{{ .Release.Namespace }}` at render time, so the manager contain
 <aside class="note" role="note">
 <p class="note-title">Do not set the metrics, webhook, or health probe flags in manager.args</p>
 
-The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--health-probe-bind-address` as `metrics.port`, `webhook.port`, and `manager.healthProbe.port`. Set those values instead of adding the flags to `manager.args`. The plugin removes these flags from the extracted args when it generates the chart, so adding one back through `manager.args`, templated or not, creates a duplicate flag alongside the value-driven one. The Service, NetworkPolicy, and probes keep using the configured port, so traffic and probes then target the wrong port.
+The chart already exposes `--metrics-bind-address`, `--webhook-port`, and `--health-probe-bind-address` as `metrics.port`, `webhook.port`, and `manager.healthProbeBindAddress`. Set those values instead of adding the flags to `manager.args`. The plugin removes these flags from the extracted args when it generates the chart, so adding one back through `manager.args`, templated or not, creates a duplicate flag alongside the value-driven one. The Service, NetworkPolicy, and probes keep using the configured port, so traffic and probes then target the wrong port.
 
 </aside>
 

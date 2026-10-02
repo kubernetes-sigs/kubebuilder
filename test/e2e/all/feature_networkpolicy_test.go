@@ -156,7 +156,8 @@ var _ = Describe("kubebuilder", func() {
 			Expect(pluginutil.ReplaceInFile(valuesPath,
 				"port: 8443", fmt.Sprintf("port: %d", customMetricsPort))).To(Succeed())
 			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"port: 8081", fmt.Sprintf("port: %d", customHealthProbePort))).To(Succeed())
+				`healthProbeBindAddress: ":8081"`,
+				fmt.Sprintf(`healthProbeBindAddress: ":%d"`, customHealthProbePort))).To(Succeed())
 			Expect(pluginutil.ReplaceInFile(valuesPath,
 				"port: 9443", fmt.Sprintf("port: %d", customWebhookPort))).To(Succeed())
 			Expect(pluginutil.ReplaceInFile(valuesPath,
