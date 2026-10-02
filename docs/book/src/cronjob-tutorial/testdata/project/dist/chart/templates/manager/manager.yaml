@@ -83,7 +83,9 @@ spec:
         # Bind to :0 to disable the controller-runtime managed metrics server
         - --metrics-bind-address=0
         {{- end }}
-        - --health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}
+        {{- with .Values.manager.healthProbeBindAddress }}
+        - --health-probe-bind-address={{ . }}
+        {{- end }}
         {{- if .Values.webhook.enabled }}
         - --webhook-port={{ .Values.webhook.port }}
         {{- else }}
@@ -108,12 +110,12 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: {{ .Values.manager.healthProbe.port }}
+            port: health
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
         ports:
-        - containerPort: {{ .Values.manager.healthProbe.port }}
+        - containerPort: {{ .Values.manager.healthProbeBindAddress | default ":8081" | splitList ":" | last | int }}
           name: health
           protocol: TCP
         {{- if .Values.webhook.enabled }}
@@ -124,7 +126,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /readyz
-            port: {{ .Values.manager.healthProbe.port }}
+            port: health
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
