@@ -890,6 +890,109 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("Health probe bind address (rendered)", func() {
+		// managerDeploymentDoc returns the manager Deployment document from a multi-document render.
+		managerDeploymentDoc := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: Deployment\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		// healthProbeArgs returns every --health-probe-bind-address arg in the rendered Deployment.
+		healthProbeArgs := func(deployment string) []string {
+			var args []string
+			for _, line := range strings.Split(deployment, "\n") {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "- --health-probe-bind-address") {
+					args = append(args, strings.TrimPrefix(trimmed, "- "))
+				}
+			}
+			return args
+		}
+
+		// healthContainerPorts returns the containerPort of every port named "health".
+		healthContainerPorts := func(deployment string) []string {
+			var ports []string
+			lines := strings.Split(deployment, "\n")
+			for i, line := range lines {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "- containerPort:") && i+1 < len(lines) &&
+					strings.TrimSpace(lines[i+1]) == "name: health" {
+					ports = append(ports, strings.TrimSpace(strings.TrimPrefix(trimmed, "- containerPort:")))
+				}
+			}
+			return ports
+		}
+
+		render := func(healthProbeArg, port string, setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithHealthProbe("test-project", healthProbeArg, port), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			deployment := managerDeploymentDoc(out)
+			Expect(deployment).NotTo(BeEmpty(), "rendered output has no Deployment: %s", out)
+			return deployment
+		}
+
+		// The probes of the fixture target the health probe server, so they are rendered exactly
+		// when it is on, on the named "health" port.
+		expectServer := func(deployment, wantArg, wantPort string) {
+			if wantArg == "" {
+				Expect(healthProbeArgs(deployment)).To(BeEmpty())
+			} else {
+				Expect(healthProbeArgs(deployment)).To(ConsistOf("--health-probe-bind-address=" + wantArg))
+			}
+			if wantPort == "" {
+				Expect(healthContainerPorts(deployment)).To(BeEmpty())
+				Expect(deployment).NotTo(ContainSubstring("livenessProbe:"))
+				Expect(deployment).NotTo(ContainSubstring("readinessProbe:"))
+				return
+			}
+			Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
+			Expect(deployment).To(ContainSubstring("path: /healthz\n            port: health"))
+			Expect(deployment).To(ContainSubstring("path: /readyz\n            port: health"))
+		}
+
+		DescribeTable("follows the project's --health-probe-bind-address with the default values",
+			func(healthProbeArg, port, wantArg, wantPort string) {
+				expectServer(render(healthProbeArg, port), wantArg, wantPort)
+			},
+			Entry("no flag: no flag, the manager's default port", "", "8081", "", "8081"),
+			Entry("port only", ":8081", "8081", ":8081", "8081"),
+			Entry("all interfaces", "0.0.0.0:8081", "8081", "0.0.0.0:8081", "8081"),
+			Entry("localhost and a custom port", "localhost:9440", "9440", "localhost:9440", "9440"),
+			Entry("IPv4 address", "127.0.0.1:9440", "9440", "127.0.0.1:9440", "9440"),
+			Entry("IPv6 address", "[::1]:9091", "9091", "[::1]:9091", "9091"),
+			Entry("custom port", ":8082", "8082", ":8082", "8082"),
+			Entry("turned off: no port and no probes", "0", "8081", "0", ""),
+		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when it is set",
+			func(healthProbeArg string, setArgs []string, wantArg, wantPort string) {
+				expectServer(render(healthProbeArg, "8081", setArgs...), wantArg, wantPort)
+			},
+			Entry("a custom port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=:9000"}, ":9000", "9000"),
+			Entry("a host and a custom port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=localhost:9441"}, "localhost:9441", "9441"),
+			Entry("an IPv6 address", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=[::1]:9091"}, "[::1]:9091", "9091"),
+			Entry("an address for a manager without the flag", "",
+				[]string{"--set", "manager.healthProbeBindAddress=:9000"}, ":9000", "9000"),
+			Entry("empty: no flag, the manager's default port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress="}, "", "8081"),
+			Entry("removed, as in a values.yaml from before the value existed", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=null"}, "", "8081"),
+			Entry("\"0\" as a string: turned off", ":8081",
+				[]string{"--set-string", "manager.healthProbeBindAddress=0"}, "0", ""),
+			Entry("0 as a number: turned off", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+			Entry("an address for a manager that turns the server off", "0",
+				[]string{"--set", "manager.healthProbeBindAddress=:8081"}, ":8081", "8081"),
+		)
+	})
+
 	Context("NetworkPolicy conversion from kustomize (rendered)", func() {
 		networkPolicyDoc := func(rendered, suffix string) string {
 			for _, doc := range strings.Split(rendered, "\n---") {
@@ -1753,6 +1856,33 @@ spec:
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+`
+}
+
+// createKustomizeWithHealthProbe returns a project whose manager serves its health probes on
+// port, with the given --health-probe-bind-address value, or without the flag when it is "".
+func createKustomizeWithHealthProbe(projectName, healthProbeArg, port string) string {
+	args := "        - --leader-elect\n"
+	if healthProbeArg != "" {
+		args += "        - --health-probe-bind-address=" + healthProbeArg + "\n"
+	}
+	return createBasicKustomizeOutput(projectName) + `        args:
+` + args + `        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: ` + port + `
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        ports:
+        - containerPort: ` + port + `
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: ` + port + `
+          initialDelaySeconds: 5
+          periodSeconds: 10
 `
 }
 

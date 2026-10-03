@@ -623,7 +623,7 @@ func templateControllerManagerArgs(yamlContent string) string {
 	var (
 		metricsLine    string
 		metricsIndent  string
-		healthLine     string
+		healthIndent   string
 		webhookLine    string
 		preservedLines []string
 	)
@@ -648,7 +648,10 @@ func templateControllerManagerArgs(yamlContent string) string {
 				metricsIndent = line[:idx]
 			}
 		case strings.Contains(trimmed, "--health-probe-bind-address"):
-			healthLine = line
+			// The chart renders this arg from .Values.manager.healthProbeBindAddress.
+			if idx := strings.Index(line, "-"); idx > 0 {
+				healthIndent = line[:idx]
+			}
 		case strings.Contains(trimmed, "--webhook-port"):
 			webhookLine = line
 		case strings.Contains(trimmed, "--webhook-cert-path"),
@@ -686,10 +689,19 @@ func templateControllerManagerArgs(yamlContent string) string {
 		builder.WriteString(metricsIndent)
 		builder.WriteString("{{- end }}\n")
 	}
-	if healthLine != "" {
-		builder.WriteString(healthLine)
-		builder.WriteString("\n")
+	// Always offered, so the address can be set from values.yaml. When the value is
+	// empty the chart passes no flag and the manager keeps its own default. "0" turns the
+	// server off; toString also matches the number 0 that `--set ...=0` produces.
+	if healthIndent == "" {
+		healthIndent = itemIndent
 	}
+	builder.WriteString(healthIndent)
+	builder.WriteString("{{- if or .Values.manager.healthProbeBindAddress " +
+		"(eq (toString .Values.manager.healthProbeBindAddress) \"0\") }}\n")
+	builder.WriteString(healthIndent)
+	builder.WriteString("- --health-probe-bind-address={{ .Values.manager.healthProbeBindAddress }}\n")
+	builder.WriteString(healthIndent)
+	builder.WriteString("{{- end }}\n")
 	if webhookLine != "" {
 		builder.WriteString(itemIndent)
 		builder.WriteString("{{- if .Values.webhook.enabled }}\n")
