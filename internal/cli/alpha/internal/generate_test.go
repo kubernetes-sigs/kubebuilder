@@ -346,8 +346,13 @@ var _ = Describe("generate: file-helpers", func() {
 
 var _ = Describe("generate: get-args-helpers", func() {
 	const (
-		fooDomain = "foo.com"
-		barRepo   = "bar"
+		fooDomain      = "foo.com"
+		barRepo        = "bar"
+		crewGroup      = "crew"
+		captainKind    = "Captain"
+		captainCtrl    = "captain"
+		captainBackup  = "captain-backup"
+		certManagerMod = "github.com/cert-manager/cert-manager@v1.18.2"
 	)
 
 	// getInitArgs
@@ -516,6 +521,86 @@ var _ = Describe("generate: get-args-helpers", func() {
 		})
 	})
 
+	// getControllerFlags
+	Context("getControllerFlags", func() {
+		var res resource.Resource
+		BeforeEach(func() {
+			res = resource.Resource{
+				GVK: resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+			}
+		})
+
+		It("replays a named controller with its name", func() {
+			Expect(getControllerFlags(res, captainBackup)).To(ContainElements(
+				"--resource=false", "--controller=true", "--controller-name", captainBackup))
+		})
+
+		It("replays an external resource with its API flags", func() {
+			res.External = true
+			res.Path = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+			res.Domain = "io"
+			res.Module = certManagerMod
+
+			Expect(getControllerFlags(res, "certificate")).To(ContainElements(
+				"--controller-name", "certificate",
+				"--external-api-path", res.Path,
+				"--external-api-domain", "io",
+				"--external-api-module", res.Module))
+		})
+	})
+
+	// createControllers runs one `create api` per name reported by GetControllerNames,
+	// so the commands it issues are what re-scaffolds a project.
+	Context("createControllers", func() {
+		var issued [][]string
+
+		replay := func(res resource.Resource) {
+			names := res.GetControllerNames()
+			issued = make([][]string, 0, len(names))
+			for _, name := range names {
+				issued = append(issued, getControllerFlags(res, name))
+			}
+		}
+
+		It("replays a legacy controller under its default kind-based name", func() {
+			replay(resource.Resource{
+				GVK:        resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+				Controller: true,
+			})
+
+			Expect(issued).To(HaveLen(1))
+			Expect(issued[0]).To(ContainElements("--controller-name", captainCtrl))
+		})
+
+		It("replays one command per named controller", func() {
+			replay(resource.Resource{
+				GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+				Controllers: &resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}},
+			})
+
+			Expect(issued).To(HaveLen(2))
+			Expect(issued[0]).To(ContainElements("--controller-name", captainCtrl))
+			Expect(issued[1]).To(ContainElements("--controller-name", captainBackup))
+		})
+
+		It("replays a hand-edited resource carrying both fields without dropping one", func() {
+			replay(resource.Resource{
+				GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+				Controller:  true,
+				Controllers: &resource.Controllers{{Name: captainBackup}},
+			})
+
+			Expect(issued).To(HaveLen(2), "the legacy controller must be replayed too")
+			Expect(issued[1]).To(ContainElements("--controller-name", captainCtrl))
+		})
+
+		It("issues nothing for a resource without a controller", func() {
+			replay(resource.Resource{GVK: resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind}})
+
+			Expect(issued).To(BeEmpty())
+		})
+	})
+
 	// getAPIResourceFlags
 	Context("getAPIResourceFlags", func() {
 		var res resource.Resource
@@ -525,7 +610,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 
 		Context("returns correct flags", func() {
 			It("for nil API with Controller set", func() {
-				res.Controller = true
+				res.Controller = true //nolint:staticcheck // exercising the deprecated field is the point
 				// Controllers are now created separately, so always --controller=false in API step
 				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller=false"))
 			})

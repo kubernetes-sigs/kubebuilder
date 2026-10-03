@@ -28,7 +28,7 @@ import (
 type Controller struct {
 	// Name is the controller identifier, unique within a resource.
 	// Must be a valid DNS label (lowercase, alphanumeric, hyphens, max 63 chars).
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }
 
 // Validate checks that the Controller is valid.
@@ -54,49 +54,32 @@ func (c *Controllers) IsEmpty() bool {
 }
 
 // Validate checks that all controllers are valid and have unique names.
-// It also detects name collisions that would occur after normalization,
-// such as "captain-backup" and "captainbackup" both becoming "CaptainBackupReconciler".
+// Names generating the same reconciler struct are rejected by Resource.Validate,
+// which knows the kind those names are resolved against.
 func (c *Controllers) Validate() error {
 	if c.IsEmpty() {
 		return nil
 	}
 
 	names := make(map[string]bool)
-	normalizedNames := make(map[string]string) // Maps normalized name to original name
 
 	for _, controller := range *c {
 		if err := controller.Validate(); err != nil {
 			return err
 		}
 
-		// Check for exact duplicate names
 		if names[controller.Name] {
 			return fmt.Errorf("duplicate controller name %q", controller.Name)
 		}
 		names[controller.Name] = true
-
-		// Check for normalization collisions where different names would generate the same struct
-		normalized := normalizeControllerName(controller.Name)
-		if existingName, exists := normalizedNames[normalized]; exists {
-			return fmt.Errorf("controller name %q conflicts with %q: both normalize to %q",
-				controller.Name, existingName, normalized+"Reconciler")
-		}
-		normalizedNames[normalized] = controller.Name
 	}
 
 	return nil
 }
 
-// normalizeControllerName removes non-alphanumeric characters and converts to lowercase
-// for collision detection. This helps identify names that would generate the same struct.
-func normalizeControllerName(name string) string {
-	var result strings.Builder
-	for _, r := range name {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-			result.WriteRune(r)
-		}
-	}
-	return strings.ToLower(result.String())
+// DefaultControllerName returns the controller name used when none is given.
+func DefaultControllerName(kind string) string {
+	return strings.ToLower(kind)
 }
 
 // NormalizeFileName converts a controller name to a valid Go filename.
@@ -121,10 +104,12 @@ func NormalizeReconcilerName(controllerName, kind string) string {
 	var result strings.Builder
 	for _, part := range parts {
 		if len(part) > 0 {
-			result.WriteString(strings.ToUpper(part[:1]) + part[1:])
+			result.WriteString(strings.ToUpper(part[:1]))
+			result.WriteString(part[1:])
 		}
 	}
-	return result.String() + "Reconciler"
+	result.WriteString("Reconciler")
+	return result.String()
 }
 
 // GetControllerName returns the runtime name used in Named() and error logs.
