@@ -690,14 +690,16 @@ func templateControllerManagerArgs(yamlContent string) string {
 		builder.WriteString("{{- end }}\n")
 	}
 	// Always offered, so the address can be set from values.yaml. When the value is
-	// empty the chart passes no flag and the manager keeps its own default.
+	// empty the chart passes no flag and the manager keeps its own default. "0" turns the
+	// server off; toString also matches the number 0 that `--set ...=0` produces.
 	if healthIndent == "" {
 		healthIndent = itemIndent
 	}
 	builder.WriteString(healthIndent)
-	builder.WriteString("{{- with .Values.manager.healthProbeBindAddress }}\n")
+	builder.WriteString("{{- if or .Values.manager.healthProbeBindAddress " +
+		"(eq (toString .Values.manager.healthProbeBindAddress) \"0\") }}\n")
 	builder.WriteString(healthIndent)
-	builder.WriteString("- --health-probe-bind-address={{ . }}\n")
+	builder.WriteString("- --health-probe-bind-address={{ .Values.manager.healthProbeBindAddress }}\n")
 	builder.WriteString(healthIndent)
 	builder.WriteString("{{- end }}\n")
 	if webhookLine != "" {

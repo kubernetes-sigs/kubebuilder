@@ -289,6 +289,19 @@ helm install my-operator ./dist/chart --set manager.healthProbeBindAddress=:8082
 
 The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag, the manager keeps its own default, and the container port and probes use `8081`.
 
+To turn the health probe server off, set the value to `0`. The chart then passes `--health-probe-bind-address=0` and renders neither the `health` container port nor the liveness and readiness probes, since nothing would answer them. Without probes, Kubernetes no longer restarts a manager that stops responding, and it sends traffic to the Pod before the manager is ready.
+
+```bash
+helm install my-operator ./dist/chart --set manager.healthProbeBindAddress=0
+```
+
+<aside class="note" role="note">
+<p class="note-title">Charts generated before `manager.healthProbeBindAddress`</p>
+
+Earlier versions of the plugin exposed only the port, as `manager.healthProbe.port`. Regenerating the chart without `--force` keeps your `values.yaml`, so that key stays but the new templates no longer read it, and the manager uses port `8081`. Move a custom port to `manager.healthProbeBindAddress`, for example `":8082"`, or regenerate with `--force`.
+
+</aside>
+
 ### Passing args for the manager
 
 Use `manager.args` in `values.yaml` to pass extra flags to the manager container that the chart does not expose as dedicated values. The chart renders each entry through Helm's `tpl` function, evaluated against the chart's root context, so an arg can reference other values, release information, or chart template functions instead of only a static string.

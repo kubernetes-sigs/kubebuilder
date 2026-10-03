@@ -267,8 +267,8 @@ func extractWebhookPortFromDeployment(deployment *unstructured.Unstructured) int
 
 // extractHealthProbeBindAddressFromDeployment returns the address from the manager
 // container's --health-probe-bind-address argument, for example ":8081" or
-// "localhost:9440". It returns "" when the manager does not set the argument or its
-// address has no valid port.
+// "localhost:9440", or "0" when the manager turns its health probe server off. It returns
+// "" when the manager does not set the argument or its address has no valid port.
 func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstructured) string {
 	specMap := extractDeploymentSpec(deployment)
 	if specMap == nil {
@@ -295,8 +295,9 @@ func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstru
 		if !ok || !strings.HasPrefix(strArg, flagPrefix) {
 			continue
 		}
-		if ExtractPortFromArg(strArg) > 0 {
-			return strings.TrimPrefix(strArg, flagPrefix)
+		address := strings.TrimPrefix(strArg, flagPrefix)
+		if address == "0" || ExtractPortFromArg(strArg) > 0 {
+			return address
 		}
 	}
 
