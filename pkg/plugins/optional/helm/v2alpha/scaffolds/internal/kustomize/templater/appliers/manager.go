@@ -713,14 +713,16 @@ func renderManagerArguments(arguments managerArguments) []string {
 	}
 
 	// Always offered, so the address can be set from values.yaml. When the value is
-	// empty the chart passes no flag and the manager keeps its own default.
+	// empty the chart passes no flag and the manager keeps its own default. "0" turns the
+	// server off; toString also matches the number 0 that `--set ...=0` produces.
 	healthIndent := arguments.healthProbeBindIndent
 	if healthIndent == "" {
 		healthIndent = arguments.itemIndent
 	}
 	rendered = append(rendered,
-		healthIndent+"{{- with .Values.manager.healthProbeBindAddress }}",
-		healthIndent+"- --health-probe-bind-address={{ . }}",
+		healthIndent+"{{- if or .Values.manager.healthProbeBindAddress "+
+			"(eq (toString .Values.manager.healthProbeBindAddress) \"0\") }}",
+		healthIndent+"- --health-probe-bind-address={{ .Values.manager.healthProbeBindAddress }}",
 		healthIndent+"{{- end }}",
 	)
 

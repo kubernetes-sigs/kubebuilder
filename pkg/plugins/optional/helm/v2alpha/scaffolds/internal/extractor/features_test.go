@@ -95,8 +95,26 @@ var _ = Describe("FeaturesExtractor", func() {
 			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})
 
-		It("should be empty when probes are disabled with bind address 0", func() {
+		It("should keep 0, which turns the health probe server off", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=0"))
+
+			Expect(features.HealthProbeBindAddress).To(Equal("0"))
+		})
+
+		It("should keep the all-interfaces host", func() {
+			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=0.0.0.0:8081"))
+
+			Expect(features.HealthProbeBindAddress).To(Equal("0.0.0.0:8081"))
+		})
+
+		It("should keep an IPv4 host", func() {
+			features := detect(deploymentWithManagerArgs("--health-probe-bind-address=127.0.0.1:9440"))
+
+			Expect(features.HealthProbeBindAddress).To(Equal("127.0.0.1:9440"))
+		})
+
+		It("should be empty when the address is empty", func() {
+			features := detect(deploymentWithManagerArgs("--health-probe-bind-address="))
 
 			Expect(features.HealthProbeBindAddress).To(BeEmpty())
 		})

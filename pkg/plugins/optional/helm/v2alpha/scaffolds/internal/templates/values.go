@@ -598,16 +598,15 @@ metrics:
 
 // addHealthProbeSection adds the manager's health probe bind address under the manager
 // section. It mirrors the --health-probe-bind-address flag of the project's manager and
-// is empty when the manager does not set that flag.
+// is empty when the manager does not set that flag. "0" turns the server off.
 func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
 	address := ":8081"
 	if f.Extraction != nil {
 		address = f.Extraction.Features.HealthProbeBindAddress
 	}
 
-	buf.WriteString(`  ## Address the manager's health probe server binds to (--health-probe-bind-address).
-  ## The "health" container port and the liveness (/healthz) and readiness (/readyz) probes use its port.
-  ## Empty: the chart passes no flag and the manager keeps its own default, :8081.
+	buf.WriteString(`  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
+  ## Empty: no flag, the manager's default :8081. "0": turns the server, the "health" port and probes off.
   ##
 `)
 	fmt.Fprintf(buf, "  healthProbeBindAddress: %q\n\n", address)

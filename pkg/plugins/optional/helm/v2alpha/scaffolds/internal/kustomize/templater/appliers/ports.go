@@ -161,28 +161,96 @@ func templateNetworkPolicyIngressPort(yamlContent, portTemplate string) string {
 // manager's default 8081 when the value is empty. It works for ":PORT", "HOST:PORT"
 // and "[::1]:PORT".
 const healthProbePortTemplate = `{{ .Values.manager.healthProbeBindAddress | default ":8081"` +
-	` | splitList ":" | last | int }}`
+	` | toString | splitList ":" | last | int }}`
+
+// healthProbeEnabledCondition is false when .Values.manager.healthProbeBindAddress is "0",
+// the address that turns the manager's health probe server off. toString also matches
+// `--set manager.healthProbeBindAddress=0`, which Helm reads as the number 0.
+const healthProbeEnabledCondition = `{{- if ne (toString .Values.manager.healthProbeBindAddress) "0" }}`
 
 // templateHealthProbePort derives the manager's health probe ports from
 // .Values.manager.healthProbeBindAddress, so they follow the address the manager binds to.
 // The --health-probe-bind-address arg itself is rendered by templateControllerManagerArgs.
 // The "health" containerPort takes the port of the address, and the liveness and readiness
 // httpGet probes point at that named port, or at the same port when the container does
-// not declare it.
+// not declare it. The port and the probes are rendered only while the server is on.
+// Only the manager container is changed, so a sidecar keeps its own ports and probes.
 func templateHealthProbePort(yamlContent string) string {
+	start, end := FindManagerContainerRange(yamlContent)
+	if start < 0 {
+		return yamlContent
+	}
+	lines := strings.Split(yamlContent, "\n")
+	manager := strings.Join(lines[start:end+1], "\n")
+
 	// containerPort for the port named "health"
 	healthContainerPort := regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*health\b)`)
-	hasHealthPort := healthContainerPort.MatchString(yamlContent)
-	yamlContent = healthContainerPort.
-		ReplaceAllString(yamlContent, "${1}containerPort: "+healthProbePortTemplate+"${2}")
+	hasHealthPort := healthContainerPort.MatchString(manager)
+	manager = healthContainerPort.
+		ReplaceAllString(manager, "${1}containerPort: "+healthProbePortTemplate+"${2}")
 
 	// liveness (/healthz) and readiness (/readyz) httpGet ports
 	probePort := healthProbePortTemplate
 	if hasHealthPort {
 		probePort = "health"
 	}
-	yamlContent = regexp.MustCompile(`(path:\s*/(?:healthz|readyz)[ \t]*\n\s*port:\s*)\d+`).
-		ReplaceAllString(yamlContent, "${1}"+probePort)
+	manager = regexp.MustCompile(`(path:\s*/(?:healthz|readyz)[ \t]*\n\s*port:\s*)\d+`).
+		ReplaceAllString(manager, "${1}"+probePort)
 
-	return yamlContent
+	if !strings.Contains(manager, healthProbeEnabledCondition) {
+		manager = makeHealthContainerPortConditional(manager)
+		manager = makeHealthProbesConditional(manager, probePort)
+	}
+
+	result := make([]string, 0, len(lines))
+	result = append(result, lines[:start]...)
+	result = append(result, strings.Split(manager, "\n")...)
+	result = append(result, lines[end+1:]...)
+	return strings.Join(result, "\n")
+}
+
+// makeHealthContainerPortConditional renders the "health" container port only while the
+// health probe server is on.
+func makeHealthContainerPortConditional(yamlContent string) string {
+	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- containerPort: ` + regexp.QuoteMeta(healthProbePortTemplate) +
+		`\n[ \t]+name: health(?:\n[ \t]+protocol: \w+)?$`)
+	return portPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
+		indent, _ := LeadingWhitespace(match)
+		return fmt.Sprintf("%s%s\n%s\n%s{{- end }}", indent, healthProbeEnabledCondition, match, indent)
+	})
+}
+
+// makeHealthProbesConditional renders the liveness, readiness and startup probes that
+// target the health probe server only while that server is on. A probe block spans the
+// lines indented deeper than its key.
+func makeHealthProbesConditional(yamlContent, probePort string) string {
+	lines := strings.Split(yamlContent, "\n")
+	result := make([]string, 0, len(lines)+6)
+	for i := 0; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed != "livenessProbe:" && trimmed != "readinessProbe:" && trimmed != "startupProbe:" {
+			result = append(result, lines[i])
+			continue
+		}
+		indent, indentLen := LeadingWhitespace(lines[i])
+		end := i + 1
+		for end < len(lines) {
+			if t := strings.TrimSpace(lines[end]); t != "" {
+				if _, n := LeadingWhitespace(lines[end]); n <= indentLen {
+					break
+				}
+			}
+			end++
+		}
+		block := lines[i:end]
+		if !strings.Contains(strings.Join(block, "\n"), "port: "+probePort) {
+			result = append(result, block...)
+		} else {
+			result = append(result, indent+healthProbeEnabledCondition)
+			result = append(result, block...)
+			result = append(result, indent+"{{- end }}")
+		}
+		i = end - 1
+	}
+	return strings.Join(result, "\n")
 }
