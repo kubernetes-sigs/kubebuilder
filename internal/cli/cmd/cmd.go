@@ -34,7 +34,6 @@ import (
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
-	helmv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha" //nolint:staticcheck // Deprecated
 	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
@@ -75,7 +74,6 @@ func Run() {
 			&kustomizecommonv2.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha.Plugin{},
-			&helmv1alpha.Plugin{},
 			&helmv2alpha.Plugin{},
 			&autoupdatev1alpha.Plugin{},
 		),

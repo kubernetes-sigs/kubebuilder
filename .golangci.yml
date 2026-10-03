@@ -46,8 +46,6 @@ linters:
     importas:
       no-unaliased: true
       alias:
-        - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha
-          alias: helmv1alpha
         - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha
           alias: helmv2alpha
         - pkg: sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha
