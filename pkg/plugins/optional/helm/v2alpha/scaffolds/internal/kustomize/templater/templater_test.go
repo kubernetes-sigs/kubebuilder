@@ -212,9 +212,7 @@ spec:
 			Expect(result).To(ContainSubstring("{{- if not .Values.metrics.secure }}"))
 			Expect(result).To(ContainSubstring("- --metrics-secure=false"))
 			Expect(result).To(ContainSubstring("- --metrics-bind-address=0"))
-			Expect(result).To(ContainSubstring(`        {{- with .Values.manager.healthProbeBindAddress }}
-        - --health-probe-bind-address={{ . }}
-        {{- end }}`))
+			Expect(result).To(ContainSubstring(healthProbeArgBlock))
 			Expect(result).NotTo(ContainSubstring("--health-probe-bind-address=:8081"))
 			Expect(result).To(ContainSubstring(`{{- if .Values.webhook.enabled }}
         - --webhook-port={{ .Values.webhook.port }}

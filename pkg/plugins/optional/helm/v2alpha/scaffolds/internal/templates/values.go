@@ -605,7 +605,8 @@ func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
 		address = f.Extraction.Features.HealthProbeBindAddress
 	}
 
-	buf.WriteString(`  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
+	buf.WriteString(
+		`  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
   ## Empty: no flag, the manager's default :8081. "0": turns the server, the "health" port and probes off.
   ##
 `)
