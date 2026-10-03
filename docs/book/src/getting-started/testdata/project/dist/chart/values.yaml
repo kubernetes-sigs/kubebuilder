@@ -27,9 +27,8 @@ manager:
   args:
     - --leader-elect
 
-  ## Address the manager's health probe server binds to (--health-probe-bind-address).
-  ## The "health" container port and the liveness (/healthz) and readiness (/readyz) probes use its port.
-  ## Empty: the chart passes no flag and the manager keeps its own default, :8081.
+  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
+  ## Empty: no flag, the manager's default :8081. "0": turns the server, the "health" port and probes off.
   ##
   healthProbeBindAddress: ":8081"
 
