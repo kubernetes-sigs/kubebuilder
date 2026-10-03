@@ -182,6 +182,52 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).To(HaveOccurred(), "webhook Service must not exist when webhook.enabled=false")
 		})
 
+		It("should not run the health probe server when installed with manager.healthProbeBindAddress=0", func() {
+			By("generating a project without webhooks")
+			helpers.GenerateV4WithoutWebhooks(kbc)
+
+			By("building installer and generating helm chart")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+			Expect(kbc.EditHelmPlugin()).To(Succeed())
+
+			// An unquoted 0 is a YAML number, the same value `--set manager.healthProbeBindAddress=0` gives.
+			By("turning the health probe server off in values.yaml")
+			valuesPath := filepath.Join(kbc.Dir, "dist", "chart", "values.yaml")
+			Expect(pluginutil.ReplaceInFile(valuesPath,
+				`healthProbeBindAddress: ":8081"`, "healthProbeBindAddress: 0")).To(Succeed())
+
+			By("deploying without the health probe server and validating the manager reconciles the sample CR")
+			helpers.Run(kbc, helpers.RunOptions{
+				HasWebhook:          false,
+				HasMetrics:          true,
+				HasNetworkPolicies:  false,
+				InstallMethod:       helpers.InstallMethodHelm,
+				SkipChartGeneration: true, // Chart already generated and customized above
+			})
+
+			By("verifying the chart tells the manager to turn the health probe server off")
+			controllerPodName := helpers.GetControllerPodName(kbc)
+			args, err := kbc.Kubectl.Get(true,
+				"pod", controllerPodName, "-o", "jsonpath={.spec.containers[0].args}")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(args).To(ContainSubstring("--health-probe-bind-address=0"))
+
+			By("verifying the container declares neither the health port nor the probes")
+			portNames, err := kbc.Kubectl.Get(true,
+				"pod", controllerPodName, "-o", "jsonpath={.spec.containers[0].ports[*].name}")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(portNames).NotTo(ContainSubstring("health"))
+			probes, err := kbc.Kubectl.Get(true, "pod", controllerPodName, "-o",
+				"jsonpath={.spec.containers[0].livenessProbe}{.spec.containers[0].readinessProbe}")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(probes)).To(BeEmpty())
+
+			By("verifying the manager did not start the health probe server")
+			logs, err := kbc.Kubectl.Logs(controllerPodName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logs).NotTo(ContainSubstring("health probe"))
+		})
+
 		It("should generate a namespeced runnable project using webhooks and installed with the HelmChart", func() {
 			helpers.GenerateV4Namespaced(kbc)
 

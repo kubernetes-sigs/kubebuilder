@@ -197,6 +197,11 @@ var _ = Describe("kubebuilder", func() {
 			Expect(ports).To(ContainSubstring(strconv.Itoa(customHealthProbePort)))
 			Expect(ports).To(ContainSubstring(strconv.Itoa(customWebhookPort)))
 
+			By("verifying the manager started its health probe server")
+			logs, err := kbc.Kubectl.Logs(controllerPodName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logs).To(ContainSubstring("health probe"))
+
 			By("verifying the metrics Service exposes the custom port")
 			namePrefix := fmt.Sprintf("e2e-%s", kbc.TestSuffix)
 			Expect(helpers.GetMetricsServicePort(namePrefix, kbc)).To(Equal(customMetricsPort))
