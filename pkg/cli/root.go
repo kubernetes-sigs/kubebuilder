@@ -65,6 +65,28 @@ func isCompletionRequest(cmd *cobra.Command) bool {
 	return cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd
 }
 
+// commandGroups are the subcommands that only hold other subcommands. They display their help, which
+// does not use the project configuration.
+var commandGroups = []string{createCommand, alphaCommand}
+
+// isCommandGroup reports whether cmd is one of the commandGroups.
+func isCommandGroup(cmd *cobra.Command) bool {
+	path := subcommandPath(cmd)
+
+	return len(path) == 1 && slices.Contains(commandGroups, path[0])
+}
+
+// runCommandGroup displays the help of a command that only holds other subcommands. Cobra runs no
+// hook for a command that cannot run and displays its help instead, so a malformed command line
+// would be ignored.
+func runCommandGroup(cmd *cobra.Command, _ []string) error {
+	if err := cmd.Help(); err != nil {
+		return fmt.Errorf("failed to display help: %w", err)
+	}
+
+	return nil
+}
+
 // subcommandPath returns the subcommand names leading from the root command to cmd.
 func subcommandPath(cmd *cobra.Command) []string {
 	var path []string
@@ -164,7 +186,7 @@ func (c *CLI) checkCommandLine(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Cobra resolved the command, so it is now known whether it consumes the configuration.
-	if isSubcommandPathWithoutConfig(subcommandPath(cmd)) {
+	if isSubcommandPathWithoutConfig(subcommandPath(cmd)) || isCommandGroup(cmd) {
 		return nil
 	}
 	if c.configErr != nil {

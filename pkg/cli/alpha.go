@@ -50,6 +50,7 @@ Alpha subcommands are for unstable features.
 - Alpha subcommands are exploratory and may be removed without warning.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
+		RunE: runCommandGroup,
 	}
 	cmd.AddCommand(newAlphaSubcommands()...)
 	return cmd
