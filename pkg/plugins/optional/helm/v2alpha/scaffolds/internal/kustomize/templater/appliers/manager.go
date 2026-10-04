@@ -598,16 +598,16 @@ func templateControllerManagerArgs(yamlContent string) string {
 	rangeStart, rangeEnd := FindManagerContainerRange(yamlContent)
 
 	argsPattern := regexp.MustCompile(`(?m)([ \t]+)args:\n((?:[ \t]+-.*\n)+)`)
-	loc := argsPattern.FindStringSubmatchIndex(yamlContent)
+	var loc []int
+	for _, candidate := range argsPattern.FindAllStringSubmatchIndex(yamlContent, -1) {
+		matchLine := strings.Count(yamlContent[:candidate[0]], "\n")
+		if rangeStart < 0 || (matchLine >= rangeStart && matchLine <= rangeEnd) {
+			loc = candidate
+			break
+		}
+	}
 	if loc == nil {
 		return yamlContent
-	}
-
-	if rangeStart >= 0 {
-		matchLine := strings.Count(yamlContent[:loc[0]], "\n")
-		if matchLine < rangeStart || matchLine > rangeEnd {
-			return yamlContent
-		}
 	}
 
 	match := yamlContent[loc[0]:loc[1]]

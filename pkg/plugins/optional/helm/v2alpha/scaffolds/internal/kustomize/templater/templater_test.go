@@ -2853,6 +2853,44 @@ spec:
 				Entry("turned off", "        - --health-probe-bind-address=0\n", "address=0"),
 				Entry("when the project's manager does not set the flag", "", ""),
 			)
+
+			It("should render the manager's flag when a sidecar with its own args comes first", func() {
+				_, deployment := managerDeployment("")
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:9090
+        image: sidecar:latest
+        name: sidecar
+      - args:
+        - --leader-elect
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:9440
+        - --webhook-port=9443
+        image: controller:latest
+        name: manager
+`
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				_, containers, found := strings.Cut(result, "      containers:\n")
+				Expect(found).To(BeTrue())
+				sidecar, manager, found := strings.Cut(containers, "        name: sidecar\n")
+				Expect(found).To(BeTrue())
+				Expect(sidecar).To(ContainSubstring("- --health-probe-bind-address=:9090\n        image: sidecar:latest"))
+				Expect(sidecar).NotTo(ContainSubstring("{{"))
+				Expect(manager).To(ContainSubstring(healthProbeArgBlock))
+				Expect(manager).NotTo(ContainSubstring("9440"))
+				Expect(manager).To(ContainSubstring("{{- if .Values.metrics.enabled }}"))
+				Expect(manager).To(ContainSubstring("{{- if .Values.webhook.enabled }}"))
+				Expect(manager).To(ContainSubstring("{{- range .Values.manager.args }}"))
+			})
 		})
 
 		It("should not template non-webhook/metrics resources", func() {

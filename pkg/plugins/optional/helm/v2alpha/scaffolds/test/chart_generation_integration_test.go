@@ -991,6 +991,27 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Entry("an address for a manager that turns the server off", "0",
 				[]string{"--set", "manager.healthProbeBindAddress=:8081"}, ":8081", "8081"),
 		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when a sidecar with its own args comes first",
+			func(setArgs []string, wantArg, wantPort string) {
+				const sidecarArg = "- --health-probe-bind-address=:9090\n"
+				kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", "localhost:9440", "9440"),
+					"      containers:\n      - name: manager\n",
+					"      containers:\n      - args:\n        "+sidecarArg+
+						"        image: sidecar:latest\n        name: sidecar\n      - name: manager\n", 1)
+				Expect(kustomize).To(ContainSubstring("name: sidecar"))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				Expect(deployment).To(ContainSubstring(sidecarArg + "        image: sidecar:latest"))
+				expectServer(strings.Replace(deployment, sidecarArg, "", 1), wantArg, wantPort)
+			},
+			Entry("the default value", nil, "localhost:9440", "9440"),
+			Entry("a host and a custom port",
+				[]string{"--set", "manager.healthProbeBindAddress=localhost:9441"}, "localhost:9441", "9441"),
+			Entry("0 as a number: turned off",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+		)
 	})
 
 	Context("NetworkPolicy conversion from kustomize (rendered)", func() {
