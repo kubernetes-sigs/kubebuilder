@@ -144,20 +144,28 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+	if !p.options.DoAPI {
 		// When scaffolding a controller without an API (--resource=false), copy essential
-		// fields from the existing resource in the PROJECT file, such as Path and Plural.
+		// fields from the existing resource in the PROJECT file, such as Domain, Path and Plural.
+		// Several recorded resources can share the Group/Version/Kind under different domains,
+		// so resolve the target the same way create webhook does instead of by the full GVK.
 		// Note: API, Controllers, and Webhooks are managed separately by UpdateResource.
-		if !p.options.DoAPI {
+		existingRes, err := findRecordedResource(p.config, res, p.options.ExternalAPIDomain, p.options.ExternalAPIPath)
+		if err != nil {
+			return err
+		}
+		if existingRes != nil {
+			p.resource.Domain = existingRes.Domain
 			p.resource.Path = existingRes.Path
 			p.resource.Plural = existingRes.Plural
 			p.resource.External = existingRes.External
 			p.resource.Core = existingRes.Core
 			p.resource.Module = existingRes.Module
-		} else if existingRes.API != nil && existingRes.API.SSA {
-			// SSA cannot be disabled, so keep the value tracked in the PROJECT file.
-			p.options.SSA = true
 		}
+	} else if existingRes, err := p.config.GetResource(res.GVK); err == nil &&
+		existingRes.API != nil && existingRes.API.SSA {
+		// SSA cannot be disabled, so keep the value tracked in the PROJECT file.
+		p.options.SSA = true
 	}
 
 	// Ensure that external API options cannot be used when creating an API in the project.

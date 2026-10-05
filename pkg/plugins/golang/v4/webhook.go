@@ -245,42 +245,8 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 
 // updateResourceFromConfig fills res with the configuration recorded for its
 // Group/Version/Kind in the PROJECT file: Domain, Path, Plural, External, Core and Module.
-//
-// The lookup matches on Group/Version/Kind rather than the full GVK so that a single query
-// surfaces every recorded entry for that G/V/K, since more than one can share it under different
-// domains: two external variants, or a core type and a project API that collide. When several
-// match, --external-api-domain selects the intended one; without it resolution falls to the
-// non-external (core/project) entry via selectNonExternal.
-//
-// selectNonExternal breaks a core-vs-project tie by preferring the candidate whose domain equals
-// res.Domain. This relies on resolveDomain (pkg/cli/cmd_helpers.go) leaving res.Domain as the
-// project domain when several records match; revisit that tie-break if resolveDomain changes.
 func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resource) error {
-	resources, err := p.config.GetResources()
-	if err != nil {
-		return fmt.Errorf("failed to load resources from project configuration: %w", err)
-	}
-
-	// Collect every recorded resource sharing this Group/Version/Kind.
-	var candidates []resource.Resource
-	for _, r := range resources {
-		if r.Group == res.Group && r.Version == res.Version && r.Kind == res.Kind {
-			candidates = append(candidates, r)
-		}
-	}
-
-	domain := p.options.ExternalAPIDomain
-	var selected *resource.Resource
-	switch {
-	case len(candidates) == 0:
-		return nil // nothing recorded for this GVK; keep res as built from the flags
-	case domain != "":
-		selected, err = selectByDomain(candidates, domain, p.options.ExternalAPIPath)
-	case len(candidates) == 1:
-		selected = &candidates[0] // recover the single record
-	default:
-		selected, err = selectNonExternal(candidates, res.Domain)
-	}
+	selected, err := findRecordedResource(p.config, res, p.options.ExternalAPIDomain, p.options.ExternalAPIPath)
 	if err != nil {
 		return err
 	}
@@ -296,6 +262,46 @@ func (p *createWebhookSubcommand) updateResourceFromConfig(res *resource.Resourc
 	res.Module = selected.Module
 
 	return nil
+}
+
+// findRecordedResource returns the resource recorded in the PROJECT file that res refers to, or nil
+// when nothing is recorded for its Group/Version/Kind or the flags describe a new resource. It is
+// shared by create api and create webhook so both resolve the target the same way.
+//
+// The lookup matches on Group/Version/Kind rather than the full GVK so that a single query
+// surfaces every recorded entry for that G/V/K, since more than one can share it under different
+// domains: two external variants, or a core type and a project API that collide. When several
+// match, --external-api-domain selects the intended one; without it resolution falls to the
+// non-external (core/project) entry via selectNonExternal.
+//
+// selectNonExternal breaks a core-vs-project tie by preferring the candidate whose domain equals
+// res.Domain. This relies on resolveDomain (pkg/cli/resource.go) leaving res.Domain as the
+// project domain when several records match; revisit that tie-break if resolveDomain changes.
+func findRecordedResource(c config.Config, res *resource.Resource, domain, externalPath string,
+) (*resource.Resource, error) {
+	resources, err := c.GetResources()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load resources from project configuration: %w", err)
+	}
+
+	// Collect every recorded resource sharing this Group/Version/Kind.
+	var candidates []resource.Resource
+	for _, r := range resources {
+		if r.Group == res.Group && r.Version == res.Version && r.Kind == res.Kind {
+			candidates = append(candidates, r)
+		}
+	}
+
+	switch {
+	case len(candidates) == 0:
+		return nil, nil // nothing recorded for this GVK; keep res as built from the flags
+	case domain != "":
+		return selectByDomain(candidates, domain, externalPath)
+	case len(candidates) == 1:
+		return &candidates[0], nil // recover the single record
+	default:
+		return selectNonExternal(candidates, res.Domain)
+	}
 }
 
 // selectByDomain resolves the candidate carrying the given --external-api-domain, for any number
