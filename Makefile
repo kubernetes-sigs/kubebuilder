@@ -153,6 +153,12 @@ apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared
 go-apidiff:
 	$(call go-install-tool,$(GO_APIDIFF),github.com/joelanford/go-apidiff,$(GO_APIDIFF_VERSION))
 
+GOVULNCHECK_VERSION ?= v1.3.0
+
+.PHONY: govulncheck
+govulncheck: ## Run govulncheck (https://go.dev/doc/security/vuln/) against the module.
+	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+
 ##@ Tests
 
 .PHONY: test

@@ -1,0 +1,36 @@
+name: Govulncheck
+
+on:
+  pull_request:
+    branches:
+      - master
+      - 'release-*'
+  schedule:
+    # Daily 08:00 UTC — catches new CVEs in the DB when no PRs run the check.
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  govulncheck:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # Use the Makefile target (GOVULNCHECK_VERSION) instead of golang/govulncheck-action, which
+      # installs govulncheck@latest and can disagree with local `make govulncheck`.
+      - name: Run govulncheck
+        run: make govulncheck
