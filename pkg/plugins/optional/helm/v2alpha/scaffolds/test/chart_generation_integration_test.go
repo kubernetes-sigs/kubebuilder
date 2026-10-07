@@ -1012,6 +1012,27 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Entry("0 as a number: turned off",
 				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
 		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when the health port also sets hostPort",
+			func(setArgs []string, wantArg, wantPort string) {
+				const hostPort = "          hostPort: 18081\n"
+				kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", ":8081", "8081"),
+					"- containerPort: 8081\n", "- containerPort: 8081\n"+hostPort, 1)
+				Expect(kustomize).To(ContainSubstring(hostPort + "          name: health"))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				if wantPort != "" {
+					Expect(deployment).To(ContainSubstring(hostPort + "          name: health"))
+				}
+				expectServer(strings.Replace(deployment, hostPort, "", 1), wantArg, wantPort)
+			},
+			Entry("the default value", nil, ":8081", "8081"),
+			Entry("a custom port",
+				[]string{"--set", "manager.healthProbeBindAddress=:9001"}, ":9001", "9001"),
+			Entry("0 as a number: turned off",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+		)
 	})
 
 	Context("NetworkPolicy conversion from kustomize (rendered)", func() {

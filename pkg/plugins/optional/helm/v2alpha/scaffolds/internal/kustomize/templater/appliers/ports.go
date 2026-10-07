@@ -183,8 +183,10 @@ func templateHealthProbePort(yamlContent string) string {
 	lines := strings.Split(yamlContent, "\n")
 	manager := strings.Join(lines[start:end+1], "\n")
 
-	// containerPort for the port named "health"
-	healthContainerPort := regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*health\b)`)
+	// containerPort for the port named "health". kustomize sorts the keys of a port, so a
+	// hostIP or hostPort comes between containerPort and name, and is kept as it is.
+	healthContainerPort := regexp.MustCompile(
+		`(?m)(\s*- )?containerPort:\s*\d+((?:\s*\n\s*host(?:IP|Port):[^\n]*)*\s*\n\s*name:\s*health\b)`)
 	hasHealthPort := healthContainerPort.MatchString(manager)
 	manager = healthContainerPort.
 		ReplaceAllString(manager, "${1}containerPort: "+healthProbePortTemplate+"${2}")
@@ -213,7 +215,7 @@ func templateHealthProbePort(yamlContent string) string {
 // health probe server is on.
 func makeHealthContainerPortConditional(yamlContent string) string {
 	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- containerPort: ` + regexp.QuoteMeta(healthProbePortTemplate) +
-		`\n[ \t]+name: health(?:\n[ \t]+protocol: \w+)?$`)
+		`(?:\n[ \t]+host(?:IP|Port): [^\n]*)*\n[ \t]+name: health(?:\n[ \t]+protocol: \w+)?$`)
 	return portPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 		indent, _ := LeadingWhitespace(match)
 		return fmt.Sprintf("%s%s\n%s\n%s{{- end }}", indent, healthProbeEnabledCondition, match, indent)

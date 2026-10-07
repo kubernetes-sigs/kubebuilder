@@ -2586,6 +2586,45 @@ spec:
         {{- end }}`))
 		})
 
+		It("should template the health port when it also sets hostIP and hostPort", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        ports:
+        - containerPort: 8081
+          hostIP: 10.0.0.1
+          hostPort: 9999
+          name: health
+          protocol: TCP`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).NotTo(ContainSubstring(": 8081"))
+			Expect(result).To(ContainSubstring("        " + healthProbeOnExpr + `
+        - containerPort: ` + healthProbePortExpr + `
+          hostIP: 10.0.0.1
+          hostPort: 9999
+          name: health
+          protocol: TCP
+        {{- end }}`))
+			Expect(result).To(ContainSubstring("path: /healthz\n            port: health"))
+		})
+
 		It("should only template the health probe of the manager container, not of a sidecar", func() {
 			deployment := &unstructured.Unstructured{}
 			deployment.SetAPIVersion("apps/v1")
