@@ -83,7 +83,9 @@ spec:
         # Bind to :0 to disable the controller-runtime managed metrics server
         - --metrics-bind-address=0
         {{- end }}
-        - --health-probe-bind-address=:{{ .Values.manager.healthProbe.port }}
+        {{- if or .Values.manager.healthProbeBindAddress (eq (toString .Values.manager.healthProbeBindAddress) "0") }}
+        - --health-probe-bind-address={{ .Values.manager.healthProbeBindAddress }}
+        {{- end }}
         {{- range .Values.manager.args }}
         - {{ tpl . $ }}
         {{- end }}
@@ -93,23 +95,29 @@ spec:
         {{- with .Values.manager.image.pullPolicy }}
         imagePullPolicy: {{ . }}
         {{- end }}
+        {{- if ne (toString .Values.manager.healthProbeBindAddress) "0" }}
         livenessProbe:
           httpGet:
             path: /healthz
-            port: {{ .Values.manager.healthProbe.port }}
+            port: health
           initialDelaySeconds: 15
           periodSeconds: 20
+        {{- end }}
         name: manager
         ports:
-        - containerPort: {{ .Values.manager.healthProbe.port }}
+        {{- if ne (toString .Values.manager.healthProbeBindAddress) "0" }}
+        - containerPort: {{ .Values.manager.healthProbeBindAddress | default ":8081" | toString | splitList ":" | last | int }}
           name: health
           protocol: TCP
+        {{- end }}
+        {{- if ne (toString .Values.manager.healthProbeBindAddress) "0" }}
         readinessProbe:
           httpGet:
             path: /readyz
-            port: {{ .Values.manager.healthProbe.port }}
+            port: health
           initialDelaySeconds: 5
           periodSeconds: 10
+        {{- end }}
         resources:
           {{- if .Values.manager.resources }}
           {{- toYaml .Values.manager.resources | nindent 10 }}

@@ -41,8 +41,8 @@ type FeatureSet struct {
 	HasClusterScopedRBAC    bool
 	WebhookPort             int
 	MetricsPort             int
-	HealthProbePort         int
-	MetricsSecure           *bool // nil when the manager does not set --metrics-secure
+	HealthProbeBindAddress  string // empty when the manager does not set --health-probe-bind-address
+	MetricsSecure           *bool  // nil when the manager does not set --metrics-secure
 	RoleNamespaces          map[string]string
 }
 
@@ -51,10 +51,9 @@ type FeatureSet struct {
 // The managerNamespace is the namespace where the manager deployment runs.
 func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, managerNamespace string) FeatureSet {
 	features := FeatureSet{
-		WebhookPort:     9443,
-		MetricsPort:     8443,
-		HealthProbePort: 8081,
-		RoleNamespaces:  make(map[string]string),
+		WebhookPort:    9443,
+		MetricsPort:    8443,
+		RoleNamespaces: make(map[string]string),
 	}
 
 	features.HasCRDs = len(resources.CustomResourceDefinitions) > 0
@@ -109,11 +108,9 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 		}
 	}
 
-	// The health probe port is defined on the manager container's --health-probe-bind-address arg.
+	// The health probe address is the manager container's --health-probe-bind-address arg.
 	if resources.Deployment != nil {
-		if port := extractHealthProbePortFromDeployment(resources.Deployment); port > 0 {
-			features.HealthProbePort = port
-		}
+		features.HealthProbeBindAddress = extractHealthProbeBindAddressFromDeployment(resources.Deployment)
 	}
 
 	// Whether metrics are served over HTTPS is defined on the manager container's --metrics-secure arg.
@@ -268,41 +265,43 @@ func extractWebhookPortFromDeployment(deployment *unstructured.Unstructured) int
 	return 0
 }
 
-// extractHealthProbePortFromDeployment extracts the health probe port from the
-// manager container's --health-probe-bind-address argument.
-func extractHealthProbePortFromDeployment(deployment *unstructured.Unstructured) int {
+// extractHealthProbeBindAddressFromDeployment returns the address from the manager
+// container's --health-probe-bind-address argument, for example ":8081" or
+// "localhost:9440", or "0" when the manager turns its health probe server off. It returns
+// "" when the manager does not set the argument or its address has no valid port.
+func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstructured) string {
 	specMap := extractDeploymentSpec(deployment)
 	if specMap == nil {
-		return 0
+		return ""
 	}
 	container := findManagerContainer(deployment, specMap)
 	if container == nil {
-		return 0
+		return ""
 	}
 
 	argsField, found, err := unstructured.NestedFieldNoCopy(container, "args")
 	if !found || err != nil {
-		return 0
+		return ""
 	}
 
 	argsList, ok := argsField.([]any)
 	if !ok {
-		return 0
+		return ""
 	}
 
+	const flagPrefix = "--health-probe-bind-address="
 	for _, a := range argsList {
 		strArg, ok := a.(string)
-		if !ok {
+		if !ok || !strings.HasPrefix(strArg, flagPrefix) {
 			continue
 		}
-		if strings.Contains(strArg, "--health-probe-bind-address") {
-			if port := ExtractPortFromArg(strArg); port > 0 {
-				return port
-			}
+		address := strings.TrimPrefix(strArg, flagPrefix)
+		if address == "0" || ExtractPortFromArg(strArg) > 0 {
+			return address
 		}
 	}
 
-	return 0
+	return ""
 }
 
 // extractMetricsSecureFromDeployment extracts whether metrics are served over
