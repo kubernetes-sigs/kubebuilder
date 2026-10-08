@@ -117,6 +117,76 @@ var _ = Describe("generate: cleanup-helpers", func() {
 		})
 	})
 
+	Context("when an in-place regeneration is backed up", func() {
+		BeforeEach(func() {
+			Expect(os.Mkdir(filepath.Join(tmpDir, ".git"), 0o755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(tmpDir, ".git", "HEAD"), []byte("ref: refs/heads/main\n"), 0o644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("original project\n"), 0o644)).To(Succeed())
+			Expect(os.Mkdir(filepath.Join(tmpDir, "internal"), 0o755)).To(Succeed())
+			originalGo := filepath.Join(tmpDir, "internal", "original.go")
+			Expect(os.WriteFile(originalGo, []byte("package internal\n"), 0o644)).To(Succeed())
+		})
+
+		It("restores the original entries after a failed attempt", func() {
+			backup, err := backupOutputDirPreservingGit(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			outputInfo, err := os.Stat(backup.outputDir)
+			Expect(err).NotTo(HaveOccurred())
+			tmpInfo, err := os.Stat(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.SameFile(outputInfo, tmpInfo)).To(BeTrue())
+			Expect(filepath.Dir(backup.backupDir)).To(Equal(tmpDir))
+			Expect(entryNames(tmpDir)).To(ConsistOf(".git", filepath.Base(backup.backupDir)))
+
+			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("partial project\n"), 0o644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(tmpDir, "partial.txt"), []byte("partial\n"), 0o644)).To(Succeed())
+			Expect(backup.restore()).To(Succeed())
+
+			Expect(entryNames(tmpDir)).To(ConsistOf(".git", "PROJECT", "internal"))
+			project, err := os.ReadFile(filepath.Join(tmpDir, "PROJECT"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(project)).To(Equal("original project\n"))
+			Expect(filepath.Join(tmpDir, "partial.txt")).NotTo(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "internal", "original.go")).To(BeAnExistingFile())
+		})
+
+		It("discards the backup after a successful attempt", func() {
+			backup, err := backupOutputDirPreservingGit(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(tmpDir, "PROJECT"), []byte("regenerated project\n"), 0o644)).To(Succeed())
+
+			Expect(backup.discard()).To(Succeed())
+			Expect(backup.backupDir).NotTo(BeADirectory())
+			project, err := os.ReadFile(filepath.Join(tmpDir, "PROJECT"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(project)).To(Equal("regenerated project\n"))
+		})
+
+		It("restores a relative output directory after the working directory changes", func() {
+			parent := filepath.Dir(tmpDir)
+			projectName := filepath.Base(tmpDir)
+			originalWorkingDir, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(func() { Expect(os.Chdir(originalWorkingDir)).To(Succeed()) })
+			Expect(os.Chdir(parent)).To(Succeed())
+
+			backup, err := backupOutputDirPreservingGit(projectName)
+			Expect(err).NotTo(HaveOccurred())
+			outputInfo, err := os.Stat(backup.outputDir)
+			Expect(err).NotTo(HaveOccurred())
+			tmpInfo, err := os.Stat(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.SameFile(outputInfo, tmpInfo)).To(BeTrue())
+			Expect(os.Chdir(tmpDir)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(tmpDir, "partial.txt"), []byte("partial\n"), 0o644)).To(Succeed())
+
+			Expect(backup.restore()).To(Succeed())
+			Expect(filepath.Join(tmpDir, "PROJECT")).To(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "internal", "original.go")).To(BeAnExistingFile())
+			Expect(filepath.Join(tmpDir, "partial.txt")).NotTo(BeAnExistingFile())
+		})
+	})
+
 	Context("when nested content exists under a removable directory", func() {
 		It("removes the directory tree with RemoveAll", func() {
 			nested := filepath.Join(tmpDir, "api", "v1", "types.go")
