@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -536,3 +537,57 @@ spec:
 		Expect(rangeContent).To(ContainSubstring(".Values.manager.env"))
 	})
 })
+
+var _ = Describe("IsManagerServiceAccount", func() {
+	It("returns false for nil resource", func() {
+		Expect(IsManagerServiceAccount(nil)).To(BeFalse())
+	})
+
+	It("returns true for unprefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns true for prefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("test-project-controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns false for external ServiceAccount names", func() {
+		resource := makeUnstructuredServiceAccount("external-sa")
+		Expect(IsManagerServiceAccount(resource)).To(BeFalse())
+	})
+})
+
+var _ = Describe("templateVolumeMounts", func() {
+	It("does not inject manager extraVolumeMounts when the manager container range is unknown", func() {
+		yamlContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: manager
+      containers:
+      - name: sidecar
+        volumeMounts:
+        - name: sidecar-config
+          mountPath: /etc/sidecar
+`
+
+		result := templateVolumeMounts(yamlContent)
+
+		Expect(result).To(Equal(yamlContent))
+		Expect(result).NotTo(ContainSubstring(".Values.manager.extraVolumeMounts"))
+	})
+})
+
+func makeUnstructuredServiceAccount(name string) *unstructured.Unstructured {
+	resource := &unstructured.Unstructured{}
+	resource.SetAPIVersion("v1")
+	resource.SetKind("ServiceAccount")
+	resource.SetName(name)
+	return resource
+}

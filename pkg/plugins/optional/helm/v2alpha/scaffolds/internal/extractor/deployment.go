@@ -288,7 +288,7 @@ func managerContainerName(deployment *unstructured.Unstructured) string {
 	return common.DefaultManagerContainerName
 }
 
-// findManagerContainer returns the named manager container; falls back to the first container.
+// findManagerContainer returns the named manager container.
 func findManagerContainer(deployment *unstructured.Unstructured, specMap map[string]any) map[string]any {
 	containers, found, err := unstructured.NestedFieldNoCopy(specMap, "containers")
 	if !found || err != nil {
@@ -311,11 +311,7 @@ func findManagerContainer(deployment *unstructured.Unstructured, specMap map[str
 		}
 	}
 
-	firstContainer, firstOK := containersList[0].(map[string]any)
-	if !firstOK {
-		return nil
-	}
-	return firstContainer
+	return nil
 }
 
 // RemoveExtractedVolumes removes custom volumes and mounts from the deployment manifest.
@@ -683,11 +679,7 @@ func isWebhookPortName(name string) bool {
 
 // FindManagerDeployment returns the controller-manager Deployment from the slice.
 // With exactly one deployment, it is returned directly — no heuristics needed.
-// With multiple deployments, the following signals are tried in order:
-//  1. deployment label control-plane=controller-manager
-//  2. pod-template annotation kubectl.kubernetes.io/default-container is non-empty
-//  3. a container whose name is exactly "manager"
-//  4. deployment name contains "controller-manager"
+// With multiple deployments, common.SelectManagerDeployment applies ordered signals.
 //
 // Returns nil when the slice is empty or when multiple deployments are present
 // but none matches any signal. Callers must treat nil as a hard error.
@@ -699,47 +691,7 @@ func FindManagerDeployment(deployments []*unstructured.Unstructured) *unstructur
 		return deployments[0]
 	}
 
-	for _, d := range deployments {
-		if d.GetLabels()["control-plane"] == "controller-manager" {
-			return d
-		}
-	}
-	for _, d := range deployments {
-		annotations, _, _ := unstructured.NestedStringMap(d.Object, "spec", "template", "metadata", "annotations")
-		if annotations[common.DefaultContainerAnnotation] != "" {
-			return d
-		}
-	}
-	for _, d := range deployments {
-		specMap := extractDeploymentSpec(d)
-		if specMap != nil && hasContainerNamed(specMap, common.DefaultManagerContainerName) {
-			return d
-		}
-	}
-	for _, d := range deployments {
-		if strings.Contains(d.GetName(), "controller-manager") {
-			return d
-		}
-	}
-	return nil
-}
-
-func hasContainerNamed(specMap map[string]any, name string) bool {
-	containers, _, _ := unstructured.NestedFieldNoCopy(specMap, "containers")
-	containersList, ok := containers.([]any)
-	if !ok {
-		return false
-	}
-	for _, c := range containersList {
-		container, ok := c.(map[string]any)
-		if !ok {
-			continue
-		}
-		if container["name"] == name {
-			return true
-		}
-	}
-	return false
+	return common.SelectManagerDeployment(deployments)
 }
 
 // toInt converts numeric types (int, int32, int64, float64) to int.
