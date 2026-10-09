@@ -183,6 +183,8 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	setup := make([]string, 0)
 	if f.WireController {
 		reconcilerName := f.ReconcilerName()
+		// Matches the Named() value so setup errors correlate with controller-runtime's
+		// own logs and metrics, and stays unique when a kind repeats across groups.
 		controllerName := resource.GetControllerName(f.ControllerName, f.Resource.Kind, f.Resource.Group, f.MultiGroup)
 
 		if !f.MultiGroup || f.Resource.Group == "" {
