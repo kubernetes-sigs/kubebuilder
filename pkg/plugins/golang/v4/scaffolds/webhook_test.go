@@ -20,6 +20,7 @@ package scaffolds
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -370,9 +371,9 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			modifiedWebhook := strings.ReplaceAll(string(webhookContent),
 				"// TODO(user): fill in your defaulting logic.",
 				`// My custom defaulting logic
-	if testcustom.Spec.Replicas == nil {
-		replicas := int32(1)
-		testcustom.Spec.Replicas = &replicas
+	if obj.Spec.Foo == nil {
+		value := "defaulted"
+		obj.Spec.Foo = &value
 	}`)
 
 			err = os.WriteFile(webhookFile, []byte(modifiedWebhook), 0o644)
@@ -409,11 +410,16 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(webhookContent)).To(ContainSubstring("// My custom defaulting logic"))
-			Expect(string(webhookContent)).To(ContainSubstring("testcustom.Spec.Replicas = &replicas"))
+			Expect(string(webhookContent)).To(ContainSubstring("obj.Spec.Foo = &value"))
 
 			By("verifying validator implementation was added")
 			Expect(string(webhookContent)).To(ContainSubstring("type TestCustomValidator struct"))
 			Expect(string(webhookContent)).To(ContainSubstring("func (v *TestCustomValidator) ValidateCreate"))
+
+			By("compiling the project and its tests with the preserved customizations")
+			Expect(kbc.Make("generate")).To(Succeed())
+			_, err = kbc.Run(exec.Command("go", "test", "-run", "^$", "./..."))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should work when user removes TODO comments", func() {
