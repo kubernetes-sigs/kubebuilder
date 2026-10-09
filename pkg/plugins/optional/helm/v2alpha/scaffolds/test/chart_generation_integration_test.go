@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
 
@@ -572,6 +573,42 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sa).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
 			Expect(sa).To(ContainSubstring("team: platform"))
 		})
+
+		DescribeTable("keeps existing annotations that are not one-line values",
+			func(annotations string, setArgs []string, want map[string]string) {
+				kustomize := strings.Replace(createKustomizeForServiceAccountWithAnnotationsRender("test-project"),
+					"    example.com/existing-annotation: preserved-value\n", annotations, 1)
+				Expect(kustomize).To(ContainSubstring(annotations))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				sa := serviceAccountDoc(out)
+
+				var rendered struct {
+					Metadata struct {
+						Annotations map[string]string `yaml:"annotations"`
+					} `yaml:"metadata"`
+				}
+				Expect(yaml.Unmarshal([]byte(sa), &rendered)).To(Succeed(), "got:\n%s", sa)
+				Expect(rendered.Metadata.Annotations).To(Equal(want), "got:\n%s", sa)
+			},
+			Entry("a multi-line annotation with a line like labels:",
+				"    example.com/description: |\n      Runs the manager.\n      labels:\n", nil,
+				map[string]string{"example.com/description": "Runs the manager.\nlabels:\n"}),
+			Entry("an annotation with a quoted key",
+				"    \"on\": original\n", nil,
+				map[string]string{"on": "original"}),
+			Entry("a value set for a key that only appears inside a multi-line annotation",
+				"    note: |\n      endpoint: api\n      second line\n",
+				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
+				map[string]string{"note": "endpoint: api\nsecond line\n", "endpoint": "custom"}),
+			Entry("an annotation whose value has literal template text",
+				"    \"on\": \"{{ .Spec.Branch }}\\t\"\n", nil,
+				map[string]string{"on": "{{ .Spec.Branch }}\t"}),
+			Entry("a multi-line annotation that starts with literal template text",
+				"    note: |\n      {{ .Spec.Branch }}\n        nested text\n      endpoint: api\n",
+				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
+				map[string]string{"note": "{{ .Spec.Branch }}\n  nested text\nendpoint: api\n", "endpoint": "custom"}),
+		)
 	})
 
 	Context("ServiceAccount labels (rendered)", func() {
