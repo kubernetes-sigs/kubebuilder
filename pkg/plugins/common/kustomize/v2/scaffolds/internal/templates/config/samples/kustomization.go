@@ -39,7 +39,8 @@ func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", "kustomization.yaml")
 	}
-	f.TemplateBody = fmt.Sprintf(kustomizationTemplate, machinery.NewMarkerFor(f.Path, samplesMarker))
+	marker := machinery.NewMarkerFor(f.Path, samplesMarker)
+	f.TemplateBody = fmt.Sprintf(kustomizationTemplate, marker)
 
 	return nil
 }
@@ -50,7 +51,8 @@ const (
 
 // GetMarkers implements file.Inserter
 func (f *Kustomization) GetMarkers() []machinery.Marker {
-	return []machinery.Marker{machinery.NewMarkerFor(f.Path, samplesMarker)}
+	marker := machinery.NewMarkerFor(f.Path, samplesMarker)
+	return []machinery.Marker{marker}
 }
 
 const samplesCodeFragment = `- %s
@@ -67,8 +69,9 @@ func (f Kustomization) makeCRFileName() string {
 
 // GetCodeFragments implements file.Inserter
 func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
+	marker := machinery.NewMarkerFor(f.Path, samplesMarker)
 	return machinery.CodeFragmentsMap{
-		machinery.NewMarkerFor(f.Path, samplesMarker): []string{fmt.Sprintf(samplesCodeFragment, f.makeCRFileName())},
+		marker: []string{fmt.Sprintf(samplesCodeFragment, f.makeCRFileName())},
 	}
 }
 
