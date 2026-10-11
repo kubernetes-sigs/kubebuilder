@@ -133,16 +133,22 @@ func hasFields(item templates.CustomMetricItem) bool {
 	return false
 }
 
-// TODO: Prom_ql exprs can improved to be more pratical and applicable
+// fillMissingExpr generates practical PromQL expressions based on metric type
 func fillMissingExpr(item templates.CustomMetricItem) templates.CustomMetricItem {
 	if item.Expr == "" {
 		switch strings.ToLower(item.Type) {
 		case "counter":
+			// Use rate() for counters to show requests/errors per second
 			item.Expr = "sum(rate(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, pod)`
 		case "histogram":
+			// Use histogram_quantile for p90 latency
 			//nolint:lll
 			item.Expr = "histogram_quantile(0.90, sum by(instance, le) (rate(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}[5m])))`
-		default: // gauge
+		case "gauge":
+			// Gauges show current state, use avg() to handle multiple pods
+			item.Expr = "avg(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}) by (instance, pod)`
+		default:
+			// Fallback to raw metric
 			item.Expr = item.Metric
 		}
 	}
