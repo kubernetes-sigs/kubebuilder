@@ -156,6 +156,66 @@ var _ = Describe("editSubcommand", func() {
 		})
 	})
 
+	// PreScaffold -> Scaffold
+	Context("edit should not flip scope when its flag is omitted", func() {
+		var (
+			fs     *pflag.FlagSet
+			mockFS machinery.Filesystem
+		)
+
+		BeforeEach(func() {
+			fs = pflag.NewFlagSet("test", pflag.ContinueOnError)
+			subCmd.BindFlags(fs)
+
+			// Only set namespaced project
+			Expect(cfg.SetNamespaced()).To(Succeed())
+			Expect(subCmd.InjectConfig(cfg)).To(Succeed())
+
+			memFS := afero.NewMemMapFs()
+			mockFS = machinery.Filesystem{FS: memFS}
+
+			// Reads the Dockerfile
+			Expect(afero.WriteFile(memFS, "Dockerfile", []byte("FROM golang:1.23"), 0o644)).To(Succeed())
+
+			// Seed a namespace-scoped RBAC role
+			Expect(afero.WriteFile(memFS, filepath.Join("config", "rbac", "role.yaml"),
+				[]byte("kind: Role\n"), 0o644)).To(Succeed())
+		})
+
+		It("keeps namespaced: true and the Role intact on `edit --multigroup`", func() {
+			// Only --multigroup is passed
+			Expect(fs.Set("multigroup", "true")).To(Succeed())
+
+			Expect(subCmd.PreScaffold(mockFS)).To(Succeed())
+			Expect(subCmd.Scaffold(mockFS)).To(Succeed())
+
+			// Enable PROJECT state: multigroup
+			Expect(cfg.IsMultiGroup()).To(BeTrue(), "multigroup should be enabled by the flag")
+			Expect(cfg.IsNamespaced()).To(BeTrue(), "namespaced must be preserved, not cleared")
+
+			// Ignore RBAC re-written
+			content, err := afero.ReadFile(mockFS.FS, filepath.Join("config", "rbac", "role.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal("kind: Role\n"),
+				"role.yaml must not be overwritten with a ClusterRole")
+		})
+
+		It("keeps namespaced: true on `edit --license apache2`", func() {
+			// Set license-only
+			Expect(fs.Set("license", "apache2")).To(Succeed())
+
+			Expect(subCmd.PreScaffold(mockFS)).To(Succeed())
+			Expect(subCmd.Scaffold(mockFS)).To(Succeed())
+
+			Expect(cfg.IsNamespaced()).To(BeTrue(), "namespaced must be preserved, not cleared")
+
+			content, err := afero.ReadFile(mockFS.FS, filepath.Join("config", "rbac", "role.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal("kind: Role\n"),
+				"role.yaml must not be overwritten with a ClusterRole")
+		})
+	})
+
 	Context("Boilerplate update", func() {
 		var (
 			fs     machinery.Filesystem
