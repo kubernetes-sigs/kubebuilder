@@ -58,6 +58,11 @@ func (f *fakeConfig) GetResources() ([]resource.Resource, error) {
 	return f.resources, nil
 }
 
+func (f *fakeConfig) DeletePluginConfig(key string) error {
+	delete(f.plugins, key)
+	return nil
+}
+
 func (f *fakeConfig) DecodePluginConfig(key string, dst any) error {
 	if len(f.plugins) == 0 {
 		return config.PluginKeyNotFoundError{Key: key}

@@ -34,4 +34,12 @@ var _ = Describe("Plugin", func() {
 	It("should not be deprecated", func() {
 		Expect(p.DeprecationWarning()).To(BeEmpty())
 	})
+
+	It("should return an edit subcommand", func() {
+		Expect(p.GetEditSubcommand()).NotTo(BeNil())
+	})
+
+	It("should return a delete subcommand", func() {
+		Expect(p.GetDeleteSubcommand()).NotTo(BeNil())
+	})
 })

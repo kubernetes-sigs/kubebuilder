@@ -65,6 +65,11 @@ var pluginChainTestCases = []struct {
 		new:  func() chainAwareSubcommand { return &createWebhookSubcommand{} },
 		get:  func(sub chainAwareSubcommand) []string { return sub.(*createWebhookSubcommand).pluginChain },
 	},
+	{
+		name: "delete",
+		new:  func() chainAwareSubcommand { return &deleteSubcommand{} },
+		get:  func(sub chainAwareSubcommand) []string { return sub.(*deleteSubcommand).pluginChain },
+	},
 }
 
 func TestExternalPlugin(t *testing.T) {

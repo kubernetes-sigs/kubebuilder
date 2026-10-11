@@ -45,11 +45,15 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Determine which subcommand's flags are being requested
 	var subcommand string
 	for _, arg := range pr.Args {
-		if arg == "--init" {
+		switch arg {
+		case "--init":
 			subcommand = "init"
-			break
-		} else if arg == "--edit" {
+		case "--edit":
 			subcommand = "edit"
+		case "--delete":
+			subcommand = "delete"
+		}
+		if subcommand != "" {
 			break
 		}
 	}
@@ -59,6 +63,9 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 		pluginResponse.Flags = scaffolds.InitFlags
 	case "edit":
 		pluginResponse.Flags = scaffolds.EditFlags
+	case "delete":
+		// The delete subcommand accepts no extra flags in this sample plugin.
+		pluginResponse.Flags = []external.Flag{}
 	default:
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{

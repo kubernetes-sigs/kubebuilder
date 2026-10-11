@@ -70,7 +70,7 @@ The kustomize plugin implements the following subcommands:
 
 * init (`$ kubebuilder init [OPTIONS]`)
 * create api (`$ kubebuilder create api [OPTIONS]`)
-* create webhook (`$ kubebuilder create api [OPTIONS]`)
+* create webhook (`$ kubebuilder create webhook [OPTIONS]`)
 
 <aside class="note" role="note">
 <p class="note-title">Create API and Webhook</p>

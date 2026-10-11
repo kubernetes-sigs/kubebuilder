@@ -347,6 +347,12 @@ func (c Cfg) DecodePluginConfig(key string, configObj any) error {
 	return config.PluginKeyNotFoundError{Key: key}
 }
 
+// DeletePluginConfig implements config.Config
+func (c *Cfg) DeletePluginConfig(key string) error {
+	delete(c.Plugins, key)
+	return nil
+}
+
 // EncodePluginConfig will return an error if used on any project version < v3.
 func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 	// Get object's bytes and set them under key in extra fields.
