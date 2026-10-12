@@ -214,19 +214,13 @@ func main() {
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupCronJobWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupCronJobWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
+		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv2.SetupCronJobWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
-			os.Exit(1)
-		}
+	if err := webhookv2.SetupCronJobWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 

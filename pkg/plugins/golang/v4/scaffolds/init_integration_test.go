@@ -20,6 +20,7 @@ package scaffolds
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -35,13 +36,50 @@ var _ = Describe("Init Scaffolding Integration Test", func() {
 
 	BeforeEach(func() {
 		var err error
-		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
+		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on",
+			"KUBECONFIG="+filepath.Join(GinkgoT().TempDir(), "missing-kubeconfig"))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(kbc.Prepare()).To(Succeed())
 	})
 
 	AfterEach(func() {
 		kbc.Destroy()
+	})
+
+	Context("local controller execution", func() {
+		BeforeEach(func() {
+			By("initializing a project")
+			Expect(kbc.Init(
+				"--plugins", "go/v4",
+				"--domain", kbc.Domain,
+				"--repo", "test.io/runargs",
+			)).To(Succeed())
+		})
+
+		DescribeTable("should forward RUN_ARGS to the controller command",
+			func(runArguments string) {
+				By("dry-running the run target without generation and formatting prerequisites")
+				command := exec.Command("make", "--no-print-directory", "-n", "run", "RUN_ARGS="+runArguments,
+					"-o", "manifests", "-o", "generate", "-o", "fmt", "-o", "vet")
+				output, err := kbc.Run(command)
+				Expect(err).NotTo(HaveOccurred())
+				expectedArguments := append([]string{"go", "run", "./cmd/main.go"}, strings.Fields(runArguments)...)
+				Expect(strings.Fields(string(output))).To(Equal(expectedArguments))
+			},
+			Entry("without arguments", ""),
+			Entry("with the webhook server disabled", "--webhook-port=-1"),
+			Entry("with multiple arguments", "--webhook-port=-1 --metrics-bind-address=0"),
+		)
+
+		It("should pass RUN_ARGS to the generated program", func() {
+			By("running the controller help command without generation and formatting prerequisites")
+			command := exec.Command("make", "--no-print-directory", "run", "RUN_ARGS=--help",
+				"-o", "manifests", "-o", "generate", "-o", "fmt", "-o", "vet")
+			output, err := kbc.Run(command)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(output)).To(ContainSubstring("-webhook-port int"))
+			Expect(string(output)).To(ContainSubstring("Set -1 to disable the webhook server"))
+		})
 	})
 
 	Context("cluster-scoped init (default)", func() {

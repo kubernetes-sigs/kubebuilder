@@ -249,12 +249,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "busybox")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
-			os.Exit(1)
-		}
+	if err := webhookv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
+		os.Exit(1)
 	}
 	if err := (&controller.WordpressReconciler{
 		Client: mgr.GetClient(),
@@ -263,12 +260,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "wordpress")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupWordpressWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
