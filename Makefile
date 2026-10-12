@@ -154,10 +154,13 @@ go-apidiff:
 	$(call go-install-tool,$(GO_APIDIFF),github.com/joelanford/go-apidiff,$(GO_APIDIFF_VERSION))
 
 GOVULNCHECK_VERSION ?= v1.3.0
+# Pin the toolchain from go.mod so a newer local Go (e.g. 1.27.1) does not
+# report stdlib CVEs that CI (setup-go + toolchain) does not see.
+GOVULNCHECK_GOTOOLCHAIN ?= go1.26.9
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck (https://go.dev/doc/security/vuln/) against the module.
-	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+	GOTOOLCHAIN=$(GOVULNCHECK_GOTOOLCHAIN) go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 ##@ Tests
 

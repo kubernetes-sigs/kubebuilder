@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - master
-      - 'release-*'
   schedule:
     # Daily 08:00 UTC — catches new CVEs in the DB when no PRs run the check.
     - cron: '0 8 * * *'
