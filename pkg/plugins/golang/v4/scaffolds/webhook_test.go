@@ -416,6 +416,62 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(webhookContent)).To(ContainSubstring("func (v *TestCustomValidator) ValidateCreate"))
 		})
 
+		It("should build, keep user code, and serve both handlers when a webhook is extended", func() {
+			steps := map[string][]string{
+				"Frigate": {"--defaulting", "--programmatic-validation"},
+				"Cruiser": {"--programmatic-validation", "--defaulting"},
+			}
+			userCode := map[string][2]string{
+				"--defaulting": {
+					"// TODO(user): fill in your defaulting logic.",
+					"if obj.Spec.Foo == nil {\n\t\tdefaultFoo := \"set-by-defaulter\"\n\t\tobj.Spec.Foo = &defaultFoo\n\t}",
+				},
+				"--programmatic-validation": {
+					"// TODO(user): fill in your validation logic upon object creation.",
+					"if obj.Spec.Foo != nil && *obj.Spec.Foo == \"not-allowed\" {\n\t\treturn nil, errors.New(\"spec.foo value is not allowed\")\n\t}",
+				},
+			}
+
+			for kind := range steps {
+				Expect(kbc.CreateAPI("--group", "ship", "--version", "v1", "--kind", kind,
+					"--resource", "--controller", "--make=false")).To(Succeed())
+			}
+
+			for kind, options := range steps {
+				name := strings.ToLower(kind)
+				webhookFile := filepath.Join(kbc.Dir, "internal", "webhook", "v1", name+"_webhook.go")
+				ownFunc := "func " + name + "Notes() string { return \"written by the user\" }"
+
+				for i, option := range options {
+					By("running create webhook " + option + " for " + kind)
+					Expect(kbc.CreateWebhook("--group", "ship", "--version", "v1", "--kind", kind,
+						option, "--make=false")).To(Succeed())
+
+					By("filling in the new handler")
+					Expect(pluginutil.ReplaceInFile(webhookFile, userCode[option][0], userCode[option][1])).To(Succeed())
+					if i == 0 {
+						By("adding code of the user's own before extending the webhook")
+						Expect(pluginutil.AppendCodeAtTheEnd(webhookFile, "\n"+ownFunc+"\n")).To(Succeed())
+					}
+				}
+
+				By("checking the user's code survived the second create webhook")
+				content, err := os.ReadFile(webhookFile)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring(ownFunc))
+
+				By("adding the errors import used by the validation handler")
+				Expect(pluginutil.InsertCodeIfNotExist(webhookFile, "import (", "\n\t\"errors\"")).To(Succeed())
+
+				By("adding a test that calls the served webhooks for " + kind)
+				Expect(os.WriteFile(filepath.Join(kbc.Dir, "internal", "webhook", "v1", name+"_served_test.go"),
+					[]byte(strings.ReplaceAll(servedWebhookTest, "KIND", kind)), 0o644)).To(Succeed())
+			}
+
+			By("building the project and running its tests under envtest")
+			Expect(kbc.Make("test")).To(Succeed())
+		})
+
 		It("should work when user removes TODO comments", func() {
 			By("creating an API")
 			err := kbc.CreateAPI(
@@ -610,3 +666,40 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 		})
 	})
 })
+
+// servedWebhookTest is written only into the throwaway project the "should build, keep user code,
+// and serve both handlers when a webhook is extended" spec generates, never into a template, so it
+// joins that project's webhook suite and nothing users scaffold. KIND is replaced with the kind
+// under test.
+const servedWebhookTest = `package v1
+
+import (
+	"context"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	shipv1 "test.io/webhooktest/api/v1"
+)
+
+var _ = Describe("KIND webhooks served under envtest", func() {
+	It("applies the defaulting webhook", func() {
+		obj := &shipv1.KIND{ObjectMeta: metav1.ObjectMeta{Name: "gets-defaults", Namespace: "default"}}
+		Expect(k8sClient.Create(context.Background(), obj)).To(Succeed())
+		Expect(obj.Spec.Foo).NotTo(BeNil())
+		Expect(*obj.Spec.Foo).To(Equal("set-by-defaulter"))
+	})
+
+	It("applies the validating webhook", func() {
+		value := "not-allowed"
+		obj := &shipv1.KIND{
+			ObjectMeta: metav1.ObjectMeta{Name: "gets-rejected", Namespace: "default"},
+			Spec:       shipv1.KINDSpec{Foo: &value},
+		}
+		err := k8sClient.Create(context.Background(), obj)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("spec.foo value is not allowed"))
+	})
+})
+`
