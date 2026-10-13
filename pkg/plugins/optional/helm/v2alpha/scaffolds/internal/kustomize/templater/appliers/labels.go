@@ -260,8 +260,9 @@ func injectMissingMetadataBlocks(
 }
 
 // mergeMetadataMapBlock re-emits the existing labels/annotations block that starts at headerIndex
-// and appends a Helm block that merges the matching .Values map, omitting keys the block already
-// defines so nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
+// and appends a Helm block that merges the matching .Values map, omitting only the chart-owned keys
+// (the standard Helm labels). Every other key is guarded, so a value set for the same key replaces it
+// and nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
 // a guarded block, so the header renders only when the user supplies values and never as a null
 // key. It returns the updated output and the index of the last source line it consumed.
 func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valuePath string) ([]string, int) {
@@ -285,9 +286,9 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	}
 
 	merged = append(merged, strings.Repeat(" ", headerIndent)+mapKey)
-	merged = append(merged, body...)
+	merged = appendOverridableKeys(merged, body, headerIndent, valuePath)
 	valueIndent := strings.Repeat(" ", headerIndent+2)
-	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
+	merged = appendHelmMapBlock(merged, valueIndent, valuePath, chartOwnedKeysIn(existingKeys))
 
 	return merged, bodyEnd - 1
 }
@@ -395,4 +396,67 @@ func extractKeysFromLines(lines []string) []string {
 	}
 
 	return keys
+}
+
+// chartOwnedMetadataKeys are the standard Helm labels. The chart always sets them itself, so a value
+// from .Values never replaces them. Every other key coming from config/ can be overridden by the values.
+var chartOwnedMetadataKeys = []string{
+	strings.TrimSuffix(common.LabelKeyAppManagedBy, ":"),
+	strings.TrimSuffix(common.LabelKeyAppName, ":"),
+	strings.TrimSuffix(common.LabelKeyHelmChart, ":"),
+	strings.TrimSuffix(common.LabelKeyAppInstance, ":"),
+}
+
+// metadataKeyPattern matches a "  key: value" or "  key:" line and captures its indent and key.
+var metadataKeyPattern = regexp.MustCompile(`^(\s+)([a-zA-Z0-9._/-]+):(\s|$)`)
+
+// isChartOwnedKey reports whether key is one of the standard Helm labels the chart always controls.
+func isChartOwnedKey(key string) bool {
+	return slices.Contains(chartOwnedMetadataKeys, key)
+}
+
+// chartOwnedKeysIn returns the chart-owned keys found in keys, in their original order.
+func chartOwnedKeysIn(keys []string) []string {
+	owned := []string{}
+	for _, key := range keys {
+		if isChartOwnedKey(key) {
+			owned = append(owned, key)
+		}
+	}
+	return owned
+}
+
+// appendOverridableKeys re-emits body. Each key that is not chart-owned is wrapped in a guard that
+// skips it when valuePath already sets the same key, so the value wins and the key renders only once.
+func appendOverridableKeys(merged, body []string, headerIndent int, valuePath string) []string {
+	keyIndent := headerIndent + 2
+	guardIndent := strings.Repeat(" ", keyIndent)
+
+	for i := 0; i < len(body); i++ {
+		match := metadataKeyPattern.FindStringSubmatch(body[i])
+		if match == nil || len(match[1]) != keyIndent || isChartOwnedKey(match[2]) {
+			merged = append(merged, body[i])
+			continue
+		}
+
+		// The key owns every following line that is blank or indented deeper than the key.
+		end := i + 1
+		for end < len(body) {
+			_, indent := LeadingWhitespace(body[end])
+			if strings.TrimSpace(body[end]) != "" && indent <= keyIndent {
+				break
+			}
+			end++
+		}
+		for end > i+1 && strings.TrimSpace(body[end-1]) == "" {
+			end--
+		}
+
+		merged = append(merged,
+			guardIndent+"{{- if not (hasKey ("+valuePath+" | default dict) "+strconv.Quote(match[2])+") }}")
+		merged = append(merged, body[i:end]...)
+		merged = append(merged, guardIndent+"{{- end }}")
+		i = end - 1
+	}
+	return merged
 }

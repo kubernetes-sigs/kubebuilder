@@ -7,9 +7,11 @@ metadata:
     app.kubernetes.io/name: {{ include "project.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- if not (hasKey (.Values.prometheus.labels | default dict) "control-plane") }}
     control-plane: controller-manager
+    {{- end }}
     {{- with .Values.prometheus.labels }}
-    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
+    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- end }}
