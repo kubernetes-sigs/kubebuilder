@@ -288,7 +288,9 @@ For example, install the chart with the health probes on port `8082`:
 helm install my-operator ./dist/chart --set manager.healthProbeBindAddress=:8082
 ```
 
-The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag, the manager keeps its own default, and the container port and probes use `8081`.
+The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag, the manager keeps its own default, and the container port and probes use `8081`. A project that sets an empty `--health-probe-bind-address=` gets `0`, since controller-runtime turns the server off for an empty address too.
+
+The kubelet sends the probes to the Pod IP, so keep the host empty or use one that covers it, such as `0.0.0.0`. With a loopback host such as `localhost` or `127.0.0.1`, the probes cannot reach the server.
 
 To turn the health probe server off, set the value to `0`. The chart then passes `--health-probe-bind-address=0` and renders neither the `health` container port nor the liveness and readiness probes, since nothing would answer them. Without probes, Kubernetes no longer restarts a manager that stops responding, and it sends traffic to the Pod before the manager is ready.
 

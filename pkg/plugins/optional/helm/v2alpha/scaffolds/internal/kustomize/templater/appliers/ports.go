@@ -212,9 +212,11 @@ func templateHealthProbePort(yamlContent string) string {
 }
 
 // makeHealthContainerPortConditional renders the "health" container port only while the
-// health probe server is on.
+// health probe server is on. kustomize sorts an appProtocol before containerPort, so the
+// list item can start with it.
 func makeHealthContainerPortConditional(yamlContent string) string {
-	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- containerPort: ` + regexp.QuoteMeta(healthProbePortTemplate) +
+	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- (?:appProtocol: [^\n]*\n[ \t]+)?containerPort: ` +
+		regexp.QuoteMeta(healthProbePortTemplate) +
 		`(?:\n[ \t]+host(?:IP|Port): [^\n]*)*\n[ \t]+name: health(?:\n[ \t]+protocol: \w+)?$`)
 	return portPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 		indent, _ := LeadingWhitespace(match)

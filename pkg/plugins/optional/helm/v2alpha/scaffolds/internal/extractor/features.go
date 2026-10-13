@@ -269,6 +269,8 @@ func extractWebhookPortFromDeployment(deployment *unstructured.Unstructured) int
 // container's --health-probe-bind-address argument, for example ":8081" or
 // "localhost:9440", or "0" when the manager turns its health probe server off. It returns
 // "" when the manager does not set the argument or its address has no valid port.
+// controller-runtime also turns the server off for an empty address, but in the chart an
+// empty value means no flag, so an explicit empty address is returned as "0".
 func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstructured) string {
 	specMap := extractDeploymentSpec(deployment)
 	if specMap == nil {
@@ -296,7 +298,10 @@ func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstru
 			continue
 		}
 		address := strings.TrimPrefix(strArg, flagPrefix)
-		if address == "0" || ExtractPortFromArg(strArg) > 0 {
+		if address == "" || address == "0" {
+			return "0"
+		}
+		if ExtractPortFromArg(strArg) > 0 {
 			return address
 		}
 	}

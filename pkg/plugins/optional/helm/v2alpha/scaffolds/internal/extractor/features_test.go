@@ -113,10 +113,10 @@ var _ = Describe("FeaturesExtractor", func() {
 			Expect(features.HealthProbeBindAddress).To(Equal("127.0.0.1:9440"))
 		})
 
-		It("should be empty when the address is empty", func() {
+		It("should be 0 when the address is empty, since that also turns the server off", func() {
 			features := detect(deploymentWithManagerArgs("--health-probe-bind-address="))
 
-			Expect(features.HealthProbeBindAddress).To(BeEmpty())
+			Expect(features.HealthProbeBindAddress).To(Equal("0"))
 		})
 
 		It("should accept the maximum valid port 65535", func() {
