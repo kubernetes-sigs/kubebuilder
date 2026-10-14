@@ -53,8 +53,69 @@ var _ = Describe("FeaturesExtractor", func() {
 			features := detect(nil)
 
 			Expect(features.HealthProbeBindAddress).To(BeEmpty())
+			Expect(features.HealthProbeDefaultPort).To(Equal(8081))
 			Expect(features.MetricsPort).To(Equal(8443))
 			Expect(features.WebhookPort).To(Equal(9443))
+		})
+	})
+
+	// Without the flag in the manifest, the manager listens on the default in its cmd/main.go,
+	// and the manifest's "health" port or probes say which port that is.
+	Describe("DetectFeatures health probe default port", func() {
+		manager := func(container map[string]any) *unstructured.Unstructured {
+			container[keyName] = valManager
+			container[keyImage] = valControllerImage
+			return makeDeployment(deploymentOpts{containers: []map[string]any{container}})
+		}
+		healthPort := func(port int64) []any {
+			return []any{map[string]any{"containerPort": port, "name": "health", "protocol": "TCP"}}
+		}
+		httpGet := func(path string, port any) map[string]any {
+			return map[string]any{"httpGet": map[string]any{"path": path, "port": port}}
+		}
+
+		It("should be 8081 when the manager passes the flag, whatever its health port", func() {
+			features := detect(manager(map[string]any{
+				keyArgs:  []any{"--health-probe-bind-address=:9440"},
+				keyPorts: healthPort(9440),
+			}))
+
+			Expect(features.HealthProbeDefaultPort).To(Equal(8081))
+		})
+
+		It("should be the health port when the manager does not pass the flag", func() {
+			features := detect(manager(map[string]any{
+				keyArgs:  []any{"--leader-elect"},
+				keyPorts: healthPort(9440),
+			}))
+
+			Expect(features.HealthProbeDefaultPort).To(Equal(9440))
+		})
+
+		It("should be the probe port when the manager has neither the flag nor a health port", func() {
+			features := detect(manager(map[string]any{
+				"livenessProbe":  httpGet("/livez", int64(9091)),
+				"readinessProbe": httpGet("/ready", int64(9091)),
+			}))
+
+			Expect(features.HealthProbeDefaultPort).To(Equal(9091))
+		})
+
+		It("should be 8081 when nothing in the manifest says which port the manager uses", func() {
+			features := detect(manager(map[string]any{
+				"livenessProbe": httpGet("/healthz", "health"),
+			}))
+
+			Expect(features.HealthProbeDefaultPort).To(Equal(8081))
+		})
+
+		It("should be 8081 when the flag is passed as a separate arg", func() {
+			features := detect(manager(map[string]any{
+				keyArgs:  []any{"--health-probe-bind-address", ":9440"},
+				keyPorts: healthPort(9440),
+			}))
+
+			Expect(features.HealthProbeDefaultPort).To(Equal(8081))
 		})
 	})
 
