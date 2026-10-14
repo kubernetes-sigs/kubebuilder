@@ -279,6 +279,87 @@ var _ = Describe("createAPISubcommand", func() {
 		Expect(res.Path).To(Equal(externalPath))
 	})
 
+	Context("when several recorded resources share the Group/Version/Kind", func() {
+		const (
+			ioDomain    = "io"
+			k8sIODomain = "k8s.io"
+			ioPath      = "github.com/external/io/api/v1"
+			k8sIOPath   = "github.com/external/k8sio/api/v1"
+		)
+
+		BeforeEach(func() {
+			// A slice, not a map, so the recorded order (and the domains listed in errors) is fixed.
+			for _, variant := range []struct{ domain, path string }{
+				{ioDomain, ioPath},
+				{k8sIODomain, k8sIOPath},
+			} {
+				external := *res
+				external.Domain = variant.domain
+				external.External = true
+				external.Path = variant.path
+				external.API = nil
+				Expect(cfg.AddResource(external)).To(Succeed())
+			}
+
+			// resolveDomain keeps the project domain when several records match.
+			subCmd.options.DoAPI = false
+			subCmd.options.DoController = true
+		})
+
+		DescribeTable("should select the entry named by --external-api-domain",
+			func(externalPath string) {
+				subCmd.options.ExternalAPIDomain = k8sIODomain
+				subCmd.options.ExternalAPIPath = externalPath
+
+				Expect(subCmd.InjectResource(res)).To(Succeed())
+				Expect(res.Domain).To(Equal(k8sIODomain))
+				Expect(res.External).To(BeTrue())
+				Expect(res.Path).To(Equal(k8sIOPath))
+			},
+			Entry("without --external-api-path", ""),
+			Entry("with the recorded --external-api-path", k8sIOPath),
+		)
+
+		It("should refuse without --external-api-domain instead of adding a project-domain entry", func() {
+			err := subCmd.InjectResource(res)
+
+			Expect(err).To(MatchError(ContainSubstring("match more than one resource (domains: io, k8s.io)")))
+			Expect(err).To(MatchError(ContainSubstring("pass --external-api-domain")))
+			Expect(res.Domain).To(Equal(testIO))
+		})
+
+		It("should refuse an --external-api-domain that matches no recorded entry", func() {
+			subCmd.options.ExternalAPIDomain = "example.org"
+
+			err := subCmd.InjectResource(res)
+
+			Expect(err).To(MatchError(ContainSubstring(`no resource matches --external-api-domain "example.org"`)))
+		})
+
+		It("should add a new external variant when given a new domain and --external-api-path", func() {
+			const newPath = "github.com/external/org/api/v1"
+			subCmd.options.ExternalAPIDomain = "example.org"
+			subCmd.options.ExternalAPIPath = newPath
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+			Expect(res.Domain).To(Equal("example.org"))
+			Expect(res.External).To(BeTrue())
+			Expect(res.Path).To(Equal(newPath))
+		})
+
+		It("should select the project API when one shares the Group/Version/Kind", func() {
+			project := *res
+			project.Path = resource.APIPackagePath(cfg.GetRepository(), res.Group, res.Version, false)
+			project.API = &resource.API{CRDVersion: "v1", Namespaced: true}
+			Expect(cfg.AddResource(project)).To(Succeed())
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+			Expect(res.Domain).To(Equal(testIO))
+			Expect(res.External).To(BeFalse())
+			Expect(res.Path).To(Equal(project.Path))
+		})
+	})
+
 	It("should return an actionable error for --resource=false on old project with relative external path", func() {
 		// Simulate an old PROJECT file that stored a relative path instead of a Go import path
 		existingExternal := *res
