@@ -202,12 +202,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "captain-backup")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupCaptainWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Captain")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupCaptainWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Captain")
+		os.Exit(1)
 	}
 	if err := (&controller.FirstMateReconciler{
 		Client: mgr.GetClient(),
@@ -216,12 +213,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "firstmate")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupFirstMateWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "FirstMate")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupFirstMateWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "FirstMate")
+		os.Exit(1)
 	}
 	if err := (&controller.SailorReconciler{
 		Client: mgr.GetClient(),
@@ -230,12 +224,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "sailor")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupSailorWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Sailor")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupSailorWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Sailor")
+		os.Exit(1)
 	}
 	if err := (&controller.AdmiralReconciler{
 		Client: mgr.GetClient(),
@@ -244,12 +235,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "admiral")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupAdmiralWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Admiral")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupAdmiralWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Admiral")
+		os.Exit(1)
 	}
 	if err := (&controller.CertificateReconciler{
 		Client: mgr.GetClient(),
@@ -258,26 +246,17 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "certificate")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupIssuerWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Issuer")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Issuer")
+		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupPodWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Pod")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupPodWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Pod")
+		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
+		os.Exit(1)
 	}
 	if err := (&controller.NavigatorReconciler{
 		Client: mgr.GetClient(),

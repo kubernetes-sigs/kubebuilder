@@ -213,19 +213,13 @@ func main() {
 	}
 
 	/*
-		We'll also set up webhooks for our type, which we'll talk about next.
-		We just need to add them to the manager.  Since we might want to run
-		the webhooks separately, or not run them when testing our controller
-		locally, we'll put them behind an environment variable.
-
-		We'll just make sure to set `ENABLE_WEBHOOKS=false` when we run locally.
+		Register webhooks for our type with the manager, as explained in the next section.
+		To run the controller locally without webhook certificates, disable the webhook
+		server with `make run RUN_ARGS=--webhook-port=-1`.
 	*/
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1.SetupCronJobWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
-			os.Exit(1)
-		}
+	if err := webhookv1.SetupCronJobWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "CronJob")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
