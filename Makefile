@@ -216,6 +216,7 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 	cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
 	cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
 	cd ./docs/book/src/getting-started/testdata/project && make test
+	./hack/docs/test_webhook_certs.sh
 
 .PHONY: test-gomod
 test-gomod:  ## Run the Go module compatibility check
