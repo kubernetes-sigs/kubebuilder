@@ -78,6 +78,7 @@
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
     - [Webhook bootstrap problem](reference/webhook-bootstrap-problem.md)
+    - [Self-Signed Certificates (without cert-manager)](reference/webhook-self-signed-cert.md)
   - [Markers for Config/Code Generation](./reference/markers.md)
 
     - [CRD Generation](./reference/markers/crd.md)
@@ -121,7 +122,6 @@
     - [deploy-image/v1-alpha](./plugins/available/deploy-image-plugin-v1-alpha.md)
     - [go/v4](./plugins/available/go-v4-plugin.md)
     - [grafana/v1-alpha](./plugins/available/grafana-v1-alpha.md)
-    - [helm/v1-alpha](./plugins/available/helm-v1-alpha.md)
     - [helm/v2-alpha](./plugins/available/helm-v2-alpha.md)
     - [kustomize/v2](./plugins/available/kustomize-v2.md)
   - [Extending](./plugins/extending.md)

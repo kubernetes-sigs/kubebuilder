@@ -185,6 +185,32 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 	})
 })
 
+var _ = Describe("extractMapKeys", func() {
+	DescribeTable("returns the keys of the block in order",
+		func(body string, want []string) {
+			Expect(extractMapKeys(strings.Split(strings.TrimSuffix(body, "\n"), "\n"))).To(Equal(want))
+		},
+		Entry("a quoted key",
+			"    \"on\": original\n", []string{"on"}),
+		Entry("YAML text inside a multi-line value",
+			"    example.com/config: |\n      metadata:\n        labels:\n          foo: bar\n",
+			[]string{"example.com/config"}),
+		Entry("Helm expressions in values",
+			"    foo: {{ .Values.foo }}\n    bar: {{ include \"something\" . }}\n"+
+				"    baz: \"{{ .Values.baz }}\"\n    qux: prefix-{{ .Values.qux | quote }}\n",
+			[]string{"foo", "bar", "baz", "qux"}),
+		Entry("an escaped literal template in a quoted value",
+			"    \"on\": \"{{ \"{{ .Spec.Branch }}\" }}\\t\"\n", []string{"on"}),
+		Entry("an escaped literal template on the first line of a multi-line value",
+			"    note: |\n      {{ \"{{ .Spec.Branch }}\" }}\n        nested text\n      labels:\n",
+			[]string{"note"}),
+		Entry("a block that is not valid YAML, through the line-based fallback",
+			"    example.com/keep: value\n    example.com/broken: [unclosed\n",
+			[]string{"example.com/keep", "example.com/broken"}),
+		Entry("an empty block", "", []string{}),
+	)
+})
+
 // A ServiceMonitor's metadata.labels always carries the standard Helm/chart labels added by
 // AddStandardHelmLabels before this applier runs. Kustomize commonAnnotations add an annotations
 // block, which sorts before labels.
@@ -248,6 +274,16 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 		Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
 		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
 		Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+	})
+
+	It("keeps an existing annotation with a quoted key", func() {
+		input := strings.Replace(smAnnotationsThenLabels,
+			"    example.com/existing-annotation: keep\n", "    \"on\": original\n", 1)
+
+		rendered := AddServiceMonitorLabelsAndAnnotations(input)
+
+		Expect(rendered).To(ContainSubstring("  annotations:\n    \"on\": original\n"))
+		Expect(rendered).To(ContainSubstring(`{{- with omit . "on" }}`))
 	})
 
 	It("leaves the spec.selector.matchLabels block untouched", func() {

@@ -18,8 +18,10 @@ package all
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -180,6 +182,122 @@ var _ = Describe("kubebuilder", func() {
 			_, err = kbc.Kubectl.Get(true,
 				"service", fmt.Sprintf("e2e-%s-webhook-service", kbc.TestSuffix))
 			Expect(err).To(HaveOccurred(), "webhook Service must not exist when webhook.enabled=false")
+		})
+
+		It("should serve the health probes on each health probe bind address the manager accepts", func() {
+			By("generating a project without webhooks")
+			helpers.GenerateV4WithoutWebhooks(kbc)
+
+			// The flag, the "health" container port and both probes move together.
+			By("moving the project's health probe server to port 9440")
+			managerPath := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
+			Expect(pluginutil.ReplaceInFile(managerPath, "8081", "9440")).To(Succeed())
+
+			By("building installer and generating helm chart")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+			Expect(kbc.EditHelmPlugin()).To(Succeed())
+
+			By("verifying the chart takes the project's address as its default")
+			values, err := os.ReadFile(filepath.Join(kbc.Dir, "dist", "chart", "values.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(values)).To(ContainSubstring(`healthProbeBindAddress: ":9440"`))
+
+			By("deploying with the project's address and validating the manager reconciles the sample CR")
+			helpers.Run(kbc, helpers.RunOptions{
+				HasWebhook:          false,
+				HasMetrics:          true,
+				HasNetworkPolicies:  false,
+				InstallMethod:       helpers.InstallMethodHelm,
+				SkipChartGeneration: true, // Chart already generated above
+			})
+
+			releaseName := fmt.Sprintf("e2e-%s", kbc.TestSuffix)
+			deploymentName := releaseName + "-controller-manager"
+			// controller-runtime logs the address its health probe server listens on.
+			serverAddr := regexp.MustCompile(`"name":\s*"health probe",\s*"addr":\s*"([^"]+)"`)
+
+			// expectHealthProbeServer checks the running manager. With an address, the server
+			// listens on it, and the probes reach it through the "health" port: the rollout only
+			// completes once the readiness probe passes. With "0" there is no server, no "health"
+			// port and no probe. wantFlag "" means the chart passes no flag.
+			expectHealthProbeServer := func(wantFlag, wantListen, wantPort string) {
+				_, err = kbc.Kubectl.CommandInNamespace("rollout", "status",
+					"deployment/"+deploymentName, "--timeout=5m")
+				Expect(err).NotTo(HaveOccurred())
+				// Wait for the previous Pod to be gone, since GetControllerPodName describes all
+				// the Pods and fails when one is deleted meanwhile.
+				Eventually(func(g Gomega) {
+					pods, getErr := kbc.Kubectl.Get(true, "pods", "-l", "control-plane=controller-manager", "-o", "name")
+					g.Expect(getErr).NotTo(HaveOccurred())
+					g.Expect(strings.Fields(pods)).To(HaveLen(1))
+				}, 2*time.Minute, time.Second).Should(Succeed())
+				podName := helpers.GetControllerPodName(kbc)
+
+				var args, port, probes, logs string
+				args, err = kbc.Kubectl.Get(true, "pod", podName, "-o", "jsonpath={.spec.containers[0].args}")
+				Expect(err).NotTo(HaveOccurred())
+				if wantFlag == "" {
+					Expect(args).NotTo(ContainSubstring("--health-probe-bind-address"))
+				} else {
+					Expect(args).To(ContainSubstring(`"--health-probe-bind-address=` + wantFlag + `"`))
+				}
+
+				port, err = kbc.Kubectl.Get(true, "pod", podName, "-o",
+					`jsonpath={.spec.containers[0].ports[?(@.name=="health")].containerPort}`)
+				Expect(err).NotTo(HaveOccurred())
+				probes, err = kbc.Kubectl.Get(true, "pod", podName, "-o",
+					"jsonpath={.spec.containers[0].livenessProbe.httpGet.port}"+
+						"{.spec.containers[0].readinessProbe.httpGet.port}")
+				Expect(err).NotTo(HaveOccurred())
+
+				// The manager starts its HTTP servers before it tries to take the leader lease.
+				Eventually(func(g Gomega) {
+					logs, err = kbc.Kubectl.Logs(podName)
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(logs).To(ContainSubstring("Attempting to acquire leader lease"))
+				}, 2*time.Minute, time.Second).Should(Succeed())
+
+				if wantListen == "" {
+					Expect(port).To(BeEmpty())
+					Expect(probes).To(BeEmpty())
+					Expect(logs).NotTo(ContainSubstring("health probe"))
+					return
+				}
+				Expect(port).To(Equal(wantPort))
+				Expect(probes).To(Equal("healthhealth"))
+				match := serverAddr.FindStringSubmatch(logs)
+				Expect(match).NotTo(BeNil(), "the manager did not start the health probe server:\n%s", logs)
+				Expect(match[1]).To(Equal(wantListen))
+			}
+
+			By("verifying the manager serves the probes on the project's address")
+			expectHealthProbeServer(":9440", "[::]:9440", "9440")
+
+			for _, step := range []struct {
+				description, value, wantListen, wantPort string
+				asString                                 bool
+			}{
+				{"another port", ":9441", "[::]:9441", "9441", false},
+				// Go listens on 0.0.0.0 with a dual-stack socket, which it reports as [::].
+				{"all IPv4 interfaces", "0.0.0.0:9442", "[::]:9442", "9442", false},
+				{"all IPv6 interfaces", "[::]:9443", "[::]:9443", "9443", false},
+				{"empty: no flag, the manager's default :8081", "", "[::]:8081", "8081", false},
+				{"\"0\" as a string: turned off", "0", "", "", true},
+				{"0 as a number: turned off", "0", "", "", false},
+				{"the project's address again", ":9440", "[::]:9440", "9440", false},
+			} {
+				By("upgrading the release with manager.healthProbeBindAddress set to " + step.description)
+				setFlag := "--set"
+				if step.asString {
+					setFlag = "--set-string"
+				}
+				cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+					"--namespace", kbc.Kubectl.Namespace, "--reuse-values",
+					setFlag, "manager.healthProbeBindAddress="+step.value)
+				_, err = kbc.Run(cmd)
+				Expect(err).NotTo(HaveOccurred())
+				expectHealthProbeServer(step.value, step.wantListen, step.wantPort)
+			}
 		})
 
 		It("should generate a namespeced runnable project using webhooks and installed with the HelmChart", func() {

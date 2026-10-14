@@ -150,6 +150,71 @@ var _ = Describe("alpha generate", func() {
 		}
 	})
 
+	It("should migrate a deprecated Helm v1-alpha project to v2-alpha with an older Go layout", func() {
+		By("preparing a project with legacy Helm metadata")
+		Expect(kbc.Init("--plugins", "go/v4", "--project-version", "3", "--domain", kbc.Domain)).To(Succeed())
+		projectPath := filepath.Join(kbc.Dir, "PROJECT")
+		projectStore := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+		Expect(projectStore.LoadFrom(projectPath)).To(Succeed())
+		Expect(projectStore.Config().SetPluginChain([]string{
+			"go.kubebuilder.io/v3", pluginHelmKubebuilderV1Alpha,
+		})).To(Succeed())
+		Expect(projectStore.Config().EncodePluginConfig(pluginHelmKubebuilderV1Alpha, map[string]any{})).To(Succeed())
+		Expect(projectStore.SaveTo(projectPath)).To(Succeed())
+
+		By("regenerating the project through the CLI")
+		//nolint:gosec
+		output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", snapshotDir))
+		Expect(err).NotTo(HaveOccurred(), string(output))
+		Expect(string(output)).To(ContainSubstring("migrating deprecated helm/v1-alpha to helm/v2-alpha"))
+
+		By("checking the saved configuration and generated chart")
+		regeneratedConfig, err := loadProjectConfig(snapshotDir)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(regeneratedConfig.GetPluginChain()).To(Equal([]string{
+			pluginGoKubebuilderV4, pluginHelmKubebuilderV2Alpha,
+		}))
+		var helmConfig map[string]any
+		Expect(regeneratedConfig.DecodePluginConfig(pluginHelmKubebuilderV1Alpha, &helmConfig)).To(
+			MatchError(config.PluginKeyNotFoundError{Key: pluginHelmKubebuilderV1Alpha}))
+		Expect(regeneratedConfig.DecodePluginConfig(pluginHelmKubebuilderV2Alpha, &helmConfig)).To(Succeed())
+		Expect(helmConfig).To(HaveKeyWithValue("manifests", "dist/install.yaml"))
+		Expect(helmConfig).To(HaveKeyWithValue(helmOutputKey, "dist"))
+		for _, path := range []string{"Chart.yaml", "values.yaml", "templates/manager/manager.yaml"} {
+			Expect(filepath.Join(snapshotDir, "dist", "chart", path)).To(BeAnExistingFile())
+		}
+		makefile, err := os.ReadFile(filepath.Join(snapshotDir, "Makefile"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(makefile)).To(ContainSubstring("helm-deploy:"))
+
+		By("checking that the source project still tracks its legacy configuration")
+		Expect(projectStore.LoadFrom(projectPath)).To(Succeed())
+		Expect(projectStore.Config().DecodePluginConfig(pluginHelmKubebuilderV1Alpha, &helmConfig)).To(Succeed())
+	})
+
+	It("should enable cert-manager in an existing Helm v2-alpha workflow when adding a webhook", func() {
+		Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+		Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+			"--resource", "--controller", "--make=false")).To(Succeed())
+		Expect(kbc.Edit("--plugins", "helm/v2-alpha")).To(Succeed())
+
+		workflowPath := filepath.Join(kbc.Dir, ".github", "workflows", "test-chart.yml")
+		workflow, err := os.ReadFile(workflowPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(workflow)).To(ContainSubstring("#      - name: Install cert-manager via Helm (wait for readiness)"))
+
+		Expect(kbc.CreateWebhook("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+			"--defaulting", "--programmatic-validation")).To(Succeed())
+		workflow, err = os.ReadFile(workflowPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(workflow)).To(ContainSubstring("\n      - name: Install cert-manager via Helm (wait for readiness)"))
+		Expect(string(workflow)).To(ContainSubstring("\n          helm install cert-manager jetstack/cert-manager \\"))
+		Expect(string(workflow)).To(ContainSubstring("\n            --wait \\"))
+		Expect(string(workflow)).To(ContainSubstring("\n            --timeout 300s"))
+		Expect(string(workflow)).NotTo(ContainSubstring("# TODO: Uncomment if cert-manager is enabled"))
+		Expect(string(workflow)).NotTo(ContainSubstring("#      - name: Install cert-manager"))
+	})
+
 	// The regression these two specs guard against: the cleanup deletes the
 	// project directory before the Grafana migration copies the config, so an
 	// in-place run used to replace the user's customisation with the

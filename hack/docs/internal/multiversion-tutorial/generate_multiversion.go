@@ -507,12 +507,9 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
 		`/*
-		We'll also set up webhooks for our type, which we'll talk about next.
-		We just need to add them to the manager.  Since we might want to run
-		the webhooks separately, or not run them when testing our controller
-		locally, we'll put them behind an environment variable.
-
-		We'll just make sure to set `+"`ENABLE_WEBHOOKS=false`"+` when we run locally.
+		Register webhooks for our type with the manager, as explained in the next section.
+		To run the controller locally without webhook certificates, disable the webhook
+		server with `+"`make run RUN_ARGS=--webhook-port=-1`"+`.
 	*/`,
 		`/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.

@@ -155,8 +155,10 @@ var _ = Describe("kubebuilder", func() {
 			valuesPath := filepath.Join(kbc.Dir, "dist", "chart", "values.yaml")
 			Expect(pluginutil.ReplaceInFile(valuesPath,
 				"port: 8443", fmt.Sprintf("port: %d", customMetricsPort))).To(Succeed())
+			// The health probe value is a whole address, so set a host as well as the port.
 			Expect(pluginutil.ReplaceInFile(valuesPath,
-				"port: 8081", fmt.Sprintf("port: %d", customHealthProbePort))).To(Succeed())
+				`healthProbeBindAddress: ":8081"`,
+				fmt.Sprintf(`healthProbeBindAddress: "0.0.0.0:%d"`, customHealthProbePort))).To(Succeed())
 			Expect(pluginutil.ReplaceInFile(valuesPath,
 				"port: 9443", fmt.Sprintf("port: %d", customWebhookPort))).To(Succeed())
 			Expect(pluginutil.ReplaceInFile(valuesPath,
@@ -183,7 +185,7 @@ var _ = Describe("kubebuilder", func() {
 				"pod", controllerPodName, "-o", "jsonpath={.spec.containers[0].args}")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(args).To(ContainSubstring(
-				fmt.Sprintf("--health-probe-bind-address=:%d", customHealthProbePort)))
+				fmt.Sprintf("--health-probe-bind-address=0.0.0.0:%d", customHealthProbePort)))
 			Expect(args).To(ContainSubstring(
 				fmt.Sprintf("--metrics-bind-address=:%d", customMetricsPort)))
 			Expect(args).To(ContainSubstring(fmt.Sprintf("--webhook-port=%d", customWebhookPort)))
@@ -194,6 +196,11 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ports).To(ContainSubstring(strconv.Itoa(customHealthProbePort)))
 			Expect(ports).To(ContainSubstring(strconv.Itoa(customWebhookPort)))
+
+			By("verifying the manager started its health probe server")
+			logs, err := kbc.Kubectl.Logs(controllerPodName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logs).To(ContainSubstring("health probe"))
 
 			By("verifying the metrics Service exposes the custom port")
 			namePrefix := fmt.Sprintf("e2e-%s", kbc.TestSuffix)

@@ -19,6 +19,9 @@ limitations under the License.
 package scaffolds
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +38,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 
 	BeforeEach(func() {
 		var err error
-		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
+		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on",
+			"KUBECONFIG="+filepath.Join(GinkgoT().TempDir(), "missing-kubeconfig"))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(kbc.Prepare()).To(Succeed())
 
@@ -95,6 +99,44 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(content)).To(ContainSubstring("err = crewv1.AddToScheme(scheme.Scheme)"))
 			Expect(string(content)).To(ContainSubstring("err = certmanageriov1.AddToScheme(scheme.Scheme)"))
 			Expect(strings.Count(string(content), "crewv1.AddToScheme(scheme.Scheme)")).To(Equal(1))
+
+			By("verifying each webhook is registered once directly in main")
+			expectUnconditionalWebhookSetup(kbc.Dir,
+				"SetupCaptainWebhookWithManager", "SetupFirstMateWebhookWithManager", "SetupIssuerWebhookWithManager")
+		})
+	})
+
+	Context("When creating webhooks in multiple groups", func() {
+		It("should register each webhook once directly in main", func() {
+			By("enabling the multigroup layout")
+			Expect(kbc.AllowProjectBeMultiGroup()).To(Succeed())
+
+			By("creating APIs and webhooks in different groups")
+			resources := []struct {
+				group string
+				kind  string
+			}{
+				{group: "crew", kind: "Captain"},
+				{group: "ships", kind: "Vessel"},
+			}
+			for _, resource := range resources {
+				Expect(kbc.CreateAPI(
+					"--group", resource.group,
+					"--version", "v1",
+					"--kind", resource.kind,
+					"--resource", "--controller",
+					"--make=false",
+				)).To(Succeed())
+				Expect(kbc.CreateWebhook(
+					"--group", resource.group,
+					"--version", "v1",
+					"--kind", resource.kind,
+					"--defaulting",
+					"--make=false",
+				)).To(Succeed())
+			}
+
+			expectUnconditionalWebhookSetup(kbc.Dir, "SetupCaptainWebhookWithManager", "SetupVesselWebhookWithManager")
 		})
 	})
 
@@ -139,6 +181,9 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(content)).To(ContainSubstring("validator TestIncrementalValidator"))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestIncremental under Defaulting Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating or updating TestIncremental under Validating Webhook\""))
+
+			By("verifying incremental scaffolding registers the webhook once directly in main")
+			expectUnconditionalWebhookSetup(kbc.Dir, "SetupTestIncrementalWebhookWithManager")
 		})
 
 		It("should support adding defaulting to existing validation webhook", func() {
@@ -179,6 +224,9 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 
 			Expect(string(content)).To(ContainSubstring("validator TestReverseValidator"))
 			Expect(string(content)).To(ContainSubstring("defaulter TestReverseDefaulter"))
+
+			By("verifying incremental scaffolding registers the webhook once directly in main")
+			expectUnconditionalWebhookSetup(kbc.Dir, "SetupTestReverseWebhookWithManager")
 		})
 
 		It("should support conversion-only webhooks without defaulting/validation", func() {
@@ -233,12 +281,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(webhookContent)).NotTo(ContainSubstring("TestConversionDefaulter"))
 			Expect(string(webhookContent)).NotTo(ContainSubstring("TestConversionValidator"))
 
-			By("verifying conversion webhook IS wired in main.go")
-			mainFile := filepath.Join(kbc.Dir, "cmd/main.go")
-			mainContent, err := os.ReadFile(mainFile)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(string(mainContent)).To(ContainSubstring("SetupTestConversionWebhookWithManager"))
+			By("verifying the conversion webhook is registered once directly in main")
+			expectUnconditionalWebhookSetup(kbc.Dir, "SetupTestConversionWebhookWithManager")
 
 			By("verifying e2e test has conversion CA injection check")
 			e2eFile := filepath.Join(kbc.Dir, "test/e2e/e2e_test.go")
@@ -307,12 +351,8 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating TestMulti under Defaulting Webhook\""))
 			Expect(string(content)).To(ContainSubstring("Context(\"When creating or updating TestMulti under Validating Webhook\""))
 
-			By("verifying defaulting/validation webhooks are wired in main.go")
-			mainFile := filepath.Join(kbc.Dir, "cmd/main.go")
-			mainContent, err := os.ReadFile(mainFile)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(string(mainContent)).To(ContainSubstring("SetupTestMultiWebhookWithManager"))
+			By("verifying conversion and admission webhooks share one registration directly in main")
+			expectUnconditionalWebhookSetup(kbc.Dir, "SetupTestMultiWebhookWithManager")
 		})
 	})
 
@@ -370,9 +410,9 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			modifiedWebhook := strings.ReplaceAll(string(webhookContent),
 				"// TODO(user): fill in your defaulting logic.",
 				`// My custom defaulting logic
-	if testcustom.Spec.Replicas == nil {
-		replicas := int32(1)
-		testcustom.Spec.Replicas = &replicas
+	if obj.Spec.Foo == nil {
+		value := "defaulted"
+		obj.Spec.Foo = &value
 	}`)
 
 			err = os.WriteFile(webhookFile, []byte(modifiedWebhook), 0o644)
@@ -409,7 +449,7 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(webhookContent)).To(ContainSubstring("// My custom defaulting logic"))
-			Expect(string(webhookContent)).To(ContainSubstring("testcustom.Spec.Replicas = &replicas"))
+			Expect(string(webhookContent)).To(ContainSubstring("obj.Spec.Foo = &value"))
 
 			By("verifying validator implementation was added")
 			Expect(string(webhookContent)).To(ContainSubstring("type TestCustomValidator struct"))
@@ -610,3 +650,43 @@ var _ = Describe("Webhook Incremental Scaffolding", func() {
 		})
 	})
 })
+
+func expectUnconditionalWebhookSetup(projectDirectory string, setupFunctions ...string) {
+	GinkgoHelper()
+
+	mainFile := filepath.Join(projectDirectory, "cmd", "main.go")
+	content, err := os.ReadFile(mainFile)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(string(content)).NotTo(ContainSubstring("ENABLE_WEBHOOKS"))
+	Expect(string(content)).NotTo(ContainSubstring("nolint:goconst"))
+
+	parsedFile, err := parser.ParseFile(token.NewFileSet(), mainFile, content, 0)
+	Expect(err).NotTo(HaveOccurred())
+	var directCalls []string
+	for _, declaration := range parsedFile.Decls {
+		function, ok := declaration.(*ast.FuncDecl)
+		if !ok || function.Name.Name != "main" {
+			continue
+		}
+		for _, statement := range function.Body.List {
+			registration, ok := statement.(*ast.IfStmt)
+			if !ok || registration.Init == nil {
+				continue
+			}
+			ast.Inspect(registration.Init, func(node ast.Node) bool {
+				call, ok := node.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+				if selector, ok := call.Fun.(*ast.SelectorExpr); ok {
+					directCalls = append(directCalls, selector.Sel.Name)
+				}
+				return true
+			})
+		}
+	}
+	for _, setupFunction := range setupFunctions {
+		Expect(strings.Count(string(content), setupFunction+"(")).To(Equal(1))
+		Expect(directCalls).To(ContainElement(setupFunction))
+	}
+}

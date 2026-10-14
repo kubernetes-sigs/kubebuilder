@@ -108,7 +108,8 @@ func main() {
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to. "+
+		"Set 0 to disable the health probe server.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -239,12 +240,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "crew-captain-backup")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Captain")
-			os.Exit(1)
-		}
+	if err := webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Captain")
+		os.Exit(1)
 	}
 	if err := (&shipcontroller.FrigateReconciler{
 		Client: mgr.GetClient(),
@@ -260,12 +258,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "ship-destroyer")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Destroyer")
-			os.Exit(1)
-		}
+	if err := webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Destroyer")
+		os.Exit(1)
 	}
 	if err := (&shipcontroller.CruiserReconciler{
 		Client: mgr.GetClient(),
@@ -274,12 +269,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "ship-cruiser")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Cruiser")
-			os.Exit(1)
-		}
+	if err := webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Cruiser")
+		os.Exit(1)
 	}
 	if err := (&seacreaturescontroller.KrakenReconciler{
 		Client: mgr.GetClient(),
@@ -330,26 +322,17 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "cert-manager-certificate")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Issuer")
-			os.Exit(1)
-		}
+	if err := webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Issuer")
+		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Pod")
-			os.Exit(1)
-		}
+	if err := webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Pod")
+		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
-			os.Exit(1)
-		}
+	if err := webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Deployment")
+		os.Exit(1)
 	}
 	if err := (&seacreaturescontroller.PrawnReconciler{
 		Client: mgr.GetClient(),
@@ -374,12 +357,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "example.com-busybox")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
-			os.Exit(1)
-		}
+	if err := webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Memcached")
+		os.Exit(1)
 	}
 	if err := (&examplecomcontroller.WordpressReconciler{
 		Client: mgr.GetClient(),
@@ -388,12 +368,9 @@ func main() {
 		setupLog.Error(err, "Failed to create controller", "controller", "example.com-wordpress")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
-			os.Exit(1)
-		}
+	if err := webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook", "webhook", "Wordpress")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 

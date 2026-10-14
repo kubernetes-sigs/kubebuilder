@@ -25,8 +25,8 @@ import (
 )
 
 func (c CLI) newCreateCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:        "create",
+	return asCommandGroup(&cobra.Command{
+		Use:        createCommand,
 		SuggestFor: []string{"new"},
 		Short:      "Scaffold a Kubernetes API or webhook",
 		Long: fmt.Sprintf(`Scaffold a Kubernetes API or webhook.
@@ -42,5 +42,5 @@ Available plugins that support 'create' subcommands:
 			_, hasCreateWebhook := p.(plugin.CreateWebhook)
 			return hasCreateAPI || hasCreateWebhook
 		})),
-	}
+	})
 }

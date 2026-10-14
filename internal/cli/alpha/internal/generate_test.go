@@ -15,7 +15,10 @@ limitations under the License.
 package internal
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -70,19 +73,16 @@ func (f *fakeConfig) DecodePluginConfig(key string, dst any) error {
 	if !exists {
 		return config.PluginKeyNotFoundError{Key: key}
 	}
-	// If the value is a struct, copy its fields to dst
-	if val != nil && dst != nil {
-		// Handle different plugin config types
-		switch d := dst.(type) {
-		case *autoupdatev1alpha.PluginConfig:
-			if v, ok := val.(autoupdatev1alpha.PluginConfig); ok {
-				*d = v
-			}
-		case *deployimagev1alpha1.PluginConfig:
-			if v, ok := val.(deployimagev1alpha1.PluginConfig); ok {
-				*d = v
-			}
-		}
+	// Some helpers only check presence with an empty, non-pointer struct.
+	if _, presenceOnly := dst.(struct{}); presenceOnly || dst == nil {
+		return nil
+	}
+	data, err := json.Marshal(val)
+	if err != nil {
+		return fmt.Errorf("failed to encode fake plugin config: %w", err)
+	}
+	if err := json.Unmarshal(data, dst); err != nil {
+		return fmt.Errorf("failed to decode fake plugin config: %w", err)
 	}
 	return nil
 }
@@ -95,6 +95,7 @@ type fakeStore struct {
 func (f *fakeStore) Config() config.Config { return f.cfg }
 
 const (
+	helmOutputKey      = "output"
 	exampleDomain      = "example.com"
 	fooKind            = "Foo"
 	exampleKind        = "Example"
@@ -353,6 +354,23 @@ var _ = Describe("generate: get-args-helpers", func() {
 	// getInitArgs
 	Describe("getInitArgs", func() {
 		Context("for outdated plugins", func() {
+			const pluginGoKubebuilderV3 = "go.kubebuilder.io/v3"
+			DescribeTable("replaces every deprecated entry while preserving plugin order",
+				func(pluginChain []string, expectedChain string) {
+					cfg := &fakeConfig{pluginChain: pluginChain}
+					args := getInitArgs(&fakeStore{cfg: cfg}, &Generate{}, "")
+					Expect(args).To(ContainElement(expectedChain))
+					Expect(args).NotTo(ContainElement(ContainSubstring(pluginGoKubebuilderV3)))
+					Expect(args).NotTo(ContainElement(ContainSubstring(pluginHelmKubebuilderV1Alpha)))
+				},
+				Entry("Go before Helm",
+					[]string{pluginGoKubebuilderV3, "kustomize.common.kubebuilder.io/v2", pluginHelmKubebuilderV1Alpha},
+					pluginGoKubebuilderV4+",kustomize.common.kubebuilder.io/v2,"+pluginHelmKubebuilderV2Alpha),
+				Entry("Helm before Go",
+					[]string{pluginHelmKubebuilderV1Alpha, pluginGoKubebuilderV3},
+					pluginHelmKubebuilderV2Alpha+","+pluginGoKubebuilderV4),
+			)
+
 			When("v3 plugin is used", func() {
 				It("should return correct args for plugins, domain, repo", func() {
 					cfg := &fakeConfig{pluginChain: []string{"go.kubebuilder.io/v3"}, domain: fooDomain, repo: barRepo}
@@ -854,35 +872,101 @@ var _ = Describe("generate: kubebuilder", func() {
 
 	Context("kubebuilderHelmEdit", func() {
 		It("runs kubebuilder edit successfully for Helm plugin", func() {
-			// Run kubebuilderHelmEdit and verify no errors
-			Expect(kubebuilderHelmEdit(true)).To(Succeed())
+			Expect(kubebuilderHelmEdit()).To(Succeed())
 		})
 	})
-})
 
-var _ = Describe("generate: hasHelmPlugin", func() {
-	It("returns true if v2-alpha plugin present", func() {
-		cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV2Alpha: true}}
-		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeTrue())
-		Expect(isV2Alpha).To(BeTrue())
-	})
+	Context("migrateHelmPlugin", func() {
+		var warnings bytes.Buffer
 
-	It("returns true if v1-alpha plugin present", func() {
-		cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV1Alpha: true}}
-		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeTrue())
-		Expect(isV2Alpha).To(BeFalse())
-	})
+		BeforeEach(func() {
+			originalLogger := slog.Default()
+			slog.SetDefault(slog.New(slog.NewTextHandler(&warnings, &slog.HandlerOptions{Level: slog.LevelWarn})))
+			DeferCleanup(func() { slog.SetDefault(originalLogger) })
+			warnings.Reset()
+		})
 
-	It("returns false if both plugins not found", func() {
-		cfg := &fakeConfig{pluginErr: &config.PluginKeyNotFoundError{Key: "helm.kubebuilder.io/v2-beta"}}
-		store := &fakeStore{cfg: cfg}
-		hasPlugin, isV2Alpha := hasHelmPlugin(store)
-		Expect(hasPlugin).To(BeFalse())
-		Expect(isV2Alpha).To(BeFalse())
+		DescribeTable("upgrades legacy projects with v2-alpha defaults and a warning",
+			func(plugins map[string]any) {
+				cfg := &fakeConfig{plugins: plugins}
+				Expect(migrateHelmPlugin(&fakeStore{cfg: cfg})).To(Succeed())
+				commandLog, err := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(commandLog)).To(Equal("edit --plugins " + pluginHelmKubebuilderV2Alpha + "\n"))
+				Expect(warnings.String()).To(ContainSubstring("migrating deprecated helm/v1-alpha to helm/v2-alpha"))
+			},
+			Entry("tracked legacy configuration", map[string]any{
+				pluginHelmKubebuilderV1Alpha: map[string]any{helmOutputKey: "old-chart"},
+			}),
+			Entry("empty legacy configuration", map[string]any{pluginHelmKubebuilderV1Alpha: map[string]any{}}),
+		)
+
+		DescribeTable("passes tracked v2-alpha options",
+			func(includeLegacy bool) {
+				plugins := map[string]any{
+					pluginHelmKubebuilderV2Alpha: map[string]any{
+						"manifests":   "dist/install.yaml",
+						helmOutputKey: kbc.Dir,
+					},
+				}
+				if includeLegacy {
+					plugins[pluginHelmKubebuilderV1Alpha] = map[string]any{}
+				}
+				Expect(migrateHelmPlugin(&fakeStore{cfg: &fakeConfig{plugins: plugins}})).To(Succeed())
+				commandLog, err := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(commandLog)).To(ContainSubstring(pluginHelmKubebuilderV2Alpha))
+				Expect(string(commandLog)).To(ContainSubstring("--manifests dist/install.yaml"))
+				Expect(string(commandLog)).To(ContainSubstring("--output-dir " + kbc.Dir))
+				Expect(string(commandLog)).NotTo(ContainSubstring(pluginHelmKubebuilderV1Alpha))
+				Expect(warnings.String()).To(BeEmpty())
+			},
+			Entry("v2-alpha only", false),
+			Entry("v2-alpha takes precedence over legacy metadata", true),
+		)
+
+		It("uses defaults when v2-alpha has no tracked options", func() {
+			cfg := &fakeConfig{plugins: map[string]any{pluginHelmKubebuilderV2Alpha: map[string]any{}}}
+			Expect(migrateHelmPlugin(&fakeStore{cfg: cfg})).To(Succeed())
+			commandLog, err := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(commandLog)).To(Equal("edit --plugins " + pluginHelmKubebuilderV2Alpha + "\n"))
+			Expect(warnings.String()).To(BeEmpty())
+		})
+
+		DescribeTable("skips projects without Helm metadata support or a Helm plugin",
+			func(cfg *fakeConfig) {
+				Expect(migrateHelmPlugin(&fakeStore{cfg: cfg})).To(Succeed())
+				Expect(filepath.Join(kbc.Dir, "kubebuilder.log")).NotTo(BeAnExistingFile())
+				Expect(warnings.String()).To(BeEmpty())
+			},
+			Entry("no Helm plugin", &fakeConfig{}),
+			Entry("unsupported metadata", &fakeConfig{
+				plugins:   map[string]any{pluginHelmKubebuilderV2Alpha: map[string]any{}},
+				pluginErr: config.UnsupportedFieldError{Field: "plugins"},
+			}),
+		)
+
+		DescribeTable("reports invalid Helm configuration without running edit",
+			func(key string, value any) {
+				cfg := &fakeConfig{plugins: map[string]any{key: value}}
+				Expect(migrateHelmPlugin(&fakeStore{cfg: cfg})).NotTo(Succeed())
+				Expect(filepath.Join(kbc.Dir, "kubebuilder.log")).NotTo(BeAnExistingFile())
+			},
+			Entry("v2-alpha metadata", pluginHelmKubebuilderV2Alpha, "invalid"),
+			Entry("v1-alpha metadata", pluginHelmKubebuilderV1Alpha, "invalid"),
+			Entry("v2-alpha options", pluginHelmKubebuilderV2Alpha, map[string]any{helmOutputKey: 42}),
+		)
+
+		DescribeTable("reports an edit command failure",
+			func(key string) {
+				Expect(os.WriteFile(filepath.Join(kbc.Dir, "kubebuilder"), []byte("#!/bin/sh\nexit 1\n"), 0o755)).To(Succeed())
+				cfg := &fakeConfig{plugins: map[string]any{key: map[string]any{}}}
+				Expect(migrateHelmPlugin(&fakeStore{cfg: cfg})).To(MatchError(ContainSubstring("failed to run edit subcommand")))
+			},
+			Entry("legacy migration", pluginHelmKubebuilderV1Alpha),
+			Entry("v2-alpha regeneration", pluginHelmKubebuilderV2Alpha),
+		)
 	})
 })
 
@@ -997,7 +1081,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("returns error if decoding Grafana plugin config fails", func() {
 			cfg := &fakeConfig{
 				pluginErr: fmt.Errorf("decoding error"),
-				plugins:   map[string]any{grafanaPluginKey: true},
+				plugins:   map[string]any{grafanaPluginKey: map[string]any{}},
 			}
 			store := &fakeStore{cfg: cfg}
 			Expect(migrateGrafanaPlugin(store, "src", "dest", nil, false)).NotTo(Succeed())
@@ -1020,7 +1104,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 			})
 
 			It("migrates Grafana plugin successfully", func() {
-				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: map[string]any{}}}
 				store := &fakeStore{cfg: cfg}
 				Expect(migrateGrafanaPlugin(store, src, dest, nil, false)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
@@ -1033,7 +1117,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 				// default: the state after cleanOutputDirPreservingGit and
 				// kubebuilderGrafanaEdit have both run. Only the preserved
 				// content read before the cleanup carries the customisation.
-				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: map[string]any{}}}
 				store := &fakeStore{cfg: cfg}
 				Expect(migrateGrafanaPlugin(store, src, src, []byte("customised"), true)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
@@ -1045,7 +1129,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 				// An existing empty config.yaml is a customisation too: the
 				// user emptied it on purpose, so the restore must not leave
 				// the scaffolded default behind.
-				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: map[string]any{}}}
 				store := &fakeStore{cfg: cfg}
 				Expect(migrateGrafanaPlugin(store, src, src, nil, true)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(src, "grafana/custom-metrics/config.yaml"))
@@ -1054,7 +1138,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 			})
 
 			It("prefers the preserved config over the source file", func() {
-				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: true}}
+				cfg := &fakeConfig{plugins: map[string]any{grafanaPluginKey: map[string]any{}}}
 				store := &fakeStore{cfg: cfg}
 				Expect(migrateGrafanaPlugin(store, src, dest, []byte("customised"), true)).To(Succeed())
 				b, err := os.ReadFile(filepath.Join(dest, "grafana/custom-metrics/config.yaml"))
@@ -1074,7 +1158,7 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("returns error if failed to decode Auto Update plugin", func() {
 			cfg := &fakeConfig{
 				pluginErr: fmt.Errorf("decoding error"),
-				plugins:   map[string]any{autoupdatePluginKey: true},
+				plugins:   map[string]any{autoupdatePluginKey: map[string]any{}},
 			}
 			store := &fakeStore{cfg: cfg}
 			Expect(migrateAutoUpdatePlugin(store)).NotTo(Succeed())
@@ -1101,14 +1185,14 @@ var _ = Describe("generate: migrate-plugins", func() {
 		It("returns error if decoding Deploy Image plugin config fails", func() {
 			cfg := &fakeConfig{
 				pluginErr: fmt.Errorf("decoding error"),
-				plugins:   map[string]any{deployImagePluginKey: true},
+				plugins:   map[string]any{deployImagePluginKey: map[string]any{}},
 			}
 			store := &fakeStore{cfg: cfg}
 			Expect(migrateDeployImagePlugin(store)).NotTo(Succeed())
 		})
 
 		It("migrates Deploy Image plugin successfully", func() {
-			cfg := &fakeConfig{plugins: map[string]any{deployImagePluginKey: true}}
+			cfg := &fakeConfig{plugins: map[string]any{deployImagePluginKey: map[string]any{}}}
 			store := &fakeStore{cfg: cfg}
 
 			// Mock resources for the plugin

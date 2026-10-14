@@ -30,4 +30,8 @@ controller-runtime logs `Webhook server is disabled` and does not listen on any 
 
 Only disable the server when no webhook configuration or CRD conversion points at the manager. Otherwise the API server cannot reach the webhooks and rejects the requests they guard.
 
-To skip webhook registration when running the manager locally with `make run`, set `ENABLE_WEBHOOKS=false` instead.
+To disable the webhook server when running the manager locally, pass the flag through `RUN_ARGS`:
+
+```bash
+make run RUN_ARGS=--webhook-port=-1
+```

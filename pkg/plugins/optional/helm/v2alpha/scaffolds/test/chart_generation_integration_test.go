@@ -19,6 +19,8 @@ limitations under the License.
 package test
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,8 +30,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/action"
 	helmChartLoader "helm.sh/helm/v3/pkg/chart/loader"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -572,6 +577,42 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sa).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
 			Expect(sa).To(ContainSubstring("team: platform"))
 		})
+
+		DescribeTable("keeps existing annotations that are not one-line values",
+			func(annotations string, setArgs []string, want map[string]string) {
+				kustomize := strings.Replace(createKustomizeForServiceAccountWithAnnotationsRender("test-project"),
+					"    example.com/existing-annotation: preserved-value\n", annotations, 1)
+				Expect(kustomize).To(ContainSubstring(annotations))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				sa := serviceAccountDoc(out)
+
+				var rendered struct {
+					Metadata struct {
+						Annotations map[string]string `yaml:"annotations"`
+					} `yaml:"metadata"`
+				}
+				Expect(yaml.Unmarshal([]byte(sa), &rendered)).To(Succeed(), "got:\n%s", sa)
+				Expect(rendered.Metadata.Annotations).To(Equal(want), "got:\n%s", sa)
+			},
+			Entry("a multi-line annotation with a line like labels:",
+				"    example.com/description: |\n      Runs the manager.\n      labels:\n", nil,
+				map[string]string{"example.com/description": "Runs the manager.\nlabels:\n"}),
+			Entry("an annotation with a quoted key",
+				"    \"on\": original\n", nil,
+				map[string]string{"on": "original"}),
+			Entry("a value set for a key that only appears inside a multi-line annotation",
+				"    note: |\n      endpoint: api\n      second line\n",
+				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
+				map[string]string{"note": "endpoint: api\nsecond line\n", "endpoint": "custom"}),
+			Entry("an annotation whose value has literal template text",
+				"    \"on\": \"{{ .Spec.Branch }}\\t\"\n", nil,
+				map[string]string{"on": "{{ .Spec.Branch }}\t"}),
+			Entry("a multi-line annotation that starts with literal template text",
+				"    note: |\n      {{ .Spec.Branch }}\n        nested text\n      endpoint: api\n",
+				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
+				map[string]string{"note": "{{ .Spec.Branch }}\n  nested text\nendpoint: api\n", "endpoint": "custom"}),
+		)
 	})
 
 	Context("ServiceAccount labels (rendered)", func() {
@@ -611,8 +652,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	}
 
 	Context("ServiceMonitor labels and annotations (rendered, kustomize-derived)", func() {
+		// The ServiceMonitor is gated on metrics.enabled, which the fixtures leave off.
 		renderChart := func(setArgs ...string) string {
-			out, err := helmTemplate(createKustomizeWithServiceMonitor("test-project"), setArgs...)
+			args := append([]string{"--set", "metrics.enabled=true"}, setArgs...)
+			out, err := helmTemplate(createKustomizeWithServiceMonitor("test-project"), args...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 			return out
 		}
@@ -656,6 +699,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 
 		It("merges into an existing annotations block instead of duplicating it", func() {
 			out, err := helmTemplate(createKustomizeWithServiceMonitorAnnotations("test-project"),
+				"--set", "metrics.enabled=true",
 				"--set", "prometheus.enabled=true",
 				"--set", "prometheus.annotations.team=platform",
 			)
@@ -668,12 +712,24 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).To(ContainSubstring("example.com/existing-annotation: preserved-value"))
 			Expect(sm).To(ContainSubstring("team: platform"))
 		})
+
+		It("does not render the ServiceMonitor when metrics are disabled", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+			))
+
+			Expect(sm).To(BeEmpty(),
+				"the ServiceMonitor scrapes the metrics Service, so it must not render without it")
+		})
 	})
 
 	Context("ServiceMonitor labels and annotations (rendered, static fallback)", func() {
 		// No ServiceMonitor in the kustomize input — the static fallback template is scaffolded.
+		// The ServiceMonitor is gated on metrics.enabled, which the fixture leaves off.
 		renderChart := func(setArgs ...string) string {
-			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), setArgs...)
+			args := append([]string{"--set", "metrics.enabled=true"}, setArgs...)
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"), args...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 			return out
 		}
@@ -713,6 +769,16 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			// the user value must not appear; only the scaffolded value remains.
 			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
 				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+		})
+
+		It("does not render the ServiceMonitor when metrics are disabled", func() {
+			sm := serviceMonitorDoc(renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+			))
+
+			Expect(sm).To(BeEmpty(),
+				"the ServiceMonitor scrapes the metrics Service, so it must not render without it")
 		})
 	})
 
@@ -887,6 +953,183 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(args).NotTo(ContainElement("--webhook-port=-1"), "rendered manager args: %v", args)
 			Expect(containerPortNames(rendered)).To(ContainElement("webhook-server"))
 			Expect(rendered).To(ContainSubstring("containerPort: 9444"))
+		})
+	})
+
+	Context("Health probe bind address (rendered)", func() {
+		// managerDeploymentDoc returns the manager Deployment document from a multi-document render.
+		managerDeploymentDoc := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: Deployment\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		// healthProbeArgs returns every --health-probe-bind-address arg in the rendered Deployment.
+		healthProbeArgs := func(deployment string) []string {
+			var args []string
+			for _, line := range strings.Split(deployment, "\n") {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "- --health-probe-bind-address") {
+					args = append(args, strings.TrimPrefix(trimmed, "- "))
+				}
+			}
+			return args
+		}
+
+		// healthContainerPorts returns the containerPort of every port named "health".
+		healthContainerPorts := func(deployment string) []string {
+			var ports []string
+			lines := strings.Split(deployment, "\n")
+			for i, line := range lines {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "- containerPort:") && i+1 < len(lines) &&
+					strings.TrimSpace(lines[i+1]) == "name: health" {
+					ports = append(ports, strings.TrimSpace(strings.TrimPrefix(trimmed, "- containerPort:")))
+				}
+			}
+			return ports
+		}
+
+		render := func(healthProbeArg, port string, setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithHealthProbe("test-project", healthProbeArg, port), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			deployment := managerDeploymentDoc(out)
+			Expect(deployment).NotTo(BeEmpty(), "rendered output has no Deployment: %s", out)
+			return deployment
+		}
+
+		// The probes of the fixture target the health probe server, so they are rendered exactly
+		// when it is on, on the named "health" port.
+		expectServer := func(deployment, wantArg, wantPort string) {
+			if wantArg == "" {
+				Expect(healthProbeArgs(deployment)).To(BeEmpty())
+			} else {
+				Expect(healthProbeArgs(deployment)).To(ConsistOf("--health-probe-bind-address=" + wantArg))
+			}
+			if wantPort == "" {
+				Expect(healthContainerPorts(deployment)).To(BeEmpty())
+				Expect(deployment).NotTo(ContainSubstring("livenessProbe:"))
+				Expect(deployment).NotTo(ContainSubstring("readinessProbe:"))
+				return
+			}
+			Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
+			Expect(deployment).To(ContainSubstring("path: /healthz\n            port: health"))
+			Expect(deployment).To(ContainSubstring("path: /readyz\n            port: health"))
+		}
+
+		DescribeTable("follows the project's --health-probe-bind-address with the default values",
+			func(healthProbeArg, port, wantArg, wantPort string) {
+				expectServer(render(healthProbeArg, port), wantArg, wantPort)
+			},
+			Entry("no flag: no flag, the manager's default port", "", "8081", "", "8081"),
+			Entry("port only", ":8081", "8081", ":8081", "8081"),
+			Entry("all interfaces", "0.0.0.0:8081", "8081", "0.0.0.0:8081", "8081"),
+			Entry("localhost and a custom port", "localhost:9440", "9440", "localhost:9440", "9440"),
+			Entry("IPv4 address", "127.0.0.1:9440", "9440", "127.0.0.1:9440", "9440"),
+			Entry("IPv6 address", "[::1]:9091", "9091", "[::1]:9091", "9091"),
+			Entry("custom port", ":8082", "8082", ":8082", "8082"),
+			Entry("turned off: no port and no probes", "0", "8081", "0", ""),
+		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when it is set",
+			func(healthProbeArg string, setArgs []string, wantArg, wantPort string) {
+				expectServer(render(healthProbeArg, "8081", setArgs...), wantArg, wantPort)
+			},
+			Entry("a custom port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=:9000"}, ":9000", "9000"),
+			Entry("a host and a custom port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=localhost:9441"}, "localhost:9441", "9441"),
+			Entry("an IPv6 address", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=[::1]:9091"}, "[::1]:9091", "9091"),
+			Entry("an address for a manager without the flag", "",
+				[]string{"--set", "manager.healthProbeBindAddress=:9000"}, ":9000", "9000"),
+			Entry("empty: no flag, the manager's default port", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress="}, "", "8081"),
+			Entry("removed, as in a values.yaml from before the value existed", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=null"}, "", "8081"),
+			Entry("\"0\" as a string: turned off", ":8081",
+				[]string{"--set-string", "manager.healthProbeBindAddress=0"}, "0", ""),
+			Entry("0 as a number: turned off", ":8081",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+			Entry("an address for a manager that turns the server off", "0",
+				[]string{"--set", "manager.healthProbeBindAddress=:8081"}, ":8081", "8081"),
+		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when a sidecar with its own args comes first",
+			func(setArgs []string, wantArg, wantPort string) {
+				const sidecarArg = "- --health-probe-bind-address=:9090\n"
+				kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", "localhost:9440", "9440"),
+					"      containers:\n      - name: manager\n",
+					"      containers:\n      - args:\n        "+sidecarArg+
+						"        image: sidecar:latest\n        name: sidecar\n      - name: manager\n", 1)
+				Expect(kustomize).To(ContainSubstring("name: sidecar"))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				Expect(deployment).To(ContainSubstring(sidecarArg + "        image: sidecar:latest"))
+				expectServer(strings.Replace(deployment, sidecarArg, "", 1), wantArg, wantPort)
+			},
+			Entry("the default value", nil, "localhost:9440", "9440"),
+			Entry("a host and a custom port",
+				[]string{"--set", "manager.healthProbeBindAddress=localhost:9441"}, "localhost:9441", "9441"),
+			Entry("0 as a number: turned off",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+		)
+
+		DescribeTable("follows manager.healthProbeBindAddress when the health port also sets hostPort",
+			func(setArgs []string, wantArg, wantPort string) {
+				const hostPort = "          hostPort: 18081\n"
+				kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", ":8081", "8081"),
+					"- containerPort: 8081\n", "- containerPort: 8081\n"+hostPort, 1)
+				Expect(kustomize).To(ContainSubstring(hostPort + "          name: health"))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				if wantPort != "" {
+					Expect(deployment).To(ContainSubstring(hostPort + "          name: health"))
+				}
+				expectServer(strings.Replace(deployment, hostPort, "", 1), wantArg, wantPort)
+			},
+			Entry("the default value", nil, ":8081", "8081"),
+			Entry("a custom port",
+				[]string{"--set", "manager.healthProbeBindAddress=:9001"}, ":9001", "9001"),
+			Entry("0 as a number: turned off",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+		)
+
+		// kustomize sorts appProtocol before containerPort, so it starts the list item.
+		DescribeTable("follows manager.healthProbeBindAddress when the health port also sets appProtocol",
+			func(setArgs []string, wantArg, wantPort string) {
+				const appProtocol = "- appProtocol: http\n          containerPort:"
+				kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", ":8081", "8081"),
+					"- containerPort: 8081\n", "- appProtocol: http\n          containerPort: 8081\n", 1)
+				Expect(kustomize).To(ContainSubstring(appProtocol + " 8081\n          name: health"))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				if wantPort == "" {
+					Expect(deployment).NotTo(ContainSubstring("appProtocol"))
+				}
+				expectServer(strings.Replace(deployment, appProtocol, "- containerPort:", 1), wantArg, wantPort)
+			},
+			Entry("the default value", nil, ":8081", "8081"),
+			Entry("a custom port",
+				[]string{"--set", "manager.healthProbeBindAddress=:9001"}, ":9001", "9001"),
+			Entry("0 as a number: turned off",
+				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+		)
+
+		// controller-runtime turns the server off for an empty address as well as for "0".
+		It("turns the server off for a project that sets an empty --health-probe-bind-address", func() {
+			kustomize := strings.Replace(createKustomizeWithHealthProbe("test-project", ":8081", "8081"),
+				"--health-probe-bind-address=:8081\n", "--health-probe-bind-address=\n", 1)
+			Expect(kustomize).To(ContainSubstring("- --health-probe-bind-address=\n"))
+			out, err := helmTemplate(kustomize)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			expectServer(managerDeploymentDoc(out), "0", "")
 		})
 	})
 
@@ -1354,9 +1597,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 	// literal args mixed in the same list, and a templated arg that calls a Helm template
 	// function.
 	Context("Manager args templating (rendered)", func() {
-		writeValuesFile := func(content string) string {
+		writeValuesFile := func(valuesContent string) string {
 			valuesFile := filepath.Join(tmpDir, "manager-args-values.yaml")
-			Expect(os.WriteFile(valuesFile, []byte(content), 0o600)).To(Succeed())
+			Expect(os.WriteFile(valuesFile, []byte(valuesContent), 0o600)).To(Succeed())
 			return valuesFile
 		}
 
@@ -1365,7 +1608,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		// generated values.yaml (i.e. the default manager.args extracted from the kustomize
 		// output), exercising the same code path production users hit before ever touching
 		// manager.args themselves.
-		renderWithArgs := func(valuesContent string) string {
+		renderWithManagerArgs := func(valuesContent string) string {
 			var setArgs []string
 			if valuesContent != "" {
 				setArgs = []string{"-f", writeValuesFile(valuesContent)}
@@ -1375,48 +1618,128 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			return out
 		}
 
-		// managerArgsLines extracts every rendered "- --flag..." list item so assertions do not
-		// depend on indentation and are not confused by other list items in the manifest.
-		managerArgsLines := func(rendered string) []string {
-			var args []string
-			for _, line := range strings.Split(rendered, "\n") {
-				trimmed := strings.TrimSpace(line)
-				if strings.HasPrefix(trimmed, "- --") {
-					args = append(args, strings.TrimPrefix(trimmed, "- "))
-				}
-			}
-			return args
+		renderedManagerArgs := func(renderedManifest string) []string {
+			managerArgs, err := renderedContainerArgs(renderedManifest, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			return managerArgs
 		}
 
 		It("should render the manager Deployment successfully when manager.args uses the chart's own "+
 			"default values (no values override)", func() {
-			rendered := renderWithArgs("")
+			rendered := renderWithManagerArgs("")
 
 			By("the default extracted arg renders as a literal, unaffected by tpl")
-			Expect(managerArgsLines(rendered)).To(ContainElement("--leader-elect"))
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--leader-elect"))
+		})
+
+		It("should connect metrics values to a manager that omits the metrics bind argument", func() {
+			renderWithoutMetricsBindAddressArg := func(setArgs ...string) string {
+				out, err := helmTemplate(
+					createKustomizeWithMetricsServiceWithoutManagerArg("test-project"), setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				return out
+			}
+
+			By("using the metrics Service port when metrics are enabled")
+			rendered := renderWithoutMetricsBindAddressArg("--set", "metrics.enabled=true")
+			renderedArgs := renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:7443"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=0"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-secure=false"))
+
+			By("using an explicitly configured metrics port")
+			rendered = renderWithoutMetricsBindAddressArg(
+				"--set", "metrics.enabled=true",
+				"--set", "metrics.port=9000",
+			)
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:9000"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=:7443"))
+
+			By("disabling the manager metrics server when metrics are disabled")
+			rendered = renderWithoutMetricsBindAddressArg("--set", "metrics.enabled=false")
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=0"))
+			Expect(renderedArgs).NotTo(ContainElement("--metrics-bind-address=:7443"))
+
+			By("passing the secure setting to the manager")
+			rendered = renderWithoutMetricsBindAddressArg(
+				"--set", "metrics.enabled=true", "--set", "metrics.secure=false")
+			renderedArgs = renderedManagerArgs(rendered)
+			Expect(renderedArgs).To(ContainElement("--metrics-bind-address=:7443"))
+			Expect(renderedArgs).To(ContainElement("--metrics-secure=false"))
+		})
+
+		It("should add metrics arguments when the source manager has no args field", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndNoManagerArgs("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("serving metrics on the Service port")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+		})
+
+		It("should add metrics arguments when the source manager has an empty args list", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndEmptyManagerArgs("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("serving metrics on the Service port")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+		})
+
+		It("should accept manager.args overrides when the source manager has no args field", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithMetricsServiceAndNoManagerArgs("test-project"),
+				"--set", "manager.args[0]=--leader-elect",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("keeping the user-provided argument alongside the generated metrics argument")
+			Expect(renderedManagerArgs(rendered)).To(ContainElements(
+				"--metrics-bind-address=:7443",
+				"--leader-elect",
+			))
+		})
+
+		It("should preserve sidecar arguments while configuring the manager container", func() {
+			rendered, err := helmTemplate(
+				createKustomizeWithSidecarBeforeManagerAndMetricsService("test-project"),
+				"--set", "metrics.enabled=true",
+			)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			By("configuring metrics on the manager")
+			Expect(renderedManagerArgs(rendered)).To(ContainElement("--metrics-bind-address=:7443"))
+
+			By("leaving the sidecar's command-line arguments unchanged")
+			sidecarArgs, err := renderedContainerArgs(rendered, "sidecar")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sidecarArgs).To(Equal([]string{"--sidecar-flag"}))
 		})
 
 		DescribeTable("should resolve manager.args entries through tpl when values are provided",
-			func(valuesContent string, wantArgs []string, unwantedSubstrings []string) {
-				rendered := renderWithArgs(valuesContent)
+			func(valuesContent string, additionalManagerArgs []string) {
+				rendered := renderWithManagerArgs(valuesContent)
 
-				args := managerArgsLines(rendered)
-				for _, want := range wantArgs {
-					Expect(args).To(ContainElement(want), "rendered manager args: %v", args)
-				}
-				for _, unwanted := range unwantedSubstrings {
-					Expect(rendered).NotTo(ContainSubstring(unwanted))
-				}
+				expectedManagerArgs := append([]string{
+					"--metrics-bind-address=0",
+					"--health-probe-bind-address=:8081",
+				}, additionalManagerArgs...)
+				renderedArgs := renderedManagerArgs(rendered)
+				Expect(renderedArgs).To(Equal(expectedManagerArgs), "rendered manager args: %v", renderedArgs)
 			},
 			Entry("should keep plain literal args unchanged when no template syntax is used (backwards compatible)",
 				"manager:\n  args:\n  - --leader-elect\n  - --zap-log-level=info\n",
 				[]string{"--leader-elect", "--zap-log-level=info"},
-				[]string(nil),
 			),
 			Entry("should resolve to the release namespace when an arg references .Release.Namespace",
 				"manager:\n  args:\n  - --leader-election-namespace={{ .Release.Namespace }}\n",
 				[]string{"--leader-election-namespace=my-namespace"},
-				[]string{"{{ .Release.Namespace }}"},
 			),
 			Entry("should resolve every arg independently and keep list order when multiple args are templated",
 				"manager:\n  args:\n"+
@@ -1428,7 +1751,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 					"--release-name=my-release",
 					"--chart-name=test-project",
 				},
-				[]string{"{{ .Release", "{{ .Chart"},
 			),
 			Entry("should resolve templated args and keep literal args unchanged when both appear in the same list",
 				"manager:\n  args:\n"+
@@ -1440,7 +1762,6 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 					"--leader-election-namespace=my-namespace",
 					"--zap-log-level=info",
 				},
-				[]string(nil),
 			),
 			Entry("should resolve an arg when it calls a Helm template function",
 				`manager:
@@ -1448,9 +1769,115 @@ var _ = Describe("Chart Generation Integration Tests", func() {
   - --extra-flag={{ printf "%s-%s" .Release.Name .Release.Namespace }}
 `,
 				[]string{"--extra-flag=my-release-my-namespace"},
-				[]string{"{{ printf"},
 			),
 		)
+	})
+
+	Context("Metrics feature toggles (rendered)", func() {
+		renderChart := func(setArgs ...string) string {
+			out, err := helmTemplate(createKustomizeWithMetricsResources("test-project"), setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			return out
+		}
+
+		It("should enable the manager and metrics resources together", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=true",
+				"--set", "prometheus.enabled=true",
+				"--set", "networkPolicy.enabled=true",
+			)
+
+			By("binding the manager to the metrics Service port")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(ContainElement("--metrics-bind-address=:7443"))
+
+			By("rendering the metrics Service")
+			metricsServices, err := renderedResourcesByKind(rendered, "Service")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsServices).To(HaveLen(1))
+
+			By("rendering the ServiceMonitor")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(HaveLen(1))
+
+			By("rendering the metrics NetworkPolicy")
+			metricsPolicies, err := renderedResourcesByKind(rendered, "NetworkPolicy")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsPolicies).To(HaveLen(1))
+		})
+
+		It("should disable the manager and metrics resources together", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=false",
+				"--set", "prometheus.enabled=true",
+				"--set", "networkPolicy.enabled=true",
+			)
+
+			By("disabling the manager metrics server")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(Equal([]string{
+				"--metrics-bind-address=0",
+				"--health-probe-bind-address=:8081",
+				"--leader-elect",
+			}))
+
+			By("removing the metrics Service")
+			metricsServices, err := renderedResourcesByKind(rendered, "Service")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsServices).To(BeEmpty())
+
+			By("removing the ServiceMonitor even though prometheus stays enabled")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(BeEmpty())
+
+			By("removing the metrics NetworkPolicy")
+			metricsPolicies, err := renderedResourcesByKind(rendered, "NetworkPolicy")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsPolicies).To(BeEmpty())
+		})
+
+		It("should use insecure metrics settings consistently in the manager and ServiceMonitor", func() {
+			rendered := renderChart(
+				"--set", "metrics.enabled=true",
+				"--set", "metrics.secure=false",
+				"--set", "prometheus.enabled=true",
+			)
+
+			By("passing the insecure metrics flag to the manager")
+			managerArgs, err := renderedContainerArgs(rendered, "manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(managerArgs).To(ContainElements(
+				"--metrics-bind-address=:7443",
+				"--metrics-secure=false",
+			))
+
+			By("configuring the ServiceMonitor for HTTP")
+			serviceMonitors, err := renderedResourcesByKind(rendered, "ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(serviceMonitors).To(HaveLen(1))
+			endpoints, found, err := unstructured.NestedSlice(serviceMonitors[0].Object, "spec", "endpoints")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(endpoints).To(HaveLen(1))
+			endpoint, ok := endpoints[0].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+			endpointPort, _, err := unstructured.NestedString(endpoint, "port")
+			Expect(err).NotTo(HaveOccurred())
+			endpointScheme, _, err := unstructured.NestedString(endpoint, "scheme")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(endpointPort).To(Equal("http"))
+			Expect(endpointScheme).To(Equal("http"))
+			_, hasBearerToken, err := unstructured.NestedString(endpoint, "bearerTokenFile")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBearerToken).To(BeFalse())
+			_, hasTLSConfig, err := unstructured.NestedMap(endpoint, "tlsConfig")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasTLSConfig).To(BeFalse())
+		})
 	})
 })
 
@@ -1756,6 +2183,33 @@ spec:
 `
 }
 
+// createKustomizeWithHealthProbe returns a project whose manager serves its health probes on
+// port, with the given --health-probe-bind-address value, or without the flag when it is "".
+func createKustomizeWithHealthProbe(projectName, healthProbeArg, port string) string {
+	args := "        - --leader-elect\n"
+	if healthProbeArg != "" {
+		args += "        - --health-probe-bind-address=" + healthProbeArg + "\n"
+	}
+	return createBasicKustomizeOutput(projectName) + `        args:
+` + args + `        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: ` + port + `
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        ports:
+        - containerPort: ` + port + `
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: ` + port + `
+          initialDelaySeconds: 5
+          periodSeconds: 10
+`
+}
+
 func createKustomizeWithWebhooksAndCertManager(projectName string) string {
 	return createKustomizeWithWebhooks(projectName) + `---
 apiVersion: cert-manager.io/v1
@@ -1882,6 +2336,89 @@ spec:
             drop:
             - ALL
 `
+}
+
+// createKustomizeWithMetricsServiceWithoutManagerArg represents a project whose metrics
+// Service is present but whose manager args do not include --metrics-bind-address.
+func createKustomizeWithMetricsServiceWithoutManagerArg(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithFullDeploymentConfig(projectName),
+		"        - --metrics-bind-address=:8443\n",
+		"",
+		1,
+	)
+
+	return kustomizeYAML + `---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ` + projectName + `-controller-manager-metrics-service
+  namespace: ` + projectName + `-system
+spec:
+  ports:
+  - name: https
+    port: 7443
+    protocol: TCP
+    targetPort: 7443
+  selector:
+    control-plane: controller-manager
+`
+}
+
+// createKustomizeWithMetricsResources represents a project with the metrics Service and the
+// scaffolded metrics NetworkPolicy. The chart adds the fallback ServiceMonitor during scaffolding.
+func createKustomizeWithMetricsResources(projectName string) string {
+	return createKustomizeWithMetricsServiceWithoutManagerArg(projectName) + `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ` + projectName + `-allow-metrics-traffic
+  namespace: ` + projectName + `-system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          metrics: enabled
+    ports:
+    - port: 7443
+      protocol: TCP
+`
+}
+
+// createKustomizeWithMetricsServiceAndNoManagerArgs represents a project whose manager has no
+// args field at all, while its metrics Service still exposes the configured endpoint.
+func createKustomizeWithMetricsServiceAndNoManagerArgs(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithMetricsServiceWithoutManagerArg(projectName),
+		`        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+`,
+		"",
+		1,
+	)
+	return kustomizeYAML
+}
+
+// createKustomizeWithMetricsServiceAndEmptyManagerArgs represents a project whose manager
+// explicitly declares an empty args list.
+func createKustomizeWithMetricsServiceAndEmptyManagerArgs(projectName string) string {
+	return strings.Replace(
+		createKustomizeWithMetricsServiceWithoutManagerArg(projectName),
+		`        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+`,
+		`        args: []
+`,
+		1,
+	)
 }
 
 // createKustomizeForServiceAccountRender extends createBasicKustomizeOutput (Namespace +
@@ -2024,6 +2561,94 @@ func setupKustomizeFile(filePath, content string) error {
 		return err
 	}
 	return os.WriteFile(filePath, []byte(content), 0o644)
+}
+
+// decodeRenderedResources returns the non-empty Kubernetes objects from a Helm render.
+// Keeping render assertions at the Kubernetes object level makes tests independent of Helm
+// template layout and YAML indentation.
+func decodeRenderedResources(renderedManifest string) ([]*unstructured.Unstructured, error) {
+	decoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(renderedManifest), 4096)
+	var renderedResources []*unstructured.Unstructured
+
+	for {
+		resource := &unstructured.Unstructured{}
+		err := decoder.Decode(resource)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("decode rendered resource: %w", err)
+		}
+		if len(resource.Object) == 0 {
+			continue
+		}
+		renderedResources = append(renderedResources, resource)
+	}
+
+	return renderedResources, nil
+}
+
+func renderedResourcesByKind(
+	renderedManifest, resourceKind string,
+) ([]*unstructured.Unstructured, error) {
+	allResources, err := decodeRenderedResources(renderedManifest)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingResources []*unstructured.Unstructured
+	for _, resource := range allResources {
+		if resource.GetKind() == resourceKind {
+			matchingResources = append(matchingResources, resource)
+		}
+	}
+	return matchingResources, nil
+}
+
+// renderedContainerArgs returns the effective args from a named container in a rendered
+// Deployment.
+func renderedContainerArgs(renderedManifest, containerName string) ([]string, error) {
+	deployments, err := renderedResourcesByKind(renderedManifest, "Deployment")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deployment := range deployments {
+		containers, found, err := unstructured.NestedSlice(
+			deployment.Object, "spec", "template", "spec", "containers")
+		if err != nil {
+			return nil, fmt.Errorf("read deployment containers: %w", err)
+		}
+		if !found {
+			continue
+		}
+
+		for _, rawContainer := range containers {
+			container, ok := rawContainer.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			containerNameFromManifest, _, err := unstructured.NestedString(container, "name")
+			if err != nil {
+				return nil, fmt.Errorf("read container name: %w", err)
+			}
+			if containerNameFromManifest != containerName {
+				continue
+			}
+
+			containerArgs, found, err := unstructured.NestedStringSlice(container, "args")
+			if err != nil {
+				return nil, fmt.Errorf("read %s container args: %w", containerName, err)
+			}
+			if !found {
+				return nil, fmt.Errorf("%s container has no args", containerName)
+			}
+			return containerArgs, nil
+		}
+	}
+
+	return nil, fmt.Errorf("rendered Deployment container %q not found", containerName)
 }
 
 // createKustomizeWithTolerationsAndSchedulingFields simulates a manager.yaml that already
@@ -2235,6 +2860,48 @@ spec:
         configMap:
           name: my-config
       serviceAccountName: ` + projectName + `-controller-manager
+`
+}
+
+// createKustomizeWithSidecarBeforeManagerAndMetricsService represents a sidecar-first Pod whose
+// manager has no args field. The fixture verifies that manager-specific defaults do not leak into
+// the sidecar when the templater has to add the manager args block.
+func createKustomizeWithSidecarBeforeManagerAndMetricsService(projectName string) string {
+	kustomizeYAML := strings.Replace(
+		createKustomizeWithSidecarBeforeManager(projectName),
+		`        args:
+        - --leader-elect
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+`,
+		"",
+		1,
+	)
+	kustomizeYAML = strings.Replace(
+		kustomizeYAML,
+		`        image: sidecar:v1
+        env:`,
+		`        image: sidecar:v1
+        args:
+        - --sidecar-flag
+        env:`,
+		1,
+	)
+
+	return kustomizeYAML + `---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ` + projectName + `-controller-manager-metrics-service
+  namespace: ` + projectName + `-system
+spec:
+  ports:
+  - name: https
+    port: 7443
+    protocol: TCP
+    targetPort: 7443
+  selector:
+    control-plane: controller-manager
 `
 }
 
