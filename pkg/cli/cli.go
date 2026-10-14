@@ -51,6 +51,10 @@ const (
 	kubebuilderSubcommandInit       = "init"
 	kubebuilderSubcommandVersion    = "version"
 	kubebuilderSubcommandCompletion = "completion"
+	createCommand                   = "create"
+	apiCommand                      = "api"
+	webhookCommand                  = "webhook"
+	editCommand                     = "edit"
 	pluginGoKubebuilderV4           = "go.kubebuilder.io/v4"
 	pluginGoKubebuilderV3           = "go.kubebuilder.io/v3"
 	pluginGoKubebuilderV2           = "go.kubebuilder.io/v2"
@@ -460,7 +464,41 @@ func isSubcommandWithoutConfig(args []string) bool {
 		return len(positional) == 1 || isSubcommandPathWithoutConfig(positional[1:])
 	}
 
+	// Completion reads the configuration only for the commands the plugin chain builds, whose flags
+	// depend on the plugins the project names.
+	if isShellCompletionRequest(positional[0]) {
+		return !completesPluginCommand(args[slices.Index(args, positional[0])+1:])
+	}
+
 	return isSubcommandPathWithoutConfig(positional)
+}
+
+// pluginCommandPaths are the subcommand paths of the commands that the plugin chain builds.
+var pluginCommandPaths = [][]string{
+	{kubebuilderSubcommandInit},
+	{editCommand},
+	{createCommand, apiCommand},
+	{createCommand, webhookCommand},
+}
+
+// isShellCompletionRequest reports whether arg names the hidden command Cobra runs to complete a
+// command line.
+func isShellCompletionRequest(arg string) bool {
+	return arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd
+}
+
+// completesPluginCommand reports whether the arguments of a completion request complete a word for a
+// command that the plugin chain builds. Cobra passes the word being completed last, so that word is
+// not part of the command path.
+func completesPluginCommand(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	path := positionalArgs(args[:len(args)-1])
+
+	return slices.ContainsFunc(pluginCommandPaths, func(pluginPath []string) bool {
+		return len(path) >= len(pluginPath) && slices.Equal(path[:len(pluginPath)], pluginPath)
+	})
 }
 
 // isSubcommandPathWithoutConfig returns true for a subcommand path that never consumes the PROJECT

@@ -65,6 +65,39 @@ func isCompletionRequest(cmd *cobra.Command) bool {
 	return cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd
 }
 
+// commandGroupAnnotation marks a command that only holds other subcommands.
+const commandGroupAnnotation = "kubebuilder.io/command-group"
+
+// asCommandGroup marks cmd as a command that only holds other subcommands and makes it display its
+// help, which does not use the project configuration.
+func asCommandGroup(cmd *cobra.Command) *cobra.Command {
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[commandGroupAnnotation] = "true"
+	cmd.RunE = runCommandGroup
+
+	return cmd
+}
+
+// isCommandGroup reports whether cmd was marked by asCommandGroup.
+func isCommandGroup(cmd *cobra.Command) bool {
+	_, isGroup := cmd.Annotations[commandGroupAnnotation]
+
+	return isGroup
+}
+
+// runCommandGroup displays the help of a command that only holds other subcommands. Cobra runs no
+// hook for a command that cannot run and displays its help instead, so a malformed command line
+// would be ignored.
+func runCommandGroup(cmd *cobra.Command, _ []string) error {
+	if err := cmd.Help(); err != nil {
+		return fmt.Errorf("failed to display help: %w", err)
+	}
+
+	return nil
+}
+
 // subcommandPath returns the subcommand names leading from the root command to cmd.
 func subcommandPath(cmd *cobra.Command) []string {
 	var path []string
@@ -164,7 +197,7 @@ func (c *CLI) checkCommandLine(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Cobra resolved the command, so it is now known whether it consumes the configuration.
-	if isSubcommandPathWithoutConfig(subcommandPath(cmd)) {
+	if isSubcommandPathWithoutConfig(subcommandPath(cmd)) || isCommandGroup(cmd) {
 		return nil
 	}
 	if c.configErr != nil {
