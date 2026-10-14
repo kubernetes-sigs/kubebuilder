@@ -22,6 +22,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/common"
@@ -58,7 +59,7 @@ type Generate struct {
 var getExecutablePathFunc = getExecutablePath
 
 // Generate handles the migration and scaffolding process.
-func (opts *Generate) Generate() error {
+func (opts *Generate) Generate() (retErr error) {
 	projectConfig, err := common.LoadProjectConfig(opts.InputDir)
 	if err != nil {
 		return fmt.Errorf("error loading project config: %v", err)
@@ -114,18 +115,15 @@ func (opts *Generate) Generate() error {
 		return err
 	}
 
+	var backup *outputBackup
 	if inPlace {
-		if _, statErr := os.Stat(opts.OutputDir); statErr == nil {
-			slog.Warn("Re-scaffolding the project in place", "dir", opts.OutputDir)
-			slog.Warn("This directory will be cleaned up and all files removed before the re-generation")
-
-			// Ensure we clean the correct directory without shell interpolation
-			// of --output-dir (paths with metacharacters must not reach sh -c).
-			slog.Info("Cleaning directory", "dir", opts.OutputDir)
-			if err = cleanOutputDirPreservingGit(opts.OutputDir); err != nil {
-				slog.Error("Cleanup failed", "error", err)
-				return fmt.Errorf("cleanup failed: %w", err)
-			}
+		if backup, err = prepareInPlaceRegeneration(opts.OutputDir); err != nil {
+			return err
+		}
+		if backup != nil {
+			defer func() {
+				retErr = backup.finish(retErr)
+			}()
 		}
 	}
 
@@ -740,13 +738,20 @@ func resolveOutputDir(inputDir, outputDir string) (string, error) {
 // PROJECT must go too: `kubebuilder init` refuses to run when a config file is
 // already present, and it re-creates PROJECT from the config loaded in memory.
 func cleanOutputDirPreservingGit(outputDir string) error {
+	return cleanOutputDirPreserving(outputDir, "")
+}
+
+// cleanOutputDirPreserving removes all top-level entries except .git and the
+// explicitly preserved entry. The latter keeps an in-project regeneration
+// backup safe while a failed scaffold is removed before restoration.
+func cleanOutputDirPreserving(outputDir, preserveName string) error {
 	entries, err := os.ReadDir(outputDir)
 	if err != nil {
 		return fmt.Errorf("read output directory %q: %w", outputDir, err)
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if name == ".git" {
+		if name == ".git" || name == preserveName {
 			continue
 		}
 		path := filepath.Join(outputDir, name)
@@ -755,6 +760,114 @@ func cleanOutputDirPreservingGit(outputDir string) error {
 		}
 	}
 	return nil
+}
+
+// outputBackup holds the original top-level project entries while an in-place
+// regeneration runs. The backup lives inside the project so moves stay on the
+// same filesystem even when the project is the root of a mount.
+type outputBackup struct {
+	outputDir string
+	backupDir string
+}
+
+func prepareInPlaceRegeneration(outputDir string) (*outputBackup, error) {
+	if _, err := os.Stat(outputDir); errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("check output directory %q: %w", outputDir, err)
+	}
+
+	slog.Warn("Re-scaffolding the project in place", "dir", outputDir)
+	slog.Warn("This directory will be cleaned up before the re-generation")
+	backup, err := backupOutputDirPreservingGit(outputDir)
+	if err != nil {
+		slog.Error("Cleanup failed", "error", err)
+		return nil, fmt.Errorf("backup before cleanup failed: %w", err)
+	}
+	slog.Info("Backed up directory", "dir", backup.outputDir, "backup", backup.backupDir)
+	return backup, nil
+}
+
+// backupOutputDirPreservingGit moves all top-level entries except .git out of
+// outputDir. If moving any entry fails, entries already moved are put back
+// before the error is returned.
+func backupOutputDirPreservingGit(outputDir string) (*outputBackup, error) {
+	outputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return nil, fmt.Errorf("resolve output directory %q: %w", outputDir, err)
+	}
+
+	entries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return nil, fmt.Errorf("read output directory %q: %w", outputDir, err)
+	}
+
+	backupDir, err := os.MkdirTemp(outputDir, ".kubebuilder-backup-")
+	if err != nil {
+		return nil, fmt.Errorf("create backup directory for %q: %w", outputDir, err)
+	}
+	backupName := filepath.Base(backupDir)
+
+	moved := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		name := entry.Name()
+		if name == ".git" || name == backupName {
+			continue
+		}
+		if err = os.Rename(filepath.Join(outputDir, name), filepath.Join(backupDir, name)); err != nil {
+			for _, m := range slices.Backward(moved) {
+				name = m
+				_ = os.Rename(filepath.Join(backupDir, name), filepath.Join(outputDir, name))
+			}
+			_ = os.Remove(backupDir)
+			return nil, fmt.Errorf("move %q into regeneration backup: %w", name, err)
+		}
+		moved = append(moved, name)
+	}
+
+	return &outputBackup{outputDir: outputDir, backupDir: backupDir}, nil
+}
+
+func (b *outputBackup) restore() error {
+	if err := cleanOutputDirPreserving(b.outputDir, filepath.Base(b.backupDir)); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(b.backupDir)
+	if err != nil {
+		return fmt.Errorf("read backup directory %q: %w", b.backupDir, err)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if err = os.Rename(filepath.Join(b.backupDir, name), filepath.Join(b.outputDir, name)); err != nil {
+			return fmt.Errorf("restore %q from regeneration backup: %w", name, err)
+		}
+	}
+	if err = os.Remove(b.backupDir); err != nil {
+		return fmt.Errorf("remove empty backup directory %q: %w", b.backupDir, err)
+	}
+	return nil
+}
+
+func (b *outputBackup) discard() error {
+	if err := os.RemoveAll(b.backupDir); err != nil {
+		return fmt.Errorf("remove backup directory %q: %w", b.backupDir, err)
+	}
+	return nil
+}
+
+func (b *outputBackup) finish(generateErr error) error {
+	if generateErr == nil {
+		if err := b.discard(); err != nil {
+			return fmt.Errorf("remove regeneration backup: %w", err)
+		}
+		return nil
+	}
+
+	if err := b.restore(); err != nil {
+		return errors.Join(generateErr, fmt.Errorf("restore project after failed regeneration: %w", err))
+	}
+	return generateErr
 }
 
 // Copies files from source to destination.
