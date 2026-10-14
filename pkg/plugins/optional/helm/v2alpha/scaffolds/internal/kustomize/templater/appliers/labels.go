@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"go.yaml.in/yaml/v3"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
 
@@ -278,7 +280,7 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	}
 
 	body := lines[bodyStart:bodyEnd]
-	existingKeys := extractKeysFromLines(body)
+	existingKeys := extractMapKeys(body)
 	if len(existingKeys) == 0 {
 		merged = append(merged, buildGuardedMetadataMapBlock(headerIndent, mapKey, valuePath)...)
 		return merged, bodyEnd - 1
@@ -290,6 +292,30 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
 
 	return merged, bodyEnd - 1
+}
+
+// helmTemplateRegex matches a {{ }} action, including quoted strings containing {{ }}.
+var helmTemplateRegex = regexp.MustCompile(`\{\{(?:"(?:[^"\\]|\\.)*"|[^"}]|\}[^}])*\}\}`)
+
+// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
+func extractMapKeys(body []string) []string {
+	cleaned := make([]string, 0, len(body))
+	for _, line := range body {
+		cleaned = append(cleaned, helmTemplateRegex.ReplaceAllString(line, "x"))
+	}
+
+	var document yaml.Node
+	if err := yaml.Unmarshal([]byte(strings.Join(cleaned, "\n")), &document); err != nil ||
+		len(document.Content) != 1 || document.Content[0].Kind != yaml.MappingNode {
+		return extractKeysFromLines(body)
+	}
+
+	mapping := document.Content[0]
+	keys := make([]string, 0, len(mapping.Content)/2)
+	for i := 0; i < len(mapping.Content); i += 2 {
+		keys = append(keys, mapping.Content[i].Value)
+	}
+	return keys
 }
 
 // buildGuardedMetadataMapBlock renders a labels/annotations block wrapped in
