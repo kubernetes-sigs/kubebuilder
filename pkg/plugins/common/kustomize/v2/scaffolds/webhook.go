@@ -136,24 +136,22 @@ func (s *webhookScaffolder) Scaffold() error {
 		uncommentCodeForConversionWebhooks(s.resource)
 	}
 
-	const helmPluginKey = "helm.kubebuilder.io/v1-alpha"
+	const helmPluginKey = "helm.kubebuilder.io/v2-alpha"
 	var helmPlugin any
 	err := s.config.DecodePluginConfig(helmPluginKey, &helmPlugin)
 	if !errors.As(err, &config.PluginKeyNotFoundError{}) {
 		testChartPath := ".github/workflows/test-chart.yml"
-		//nolint:lll
 		_ = pluginutil.UncommentCode(
-			testChartPath, `#      - name: Install cert-manager via Helm
+			testChartPath, `#      - name: Install cert-manager via Helm (wait for readiness)
 #        run: |
 #          helm repo add jetstack https://charts.jetstack.io
 #          helm repo update
-#          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
-#
-#      - name: Wait for cert-manager to be ready
-#        run: |
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+#          helm install cert-manager jetstack/cert-manager \
+#            --namespace cert-manager \
+#            --create-namespace \
+#            --set crds.enabled=true \
+#            --wait \
+#            --timeout 300s
 `, "#",
 		)
 
