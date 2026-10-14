@@ -1597,8 +1597,45 @@ version: "3"
 				Entry("for the version subcommand", kubebuilderSubcommandVersion),
 				Entry("for the help subcommand", kubebuilderSubcommandHelp),
 				Entry("for the completion subcommand", kubebuilderSubcommandCompletion, shellZsh),
-				Entry("for the create command group", createSubcommand),
-				Entry("for the alpha command group", alphaCommand),
+			)
+
+			DescribeTable("should report it for a command group, whatever the project looks like",
+				func(filesystem func() machinery.Filesystem, group string) {
+					err = executeCLI(filesystem(), group, pluginsFlagArg, "//")
+					Expect(err).To(MatchError(ContainSubstring(`invalid plugin "//"`)))
+					// The user made a typo in the flag, so the error is about the flag alone.
+					Expect(err).NotTo(MatchError(ContainSubstring(yamlstore.DefaultPath)))
+					Expect(err).NotTo(MatchError(ContainSubstring("configuration")))
+				},
+				commandGroupEntries(func(group commandGroup, state describedFilesystem) TableEntry {
+					return Entry(fmt.Sprintf("for %s when %s", group.name, state.description), state.build, group.name)
+				}, usableAndBrokenProjectStates),
+			)
+
+			DescribeTable("should still display the help of a command group asked for next to it",
+				func(group commandGroup, helpArg string) {
+					args := []string{group.name, pluginsFlagArg, "//", helpArg}
+					out, helpErr := runCLI(filesystemWithoutProject(), args, args)
+					Expect(helpErr).NotTo(HaveOccurred())
+					Expect(out).To(ContainSubstring(group.help))
+				},
+				Entry("for create", createGroup, helpFlagArg),
+				Entry("for alpha", alphaGroup, helpFlagArg),
+				Entry("for create with the help shorthand", createGroup, helpShorthandArg),
+				Entry("for alpha with the help shorthand", alphaGroup, helpShorthandArg),
+			)
+		})
+
+		When("a command group runs on its own", func() {
+			DescribeTable("should display its help",
+				func(filesystem func() machinery.Filesystem, group commandGroup) {
+					out, runErr := runCLI(filesystem(), []string{group.name}, []string{group.name})
+					Expect(runErr).NotTo(HaveOccurred())
+					Expect(out).To(ContainSubstring(group.help))
+				},
+				commandGroupEntries(func(group commandGroup, state describedFilesystem) TableEntry {
+					return Entry(fmt.Sprintf("for %s when %s", group.name, state.description), state.build, group)
+				}, brokenProjectStates),
 			)
 		})
 
@@ -1621,6 +1658,30 @@ version: "3"
 				completions, completeErr := completeCLI(filesystemWithProjectDirectory(), createSubcommand, "")
 				Expect(completeErr).NotTo(HaveOccurred())
 				Expect(completions).To(ContainSubstring(apiSubcommand))
+			})
+
+			// Completing the flags of create api reads PROJECT, since they come from the plugin chain it names.
+			DescribeTable("should offer the flags of the default plugins when PROJECT cannot be used",
+				func(filesystem func() machinery.Filesystem) {
+					completions, completeErr := completeCLI(filesystem(), createSubcommand, apiSubcommand, "--")
+					Expect(completeErr).NotTo(HaveOccurred())
+					Expect(completions).To(ContainSubstring(kindFlagArg))
+				},
+				Entry("when the PROJECT file is not valid YAML", filesystemWithInvalidProject),
+				Entry("when the PROJECT project version is not supported", filesystemWithUnloadableProject),
+				Entry("when the PROJECT plugin chain cannot be resolved", filesystemWithUnresolvableProject),
+				Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+				Entry("when PROJECT is not a regular file", filesystemWithNonRegularProject),
+			)
+
+			It("should not open PROJECT when it is not a regular file", func() {
+				// Opening a named pipe blocks until something writes to it, so completion would hang.
+				fs := &projectReadCountingFs{Fs: &nonRegularProjectFs{Fs: filesystemWithResolvableProject().FS}}
+
+				completions, completeErr := completeCLI(machinery.Filesystem{FS: fs}, createSubcommand, apiSubcommand, "--")
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(completions).To(ContainSubstring(kindFlagArg))
+				Expect(fs.reads).To(BeZero())
 			})
 		})
 
@@ -1855,6 +1916,25 @@ version: "3"
 	})
 })
 
+var _ = Describe("isCommandGroup", func() {
+	It("should hold only the commands that display their help as command groups", func() {
+		var groups []string
+		var visit func(cmd *cobra.Command)
+		visit = func(cmd *cobra.Command) {
+			if isCommandGroup(cmd) {
+				groups = append(groups, cmd.CommandPath())
+			}
+			for _, subcommand := range cmd.Commands() {
+				visit(subcommand)
+			}
+		}
+		visit(buildCLI(filesystemWithoutProject(), nil).cmd)
+
+		Expect(groups).To(ConsistOf(kubebuilderCommandName+" "+createSubcommand,
+			kubebuilderCommandName+" "+alphaCommand))
+	})
+})
+
 var _ = Describe("isSubcommandWithoutConfig", func() {
 	DescribeTable("should not read the project configuration",
 		func(args ...string) {
@@ -1939,6 +2019,38 @@ var brokenProjectStates = []describedFilesystem{
 	{"PROJECT is a directory", filesystemWithProjectDirectory},
 	{"PROJECT is a directory holding a file", filesystemWithPopulatedProjectDirectory},
 	{"PROJECT is not a regular file", filesystemWithNonRegularProject},
+}
+
+// usableAndBrokenProjectStates adds a usable PROJECT file to brokenProjectStates.
+var usableAndBrokenProjectStates = append([]describedFilesystem{
+	{"the PROJECT file can be used", filesystemWithResolvableProject},
+}, brokenProjectStates...)
+
+// commandGroup is a command that only holds other subcommands, with a line of the help it displays.
+type commandGroup struct {
+	name string
+	help string
+}
+
+var (
+	createGroup   = commandGroup{createSubcommand, "Scaffold a Kubernetes API or webhook."}
+	alphaGroup    = commandGroup{alphaCommand, "Alpha subcommands are for unstable features."}
+	commandGroups = []commandGroup{createGroup, alphaGroup}
+)
+
+// commandGroupEntries returns one table entry for each command group in each of the project states.
+func commandGroupEntries(
+	entry func(commandGroup, describedFilesystem) TableEntry,
+	states []describedFilesystem,
+) []TableEntry {
+	entries := make([]TableEntry, 0, len(commandGroups)*len(states))
+	for _, group := range commandGroups {
+		for _, state := range states {
+			entries = append(entries, entry(group, state))
+		}
+	}
+
+	return entries
 }
 
 // configFreeCommands are the commands that do not consume the project configuration.

@@ -40,7 +40,7 @@ func newAlphaSubcommands() []*cobra.Command {
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asCommandGroup(&cobra.Command{
 		Use:        alphaCommand,
 		SuggestFor: []string{"experimental"},
 		Short:      "Alpha-stage subcommands",
@@ -50,8 +50,7 @@ Alpha subcommands are for unstable features.
 - Alpha subcommands are exploratory and may be removed without warning.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
-		RunE: runCommandGroup,
-	}
+	})
 	cmd.AddCommand(newAlphaSubcommands()...)
 	return cmd
 }

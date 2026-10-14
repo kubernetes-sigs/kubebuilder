@@ -65,15 +65,26 @@ func isCompletionRequest(cmd *cobra.Command) bool {
 	return cmd.Name() == cobra.ShellCompRequestCmd || cmd.Name() == cobra.ShellCompNoDescRequestCmd
 }
 
-// commandGroups are the subcommands that only hold other subcommands. They display their help, which
-// does not use the project configuration.
-var commandGroups = []string{createCommand, alphaCommand}
+// commandGroupAnnotation marks a command that only holds other subcommands.
+const commandGroupAnnotation = "kubebuilder.io/command-group"
 
-// isCommandGroup reports whether cmd is one of the commandGroups.
+// asCommandGroup marks cmd as a command that only holds other subcommands and makes it display its
+// help, which does not use the project configuration.
+func asCommandGroup(cmd *cobra.Command) *cobra.Command {
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[commandGroupAnnotation] = "true"
+	cmd.RunE = runCommandGroup
+
+	return cmd
+}
+
+// isCommandGroup reports whether cmd was marked by asCommandGroup.
 func isCommandGroup(cmd *cobra.Command) bool {
-	path := subcommandPath(cmd)
+	_, isGroup := cmd.Annotations[commandGroupAnnotation]
 
-	return len(path) == 1 && slices.Contains(commandGroups, path[0])
+	return isGroup
 }
 
 // runCommandGroup displays the help of a command that only holds other subcommands. Cobra runs no
