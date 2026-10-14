@@ -181,6 +181,7 @@ func (c *ResourceCategorizer) collectExtrasResources() []*unstructured.Unstructu
 	var extrasResources []*unstructured.Unstructured
 
 	extrasResources = append(extrasResources, c.resources.ExtraDeployments...)
+	extrasResources = append(extrasResources, c.resources.ExtraServiceAccounts...)
 
 	for _, service := range c.resources.Services {
 		if !c.isWebhookService(service) && !c.isMetricsService(service) {
