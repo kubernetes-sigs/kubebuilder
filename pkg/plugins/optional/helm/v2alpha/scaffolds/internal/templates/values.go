@@ -216,7 +216,7 @@ func (f *HelmValues) addDeploymentConfig(buf *bytes.Buffer) {
 	// Args
 	f.addArgsSection(buf)
 
-	// Health probe (always present; every manager exposes liveness/readiness probes)
+	// Health probe bind address (always present, empty when the manager does not set the flag)
 	f.addHealthProbeSection(buf)
 
 	// Environment variables
@@ -596,20 +596,21 @@ metrics:
 	fmt.Fprintf(buf, "  secure: %t\n\n", secure)
 }
 
-// addHealthProbeSection adds health probe configuration under the manager section
+// addHealthProbeSection adds the manager's health probe bind address under the manager
+// section. It mirrors the --health-probe-bind-address flag of the project's manager and
+// is empty when the manager does not set that flag. "0" turns the server off.
 func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
-	port := 8081
-	if f.Extraction != nil && f.Extraction.Features.HealthProbePort > 0 {
-		port = f.Extraction.Features.HealthProbePort
+	address := ":8081"
+	if f.Extraction != nil {
+		address = f.Extraction.Features.HealthProbeBindAddress
 	}
 
-	buf.WriteString(`  ## Health probes.
-  ## The manager serves the liveness (/healthz) and readiness (/readyz) endpoints on this port.
+	buf.WriteString(
+		`  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
+  ## Empty: no flag, the manager's default :8081. "0": turns the server, the "health" port and probes off.
   ##
-  healthProbe:
 `)
-	buf.WriteString("    # Health probe server port\n")
-	fmt.Fprintf(buf, "    port: %d\n\n", port)
+	fmt.Fprintf(buf, "  healthProbeBindAddress: %q\n\n", address)
 }
 
 // addWebhookSection adds webhook configuration

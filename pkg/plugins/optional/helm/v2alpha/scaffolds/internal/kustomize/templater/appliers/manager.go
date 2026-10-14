@@ -615,7 +615,7 @@ type managerArguments struct {
 	inlineItemPrefix         string
 	metricsBindAddressLine   string
 	metricsBindAddressIndent string
-	healthProbeBindLine      string
+	healthProbeBindIndent    string
 	webhookPortLine          string
 	certificateArgumentLines []string
 }
@@ -669,7 +669,8 @@ func findManagerArguments(lines []string, managerStartLine, managerEndLine int) 
 			arguments.metricsBindAddressLine = argumentLine
 			arguments.metricsBindAddressIndent, _ = LeadingWhitespace(argumentLine)
 		case strings.Contains(trimmedArgumentLine, "--health-probe-bind-address"):
-			arguments.healthProbeBindLine = argumentLine
+			// The chart renders this arg from .Values.manager.healthProbeBindAddress.
+			arguments.healthProbeBindIndent, _ = LeadingWhitespace(argumentLine)
 		case strings.Contains(trimmedArgumentLine, "--webhook-port"):
 			arguments.webhookPortLine = argumentLine
 		case strings.Contains(trimmedArgumentLine, "--webhook-cert-path"),
@@ -711,9 +712,19 @@ func renderManagerArguments(arguments managerArguments) []string {
 		metricsIndent + "{{- end }}",
 	}
 
-	if arguments.healthProbeBindLine != "" {
-		rendered = append(rendered, arguments.healthProbeBindLine)
+	// Always offered, so the address can be set from values.yaml. When the value is
+	// empty the chart passes no flag and the manager keeps its own default. "0" turns the
+	// server off; toString also matches the number 0 that `--set ...=0` produces.
+	healthIndent := arguments.healthProbeBindIndent
+	if healthIndent == "" {
+		healthIndent = arguments.itemIndent
 	}
+	rendered = append(rendered,
+		healthIndent+"{{- if or .Values.manager.healthProbeBindAddress "+
+			"(eq (toString .Values.manager.healthProbeBindAddress) \"0\") }}",
+		healthIndent+"- --health-probe-bind-address={{ .Values.manager.healthProbeBindAddress }}",
+		healthIndent+"{{- end }}",
+	)
 
 	if arguments.webhookPortLine != "" {
 		rendered = append(rendered,
