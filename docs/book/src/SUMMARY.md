@@ -78,6 +78,7 @@
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
     - [Webhook bootstrap problem](reference/webhook-bootstrap-problem.md)
+    - [Self-Signed Certificates (without cert-manager)](reference/webhook-self-signed-cert.md)
   - [Markers for Config/Code Generation](./reference/markers.md)
 
     - [CRD Generation](./reference/markers/crd.md)
