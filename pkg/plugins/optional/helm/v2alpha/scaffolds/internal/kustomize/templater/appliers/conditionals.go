@@ -54,8 +54,12 @@ func AddConditionalWrappers(
 	case kind == common.KindIssuer && apiVersion == common.APIVersionCertManager:
 		return fmt.Sprintf("{{- if .Values.certManager.enabled }}\n%s\n{{- end }}", yamlContent)
 	case kind == common.KindServiceMonitor && apiVersion == common.APIVersionMonitoring:
+		// The ServiceMonitor scrapes the metrics Service, so it needs metrics enabled too.
 		// CRITICAL: newline before {{- end }} prevents whitespace chomping from eating content
-		return fmt.Sprintf("{{- if .Values.prometheus.enabled }}\n%s\n{{- end }}", yamlContent)
+		return fmt.Sprintf(
+			"{{- if and .Values.prometheus.enabled .Values.metrics.enabled }}\n%s\n{{- end }}",
+			yamlContent,
+		)
 	case kind == common.KindNetworkPolicy && apiVersion == common.APIVersionNetworking:
 		switch {
 		case IsScaffoldedPolicyName(name, detectedPrefix, "allow-webhook-traffic"):
