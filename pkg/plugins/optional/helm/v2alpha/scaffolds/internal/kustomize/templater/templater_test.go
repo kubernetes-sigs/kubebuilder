@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -2998,6 +2999,48 @@ spec:
 				Entry("turned off", "        - --health-probe-bind-address=0\n", "--health-probe-bind-address=0"),
 				Entry("when the project's manager does not set the flag", "", ""),
 			)
+
+			// The probes are matched by the port of the health probe server, so a probe on another
+			// server of the manager keeps its port and stays on when the health probe server is off.
+			It("should keep a probe that does not reach the health probe server", func() {
+				content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:9440
+        image: controller:latest
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9440
+        name: manager
+        ports:
+        - containerPort: 9440
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9440
+        startupProbe:
+          tcpSocket:
+            port: 8443
+`
+				deployment := &unstructured.Unstructured{}
+				Expect(yaml.Unmarshal([]byte(content), &deployment.Object)).To(Succeed())
+
+				result := templater.ApplyHelmSubstitutions(content, deployment)
+
+				Expect(result).To(ContainSubstring("path: /healthz\n            port: health"))
+				Expect(result).To(ContainSubstring("path: /readyz\n            port: health"))
+				Expect(result).To(ContainSubstring("        startupProbe:\n          tcpSocket:\n            port: 8443\n"))
+				Expect(strings.Count(result, healthProbeOnExpr)).To(Equal(3))
+			})
 
 			It("should render the manager's flag when a sidecar with its own args comes first", func() {
 				_, deployment := managerDeployment("")
