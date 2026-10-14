@@ -2927,7 +2927,7 @@ spec:
 				Entry("with localhost", "        - --health-probe-bind-address=localhost:9440\n", "localhost"),
 				Entry("with an IPv4 address", "        - --health-probe-bind-address=127.0.0.1:9440\n", "127.0.0.1"),
 				Entry("with an IPv6 address", "        - --health-probe-bind-address=[::1]:9440\n", "[::1]"),
-				Entry("turned off", "        - --health-probe-bind-address=0\n", "address=0"),
+				Entry("turned off", "        - --health-probe-bind-address=0\n", "--health-probe-bind-address=0"),
 				Entry("when the project's manager does not set the flag", "", ""),
 			)
 
