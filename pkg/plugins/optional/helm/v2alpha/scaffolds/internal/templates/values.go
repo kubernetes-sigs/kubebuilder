@@ -600,16 +600,21 @@ metrics:
 // section. It mirrors the --health-probe-bind-address flag of the project's manager and
 // is empty when the manager does not set that flag. "0" turns the server off.
 func (f *HelmValues) addHealthProbeSection(buf *bytes.Buffer) {
-	address := ":8081"
+	address, defaultPort := ":8081", 8081
 	if f.Extraction != nil {
 		address = f.Extraction.Features.HealthProbeBindAddress
+		if port := f.Extraction.Features.HealthProbeDefaultPort; port > 0 {
+			defaultPort = port
+		}
 	}
 
 	buf.WriteString(
 		`  ## Health probe server address (--health-probe-bind-address); the "health" port and probes use its port.
-  ## Empty: no flag, the manager's default :8081. "0": turns the server, the "health" port and probes off.
-  ##
 `)
+	fmt.Fprintf(buf,
+		"  ## Empty: no flag, the manager's default :%d. \"0\": turns the server, the \"health\" port and probes off.\n",
+		defaultPort)
+	buf.WriteString("  ##\n")
 	fmt.Fprintf(buf, "  healthProbeBindAddress: %q\n\n", address)
 }
 
