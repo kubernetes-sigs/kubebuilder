@@ -190,17 +190,14 @@ var _ = Describe("kubebuilder", func() {
 
 			// The flag, the "health" container port and both probes move together.
 			By("moving the project's health probe server to port 9440")
-			managerPath := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
-			Expect(pluginutil.ReplaceInFile(managerPath, "8081", "9440")).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(managerManifest(kbc), scaffoldedHealthProbePort, "9440")).To(Succeed())
 
 			By("building installer and generating helm chart")
 			Expect(kbc.Make("build-installer")).To(Succeed())
 			Expect(kbc.EditHelmPlugin()).To(Succeed())
 
 			By("verifying the chart takes the project's address as its default")
-			values, err := os.ReadFile(filepath.Join(kbc.Dir, "dist", "chart", "values.yaml"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(values)).To(ContainSubstring(`healthProbeBindAddress: ":9440"`))
+			Expect(chartFile(kbc, "values.yaml")).To(ContainSubstring(`healthProbeBindAddress: ":9440"`))
 
 			By("deploying with the project's address and validating the manager reconciles the sample CR")
 			helpers.Run(kbc, helpers.RunOptions{
@@ -211,93 +208,125 @@ var _ = Describe("kubebuilder", func() {
 				SkipChartGeneration: true, // Chart already generated above
 			})
 
-			releaseName := fmt.Sprintf("e2e-%s", kbc.TestSuffix)
-			deploymentName := releaseName + "-controller-manager"
-			// controller-runtime logs the address its health probe server listens on.
-			serverAddr := regexp.MustCompile(`"name":\s*"health probe",\s*"addr":\s*"([^"]+)"`)
-
-			// expectHealthProbeServer checks the running manager. With an address, the server
-			// listens on it, and the probes reach it through the "health" port: the rollout only
-			// completes once the readiness probe passes. With "0" there is no server, no "health"
-			// port and no probe. wantFlag "" means the chart passes no flag.
-			expectHealthProbeServer := func(wantFlag, wantListen, wantPort string) {
-				_, err = kbc.Kubectl.CommandInNamespace("rollout", "status",
-					"deployment/"+deploymentName, "--timeout=5m")
-				Expect(err).NotTo(HaveOccurred())
-				// Wait for the previous Pod to be gone, since GetControllerPodName describes all
-				// the Pods and fails when one is deleted meanwhile.
-				Eventually(func(g Gomega) {
-					pods, getErr := kbc.Kubectl.Get(true, "pods", "-l", "control-plane=controller-manager", "-o", "name")
-					g.Expect(getErr).NotTo(HaveOccurred())
-					g.Expect(strings.Fields(pods)).To(HaveLen(1))
-				}, 2*time.Minute, time.Second).Should(Succeed())
-				podName := helpers.GetControllerPodName(kbc)
-
-				var args, port, probes, logs string
-				args, err = kbc.Kubectl.Get(true, "pod", podName, "-o", "jsonpath={.spec.containers[0].args}")
-				Expect(err).NotTo(HaveOccurred())
-				if wantFlag == "" {
-					Expect(args).NotTo(ContainSubstring("--health-probe-bind-address"))
-				} else {
-					Expect(args).To(ContainSubstring(`"--health-probe-bind-address=` + wantFlag + `"`))
-				}
-
-				port, err = kbc.Kubectl.Get(true, "pod", podName, "-o",
-					`jsonpath={.spec.containers[0].ports[?(@.name=="health")].containerPort}`)
-				Expect(err).NotTo(HaveOccurred())
-				probes, err = kbc.Kubectl.Get(true, "pod", podName, "-o",
-					"jsonpath={.spec.containers[0].livenessProbe.httpGet.port}"+
-						"{.spec.containers[0].readinessProbe.httpGet.port}")
-				Expect(err).NotTo(HaveOccurred())
-
-				// The manager starts its HTTP servers before it tries to take the leader lease.
-				Eventually(func(g Gomega) {
-					logs, err = kbc.Kubectl.Logs(podName)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(logs).To(ContainSubstring("Attempting to acquire leader lease"))
-				}, 2*time.Minute, time.Second).Should(Succeed())
-
-				if wantListen == "" {
-					Expect(port).To(BeEmpty())
-					Expect(probes).To(BeEmpty())
-					Expect(logs).NotTo(ContainSubstring("health probe"))
-					return
-				}
-				Expect(port).To(Equal(wantPort))
-				Expect(probes).To(Equal("healthhealth"))
-				match := serverAddr.FindStringSubmatch(logs)
-				Expect(match).NotTo(BeNil(), "the manager did not start the health probe server:\n%s", logs)
-				Expect(match[1]).To(Equal(wantListen))
-			}
-
 			By("verifying the manager serves the probes on the project's address")
-			expectHealthProbeServer(":9440", "[::]:9440", "9440")
+			expectHealthProbeServer(kbc, ":9440", healthProbeServer{"9440", scaffoldedProbePaths})
 
-			for _, step := range []struct {
-				description, value, wantListen, wantPort string
-				asString                                 bool
-			}{
-				{"another port", ":9441", "[::]:9441", "9441", false},
+			runHealthProbeSteps(kbc, []healthProbeStep{
+				{"another port", ":9441", false, healthProbeServer{"9441", scaffoldedProbePaths}},
 				// Go listens on 0.0.0.0 with a dual-stack socket, which it reports as [::].
-				{"all IPv4 interfaces", "0.0.0.0:9442", "[::]:9442", "9442", false},
-				{"all IPv6 interfaces", "[::]:9443", "[::]:9443", "9443", false},
-				{"empty: no flag, the manager's default :8081", "", "[::]:8081", "8081", false},
-				{"\"0\" as a string: turned off", "0", "", "", true},
-				{"0 as a number: turned off", "0", "", "", false},
-				{"the project's address again", ":9440", "[::]:9440", "9440", false},
-			} {
-				By("upgrading the release with manager.healthProbeBindAddress set to " + step.description)
-				setFlag := "--set"
-				if step.asString {
-					setFlag = "--set-string"
-				}
-				cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
-					"--namespace", kbc.Kubectl.Namespace, "--reuse-values",
-					setFlag, "manager.healthProbeBindAddress="+step.value)
-				_, err = kbc.Run(cmd)
-				Expect(err).NotTo(HaveOccurred())
-				expectHealthProbeServer(step.value, step.wantListen, step.wantPort)
-			}
+				{"all IPv4 interfaces", "0.0.0.0:9442", false, healthProbeServer{"9442", scaffoldedProbePaths}},
+				{"all IPv6 interfaces", "[::]:9443", false, healthProbeServer{"9443", scaffoldedProbePaths}},
+				{
+					"empty: no flag, the manager's default :8081", "", false,
+					healthProbeServer{scaffoldedHealthProbePort, scaffoldedProbePaths},
+				},
+				{"\"0\" as a string: turned off", "0", true, healthProbeServer{}},
+				{"0 as a number: turned off", "0", false, healthProbeServer{}},
+				{"the project's address again", ":9440", false, healthProbeServer{"9440", scaffoldedProbePaths}},
+			})
+		})
+
+		// The helm plugin builds the chart from the kustomize output, never from cmd/main.go, so
+		// each change below in cmd/main.go goes with the change config/manager/manager.yaml needs
+		// for a kustomize deploy to work.
+		It("should serve the health probes of a manager with its own default address and probe endpoints", func() {
+			const ownPort, renamedProbePaths = "9450", "/livez/ready"
+
+			By("generating a project without webhooks")
+			helpers.GenerateV4WithoutWebhooks(kbc)
+
+			By("moving the default address to :9450 and renaming the probe endpoints in cmd/main.go")
+			Expect(pluginutil.ReplaceInFile(mainGo(kbc),
+				`"health-probe-bind-address", ":8081",`, `"health-probe-bind-address", ":9450",`)).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(mainGo(kbc), "HealthProbeBindAddress: probeAddr,\n",
+				"HealthProbeBindAddress: probeAddr,\n"+
+					"\t\tLivenessEndpointName:   \"/livez\",\n"+
+					"\t\tReadinessEndpointName:  \"/ready\",\n")).To(Succeed())
+
+			By("passing no flag in config/manager/manager.yaml, and moving its port and probes")
+			removeHealthProbeFlag(kbc)
+			Expect(pluginutil.ReplaceInFile(managerManifest(kbc), scaffoldedHealthProbePort, ownPort)).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(managerManifest(kbc), "path: /healthz", "path: /livez")).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(managerManifest(kbc), "path: /readyz", "path: /ready")).To(Succeed())
+
+			By("building installer and generating helm chart")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+			Expect(kbc.EditHelmPlugin()).To(Succeed())
+
+			By("verifying the chart passes no flag and takes the port of the project's manifest")
+			values := chartFile(kbc, "values.yaml")
+			Expect(values).To(ContainSubstring(`healthProbeBindAddress: ""`))
+			Expect(values).To(ContainSubstring("Empty: no flag, the manager's default :" + ownPort + "."))
+
+			By("deploying and validating the manager reconciles the sample CR")
+			helpers.Run(kbc, helpers.RunOptions{
+				HasMetrics:             true,
+				InstallMethod:          helpers.InstallMethodHelm,
+				SkipChartGeneration:    true,
+				WithoutHealthProbeFlag: true,
+			})
+
+			By("verifying the manager serves the renamed probes on the default in its cmd/main.go")
+			expectHealthProbeServer(kbc, "", healthProbeServer{ownPort, renamedProbePaths})
+
+			runHealthProbeSteps(kbc, []healthProbeStep{
+				{"another port", ":9451", false, healthProbeServer{"9451", renamedProbePaths}},
+				{"0: turned off", "0", false, healthProbeServer{}},
+				{"empty: no flag, the default in cmd/main.go", "", false, healthProbeServer{ownPort, renamedProbePaths}},
+			})
+		})
+
+		It("should run a manager without the health probe flag and without the Ping checks", func() {
+			const ownPort = "8082"
+
+			By("generating a project without webhooks")
+			helpers.GenerateV4WithoutWebhooks(kbc)
+
+			By("setting the address in cmd/main.go, and removing the flag and both healthz.Ping checks")
+			Expect(pluginutil.ReplaceInFile(mainGo(kbc),
+				`flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to. "+
+		"Set 0 to disable the health probe server.")
+`, "probeAddr = \":"+ownPort+"\"\n")).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(mainGo(kbc),
+				`	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "Failed to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "Failed to set up ready check")
+		os.Exit(1)
+	}
+`, "")).To(Succeed())
+			Expect(pluginutil.ReplaceInFile(mainGo(kbc),
+				"\t\"sigs.k8s.io/controller-runtime/pkg/healthz\"\n", "")).To(Succeed())
+
+			// Without the checks, /healthz and /readyz answer 404, so the probes go too.
+			By("passing no flag in config/manager/manager.yaml, moving its port, and removing its probes")
+			removeHealthProbeFlag(kbc)
+			Expect(pluginutil.ReplaceInFile(managerManifest(kbc), scaffoldedHealthProbePort, ownPort)).To(Succeed())
+			Expect(pluginutil.ReplaceRegexInFile(managerManifest(kbc),
+				`(?m)^        (?:livenessProbe|readinessProbe):\n(?:          .*\n)+`, "")).To(Succeed())
+
+			By("building installer and generating helm chart")
+			Expect(kbc.Make("build-installer")).To(Succeed())
+			Expect(kbc.EditHelmPlugin()).To(Succeed())
+
+			By("verifying the chart passes no flag, takes the port of the project's manifest and has no probes")
+			values := chartFile(kbc, "values.yaml")
+			Expect(values).To(ContainSubstring(`healthProbeBindAddress: ""`))
+			Expect(values).To(ContainSubstring("Empty: no flag, the manager's default :" + ownPort + "."))
+			Expect(chartFile(kbc, "templates", "manager", "manager.yaml")).NotTo(ContainSubstring("Probe:"))
+
+			By("deploying and validating the manager reconciles the sample CR")
+			helpers.Run(kbc, helpers.RunOptions{
+				HasMetrics:             true,
+				InstallMethod:          helpers.InstallMethodHelm,
+				SkipChartGeneration:    true,
+				WithoutHealthProbeFlag: true,
+			})
+
+			By("verifying the manager serves its health probe server on the address set in cmd/main.go")
+			expectHealthProbeServer(kbc, "", healthProbeServer{port: ownPort})
 		})
 
 		It("should generate a namespeced runnable project using webhooks and installed with the HelmChart", func() {
@@ -355,3 +384,127 @@ var _ = Describe("kubebuilder", func() {
 		})
 	})
 })
+
+const (
+	// scaffoldedHealthProbePort is the health probe port go/v4 scaffolds.
+	scaffoldedHealthProbePort = "8081"
+	// scaffoldedProbePaths are the liveness and readiness probe paths go/v4 scaffolds.
+	scaffoldedProbePaths = "/healthz/readyz"
+)
+
+// healthProbeServerAddr matches the address controller-runtime logs for its health probe server.
+var healthProbeServerAddr = regexp.MustCompile(`"name":\s*"health probe",\s*"addr":\s*"([^"]+)"`)
+
+// healthProbeServer is what a running manager serves. The zero value is a manager whose health
+// probe server is off.
+type healthProbeServer struct {
+	port       string // the port the server listens on, which the "health" port declares
+	probePaths string // the liveness and readiness probe paths, "" when the manager has none
+}
+
+// healthProbeStep upgrades the release with manager.healthProbeBindAddress set to value, which
+// the chart passes as the flag, and checks the manager then serves want.
+type healthProbeStep struct {
+	description, value string
+	asString           bool // set the value with --set-string
+	want               healthProbeServer
+}
+
+func mainGo(kbc *utils.TestContext) string {
+	return filepath.Join(kbc.Dir, "cmd", "main.go")
+}
+
+func managerManifest(kbc *utils.TestContext) string {
+	return filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
+}
+
+// chartFile returns a file of the generated chart.
+func chartFile(kbc *utils.TestContext, path ...string) string {
+	content, err := os.ReadFile(filepath.Join(append([]string{kbc.Dir, "dist", "chart"}, path...)...))
+	Expect(err).NotTo(HaveOccurred())
+	return string(content)
+}
+
+// removeHealthProbeFlag removes the scaffolded --health-probe-bind-address from the manager's args.
+func removeHealthProbeFlag(kbc *utils.TestContext) {
+	Expect(pluginutil.ReplaceRegexInFile(managerManifest(kbc),
+		`(?m)^[ \t]*- --health-probe-bind-address=:8081\n`, "")).To(Succeed())
+}
+
+func runHealthProbeSteps(kbc *utils.TestContext, steps []healthProbeStep) {
+	releaseName := fmt.Sprintf("e2e-%s", kbc.TestSuffix)
+	for _, step := range steps {
+		By("upgrading the release with manager.healthProbeBindAddress set to " + step.description)
+		setFlag := "--set"
+		if step.asString {
+			setFlag = "--set-string"
+		}
+		cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+			"--namespace", kbc.Kubectl.Namespace, "--reuse-values",
+			setFlag, "manager.healthProbeBindAddress="+step.value)
+		_, err := kbc.Run(cmd)
+		Expect(err).NotTo(HaveOccurred())
+		expectHealthProbeServer(kbc, step.value, step.want)
+	}
+}
+
+// expectHealthProbeServer checks the running manager gets flag ("" for none) and serves want. The
+// server listens on all interfaces, which Go reports as [::], and the probes reach it through the
+// "health" port: the rollout only completes once the readiness probe passes. When the server is
+// off there is no "health" port and no probe.
+func expectHealthProbeServer(kbc *utils.TestContext, flag string, want healthProbeServer) {
+	deploymentName := fmt.Sprintf("e2e-%s-controller-manager", kbc.TestSuffix)
+	_, err := kbc.Kubectl.CommandInNamespace("rollout", "status",
+		"deployment/"+deploymentName, "--timeout=5m")
+	Expect(err).NotTo(HaveOccurred())
+	// Wait for the previous Pod to be gone, since GetControllerPodName describes all
+	// the Pods and fails when one is deleted meanwhile.
+	Eventually(func(g Gomega) {
+		pods, getErr := kbc.Kubectl.Get(true, "pods", "-l", "control-plane=controller-manager", "-o", "name")
+		g.Expect(getErr).NotTo(HaveOccurred())
+		g.Expect(strings.Fields(pods)).To(HaveLen(1))
+	}, 2*time.Minute, time.Second).Should(Succeed())
+	podName := helpers.GetControllerPodName(kbc)
+
+	args, err := kbc.Kubectl.Get(true, "pod", podName, "-o", "jsonpath={.spec.containers[0].args}")
+	Expect(err).NotTo(HaveOccurred())
+	if flag == "" {
+		Expect(args).NotTo(ContainSubstring("--health-probe-bind-address"))
+	} else {
+		Expect(args).To(ContainSubstring(`"--health-probe-bind-address=` + flag + `"`))
+	}
+
+	port, err := kbc.Kubectl.Get(true, "pod", podName, "-o",
+		`jsonpath={.spec.containers[0].ports[?(@.name=="health")].containerPort}`)
+	Expect(err).NotTo(HaveOccurred())
+	probes, err := kbc.Kubectl.Get(true, "pod", podName, "-o",
+		"jsonpath={.spec.containers[0].livenessProbe.httpGet.port}"+
+			"{.spec.containers[0].readinessProbe.httpGet.port}"+
+			"{.spec.containers[0].livenessProbe.httpGet.path}"+
+			"{.spec.containers[0].readinessProbe.httpGet.path}")
+	Expect(err).NotTo(HaveOccurred())
+
+	// The manager starts its HTTP servers before it tries to take the leader lease.
+	var logs string
+	Eventually(func(g Gomega) {
+		logs, err = kbc.Kubectl.Logs(podName)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(logs).To(ContainSubstring("Attempting to acquire leader lease"))
+	}, 2*time.Minute, time.Second).Should(Succeed())
+
+	if want.port == "" {
+		Expect(port).To(BeEmpty())
+		Expect(probes).To(BeEmpty())
+		Expect(logs).NotTo(ContainSubstring("health probe"))
+		return
+	}
+	Expect(port).To(Equal(want.port))
+	if want.probePaths == "" {
+		Expect(probes).To(BeEmpty())
+	} else {
+		Expect(probes).To(Equal("healthhealth" + want.probePaths))
+	}
+	match := healthProbeServerAddr.FindStringSubmatch(logs)
+	Expect(match).NotTo(BeNil(), "the manager did not start the health probe server:\n%s", logs)
+	Expect(match[1]).To(Equal("[::]:" + want.port))
+}
