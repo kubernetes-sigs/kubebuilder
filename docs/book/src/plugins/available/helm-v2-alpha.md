@@ -333,7 +333,7 @@ The default webhook policy allows ingress from all sources to the manager pod's 
 
 Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
 
-The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. A value set there replaces the same key coming from `config/` (for example a label or annotation in `config/rbac/service_account.yaml`). Only the chart's own Helm labels (`app.kubernetes.io/managed-by`, `app.kubernetes.io/name`, `app.kubernetes.io/instance` and `helm.sh/chart`) always keep the chart's value. For example, to match a Prometheus Operator `serviceMonitorSelector`:
+The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. A value set there replaces the same key coming from `config/` (for example a label or annotation in `config/rbac/service_account.yaml`). Only the chart's own Helm labels (`app.kubernetes.io/managed-by`, `app.kubernetes.io/name`, `app.kubernetes.io/instance` and `helm.sh/chart`) and the scaffolded `control-plane` label always keep the chart's value. For example, to match a Prometheus Operator `serviceMonitorSelector`:
 
 ```yaml
 prometheus:

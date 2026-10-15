@@ -234,10 +234,7 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 		Expect(countMetadataHeader(rendered, "labels:")).To(Equal(1))
 		Expect(rendered).To(ContainSubstring(valuesPrometheusLabels))
 		Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/managed-by" ` +
-			`"app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}`))
-		Expect(rendered).To(ContainSubstring(
-			`{{- if not (hasKey (.Values.prometheus.labels | default dict) ` +
-				`"control-plane") }}`))
+			`"app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}`))
 	})
 
 	It("injects a guarded .Values.prometheus.annotations block since none existed", func() {

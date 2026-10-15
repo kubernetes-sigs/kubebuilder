@@ -28,7 +28,13 @@ import (
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
-type helmValues = map[string]interface{}
+const (
+	keyServiceAccount = "serviceAccount"
+	keyPrometheus     = "prometheus"
+	keyAnnotations    = "annotations"
+)
+
+type helmValues = map[string]any
 
 const (
 	renderedResourceName = "test/templates/resource.yaml"
@@ -63,8 +69,8 @@ func renderResource(templateText string, userValues helmValues) *unstructured.Un
 			{Name: "templates/resource.yaml", Data: []byte(templateText)},
 		},
 		Values: helmValues{
-			"serviceAccount": helmValues{"enabled": true},
-			"prometheus":     helmValues{"enabled": true},
+			keyServiceAccount: helmValues{"enabled": true},
+			keyPrometheus:     helmValues{"enabled": true},
 		},
 	}
 
@@ -75,7 +81,7 @@ func renderResource(templateText string, userValues helmValues) *unstructured.Un
 	rendered, err := helmengine.Render(testChart, releaseValues)
 	Expect(err).NotTo(HaveOccurred())
 
-	var content map[string]interface{}
+	var content map[string]any
 	Expect(sigsyaml.UnmarshalStrict([]byte(rendered[renderedResourceName]), &content)).To(Succeed(),
 		fmt.Sprintf("rendered output must be valid YAML without duplicate keys:\n%s",
 			rendered[renderedResourceName]))
@@ -101,7 +107,7 @@ var _ = Describe("Helm-rendered ServiceAccount and ServiceMonitor metadata", fun
 			resource := renderResource(AddServiceAccountLabelsAndAnnotations(saRenderInput), userValues)
 			check(
 				renderedStringMap(resource, "metadata", "labels"),
-				renderedStringMap(resource, "metadata", "annotations"))
+				renderedStringMap(resource, "metadata", keyAnnotations))
 		},
 		Entry("no overrides: the values from config/ are rendered",
 			helmValues{},
@@ -114,15 +120,15 @@ var _ = Describe("Helm-rendered ServiceAccount and ServiceMonitor metadata", fun
 				Expect(annotations).To(HaveKeyWithValue("example.com/multi", multiDefault))
 			}),
 		Entry("empty label and annotation maps behave like no overrides",
-			helmValues{"serviceAccount": helmValues{"labels": helmValues{}, "annotations": helmValues{}}},
+			helmValues{keyServiceAccount: helmValues{"labels": helmValues{}, keyAnnotations: helmValues{}}},
 			func(labels, annotations map[string]string) {
 				Expect(labels).To(HaveKeyWithValue("example.com/tier", "a"))
 				Expect(annotations).To(HaveKeyWithValue("eks.amazonaws.com/role-arn", roleA))
 			}),
 		Entry("a label and an annotation set in the values replace the ones from config/",
-			helmValues{"serviceAccount": helmValues{
-				"labels":      helmValues{"example.com/tier": "b"},
-				"annotations": helmValues{"eks.amazonaws.com/role-arn": roleB},
+			helmValues{keyServiceAccount: helmValues{
+				"labels":       helmValues{"example.com/tier": "b"},
+				keyAnnotations: helmValues{"eks.amazonaws.com/role-arn": roleB},
 			}},
 			func(labels, annotations map[string]string) {
 				Expect(labels).To(HaveLen(3))
@@ -132,31 +138,31 @@ var _ = Describe("Helm-rendered ServiceAccount and ServiceMonitor metadata", fun
 				Expect(annotations).To(HaveKeyWithValue("example.com/multi", multiDefault))
 			}),
 		Entry("a multi-line annotation from config/ can be replaced",
-			helmValues{"serviceAccount": helmValues{
-				"annotations": helmValues{"example.com/multi": "replaced"},
+			helmValues{keyServiceAccount: helmValues{
+				keyAnnotations: helmValues{"example.com/multi": "replaced"},
 			}},
-			func(labels, annotations map[string]string) {
+			func(_, annotations map[string]string) {
 				Expect(annotations).To(HaveLen(2))
 				Expect(annotations).To(HaveKeyWithValue("example.com/multi", "replaced"))
 				Expect(annotations).To(HaveKeyWithValue("eks.amazonaws.com/role-arn", roleA))
 			}),
 		Entry("the chart's own Helm labels keep the chart's value",
-			helmValues{"serviceAccount": helmValues{
+			helmValues{keyServiceAccount: helmValues{
 				"labels": helmValues{
 					"app.kubernetes.io/managed-by": "foo",
 					"app.kubernetes.io/name":       "foo",
 				},
 			}},
-			func(labels, annotations map[string]string) {
+			func(labels, _ map[string]string) {
 				Expect(labels).To(HaveLen(3))
 				Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/managed-by", "Helm"))
 				Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/name", "test-project"))
 				Expect(labels).To(HaveKeyWithValue("example.com/tier", "a"))
 			}),
 		Entry("every key overridden plus new keys: each key appears once with the value set",
-			helmValues{"serviceAccount": helmValues{
+			helmValues{keyServiceAccount: helmValues{
 				"labels": helmValues{"example.com/tier": "b", "example.com/new": "n"},
-				"annotations": helmValues{
+				keyAnnotations: helmValues{
 					"eks.amazonaws.com/role-arn": roleB,
 					"example.com/multi":          "x",
 					"example.com/extra":          "y",
@@ -182,23 +188,26 @@ var _ = Describe("Helm-rendered ServiceAccount and ServiceMonitor metadata", fun
 			Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/managed-by", "Helm"))
 		})
 
-		It("lets the values override a label from config/ without touching the selector", func() {
-			resource := renderResource(AddServiceMonitorLabelsAndAnnotations(smStandardLabelsOnly), helmValues{
-				"prometheus": helmValues{
-					"labels":      helmValues{"control-plane": "custom", "release": "prometheus"},
-					"annotations": helmValues{"example.com/owner": "sre"},
+		It("lets the values override an annotation from config/ and keeps control-plane owned by the chart", func() {
+			resource := renderResource(AddServiceMonitorLabelsAndAnnotations(smAnnotationsThenLabels), helmValues{
+				keyPrometheus: helmValues{
+					"labels": helmValues{labelKeyControlPlane: "custom", "release": "prometheus"},
+					keyAnnotations: helmValues{
+						"example.com/existing-annotation": "replaced",
+						"example.com/owner":               "sre",
+					},
 				},
 			})
 
 			labels := renderedStringMap(resource, "metadata", "labels")
-			Expect(labels).To(HaveKeyWithValue("control-plane", "custom"))
+			Expect(labels).To(HaveKeyWithValue("control-plane", "controller-manager"))
 			Expect(labels).To(HaveKeyWithValue("release", "prometheus"))
 			Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/managed-by", "Helm"))
-			Expect(renderedStringMap(resource, "metadata", "annotations")).
-				To(HaveKeyWithValue("example.com/owner", "sre"))
 
-			selector := renderedStringMap(resource, "spec", "selector", "matchLabels")
-			Expect(selector).To(HaveKeyWithValue("control-plane", "controller-manager"))
+			annotations := renderedStringMap(resource, "metadata", "annotations")
+			Expect(annotations).To(HaveLen(2))
+			Expect(annotations).To(HaveKeyWithValue("example.com/existing-annotation", "replaced"))
+			Expect(annotations).To(HaveKeyWithValue("example.com/owner", "sre"))
 		})
 	})
 })

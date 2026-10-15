@@ -398,13 +398,18 @@ func extractKeysFromLines(lines []string) []string {
 	return keys
 }
 
-// chartOwnedMetadataKeys are the standard Helm labels. The chart always sets them itself, so a value
-// from .Values never replaces them. Every other key coming from config/ can be overridden by the values.
+// labelKeyControlPlane is the scaffolded label that selects the manager pods and Service.
+const labelKeyControlPlane = "control-plane"
+
+// chartOwnedMetadataKeys are the standard Helm labels plus the scaffolded control-plane label. The chart
+// always sets them itself, so a value from .Values never replaces them. Every other key coming from
+// config/ can be overridden by the values.
 var chartOwnedMetadataKeys = []string{
 	strings.TrimSuffix(common.LabelKeyAppManagedBy, ":"),
 	strings.TrimSuffix(common.LabelKeyAppName, ":"),
 	strings.TrimSuffix(common.LabelKeyHelmChart, ":"),
 	strings.TrimSuffix(common.LabelKeyAppInstance, ":"),
+	labelKeyControlPlane,
 }
 
 // metadataKeyPattern matches a "  key: value" or "  key:" line and captures its indent and key.
