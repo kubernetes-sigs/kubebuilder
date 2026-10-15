@@ -368,6 +368,12 @@ func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 // MarshalYAML implements config.Config
 func (c Cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
+		// Writing the file is what moves a project to the current format, including
+		// resources this command did not touch.
+		if err := c.Resources[i].Migrate(); err != nil {
+			return nil, config.MarshalError{Err: err}
+		}
+
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
 			c.Resources[i].API = nil
@@ -375,6 +381,10 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
 		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
 			c.Resources[i].Webhooks = nil
+		}
+		// If Controllers is empty, omit it (prevents `controllers: []`).
+		if r.Controllers != nil && r.Controllers.IsEmpty() {
+			c.Resources[i].Controllers = nil
 		}
 	}
 
@@ -393,11 +403,6 @@ func (c *Cfg) UnmarshalYAML(b []byte) error {
 	// with newer fields and simply ignore unknown fields.
 	if err := yaml.Unmarshal(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
-	}
-
-	// Normalize resources to auto-migrate legacy controller: true format
-	for i := range c.Resources {
-		c.Resources[i].Normalize()
 	}
 
 	return nil
