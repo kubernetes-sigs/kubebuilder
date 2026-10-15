@@ -35,6 +35,7 @@ import (
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	grafanav1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
+	multiclusterruntimev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/multicluster-runtime/v1alpha"
 )
 
 // Run bootstraps & runs the CLI
@@ -76,6 +77,7 @@ func Run() {
 			&grafanav1alpha.Plugin{},
 			&helmv2alpha.Plugin{},
 			&autoupdatev1alpha.Plugin{},
+			&multiclusterruntimev1alpha.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),
