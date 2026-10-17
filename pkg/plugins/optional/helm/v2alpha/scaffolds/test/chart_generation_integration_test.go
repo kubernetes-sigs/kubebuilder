@@ -954,6 +954,60 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(containerPortNames(rendered)).To(ContainElement("webhook-server"))
 			Expect(rendered).To(ContainSubstring("containerPort: 9444"))
 		})
+
+		// managerDeployment returns the rendered Deployment document.
+		managerDeployment := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: Deployment\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		webhookSettings := []TableEntry{
+			Entry("the default value", nil, "9443"),
+			Entry("a custom port", []string{"--set", "webhook.port=9444"}, "9444"),
+			Entry("webhooks disabled",
+				[]string{"--set", "webhook.enabled=false", "--set", "certManager.enabled=false"}, ""),
+		}
+
+		// kustomize sorts the keys of a port, so a hostPort comes between containerPort and name.
+		DescribeTable("follows webhook.port and webhook.enabled when the webhook-server port also sets hostPort",
+			func(setArgs []string, wantPort string) {
+				const hostPort = "          hostPort: 19443\n"
+				kustomize := strings.Replace(createKustomizeWithWebhookServer("test-project"),
+					"- containerPort: 9443\n", "- containerPort: 9443\n"+hostPort, 1)
+				Expect(kustomize).To(ContainSubstring(hostPort + "          name: webhook-server"))
+				deployment := managerDeployment(render(kustomize, setArgs...))
+				if wantPort == "" {
+					Expect(deployment).NotTo(ContainSubstring("name: webhook-server\n"))
+					Expect(deployment).NotTo(ContainSubstring("hostPort: 19443"))
+					return
+				}
+				Expect(deployment).To(ContainSubstring(
+					"- containerPort: " + wantPort + "\n" + hostPort + "          name: webhook-server\n"))
+			},
+			webhookSettings,
+		)
+
+		// kustomize sorts appProtocol before containerPort, so it starts the list item.
+		DescribeTable("follows webhook.port and webhook.enabled when the webhook-server port also sets appProtocol",
+			func(setArgs []string, wantPort string) {
+				const appProtocol = "- appProtocol: https\n          containerPort: "
+				kustomize := strings.Replace(createKustomizeWithWebhookServer("test-project"),
+					"- containerPort: 9443\n", appProtocol+"9443\n", 1)
+				Expect(kustomize).To(ContainSubstring(appProtocol + "9443\n          name: webhook-server"))
+				deployment := managerDeployment(render(kustomize, setArgs...))
+				if wantPort == "" {
+					Expect(deployment).NotTo(ContainSubstring("name: webhook-server\n"))
+					Expect(deployment).NotTo(ContainSubstring("appProtocol"))
+					return
+				}
+				Expect(deployment).To(ContainSubstring(appProtocol + wantPort + "\n          name: webhook-server\n"))
+			},
+			webhookSettings,
+		)
 	})
 
 	Context("Health probe bind address (rendered)", func() {
