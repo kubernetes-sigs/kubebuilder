@@ -6,12 +6,16 @@ on:
       - 'docs/book/src/getting-started/testdata/project/**'
       - 'docs/book/src/cronjob-tutorial/testdata/project/**'
       - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+      - 'docs/book/src/reference/webhook-self-signed-cert/**'
+      - 'hack/docs/test_webhook_certs.sh'
       - '.github/workflows/test-e2e-book.yml'
   pull_request:
     paths:
       - 'docs/book/src/getting-started/testdata/project/**'
       - 'docs/book/src/cronjob-tutorial/testdata/project/**'
       - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+      - 'docs/book/src/reference/webhook-self-signed-cert/**'
+      - 'hack/docs/test_webhook_certs.sh'
       - '.github/workflows/test-e2e-book.yml'
 
 permissions: {}
@@ -60,3 +64,17 @@ jobs:
       - name: Running make test-e2e for ${{ matrix.folder }}
         working-directory: ${{ matrix.folder }}
         run: make test-e2e
+
+  webhook-certs:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test the self-signed webhook certificate script
+        run: ./hack/docs/test_webhook_certs.sh

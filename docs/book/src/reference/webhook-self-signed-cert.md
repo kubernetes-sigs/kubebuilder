@@ -1,4 +1,4 @@
-# Webhook with Self-Signed Certificates (Without cert-manager)
+# Webhook with self-signed certificates (without cert-manager)
 
 <aside class="warning" role="note">
 <p class="note-title">Warning</p>
@@ -42,87 +42,7 @@ Create a file named `hack/webhook-certs.sh` in your project and add the followin
 ```bash
 #!/usr/bin/env bash
 
-set -e
-
-# Usage: ./hack/webhook-certs.sh <project-name>
-
-PROJECT_NAME=${1:-"my-project"}
-NAMESPACE="${PROJECT_NAME}-system"
-SERVICE="${PROJECT_NAME}-webhook-service"
-CERT_DIR="config/webhook/certs"
-
-echo "Generating certificates for ${SERVICE}.${NAMESPACE}.svc..."
-mkdir -p "${CERT_DIR}"
-
-# 1. Generate the CA private key and self-signed certificate
-openssl genrsa -out "${CERT_DIR}/ca.key" 2048
-openssl req -new -x509 -days 365 \
-  -key "${CERT_DIR}/ca.key" \
-  -subj "/CN=Webhook CA/O=Dev" \
-  -out "${CERT_DIR}/ca.crt"
-
-# 2. Generate the webhook server private key
-openssl genrsa -out "${CERT_DIR}/tls.key" 2048
-
-# 3. Generate a CSR for the webhook service DNS name
-openssl req -new \
-  -key "${CERT_DIR}/tls.key" \
-  -subj "/CN=${SERVICE}.${NAMESPACE}.svc" \
-  -out "${CERT_DIR}/tls.csr"
-
-# 4. Create a SAN extension file
-cat > "${CERT_DIR}/san.ext" <<EOF
-subjectAltName = DNS:${SERVICE}.${NAMESPACE}.svc, DNS:${SERVICE}.${NAMESPACE}.svc.cluster.local
-EOF
-
-# 5. Sign the server certificate with the CA
-openssl x509 -req -days 365 \
-  -in "${CERT_DIR}/tls.csr" \
-  -CA "${CERT_DIR}/ca.crt" \
-  -CAkey "${CERT_DIR}/ca.key" \
-  -CAcreateserial \
-  -extfile "${CERT_DIR}/san.ext" \
-  -out "${CERT_DIR}/tls.crt"
-
-# Clean up temporary CSR and SAN extension files
-rm "${CERT_DIR}/tls.csr" "${CERT_DIR}/san.ext"
-
-# Base64 encode the CA bundle
-CA_BUNDLE=$(base64 -w 0 < "${CERT_DIR}/ca.crt")
-
-echo "Creating or updating the webhook-server-cert Secret in namespace ${NAMESPACE}..."
-kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
-kubectl create secret tls webhook-server-cert \
-  --cert="${CERT_DIR}/tls.crt" \
-  --key="${CERT_DIR}/tls.key" \
-  --namespace="${NAMESPACE}" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-echo "Injecting CA bundle into MutatingWebhookConfigurations..."
-for webhook in $(kubectl get mutatingwebhookconfiguration -o name | grep "${PROJECT_NAME}" || true); do
-    WEBHOOKS_COUNT=$(kubectl get "$webhook" -o jsonpath='{range .webhooks[*]}{@.name}{"\n"}{end}' | wc -l)
-    for (( i=0; i<WEBHOOKS_COUNT; i++ )); do
-        kubectl patch "$webhook" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/webhooks/$i/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
-    done
-done
-
-echo "Injecting CA bundle into ValidatingWebhookConfigurations..."
-for webhook in $(kubectl get validatingwebhookconfiguration -o name | grep "${PROJECT_NAME}" || true); do
-    WEBHOOKS_COUNT=$(kubectl get "$webhook" -o jsonpath='{range .webhooks[*]}{@.name}{"\n"}{end}' | wc -l)
-    for (( i=0; i<WEBHOOKS_COUNT; i++ )); do
-        kubectl patch "$webhook" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/webhooks/$i/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
-    done
-done
-
-echo "Injecting CA bundle into CRD conversion webhooks..."
-for crd in $(kubectl get crd -o name | grep "${PROJECT_NAME}" || true); do
-    HAS_WEBHOOK=$(kubectl get "$crd" -o jsonpath='{.spec.conversion.webhook.clientConfig}' || true)
-    if [ -n "$HAS_WEBHOOK" ]; then
-        kubectl patch "$crd" --type='json' -p="[{\"op\": \"replace\", \"path\": \"/spec/conversion/webhook/clientConfig/caBundle\", \"value\": \"${CA_BUNDLE}\"}]"
-    fi
-done
-
-echo "Done!"
+{{#include ./webhook-self-signed-cert/webhook-certs.sh:script}}
 ```
 
 Make the script executable:
@@ -131,7 +51,7 @@ Make the script executable:
 chmod +x hack/webhook-certs.sh
 ```
 
-Ensure the generated certificates aren't accidentally tracked by Git:
+Ensure the generated certificates are not accidentally tracked by Git:
 
 ```bash
 echo "config/webhook/certs/" >> .gitignore
@@ -144,9 +64,7 @@ echo "config/webhook/certs/" >> .gitignore
 Open your `Makefile` and add the following target to automate running the script:
 
 ```makefile
-.PHONY: webhook-certs
-webhook-certs: ## Generate and inject development webhook certificates
-	./hack/webhook-certs.sh my-project
+{{#include ./webhook-self-signed-cert/webhook-certs.mk}}
 ```
 
 *(Note: Make sure to replace `my-project` with the actual name prefix of your project)*
@@ -192,7 +110,7 @@ patches:
 
 ---
 
-## Step 4: Build, Deploy and Inject
+## Step 4: Build, deploy and inject
 
 Now, you can build and deploy your project, followed by injecting the certificates:
 
