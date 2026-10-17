@@ -10,7 +10,7 @@ metadata:
     "helm.sh/resource-policy": keep
     {{- end }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "project.resourceName" (dict "suffix" "serving-cert" "context" $) }}
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   conversion:
@@ -145,6 +145,7 @@ spec:
                             items:
                               properties:
                                 name:
+                                  minLength: 1
                                   type: string
                                 resourceClaimName:
                                   type: string
@@ -153,6 +154,7 @@ spec:
                               required:
                               - name
                               type: object
+                            maxItems: 4
                             type: array
                             x-kubernetes-list-map-keys:
                             - name
@@ -166,10 +168,12 @@ spec:
                                 items:
                                   properties:
                                     key:
+                                      minLength: 1
                                       type: string
                                   required:
                                   - key
                                   type: object
+                                maxItems: 1
                                 type: array
                                 x-kubernetes-list-type: atomic
                             type: object
@@ -184,6 +188,7 @@ spec:
                                 properties:
                                   minCount:
                                     format: int32
+                                    minimum: 1
                                     type: integer
                                 type: object
                             type: object
@@ -2214,15 +2219,19 @@ spec:
                                 items:
                                   properties:
                                     name:
+                                      minLength: 1
                                       type: string
                                     priority:
                                       format: int32
+                                      maximum: 100000
+                                      minimum: 0
                                       type: integer
                                   required:
                                   - name
                                   - priority
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                maxItems: 10
                                 type: array
                                 x-kubernetes-list-map-keys:
                                 - name
@@ -4358,6 +4367,7 @@ spec:
                             items:
                               properties:
                                 name:
+                                  minLength: 1
                                   type: string
                                 resourceClaimName:
                                   type: string
@@ -4366,6 +4376,7 @@ spec:
                               required:
                               - name
                               type: object
+                            maxItems: 4
                             type: array
                             x-kubernetes-list-map-keys:
                             - name
@@ -4379,10 +4390,12 @@ spec:
                                 items:
                                   properties:
                                     key:
+                                      minLength: 1
                                       type: string
                                   required:
                                   - key
                                   type: object
+                                maxItems: 1
                                 type: array
                                 x-kubernetes-list-type: atomic
                             type: object
@@ -4397,6 +4410,7 @@ spec:
                                 properties:
                                   minCount:
                                     format: int32
+                                    minimum: 1
                                     type: integer
                                 type: object
                             type: object
@@ -6427,15 +6441,19 @@ spec:
                                 items:
                                   properties:
                                     name:
+                                      minLength: 1
                                       type: string
                                     priority:
                                       format: int32
+                                      maximum: 100000
+                                      minimum: 0
                                       type: integer
                                   required:
                                   - name
                                   - priority
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                maxItems: 10
                                 type: array
                                 x-kubernetes-list-map-keys:
                                 - name
