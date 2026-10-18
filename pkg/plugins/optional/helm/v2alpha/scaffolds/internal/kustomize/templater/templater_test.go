@@ -41,6 +41,9 @@ const (
 
 	k8sSpecField = "spec"
 
+	// healthPortName is the name of the manager's health probe container port
+	healthPortName = "health"
+
 	// healthProbePortExpr is the port of .Values.manager.healthProbeBindAddress, 8081 when empty
 	healthProbePortExpr = `{{ .Values.manager.healthProbeBindAddress | default ":8081" | toString` +
 		` | splitList ":" | last | int }}`
@@ -2906,6 +2909,22 @@ spec:
 `, deployment
 			}
 
+			// probePorts returns the port of every probe in the manifest, by the name of the probe.
+			probePorts := func(manifest string) map[string]string {
+				ports := map[string]string{}
+				probe := ""
+				for line := range strings.SplitSeq(manifest, "\n") {
+					trimmed := strings.TrimSpace(line)
+					if strings.HasSuffix(trimmed, "Probe:") {
+						probe = strings.TrimSuffix(trimmed, ":")
+					} else if probe != "" && strings.HasPrefix(trimmed, "port:") {
+						ports[probe] = strings.TrimSpace(strings.TrimPrefix(trimmed, "port:"))
+						probe = ""
+					}
+				}
+				return ports
+			}
+
 			DescribeTable("should render the flag, the port and the probes from the value only",
 				func(arg, literal string) {
 					content, deployment := managerDeployment(arg)
@@ -2919,8 +2938,10 @@ spec:
 					}
 					Expect(result).NotTo(ContainSubstring("9440"))
 					Expect(result).To(ContainSubstring("containerPort: " + healthProbePortExpr + "\n          name: health"))
-					Expect(result).To(ContainSubstring("path: /healthz\n            port: health"))
-					Expect(result).To(ContainSubstring("path: /readyz\n            port: health"))
+					Expect(probePorts(result)).To(Equal(map[string]string{
+						"livenessProbe":  healthPortName,
+						"readinessProbe": healthPortName,
+					}))
 					Expect(strings.Count(result, healthProbeOnExpr)).To(Equal(3))
 				},
 				Entry("without a host", "        - --health-probe-bind-address=:9440\n", ":9440"),
@@ -2968,9 +2989,11 @@ spec:
 
 				result := templater.ApplyHelmSubstitutions(content, deployment)
 
-				Expect(result).To(ContainSubstring("path: /healthz\n            port: health"))
-				Expect(result).To(ContainSubstring("path: /readyz\n            port: health"))
-				Expect(result).To(ContainSubstring("        startupProbe:\n          tcpSocket:\n            port: 8443\n"))
+				Expect(probePorts(result)).To(Equal(map[string]string{
+					"livenessProbe":  healthPortName,
+					"readinessProbe": healthPortName,
+					"startupProbe":   "8443",
+				}))
 				Expect(strings.Count(result, healthProbeOnExpr)).To(Equal(3))
 			})
 
