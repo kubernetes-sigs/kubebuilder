@@ -1477,6 +1477,22 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			return ports
 		}
 
+		// probePorts returns the port of every probe in the rendered Deployment, by the name of the probe.
+		probePorts := func(deployment string) map[string]string {
+			ports := map[string]string{}
+			probe := ""
+			for line := range strings.SplitSeq(deployment, "\n") {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasSuffix(trimmed, "Probe:") {
+					probe = strings.TrimSuffix(trimmed, ":")
+				} else if probe != "" && strings.HasPrefix(trimmed, "port:") {
+					ports[probe] = strings.TrimSpace(strings.TrimPrefix(trimmed, "port:"))
+					probe = ""
+				}
+			}
+			return ports
+		}
+
 		render := func(healthProbeArg, port string, setArgs ...string) string {
 			out, err := helmTemplate(createKustomizeWithHealthProbe("test-project", healthProbeArg, port), setArgs...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
@@ -1495,13 +1511,14 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			}
 			if wantPort == "" {
 				Expect(healthContainerPorts(deployment)).To(BeEmpty())
-				Expect(deployment).NotTo(ContainSubstring("livenessProbe:"))
-				Expect(deployment).NotTo(ContainSubstring("readinessProbe:"))
+				Expect(probePorts(deployment)).To(BeEmpty())
 				return
 			}
 			Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
-			Expect(deployment).To(ContainSubstring("path: /healthz\n            port: health"))
-			Expect(deployment).To(ContainSubstring("path: /readyz\n            port: health"))
+			Expect(probePorts(deployment)).To(Equal(map[string]string{
+				"livenessProbe":  "health",
+				"readinessProbe": "health",
+			}))
 		}
 
 		DescribeTable("follows the project's --health-probe-bind-address with the default values",
@@ -1679,8 +1696,12 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 						return
 					}
 					Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
-					Expect(deployment).To(ContainSubstring("path: /livez\n            port: health"))
-					Expect(deployment).To(ContainSubstring("path: /ready\n            port: health"))
+					Expect(probePorts(deployment)).To(Equal(map[string]string{
+						"livenessProbe":  "health",
+						"readinessProbe": "health",
+					}))
+					Expect(deployment).To(ContainSubstring("path: /livez\n"))
+					Expect(deployment).To(ContainSubstring("path: /ready\n"))
 				},
 				Entry("the default value", nil, ":9440", "9440"),
 				Entry("another port", []string{"--set", "manager.healthProbeBindAddress=:9441"}, ":9441", "9441"),
