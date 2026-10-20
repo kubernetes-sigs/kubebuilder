@@ -18,6 +18,7 @@ package appliers
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -50,26 +51,75 @@ func SubstituteRBACValues(detectedPrefix, chartName, yamlContent string) string 
 
 // TemplateServiceAccountNameInBindings templates SA name in RoleBinding/ClusterRoleBinding subjects.
 func TemplateServiceAccountNameInBindings(detectedPrefix, chartName, yamlContent string) string {
-	replacement := `{{ include "` + chartName + `.serviceAccountName" . }}`
+	lines := strings.Split(yamlContent, "\n")
+	subjectsLine := slices.Index(lines, "subjects:")
+	if subjectsLine < 0 {
+		return yamlContent
+	}
 
-	// Handle already-templated resourceName (from substituteResourceNamesWithPrefix)
-	templatedPattern := regexp.MustCompile(
-		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
-			regexp.QuoteMeta(`{{ include "`+chartName+`.resourceName" (dict "suffix" "controller-manager" "context" $) }}`))
-	yamlContent = templatedPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+	for start := subjectsLine + 1; start < len(lines); {
+		trimmed := strings.TrimSpace(lines[start])
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			start++
+			continue
+		}
+		_, indent := LeadingWhitespace(lines[start])
+		if !strings.HasPrefix(trimmed, "- ") {
+			break
+		}
 
-	// Handle literal names with prefix
-	subjectPattern := regexp.MustCompile(
-		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)` +
-			regexp.QuoteMeta(detectedPrefix) + `-controller-manager`)
-	yamlContent = subjectPattern.ReplaceAllString(yamlContent, `${1}`+replacement)
+		end := start + 1
+		for end < len(lines) {
+			trimmed = strings.TrimSpace(lines[end])
+			_, nextIndent := LeadingWhitespace(lines[end])
+			if trimmed != "" && !strings.HasPrefix(trimmed, "#") && nextIndent <= indent {
+				break
+			}
+			end++
+		}
+		templateServiceAccountSubject(lines[start:end], detectedPrefix, chartName)
+		start = end
+	}
 
-	// Handle literal names without prefix
-	subjectPatternSimple := regexp.MustCompile(
-		`(?m)(subjects:\s*\n\s*-\s*kind:\s*ServiceAccount\s*\n\s+name:\s+)controller-manager`)
-	yamlContent = subjectPatternSimple.ReplaceAllString(yamlContent, `${1}`+replacement)
+	return strings.Join(lines, "\n")
+}
 
-	return yamlContent
+// Keep substitutions within one subject because Helm expressions prevent YAML decoding here.
+func templateServiceAccountSubject(lines []string, detectedPrefix, chartName string) {
+	var kind, name, namespace string
+	nameLine := -1
+	_, subjectIndent := LeadingWhitespace(lines[0])
+	for i, line := range lines {
+		field := strings.TrimSpace(line)
+		if i == 0 {
+			field = strings.TrimPrefix(field, "- ")
+		} else if _, indent := LeadingWhitespace(line); indent != subjectIndent+2 {
+			continue
+		}
+		key, value, found := strings.Cut(field, ":")
+		if !found {
+			continue
+		}
+		switch key {
+		case "kind":
+			kind = strings.TrimSpace(value)
+		case "name":
+			name = strings.TrimSpace(value)
+			nameLine = i
+		case "namespace":
+			namespace = strings.TrimSpace(value)
+		}
+	}
+	// Namespace substitution has already mapped the manager namespace to the release namespace.
+	if kind != "ServiceAccount" || nameLine < 0 ||
+		(namespace != "" && namespace != `""` && namespace != "null" && namespace != "{{ .Release.Namespace }}") {
+		return
+	}
+	if name == "controller-manager" || name == detectedPrefix+"-controller-manager" ||
+		name == ResourceNameTemplate(chartName, "controller-manager") {
+		colon := strings.IndexByte(lines[nameLine], ':')
+		lines[nameLine] = lines[nameLine][:colon+1] + ` {{ include "` + chartName + `.serviceAccountName" . }}`
+	}
 }
 
 // TemplateServiceAccountNameInDeployment templates serviceAccountName in Deployment spec.

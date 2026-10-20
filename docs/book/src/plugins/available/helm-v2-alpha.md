@@ -388,7 +388,7 @@ Helm merges this default into any values file that omits the section, so omittin
 
 When `serviceAccount.enabled: false`, `serviceAccount.name` is required and the chart fails to render without it. Set `name: default` explicitly to use the namespace default ServiceAccount.
 
-The resolved name is used consistently in the Deployment and in all RBAC bindings, for both cluster-scoped and namespaced RBAC modes:
+The resolved name is used consistently in the Deployment and in all RBAC bindings, for both cluster-scoped and namespaced RBAC modes. The manager ServiceAccount can appear anywhere in a binding's subjects list. ServiceAccounts in an explicitly different namespace do not use `serviceAccount.name`:
 
 | `serviceAccount.enabled` | `serviceAccount.name` | ServiceAccount created | Name used (Deployment + RBAC bindings) |
 |--------------------------|-----------------------|------------------------|----------------------------------------|

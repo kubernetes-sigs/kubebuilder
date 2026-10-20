@@ -551,6 +551,74 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("Mixed ServiceAccount subjects (rendered)", func() {
+		DescribeTable("resolves the manager while preserving every unrelated binding subject",
+			func(setArgs []string, wantName, wantManagerKind string, wantServiceAccountCount int) {
+				setArgs = append([]string{"--set", "metrics.enabled=true", "--set", "metrics.secure=true"}, setArgs...)
+				rendered, err := helmTemplate(createKustomizeForMixedServiceAccountSubjectsRender("test-project"), setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+				wantSubjects := []any{
+					map[string]any{"apiGroup": "rbac.authorization.k8s.io", "kind": "User", "name": "alice"},
+					map[string]any{"apiGroup": "rbac.authorization.k8s.io", "kind": "Group", "name": "operators"},
+					map[string]any{"kind": "ServiceAccount", "name": "observer", "namespace": "other-system"},
+					map[string]any{"kind": "ServiceAccount", "name": "controller-manager", "namespace": "foreign-before"},
+					map[string]any{"kind": "ServiceAccount", "name": wantName, "namespace": "my-namespace"},
+					map[string]any{"kind": "ServiceAccount", "name": "controller-manager", "namespace": "foreign-after"},
+					map[string]any{
+						"kind": "ServiceAccount", "name": "controller-manager-extra", "namespace": "other-system",
+					},
+				}
+				wantBindingKinds := map[string]string{
+					"my-release-test-project-manager-rolebinding":         wantManagerKind,
+					"my-release-test-project-leader-election-rolebinding": "RoleBinding",
+					"my-release-test-project-metrics-auth-rolebinding":    "ClusterRoleBinding",
+				}
+				bindings := make(map[string]string)
+				deploymentCount, serviceAccountCount := 0, 0
+				decoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(rendered), 4096)
+				for {
+					var resource unstructured.Unstructured
+					err := decoder.Decode(&resource)
+					if err == io.EOF {
+						break
+					}
+					Expect(err).NotTo(HaveOccurred())
+					switch resource.GetKind() {
+					case "Deployment":
+						deploymentCount++
+						name, found, err := unstructured.NestedString(resource.Object,
+							"spec", "template", "spec", "serviceAccountName")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(found).To(BeTrue())
+						Expect(name).To(Equal(wantName))
+					case "ServiceAccount":
+						serviceAccountCount++
+						Expect(resource.GetName()).To(Equal(wantName))
+					case "RoleBinding", "ClusterRoleBinding":
+						bindings[resource.GetName()] = resource.GetKind()
+						Expect(resource.Object["subjects"]).To(Equal(wantSubjects),
+							"subjects in %s must preserve their order and unrelated identities", resource.GetName())
+					}
+				}
+				Expect(bindings).To(Equal(wantBindingKinds))
+				Expect(deploymentCount).To(Equal(1))
+				Expect(serviceAccountCount).To(Equal(wantServiceAccountCount))
+			},
+			Entry("cluster-scoped, generated ServiceAccount", []string{},
+				"my-release-test-project-controller-manager", "ClusterRoleBinding", 1),
+			Entry("namespaced, generated ServiceAccount", []string{"--set", "rbac.namespaced=true"},
+				"my-release-test-project-controller-manager", "RoleBinding", 1),
+			Entry("cluster-scoped, external ServiceAccount",
+				[]string{"--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa"},
+				"external-sa", "ClusterRoleBinding", 0),
+			Entry("namespaced, external ServiceAccount", []string{
+				"--set", "rbac.namespaced=true", "--set", "serviceAccount.enabled=false",
+				"--set", "serviceAccount.name=external-sa",
+			}, "external-sa", "RoleBinding", 0),
+		)
+	})
+
 	// When the source ServiceAccount already carries annotations, Kustomize lists annotations before
 	// labels. The generator must merge into that block; a second annotations key makes the manifest
 	// invalid YAML and fails `helm template`.
@@ -2535,6 +2603,36 @@ subjects:
   name: ` + projectName + `-controller-manager
   namespace: ` + projectName + `-system
 `
+}
+
+// createKustomizeForMixedServiceAccountSubjectsRender gives every manager binding unrelated
+// subjects before and after the manager ServiceAccount.
+func createKustomizeForMixedServiceAccountSubjectsRender(projectName string) string {
+	managerSubject := `- kind: ServiceAccount
+  name: ` + projectName + `-controller-manager
+  namespace: ` + projectName + `-system
+`
+	mixedSubjects := `- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: alice
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: operators
+- kind: ServiceAccount
+  name: observer
+  namespace: other-system
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: foreign-before
+` + managerSubject + `- kind: ServiceAccount
+  name: controller-manager
+  namespace: foreign-after
+- kind: ServiceAccount
+  name: controller-manager-extra
+  namespace: other-system
+`
+	return strings.ReplaceAll(createKustomizeForServiceAccountRender(projectName),
+		"subjects:\n"+managerSubject, "subjects:\n"+mixedSubjects)
 }
 
 // createKustomizeForServiceAccountWithAnnotationsRender reuses the serviceAccountName render
