@@ -139,18 +139,24 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 		Entry("annotations then labels (Kustomize alphabetical order): both merge, none duplicated",
 			saAnnotationsThenLabels, func(rendered string) {
 				Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(
+					`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) ` +
+						`"example.com/existing-annotation") }}`))
 				Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
 			}),
 		Entry("labels then annotations (hand-ordered): both merge, none duplicated",
 			saLabelsThenAnnotations, func(rendered string) {
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(
+					`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) ` +
+						`"example.com/existing-annotation") }}`))
 				Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
 			}),
 		Entry("annotations only (labels removed from base): the labels block is injected",
 			saAnnotationsOnly, func(rendered string) {
 				Expect(rendered).To(ContainSubstring(`{{- with .Values.serviceAccount.labels }}`))
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(
+					`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) ` +
+						`"example.com/existing-annotation") }}`))
 			}),
 		Entry("neither block present: both are injected",
 			saNoLabelsNoAnnotations, func(rendered string) {
@@ -273,7 +279,9 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 			"want exactly one labels: header in:\n%s", rendered)
 		Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
 		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
-		Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+		Expect(rendered).To(ContainSubstring(
+			`{{- if not (hasKey (.Values.prometheus.annotations | default dict) ` +
+				`"example.com/existing-annotation") }}`))
 	})
 
 	It("keeps an existing annotation with a quoted key", func() {
@@ -292,7 +300,7 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 		Expect(rendered).To(ContainSubstring(
 			"  selector:\n    matchLabels:\n      app.kubernetes.io/name: " +
 				`{{ include "test-project.name" . }}` + "\n      control-plane: controller-manager"))
-		Expect(strings.Count(rendered, valuesPrometheusLabels)).To(Equal(1))
+		Expect(strings.Count(rendered, "{{- with "+valuesPrometheusLabels+" }}")).To(Equal(1))
 	})
 })
 
@@ -528,5 +536,59 @@ var _ = Describe("AddCustomLabelsAndAnnotations", func() {
 		twice := AddCustomLabelsAndAnnotations(once)
 
 		Expect(twice).To(Equal(once))
+	})
+})
+
+const (
+	saOverridableKeys = `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/a
+  labels:
+    app.kubernetes.io/name: test-project
+    example.com/tier: a
+  name: controller-manager`
+
+	saMultiLineAnnotation = `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    example.com/multi: |
+      line one
+      line two
+    example.com/other: keep
+  name: controller-manager`
+)
+
+var _ = Describe("AddServiceAccountLabelsAndAnnotations value overrides", func() {
+	It("guards keys from config/ so a value set for the same key replaces them", func() {
+		rendered := AddServiceAccountLabelsAndAnnotations(saOverridableKeys)
+
+		Expect(rendered).To(ContainSubstring(
+			`{{- if not (hasKey (.Values.serviceAccount.labels | default dict) "example.com/tier") }}` +
+				"\n    example.com/tier: a\n    {{- end }}"))
+		Expect(rendered).To(ContainSubstring(
+			`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) ` +
+				`"eks.amazonaws.com/role-arn") }}`))
+		Expect(strings.Count(rendered, "example.com/tier: a")).To(Equal(1))
+	})
+
+	It("keeps the chart's own Helm labels owned by the chart", func() {
+		rendered := AddServiceAccountLabelsAndAnnotations(saOverridableKeys)
+
+		Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
+		Expect(rendered).NotTo(ContainSubstring(
+			`hasKey (.Values.serviceAccount.labels | default dict) "app.kubernetes.io/name"`))
+	})
+
+	It("guards a multi-line annotation value as one unit", func() {
+		rendered := AddServiceAccountLabelsAndAnnotations(saMultiLineAnnotation)
+
+		Expect(rendered).To(ContainSubstring(
+			`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) "example.com/multi") }}` +
+				"\n    example.com/multi: |\n      line one\n      line two\n    {{- end }}"))
+		Expect(rendered).To(ContainSubstring(
+			`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) "example.com/other") }}`))
 	})
 })
