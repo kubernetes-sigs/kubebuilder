@@ -305,6 +305,21 @@ var _ = Describe("HelmValues", func() {
 			Entry("all custom ports", 8888, 9999, ":7777", 8888, 9999, ":7777"),
 		)
 
+		It("should name the manager's own default port when the project passes no health probe flag", func() {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{HealthProbeDefaultPort: 9440},
+				},
+			}
+			values.ProjectName = testProjectName
+
+			result := values.generateValues()
+
+			Expect(result).To(ContainSubstring(
+				"\n  ## Empty: no flag, the manager's default :9440. \"0\": turns the server"))
+			Expect(result).To(ContainSubstring("\n  healthProbeBindAddress: \"\"\n"))
+		})
+
 		Context("when the project has no webhooks or metrics", func() {
 			It("should still emit the health probe bind address", func() {
 				values := &HelmValues{

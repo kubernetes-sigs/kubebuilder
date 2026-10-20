@@ -993,6 +993,22 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			return ports
 		}
 
+		// probePorts returns the port of every probe in the rendered Deployment, by the name of the probe.
+		probePorts := func(deployment string) map[string]string {
+			ports := map[string]string{}
+			probe := ""
+			for line := range strings.SplitSeq(deployment, "\n") {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasSuffix(trimmed, "Probe:") {
+					probe = strings.TrimSuffix(trimmed, ":")
+				} else if probe != "" && strings.HasPrefix(trimmed, "port:") {
+					ports[probe] = strings.TrimSpace(strings.TrimPrefix(trimmed, "port:"))
+					probe = ""
+				}
+			}
+			return ports
+		}
+
 		render := func(healthProbeArg, port string, setArgs ...string) string {
 			out, err := helmTemplate(createKustomizeWithHealthProbe("test-project", healthProbeArg, port), setArgs...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
@@ -1011,13 +1027,14 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			}
 			if wantPort == "" {
 				Expect(healthContainerPorts(deployment)).To(BeEmpty())
-				Expect(deployment).NotTo(ContainSubstring("livenessProbe:"))
-				Expect(deployment).NotTo(ContainSubstring("readinessProbe:"))
+				Expect(probePorts(deployment)).To(BeEmpty())
 				return
 			}
 			Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
-			Expect(deployment).To(ContainSubstring("path: /healthz\n            port: health"))
-			Expect(deployment).To(ContainSubstring("path: /readyz\n            port: health"))
+			Expect(probePorts(deployment)).To(Equal(map[string]string{
+				"livenessProbe":  "health",
+				"readinessProbe": "health",
+			}))
 		}
 
 		DescribeTable("follows the project's --health-probe-bind-address with the default values",
@@ -1121,6 +1138,80 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Entry("0 as a number: turned off",
 				[]string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
 		)
+
+		// The chart is built from the kustomize output, so a change in cmd/main.go reaches it
+		// through config/manager/manager.yaml, as it reaches a kustomize deploy.
+		Context("for a project that changed cmd/main.go", func() {
+			renderProject := func(kustomize string, setArgs ...string) string {
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				deployment := managerDeploymentDoc(out)
+				Expect(deployment).NotTo(BeEmpty(), "rendered output has no Deployment: %s", out)
+				return deployment
+			}
+
+			// The default of --health-probe-bind-address in cmd/main.go moved to :9440, and
+			// config/manager/manager.yaml no longer passes the flag, so the manager listens on
+			// :9440 without it.
+			DescribeTable("follows manager.healthProbeBindAddress when the manager listens on its own default",
+				func(setArgs []string, wantArg, wantPort string) {
+					expectServer(render("", "9440", setArgs...), wantArg, wantPort)
+				},
+				Entry("the default value: no flag, the port of the project's manifest", nil, "", "9440"),
+				Entry("another port", []string{"--set", "manager.healthProbeBindAddress=:9441"}, ":9441", "9441"),
+				Entry("0 as a number: turned off", []string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+			)
+
+			// LivenessEndpointName and ReadinessEndpointName set to /livez and /ready in
+			// cmd/main.go, and the probes in config/manager/manager.yaml moved with them.
+			DescribeTable("follows manager.healthProbeBindAddress when the probe endpoints are renamed",
+				func(setArgs []string, wantArg, wantPort string) {
+					kustomize := strings.NewReplacer("path: /healthz", "path: /livez", "path: /readyz", "path: /ready").
+						Replace(createKustomizeWithHealthProbe("test-project", ":9440", "9440"))
+					deployment := renderProject(kustomize, setArgs...)
+					Expect(healthProbeArgs(deployment)).To(ConsistOf("--health-probe-bind-address=" + wantArg))
+					if wantPort == "" {
+						Expect(healthContainerPorts(deployment)).To(BeEmpty())
+						Expect(deployment).NotTo(ContainSubstring("Probe:"))
+						return
+					}
+					Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
+					Expect(probePorts(deployment)).To(Equal(map[string]string{
+						"livenessProbe":  "health",
+						"readinessProbe": "health",
+					}))
+					Expect(deployment).To(ContainSubstring("path: /livez\n"))
+					Expect(deployment).To(ContainSubstring("path: /ready\n"))
+				},
+				Entry("the default value", nil, ":9440", "9440"),
+				Entry("another port", []string{"--set", "manager.healthProbeBindAddress=:9441"}, ":9441", "9441"),
+				Entry("0 as a number: turned off", []string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+			)
+
+			// Both healthz.Ping checks removed from cmd/main.go, so /healthz and /readyz answer
+			// 404, and the probes removed from config/manager/manager.yaml with them.
+			DescribeTable("follows manager.healthProbeBindAddress when the manager has no probes",
+				func(setArgs []string, wantArg, wantPort string) {
+					kustomize := createKustomizeWithHealthProbe("test-project", ":8081", "8081")
+					for _, probe := range []string{"livenessProbe", "readinessProbe"} {
+						kustomize = regexp.MustCompile(`(?m)^        `+probe+`:\n(?:          .*\n)+`).
+							ReplaceAllString(kustomize, "")
+					}
+					Expect(kustomize).NotTo(ContainSubstring("Probe:"))
+					deployment := renderProject(kustomize, setArgs...)
+					Expect(healthProbeArgs(deployment)).To(ConsistOf("--health-probe-bind-address=" + wantArg))
+					Expect(deployment).NotTo(ContainSubstring("Probe:"))
+					if wantPort == "" {
+						Expect(healthContainerPorts(deployment)).To(BeEmpty())
+					} else {
+						Expect(healthContainerPorts(deployment)).To(ConsistOf(wantPort))
+					}
+				},
+				Entry("the default value", nil, ":8081", "8081"),
+				Entry("another port", []string{"--set", "manager.healthProbeBindAddress=:9441"}, ":9441", "9441"),
+				Entry("0 as a number: turned off", []string{"--set", "manager.healthProbeBindAddress=0"}, "0", ""),
+			)
+		})
 
 		// controller-runtime turns the server off for an empty address as well as for "0".
 		It("turns the server off for a project that sets an empty --health-probe-bind-address", func() {
