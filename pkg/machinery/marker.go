@@ -19,6 +19,7 @@ package machinery
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -31,7 +32,8 @@ var commentsByExt = map[string]string{
 	goFileExt: "//",
 	".yaml":   "#",
 	".yml":    "#",
-	// When adding additional file extensions, update also the NewMarkerFor documentation and error
+	// When adding additional file extensions, update the "Supported file extensions" doc comment on
+	// ParseMarkerFor and ParseMarkerWithPrefixFor.
 }
 
 // Marker represents a machine-readable comment that will be used for scaffolding purposes
@@ -41,34 +43,76 @@ type Marker struct {
 	value   string
 }
 
-// NewMarkerFor creates a new marker customized for the specific file. The created marker
-// is prefixed with `+kubebuilder:scaffold:` the default prefix for kubebuilder.
-// Supported file extensions: .go, .yaml, .yml.
-func NewMarkerFor(path string, value string) Marker {
-	return NewMarkerWithPrefixFor(kbPrefix, path, value)
+// must panics with err if non-nil, otherwise returns m.
+func must(m Marker, err error) Marker {
+	if err != nil {
+		panic(err)
+	}
+	return m
 }
 
-// NewMarkerWithPrefixFor creates a new custom prefixed marker customized for the specific file
-// Supported file extensions: .go, .yaml, .yml
+// NewMarkerFor creates a new marker customized for the specific file. The created marker
+// is prefixed with `+kubebuilder:scaffold:` the default prefix for kubebuilder.
+// Panics on unsupported file extensions; use ParseMarkerFor when the path may come
+// from untrusted input and an error is preferable to a panic.
+func NewMarkerFor(path string, value string) Marker {
+	return must(ParseMarkerFor(path, value))
+}
+
+// ParseMarkerFor creates a new marker customized for the specific file. The created marker
+// is prefixed with `+kubebuilder:scaffold:` the default prefix for kubebuilder.
+// Returns an error for unsupported file extensions instead of panicking.
+// Supported file extensions: .go, .yaml, .yml.
+func ParseMarkerFor(path string, value string) (Marker, error) {
+	return ParseMarkerWithPrefixFor(kbPrefix, path, value)
+}
+
+// NewMarkerWithPrefixFor creates a new custom prefixed marker customized for the specific file.
+// Panics on unsupported file extensions; use ParseMarkerWithPrefixFor when the path may come
+// from untrusted input and an error is preferable to a panic.
 func NewMarkerWithPrefixFor(prefix string, path string, value string) Marker {
+	return must(ParseMarkerWithPrefixFor(prefix, path, value))
+}
+
+// ParseMarkerWithPrefixFor creates a new custom prefixed marker customized for the specific file.
+// Returns an error for unsupported file extensions instead of panicking.
+// Supported file extensions: .go, .yaml, .yml.
+func ParseMarkerWithPrefixFor(prefix string, path string, value string) (Marker, error) {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
 		return Marker{
 			prefix:  markerPrefix(prefix),
 			comment: comment,
 			value:   value,
-		}
+		}, nil
 	}
 
-	extensions := make([]string, 0, len(commentsByExt))
-	for extension := range commentsByExt {
-		extensions = append(extensions, fmt.Sprintf("%q", extension))
+	exts := make([]string, 0, len(commentsByExt))
+	for e := range commentsByExt {
+		exts = append(exts, e)
 	}
-	panic(fmt.Errorf("unknown file extension: '%s', expected one of: %s", ext, strings.Join(extensions, ", ")))
+	slices.Sort(exts)
+	for i, e := range exts {
+		exts[i] = fmt.Sprintf("%q", e)
+	}
+	list := strings.Join(exts, ", ")
+
+	// ext=="" covers plain extensionless names (e.g. Makefile).
+	// ext=="." covers trailing-dot files (e.g. file.).
+	if ext == "" || ext == "." {
+		return Marker{}, fmt.Errorf("path %q has no file extension, expected one of: %s", path, list)
+	}
+
+	// Dotfiles like ".gitignore" land here, not above: filepath.Ext treats the leading dot as the
+	// final dot, so Ext(".gitignore") == ".gitignore", not "". They're genuinely unknown extensions.
+	return Marker{}, fmt.Errorf("path %q has unknown file extension %q, expected one of: %s", path, ext, list)
 }
 
 // String implements Stringer
 func (m Marker) String() string {
+	if m.comment == "" {
+		return ""
+	}
 	return m.comment + " " + m.prefix + m.value
 }
 
