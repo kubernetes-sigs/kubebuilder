@@ -4788,6 +4788,72 @@ spec:
 		})
 
 		Context("when binding RBAC permissions to ServiceAccount", func() {
+			DescribeTable("resolves the manager after unrelated binding subjects",
+				func(kind, name string) {
+					binding := &unstructured.Unstructured{}
+					binding.SetAPIVersion("rbac.authorization.k8s.io/v1")
+					binding.SetKind(kind)
+					binding.SetName("test-project-" + name)
+
+					content := `apiVersion: rbac.authorization.k8s.io/v1
+kind: ` + kind + `
+metadata:
+  name: test-project-` + name + `
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: alice
+- kind: ServiceAccount
+  name: observer
+  namespace: external
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: other-team
+- apiGroup: ""
+  kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: test-project-system
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: another-team
+- kind: ServiceAccount
+  name: test-project-controller-manager
+  namespace: other-team
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: operators`
+
+					result := templater.ApplyHelmSubstitutions(content, binding)
+
+					Expect(result).To(ContainSubstring(`subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: alice
+- kind: ServiceAccount
+  name: observer
+  namespace: external
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: other-team
+- apiGroup: ""
+  kind: ServiceAccount
+  name: {{ include "test-project.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: another-team
+- kind: ServiceAccount
+  name: {{ include "test-project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: other-team
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: operators`))
+				},
+				Entry("manager ClusterRoleBinding", "ClusterRoleBinding", "manager-rolebinding"),
+				Entry("leader-election RoleBinding", "RoleBinding", "leader-election-rolebinding"),
+				Entry("metrics-auth ClusterRoleBinding", "ClusterRoleBinding", "metrics-auth-rolebinding"),
+			)
+
 			It("references ServiceAccount consistently in RoleBinding subjects", func() {
 				roleBinding := &unstructured.Unstructured{}
 				roleBinding.SetAPIVersion("rbac.authorization.k8s.io/v1")
@@ -4805,7 +4871,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: controller-manager
-  namespace: system`
+  namespace: test-project-system`
 
 				result := templater.ApplyHelmSubstitutions(content, roleBinding)
 
@@ -4830,7 +4896,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: controller-manager
-  namespace: system`
+  namespace: test-project-system`
 
 				result := templater.ApplyHelmSubstitutions(content, clusterRoleBinding)
 
