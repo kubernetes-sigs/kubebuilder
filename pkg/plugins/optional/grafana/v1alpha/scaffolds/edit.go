@@ -133,7 +133,7 @@ func hasFields(item templates.CustomMetricItem) bool {
 	return false
 }
 
-// TODO: Prom_ql exprs can improved to be more pratical and applicable
+// TODO: Prom_ql exprs can be improved to be more practical and applicable
 func fillMissingExpr(item templates.CustomMetricItem) templates.CustomMetricItem {
 	if item.Expr == "" {
 		switch strings.ToLower(item.Type) {
