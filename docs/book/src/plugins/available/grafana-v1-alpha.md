@@ -75,8 +75,8 @@ See an example of how to use the plugin in your project:
   - controller_runtime_reconcile_total
   - controller_runtime_reconcile_errors_total
 - Query:
-  - sum(rate(controller_runtime_reconcile_total{job="$job"}[5m])) by (instance, pod)
-  - sum(rate(controller_runtime_reconcile_errors_total{job="$job"}[5m])) by (instance, pod)
+  - sum(rate(controller_runtime_reconcile_total{job="$job", namespace="$namespace"}[5m])) by (instance, pod)
+  - sum(rate(controller_runtime_reconcile_errors_total{job="$job", namespace="$namespace"}[5m])) by (instance, pod)
 - Description:
   - Per-second rate of total reconciliation as measured over the last 5 minutes
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
@@ -165,6 +165,25 @@ See an example of how to use the plugin in your project:
   - How many seconds of work has done that is in progress and has not been observed by work_duration.
 - Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/081727c0-9531-4f7a-9649-87723ebc773f">
 
+### Custom metric PromQL expressions
+
+When configuring custom metrics in `grafana/custom-metrics/config.yaml`, the plugin auto-generates PromQL expressions based on the metric type. You can also provide your own `expr` to override the default.
+
+| Type | Generated PromQL | Use case |
+|------|------------------|----------|
+| `counter` | `sum(rate(METRIC{job="$job", namespace="$namespace"}[5m])) by (instance, pod)` | Monotonically increasing values (requests, errors, reconciliations) |
+| `gauge` | `avg(METRIC{job="$job", namespace="$namespace"}) by (instance, pod)` | Current state values (memory, queue depth, active workers) |
+| `histogram` | `histogram_quantile(0.90, sum by(instance, le) (rate(METRIC{job="$job", namespace="$namespace"}[5m])))` | Distribution data (latency, duration buckets) |
+
+All auto-generated expressions include `job` and `namespace` label selectors, which map to Grafana dashboard template variables. This ensures the queries work correctly in multi-tenant or multi-namespace Prometheus setups.
+
+<aside class="note" role="note">
+<p class="note-title">Multi-pod support</p>
+
+The `gauge` expression uses `avg() by (instance, pod)` so that when your controller runs with multiple replicas, the dashboard shows an aggregated view rather than a single pod's value. Similarly, `counter` uses `sum(rate())` to combine rates across all pods.
+
+</aside>
+
 ### Visualize custom metrics
 
 The Grafana plugin supports scaffolding manifests for custom metrics.
@@ -178,14 +197,14 @@ When the plugin is triggered for the first time, `grafana/custom-metrics/config.
 customMetrics:
 #  - metric: # Raw custom metric (required)
 #    type:   # Metric type: counter/gauge/histogram (required)
-#    expr:   # Prom_ql for the metric (optional)
-#    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
+#    expr:   # Prom_ql for the metric (optional - auto-generated if omitted)
+#    unit:   # Unit of measurement, examples: s,none,bytes,percent (optional - auto-detected if omitted)
 ```
 
 #### Add custom metrics to config
 
 You can enter multiple custom metrics in the file. For each element, you need to specify the `metric` and its `type`.
-The Grafana plugin can automatically generate `expr` for visualization.
+The Grafana plugin can automatically generate `expr` and `unit` for visualization.
 Alternatively, you can provide `expr` and the plugin uses the specified one directly.
 
 ```yaml
@@ -196,7 +215,15 @@ customMetrics:
     unit: none
   - metric: memcached_operator_reconcile_time_seconds_bucket
     type: histogram
+  - metric: memcached_operator_active_workers # Gauge example
+    type: gauge
 ```
+
+The plugin auto-generates PromQL expressions based on the metric type:
+
+- **counter** → `sum(rate(memcached_operator_reconcile_total{job="$job", namespace="$namespace"}[5m])) by (instance, pod)`
+- **histogram** → `histogram_quantile(0.90, sum by(instance, le) (rate(memcached_operator_reconcile_time_seconds_bucket{job="$job", namespace="$namespace"}[5m])))`
+- **gauge** → `avg(memcached_operator_active_workers{job="$job", namespace="$namespace"}) by (instance, pod)`
 
 #### Scaffold manifest
 
