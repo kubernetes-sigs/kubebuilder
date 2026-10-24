@@ -156,7 +156,7 @@ go-apidiff:
 GOVULNCHECK_VERSION ?= v1.3.0
 # Pin the toolchain to match CI so a newer local Go (e.g. 1.27.1) does not
 # report stdlib CVEs that CI does not see.
-GOVULNCHECK_GOTOOLCHAIN ?= go1.26.9
+GOVULNCHECK_GOTOOLCHAIN ?= go1.26.10
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck (https://go.dev/doc/security/vuln/) against the module.
