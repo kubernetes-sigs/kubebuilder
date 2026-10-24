@@ -252,4 +252,4 @@ so the current behavior may differ slightly from what is shown in the demo.
 
 [project-config]: ../../reference/project-config.md
 [autoupdate-plugin]: ./../../plugins/available/autoupdate-v1-alpha.md
-[design-proposal]: ./../../../../../designs/update_action.md
+[design-proposal]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/update_action.md
