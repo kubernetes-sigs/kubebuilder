@@ -529,4 +529,107 @@ var _ = Describe("AddCustomLabelsAndAnnotations", func() {
 
 		Expect(twice).To(Equal(once))
 	})
+
+	DescribeTable("reads the keys of each block from the block itself",
+		func(base, existing, replacement, want string) {
+			Expect(base).To(ContainSubstring(existing))
+			rendered := AddCustomLabelsAndAnnotations(strings.Replace(base, existing, replacement, 1))
+
+			Expect(rendered).To(ContainSubstring(want), "got:\n%s", rendered)
+		},
+		Entry("a Deployment annotation whose text ends with a line like labels:",
+			depAnnotationsThenLabels, "    example.com/managed: keep\n",
+			"    example.com/description: |\n      Runs the manager.\n      labels:\n",
+			"  annotations:\n    example.com/description: |\n      Runs the manager.\n      labels:\n"+
+				"    {{- with .Values.manager.annotations }}\n"+
+				"    {{- with omit . \"example.com/description\" }}\n"+
+				"    {{- toYaml . | nindent 4 }}\n"),
+		Entry("a Deployment annotation with a line like spec: inside its text",
+			depAnnotationsThenLabels, "    example.com/managed: keep\n",
+			"    example.com/a-first: keep\n    example.com/description: |\n      spec:\n      text\n"+
+				"    example.com/z-last: keep\n",
+			`{{- with omit . "example.com/a-first" "example.com/description" "example.com/z-last" }}`),
+		Entry("a Deployment annotation with lines like template: and metadata: inside its text",
+			depAnnotationsThenLabels, "    example.com/managed: keep\n",
+			"    example.com/description: |\n      template:\n      metadata:\n",
+			"  labels:\n    app.kubernetes.io/name: test-project\n    control-plane: controller-manager\n"+
+				"    {{- with .Values.manager.labels }}\n"),
+		Entry("a pod annotation with a key-like line inside its text",
+			depPodAnnotationsThenLabels, "        kubectl.kubernetes.io/default-container: manager\n",
+			"        kubectl.kubernetes.io/default-container: manager\n"+
+				"        note: |\n          endpoint: api\n          second line\n",
+			"          second line\n"+
+				"        {{- with .Values.manager.pod }}\n"+
+				"        {{- with .annotations }}\n"+
+				"        {{- with omit . \"kubectl.kubernetes.io/default-container\" \"note\" }}\n"+
+				"        {{- toYaml . | nindent 8 }}\n"),
+		Entry("a pod annotation with a line like labels: inside its text",
+			depPodAnnotationsThenLabels, "        kubectl.kubernetes.io/default-container: manager\n",
+			"        kubectl.kubernetes.io/default-container: manager\n"+
+				"        note: |\n          Runs the manager.\n          labels:\n",
+			"          labels:\n"+
+				"        {{- with .Values.manager.pod }}\n"+
+				"        {{- with .annotations }}\n"+
+				"        {{- with omit . \"kubectl.kubernetes.io/default-container\" \"note\" }}\n"+
+				"        {{- toYaml . | nindent 8 }}\n"+
+				"        {{- end }}\n        {{- end }}\n        {{- end }}\n"+
+				"      labels:\n        control-plane: controller-manager\n"+
+				"        {{- with .Values.manager.pod }}\n"+
+				"        {{- with .labels }}\n"),
+		Entry("a pod annotation with a line like spec: inside its text",
+			depPodAnnotationsThenLabels, "        kubectl.kubernetes.io/default-container: manager\n",
+			"        kubectl.kubernetes.io/default-container: manager\n        note: |\n          spec:\n",
+			"      labels:\n        control-plane: controller-manager\n"+
+				"        {{- with .Values.manager.pod }}\n"+
+				"        {{- with .labels }}\n"),
+	)
+})
+
+var _ = Describe("AddStandardHelmLabels", func() {
+	DescribeTable("adds the chart labels to metadata labels only, not to the text of a multi-line value",
+		func(input, annotation string) {
+			Expect(input).To(ContainSubstring(annotation))
+			rendered := AddStandardHelmLabels(input)
+
+			Expect(rendered).To(ContainSubstring(annotation), "got:\n%s", rendered)
+			Expect(strings.Count(rendered, "helm.sh/chart:")).To(Equal(1), "got:\n%s", rendered)
+		},
+		Entry("a ServiceAccount annotation", `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    example.com/description: |
+      labels:
+        app.kubernetes.io/name: other
+  labels:
+    app.kubernetes.io/name: test-project
+  name: controller-manager`,
+			"    example.com/description: |\n      labels:\n        app.kubernetes.io/name: other\n  labels:\n"),
+		Entry("an annotation with a labels: line, followed by a value with app.kubernetes.io/name:",
+			`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: |
+      labels:
+    sel: 'app.kubernetes.io/name: x'
+  labels:
+    app.kubernetes.io/name: test-project
+  name: controller-manager`,
+			"    note: |\n      labels:\n    sel: 'app.kubernetes.io/name: x'\n  labels:\n"),
+		Entry("a pod template annotation", `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        note: |
+          labels:
+            app.kubernetes.io/name: other
+      labels:
+        app.kubernetes.io/name: test-project`,
+			"        note: |\n          labels:\n            app.kubernetes.io/name: other\n      labels:\n"),
+	)
 })
