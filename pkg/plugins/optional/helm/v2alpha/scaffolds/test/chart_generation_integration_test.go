@@ -708,6 +708,99 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("Manager pod annotations (rendered)", func() {
+		managerDeploymentDoc := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: Deployment\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		type podMetadataDoc struct {
+			Spec struct {
+				Template struct {
+					Metadata struct {
+						Annotations map[string]string `yaml:"annotations"`
+					} `yaml:"metadata"`
+				} `yaml:"template"`
+			} `yaml:"spec"`
+		}
+
+		It("renders pod annotations when config/manager has no pod annotations", func() {
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"),
+				"--set", "manager.pod.annotations.team=platform")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			depDoc := managerDeploymentDoc(out)
+			Expect(depDoc).NotTo(BeEmpty(), "expected a Deployment manifest in the render")
+
+			var parsed podMetadataDoc
+			Expect(yaml.Unmarshal([]byte(depDoc), &parsed)).To(Succeed(), "got:\n%s", depDoc)
+			Expect(parsed.Spec.Template.Metadata.Annotations).To(Equal(map[string]string{
+				"team": "platform",
+			}))
+		})
+
+		It("omits pod annotations when config/manager has no pod annotations and none are set", func() {
+			out, err := helmTemplate(createBasicKustomizeOutput("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			depDoc := managerDeploymentDoc(out)
+			Expect(depDoc).NotTo(BeEmpty(), "expected a Deployment manifest in the render")
+
+			var parsed podMetadataDoc
+			Expect(yaml.Unmarshal([]byte(depDoc), &parsed)).To(Succeed(), "got:\n%s", depDoc)
+			Expect(parsed.Spec.Template.Metadata.Annotations).To(BeEmpty())
+		})
+
+		It("merges user-supplied pod annotations when config/manager has existing pod annotations", func() {
+			out, err := helmTemplate(createKustomizeForServiceAccountRender("test-project"),
+				"--set", "manager.pod.annotations.team=platform")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			depDoc := managerDeploymentDoc(out)
+			Expect(depDoc).NotTo(BeEmpty(), "expected a Deployment manifest in the render")
+
+			var parsed podMetadataDoc
+			Expect(yaml.Unmarshal([]byte(depDoc), &parsed)).To(Succeed(), "got:\n%s", depDoc)
+			Expect(parsed.Spec.Template.Metadata.Annotations).To(Equal(map[string]string{
+				"kubectl.kubernetes.io/default-container": "manager",
+				"team": "platform",
+			}))
+		})
+
+		It("preserves existing pod annotations when config/manager has pod annotations and none are set", func() {
+			out, err := helmTemplate(createKustomizeForServiceAccountRender("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			depDoc := managerDeploymentDoc(out)
+			Expect(depDoc).NotTo(BeEmpty(), "expected a Deployment manifest in the render")
+
+			var parsed podMetadataDoc
+			Expect(yaml.Unmarshal([]byte(depDoc), &parsed)).To(Succeed(), "got:\n%s", depDoc)
+			Expect(parsed.Spec.Template.Metadata.Annotations).To(Equal(map[string]string{
+				"kubectl.kubernetes.io/default-container": "manager",
+			}))
+		})
+
+		It("does not duplicate an existing pod annotation when user overrides it via manager.pod.annotations", func() {
+			out, err := helmTemplate(createKustomizeForServiceAccountRender("test-project"),
+				"--set", "manager.pod.annotations.kubectl\\.kubernetes\\.io/default-container=custom")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			depDoc := managerDeploymentDoc(out)
+			Expect(depDoc).NotTo(BeEmpty(), "expected a Deployment manifest in the render")
+
+			var parsed podMetadataDoc
+			Expect(yaml.Unmarshal([]byte(depDoc), &parsed)).To(Succeed(), "got:\n%s", depDoc)
+			Expect(parsed.Spec.Template.Metadata.Annotations).To(Equal(map[string]string{
+				"kubectl.kubernetes.io/default-container": "manager",
+			}))
+		})
+	})
+
 	// serviceMonitorDoc returns the ServiceMonitor document from a multi-document render,
 	// or "" when it was not rendered.
 	serviceMonitorDoc := func(rendered string) string {
@@ -2491,8 +2584,7 @@ func createKustomizeWithMetricsServiceAndEmptyManagerArgs(projectName string) st
 
 // createKustomizeForServiceAccountRender extends createBasicKustomizeOutput (Namespace +
 // ServiceAccount + Deployment) for the serviceAccountName render tests. It adds:
-//   - a pod-template annotations block, otherwise the chart nil-pointers on
-//     .Values.manager.pod.annotations under `helm template`;
+//   - a pod-template annotations block;
 //   - an explicit serviceAccountName on the pod spec, which the helper rewrites;
 //   - the three bindings that carry the manager ServiceAccount as a subject, so tests can check every
 //     subject stays consistent: manager (switches with rbac.namespaced), leader-election (always a
