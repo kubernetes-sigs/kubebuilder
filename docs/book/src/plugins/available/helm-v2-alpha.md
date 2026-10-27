@@ -193,6 +193,8 @@ Install manually with all features enabled:
 $ helm install my-release ./dist/chart --namespace my-project-system --create-namespace
 ```
 
+`manager.enabled` (default: `true`) installs the manager Deployment. Set it to `false` to install only the CRDs, the RBAC, and the other resources that their own toggles enable. A `values.yaml` without this key still installs the manager.
+
 For charts without conversion webhooks, disable the manager and all optional
 components by setting all of these values to `false`:
 
@@ -254,7 +256,7 @@ The default is `8443`, detected from your project configuration.
 
 #### `metrics.secure`
 
-Control transport security and authentication for the metrics endpoint (default: `true`).
+Control transport security and authentication for the metrics endpoint (default: `true`, or `false` when the manager runs with `--metrics-secure=false`). The chart sets `--metrics-secure` on the manager from this value, so the flag is not kept in `manager.args`.
 
 When `true`:
 - Uses HTTPS with TLS certificates (when `certManager.enabled=true`)

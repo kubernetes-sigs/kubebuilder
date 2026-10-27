@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
 )
@@ -106,6 +107,18 @@ var _ = Describe("HelmValues", func() {
 			Expect(result).To(ContainSubstring("prometheus:\n  enabled: false\n\n" +
 				"  ## Custom ServiceMonitor labels\n  ##\n  # labels: {}\n\n" +
 				"  ## Custom ServiceMonitor annotations\n  ##\n  # annotations: {}\n"))
+		})
+	})
+
+	Describe("ServiceAccount section", func() {
+		It("should enable the ServiceAccount and set no name, labels or annotations", func() {
+			values := &HelmValues{Extraction: nil}
+			values.ProjectName = testProjectName
+
+			var rendered map[string]any
+			Expect(yaml.Unmarshal([]byte(values.generateValues()), &rendered)).To(Succeed())
+
+			Expect(rendered["serviceAccount"]).To(Equal(map[string]any{"enabled": true}))
 		})
 	})
 
