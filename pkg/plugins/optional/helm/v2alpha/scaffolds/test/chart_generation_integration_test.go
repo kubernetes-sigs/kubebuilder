@@ -603,6 +603,25 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			rendered := renderChart("--set", "serviceAccount.enabled=true", "--set", "serviceAccount.name=custom-sa")
 			Expect(rendered).NotTo(ContainSubstring("serviceAccountName: custom-sa"))
 		})
+		It("templates only the pod serviceAccountName and keeps a label with that key", func() {
+			rendered, err := helmTemplate(createKustomizeWithServiceAccountNameLabel("test-project"),
+				"--set", "serviceAccount.enabled=false", "--set", "serviceAccount.name=external-sa")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			deployments, err := renderedResourcesByKind(rendered, "Deployment")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deployments).To(HaveLen(1))
+			deployment := deployments[0].Object
+			name, _, err := unstructured.NestedString(deployment, "spec", "template", "spec", "serviceAccountName")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(name).To(Equal("external-sa"))
+			selector, _, err := unstructured.NestedStringMap(deployment, "spec", "selector", "matchLabels")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(selector).To(HaveKeyWithValue("serviceAccountName", "controller-manager"))
+			podLabels, _, err := unstructured.NestedStringMap(deployment, "spec", "template", "metadata", "labels")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(podLabels).To(HaveKeyWithValue("serviceAccountName", "controller-manager"))
+		})
 	})
 
 	Context("Mixed ServiceAccount subjects (rendered)", func() {
@@ -734,6 +753,17 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				"    note: |\n      {{ .Spec.Branch }}\n        nested text\n      endpoint: api\n",
 				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
 				map[string]string{"note": "{{ .Spec.Branch }}\n  nested text\nendpoint: api\n", "endpoint": "custom"}),
+			Entry("a keep-chomped annotation with a trailing blank line",
+				"    example.com/keep: |+\n      first\n      second\n\n", nil,
+				map[string]string{"example.com/keep": "first\nsecond\n\n"}),
+			Entry("a keep-chomped annotation with a trailing blank line beside a custom annotation",
+				"    example.com/keep: |+\n      first\n      second\n\n",
+				[]string{"--set", "serviceAccount.annotations.team=platform"},
+				map[string]string{"example.com/keep": "first\nsecond\n\n", "team": "platform"}),
+			Entry("a keep-chomped annotation with a trailing blank line when every custom annotation is already set",
+				"    example.com/keep: |+\n      first\n      second\n\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/keep=other"},
+				map[string]string{"example.com/keep": "first\nsecond\n\n"}),
 			Entry("a multi-line annotation with lines like labels: and app.kubernetes.io/name:",
 				"    example.com/description: |\n      labels:\n        app.kubernetes.io/name: other\n", nil,
 				map[string]string{"example.com/description": "labels:\n  app.kubernetes.io/name: other\n"}),
@@ -816,6 +846,41 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				Expect(kustomize).To(ContainSubstring(existing))
 				check(renderMetadata(strings.Replace(kustomize, existing, replacement, 1), setArgs))
 			},
+			Entry("a keep-chomped Deployment annotation with a trailing blank line",
+				deploymentMetadata,
+				deploymentMetadata+"  annotations:\n    example.com/keep: |+\n      first\n      second\n\n",
+				[]string{"--set", "manager.annotations.team=platform"},
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(Equal(map[string]string{
+						"example.com/keep": "first\nsecond\n\n", "team": "platform",
+					}))
+				}),
+			Entry("a keep-chomped pod annotation with a trailing blank line",
+				podAnnotation, podAnnotation+"        note: |+\n          first\n          second\n\n",
+				[]string{"--set", "manager.pod.annotations.team=platform"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Annotations).To(Equal(map[string]string{
+						"kubectl.kubernetes.io/default-container": "manager",
+						"note": "first\nsecond\n\n",
+						"team": "platform",
+					}))
+				}),
+			Entry("a keep-chomped Deployment annotation with a trailing blank line and no custom annotations",
+				deploymentMetadata,
+				deploymentMetadata+"  annotations:\n    example.com/keep: |+\n      first\n      second\n\n",
+				nil,
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(Equal(map[string]string{"example.com/keep": "first\nsecond\n\n"}))
+				}),
+			Entry("a keep-chomped pod annotation with a trailing blank line when every custom annotation is already set",
+				podAnnotation, podAnnotation+"        note: |+\n          first\n          second\n\n",
+				[]string{"--set", "manager.pod.annotations.note=other"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Annotations).To(Equal(map[string]string{
+						"kubectl.kubernetes.io/default-container": "manager",
+						"note": "first\nsecond\n\n",
+					}))
+				}),
 			Entry("a Deployment annotation whose text ends with a line like labels:",
 				deploymentMetadata,
 				deploymentMetadata+"  annotations:\n    example.com/description: |\n      Runs the manager.\n      labels:\n",
@@ -3116,6 +3181,16 @@ subjects:
   name: ` + projectName + `-controller-manager
   namespace: ` + projectName + `-system
 `
+}
+
+func createKustomizeWithServiceAccountNameLabel(projectName string) string {
+	return strings.NewReplacer(
+		"    matchLabels:\n      control-plane: controller-manager\n",
+		"    matchLabels:\n      control-plane: controller-manager\n      serviceAccountName: controller-manager\n",
+		"      labels:\n        control-plane: controller-manager\n    spec:\n      serviceAccountName:",
+		"      labels:\n        control-plane: controller-manager\n        serviceAccountName: controller-manager\n"+
+			"    spec:\n      serviceAccountName:",
+	).Replace(createKustomizeForServiceAccountRender(projectName))
 }
 
 // createKustomizeForMixedServiceAccountSubjectsRender gives every manager binding unrelated

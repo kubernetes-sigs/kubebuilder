@@ -49,6 +49,9 @@ func LeadingWhitespace(line string) (string, int) {
 	return line[:indentLen], indentLen
 }
 
+// controllerManagerName is the name suffix and control-plane label value of the manager.
+const controllerManagerName = "controller-manager"
+
 // blockScalarRegex matches a line whose value starts a multi-line block scalar, such as "key: |",
 // "key: >-" or "- |2". The first group is set when the scalar is a list item.
 var blockScalarRegex = regexp.MustCompile(`(?:(^\s*-)|:)\s+[|>][-+0-9]*\s*$`)
@@ -81,13 +84,13 @@ func blockScalarLines(lines []string) []bool {
 // IsManagerDeployment reports whether resource is the controller-manager Deployment.
 // Annotation is not checked — any extra Deployment may carry it, causing false positives.
 func IsManagerDeployment(resource *unstructured.Unstructured) bool {
-	if resource.GetLabels()["control-plane"] == "controller-manager" {
+	if resource.GetLabels()["control-plane"] == controllerManagerName {
 		return true
 	}
 	if names := ExtractContainerNames(resource); names["manager"] {
 		return true
 	}
-	return strings.Contains(resource.GetName(), "controller-manager")
+	return strings.Contains(resource.GetName(), controllerManagerName)
 }
 
 // wrapWebhookCertificateBlock wraps a webhook certificate block with its feature conditions.

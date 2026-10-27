@@ -340,19 +340,30 @@ func buildGuardedMetadataMapBlock(headerIndent int, mapKey, valuePath string) []
 	}
 }
 
+// appendAfterExistingEntries appends block after the existing entries in result. When they end with a
+// blank line, it ends a keep-chomped (|+) value: an unindented, untrimmed first action takes its
+// place and renders it back, where an indented "{{-" action would eat it.
+func appendAfterExistingEntries(result, block []string) []string {
+	if last := len(result) - 1; last >= 0 && strings.TrimSpace(result[last]) == "" {
+		result = result[:last]
+		block[0] = strings.Replace(strings.TrimLeft(block[0], " "), "{{- ", "{{ ", 1)
+	}
+	return append(result, block...)
+}
+
 // appendHelmMapBlock appends Helm template blocks for custom labels/annotations.
 func appendHelmMapBlock(result []string, indent, valuePath string, existingKeys []string) []string {
 	childIndentWidth := strconv.Itoa(len(indent))
 
 	if len(existingKeys) > 0 {
 		omitKeys := strings.Join(existingKeys, "\" \"")
-		return append(result,
-			indent+"{{- with "+valuePath+" }}",
-			indent+"{{- with omit . \""+omitKeys+"\" }}",
-			indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
-			indent+"{{- end }}",
-			indent+"{{- end }}",
-		)
+		return appendAfterExistingEntries(result, []string{
+			indent + "{{- with " + valuePath + " }}",
+			indent + "{{- with omit . \"" + omitKeys + "\" }}",
+			indent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
+			indent + "{{- end }}",
+			indent + "{{- end }}",
+		})
 	}
 
 	return append(result,
@@ -368,15 +379,15 @@ func appendNestedHelmMapBlock(result []string, indent, outerPath, innerPath stri
 
 	if len(existingKeys) > 0 {
 		omitKeys := strings.Join(existingKeys, "\" \"")
-		return append(result,
-			indent+"{{- with "+outerPath+" }}",
-			indent+"{{- with "+innerPath+" }}",
-			indent+"{{- with omit . \""+omitKeys+"\" }}",
-			indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
-			indent+"{{- end }}",
-			indent+"{{- end }}",
-			indent+"{{- end }}",
-		)
+		return appendAfterExistingEntries(result, []string{
+			indent + "{{- with " + outerPath + " }}",
+			indent + "{{- with " + innerPath + " }}",
+			indent + "{{- with omit . \"" + omitKeys + "\" }}",
+			indent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
+			indent + "{{- end }}",
+			indent + "{{- end }}",
+			indent + "{{- end }}",
+		})
 	}
 
 	return append(result,
