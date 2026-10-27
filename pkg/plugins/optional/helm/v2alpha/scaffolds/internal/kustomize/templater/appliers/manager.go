@@ -19,7 +19,6 @@ package appliers
 import (
 	"fmt"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -57,6 +56,8 @@ type customFieldsState struct {
 
 	currentBlock       blockType
 	currentBlockIndent int
+	// currentBlockStart is the index in the output of the first line after the current block's header.
+	currentBlockStart int
 }
 
 // TemplateDeploymentFields applies all Deployment-specific transformations.
@@ -130,6 +131,7 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 		strings.Contains(yamlContent, "{{- if .Values.manager.pod.annotations }}"))
 
 	lines := strings.Split(yamlContent, "\n")
+	inBlockScalar := blockScalarLines(lines)
 	result := make([]string, 0, len(lines))
 	state := &customFieldsState{
 		position:                     positionStart,
@@ -141,6 +143,11 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 
 	for i := range lines {
 		line := lines[i]
+		// Lines of a multi-line value are text, so they never open or close a block.
+		if inBlockScalar[i] {
+			result = append(result, line)
+			continue
+		}
 		trimmed := strings.TrimSpace(line)
 		indent, indentLen := LeadingWhitespace(line)
 
@@ -1043,18 +1050,21 @@ func handleDeploymentAnnotations(
 		state.hasDeploymentAnnotations = true
 		state.currentBlock = blockDeploymentAnnotations
 		state.currentBlockIndent = indentLen
+		state.currentBlockStart = len(result)
 		return handleFlowStyleAnnotations(result, line, indent)
 	}
 
 	if shouldInjectDeploymentAnnotations(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
 
-		existingKeys := extractKeysFromLines(result)
+		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
-		childIndent := detectChildIndent(result, parentIndent)
+		// Each resource is re-marshaled with sigs.k8s.io/yaml before templating, so children sit
+		// 2 spaces under the header.
+		childIndent := parentIndent + "  "
 
 		if len(existingKeys) == 0 {
-			result = result[:len(result)-1]
+			result = result[:state.currentBlockStart-1]
 			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
 				parentIndent+"{{- if .Values.manager.annotations }}",
@@ -1063,7 +1073,7 @@ func handleDeploymentAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			result = injectDeploymentAnnotations(result, childIndent)
+			result = injectDeploymentAnnotations(result, childIndent, existingKeys)
 		}
 
 		result = append(result, line)
@@ -1082,18 +1092,19 @@ func handlePodAnnotations(
 		(trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations)) {
 		state.currentBlock = blockPodAnnotations
 		state.currentBlockIndent = indentLen
+		state.currentBlockStart = len(result)
 		return handleFlowStyleAnnotations(result, line, indent)
 	}
 
 	if shouldInjectPodAnnotations(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
 
-		existingKeys := extractKeysFromLines(result)
+		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
-		childIndent := detectChildIndent(result, parentIndent)
+		childIndent := parentIndent + "  "
 
 		if len(existingKeys) == 0 {
-			result = result[:len(result)-1]
+			result = result[:state.currentBlockStart-1]
 			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
 				parentIndent+"{{- with .Values.manager.pod }}",
@@ -1104,7 +1115,7 @@ func handlePodAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			result = addPodAnnotations(result, childIndent)
+			result = addPodAnnotations(result, childIndent, existingKeys)
 		}
 
 		result = append(result, line)
@@ -1117,7 +1128,7 @@ func handlePodAnnotations(
 		result = append(result, indent+"{{- with .Values.manager.pod }}")
 		result = append(result, indent+"{{- with .annotations }}")
 		result = append(result, indent+"annotations:")
-		result = addPodAnnotations(result, indent+"  ")
+		result = addPodAnnotations(result, indent+"  ", nil)
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+common.YamlKeyLabels)
@@ -1157,14 +1168,15 @@ func handleDeploymentLabels(
 		trimmed == common.YamlKeyLabels {
 		state.currentBlock = blockDeploymentLabels
 		state.currentBlockIndent = indentLen
+		state.currentBlockStart = len(result)
 		return result
 	}
 
 	if shouldInjectDeploymentLabels(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
-		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
-		childIndent := detectChildIndent(result, parentIndent)
-		result = injectDeploymentLabels(result, childIndent)
+		existingKeys := extractMapKeys(result[state.currentBlockStart:])
+		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
+		result = injectDeploymentLabels(result, childIndent, existingKeys)
 		result = append(result, line)
 		state.addedLabelsToDeployment = true
 		state.currentBlock = blockNone
@@ -1182,14 +1194,15 @@ func handlePodLabels(
 		trimmed == common.YamlKeyLabels {
 		state.currentBlock = blockPodLabels
 		state.currentBlockIndent = indentLen
+		state.currentBlockStart = len(result)
 		return result
 	}
 
 	if shouldInjectPodLabels(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
-		parentIndent := strings.Repeat(" ", state.currentBlockIndent)
-		childIndent := detectChildIndent(result, parentIndent)
-		result = injectPodLabels(result, childIndent)
+		existingKeys := extractMapKeys(result[state.currentBlockStart:])
+		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
+		result = injectPodLabels(result, childIndent, existingKeys)
 		result = append(result, line)
 		state.addedPodLabels = true
 		state.currentBlock = blockNone
@@ -1222,23 +1235,19 @@ func shouldInjectPodLabels(
 		trimmed != common.YamlKeyLabels
 }
 
-func injectDeploymentLabels(result []string, childIndent string) []string {
-	existingKeys := extractKeysFromLines(result)
+func injectDeploymentLabels(result []string, childIndent string, existingKeys []string) []string {
 	return appendHelmMapBlock(result, childIndent, ".Values.manager.labels", existingKeys)
 }
 
-func injectPodLabels(result []string, childIndent string) []string {
-	existingKeys := extractKeysFromLines(result)
+func injectPodLabels(result []string, childIndent string, existingKeys []string) []string {
 	return appendNestedHelmMapBlock(result, childIndent, ".Values.manager.pod", ".labels", existingKeys)
 }
 
-func injectDeploymentAnnotations(result []string, indent string) []string {
-	existingKeys := extractKeysFromLines(result)
+func injectDeploymentAnnotations(result []string, indent string, existingKeys []string) []string {
 	return appendHelmMapBlock(result, indent, ".Values.manager.annotations", existingKeys)
 }
 
-func addPodAnnotations(result []string, indent string) []string {
-	existingKeys := extractKeysFromLines(result)
+func addPodAnnotations(result []string, indent string, existingKeys []string) []string {
 	return appendNestedHelmMapBlock(result, indent, ".Values.manager.pod", ".annotations", existingKeys)
 }
 
@@ -1317,37 +1326,6 @@ func updateMetadataTracking(
 	if state.position == positionPodMetadata && trimmed == common.YamlKeySpec {
 		state.position = positionAfterDeploymentMetadata
 	}
-}
-
-// detectChildIndent detects the actual child indentation from existing entries in the current block.
-func detectChildIndent(lines []string, parentIndent string) string {
-	// Scan backwards to find the first child entry with indentation > parent
-	parentIndentLen := len(parentIndent)
-
-	for _, v := range slices.Backward(lines) {
-		line := v
-		trimmed := strings.TrimSpace(line)
-
-		// Skip empty lines and Helm template directives
-		if trimmed == "" || strings.HasPrefix(trimmed, "{{") {
-			continue
-		}
-
-		// Stop at section headers
-		if trimmed == common.YamlKeyLabels || trimmed == common.YamlKeyAnnotations ||
-			trimmed == common.YamlKeyMetadata || trimmed == common.YamlKeySpec || trimmed == common.YamlKeyTemplate {
-			break
-		}
-
-		// Find a line with indentation greater than parent (a child entry)
-		indent, indentLen := LeadingWhitespace(line)
-		if indentLen > parentIndentLen && strings.Contains(line, ":") {
-			return indent
-		}
-	}
-
-	// Default to 2-space indentation (sigs.k8s.io/yaml standard)
-	return parentIndent + "  "
 }
 
 // MakeContainerArgsConditional makes certificate path args conditional.

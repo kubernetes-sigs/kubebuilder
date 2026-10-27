@@ -96,12 +96,17 @@ func CheckExistingLabels(lines []string, currentIndex int, indent string) (hasCh
 // AddStandardHelmLabels adds standard Helm labels to all labels sections except selectors.
 func AddStandardHelmLabels(yamlContent string) string {
 	lines := strings.Split(yamlContent, "\n")
+	inBlockScalar := blockScalarLines(lines)
 	result := make([]string, 0, len(lines)+10) // slack for the labels added below
 	inSelector := false
 
 	for i := range lines {
 		line := lines[i]
 		result = append(result, line)
+		// Lines of a multi-line value are text, not labels.
+		if inBlockScalar[i] {
+			continue
+		}
 
 		// Track if we're in a selector section (matchLabels or spec.selector for Services)
 		trimmed := strings.TrimSpace(line)
@@ -125,6 +130,9 @@ func AddStandardHelmLabels(yamlContent string) string {
 
 			isInLabelsSection := false
 			for j := i - 1; j >= 0 && j >= i-5; j-- {
+				if inBlockScalar[j] {
+					continue
+				}
 				if strings.TrimSpace(lines[j]) == common.YamlKeyLabels {
 					isInLabelsSection = true
 					break

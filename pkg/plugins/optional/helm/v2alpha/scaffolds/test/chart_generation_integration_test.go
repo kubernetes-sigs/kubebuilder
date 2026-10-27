@@ -680,6 +680,9 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				"    note: |\n      {{ .Spec.Branch }}\n        nested text\n      endpoint: api\n",
 				[]string{"--set", "serviceAccount.annotations.endpoint=custom"},
 				map[string]string{"note": "{{ .Spec.Branch }}\n  nested text\nendpoint: api\n", "endpoint": "custom"}),
+			Entry("a multi-line annotation with lines like labels: and app.kubernetes.io/name:",
+				"    example.com/description: |\n      labels:\n        app.kubernetes.io/name: other\n", nil,
+				map[string]string{"example.com/description": "labels:\n  app.kubernetes.io/name: other\n"}),
 		)
 	})
 
@@ -706,6 +709,140 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(strings.Count(sa, "app.kubernetes.io/name:")).To(Equal(1),
 				"a user override must not add a second app.kubernetes.io/name label, got:\n%s", sa)
 		})
+	})
+
+	// The manager Deployment merges manager.labels, manager.annotations, manager.pod.labels and
+	// manager.pod.annotations into the blocks Kustomize emitted, and each key renders once. These specs
+	// do not check which value is used when a key is in both config/ and the values.
+	Context("Manager Deployment labels and annotations (rendered)", func() {
+		type renderedMetadata struct {
+			Labels      map[string]string `yaml:"labels"`
+			Annotations map[string]string `yaml:"annotations"`
+		}
+
+		// renderMetadata renders the chart and returns the metadata of the Deployment and of its pod
+		// template. Decoding fails on a duplicate key, so a key rendered twice fails the spec.
+		renderMetadata := func(kustomize string, setArgs []string) (renderedMetadata, renderedMetadata) {
+			out, err := helmTemplate(kustomize, setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			var deployment string
+			for doc := range strings.SplitSeq(out, "\n---") {
+				if strings.Contains(doc, "\nkind: Deployment\n") {
+					deployment = doc
+				}
+			}
+			var rendered struct {
+				Metadata renderedMetadata `yaml:"metadata"`
+				Spec     struct {
+					Template struct {
+						Metadata renderedMetadata `yaml:"metadata"`
+					} `yaml:"template"`
+				} `yaml:"spec"`
+			}
+			Expect(deployment).NotTo(BeEmpty(), "no Deployment in the render:\n%s", out)
+			Expect(yaml.Unmarshal([]byte(deployment), &rendered)).To(Succeed(), "got:\n%s", deployment)
+			return rendered.Metadata, rendered.Spec.Template.Metadata
+		}
+
+		const (
+			deploymentMetadata = "kind: Deployment\nmetadata:\n"
+			deploymentLabel    = "    control-plane: controller-manager\n  name: test-project-controller-manager\n"
+			podLabel           = "        control-plane: controller-manager\n    spec:\n"
+			podAnnotation      = "        kubectl.kubernetes.io/default-container: manager\n"
+		)
+
+		DescribeTable("keeps existing keys that are quoted or have multi-line values",
+			func(existing, replacement string, setArgs []string, check func(deployment, pod renderedMetadata)) {
+				kustomize := createKustomizeForServiceAccountRender("test-project")
+				Expect(kustomize).To(ContainSubstring(existing))
+				check(renderMetadata(strings.Replace(kustomize, existing, replacement, 1), setArgs))
+			},
+			Entry("a Deployment annotation whose text ends with a line like labels:",
+				deploymentMetadata,
+				deploymentMetadata+"  annotations:\n    example.com/description: |\n      Runs the manager.\n      labels:\n",
+				[]string{"--set", "manager.annotations.team=platform"},
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(Equal(map[string]string{
+						"example.com/description": "Runs the manager.\nlabels:\n", "team": "platform",
+					}))
+				}),
+			Entry("a Deployment annotation with a line like spec: inside its text",
+				deploymentMetadata,
+				deploymentMetadata+"  annotations:\n    example.com/a-first: keep\n"+
+					"    example.com/description: |\n      spec:\n      text\n    example.com/z-last: keep\n",
+				[]string{"--set", "manager.annotations.example\\.com/a-first=override"},
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(HaveKey("example.com/a-first"))
+					Expect(deployment.Annotations).To(HaveKeyWithValue("example.com/description", "spec:\ntext\n"))
+					Expect(deployment.Annotations).To(HaveKeyWithValue("example.com/z-last", "keep"))
+				}),
+			Entry("a pod annotation with a key-like line inside its text",
+				podAnnotation, podAnnotation+"        note: |\n          endpoint: api\n          second line\n",
+				[]string{"--set", "manager.pod.annotations.endpoint=custom"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Annotations).To(Equal(map[string]string{
+						"kubectl.kubernetes.io/default-container": "manager",
+						"note":     "endpoint: api\nsecond line\n",
+						"endpoint": "custom",
+					}))
+				}),
+			Entry("a pod annotation with a line like labels: inside its text",
+				podAnnotation, podAnnotation+"        note: |\n          Runs the manager.\n          labels:\n",
+				[]string{"--set", "manager.pod.labels.team=platform", "--set", "manager.pod.annotations.team=platform"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Labels).To(Equal(map[string]string{
+						"control-plane": "controller-manager", "team": "platform",
+					}))
+					Expect(pod.Annotations).To(Equal(map[string]string{
+						"kubectl.kubernetes.io/default-container": "manager",
+						"note": "Runs the manager.\nlabels:\n",
+						"team": "platform",
+					}))
+				}),
+			Entry("a Deployment label with a quoted key",
+				deploymentLabel, "    \"on\": original\n"+deploymentLabel,
+				[]string{"--set", "manager.labels.on=override"},
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Labels).To(HaveKey("on"))
+				}),
+			Entry("a pod label with a quoted key",
+				podLabel, "        \"on\": original\n"+podLabel,
+				[]string{"--set", "manager.pod.labels.on=override"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Labels).To(HaveKey("on"))
+					Expect(pod.Labels).To(HaveKeyWithValue("control-plane", "controller-manager"))
+				}),
+			Entry("a pod annotation with a quoted key",
+				podAnnotation, podAnnotation+"        \"on\": original\n",
+				[]string{"--set", "manager.pod.annotations.on=override"},
+				func(_, pod renderedMetadata) {
+					Expect(pod.Annotations).To(HaveKey("on"))
+					Expect(pod.Annotations).To(HaveKeyWithValue("kubectl.kubernetes.io/default-container", "manager"))
+				}),
+			Entry("a Deployment annotation with a quoted key",
+				deploymentMetadata, deploymentMetadata+"  annotations:\n    \"on\": original\n", nil,
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(Equal(map[string]string{"on": "original"}))
+				}),
+			Entry("a Deployment annotation with a quoted key and a value set for it",
+				deploymentMetadata, deploymentMetadata+"  annotations:\n    \"on\": original\n",
+				[]string{"--set", "manager.annotations.on=override", "--set", "manager.annotations.team=platform"},
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(HaveKey("on"))
+					Expect(deployment.Annotations).To(HaveKeyWithValue("team", "platform"))
+				}),
+			Entry("a Deployment annotation with lines like labels: and app.kubernetes.io/name:",
+				deploymentMetadata,
+				deploymentMetadata+"  annotations:\n    example.com/description: |\n"+
+					"      labels:\n        app.kubernetes.io/name: other\n",
+				nil,
+				func(deployment, _ renderedMetadata) {
+					Expect(deployment.Annotations).To(Equal(map[string]string{
+						"example.com/description": "labels:\n  app.kubernetes.io/name: other\n",
+					}))
+				}),
+		)
 	})
 
 	// serviceMonitorDoc returns the ServiceMonitor document from a multi-document render,

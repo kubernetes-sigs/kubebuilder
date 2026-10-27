@@ -37,6 +37,27 @@ const (
 	managerVal    = "manager"
 )
 
+var _ = Describe("blockScalarLines", func() {
+	DescribeTable("marks the text lines of multi-line values",
+		func(yamlContent string, want []bool) {
+			Expect(blockScalarLines(strings.Split(yamlContent, "\n"))).To(Equal(want))
+		},
+		Entry("a literal value with lines like YAML keys",
+			"a: |\n  labels:\n    x: y\nb: c", []bool{false, true, true, false}),
+		Entry("chomping and indentation indicators",
+			"a: |2-\n    indented\n  text\nb: >+\n  folded\nc: d", []bool{false, true, true, false, true, false}),
+		Entry("blank lines inside the text",
+			"a: |\n  one\n\n  two\nb: c", []bool{false, true, true, true, false}),
+		Entry("a list item value",
+			"- |\n  labels:\n- name: x", []bool{false, true, false}),
+		Entry("a value in a list item, followed by the item's other keys",
+			"- command: |\n    labels:\n  name: x", []bool{false, true, false}),
+		Entry("a quoted value that is a pipe", "a: '|'\n  b: c", []bool{false, false}),
+		Entry("a quoted value that ends with a pipe", "a: \"x: |\"\nb: c", []bool{false, false}),
+		Entry("a plain value that ends with a pipe", "a: x |y\n  b: c", []bool{false, false}),
+	)
+})
+
 var _ = Describe("FindManagerContainerRange", func() {
 	It("should find manager when name is the first field", func() {
 		yaml := `spec:
