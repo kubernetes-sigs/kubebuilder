@@ -45,7 +45,7 @@ Following is an example of a code implementation that raises an Event.
 ### How to be able to raise events
 
 Following are the steps with examples to help you raise events in your controller's reconciliations.
-Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
+Events are published from a Controller using an [EventRecorder][EventRecorder],
 which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
@@ -79,7 +79,7 @@ type MyKindReconciler struct {
 ```
 ### Passing the EventRecorder to the controller
 
-Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
+Events are published from a Controller using an [EventRecorder][EventRecorder],
 which can be created for a Controller by calling `GetEventRecorder(name string)` on a Manager. See that we change the implementation scaffolded in `cmd/main.go`:
 
 ```go
@@ -108,6 +108,7 @@ func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 And then, run `$ make manifests` to update the rules under `config/rbac/role.yaml`.
 
 [Events]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#events
+[EventRecorder]: https://pkg.go.dev/k8s.io/client-go/tools/events#EventRecorder
 [Event-Example]: https://github.com/kubernetes/api/blob/6c11c9e4685cc62e4ddc8d4aaa824c46150c9148/core/v1/types.go#L6019-L6024
 [Reason-Example]: https://github.com/kubernetes/api/blob/6c11c9e4685cc62e4ddc8d4aaa824c46150c9148/core/v1/types.go#L6048
 [Message-Example]: https://github.com/kubernetes/api/blob/6c11c9e4685cc62e4ddc8d4aaa824c46150c9148/core/v1/types.go#L6053

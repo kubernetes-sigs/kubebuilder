@@ -422,14 +422,14 @@ Steps to execute:
    // +kubebuilder:rbac:groups=myapp.example.com,resources=mykinds,verbs=get;list;watch;create;update;patch;delete
    // +kubebuilder:rbac:groups=myapp.example.com,resources=mykinds/status,verbs=get;update;patch
    // +kubebuilder:rbac:groups=myapp.example.com,resources=mykinds/finalizers,verbs=update
-   // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+   // +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
    // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
    After:
    // +kubebuilder:rbac:groups=myapp.example.com,namespace=<value-from-kustomization>,resources=mykinds,verbs=get;list;watch;create;update;patch;delete
    // +kubebuilder:rbac:groups=myapp.example.com,namespace=<value-from-kustomization>,resources=mykinds/status,verbs=get;update;patch
    // +kubebuilder:rbac:groups=myapp.example.com,namespace=<value-from-kustomization>,resources=mykinds/finalizers,verbs=update
-   // +kubebuilder:rbac:groups=core,namespace=<value-from-kustomization>,resources=events,verbs=create;patch
+   // +kubebuilder:rbac:groups=events.k8s.io,namespace=<value-from-kustomization>,resources=events,verbs=create;patch
    // +kubebuilder:rbac:groups=apps,namespace=<value-from-kustomization>,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
    Important rules:

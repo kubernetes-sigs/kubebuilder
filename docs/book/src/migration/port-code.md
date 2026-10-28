@@ -172,8 +172,8 @@ PORT CUSTOM CODE (in this order):
    - Has "func (d *<Kind>Defaulter) Default(ctx": NEW pattern (direct copy)
 
    IF OLD pattern - ADAPT:
-   - Default(): Extract logic, paste after type assertion, change 'r.' to '<kind>.', add return nil, REMOVE TODO
-   - Validate*(): Extract logic, paste after assertion, change 'r.' to '<kind>.', change return types, REMOVE TODO
+   - Default(): Paste the logic into <Kind>Defaulter.Default() in place of the TODO, change 'r.' to 'obj.'
+   - Validate*(): Paste the logic into the matching <Kind>Validator method in place of the TODO, change 'r.' to 'obj.' (in ValidateUpdate, 'newObj.', and the old object to 'oldObj.'), make each return match (admission.Warnings, error)
    - Conversion: Copy Hub/ConvertTo/ConvertFrom directly (no change needed)
 
    IF NEW pattern - DIRECT COPY:

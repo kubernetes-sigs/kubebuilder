@@ -112,7 +112,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	// Scaffold or update webhook file (for all webhook types)
-	// Note: Conversion webhooks also need a webhook.go file with minimal setup (.For(&Type{}).Complete())
+	// Note: Conversion webhooks also need a webhook.go file with minimal setup
+	// (ctrl.NewWebhookManagedBy(mgr, &Type{}).Complete())
 	// This is how controller-runtime discovers Hub/Convertible interfaces
 	if doDefaulting || doValidation || doConversion {
 		if err = s.scaffoldWebhookFile(scaffold, webhookFileExists); err != nil {
