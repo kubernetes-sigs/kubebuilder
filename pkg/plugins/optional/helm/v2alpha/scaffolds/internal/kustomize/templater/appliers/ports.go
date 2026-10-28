@@ -62,9 +62,12 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured, dete
 			return templateNetworkPolicyIngressPort(yamlContent, "{{ .Values.webhook.port }}")
 		}
 
-		// Replace containerPort for webhook-server with template (matches any numeric port)
+		// Replace containerPort for webhook-server with template (matches any numeric port).
+		// kustomize sorts the keys of a port, so a hostIP or hostPort comes between containerPort
+		// and name, and is kept as it is.
 		if strings.Contains(yamlContent, "webhook-server") {
-			yamlContent = regexp.MustCompile(`(?m)(\s*- )?containerPort:\s*\d+(\s*\n\s*name:\s*webhook-server)`).
+			yamlContent = regexp.MustCompile(
+				`(?m)(\s*- )?containerPort:\s*\d+((?:\s*\n\s*host(?:IP|Port):[^\n]*)*\s*\n\s*name:\s*webhook-server)`).
 				ReplaceAllString(yamlContent, "${1}containerPort: {{ .Values.webhook.port }}${2}")
 			yamlContent = makeWebhookContainerPortConditional(yamlContent)
 		}
@@ -113,13 +116,16 @@ func TemplatePorts(yamlContent string, resource *unstructured.Unstructured, dete
 }
 
 // makeWebhookContainerPortConditional renders the webhook-server container port only when
-// webhook.enabled is true, since the manager does not listen on it otherwise.
+// webhook.enabled is true, since the manager does not listen on it otherwise. kustomize sorts
+// an appProtocol before containerPort and a hostIP or hostPort before name, so the port item
+// may start with appProtocol and carry host fields before its name.
 func makeWebhookContainerPortConditional(yamlContent string) string {
 	if regexp.MustCompile(`\{\{- if \.Values\.webhook\.enabled \}\}\n[ \t]+- containerPort:`).MatchString(yamlContent) {
 		return yamlContent
 	}
-	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- containerPort: \{\{ \.Values\.webhook\.port \}\}\n` +
-		`[ \t]+name: webhook-server(?:\n[ \t]+protocol: \w+)?$`)
+	portPattern := regexp.MustCompile(`(?m)^([ \t]+)- (?:appProtocol: [^\n]*\n[ \t]+)?containerPort: ` +
+		`\{\{ \.Values\.webhook\.port \}\}(?:\n[ \t]+host(?:IP|Port): [^\n]*)*` +
+		`\n[ \t]+name: webhook-server(?:\n[ \t]+protocol: \w+)?$`)
 	return portPattern.ReplaceAllStringFunc(yamlContent, func(match string) string {
 		indent, _ := LeadingWhitespace(match)
 		return fmt.Sprintf("%s{{- if .Values.webhook.enabled }}\n%s\n%s{{- end }}", indent, match, indent)

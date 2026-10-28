@@ -2498,6 +2498,74 @@ spec:
 			Expect(result).NotTo(ContainSubstring("containerPort: 9443"))
 		})
 
+		It("should template the webhook-server port when it also sets hostIP and hostPort", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// kustomize sorts the keys of a port, so hostIP and hostPort come between containerPort and name.
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        ports:
+        - containerPort: 9443
+          hostIP: 10.0.0.1
+          hostPort: 19443
+          name: webhook-server
+          protocol: TCP`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).NotTo(ContainSubstring("containerPort: 9443"))
+			Expect(result).To(ContainSubstring(`        {{- if .Values.webhook.enabled }}
+        - containerPort: {{ .Values.webhook.port }}
+          hostIP: 10.0.0.1
+          hostPort: 19443
+          name: webhook-server
+          protocol: TCP
+        {{- end }}`))
+		})
+
+		It("should render the webhook-server port only when webhooks are enabled when it also sets appProtocol", func() {
+			deployment := &unstructured.Unstructured{}
+			deployment.SetAPIVersion("apps/v1")
+			deployment.SetKind("Deployment")
+			deployment.SetName("test-project-controller-manager")
+
+			// kustomize sorts appProtocol before containerPort.
+			content := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        ports:
+        - appProtocol: https
+          containerPort: 9443
+          name: webhook-server
+          protocol: TCP`
+
+			result := templater.templatePorts(content, deployment)
+
+			Expect(result).NotTo(ContainSubstring("containerPort: 9443"))
+			Expect(result).To(ContainSubstring(`        {{- if .Values.webhook.enabled }}
+        - appProtocol: https
+          containerPort: {{ .Values.webhook.port }}
+          name: webhook-server
+          protocol: TCP
+        {{- end }}`))
+		})
+
 		It("should template health probe ports in Deployment", func() {
 			deployment := &unstructured.Unstructured{}
 			deployment.SetAPIVersion("apps/v1")
