@@ -104,7 +104,8 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 }
 
 // The --ssa flag is intentionally not bound here, so using it with this plugin
-// fails with "unknown flag".
+// fails with "unknown flag". When go/v4 runs first in the chain and binds it,
+// InjectResource rejects it.
 // TODO: Add support for Server-Side Apply (--ssa): scaffold the controller code
 // using SSA to deploy and manage the image, reaching the same goal as the
 // current example.
@@ -141,6 +142,19 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
+	// Reject Server-Side Apply before any plugin scaffolds, so the project is left unchanged.
+	// Rewriting an SSA API would drop its markers while the PROJECT file keeps ssa: true.
+	if existing, err := p.config.GetResource(res.GVK); err == nil && existing.API != nil && existing.API.SSA {
+		return fmt.Errorf("unable to scaffold the API %s/%s, Kind=%s with the %s plugin: "+
+			"it uses Server-Side Apply, which this plugin does not support",
+			res.Group, res.Version, res.Kind, plugin.KeyFor(Plugin{}))
+	}
+	// In a chain such as go/v4,deploy-image/v1-alpha, go/v4 binds --ssa.
+	if res.API != nil && res.API.SSA {
+		return fmt.Errorf("'--ssa' is not supported by the %s plugin: "+
+			"Server-Side Apply is only supported by the go/v4 plugin", plugin.KeyFor(Plugin{}))
+	}
+
 	p.resource = res
 	p.options.DoAPI = true
 	p.options.DoController = true

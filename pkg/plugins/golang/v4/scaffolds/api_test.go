@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
 func ssaTestResourceGV(kind, group, version string, ssa bool) resource.Resource {
@@ -475,15 +476,114 @@ package v1
 		})
 	})
 
+	Describe("Scaffold of an API with SSA in a package with plain kinds", func() {
+		const optOut = "// +kubebuilder:ac:generate=false"
+
+		var (
+			cfg         config.Config
+			captainPath string
+		)
+
+		BeforeEach(func() {
+			tmpDir, err := os.MkdirTemp("", "ssa-first-opt-in")
+			Expect(err).NotTo(HaveOccurred())
+			oldWd, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chdir(tmpDir)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(os.Chdir(oldWd)).To(Succeed())
+				_ = os.RemoveAll(tmpDir)
+			})
+
+			cfg = newSSATestConfig()
+			captainPath = filepath.Join("api", "v1", "captain_types.go")
+			fs := machinery.Filesystem{FS: afero.NewOsFs()}
+			scaffold := machinery.NewScaffold(fs, machinery.WithConfig(cfg))
+			Expect(scaffold.Execute(&cmd.Main{})).To(Succeed())
+		})
+
+		createAPI := func(kind string, ssa bool) {
+			s := NewAPIScaffolder(cfg, ssaTestResource(kind, ssa), false)
+			s.InjectFS(machinery.Filesystem{FS: afero.NewOsFs()})
+			Expect(s.Scaffold()).To(Succeed())
+		}
+
+		readCaptain := func() string {
+			content, err := os.ReadFile(captainPath)
+			Expect(err).NotTo(HaveOccurred())
+			return string(content)
+		}
+
+		It("should opt the existing plain kinds out when the package is first opted in", func() {
+			createAPI("Captain", false)
+			Expect(readCaptain()).NotTo(ContainSubstring("+kubebuilder:ac:generate"))
+
+			createAPI("Navigator", true)
+
+			Expect(readCaptain()).To(ContainSubstring(optOut))
+		})
+
+		It("should opt the existing plain kinds out when the user turned the package on by hand", func() {
+			createAPI("Captain", false)
+			groupVersionPath := filepath.Join("api", "v1", "groupversion_info.go")
+			content, err := os.ReadFile(groupVersionPath)
+			Expect(err).NotTo(HaveOccurred())
+			const objectMarker = "// +kubebuilder:object:generate=true"
+			Expect(string(content)).To(ContainSubstring(objectMarker))
+			enabled := strings.Replace(string(content), objectMarker,
+				objectMarker+"\n// +kubebuilder:ac:generate=true", 1)
+			Expect(os.WriteFile(groupVersionPath, []byte(enabled), 0o644)).To(Succeed())
+
+			createAPI("Navigator", true)
+
+			Expect(readCaptain()).To(ContainSubstring(optOut))
+		})
+
+		It("should not add back an opt-out marker the user removed when the package is already opted in", func() {
+			createAPI("Captain", false)
+			createAPI("Navigator", true)
+			optedIn := strings.Replace(readCaptain(), optOut+"\n", "", 1)
+			Expect(optedIn).NotTo(ContainSubstring(optOut))
+			Expect(os.WriteFile(captainPath, []byte(optedIn), 0o644)).To(Succeed())
+
+			createAPI("Sailor", true)
+
+			Expect(readCaptain()).To(Equal(optedIn))
+		})
+
+		It("should not add back an opt-out marker the user removed on a forced re-run of the opted-in API", func() {
+			createAPI("Captain", false)
+			createAPI("Navigator", true)
+			optedIn := strings.Replace(readCaptain(), optOut+"\n", "", 1)
+			Expect(optedIn).NotTo(ContainSubstring(optOut))
+			Expect(os.WriteFile(captainPath, []byte(optedIn), 0o644)).To(Succeed())
+
+			s := NewAPIScaffolder(cfg, ssaTestResource("Navigator", true), true)
+			s.InjectFS(machinery.Filesystem{FS: afero.NewOsFs()})
+			Expect(s.Scaffold()).To(Succeed())
+
+			Expect(readCaptain()).To(Equal(optedIn))
+		})
+
+		It("should opt a plain kind created later in the package out", func() {
+			createAPI("Navigator", true)
+
+			createAPI("Captain", false)
+
+			Expect(readCaptain()).To(ContainSubstring(optOut))
+		})
+	})
+
 	Describe("addApplyConfigGenToMakefile", func() {
 		//nolint:lll
 		const manifestsLine = `"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases`
 		//nolint:lll
 		const manifestsHelp = "manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects."
 
-		var makefilePath string
+		var makefilePath, generatorsWithSSA string
 
 		BeforeEach(func() {
+			generatorsWithSSA = makefileManifestsGeneratorsWithSSA(hack.DefaultBoilerplatePath)
 			tmpDir, err := os.MkdirTemp("", "ssa-makefile")
 			Expect(err).NotTo(HaveOccurred())
 			DeferCleanup(func() {
@@ -496,13 +596,28 @@ package v1
 			content := manifestsHelp + "\n\t" + manifestsLine + "\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			updated, err := addApplyConfigGenToMakefile(makefilePath)
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeTrue())
 
 			result, err := os.ReadFile(makefilePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(result)).To(ContainSubstring(makefileManifestsGeneratorsWithSSA + ` paths="./..."`))
+			Expect(string(result)).To(ContainSubstring(generatorsWithSSA + ` paths="./..."`))
+			Expect(string(result)).To(ContainSubstring(makefileManifestsHelpWithSSA))
+		})
+
+		It("should add applyconfiguration without headerFile when the project has no boilerplate file", func() {
+			content := manifestsHelp + "\n\t" + manifestsLine + "\n"
+			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
+
+			updated, err := addApplyConfigGenToMakefile(makefilePath, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updated).To(BeTrue())
+
+			result, err := os.ReadFile(makefilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(result)).To(ContainSubstring(`crd webhook applyconfiguration paths="./..."`))
+			Expect(string(result)).NotTo(ContainSubstring("headerFile"))
 			Expect(string(result)).To(ContainSubstring(makefileManifestsHelpWithSSA))
 		})
 
@@ -510,36 +625,95 @@ package v1
 			content := manifestsHelp + "\n\t$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths=\"./...\"\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			updated, err := addApplyConfigGenToMakefile(makefilePath)
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeTrue())
 
 			result, err := os.ReadFile(makefilePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(result)).To(ContainSubstring(makefileManifestsGeneratorsWithSSA))
+			Expect(string(result)).To(ContainSubstring(generatorsWithSSA))
 		})
 
 		It("should skip a Makefile that already runs applyconfiguration generation", func() {
-			content := manifestsHelp + "\n\t" + `"$(CONTROLLER_GEN)" ` + makefileManifestsGeneratorsWithSSA + "\n"
+			content := manifestsHelp + "\n\t" + `"$(CONTROLLER_GEN)" ` + generatorsWithSSA + "\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			updated, err := addApplyConfigGenToMakefile(makefilePath)
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeFalse())
 		})
+
+		It("should add applyconfiguration when only a comment or another target mentions it", func() {
+			content := "# See the applyconfiguration docs before enabling Server-Side Apply.\n" +
+				manifestsHelp + "\n\t" + manifestsLine + "\n" +
+				"applyconfigs: ## Notes on applyconfiguration\n\t@echo applyconfiguration\n"
+			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
+
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updated).To(BeTrue())
+
+			result, err := os.ReadFile(makefilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(result)).To(ContainSubstring(generatorsWithSSA + ` paths="./..."`))
+		})
+
+		DescribeTable("should add applyconfiguration when a manifests recipe line only mentions it",
+			func(recipeLine string) {
+				content := manifestsHelp + "\n\t" + recipeLine + "\n"
+				Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
+
+				updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updated).To(BeTrue())
+
+				result, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(result)).To(ContainSubstring(generatorsWithSSA + ` paths="./..."`))
+			},
+			Entry("in a comment after the controller-gen command", manifestsLine+" # TODO: add applyconfiguration"),
+			Entry("in an echo command", manifestsLine+"\n\t@echo \"generated applyconfiguration\""),
+			Entry("in an echo command that names controller-gen", manifestsLine+"\n\t@echo controller-gen applyconfiguration"),
+		)
+
+		DescribeTable("should skip a manifests recipe that already runs applyconfiguration",
+			func(recipe string) {
+				content := manifestsHelp + "\n\t" + recipe + "\n"
+				Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
+
+				updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updated).To(BeFalse())
+
+				result, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(result)).To(Equal(content))
+			},
+			Entry("on a line of its own", manifestsLine+"\n\t"+`"$(CONTROLLER_GEN)" applyconfiguration paths="./..."`),
+			Entry("on a continued line indented with tabs",
+				`"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook \`+"\n\t\t"+
+					`applyconfiguration paths="./..." output:crd:artifacts:config=config/crd/bases`),
+			Entry("on a continued line indented with spaces",
+				`"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook \`+"\n    "+
+					`applyconfiguration paths="./..." output:crd:artifacts:config=config/crd/bases`),
+			Entry("after another command", `cd . && "$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook `+
+				`applyconfiguration paths="./..." output:crd:artifacts:config=config/crd/bases`),
+			Entry("after an environment variable", `GOFLAGS=-mod=mod "$(CONTROLLER_GEN)" rbac:roleName=manager-role `+
+				`crd webhook applyconfiguration paths="./..." output:crd:artifacts:config=config/crd/bases`),
+		)
 
 		It("should not duplicate anything when run more than once", func() {
 			content := manifestsHelp + "\n\t" + manifestsLine + "\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			updated, err := addApplyConfigGenToMakefile(makefilePath)
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeTrue())
 
 			afterFirstRun, err := os.ReadFile(makefilePath)
 			Expect(err).NotTo(HaveOccurred())
 
-			updated, err = addApplyConfigGenToMakefile(makefilePath)
+			updated, err = addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeFalse())
 
@@ -555,7 +729,7 @@ package v1
 				manifestsHelp + "\n\t" + manifestsLine + "\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			updated, err := addApplyConfigGenToMakefile(makefilePath)
+			updated, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updated).To(BeTrue())
 
@@ -569,7 +743,7 @@ package v1
 			content := "manifests: controller-gen ## My custom help\n\t" + manifestsLine + "\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			_, err := addApplyConfigGenToMakefile(makefilePath)
+			_, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).To(HaveOccurred())
 
 			result, err := os.ReadFile(makefilePath)
@@ -581,7 +755,7 @@ package v1
 			content := manifestsHelp + "\n\tcustom-generator paths=\"./...\"\n"
 			Expect(os.WriteFile(makefilePath, []byte(content), 0o644)).To(Succeed())
 
-			_, err := addApplyConfigGenToMakefile(makefilePath)
+			_, err := addApplyConfigGenToMakefile(makefilePath, hack.DefaultBoilerplatePath)
 			Expect(err).To(HaveOccurred())
 
 			result, err := os.ReadFile(makefilePath)
@@ -590,8 +764,59 @@ package v1
 		})
 
 		It("should return an error when the Makefile does not exist", func() {
-			_, err := addApplyConfigGenToMakefile(filepath.Join("does", "not", "exist", "Makefile"))
+			_, err := addApplyConfigGenToMakefile(filepath.Join("does", "not", "exist", "Makefile"), hack.DefaultBoilerplatePath)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("updateMakefile", func() {
+		const customized = "manifests: controller-gen ## My custom help\n\tcustom-generator paths=\"./...\"\n"
+
+		var logOutput bytes.Buffer
+
+		BeforeEach(func() {
+			tmpDir, err := os.MkdirTemp("", "ssa-update-makefile")
+			Expect(err).NotTo(HaveOccurred())
+			oldWd, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chdir(tmpDir)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(os.Chdir(oldWd)).To(Succeed())
+				_ = os.RemoveAll(tmpDir)
+			})
+			Expect(os.WriteFile("Makefile", []byte(customized), 0o644)).To(Succeed())
+
+			logOutput.Reset()
+			previous := slog.Default()
+			slog.SetDefault(slog.New(slog.NewTextHandler(&logOutput, nil)))
+			DeferCleanup(func() { slog.SetDefault(previous) })
+		})
+
+		It("should warn with the headerFile generator and continue when the Makefile was customized", func() {
+			navigator := ssaTestResource("Navigator", true)
+			s := &apiScaffolder{config: newSSATestConfig(navigator), resource: navigator}
+
+			s.updateMakefile(hack.DefaultBoilerplatePath)
+
+			Expect(logOutput.String()).To(ContainSubstring("unable to update the Makefile"))
+			Expect(logOutput.String()).To(ContainSubstring(`applyconfiguration:headerFile=\"hack/boilerplate.go.txt\"`))
+			content, err := os.ReadFile("Makefile")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(customized))
+		})
+
+		It("should warn with the generator without headerFile when the project has no boilerplate file", func() {
+			navigator := ssaTestResource("Navigator", true)
+			s := &apiScaffolder{config: newSSATestConfig(navigator), resource: navigator}
+
+			s.updateMakefile("")
+
+			Expect(logOutput.String()).To(ContainSubstring("unable to update the Makefile"))
+			Expect(logOutput.String()).To(ContainSubstring(`crd webhook applyconfiguration paths=`))
+			Expect(logOutput.String()).NotTo(ContainSubstring("headerFile"))
+			content, err := os.ReadFile("Makefile")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(customized))
 		})
 	})
 })

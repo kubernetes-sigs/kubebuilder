@@ -159,6 +159,32 @@ var _ = Describe("createAPISubcommand", func() {
 			Expect(subCmd.options.Namespaced).To(BeTrue())
 		})
 
+		It("should reject a resource with Server-Side Apply set by go/v4 earlier in the plugin chain", func() {
+			res.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+
+			err := subCmd.InjectResource(res)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(
+				"'--ssa' is not supported by the deploy-image.go.kubebuilder.io/v1-alpha plugin"))
+			Expect(res.API.SSA).To(BeTrue(), "the rejected resource must be left as it was")
+			Expect(subCmd.resource).To(BeNil())
+		})
+
+		It("should reject an API that the PROJECT file records with Server-Side Apply", func() {
+			existing := *res
+			existing.API = &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}
+			Expect(cfg.AddResource(existing)).To(Succeed())
+
+			err := subCmd.InjectResource(res)
+
+			Expect(err).To(MatchError(ContainSubstring("it uses Server-Side Apply, which this plugin does not support")))
+			Expect(subCmd.resource).To(BeNil())
+			tracked, err := cfg.GetResource(res.GVK)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tracked.API.SSA).To(BeTrue(), "the PROJECT file must keep Server-Side Apply")
+		})
+
 		It("should prevent multiple groups in single-group project", func() {
 			firstRes := resource.Resource{
 				GVK: resource.GVK{

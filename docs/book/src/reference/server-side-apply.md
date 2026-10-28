@@ -10,8 +10,8 @@ The `--ssa` flag is an alpha feature and may change in future releases.
 </aside>
 
 This adds:
-- API markers (`+genclient`, `+kubebuilder:ac:generate=true`) for ApplyConfiguration generation
-- Makefile integration to generate type-safe ApplyConfiguration types alongside CRD and RBAC manifests
+- API markers (`+genclient`, `+kubebuilder:ac:generate=true`) for Server-Side Apply
+- Makefile integration to generate the Server-Side Apply types alongside CRD and RBAC manifests
 
 ## When to use it
 
@@ -32,7 +32,7 @@ For controllers that are the sole owner of a resource and manage the entire obje
 
 Traditional `Update()` overwrites the entire object. Server-Side Apply with the client's `Apply` method only manages the fields you specify.
 
-After running `make manifests`, ApplyConfiguration types are created at:
+`make manifests` generates the Server-Side Apply types in:
 ```
 api/<version>/applyconfiguration/api/<version>/          (single group)
 api/<group>/<version>/applyconfiguration/<group>/<version>/  (multi-group)
@@ -46,7 +46,7 @@ appsv1apply "example.com/myproject/api/v1/applyconfiguration/api/v1"
 
 ## Mixing SSA and non-SSA APIs
 
-The `+kubebuilder:ac:generate=true` marker in `groupversion_info.go` is package-level: it enables ApplyConfiguration generation for the group/version. Each kind then opts in or out with its own `+kubebuilder:ac:generate` marker: kinds scaffolded with `--ssa` get `=true`, and kinds scaffolded without it get `=false`. When you create an API with `--ssa`, kinds previously scaffolded without this marker in that group/version receive it automatically.
+The `+kubebuilder:ac:generate=true` marker in `groupversion_info.go` is package-level: it enables Server-Side Apply for the group/version. Each kind then opts in or out with its own `+kubebuilder:ac:generate` marker: kinds scaffolded with `--ssa` get `=true`, and kinds scaffolded without it get `=false`. When you create an API with `--ssa`, kinds previously scaffolded without this marker in that group/version receive it automatically.
 
 To change which kinds are generated:
 - Set `+kubebuilder:ac:generate=true` above a kind to include it
@@ -75,6 +75,7 @@ Implement Server-Side Apply in your controller:
 import (
     "context"
 
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
     ctrl "sigs.k8s.io/controller-runtime"
     "sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,7 +90,9 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
             WithConditions(metav1apply.Condition().
                 WithType("Available").
                 WithStatus("True").
-                WithReason("Reconciled")))
+                WithReason("Reconciled").
+                WithMessage("Reconciled successfully").
+                WithLastTransitionTime(metav1.Now())))
 
     // Apply status, forcing ownership of the fields this controller manages
     if err := r.SubResource("status").Apply(ctx, app,

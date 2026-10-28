@@ -21,6 +21,7 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -72,7 +73,8 @@ func (s *apiScaffolder) Scaffold() error {
 	log.Info("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
-	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	boilerplatePath := hack.DefaultBoilerplatePath
+	boilerplate, err := afero.ReadFile(s.fs.FS, boilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
 			log.Warn("unable to find boilerplate file. "+
@@ -81,6 +83,8 @@ func (s *apiScaffolder) Scaffold() error {
 				"add the license file or configure your project accordingly",
 				"file_path", hack.DefaultBoilerplatePath, "error", err)
 			boilerplate = []byte("")
+			// A project created with '--license none' has no boilerplate file
+			boilerplatePath = ""
 		} else {
 			return fmt.Errorf("error scaffolding API/controller: failed to load boilerplate: %w", err)
 		}
@@ -96,6 +100,11 @@ func (s *apiScaffolder) Scaffold() error {
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
+	// True when --force re-runs an API that already uses SSA
+	hadSSA := false
+	if res, err := s.config.GetResource(s.resource.GVK); err == nil {
+		hadSSA = res.API != nil && res.API.SSA
+	}
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
@@ -116,14 +125,18 @@ func (s *apiScaffolder) Scaffold() error {
 		if ssaEnabled {
 			s.updateGroupVersionInfo()
 			// The ac:generate package marker enables generation for every kind in the
-			// group/version, so kinds scaffolded without SSA must opt out explicitly
+			// group/version, so kinds scaffolded without SSA must opt out explicitly.
+			// Do it only for the first SSA API in the group/version: after that, a kind
+			// without the opt-out marker is one the user opted in.
 			if resources, err := s.config.GetResources(); err == nil {
-				s.optOutExistingKinds(resources)
+				if !hadSSA && !s.hasSSAInPackage() {
+					s.optOutExistingKinds(resources)
+				}
 				s.warnUntrackedKinds(resources)
 			}
 			// Update Makefile if this is the first SSA API in the project
 			if s.isFirstSSAAPI() {
-				s.updateMakefile()
+				s.updateMakefile(boilerplatePath)
 			}
 		}
 	}
@@ -179,7 +192,7 @@ func (s *apiScaffolder) apiPackageDir() string {
 // scaffolding could not do it for them.
 const acGenerateMarkerHint = "Add '// +kubebuilder:ac:generate=true' to the package comment in " +
 	"groupversion_info.go, alongside the other Kubebuilder markers (for example right after " +
-	"'// +kubebuilder:object:generate=true'), to enable ApplyConfiguration generation for this group/version"
+	"'// +kubebuilder:object:generate=true'), to enable Server-Side Apply for this group/version"
 
 // updateGroupVersionInfo adds the applyconfiguration generation marker
 // when groupversion_info.go already exists (e.g., adding a second API to an existing version).
@@ -227,14 +240,22 @@ const (
 	// The generators of the manifests target. Only this fragment is matched,
 	// so customized flags elsewhere in the line do not block the update.
 	makefileManifestsGeneratorsWithoutSSA = "rbac:roleName=manager-role crd webhook"
-	makefileManifestsGeneratorsWithSSA    = makefileManifestsGeneratorsWithoutSSA +
-		` applyconfiguration:headerFile="hack/boilerplate.go.txt"`
 
 	makefileManifestsHelpWithoutSSA = "## Generate WebhookConfiguration, ClusterRole and " +
 		"CustomResourceDefinition objects."
 	makefileManifestsHelpWithSSA = "## Generate WebhookConfiguration, ClusterRole and " +
 		"CustomResourceDefinition objects and ApplyConfiguration types."
 )
+
+// makefileManifestsGeneratorsWithSSA returns the manifests generators with applyconfiguration.
+// The headerFile is set only when boilerplatePath is not empty, as in the generate target.
+func makefileManifestsGeneratorsWithSSA(boilerplatePath string) string {
+	generator := makefileApplyConfigurationMarker
+	if boilerplatePath != "" {
+		generator += fmt.Sprintf(":headerFile=%q", boilerplatePath)
+	}
+	return makefileManifestsGeneratorsWithoutSSA + " " + generator
+}
 
 // isFirstSSAAPI checks if this is the first API with SSA enabled in the project.
 // Returns true if there are no other resources with SSA enabled.
@@ -294,7 +315,7 @@ func (s *apiScaffolder) optOutExistingKinds(resources []resource.Resource) {
 		if err != nil {
 			log.Warn("unable to check the '+kubebuilder:ac:generate' marker. "+
 				"Add '+kubebuilder:ac:generate=false' above the kind to exclude it "+
-				"from ApplyConfiguration generation",
+				"from Server-Side Apply",
 				"path", typesPath, "error", err)
 			continue
 		}
@@ -302,10 +323,28 @@ func (s *apiScaffolder) optOutExistingKinds(resources []resource.Resource) {
 			continue
 		}
 
-		if err := util.InsertCode(typesPath, "// +kubebuilder:object:root=true",
+		// Check the anchor first, because the InsertCode error prints the whole file.
+		anchor := "// +kubebuilder:object:root=true"
+		hasAnchor, err := util.HasFileContentWith(typesPath, anchor)
+		if err != nil {
+			log.Warn("unable to check the '+kubebuilder:object:root=true' marker. "+
+				"Add '+kubebuilder:ac:generate=false' above the kind to exclude it "+
+				"from Server-Side Apply",
+				"path", typesPath, "error", err)
+			continue
+		}
+		if !hasAnchor {
+			log.Warn("the '+kubebuilder:object:root=true' marker was not found. "+
+				"Add '+kubebuilder:ac:generate=false' above the kind to exclude it "+
+				"from Server-Side Apply",
+				"path", typesPath)
+			continue
+		}
+
+		if err := util.InsertCode(typesPath, anchor,
 			"\n// +kubebuilder:ac:generate=false"); err != nil {
 			log.Warn("unable to add the '+kubebuilder:ac:generate=false' marker. "+
-				"Add it above the kind to exclude it from ApplyConfiguration generation",
+				"Add it above the kind to exclude it from Server-Side Apply",
 				"path", typesPath, "error", err)
 		}
 	}
@@ -336,7 +375,8 @@ func (s *apiScaffolder) warnUntrackedKinds(resources []resource.Resource) {
 		}
 		log.Warn("found an API not tracked in the PROJECT file, likely added manually. "+
 			"The '+kubebuilder:ac:generate=false' marker cannot be added automatically. "+
-			"Review this API and add the marker above the kind if it should not use Server-Side Apply",
+			"Review this API. If it should not use Server-Side Apply, add the marker above the kind "+
+			"and remove its '+genclient' markers, if any",
 			"path", filepath.Join(pkgDir, name))
 	}
 }
@@ -344,27 +384,78 @@ func (s *apiScaffolder) warnUntrackedKinds(resources []resource.Resource) {
 // updateMakefile adds applyconfiguration generation to the manifests target.
 // Only runs when the first SSA API is created.
 // On failure, logs a warning and does not stop scaffolding.
-func (s *apiScaffolder) updateMakefile() {
-	updated, err := addApplyConfigGenToMakefile("Makefile")
+func (s *apiScaffolder) updateMakefile(boilerplatePath string) {
+	updated, err := addApplyConfigGenToMakefile("Makefile", boilerplatePath)
 	if err != nil {
-		log.Warn("unable to update Makefile 'manifests' target to add ApplyConfiguration generation for Server-Side Apply. "+
-			"Ensure your Makefile is updated to include 'applyconfiguration' in the controller-gen manifests command. "+
-			"For example, change '$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths=\"./...\"' to "+
-			"'$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook applyconfiguration:headerFile=\"hack/boilerplate.go.txt\" paths=\"./...\"'", //nolint:lll
+		log.Warn("unable to update the Makefile 'manifests' target for Server-Side Apply. "+
+			"Add 'applyconfiguration' to its controller-gen command, for example change "+
+			"'$(CONTROLLER_GEN) "+makefileManifestsGeneratorsWithoutSSA+" paths=\"./...\"' to "+
+			"'$(CONTROLLER_GEN) "+makefileManifestsGeneratorsWithSSA(boilerplatePath)+" paths=\"./...\"'",
 			"error", err)
 		return
 	}
 	if updated {
-		log.Info("applyconfiguration generation added to Makefile manifests target")
+		log.Info("updated the Makefile 'manifests' target for Server-Side Apply")
 	}
 }
 
-// addApplyConfigGenToMakefile adds applyconfiguration generation to the manifests target.
-// Returns false when the Makefile already runs applyconfiguration generation.
-func addApplyConfigGenToMakefile(makefilePath string) (bool, error) {
-	hasApplyConfig, err := util.HasFileContentWith(makefilePath, makefileApplyConfigurationMarker)
+// manifestsRecipePattern matches the manifests target and the recipe lines that follow it.
+var manifestsRecipePattern = regexp.MustCompile(`(?m)^manifests:.*\n((?:\t.*(?:\n|$))*)`)
+
+// shellCommandSeparator splits a recipe line into the commands it runs.
+var shellCommandSeparator = regexp.MustCompile(`&&|\|\||;|\|`)
+
+// controllerGenArgs returns the arguments of the controller-gen commands in a recipe line.
+// Leading environment assignments, such as GOFLAGS=-mod=mod, are skipped.
+func controllerGenArgs(line string) []string {
+	var args []string
+	for _, command := range shellCommandSeparator.Split(line, -1) {
+		fields := strings.Fields(strings.TrimLeft(strings.TrimSpace(command), "@-+"))
+		for len(fields) > 0 && strings.Contains(fields[0], "=") {
+			fields = fields[1:]
+		}
+		if len(fields) == 0 {
+			continue
+		}
+		name := strings.Trim(fields[0], `"'`)
+		if name == "$(CONTROLLER_GEN)" || name == "${CONTROLLER_GEN}" || path.Base(name) == "controller-gen" {
+			args = append(args, fields[1:]...)
+		}
+	}
+	return args
+}
+
+// manifestsRecipeRunsApplyConfig reports whether a controller-gen command in the manifests recipe
+// already runs applyconfiguration. Lines that end with a backslash are joined into one command.
+// Comments, other commands and other targets are ignored.
+func manifestsRecipeRunsApplyConfig(makefilePath string) (bool, error) {
+	content, err := os.ReadFile(makefilePath)
 	if err != nil {
-		return false, fmt.Errorf("checking for applyconfiguration generation: %w", err)
+		return false, fmt.Errorf("failed to read %q: %w", makefilePath, err)
+	}
+	joined := strings.NewReplacer("\\\r\n", " ", "\\\n", " ").Replace(string(content))
+	recipe := manifestsRecipePattern.FindStringSubmatch(joined)
+	if recipe == nil {
+		return false, nil
+	}
+	for line := range strings.SplitSeq(recipe[1], "\n") {
+		line, _, _ = strings.Cut(line, "#")
+		for _, arg := range controllerGenArgs(line) {
+			if arg == makefileApplyConfigurationMarker || strings.HasPrefix(arg, makefileApplyConfigurationMarker+":") {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+// addApplyConfigGenToMakefile adds applyconfiguration generation to the manifests target.
+// An empty boilerplatePath adds it without headerFile.
+// Returns false when the Makefile already runs applyconfiguration generation.
+func addApplyConfigGenToMakefile(makefilePath, boilerplatePath string) (bool, error) {
+	hasApplyConfig, err := manifestsRecipeRunsApplyConfig(makefilePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to check the Makefile for Server-Side Apply: %w", err)
 	}
 	if hasApplyConfig {
 		return false, nil
@@ -377,7 +468,8 @@ func addApplyConfigGenToMakefile(makefilePath string) (bool, error) {
 	pattern := "(?m)^(manifests: controller-gen )" +
 		regexp.QuoteMeta(makefileManifestsHelpWithoutSSA) +
 		"\n(\t.*?)" + regexp.QuoteMeta(makefileManifestsGeneratorsWithoutSSA)
-	replacement := "${1}" + makefileManifestsHelpWithSSA + "\n${2}" + makefileManifestsGeneratorsWithSSA
+	replacement := "${1}" + makefileManifestsHelpWithSSA + "\n${2}" +
+		makefileManifestsGeneratorsWithSSA(boilerplatePath)
 	if err := util.ReplaceRegexInFile(makefilePath, pattern, replacement); err != nil {
 		return false, fmt.Errorf("failed to update the manifests target in %q: %w", makefilePath, err)
 	}
