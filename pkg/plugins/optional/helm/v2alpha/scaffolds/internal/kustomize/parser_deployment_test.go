@@ -64,7 +64,7 @@ metadata:
 		Expect(result.Deployment.GetName()).To(Equal("manager-deployment"))
 	})
 
-	It("selects the deployment with pod-template annotation when no label matches", func() {
+	It("does not select a deployment with only the pod-template annotation", func() {
 		yaml := `---
 apiVersion: apps/v1
 kind: Deployment
@@ -83,8 +83,8 @@ spec:
 `
 		result, err := parser.ParseFromReader(strings.NewReader(yaml))
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Deployment).NotTo(BeNil())
-		Expect(result.Deployment.GetName()).To(Equal("annotated-deployment"))
+		Expect(result.Deployment).To(BeNil())
+		Expect(result.ExtraDeployments).To(HaveLen(2))
 	})
 
 	It("selects the deployment with a container named manager when no label or annotation matches", func() {

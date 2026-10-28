@@ -2024,6 +2024,13 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(managerStr).To(ContainSubstring("runAsNonRoot: true"),
 				"sidecar securityContext must not be templated")
 
+			By("verifying the sidecar's args remain as literals")
+			Expect(managerStr).To(ContainSubstring("--sidecar-flag"))
+			Expect(managerStr).To(ContainSubstring(".Values.manager.args"))
+			Expect(strings.Index(managerStr, "--sidecar-flag")).To(
+				BeNumerically("<", strings.Index(managerStr, ".Values.manager.args")),
+				"sidecar args must appear before manager args templating")
+
 			By("verifying the manager's resources are templated")
 			Expect(managerStr).To(ContainSubstring(".Values.manager.resources"))
 
@@ -2037,6 +2044,233 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			chart, err := helmChartLoader.LoadDir(chartPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(chart.Validate()).To(Succeed())
+		})
+	})
+
+	Context("Manager deployment with an extra deployment", func() {
+		It("should template manager values only in the manager manifest and place the extra deployment in extras", func() {
+			kustomizeYAML := createKustomizeWithExtraOperatorDeployment("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+
+			err = scaffolderBase.Scaffold()
+			Expect(err).NotTo(HaveOccurred())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+			extrasDir := filepath.Join(chartPath, "templates", "extras")
+
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+			Expect(managerStr).To(ContainSubstring(".Values.manager.image.repository"))
+			Expect(managerStr).To(ContainSubstring(".Values.manager.replicas"))
+
+			extrasFiles, err := os.ReadDir(extrasDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(extrasFiles).NotTo(BeEmpty())
+
+			var extraDeploymentFound bool
+			for _, f := range extrasFiles {
+				if !strings.Contains(f.Name(), "some-operator") {
+					continue
+				}
+				extraDeploymentFound = true
+				extraBytes, err := os.ReadFile(filepath.Join(extrasDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				extraStr := string(extraBytes)
+				Expect(extraStr).NotTo(ContainSubstring(".Values.manager."),
+					"extra deployment must not receive manager values templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.metrics.port"),
+					"extra deployment must not receive metrics port templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.webhook.port"),
+					"extra deployment must not receive webhook port templating")
+				Expect(extraStr).NotTo(ContainSubstring(".Values.manager.healthProbe.port"),
+					"extra deployment must not receive health probe port templating")
+				Expect(extraStr).To(ContainSubstring("--metrics-bind-address=:8443"))
+				Expect(extraStr).To(ContainSubstring("image: worker:latest"))
+			}
+			Expect(extraDeploymentFound).To(BeTrue(), "extra deployment file should exist in extras")
+
+			lintResult := action.NewLint().Run([]string{chartPath}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
+
+			By("rendering the chart with helm template")
+			rendered, err := helmTemplate(createKustomizeWithExtraOperatorDeployment("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("some-operator"))
+			Expect(rendered).To(ContainSubstring("--metrics-bind-address=:8443"))
+			Expect(rendered).NotTo(MatchRegexp(`some-operator[\s\S]*\.Values\.metrics\.port`))
+		})
+
+		It("should not template an extra deployment that has a container named manager", func() {
+			kustomizeYAML := strings.Replace(createKustomizeWithExtraOperatorDeployment("test-project"),
+				"      - name: worker\n", "      - name: manager\n", 1)
+			Expect(kustomizeYAML).NotTo(ContainSubstring("- name: worker"), "the extra deployment must look like a manager")
+			Expect(setupKustomizeFile(manifestsFile, kustomizeYAML)).To(Succeed())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerBytes, err := os.ReadFile(filepath.Join(chartPath, "templates", "manager", "manager.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(managerBytes)).To(ContainSubstring(".Values.manager.enabled"))
+
+			extraBytes, err := os.ReadFile(filepath.Join(chartPath, "templates", "extras",
+				"deployment-some-operator-test-project-system.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			extraStr := string(extraBytes)
+			Expect(extraStr).NotTo(ContainSubstring(".Values.manager."),
+				"extra deployment must not receive manager values or the manager.enabled conditional")
+			Expect(extraStr).NotTo(ContainSubstring(".Values.webhook.port"),
+				"extra deployment must not receive webhook port templating")
+			Expect(extraStr).To(ContainSubstring("image: worker:latest"))
+			Expect(extraStr).To(ContainSubstring("--webhook-port=9443"))
+
+			By("rendering the chart with the manager turned off")
+			rendered, err := helmTemplate(kustomizeYAML, "--set", "manager.enabled=false")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			deployments, err := renderedResourcesByKind(rendered, "Deployment")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deployments).To(HaveLen(1))
+			Expect(deployments[0].GetName()).To(HaveSuffix("test-project-some-operator"))
+		})
+	})
+
+	Context("Extra ServiceAccount with the project prefix (rendered)", func() {
+		It("should render the extra ServiceAccount with the name its RoleBinding and Deployment use", func() {
+			rendered, err := helmTemplate(createKustomizeWithExtraServiceAccount("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+
+			serviceAccounts, err := renderedResourcesByKind(rendered, "ServiceAccount")
+			Expect(err).NotTo(HaveOccurred())
+			var workerServiceAccount string
+			for _, serviceAccount := range serviceAccounts {
+				if strings.HasSuffix(serviceAccount.GetName(), "worker-sa") {
+					workerServiceAccount = serviceAccount.GetName()
+				}
+			}
+			Expect(workerServiceAccount).NotTo(BeEmpty(), "the extra ServiceAccount must be rendered")
+
+			roleBindings, err := renderedResourcesByKind(rendered, "RoleBinding")
+			Expect(err).NotTo(HaveOccurred())
+			var subjectNames []string
+			for _, roleBinding := range roleBindings {
+				if !strings.HasSuffix(roleBinding.GetName(), "worker-rolebinding") {
+					continue
+				}
+				subjects, _, err := unstructured.NestedSlice(roleBinding.Object, "subjects")
+				Expect(err).NotTo(HaveOccurred())
+				for _, subject := range subjects {
+					subjectNames = append(subjectNames, subject.(map[string]any)["name"].(string))
+				}
+			}
+			Expect(subjectNames).To(ConsistOf(workerServiceAccount))
+
+			deployments, err := renderedResourcesByKind(rendered, "Deployment")
+			Expect(err).NotTo(HaveOccurred())
+			var deploymentServiceAccount string
+			for _, deployment := range deployments {
+				if strings.HasSuffix(deployment.GetName(), "some-operator") {
+					deploymentServiceAccount, _, err = unstructured.NestedString(deployment.Object,
+						"spec", "template", "spec", "serviceAccountName")
+					Expect(err).NotTo(HaveOccurred())
+				}
+			}
+			Expect(deploymentServiceAccount).To(Equal(workerServiceAccount))
+		})
+	})
+
+	Context("Custom manager ServiceAccount name", func() {
+		It("should keep the custom manager ServiceAccount in rbac and render it with serviceAccount values", func() {
+			kustomizeYAML := createKustomizeWithCustomManagerServiceAccount("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			rbacDir := filepath.Join(chartPath, "templates", "rbac")
+			extrasDir := filepath.Join(chartPath, "templates", "extras")
+
+			var managerSAFound bool
+			rbacFiles, err := os.ReadDir(rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+			for _, f := range rbacFiles {
+				if !strings.Contains(f.Name(), "custom-operator-sa") {
+					continue
+				}
+				managerSAFound = true
+				content, err := os.ReadFile(filepath.Join(rbacDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				saStr := string(content)
+				Expect(saStr).To(ContainSubstring(`{{- if .Values.serviceAccount.enabled }}`))
+				Expect(saStr).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+			}
+			Expect(managerSAFound).To(BeTrue(), "custom manager ServiceAccount should stay in rbac templates")
+
+			if _, err := os.Stat(extrasDir); err == nil {
+				extrasFiles, err := os.ReadDir(extrasDir)
+				Expect(err).NotTo(HaveOccurred())
+				for _, f := range extrasFiles {
+					content, err := os.ReadFile(filepath.Join(extrasDir, f.Name()))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(content)).NotTo(ContainSubstring("custom-operator-sa"))
+				}
+			}
+
+			rendered, err := helmTemplate(createKustomizeWithCustomManagerServiceAccount("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
+			Expect(rendered).To(ContainSubstring("kind: ServiceAccount"))
+		})
+
+		It("should template prefixed custom manager ServiceAccount references to serviceAccountName", func() {
+			kustomizeYAML := createKustomizeWithPrefixedCustomManagerServiceAccount("test-project")
+			err := setupKustomizeFile(manifestsFile, kustomizeYAML)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolderBase = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolderBase.InjectFS(fs)
+			Expect(scaffolderBase.Scaffold()).To(Succeed())
+
+			chartPath := filepath.Join(tmpDir, outputDir, "chart")
+			managerTemplatePath := filepath.Join(chartPath, "templates", "manager", "manager.yaml")
+			managerBytes, err := os.ReadFile(managerTemplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			managerStr := string(managerBytes)
+
+			Expect(managerStr).To(ContainSubstring(
+				`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+			Expect(managerStr).NotTo(ContainSubstring(`resourceName" (dict "suffix" "operator-sa"`))
+
+			rbacDir := filepath.Join(chartPath, "templates", "rbac")
+			rbacFiles, err := os.ReadDir(rbacDir)
+			Expect(err).NotTo(HaveOccurred())
+			var bindingFound bool
+			for _, f := range rbacFiles {
+				if !strings.Contains(f.Name(), "manager-rolebinding") {
+					continue
+				}
+				content, err := os.ReadFile(filepath.Join(rbacDir, f.Name()))
+				Expect(err).NotTo(HaveOccurred())
+				bindingStr := string(content)
+				bindingFound = true
+				Expect(bindingStr).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+				Expect(bindingStr).NotTo(ContainSubstring(`resourceName" (dict "suffix" "operator-sa"`))
+			}
+			Expect(bindingFound).To(BeTrue())
+
+			rendered, err := helmTemplate(createKustomizeWithPrefixedCustomManagerServiceAccount("test-project"))
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", rendered)
+			Expect(rendered).To(ContainSubstring("serviceAccountName: my-release-test-project-controller-manager"))
 		})
 	})
 
@@ -3546,6 +3780,121 @@ spec:
 `
 }
 
+// createKustomizeWithExtraOperatorDeployment adds an operator Deployment that uses the manager's args and ports.
+func createKustomizeWithExtraOperatorDeployment(projectName string) string {
+	return createKustomizeWithFullDeploymentConfig(projectName) + `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ` + projectName + `-some-operator
+  namespace: ` + projectName + `-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: some-operator
+  template:
+    metadata:
+      labels:
+        app: some-operator
+    spec:
+      containers:
+      - name: worker
+        image: worker:latest
+        args:
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --webhook-port=9443
+        ports:
+        - containerPort: 8081
+          name: health
+        - containerPort: 9443
+          name: webhook-server
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+`
+}
+
+// createKustomizeWithExtraServiceAccount adds a ServiceAccount, named with the kustomize prefix, that the extra
+// operator Deployment runs as and that a RoleBinding grants a Role to.
+func createKustomizeWithExtraServiceAccount(projectName string) string {
+	extraDeploymentContainers := "      containers:\n      - name: worker\n"
+	base := createKustomizeWithExtraOperatorDeployment(projectName)
+	Expect(base).To(ContainSubstring(extraDeploymentContainers))
+	base = strings.Replace(base, extraDeploymentContainers,
+		"      serviceAccountName: "+projectName+"-worker-sa\n"+extraDeploymentContainers, 1)
+	return base + `---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ` + projectName + `-worker-sa
+  namespace: ` + projectName + `-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ` + projectName + `-worker-role
+  namespace: ` + projectName + `-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ` + projectName + `-worker-rolebinding
+  namespace: ` + projectName + `-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ` + projectName + `-worker-role
+subjects:
+- kind: ServiceAccount
+  name: ` + projectName + `-worker-sa
+  namespace: ` + projectName + `-system
+`
+}
+
+func createKustomizeWithCustomManagerServiceAccount(projectName string) string {
+	const customSA = "custom-operator-sa"
+	managerSA := projectName + "-controller-manager"
+	base := createKustomizeForServiceAccountRender(projectName)
+	base = strings.Replace(base,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+managerSA,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+customSA,
+		1)
+	base = strings.Replace(base, "serviceAccountName: "+managerSA, "serviceAccountName: "+customSA, 1)
+	base = strings.ReplaceAll(base,
+		"- kind: ServiceAccount\n  name: "+managerSA,
+		"- kind: ServiceAccount\n  name: "+customSA)
+	return base
+}
+
+func createKustomizeWithPrefixedCustomManagerServiceAccount(projectName string) string {
+	customSA := projectName + "-operator-sa"
+	managerSA := projectName + "-controller-manager"
+	base := createKustomizeForServiceAccountRender(projectName)
+	base = strings.Replace(base,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+managerSA,
+		"kind: ServiceAccount\nmetadata:\n  labels:\n    app.kubernetes.io/managed-by: kustomize\n    app.kubernetes.io/name: "+
+			projectName+"\n  name: "+customSA,
+		1)
+	base = strings.Replace(base, "serviceAccountName: "+managerSA, "serviceAccountName: "+customSA, 1)
+	base = strings.ReplaceAll(base,
+		"- kind: ServiceAccount\n  name: "+managerSA,
+		"- kind: ServiceAccount\n  name: "+customSA)
+	return base
+}
+
 func createKustomizeWithSidecarBeforeManager(projectName string) string {
 	return `---
 apiVersion: v1
@@ -3580,6 +3929,8 @@ spec:
       containers:
       - name: sidecar
         image: sidecar:v1
+        args:
+        - --sidecar-flag
         env:
         - name: SIDECAR_MODE
           value: "active"
