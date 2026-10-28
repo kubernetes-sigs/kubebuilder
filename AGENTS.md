@@ -295,6 +295,10 @@ This is the Kubebuilder tool itself. Follow Go logging conventions for CLI tools
 - **First word lowercase**, sentences after periods capitalized: `"unable to find file. This file is required for..."`
 - **No ending punctuation** (but use periods between sentences)
 - **Error strings lowercase**: `fmt.Errorf("something bad")`
+- **Use `log "log/slog"`** for messages: `log.Info`, `log.Warn`, `log.Error`. The CLI sets the output handler in `internal/cli/cmd/cmd.go`. Do not use the standard `log` package, logrus or klog.
+- **Put details in key/value pairs**, not in the message: `log.Warn("unable to find file", "path", path)`
+- **Use `fmt.Print*` only for text without a level**: "Next:" hints, command results such as `kubebuilder version`, prompts, and subprocess output. Never for warnings or errors.
+- **Libraries do not log**: `pkg/model/*`, `pkg/config/*` and the `pkg/plugin` interfaces return errors and let the CLI report them.
 
 ```go
 log.Info("writing scaffold for you to edit")
