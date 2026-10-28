@@ -23,6 +23,51 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var _ = Describe("TemplateServiceAccountNameInDeployment", func() {
+	const helper = `{{ include "test-project.serviceAccountName" . }}`
+	deployment := func(selectorLabel, podLabel, serviceAccountName string) string {
+		return `apiVersion: apps/v1
+kind: Deployment
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+` + selectorLabel + `  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+` + podLabel + `    spec:
+      {{- if .Values.manager.enabled }}
+      serviceAccountName: ` + serviceAccountName + `
+      containers:
+      - name: manager
+        serviceAccountName: controller-manager
+`
+	}
+
+	DescribeTable("templates the pod serviceAccountName only when it names the manager",
+		func(input, expected string) {
+			Expect(TemplateServiceAccountNameInDeployment("test-project", "test-project", input)).To(Equal(expected))
+		},
+		Entry("the plain manager name",
+			deployment("", "", "controller-manager"), deployment("", "", helper)),
+		Entry("the prefixed manager name",
+			deployment("", "", "test-project-controller-manager"), deployment("", "", helper)),
+		Entry("the templated manager name",
+			deployment("", "", ResourceNameTemplate("test-project", "controller-manager")), deployment("", "", helper)),
+		Entry("another ServiceAccount",
+			deployment("", "", "custom-sa"), deployment("", "", "custom-sa")),
+		Entry("a label and a selector with the same key",
+			deployment("      serviceAccountName: controller-manager\n", "        serviceAccountName: controller-manager\n",
+				"controller-manager"),
+			deployment("      serviceAccountName: controller-manager\n", "        serviceAccountName: controller-manager\n",
+				helper)),
+		Entry("no pod serviceAccountName",
+			"apiVersion: apps/v1\nkind: Deployment\nspec:\n  template:\n    spec:\n      containers: []\n",
+			"apiVersion: apps/v1\nkind: Deployment\nspec:\n  template:\n    spec:\n      containers: []\n"),
+	)
+})
+
 var _ = Describe("TemplateServiceAccountNameInBindings", func() {
 	const managerSubject = `- kind: ServiceAccount
   name: controller-manager
