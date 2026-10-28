@@ -21,6 +21,7 @@ package scaffolds
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -234,6 +235,25 @@ var _ = Describe("Server-Side Apply (--ssa) Scaffolding", func() {
 		Entry("when --ssa is omitted", false),
 	)
 
+	It("should fail 'create api --ssa' when the generate target fails after scaffolding", func() {
+		By("making the project's generate target fail")
+		makefilePath := filepath.Join(kbc.Dir, "Makefile")
+		makefile, err := os.ReadFile(makefilePath)
+		Expect(err).NotTo(HaveOccurred())
+		failing := regexp.MustCompile(`(?m)^(generate: .*\n)`).ReplaceAllString(string(makefile), "${1}\t@exit 1\n")
+		Expect(failing).NotTo(Equal(string(makefile)), "the scaffolded Makefile must have a generate target")
+		Expect(os.WriteFile(makefilePath, []byte(failing), 0o644)).To(Succeed())
+
+		By("creating an API with Server-Side Apply enabled, which runs the generate target")
+		Expect(kbc.CreateAPI(
+			"--group", "crew",
+			"--version", "v1",
+			"--kind", "Captain",
+			"--resource", "--controller",
+			"--ssa",
+		)).NotTo(Succeed(), "a failed generation step must fail 'create api', not end in a warning")
+	})
+
 	It("should complete 'create api --ssa' when groupversion_info.go was customized", func() {
 		By("creating a first SSA API to scaffold the group/version package")
 		Expect(kbc.CreateAPI(
@@ -297,5 +317,56 @@ var (
 		Expect(err).NotTo(HaveOccurred())
 		_, err = os.Stat(filepath.Join(kbc.Dir, "internal", "controller", "firstmate_controller.go"))
 		Expect(err).NotTo(HaveOccurred())
+	})
+})
+
+var _ = Describe("Server-Side Apply (--ssa) Scaffolding in a project without a license header", func() {
+	var kbc *utils.TestContext
+
+	BeforeEach(func() {
+		var err error
+		kbc, err = utils.NewTestContext(pluginutil.KubebuilderBinName, "GO111MODULE=on")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(kbc.Prepare()).To(Succeed())
+
+		By("initializing a project with --license none, so it has no boilerplate file")
+		Expect(kbc.Init(
+			"--domain", "test.io",
+			"--repo", "test.io/ssatest",
+			"--license", "none",
+		)).To(Succeed())
+		_, err = os.Stat(filepath.Join(kbc.Dir, "hack", "boilerplate.go.txt"))
+		Expect(os.IsNotExist(err)).To(BeTrue(), "the project must have no boilerplate file")
+	})
+
+	AfterEach(func() {
+		By("removing working directory")
+		kbc.Destroy()
+	})
+
+	It("should generate the applyconfiguration code with 'make manifests'", func() {
+		By("creating an API with Server-Side Apply enabled")
+		Expect(kbc.CreateAPI(
+			"--group", "crew",
+			"--version", "v1",
+			"--kind", "Captain",
+			"--resource", "--controller",
+			"--ssa",
+			"--make=false",
+		)).To(Succeed())
+
+		By("verifying the applyconfiguration generator was wired without a header file")
+		makefile, err := os.ReadFile(filepath.Join(kbc.Dir, "Makefile"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(makefile)).To(ContainSubstring(`crd webhook applyconfiguration paths="./..."`))
+		Expect(string(makefile)).NotTo(ContainSubstring("headerFile"))
+
+		By("running 'make manifests'")
+		Expect(kbc.Make("manifests")).To(Succeed())
+
+		By("verifying applyconfiguration code was generated for the SSA resource")
+		acFile := filepath.Join(kbc.Dir, "api", "v1", "applyconfiguration", "api", "v1", "captain.go")
+		_, err = os.Stat(acFile)
+		Expect(err).NotTo(HaveOccurred(), "applyconfiguration should be generated for the SSA resource")
 	})
 })

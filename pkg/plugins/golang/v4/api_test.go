@@ -59,6 +59,7 @@ var _ = Describe("createAPISubcommand", func() {
 		subCmd.options = &goPlugin.Options{}
 		subCmd.resourceFlag = &pflag.Flag{Changed: true}
 		subCmd.controllerFlag = &pflag.Flag{Changed: true}
+		subCmd.ssaFlag = &pflag.Flag{}
 
 		res = &resource.Resource{
 			GVK: resource.GVK{
@@ -135,8 +136,66 @@ var _ = Describe("createAPISubcommand", func() {
 		},
 		Entry("when the flag is not provided for an API scaffolded with SSA", true, false, true),
 		Entry("when the flag is provided for an API scaffolded with SSA", true, true, true),
-		Entry("when the flag is provided for an API scaffolded without SSA", false, true, true),
 		Entry("when the flag is not provided for an API scaffolded without SSA", false, false, false),
+	)
+
+	It("should reject --ssa on a forced re-run of an API scaffolded without SSA", func() {
+		existing := *res
+		existing.API = &resource.API{CRDVersion: "v1", Namespaced: true}
+		Expect(cfg.AddResource(existing)).To(Succeed())
+
+		subCmd.force = true
+		subCmd.options.DoAPI = true
+		subCmd.options.Namespaced = true
+		subCmd.options.SSA = true
+		subCmd.ssaFlag.Changed = true
+
+		err := subCmd.InjectResource(res)
+		Expect(err).To(MatchError(ContainSubstring("unable to add '--ssa' to the existing API")))
+		saved, getErr := cfg.GetResource(res.GVK)
+		Expect(getErr).NotTo(HaveOccurred())
+		Expect(saved.API.SSA).To(BeFalse())
+	})
+
+	DescribeTable("should reject --ssa=false",
+		func(stored *resource.API) {
+			if stored != nil {
+				existing := *res
+				existing.API = stored
+				Expect(cfg.AddResource(existing)).To(Succeed())
+			}
+
+			subCmd.force = true
+			subCmd.options.DoAPI = true
+			subCmd.options.Namespaced = true
+			subCmd.options.SSA = false
+			subCmd.ssaFlag.Changed = true
+
+			err := subCmd.InjectResource(res)
+			Expect(err).To(MatchError(ContainSubstring("'--ssa=false' is not supported")))
+			if stored != nil {
+				saved, getErr := cfg.GetResource(res.GVK)
+				Expect(getErr).NotTo(HaveOccurred())
+				Expect(saved.API.SSA).To(Equal(stored.SSA))
+			}
+		},
+		Entry("for a new API", nil),
+		Entry("for an API scaffolded with SSA", &resource.API{CRDVersion: "v1", Namespaced: true, SSA: true}),
+		Entry("for an API scaffolded without SSA", &resource.API{CRDVersion: "v1", Namespaced: true}),
+	)
+
+	DescribeTable("should accept --ssa or no flag",
+		func(flagChanged, flagSSA bool) {
+			subCmd.options.DoAPI = true
+			subCmd.options.Namespaced = true
+			subCmd.options.SSA = flagSSA
+			subCmd.ssaFlag.Changed = flagChanged
+
+			Expect(subCmd.InjectResource(res)).To(Succeed())
+			Expect(res.API.SSA).To(Equal(flagSSA))
+		},
+		Entry("when the flag is not provided", false, false),
+		Entry("when --ssa is provided", true, true),
 	)
 
 	It("should not enable SSA for a new API when another one has it enabled", func() {

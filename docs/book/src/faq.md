@@ -138,7 +138,7 @@ Don't confuse the `kubectl apply --server-side` command mentioned above with the
 
 - **`kubectl apply --server-side`** (discussed above): A kubectl flag that changes how CRDs are installed to avoid the annotation size limit. This is about CRD installation only.
 
-- **`--ssa` flag**: A Kubebuilder flag (e.g., `kubebuilder create api --ssa`) that scaffolds controllers with runtime behavior for managing resource fields using Server-Side Apply patterns. This is about controller runtime behavior, specifically for scenarios where your controller shares field ownership with users or other controllers. It does NOT change how `make install` applies CRDs.
+- **`--ssa` flag**: A Kubebuilder flag (e.g., `kubebuilder create api --ssa`) that scaffolds the markers and Makefile changes so `controller-gen` generates Server-Side Apply types for your kinds. Use them in your controller when it shares field ownership with users or other controllers. You write the Apply call yourself; see the [Server-Side Apply](./reference/server-side-apply.md) reference. It does NOT change how `make install` applies CRDs.
 
 See the [Kubernetes Server-Side Apply documentation][k8s-ssa-docs] to learn more about the Server-Side Apply concept in general.
 

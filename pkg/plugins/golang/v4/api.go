@@ -49,6 +49,7 @@ type createAPISubcommand struct {
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
 	controllerFlag *pflag.Flag
+	ssaFlag        *pflag.Flag
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
@@ -101,8 +102,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.options.SSA, "ssa", false,
 		"(ALPHA) If set, scaffold this API with Server-Side Apply support "+
-			"(adds +genclient and applyconfiguration generation). "+
+			"(adds the +genclient and +kubebuilder:ac:generate markers and updates the Makefile manifests target). "+
 			"Alpha feature: may change in future releases")
+	p.ssaFlag = fs.Lookup("ssa")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"Prompt whether to generate the controller by default; "+
@@ -134,6 +136,12 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
+	// Server-Side Apply can only be turned on, so reject an explicit --ssa=false.
+	if p.ssaFlag != nil && p.ssaFlag.Changed && !p.options.SSA {
+		return errors.New("'--ssa=false' is not supported: Server-Side Apply can only be turned on. " +
+			"Omit '--ssa' to scaffold without it")
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		log.Info("Create Resource [y/n]")
@@ -162,10 +170,16 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 			p.resource.Core = existingRes.Core
 			p.resource.Module = existingRes.Module
 		}
-	} else if existingRes, err := p.config.GetResource(res.GVK); err == nil &&
-		existingRes.API != nil && existingRes.API.SSA {
-		// SSA cannot be disabled, so keep the value tracked in the PROJECT file.
-		p.options.SSA = true
+	} else if existingRes, err := p.config.GetResource(res.GVK); err == nil {
+		if existingRes.API != nil && existingRes.API.SSA {
+			// SSA cannot be disabled, so keep the value tracked in the PROJECT file.
+			p.options.SSA = true
+		} else if p.force && p.options.SSA && existingRes.HasAPI() {
+			// SSA is chosen when the API is first created, so a forced re-run cannot add it.
+			return fmt.Errorf("unable to add '--ssa' to the existing API %s/%s, Kind=%s: "+
+				"Server-Side Apply can only be enabled when the API is first created",
+				res.Group, res.Version, res.Kind)
+		}
 	}
 
 	// Ensure that external API options cannot be used when creating an API in the project.
