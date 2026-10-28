@@ -17,11 +17,14 @@ limitations under the License.
 package cli
 
 import (
+	"io"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 )
@@ -275,3 +278,188 @@ func (p *mockDescribablePlugin) Name() string                               { re
 func (p *mockDescribablePlugin) Version() plugin.Version                    { return p.version }
 func (p *mockDescribablePlugin) SupportedProjectVersions() []config.Version { return p.projVers }
 func (p *mockDescribablePlugin) Description() string                        { return p.desc }
+
+// The steps an aliased command records when they run.
+const (
+	stepArgs = "args"
+	stepHook = "hook"
+	stepBody = "body"
+)
+
+// aliasedCommand records which of its steps ran: the argument check, the persistent hook and the
+// body.
+type aliasedCommand struct {
+	cmd *cobra.Command
+	ran []string
+}
+
+func newAliasedCommand(use, alias string) *aliasedCommand {
+	a := &aliasedCommand{}
+	a.cmd = &cobra.Command{
+		Use:     use,
+		Aliases: []string{alias},
+		Args: func(*cobra.Command, []string) error {
+			a.ran = append(a.ran, stepArgs)
+
+			return nil
+		},
+		PersistentPreRunE: func(*cobra.Command, []string) error {
+			a.ran = append(a.ran, stepHook)
+
+			return nil
+		},
+		RunE: func(*cobra.Command, []string) error {
+			a.ran = append(a.ran, stepBody)
+
+			return nil
+		},
+	}
+
+	return a
+}
+
+// addChild gives the command a subcommand with its own record of its argument check and body. It sets
+// no persistent hook, so the parent's runs for it.
+func (a *aliasedCommand) addChild(use string) *aliasedCommand {
+	child := &aliasedCommand{}
+	child.cmd = &cobra.Command{
+		Use: use,
+		Args: func(*cobra.Command, []string) error {
+			child.ran = append(child.ran, stepArgs)
+
+			return nil
+		},
+		RunE: func(*cobra.Command, []string) error {
+			child.ran = append(child.ran, stepBody)
+
+			return nil
+		},
+	}
+	a.cmd.AddCommand(child.cmd)
+
+	return child
+}
+
+// aliasShapes are the two tool commands the specs use: a command named version that also answers
+// to docs, and a command named docs that also answers to version.
+var aliasShapes = [][2]string{
+	{kubebuilderSubcommandVersion, docsSubcommand},
+	{docsSubcommand, kubebuilderSubcommandVersion},
+}
+
+// newToolCLI builds a CLI the way a tool does when it brings its own top-level command and no
+// version command of the CLI's, while the program was invoked with programArgs.
+func newToolCLI(filesystem machinery.Filesystem, programArgs []string, extra *cobra.Command) *CLI {
+	GinkgoHelper()
+
+	setProgramArgs(programArgs...)
+	projectVersion := config.Version{Number: 3}
+	c, err := New(
+		WithPlugins(&golangv4.Plugin{}),
+		WithDefaultPlugins(projectVersion, &golangv4.Plugin{}),
+		WithDefaultProjectVersion(projectVersion),
+		WithFilesystem(filesystem),
+		WithExtraCommands(extra),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	c.cmd.SetOut(io.Discard)
+	c.cmd.SetErr(io.Discard)
+
+	return c
+}
+
+// A tool can give its own top-level command an alias. The command cobra resolves decides whether
+// it runs without the PROJECT file, whichever of its names the user typed: a tool's version runs
+// under its alias too, and a tool's docs that also answers to version is still docs.
+var _ = Describe("a command a tool adds with an alias", func() {
+	type run func(filesystem machinery.Filesystem, extra *cobra.Command, typed ...string) error
+
+	// throughRun is a tool that runs the CLI with the words it was started with.
+	throughRun := func(filesystem machinery.Filesystem, extra *cobra.Command, typed ...string) error {
+		return newToolCLI(filesystem, typed, extra).Run()
+	}
+	// throughExecute is a tool that was started with other words and tells cobra what to run.
+	throughExecute := func(filesystem machinery.Filesystem, extra *cobra.Command, typed ...string) error {
+		c := newToolCLI(filesystem, []string{createSubcommand, apiSubcommand}, extra)
+		c.cmd.SetArgs(typed)
+
+		return c.cmd.Execute()
+	}
+
+	DescribeTable("runs a tool's version on an unusable PROJECT whichever name the user types",
+		func(execute run, filesystem func() machinery.Filesystem) {
+			for _, typed := range []string{kubebuilderSubcommandVersion, docsSubcommand} {
+				extra := newAliasedCommand(kubebuilderSubcommandVersion, docsSubcommand)
+				Expect(execute(filesystem(), extra.cmd, typed)).To(Succeed(), "version typed as %q", typed)
+				Expect(extra.ran).To(Equal([]string{stepArgs, stepHook, stepBody}), "version typed as %q", typed)
+			}
+		},
+		Entry("through Run, with a directory at the path", throughRun, filesystemWithProjectDirectory),
+		Entry("through Run, with content that cannot be parsed", throughRun, filesystemWithInvalidProject),
+		Entry("through Execute, with a directory at the path", throughExecute, filesystemWithProjectDirectory),
+		Entry("through Execute, with content that cannot be parsed", throughExecute, filesystemWithInvalidProject),
+	)
+
+	DescribeTable("runs a command under a tool's version on an unusable PROJECT whichever name the user types",
+		func(execute run, filesystem func() machinery.Filesystem) {
+			for _, typed := range []string{kubebuilderSubcommandVersion, docsSubcommand} {
+				extra := newAliasedCommand(kubebuilderSubcommandVersion, docsSubcommand)
+				details := extra.addChild("details")
+				Expect(execute(filesystem(), extra.cmd, typed, "details")).To(Succeed(),
+					"version details typed as %q details", typed)
+				Expect(details.ran).To(Equal([]string{stepArgs, stepBody}), "version details typed as %q details", typed)
+				Expect(extra.ran).To(Equal([]string{stepHook}), "only the persistent hook of version runs for details")
+			}
+		},
+		Entry("through Run, with a directory at the path", throughRun, filesystemWithProjectDirectory),
+		Entry("through Run, with content that cannot be parsed", throughRun, filesystemWithInvalidProject),
+		Entry("through Execute, with a directory at the path", throughExecute, filesystemWithProjectDirectory),
+		Entry("through Execute, with content that cannot be parsed", throughExecute, filesystemWithInvalidProject),
+	)
+
+	DescribeTable("refuses a tool's docs on an unusable PROJECT whichever name the user types",
+		func(execute run, filesystem func() machinery.Filesystem) {
+			for _, typed := range []string{docsSubcommand, kubebuilderSubcommandVersion} {
+				extra := newAliasedCommand(docsSubcommand, kubebuilderSubcommandVersion)
+				Expect(execute(filesystem(), extra.cmd, typed)).NotTo(Succeed(), "docs typed as %q", typed)
+				Expect(extra.ran).To(BeEmpty(), "docs typed as %q must not run", typed)
+			}
+		},
+		Entry("through Run, with a directory at the path", throughRun, filesystemWithProjectDirectory),
+		Entry("through Run, with content that cannot be parsed", throughRun, filesystemWithInvalidProject),
+		Entry("through Execute, with a directory at the path", throughExecute, filesystemWithProjectDirectory),
+		Entry("through Execute, with content that cannot be parsed", throughExecute, filesystemWithInvalidProject),
+	)
+
+	// The program is started with the alias, so the CLI decides from the first word whether to read
+	// PROJECT before it builds the command tree. The word names the tool's docs, which needs the
+	// configuration, so the tree is built for the plugins the layout names.
+	It("runs a tool's docs typed as its alias version on a usable PROJECT whose layout names other plugins", func() {
+		projectPlugin := newTestCreateAPIPlugin(projectChainPluginName, plugin.Version{Number: 1})
+		typed := []string{kubebuilderSubcommandVersion}
+
+		throughRun := newAliasedCommand(docsSubcommand, kubebuilderSubcommandVersion)
+		Expect(buildCLI(filesystemWithProjectChainProject(), typed,
+			WithExtraCommands(throughRun.cmd), WithPlugins(projectPlugin)).Run()).To(Succeed())
+		Expect(throughRun.ran).To(Equal([]string{stepArgs, stepHook, stepBody}))
+
+		throughExecute := newAliasedCommand(docsSubcommand, kubebuilderSubcommandVersion)
+		Expect(executeEmbeddedCLI(filesystemWithProjectChainProject(), typed, typed,
+			WithExtraCommands(throughExecute.cmd), WithPlugins(projectPlugin))).To(Succeed())
+		Expect(throughExecute.ran).To(Equal([]string{stepArgs, stepHook, stepBody}))
+	})
+
+	DescribeTable("runs with no PROJECT file whatever the user types",
+		func(execute run) {
+			for _, typed := range []string{kubebuilderSubcommandVersion, docsSubcommand} {
+				for _, shape := range aliasShapes {
+					extra := newAliasedCommand(shape[0], shape[1])
+					Expect(execute(filesystemWithoutProject(), extra.cmd, typed)).To(Succeed())
+					Expect(extra.ran).To(Equal([]string{stepArgs, stepHook, stepBody}))
+				}
+			}
+		},
+		Entry("through Run", throughRun),
+		Entry("through Execute", throughExecute),
+	)
+})
