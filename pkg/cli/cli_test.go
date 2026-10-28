@@ -545,6 +545,17 @@ type captureSubcommand struct {
 
 func (c *captureSubcommand) Scaffold(machinery.Filesystem) error { return nil }
 
+type configCaptureSubcommand struct {
+	injected bool
+}
+
+func (c *configCaptureSubcommand) Scaffold(machinery.Filesystem) error { return nil }
+
+func (c *configCaptureSubcommand) InjectConfig(config.Config) error {
+	c.injected = true
+	return nil
+}
+
 var _ = Describe("CLI", func() {
 	const (
 		pluginGoV1           = "go/v1"
@@ -642,6 +653,42 @@ var _ = Describe("CLI", func() {
 				deployImageFooPlugin,
 				deployImageBarPlugin,
 			}))
+		})
+
+		It("refuses a configuration that cannot be saved before any plugin runs", func() {
+			// An older release recorded both names, which generate the same MyKindReconciler.
+			const collidingControllersProject = `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: crew
+repo: example.com/crew
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controllers:
+  - name: mykind
+  - name: my-kind
+  domain: example.com
+  group: crew
+  kind: MyKind
+  path: example.com/crew/api/v1
+  version: v1
+version: "3"
+`
+			fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+			Expect(afero.WriteFile(fs.FS, "PROJECT", []byte(collidingControllersProject), 0o644)).To(Succeed())
+			sub := &configCaptureSubcommand{}
+			factory := executionHooksFactory{
+				store:        yamlstore.New(fs),
+				subcommands:  []keySubcommandTuple{{subcommand: sub}},
+				errorMessage: "test",
+			}
+
+			err := factory.preRunEFunc(&resourceOptions{}, false)(&cobra.Command{}, nil)
+
+			Expect(err).To(MatchError(ContainSubstring("cannot be saved")))
+			Expect(sub.injected).To(BeFalse())
 		})
 	})
 

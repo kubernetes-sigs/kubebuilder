@@ -250,7 +250,7 @@ func (p *createAPISubcommand) validateController() error {
 		return nil
 	}
 
-	if err := p.validateControllerAcrossResources(); err != nil {
+	if err := p.validateControllerName(); err != nil {
 		return err
 	}
 
@@ -305,12 +305,12 @@ func (p *createAPISubcommand) validateController() error {
 	return nil
 }
 
-// validateControllerAcrossResources rejects duplicate reconciler names and filenames
-// in the same controller package, including default controller names.
-func (p *createAPISubcommand) validateControllerAcrossResources() error {
+// validateControllerName rejects a controller whose reconciler name or generated filename
+// collides with a controller of another resource in the same package, including default names.
+func (p *createAPISubcommand) validateControllerName() error {
 	resources, err := p.config.GetResources()
 	if err != nil {
-		return nil
+		return fmt.Errorf("failed to get resources to check controller names: %w", err)
 	}
 
 	newName := p.options.ControllerName

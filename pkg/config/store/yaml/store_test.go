@@ -283,6 +283,11 @@ resources:
   kind: MyKind
   version: v1
 `
+		// collidingControllersProject records the legacy controller and a name that generates the same
+		// MyKindReconciler, which an older release accepted; such a file cannot be migrated.
+		const collidingControllersProject = legacyProject + `  controllers:
+  - name: my-kind
+`
 		It("should load, save, and reload an unnamed legacy controller", func() {
 			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(legacyProject), 0o644)).To(Succeed())
 			Expect(s.Load()).To(Succeed())
@@ -295,26 +300,99 @@ resources:
 			unchanged, err := s.Config().GetResource(gvk)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(unchanged).To(Equal(legacy))
-			content, err := afero.ReadFile(s.fs, DefaultPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(ContainSubstring("controllers:\n  - name: mykind"))
-			Expect(string(content)).NotTo(ContainSubstring("controller: true"))
 			Expect(s.Load()).To(Succeed())
 			migrated, err := s.Config().GetResource(gvk)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(migrated.Validate()).To(Succeed())
+			Expect(migrated.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 			Expect(migrated.GetControllerNames()).To(Equal(legacy.GetControllerNames()))
 		})
 
 		It("should preserve the PROJECT file when migration fails", func() {
-			body := legacyProject + "  controllers:\n  - name: my-kind\n"
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(body), 0o644)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(collidingControllersProject), 0o644)).To(Succeed())
 			Expect(s.Load()).To(Succeed())
 			Expect(s.Save()).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
 			content, err := afero.ReadFile(s.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(Equal(body))
+			Expect(string(content)).To(Equal(collidingControllersProject))
 		})
+
+		It("should not write a new path when migration fails", func() {
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(collidingControllersProject), 0o644)).To(Succeed())
+			Expect(s.Load()).To(Succeed())
+
+			Expect(s.SaveTo(path)).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+			exists, err := afero.Exists(s.fs, path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+			content, err := afero.ReadFile(s.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(collidingControllersProject))
+		})
+
+		DescribeTable("should save every legacy controller of a project as a named controller",
+			func(body string, expected map[resource.GVK][]string) {
+				Expect(afero.WriteFile(s.fs, DefaultPath, []byte(body), 0o644)).To(Succeed())
+				Expect(s.Load()).To(Succeed())
+				for gvk, names := range expected {
+					legacy, err := s.Config().GetResource(gvk)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(legacy.GetControllerNames()).To(Equal(names))
+				}
+
+				Expect(s.Save()).To(Succeed())
+
+				Expect(s.Load()).To(Succeed())
+				for gvk, names := range expected {
+					migrated, err := s.Config().GetResource(gvk)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(migrated.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
+					Expect(migrated.GetControllerNames()).To(Equal(names))
+				}
+			},
+			Entry("for a built-in type", `domain: my.domain
+layout:
+- go.kubebuilder.io/v4
+repo: example.com/my-project
+resources:
+- controller: true
+  core: true
+  group: apps
+  kind: Deployment
+  path: k8s.io/api/apps/v1
+  version: v1
+version: "3"
+`, map[resource.GVK][]string{{Group: "apps", Version: "v1", Kind: "Deployment"}: {"deployment"}}),
+			Entry("for a multigroup project", `domain: my.domain
+layout:
+- go.kubebuilder.io/v4
+multigroup: true
+repo: example.com/my-project
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: my.domain
+  group: crew
+  kind: Captain
+  path: example.com/my-project/api/crew/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: my.domain
+  group: ship
+  kind: Frigate
+  path: example.com/my-project/api/ship/v1
+  version: v1
+version: "3"
+`, map[resource.GVK][]string{
+				{Group: "crew", Domain: "my.domain", Version: "v1", Kind: "Captain"}: {"captain"},
+				{Group: "ship", Domain: "my.domain", Version: "v1", Kind: "Frigate"}: {"frigate"},
+			}),
+		)
 	})
 
 	Context("Save", func() {

@@ -387,6 +387,17 @@ var _ = Describe("Resource", func() {
 			Expect(res.Webhooks.Validation).To(BeTrue())
 			Expect(res.Webhooks.Conversion).To(BeTrue())
 		})
+
+		It("should not share the controller list with the copy", func() {
+			res.Controllers = &Controllers{{Name: "captain"}, {Name: "captain-backup"}}
+
+			other := res.Copy()
+			(*other.Controllers)[0].Name = "changed"
+			Expect(other.Controllers.AddController("captain-nightly")).To(Succeed())
+			other.Controllers = nil
+
+			Expect(res.Controllers).To(Equal(&Controllers{{Name: "captain"}, {Name: "captain-backup"}}))
+		})
 	})
 
 	Context("Update", func() {
@@ -513,6 +524,22 @@ var _ = Describe("Resource", func() {
 				other = Resource{GVK: gvk}
 				Expect(r.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeFalse())
+			})
+
+			It("should leave the resource unchanged if the merged controllers are invalid", func() {
+				r = Resource{
+					GVK:         gvk,
+					Controllers: &Controllers{{Name: "kind-backup"}},
+				}
+				original := r.Copy()
+				other = Resource{
+					GVK:         gvk,
+					Path:        "api/v1",
+					API:         &API{CRDVersion: v1, Namespaced: true},
+					Controllers: &Controllers{{Name: "kind--backup"}},
+				}
+				Expect(r.Update(other)).NotTo(Succeed())
+				Expect(r).To(Equal(original))
 			})
 		})
 

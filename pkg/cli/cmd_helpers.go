@@ -475,6 +475,12 @@ func (factory *executionHooksFactory) preRunEFunc(
 			} else if err != nil {
 				return fmt.Errorf("%s: failed to load configuration file: %w", factory.errorMessage, err)
 			}
+
+			// The command saves the configuration after scaffolding, and a save migrates every resource.
+			// Refuse a configuration that cannot be saved before any plugin writes a file.
+			if _, err := factory.store.Config().MarshalYAML(); err != nil {
+				return fmt.Errorf("%s: the configuration file cannot be saved: %w", factory.errorMessage, err)
+			}
 		}
 		cfg := factory.store.Config()
 

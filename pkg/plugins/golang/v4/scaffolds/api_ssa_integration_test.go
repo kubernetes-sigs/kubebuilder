@@ -25,7 +25,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
@@ -142,12 +146,15 @@ var _ = Describe("Server-Side Apply (--ssa) Scaffolding", func() {
 		Expect(string(typesContent)).To(ContainSubstring("+genclient"))
 
 		By("verifying the PROJECT file tracks both ssa and the controller for the resource")
-		projectContent, err := os.ReadFile(filepath.Join(kbc.Dir, "PROJECT"))
+		store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+		Expect(store.LoadFrom(filepath.Join(kbc.Dir, yaml.DefaultPath))).To(Succeed())
+		admiral, err := store.Config().GetResource(resource.GVK{
+			Group: "crew", Domain: "test.io", Version: "v1", Kind: "Admiral",
+		})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(string(projectContent)).To(ContainSubstring("ssa: true"),
-			"adding the controller must not drop the ssa flag from the PROJECT file")
-		Expect(string(projectContent)).To(ContainSubstring("- name: admiral"))
-		Expect(string(projectContent)).NotTo(ContainSubstring("controller: true"))
+		Expect(admiral.API.SSA).To(BeTrue(), "adding the controller must not drop the ssa flag from the PROJECT file")
+		Expect(admiral.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
+		Expect(admiral.GetControllerNames()).To(Equal([]string{"admiral"}))
 	})
 
 	It("should keep the SSA scaffold when the API is recreated with --force and without --ssa", func() {

@@ -365,19 +365,51 @@ func (c *Cfg) EncodePluginConfig(key string, configObj any) error {
 	return nil
 }
 
+// configMigrations lists the steps migrate runs, in order. Each step replaces one deprecated
+// top-level field. To deprecate a field, add its step here. A step must copy any map or slice
+// it changes, so MarshalYAML leaves the caller's config unchanged.
+var configMigrations = []func(*Cfg) error{
+	(*Cfg).migrateResources,
+}
+
+// migrate runs configMigrations on c.
+func (c *Cfg) migrate() error {
+	for _, migrate := range configMigrations {
+		if err := migrate(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// migrateResources replaces the deprecated fields of each resource.
+func (c *Cfg) migrateResources() error {
+	for i := range c.Resources {
+		if err := c.Resources[i].Migrate(); err != nil {
+			return fmt.Errorf("failed to migrate resources: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // MarshalYAML implements config.Config
 func (c Cfg) MarshalYAML() ([]byte, error) {
 	// Copy resources so serialization leaves the caller's config unchanged.
 	resources := c.Resources
 	c.Resources = make([]resource.Resource, len(resources))
 	for i, original := range resources {
-		r := original.Copy()
-		// Migrate every resource when saving the PROJECT file.
-		if err := r.Migrate(); err != nil {
-			return nil, config.MarshalError{Err: err}
-		}
+		c.Resources[i] = original.Copy()
+	}
+	// Migrate deprecated fields when saving the PROJECT file.
+	if err := c.migrate(); err != nil {
+		return nil, config.MarshalError{Err: err}
+	}
 
-		// Check the migrated copy: migration may have filled an empty Controllers list.
+	for i := range c.Resources {
+		r := &c.Resources[i]
+		// Omit empty fields after migration, since a step may fill them.
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
 			r.API = nil
@@ -390,7 +422,6 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 		if r.Controllers != nil && r.Controllers.IsEmpty() {
 			r.Controllers = nil
 		}
-		c.Resources[i] = r
 	}
 
 	content, err := yaml.Marshal(c)

@@ -17,7 +17,10 @@ limitations under the License.
 package v3
 
 import (
+	"errors"
+	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -659,26 +662,155 @@ version: "3"
 		)
 
 		Context("controller migration", func() {
-			const captainKind = "Captain"
+			const (
+				captainKind   = "Captain"
+				captainCtrl   = "captain"
+				captainBackup = "captain-backup"
+				sailorKind    = "Sailor"
+				sailorCtrl    = "sailor"
+				crewGroup     = "crew"
+			)
+
+			// PROJECT files are written as text so that the forms older releases wrote stay covered.
+			const (
+				projectHeader = `domain: my.domain
+layout:
+- go.kubebuilder.io/v4
+projectName: my-project
+repo: myrepo
+resources:
+`
+				projectFooter = `version: "3"
+`
+				legacyCaptain = `- controller: true
+  group: crew
+  kind: Captain
+  version: v1
+`
+				legacyCaptainV2 = `- controller: true
+  group: crew
+  kind: Captain
+  version: v2
+`
+				legacySailor = `- controller: true
+  group: crew
+  kind: Sailor
+  version: v1
+`
+				namedAdmiral = `- controllers:
+  - name: admiral
+  group: crew
+  kind: Admiral
+  version: v1
+`
+				namedCaptainBackup = `- controllers:
+  - name: captain-backup
+  group: crew
+  kind: Captain
+  version: v1
+`
+				sharedCaptain = `- controllers:
+  - name: shared
+  group: crew
+  kind: Captain
+  version: v1
+`
+				sharedFirstMate = `- controllers:
+  - name: shared
+  group: crew
+  kind: FirstMate
+  version: v1
+`
+				captainWithoutController = `- group: crew
+  kind: Captain
+  version: v1
+`
+				// bothFormsTemplate is a resource whose controller a hand-edited or older PROJECT file
+				// records in both forms. The placeholders hold the listed name and the kind.
+				bothFormsTemplate = `- controller: true
+  controllers:
+  - name: %s
+  group: crew
+  kind: %s
+  version: v1
+`
+			)
+
+			// projectWith returns a PROJECT file holding the given resources.
+			projectWith := func(resources ...string) string {
+				return projectHeader + strings.Join(resources, "") + projectFooter
+			}
+
+			// load returns the configuration a PROJECT file holds.
+			load := func(body string) Cfg {
+				GinkgoHelper()
+				var cfg Cfg
+				Expect(cfg.UnmarshalYAML([]byte(body))).To(Succeed())
+				return cfg
+			}
+
+			// save writes cfg as the PROJECT file and returns the file and the configuration the
+			// next command reads from it.
+			save := func(cfg Cfg) ([]byte, Cfg) {
+				GinkgoHelper()
+				content, err := cfg.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+				var reloaded Cfg
+				Expect(reloaded.UnmarshalYAML(content)).To(Succeed())
+				return content, reloaded
+			}
+
+			// controllersOf returns the controller names a saved configuration records for a resource,
+			// checking that the legacy field was not written.
+			controllersOf := func(cfg Cfg, gvk resource.GVK) []string {
+				GinkgoHelper()
+				res, err := cfg.GetResource(gvk)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Controller).To(BeFalse(), //nolint:staticcheck // legacy field
+					"the legacy field must not be written")
+				return res.GetControllerNames()
+			}
+
+			var captainV1 resource.GVK
+
+			BeforeEach(func() {
+				captainV1 = resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind}
+			})
+
+			It("should return a migration error and leave the caller's config unchanged", func() {
+				cfg := Cfg{Version: Version, Resources: []resource.Resource{
+					{GVK: resource.GVK{Kind: captainKind}, Controller: true},
+					{Controller: true},
+				}}
+				before := []resource.Resource{cfg.Resources[0].Copy(), cfg.Resources[1].Copy()}
+
+				_, err := cfg.MarshalYAML()
+				Expect(err).To(MatchError(ContainSubstring("kind cannot be empty")))
+				Expect(cfg.Resources).To(Equal(before))
+			})
+
 			It("should migrate and omit empty fields without mutating the caller", func() {
 				cfg := Cfg{Version: Version, Resources: []resource.Resource{
 					{
 						GVK: resource.GVK{Kind: captainKind}, Controller: true,
-						Controllers: &resource.Controllers{{Name: "captain-backup"}},
+						Controllers: &resource.Controllers{{Name: captainBackup}},
 					},
 					{
-						GVK: resource.GVK{Kind: "Sailor"}, API: &resource.API{},
+						GVK: resource.GVK{Kind: sailorKind}, API: &resource.API{},
 						Webhooks: &resource.Webhooks{}, Controllers: &resource.Controllers{},
 					},
 				}}
 				before := []resource.Resource{cfg.Resources[0].Copy(), cfg.Resources[1].Copy()}
-				first, err := cfg.MarshalYAML()
-				Expect(err).NotTo(HaveOccurred())
+
+				first, reloaded := save(cfg)
 				Expect(cfg.Resources).To(Equal(before))
-				Expect(string(first)).To(ContainSubstring("- name: captain\n"))
-				Expect(string(first)).NotTo(ContainSubstring("api: {}"))
-				Expect(string(first)).NotTo(ContainSubstring("webhooks: {}"))
-				Expect(string(first)).NotTo(ContainSubstring("controllers: []"))
+				Expect(controllersOf(reloaded, resource.GVK{Kind: captainKind})).To(Equal([]string{captainBackup, captainCtrl}))
+				sailor, err := reloaded.GetResource(resource.GVK{Kind: sailorKind})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(sailor.API).To(BeNil(), "an empty api must be omitted")
+				Expect(sailor.Webhooks).To(BeNil(), "empty webhooks must be omitted")
+				Expect(sailor.Controllers).To(BeNil(), "an empty controllers list must be omitted")
+
 				second, err := cfg.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(second).To(Equal(first))
@@ -691,10 +823,9 @@ version: "3"
 					Controller:  true,
 					Controllers: &resource.Controllers{},
 				}}}
-				content, err := cfg.MarshalYAML()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(content)).To(ContainSubstring("- name: captain\n"))
-				Expect(string(content)).NotTo(ContainSubstring("controller: true"))
+
+				_, reloaded := save(cfg)
+				Expect(controllersOf(reloaded, resource.GVK{Kind: captainKind})).To(Equal([]string{captainCtrl}))
 			})
 
 			It("should reject a migration collision without changing any resource", func() {
@@ -712,103 +843,194 @@ version: "3"
 				Expect(cfg.Resources).To(Equal(before))
 			})
 
-			// roundTrip loads a PROJECT file and saves it in the current format.
-			roundTrip := func(resources string) string {
-				body := "domain: my.domain\nlayout:\n- go.kubebuilder.io/v4\nprojectName: my-project\n" +
-					"repo: myrepo\nresources:\n" + resources + "version: \"3\"\n"
+			It("should save a file whose resources already share a controller name, as only requests are checked", func() {
+				cfg := load(projectWith(sharedCaptain, sharedFirstMate))
+				cook := resource.Resource{
+					GVK:         resource.GVK{Group: "galley", Version: "v1", Kind: "Cook"},
+					Controllers: &resource.Controllers{{Name: "cook"}},
+				}
+				Expect(cfg.UpdateResource(cook)).To(Succeed())
 
+				_, reloaded := save(cfg)
+				Expect(controllersOf(reloaded, cook.GVK)).To(Equal([]string{"cook"}))
+			})
+
+			Context("with 2 versions of a kind that both record the legacy controller", func() {
+				// Kubebuilder v4.13.0 writes this when the second version is created with --force:
+				// both versions share one captain_controller.go and one CaptainReconciler.
 				var cfg Cfg
-				Expect(cfg.UnmarshalYAML([]byte(body))).To(Succeed())
-				b, err := cfg.MarshalYAML()
-				Expect(err).NotTo(HaveOccurred())
 
-				return string(b)
+				BeforeEach(func() {
+					cfg = load(projectWith(legacyCaptain, legacyCaptainV2))
+				})
+
+				expectSharedCaptain := func(saved Cfg) {
+					GinkgoHelper()
+					for _, version := range []string{"v1", "v2"} {
+						gvk := resource.GVK{Group: crewGroup, Version: version, Kind: captainKind}
+						Expect(controllersOf(saved, gvk)).To(Equal([]string{captainCtrl}))
+					}
+				}
+
+				It("should save both versions with the shared controller", func() {
+					_, reloaded := save(cfg)
+					expectSharedCaptain(reloaded)
+				})
+
+				DescribeTable("should add or update another kind and still save",
+					func(add bool) {
+						sailor := resource.Resource{
+							GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: sailorKind},
+							Controllers: &resource.Controllers{{Name: sailorCtrl}},
+						}
+						if add {
+							Expect(cfg.AddResource(sailor)).To(Succeed())
+						} else {
+							Expect(cfg.UpdateResource(sailor)).To(Succeed())
+						}
+						Expect(cfg.Resources).To(HaveLen(3))
+
+						_, reloaded := save(cfg)
+						expectSharedCaptain(reloaded)
+						Expect(controllersOf(reloaded, sailor.GVK)).To(Equal([]string{sailorCtrl}))
+					},
+					Entry("with AddResource", true),
+					Entry("with UpdateResource", false),
+				)
+
+				It("should update a version read back from the config and still save", func() {
+					captainV2 := resource.GVK{Group: crewGroup, Version: "v2", Kind: captainKind}
+					captain, err := cfg.GetResource(captainV2)
+					Expect(err).NotTo(HaveOccurred())
+					captain.Webhooks = &resource.Webhooks{WebhookVersion: "v1", Defaulting: true}
+					Expect(cfg.UpdateResource(captain)).To(Succeed())
+
+					_, reloaded := save(cfg)
+					expectSharedCaptain(reloaded)
+					updated, err := reloaded.GetResource(captainV2)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(updated.Webhooks).To(Equal(captain.Webhooks))
+				})
+			})
+
+			It("should save the same name in different groups of a multigroup project", func() {
+				cfg := Cfg{Version: Version, MultiGroup: true, Resources: []resource.Resource{
+					{
+						GVK:         resource.GVK{Group: resourceGroup, Version: "v1", Kind: captainKind},
+						Controllers: &resource.Controllers{{Name: "shared"}},
+					},
+					{
+						GVK:         resource.GVK{Group: "ship", Version: "v1", Kind: "FirstMate"},
+						Controllers: &resource.Controllers{{Name: "shared"}},
+					},
+				}}
+
+				_, err := cfg.MarshalYAML()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			// roundTrip loads a PROJECT file holding the resources and saves it in the current format.
+			roundTrip := func(resources ...string) ([]byte, Cfg) {
+				GinkgoHelper()
+				return save(load(projectWith(resources...)))
 			}
 
 			It("should convert a legacy controller to the controllers list", func() {
-				out := roundTrip("- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n")
+				_, out := roundTrip(legacyCaptain)
 
-				Expect(out).To(ContainSubstring("controllers:\n  - name: captain\n"))
-				Expect(out).NotTo(ContainSubstring("controller: true"))
+				Expect(controllersOf(out, captainV1)).To(Equal([]string{captainCtrl}))
 			})
 
 			It("should leave a project already using controllers byte-identical", func() {
-				in := "- controllers:\n  - name: captain-backup\n" +
-					"  group: crew\n  kind: Captain\n  version: v1\n"
+				once, out := roundTrip(namedCaptainBackup)
 
-				once := roundTrip(in)
-				var cfg Cfg
-				Expect(cfg.UnmarshalYAML([]byte(once))).To(Succeed())
-				twice, err := cfg.MarshalYAML()
+				Expect(controllersOf(out, captainV1)).To(Equal([]string{captainBackup}),
+					"a named controller must not gain the default one")
+				twice, err := out.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(twice)).To(Equal(once),
-					"writing an already-migrated project must not change it")
-				Expect(roundTrip(in)).To(ContainSubstring("- name: captain-backup\n"))
-				Expect(roundTrip(in)).NotTo(ContainSubstring("- name: captain\n"))
-				Expect(roundTrip(in)).NotTo(ContainSubstring("controller:"))
+				Expect(twice).To(Equal(once), "writing an already-migrated project must not change it")
 			})
 
 			It("should be idempotent, so a second write changes nothing", func() {
-				once := roundTrip("- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n")
+				once, out := roundTrip(legacyCaptain)
 
-				var cfg Cfg
-				Expect(cfg.UnmarshalYAML([]byte(once))).To(Succeed())
-				twice, err := cfg.MarshalYAML()
+				twice, err := out.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(twice)).To(Equal(once))
+				Expect(twice).To(Equal(once))
 			})
 
-			It("should keep the controllers list when a hand-edited file carries both", func() {
-				in := "- controller: true\n  controllers:\n  - name: captain-backup\n" +
-					"  group: crew\n  kind: Captain\n  version: v1\n"
-				out := roundTrip(in)
+			// The legacy controller must be kept under its default name, not dropped, and a listed name
+			// equal to it must be saved once.
+			DescribeTable("should save each controller of a file that carries both forms once",
+				func(kind, listed string, expected []string) {
+					_, out := roundTrip(fmt.Sprintf(bothFormsTemplate, listed, kind))
 
-				Expect(out).To(ContainSubstring("- name: captain-backup\n"))
-				Expect(out).To(ContainSubstring("- name: captain\n"),
-					"the legacy controller must be kept under its default name, not dropped")
-				Expect(out).NotTo(ContainSubstring("controller: true"))
-			})
+					gvk := resource.GVK{Group: crewGroup, Version: "v1", Kind: kind}
+					Expect(controllersOf(out, gvk)).To(Equal(expected))
+				},
+				Entry("a listed name and the legacy default", captainKind, captainBackup,
+					[]string{captainBackup, captainCtrl}),
+				Entry("a listed name equal to the legacy default", captainKind, captainCtrl,
+					[]string{captainCtrl}),
+				Entry("a legacy default that differs from a listed name only by a hyphen", "Captainbackup",
+					captainBackup, []string{captainBackup, "captainbackup"}),
+			)
+
+			DescribeTable("should refuse to save invalid controllers of one resource",
+				func(controllers resource.Controllers, expected string) {
+					cfg := Cfg{Version: Version, Resources: []resource.Resource{{
+						GVK: captainV1, Controllers: &controllers,
+					}}}
+
+					content, err := cfg.MarshalYAML()
+					Expect(err).To(MatchError(ContainSubstring(expected)))
+					Expect(errors.As(err, &config.MarshalError{})).To(BeTrue())
+					Expect(content).To(BeNil())
+				},
+				Entry("a name that is not a DNS label",
+					resource.Controllers{{Name: "Captain_Backup"}}, "invalid controller name"),
+				Entry("a duplicate name",
+					resource.Controllers{{Name: captainBackup}, {Name: captainBackup}},
+					`duplicate controller name "captain-backup"`),
+				Entry("names generating the same reconciler",
+					resource.Controllers{{Name: captainBackup}, {Name: "captain--backup"}},
+					"both generate CaptainBackupReconciler"),
+			)
 
 			It("should migrate every resource, not only the ones a command touched", func() {
-				in := "- controller: true\n  group: crew\n  kind: Captain\n  version: v1\n" +
-					"- controller: true\n  group: crew\n  kind: Sailor\n  version: v1\n" +
-					"- controllers:\n  - name: admiral\n  group: crew\n  kind: Admiral\n  version: v1\n"
-				out := roundTrip(in)
+				_, out := roundTrip(legacyCaptain, legacySailor, namedAdmiral)
 
-				Expect(out).To(ContainSubstring("- name: captain\n"))
-				Expect(out).To(ContainSubstring("- name: sailor\n"))
-				Expect(out).To(ContainSubstring("- name: admiral\n"))
-				Expect(out).NotTo(ContainSubstring("controller: true"))
+				Expect(controllersOf(out, captainV1)).To(Equal([]string{captainCtrl}))
+				Expect(controllersOf(out, resource.GVK{Group: crewGroup, Version: "v1", Kind: sailorKind})).
+					To(Equal([]string{sailorCtrl}))
+				Expect(controllersOf(out, resource.GVK{Group: crewGroup, Version: "v1", Kind: "Admiral"})).
+					To(Equal([]string{"admiral"}))
 			})
 
 			It("should omit an empty controllers list", func() {
-				cfg := Cfg{
-					Version: Version,
-					Resources: []resource.Resource{{
-						GVK:         resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"},
-						Controllers: &resource.Controllers{},
-					}},
-				}
+				cfg := Cfg{Version: Version, Resources: []resource.Resource{{
+					GVK: captainV1, Controllers: &resource.Controllers{},
+				}}}
 
-				b, err := cfg.MarshalYAML()
+				_, reloaded := save(cfg)
+				res, err := reloaded.GetResource(captainV1)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(b)).NotTo(ContainSubstring("controllers:"))
+				Expect(res.Controllers).To(BeNil())
 			})
 
 			It("should not invent a controller for a resource that has none", func() {
-				out := roundTrip("- group: crew\n  kind: Captain\n  version: v1\n")
+				_, out := roundTrip(captainWithoutController)
 
-				Expect(out).NotTo(ContainSubstring("controller"))
+				res, err := out.GetResource(captainV1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.HasController()).To(BeFalse())
+				Expect(res.Controllers).To(BeNil())
 			})
 
 			It("should report a legacy controller through the accessors before it is written", func() {
-				var cfg Cfg
-				body := "domain: my.domain\nlayout:\n- go.kubebuilder.io/v4\nprojectName: my-project\n" +
-					"repo: myrepo\nresources:\n- controller: true\n  group: crew\n  kind: Captain\n" +
-					"  version: v1\nversion: \"3\"\n"
-				Expect(cfg.UnmarshalYAML([]byte(body))).To(Succeed())
+				cfg := load(projectWith(legacyCaptain))
 
-				res, err := cfg.GetResource(resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"})
+				res, err := cfg.GetResource(captainV1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(res.HasController()).To(BeTrue())
 				Expect(res.GetControllerNames()).To(Equal([]string{"captain"}))

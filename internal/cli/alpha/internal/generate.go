@@ -22,6 +22,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/internal/cli/alpha/internal/common"
@@ -61,6 +62,11 @@ func (opts *Generate) Generate() error {
 	projectConfig, err := common.LoadProjectConfig(opts.InputDir)
 	if err != nil {
 		return fmt.Errorf("error loading project config: %v", err)
+	}
+
+	controllers, sharedControllers, err := checkRegeneration(projectConfig.Config(), opts.InputDir)
+	if err != nil {
+		return err
 	}
 
 	// Save existing boilerplate before cleanup so we can restore it
@@ -162,8 +168,12 @@ func (opts *Generate) Generate() error {
 		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
-	if err = kubebuilderCreate(projectConfig); err != nil {
+	if err = kubebuilderCreate(projectConfig, controllers); err != nil {
 		return fmt.Errorf("error creating project config: %w", err)
+	}
+
+	if err = recordSharedControllers(sharedControllers); err != nil {
+		return fmt.Errorf("error recording shared controllers: %w", err)
 	}
 
 	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir,
@@ -262,7 +272,7 @@ func kubebuilderInit(s store.Store, opts *Generate, tempLicenseFile string) erro
 }
 
 // Creates APIs and Webhooks for the project.
-func kubebuilderCreate(s store.Store) error {
+func kubebuilderCreate(s store.Store, controllers []controllerStep) error {
 	resources, err := s.Config().GetResources()
 	if err != nil {
 		return fmt.Errorf("failed to get resources: %w", err)
@@ -277,9 +287,10 @@ func kubebuilderCreate(s store.Store) error {
 
 	// Scaffold controllers on top of APIs
 	// Multiple controllers can be scaffolded for the same API
-	for _, r := range resources {
-		if err = createControllers(r); err != nil {
-			return fmt.Errorf("failed to create controllers for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
+	for _, step := range controllers {
+		r := step.res
+		if err = createControllerWithName(r, step.name); err != nil {
+			return fmt.Errorf("failed to create controller %q for %s/%s/%s: %w", step.name, r.Group, r.Version, r.Kind, err)
 		}
 	}
 
@@ -588,13 +599,127 @@ func createAPI(res resource.Resource) error {
 	return nil
 }
 
-// createControllers scaffolds each controller recorded for a resource.
-// Legacy controllers use the default name for their kind.
-func createControllers(res resource.Resource) error {
-	for _, name := range res.GetControllerNames() {
-		if err := createControllerWithName(res, name); err != nil {
-			return fmt.Errorf("failed to create controller %q: %w", name, err)
+// checkRegeneration checks, before anything is cleaned or scaffolded, that the project can be
+// regenerated, so a project that cannot is left as it is. It returns the controllers to scaffold and
+// the controllers that versions of a kind share.
+func checkRegeneration(cfg config.Config, inputDir string) ([]controllerStep, map[resource.GVK][]string, error) {
+	// Regeneration writes the PROJECT file in the current format, so it must be migratable.
+	if _, err := cfg.MarshalYAML(); err != nil {
+		return nil, nil, fmt.Errorf("cannot migrate the PROJECT file in %q, rename or remove the controller it "+
+			"names and run again: %w", inputDir, err)
+	}
+
+	resources, err := cfg.GetResources()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get resources: %w", err)
+	}
+	if err := validateDuplicateControllerNames(resources, cfg.IsMultiGroup()); err != nil {
+		return nil, nil, fmt.Errorf("cannot regenerate the project in %q: %w", inputDir, err)
+	}
+	controllers, shared := planControllers(resources)
+
+	return controllers, shared, nil
+}
+
+// controllerStep is a controller that the regeneration scaffolds for a resource.
+type controllerStep struct {
+	res  resource.Resource
+	name string
+}
+
+// validateDuplicateControllerNames fails when two resources record controllers that would scaffold
+// the same controller file or reconciler in one controller package. Only versions of one kind may
+// record the same controller, which the regeneration scaffolds once.
+func validateDuplicateControllerNames(resources []resource.Resource, multiGroup bool) error {
+	var recorded []controllerStep
+	for _, res := range resources {
+		for _, name := range res.GetControllerNames() {
+			for _, earlier := range recorded {
+				if isSharedController(earlier, res, name) || !scaffoldsSameController(earlier, res, name, multiGroup) {
+					continue
+				}
+
+				return fmt.Errorf("controller %q of %s/%s/%s and controller %q of %s/%s/%s generate the same code: "+
+					"a controller package cannot have two controllers with the same name or reconciler, "+
+					"rename one of them in the PROJECT file and run again",
+					name, res.Group, res.Version, res.Kind,
+					earlier.name, earlier.res.Group, earlier.res.Version, earlier.res.Kind)
+			}
+			recorded = append(recorded, controllerStep{res: res, name: name})
 		}
+	}
+
+	return nil
+}
+
+// planControllers returns the controllers to scaffold, in PROJECT order, and the controllers that a
+// version of a kind shares with an earlier version, which are scaffolded once.
+func planControllers(resources []resource.Resource) ([]controllerStep, map[resource.GVK][]string) {
+	var steps []controllerStep
+	shared := map[resource.GVK][]string{}
+	for _, res := range resources {
+		for _, name := range res.GetControllerNames() {
+			if slices.ContainsFunc(steps, func(step controllerStep) bool { return isSharedController(step, res, name) }) {
+				shared[res.GVK] = append(shared[res.GVK], name)
+				continue
+			}
+			steps = append(steps, controllerStep{res: res, name: name})
+		}
+	}
+
+	return steps, shared
+}
+
+// isSharedController reports whether the controller name of res is the controller that step
+// scaffolds for another version of the same kind.
+func isSharedController(step controllerStep, res resource.Resource, name string) bool {
+	return step.name == name && step.res.Group == res.Group && step.res.Domain == res.Domain &&
+		step.res.Kind == res.Kind && step.res.Version != res.Version
+}
+
+// scaffoldsSameController reports whether step and the controller name of res would scaffold the
+// same controller file or reconciler in the same controller package.
+func scaffoldsSameController(step controllerStep, res resource.Resource, name string, multiGroup bool) bool {
+	if multiGroup && step.res.Group != res.Group {
+		return false
+	}
+
+	return resource.NormalizeFileName(step.name) == resource.NormalizeFileName(name) ||
+		resource.NormalizeReconcilerName(step.name, step.res.Kind) == resource.NormalizeReconcilerName(name, res.Kind)
+}
+
+// recordSharedControllers adds to the regenerated PROJECT file the controllers that versions of a
+// kind share, which the regeneration scaffolds only once.
+func recordSharedControllers(shared map[resource.GVK][]string) error {
+	if len(shared) == 0 {
+		return nil
+	}
+
+	projectConfig, err := common.LoadProjectConfig(".")
+	if err != nil {
+		return fmt.Errorf("failed to load the regenerated PROJECT file: %w", err)
+	}
+	for gvk, names := range shared {
+		res, err := projectConfig.Config().GetResource(gvk)
+		if err != nil {
+			return fmt.Errorf("failed to get resource %s/%s/%s: %w", gvk.Group, gvk.Version, gvk.Kind, err)
+		}
+		if res.Controllers == nil {
+			res.Controllers = &resource.Controllers{}
+		}
+		for _, name := range names {
+			if !res.Controllers.HasController(name) {
+				if err := res.Controllers.AddController(name); err != nil {
+					return fmt.Errorf("failed to record controller %q: %w", name, err)
+				}
+			}
+		}
+		if err := projectConfig.Config().UpdateResource(res); err != nil {
+			return fmt.Errorf("failed to update resource %s/%s/%s: %w", gvk.Group, gvk.Version, gvk.Kind, err)
+		}
+	}
+	if err := projectConfig.Save(); err != nil {
+		return fmt.Errorf("failed to save the regenerated PROJECT file: %w", err)
 	}
 
 	return nil

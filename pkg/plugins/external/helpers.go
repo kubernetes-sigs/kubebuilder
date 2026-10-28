@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -185,6 +186,10 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 		}
 
 		req.Config = configMap
+		// Send the PROJECT file as it will be saved, so it matches the config.
+		if _, ok := req.Universe[yamlstore.DefaultPath]; ok {
+			req.Universe[yamlstore.DefaultPath] = string(configData)
+		}
 	}
 
 	res, err := makePluginRequest(req, path)
