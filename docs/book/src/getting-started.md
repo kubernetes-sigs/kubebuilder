@@ -181,9 +181,12 @@ reconcile App {
 
   // Look for Database CR/CRD
   // Check the Database Deployment's replicas size
-  // If deployment.replicas size does not match cr.size, then update it
-  // Then, requeue the reconciliation to ensure the desired state is reached. For example, by returning `reconcile.Result{RequeueAfter: time.Minute}, nil`.
-  if err != nil {
+  if deployment.replicas != cr.size {
+    // Update it. If the update fails, return the error so the reconcile is retried
+    if err != nil {
+      return reconcile.Result{}, err
+    }
+    // Then, requeue the reconciliation to ensure the desired state is reached
     return reconcile.Result{RequeueAfter: time.Minute}, nil
   }
   ...

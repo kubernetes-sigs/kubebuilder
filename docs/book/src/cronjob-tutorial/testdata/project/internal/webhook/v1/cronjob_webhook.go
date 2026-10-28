@@ -86,10 +86,10 @@ type CronJobDefaulter struct {
 }
 
 /*
-We use the `admission.Defaulter`interface to set defaults to our CRD.
+We use the `admission.Defaulter` interface to set defaults to our CRD.
 A webhook will automatically be served that calls this defaulting.
 
-The `Default`method is expected to mutate the receiver, setting the defaults.
+The `Default` method is expected to set the defaults on the given object.
 */
 
 // Default implements admission.Defaulter so a webhook will be registered for the Kind CronJob.
@@ -132,7 +132,7 @@ If `admission.Validator` interface is implemented, a webhook will automatically 
 served that calls the validation.
 
 The `ValidateCreate`, `ValidateUpdate` and `ValidateDelete` methods are expected
-to validate its receiver upon creation, update and deletion respectively.
+to validate the given object upon creation, update and deletion respectively.
 We separate out ValidateCreate from ValidateUpdate to allow behavior like making
 certain fields immutable, so that they can only be set on creation.
 ValidateDelete is also separated from ValidateUpdate to allow different
