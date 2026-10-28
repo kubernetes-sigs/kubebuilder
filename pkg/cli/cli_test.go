@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
+	helmv2alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha"
 )
 
 const (
@@ -1515,6 +1516,19 @@ version: "3"
 				Expect(projectPlugin.subcommand.scaffolded).To(BeTrue())
 			})
 
+			It("should refuse a flag of that plugin when the PROJECT file names only the default chain", func() {
+				for _, args := range [][]string{
+					append(createAPIArgs(), "--"+projectChainFlag),
+					append(createAPIArgs(), pluginsFlagArg, "go/v4", "--"+projectChainFlag),
+					append(createAPIArgs(), "--"+projectChainFlag, pluginsFlagArg, "go/v4"),
+				} {
+					projectPlugin = newDescribedCreateAPIPlugin()
+					_, runErr := runCLI(filesystemWithResolvableProject(), args, args, WithPlugins(projectPlugin))
+					Expect(runErr).To(MatchError(ContainSubstring("unknown flag: --"+projectChainFlag)), "%v", args)
+					Expect(projectPlugin.subcommand.scaffolded).To(BeFalse(), "%v", args)
+				}
+			})
+
 			It("should fall back to the default plugins only when the configuration cannot be loaded", func() {
 				args := []string{createSubcommand, apiSubcommand, helpFlagArg}
 
@@ -1654,6 +1668,182 @@ version: "3"
 				commandGroupEntries(func(group commandGroup, state describedFilesystem) TableEntry {
 					return Entry(fmt.Sprintf("for %s when %s", group.name, state.description), state.build, group)
 				}, brokenProjectStates),
+			)
+		})
+
+		When("a tool adds a command group with nothing to run", func() {
+			// runToolGroup runs a CLI with a `tools` group that a tool adds with nothing to run, and
+			// returns what it wrote and whether the argument check or the persistent hook of the group
+			// ran.
+			const toolsCommand = "tools"
+			runToolGroup := func(filesystem machinery.Filesystem, args ...string) (
+				out string, groupRan bool, runErr error,
+			) {
+				tools := &cobra.Command{Use: toolsCommand}
+				tools.Args = func(*cobra.Command, []string) error {
+					groupRan = true
+					return nil
+				}
+				tools.PersistentPreRun = func(*cobra.Command, []string) { groupRan = true }
+				tools.AddCommand(newExtraCommand("check"))
+
+				out, runErr = runCLI(filesystem, args, args, WithExtraCommands(tools))
+
+				return out, groupRan, runErr
+			}
+
+			DescribeTable("should report it for a command group a tool adds",
+				func(filesystem func() machinery.Filesystem) {
+					_, groupRan, runErr := runToolGroup(filesystem(), toolsCommand, pluginsFlagArg, "//")
+					Expect(runErr).To(MatchError(ContainSubstring(`invalid plugin "//"`)))
+					Expect(runErr).NotTo(MatchError(ContainSubstring("PROJECT")))
+					Expect(groupRan).To(BeFalse())
+				},
+				Entry("when the PROJECT file is missing", filesystemWithoutProject),
+				Entry("when the PROJECT file is usable", filesystemWithResolvableProject),
+				Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+			)
+
+			DescribeTable("should still print the help of a command group a tool adds",
+				func(filesystem func() machinery.Filesystem, args ...string) {
+					out, groupRan, runErr := runToolGroup(filesystem(), args...)
+					Expect(runErr).NotTo(HaveOccurred())
+					Expect(out).To(ContainSubstring("Usage:"))
+					Expect(groupRan).To(BeFalse())
+				},
+				Entry("on its own when PROJECT is a directory", filesystemWithProjectDirectory, toolsCommand),
+				Entry("with a bad plugin key and --help", filesystemWithProjectDirectory,
+					toolsCommand, pluginsFlagArg, "//", helpFlagArg),
+			)
+		})
+
+		When("a tool sets the persistent hook of its command after the CLI is built", func() {
+			// buildReportCLI returns a CLI with a `report` command whose persistent hook the test
+			// replaces afterwards, and the flags that record which hook ran.
+			const reportCommand = "report"
+			buildReportCLI := func(filesystem machinery.Filesystem) (*CLI, *cobra.Command) {
+				report := newExtraCommand(reportCommand)
+				report.PersistentPreRun = func(*cobra.Command, []string) {}
+
+				return buildCLI(filesystem, []string{reportCommand}, WithExtraCommands(report)), report
+			}
+
+			It("should run the new hook when there is no PROJECT file", func() {
+				reportCLI, report := buildReportCLI(filesystemWithoutProject())
+				newHookRan := false
+				report.PersistentPreRun = func(*cobra.Command, []string) { newHookRan = true }
+
+				_, runErr := runBuiltCLI(reportCLI, []string{reportCommand})
+				Expect(runErr).NotTo(HaveOccurred())
+				Expect(newHookRan).To(BeTrue())
+			})
+
+			It("should still stop the command before the new hook when PROJECT is a directory", func() {
+				reportCLI, report := buildReportCLI(filesystemWithProjectDirectory())
+				newHookRan := false
+				report.PersistentPreRun = func(*cobra.Command, []string) { newHookRan = true }
+
+				_, runErr := runBuiltCLI(reportCLI, []string{reportCommand})
+				Expect(runErr).To(HaveOccurred())
+				Expect(newHookRan).To(BeFalse())
+			})
+
+			// runSummary builds a CLI with a `report` command whose persistent hook serves its
+			// `summary` child, clears the hook of the child after the CLI is built, runs the child,
+			// and returns which parts ran.
+			const summaryCommand = "summary"
+			runSummary := func(filesystem machinery.Filesystem) (
+				parentHookRan, clearedHookRan, summaryRan bool, runErr error,
+			) {
+				report := &cobra.Command{Use: reportCommand}
+				report.PersistentPreRun = func(*cobra.Command, []string) { parentHookRan = true }
+				summary := &cobra.Command{Use: summaryCommand, Run: func(*cobra.Command, []string) { summaryRan = true }}
+				summary.PersistentPreRun = func(*cobra.Command, []string) { clearedHookRan = true }
+				report.AddCommand(summary)
+				args := []string{reportCommand, summaryCommand}
+				reportCLI := buildCLI(filesystem, args, WithExtraCommands(report))
+				summary.PersistentPreRun = nil
+
+				_, runErr = runBuiltCLI(reportCLI, args)
+
+				return parentHookRan, clearedHookRan, summaryRan, runErr
+			}
+
+			DescribeTable("should run the hook of the parent when the tool clears the hook of the child",
+				func(filesystem func() machinery.Filesystem) {
+					parentHookRan, clearedHookRan, summaryRan, runErr := runSummary(filesystem())
+					Expect(runErr).NotTo(HaveOccurred())
+					Expect(parentHookRan).To(BeTrue())
+					Expect(clearedHookRan).To(BeFalse())
+					Expect(summaryRan).To(BeTrue())
+				},
+				Entry("when there is no PROJECT file", filesystemWithoutProject),
+				Entry("when the PROJECT file is usable", filesystemWithResolvableProject),
+			)
+
+			It("should still stop the child before the hook of the parent when PROJECT is a directory", func() {
+				parentHookRan, _, summaryRan, runErr := runSummary(filesystemWithProjectDirectory())
+				Expect(runErr).To(MatchError(ContainSubstring(`"PROJECT" is a directory`)))
+				Expect(parentHookRan).To(BeFalse())
+				Expect(summaryRan).To(BeFalse())
+			})
+
+			It("should run the new hook of the parent for a child that has none when the tool replaces it", func() {
+				oldHookRan, newHookRan, summaryRan := false, false, false
+				report := &cobra.Command{Use: reportCommand}
+				report.PersistentPreRun = func(*cobra.Command, []string) { oldHookRan = true }
+				report.AddCommand(&cobra.Command{
+					Use: summaryCommand,
+					Run: func(*cobra.Command, []string) { summaryRan = true },
+				})
+				args := []string{reportCommand, summaryCommand}
+				reportCLI := buildCLI(filesystemWithoutProject(), args, WithExtraCommands(report))
+				report.PersistentPreRun = func(*cobra.Command, []string) { newHookRan = true }
+
+				_, runErr := runBuiltCLI(reportCLI, args)
+				Expect(runErr).NotTo(HaveOccurred())
+				Expect(newHookRan).To(BeTrue())
+				Expect(oldHookRan).To(BeFalse())
+				Expect(summaryRan).To(BeTrue())
+			})
+		})
+
+		When("a tool replaces the hooks and body of init after the CLI is built", func() {
+			// runInit builds the CLI, replaces the pre-run hook, body and post-run hook of init with ones
+			// that record their names, runs init and returns what ran.
+			runInit := func(filesystem machinery.Filesystem) ([]string, error) {
+				args := []string{kubebuilderSubcommandInit}
+				initCLI := buildCLI(filesystem, args)
+				initCmd, _, findErr := initCLI.cmd.Find(args)
+				Expect(findErr).NotTo(HaveOccurred())
+				Expect(initCmd.Name()).To(Equal(kubebuilderSubcommandInit))
+
+				var ran []string
+				initCmd.PreRunE = func(*cobra.Command, []string) error { ran = append(ran, "pre-run"); return nil }
+				initCmd.RunE = func(*cobra.Command, []string) error { ran = append(ran, "run"); return nil }
+				initCmd.PostRunE = func(*cobra.Command, []string) error { ran = append(ran, "post-run"); return nil }
+
+				_, runErr := runBuiltCLI(initCLI, args)
+
+				return ran, runErr
+			}
+
+			It("should run them when there is no PROJECT file", func() {
+				ran, runErr := runInit(filesystemWithoutProject())
+				Expect(runErr).NotTo(HaveOccurred())
+				Expect(ran).To(Equal([]string{"pre-run", "run", "post-run"}))
+			})
+
+			DescribeTable("should run none of them when PROJECT cannot be used",
+				func(filesystem func() machinery.Filesystem) {
+					ran, runErr := runInit(filesystem())
+					Expect(runErr).To(HaveOccurred())
+					Expect(ran).To(BeEmpty())
+				},
+				Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+				Entry("when the PROJECT file is not valid YAML", filesystemWithInvalidProject),
+				Entry("when the version of the PROJECT file is not supported", filesystemWithUnloadableProject),
+				Entry("when the layout names a plugin the CLI does not have", filesystemWithUnresolvableProject),
 			)
 		})
 
@@ -1958,7 +2148,6 @@ var _ = Describe("isSubcommandWithoutConfig", func() {
 		func(args ...string) {
 			Expect(isSubcommandWithoutConfig(args)).To(BeTrue())
 		},
-		Entry("without arguments"),
 		Entry("with root flags only", pluginsFlagArg, pluginGoKubebuilderV4),
 		Entry("for help without a target", kubebuilderSubcommandHelp),
 		Entry("for the version subcommand", kubebuilderSubcommandVersion),
@@ -1990,6 +2179,11 @@ var _ = Describe("isSubcommandWithoutConfig", func() {
 			createSubcommand, webhookSubcommand, "--"),
 		Entry("for completing the flags of edit", cobra.ShellCompRequestCmd, editSubcommand, ""),
 		Entry("for completing the flags of init", cobra.ShellCompRequestCmd, kubebuilderSubcommandInit, "--"),
+		// A tool may complete the name of a command, then run that command on the same CLI.
+		Entry("for completing the name of create api", cobra.ShellCompRequestCmd, createSubcommand, apiSubcommand),
+		Entry("for completing the name of edit without descriptions", cobra.ShellCompNoDescRequestCmd, editSubcommand),
+		// A tool may build the CLI before it sets the arguments of the command it runs.
+		Entry("without arguments"),
 	)
 })
 
@@ -2150,6 +2344,88 @@ var _ = Describe("commands that do not consume the project configuration", func(
 	)
 })
 
+// A completion request for a command the plugin chain builds reads a usable PROJECT file, so the
+// layout's plugins add their flags.
+var _ = Describe("a shell completion request", func() {
+	var projectPlugin testCreateAPIPlugin
+
+	BeforeEach(func() {
+		projectPlugin = newDescribedCreateAPIPlugin()
+	})
+
+	// Cobra offers only the required flags for a bare "--", so the request types the start of the flag.
+	complete := func(filesystem machinery.Filesystem, request, typed string) string {
+		GinkgoHelper()
+
+		args := []string{request, createSubcommand, apiSubcommand, typed}
+		out, err := runCLI(filesystem, args, args, WithPlugins(projectPlugin))
+		Expect(err).NotTo(HaveOccurred())
+
+		return out
+	}
+
+	It("should offer only the default plugins with no PROJECT file", func() {
+		out := complete(filesystemWithoutProject(), cobra.ShellCompRequestCmd, "--mo")
+		Expect(out).NotTo(ContainSubstring("--" + projectChainFlag))
+	})
+
+	// A tool may set one of its own flags in code and answer a request before it runs a command on
+	// the same CLI. Answering the request must leave the value the tool set.
+	It("should keep the value of a flag the tool set when the request is answered through Run", func() {
+		const debugFlag = "debug"
+
+		c := buildCLI(filesystemWithoutProject(), nil)
+		c.cmd.PersistentFlags().Bool(debugFlag, false, "print debug output")
+		Expect(c.cmd.PersistentFlags().Set(debugFlag, "true")).To(Succeed())
+		c.cmd.SetOut(io.Discard)
+		c.cmd.SetArgs([]string{cobra.ShellCompRequestCmd, kubebuilderSubcommandVersion, ""})
+
+		Expect(c.Run()).To(Succeed())
+		Expect(c.cmd.PersistentFlags().Lookup(debugFlag).Value.String()).To(Equal("true"))
+	})
+})
+
+// A tool may build the CLI while the program was started with no arguments, then set the arguments
+// of the command it runs and call Run, the way a sample generator drives the CLI. The command tree
+// is built before the command is known, so it comes from a usable PROJECT file.
+var _ = Describe("a CLI built before the program names a command", func() {
+	var projectPlugin testCreateAPIPlugin
+
+	BeforeEach(func() {
+		projectPlugin = newDescribedCreateAPIPlugin()
+	})
+
+	// runLater builds the CLI with no program arguments, then sets them to args and calls Run.
+	runLater := func(filesystem machinery.Filesystem, args ...string) (string, error) {
+		GinkgoHelper()
+
+		c := buildCLI(filesystem, nil, WithPlugins(projectPlugin))
+		var out bytes.Buffer
+		c.cmd.SetOut(&out)
+		setProgramArgs(args...)
+		err := c.Run()
+
+		return out.String(), err
+	}
+
+	It("should offer the flags of the plugins the layout names", func() {
+		out, err := runLater(filesystemWithProjectChainProject(), createSubcommand, apiSubcommand, helpFlagArg)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(ContainSubstring("--" + projectChainFlag))
+	})
+
+	DescribeTable("should still answer the root help when the configuration cannot be used",
+		func(filesystem func() machinery.Filesystem) {
+			out, err := runLater(filesystem())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(ContainSubstring("Usage:"))
+		},
+		Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+		Entry("when PROJECT cannot be parsed", filesystemWithInvalidProject),
+		Entry("when the PROJECT plugin chain cannot be resolved", filesystemWithUnresolvableProject),
+	)
+})
+
 // An embedded CLI is built before the caller chooses the command with Command().SetArgs, so the
 // arguments of the running program say nothing about the command that will run.
 var _ = Describe("commands driven by Command().SetArgs", func() {
@@ -2173,6 +2449,72 @@ var _ = Describe("commands driven by Command().SetArgs", func() {
 		err := executeEmbeddedCLI(filesystemWithInvalidProject(), programArgs, []string{docsSubcommand},
 			WithExtraCommands(docs))
 		Expect(err).To(MatchError(ContainSubstring("failed to determine config version")))
+	})
+
+	It("should report the failure for an added command when the program needs no configuration", func() {
+		// The program was started with a command that reads no configuration, so the startup left
+		// it unread. The command the caller runs does consume it, so the failure still surfaces
+		// and that command never runs.
+		docsRan := false
+		docs := &cobra.Command{Use: docsSubcommand, RunE: func(*cobra.Command, []string) error {
+			docsRan = true
+
+			return nil
+		}}
+
+		err := executeEmbeddedCLI(filesystemWithInvalidProject(), []string{kubebuilderSubcommandVersion},
+			[]string{docsSubcommand}, WithExtraCommands(docs))
+		Expect(err).To(MatchError(ContainSubstring("failed to determine config version")))
+		Expect(docsRan).To(BeFalse())
+	})
+
+	It("should report the failure for an added command before its own argument check runs", func() {
+		// Cobra validates the arguments of the command it executes before it runs any hook, so a
+		// check that sits only in the hooks would let the tool's own argument check run first.
+		argsChecked := false
+		docs := &cobra.Command{
+			Use: docsSubcommand,
+			Args: func(*cobra.Command, []string) error {
+				argsChecked = true
+
+				return nil
+			},
+			RunE: func(*cobra.Command, []string) error { return nil },
+		}
+
+		err := executeEmbeddedCLI(filesystemWithInvalidProject(), programArgs, []string{docsSubcommand},
+			WithExtraCommands(docs))
+		Expect(err).To(MatchError(ContainSubstring("failed to determine config version")))
+		Expect(argsChecked).To(BeFalse())
+	})
+
+	It("should hand an added command's own argument check the arguments with no configuration", func() {
+		var checked []string
+		docs := &cobra.Command{
+			Use: docsSubcommand,
+			Args: func(_ *cobra.Command, args []string) error {
+				checked = args
+
+				return nil
+			},
+			RunE: func(*cobra.Command, []string) error { return nil },
+		}
+
+		Expect(executeEmbeddedCLI(filesystemWithoutProject(), programArgs, []string{docsSubcommand, "changelog"},
+			WithExtraCommands(docs))).To(Succeed())
+		Expect(checked).To(Equal([]string{"changelog"}))
+	})
+
+	It("should keep the answer of an added command's own argument check", func() {
+		docs := &cobra.Command{
+			Use:  docsSubcommand,
+			Args: cobra.ExactArgs(1),
+			RunE: func(*cobra.Command, []string) error { return nil },
+		}
+
+		err := executeEmbeddedCLI(filesystemWithoutProject(), programArgs, []string{docsSubcommand},
+			WithExtraCommands(docs))
+		Expect(err).To(MatchError(ContainSubstring("accepts 1 arg(s), received 0")))
 	})
 
 	DescribeTable("should report the failure for a command that consumes the configuration",
@@ -2224,6 +2566,36 @@ var _ = Describe("commands driven by Command().SetArgs", func() {
 		Expect(projectPlugin.subcommand.scaffolded).To(BeTrue())
 	})
 
+	It("should keep refusing that plugin chain when the caller runs a command again", func() {
+		// A tool keeps one CLI and runs more than one command through it. Reading the project
+		// configuration for the first command must not make the chain of the next one look like
+		// the chain the command tree was built for.
+		extraPlugin := newTestCreateAPIPlugin(projectChainPluginName, plugin.Version{Number: 1})
+
+		originalArgs := os.Args
+		DeferCleanup(func() { os.Args = originalArgs })
+		os.Args = []string{kubebuilderCommandName, kubebuilderSubcommandVersion}
+
+		testProjectVersion := config.Version{Number: 3}
+		c, err := New(
+			WithPlugins(&golangv4.Plugin{}, extraPlugin),
+			WithDefaultPlugins(testProjectVersion, extraPlugin),
+			WithDefaultProjectVersion(testProjectVersion),
+			WithVersion("version string"),
+			WithFilesystem(filesystemWithResolvableProject()),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out bytes.Buffer
+		c.cmd.SetOut(&out)
+		for range 2 {
+			c.cmd.SetArgs([]string{createSubcommand, apiSubcommand, kindFlagArg, kindValue})
+			Expect(c.cmd.Execute()).To(MatchError(
+				ContainSubstring("the command tree was built for the plugin chain")))
+		}
+		Expect(extraPlugin.subcommand.scaffolded).To(BeFalse())
+	})
+
 	It("should read the skipped configuration when the command tree was built for its plugin chain", func() {
 		fs := &projectReadCountingFs{Fs: filesystemWithResolvableProject().FS}
 
@@ -2234,6 +2606,39 @@ var _ = Describe("commands driven by Command().SetArgs", func() {
 		Expect(err).To(MatchError(ContainSubstring("failed to edit scaffold")))
 		Expect(err).NotTo(MatchError(ContainSubstring("the command tree was built for the plugin chain")))
 		Expect(fs.reads).NotTo(BeZero())
+	})
+
+	// A tool may also hand the command it picked to Run instead of executing the tree itself.
+	Context("through Run", func() {
+		run := func(c *CLI, args ...string) error {
+			c.cmd.SetOut(io.Discard)
+			c.cmd.SetErr(io.Discard)
+			c.cmd.SetArgs(args)
+
+			return c.Run()
+		}
+
+		DescribeTable("should run version when the program was started with a command that consumes the configuration",
+			func(filesystem func() machinery.Filesystem) {
+				Expect(run(buildCLI(filesystem(), programArgs), kubebuilderSubcommandVersion)).To(Succeed())
+			},
+			Entry("when PROJECT is a directory", filesystemWithProjectDirectory),
+			Entry("when PROJECT cannot be parsed", filesystemWithInvalidProject),
+			Entry("when the PROJECT plugin chain cannot be resolved", filesystemWithUnresolvableProject),
+		)
+
+		It("should report the failure for an added command when the program was started with version", func() {
+			docsRan := false
+			docs := &cobra.Command{Use: docsSubcommand, RunE: func(*cobra.Command, []string) error {
+				docsRan = true
+
+				return nil
+			}}
+			c := buildCLI(filesystemWithInvalidProject(), []string{kubebuilderSubcommandVersion}, WithExtraCommands(docs))
+
+			Expect(run(c, docsSubcommand)).To(MatchError(ContainSubstring("failed to determine config version")))
+			Expect(docsRan).To(BeFalse())
+		})
 	})
 })
 
@@ -2287,6 +2692,14 @@ var _ = Describe("extra commands", func() {
 		expectHookRan(err, hookRan)
 	})
 
+	It("should run the persistent hook of a subcommand when there is no PROJECT file", func() {
+		docs, hookRan := newDocsWithGenerate()
+
+		err := executeCLIWith(filesystemWithoutProject(), WithExtraCommands(docs),
+			docsSubcommand, generateSubcommand)
+		expectHookRan(err, hookRan)
+	})
+
 	It("should stop an alpha command before its own hook when PROJECT is a directory", func() {
 		docs, hookRan := newExtraCommandWithHook(docsSubcommand, setPersistentPreRunE)
 
@@ -2299,6 +2712,14 @@ var _ = Describe("extra commands", func() {
 		docs, hookRan := newExtraCommandWithHook(docsSubcommand, setPersistentPreRunE)
 
 		err := executeCLIWith(filesystemWithResolvableProject(), WithExtraAlphaCommands(docs),
+			alphaCommand, docsSubcommand)
+		expectHookRan(err, hookRan)
+	})
+
+	It("should run the hook of an alpha command when there is no PROJECT file", func() {
+		docs, hookRan := newExtraCommandWithHook(docsSubcommand, setPersistentPreRunE)
+
+		err := executeCLIWith(filesystemWithoutProject(), WithExtraAlphaCommands(docs),
 			alphaCommand, docsSubcommand)
 		expectHookRan(err, hookRan)
 	})
@@ -2321,6 +2742,17 @@ var _ = Describe("extra commands", func() {
 			WithExtraCommands(docs), WithPlugins(projectPlugin))
 		Expect(err).To(MatchError(ContainSubstring("the command tree was built for the plugin chain")))
 		Expect(*hookRan).To(BeFalse())
+	})
+
+	It("should stop the command when the tool sets the flag-name mapping again after the CLI is built", func() {
+		docs, hookRan := newExtraCommandWithHook(docsSubcommand, setPersistentPreRunE)
+		c := buildCLI(filesystemWithProjectDirectory(), []string{docsSubcommand}, WithExtraCommands(docs))
+		c.Command().SetGlobalNormalizationFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+			return pflag.NormalizedName(strings.ReplaceAll(name, "_", "-"))
+		})
+
+		_, err := runBuiltCLI(c, []string{docsSubcommand})
+		expectStoppedBeforeHook(err, hookRan)
 	})
 })
 
@@ -2558,4 +2990,412 @@ version: "3"
 			Expect(patchProjectFileInMemoryIfNeeded(fs, "nonexistent.yaml")).To(Succeed())
 		})
 	})
+})
+
+// Cobra takes any true value of a boolean flag, so `-h=true` and `--help=1` ask for help the same
+// way `--help` does.
+var _ = Describe("help asked with another true value of the help flag", func() {
+	DescribeTable("should print the help of create api when the configuration cannot be used",
+		func(filesystem func() machinery.Filesystem, spelling string) {
+			args := []string{createSubcommand, apiSubcommand, spelling}
+			out, err := runCLI(filesystem(), args, args)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(ContainSubstring(createSubcommand + " " + apiSubcommand + " [flags]"))
+			Expect(out).To(ContainSubstring(kindFlagArg))
+		},
+		Entry("for -h=true when PROJECT is a directory", filesystemWithProjectDirectory, helpShorthandArg+"=true"),
+		Entry("for --help=1 when PROJECT is a directory", filesystemWithProjectDirectory, helpFlagArg+"=1"),
+		Entry("for -h=true when PROJECT cannot be parsed", filesystemWithInvalidProject, helpShorthandArg+"=true"),
+		Entry("for --help=1 when PROJECT cannot be parsed", filesystemWithInvalidProject, helpFlagArg+"=1"),
+		Entry("for -h=true when the PROJECT plugin chain cannot be resolved",
+			filesystemWithUnresolvableProject, helpShorthandArg+"=true"),
+		Entry("for --help=1 when the PROJECT plugin chain cannot be resolved",
+			filesystemWithUnresolvableProject, helpFlagArg+"=1"),
+	)
+})
+
+// --plugins replaces the plugins the layout names, so the help shows only the flags of the chain the
+// flag names.
+var _ = Describe("a plugin chain named with --plugins next to a usable PROJECT", func() {
+	var (
+		projectPlugin testCreateAPIPlugin
+		filesystem    machinery.Filesystem
+	)
+
+	BeforeEach(func() {
+		projectPlugin = newDescribedCreateAPIPlugin()
+		filesystem = filesystemWithProject(`domain: example.com
+layout:
+- ` + plugin.KeyFor(golangv4.Plugin{}) + `
+- ` + projectChainPluginKey + `
+projectName: test
+version: "3"
+`)
+	})
+
+	It("should offer the flags of every plugin the layout names without --plugins", func() {
+		args := []string{createSubcommand, apiSubcommand, helpFlagArg}
+		out, err := runCLI(filesystem, args, args, WithPlugins(projectPlugin))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(ContainSubstring("--" + projectChainFlag))
+	})
+
+	It("should leave out the flags of the layout's other plugins", func() {
+		args := []string{createSubcommand, apiSubcommand, pluginsFlagArg, plugin.KeyFor(golangv4.Plugin{}), helpFlagArg}
+		out, err := runCLI(filesystem, args, args, WithPlugins(projectPlugin))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(ContainSubstring(kindFlagArg))
+		Expect(out).NotTo(ContainSubstring("--" + projectChainFlag))
+	})
+})
+
+// A tool's code reads the command line as cobra parsed it, and its hooks run as cobra runs them.
+var _ = Describe("what the code of an extra command sees", func() {
+	It("should give every step the --plugins value the user typed", func() {
+		seen := map[string]string{}
+		record := func(step string) func(*cobra.Command, []string) error {
+			return func(cmd *cobra.Command, _ []string) error {
+				flag := cmd.Flag(pluginsFlag)
+				Expect(flag).NotTo(BeNil())
+				seen[step] = fmt.Sprintf("%s changed=%t", flag.Value.String(), flag.Changed)
+
+				return nil
+			}
+		}
+		docs := &cobra.Command{
+			Use:               docsSubcommand,
+			Args:              record("argument check"),
+			PersistentPreRunE: record("persistent pre-run"),
+			PreRunE:           record("pre-run"),
+			RunE:              record("run"),
+		}
+		key := plugin.KeyFor(golangv4.Plugin{})
+
+		args := []string{docsSubcommand, pluginsFlagArg, key}
+		_, err := runCLI(filesystemWithoutProject(), args, args, WithExtraCommands(docs))
+		Expect(err).NotTo(HaveOccurred())
+		for _, step := range []string{"argument check", "persistent pre-run", "pre-run", "run"} {
+			Expect(seen).To(HaveKeyWithValue(step, "["+key+"] changed=true"))
+		}
+	})
+
+	It("should run every persistent hook once, in cobra's order, when hook traversal is on", func() {
+		original := cobra.EnableTraverseRunHooks
+		DeferCleanup(func() { cobra.EnableTraverseRunHooks = original })
+		cobra.EnableTraverseRunHooks = true
+
+		var steps []string
+		trace := func(step string) func(*cobra.Command, []string) {
+			return func(*cobra.Command, []string) { steps = append(steps, step) }
+		}
+		docs := &cobra.Command{
+			Use:               docsSubcommand,
+			PersistentPreRun:  trace("docs persistent pre-run"),
+			PersistentPostRun: trace("docs persistent post-run"),
+		}
+		generate := &cobra.Command{
+			Use:               generateSubcommand,
+			PersistentPreRun:  trace("generate persistent pre-run"),
+			Run:               trace("generate run"),
+			PersistentPostRun: trace("generate persistent post-run"),
+		}
+		docs.AddCommand(generate)
+
+		args := []string{docsSubcommand, generateSubcommand}
+		_, err := runCLI(filesystemWithoutProject(), args, args, WithExtraCommands(docs))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(steps).To(Equal([]string{
+			"docs persistent pre-run",
+			"generate persistent pre-run",
+			"generate run",
+			"generate persistent post-run",
+			"docs persistent post-run",
+		}))
+	})
+
+	It("should leave a cobra tree outside the CLI running only its nearest persistent hook", func() {
+		_ = buildCLI(filesystemWithoutProject(), []string{docsSubcommand})
+
+		var steps []string
+		trace := func(step string) func(*cobra.Command, []string) {
+			return func(*cobra.Command, []string) { steps = append(steps, step) }
+		}
+		solo := &cobra.Command{Use: "solo", PersistentPreRun: trace("solo persistent pre-run")}
+		solo.AddCommand(&cobra.Command{
+			Use:              "child",
+			PersistentPreRun: trace("child persistent pre-run"),
+			Run:              trace("child run"),
+		})
+		solo.SetArgs([]string{"child"})
+
+		Expect(solo.Execute()).To(Succeed())
+		Expect(steps).To(Equal([]string{"child persistent pre-run", "child run"}))
+	})
+})
+
+// A mistyped --plugins value is the end user's mistake, so a command that consumes the project
+// configuration reports that value, not the state of PROJECT.
+var _ = Describe("a mistyped plugins value on a command that consumes the configuration", func() {
+	DescribeTable("should report the value, not PROJECT",
+		func(filesystem func() machinery.Filesystem, command ...string) {
+			err := executeCLI(filesystem(), append(command, pluginsFlagArg, "//")...)
+			Expect(err).To(MatchError(ContainSubstring(`invalid plugin "//"`)))
+			Expect(err).NotTo(MatchError(ContainSubstring(yamlstore.DefaultPath)))
+		},
+		Entry("for init when PROJECT is a directory", filesystemWithProjectDirectory, kubebuilderSubcommandInit),
+		Entry("for create api when the PROJECT file is not valid YAML", filesystemWithInvalidProject,
+			createSubcommand, apiSubcommand),
+		Entry("for edit when the PROJECT project version is not supported", filesystemWithUnloadableProject,
+			editSubcommand),
+	)
+})
+
+// A tool can declare --help as a persistent flag on a group of its own, so the group's commands
+// inherit it. The commands under it still stop before their own steps when PROJECT cannot be used.
+var _ = Describe("a command under a help flag the tool declares as persistent", func() {
+	newDocsWithPersistentHelp := func() (*cobra.Command, *bool, *bool) {
+		docs := &cobra.Command{Use: docsSubcommand}
+		docs.PersistentFlags().BoolP("help", "h", false, "help for the tool's docs")
+		generate, hookRan := newExtraCommandWithHook(generateSubcommand, setPersistentPreRunE)
+		argsRan := false
+		generate.Args = func(*cobra.Command, []string) error {
+			argsRan = true
+			return nil
+		}
+		docs.AddCommand(generate)
+
+		return docs, hookRan, &argsRan
+	}
+
+	It("should stop the command before its argument check and hook when PROJECT is a directory", func() {
+		docs, hookRan, argsRan := newDocsWithPersistentHelp()
+
+		err := executeCLIWith(filesystemWithProjectDirectory(), WithExtraCommands(docs),
+			docsSubcommand, generateSubcommand)
+		expectStoppedBeforeHook(err, hookRan)
+		Expect(*argsRan).To(BeFalse())
+	})
+
+	It("should run the command and its hook when there is no PROJECT file", func() {
+		docs, hookRan, argsRan := newDocsWithPersistentHelp()
+
+		err := executeCLIWith(filesystemWithoutProject(), WithExtraCommands(docs),
+			docsSubcommand, generateSubcommand)
+		expectHookRan(err, hookRan)
+		Expect(*argsRan).To(BeTrue())
+	})
+})
+
+// A tool can add a flag of its own to a command Kubebuilder gives it, after the CLI is built. Naming
+// the plugin chain with --plugins must not take that flag away.
+var _ = Describe("a flag a tool adds to create api after the CLI is built", func() {
+	addTeamFlag := func(c *CLI) *string {
+		GinkgoHelper()
+
+		createAPI, _, err := c.Command().Find([]string{createSubcommand, apiSubcommand})
+		Expect(err).NotTo(HaveOccurred())
+
+		return createAPI.Flags().String("team", "", "team that owns what this command scaffolds")
+	}
+
+	It("should be listed in the help when --plugins names the default chain", func() {
+		args := []string{createSubcommand, apiSubcommand, pluginsFlagArg, plugin.KeyFor(golangv4.Plugin{}), helpFlagArg}
+		c := buildCLI(filesystemWithoutProject(), args)
+		_ = addTeamFlag(c)
+
+		out, err := runBuiltCLI(c, args)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(ContainSubstring("--team"))
+	})
+
+	It("should be parsed in a run when --plugins names the default chain", func() {
+		args := append(createAPIArgs(), pluginsFlagArg, plugin.KeyFor(golangv4.Plugin{}), "--team", "platform")
+		c := buildCLI(filesystemWithoutProject(), args)
+		team := addTeamFlag(c)
+
+		_, err := runBuiltCLI(c, args)
+		Expect(err).To(MatchError(ContainSubstring("project must be initialized")))
+		Expect(*team).To(Equal("platform"))
+	})
+})
+
+// --plugins help asks for help on any command, a tool's own top-level version included.
+var _ = Describe("help requested through the plugins flag on a tool's own version", func() {
+	DescribeTable("should print the help of that version and run nothing of it",
+		func(filesystem func() machinery.Filesystem, pluginsArgs ...string) {
+			ran := false
+			record := func(*cobra.Command, []string) error {
+				ran = true
+				return nil
+			}
+			version := &cobra.Command{
+				Use:               kubebuilderSubcommandVersion,
+				Short:             "the tool's own version",
+				PersistentPreRunE: record,
+				RunE:              record,
+			}
+
+			args := append([]string{kubebuilderSubcommandVersion}, pluginsArgs...)
+			out, err := runBuiltCLI(newToolCLI(filesystem(), args, version), args)
+			Expect(err).To(MatchError(errHelpDisplayed))
+			Expect(out).To(ContainSubstring(kubebuilderSubcommandVersion + " [flags]"))
+			Expect(out).To(ContainSubstring("the tool's own version"))
+			Expect(ran).To(BeFalse())
+		},
+		Entry("for --plugins help when PROJECT is a directory", filesystemWithProjectDirectory,
+			pluginsFlagArg, kubebuilderSubcommandHelp),
+		Entry("for --plugins=help when there is no PROJECT file", filesystemWithoutProject,
+			pluginsFlagArg+"="+kubebuilderSubcommandHelp),
+	)
+})
+
+// --plugins help asks for help on a command a tool adds, so the command's help is printed and none of
+// its steps runs, even when PROJECT cannot be used.
+var _ = Describe("help requested through the plugins flag on a command a tool adds", func() {
+	DescribeTable("should print the help of the command and run nothing of it when PROJECT is a directory",
+		func(pluginsArgs ...string) {
+			docs, hookRan := newExtraCommandWithHook(docsSubcommand, setPersistentPreRunE)
+			docs.Short = "the tool's own docs"
+
+			args := append([]string{docsSubcommand}, pluginsArgs...)
+			out, err := runCLI(filesystemWithProjectDirectory(), args, args, WithExtraCommands(docs))
+			Expect(err).To(MatchError(errHelpDisplayed))
+			Expect(out).To(ContainSubstring(docsSubcommand + " [flags]"))
+			Expect(*hookRan).To(BeFalse())
+		},
+		Entry("for --plugins help", pluginsFlagArg, kubebuilderSubcommandHelp),
+		Entry("for --plugins=help", pluginsFlagArg+"="+kubebuilderSubcommandHelp),
+	)
+})
+
+// A --plugins flag replaces the chain the project names, but a project whose own chain cannot be
+// resolved is broken whatever the command line asks for, so a command that consumes it stops.
+var _ = Describe("a PROJECT file whose plugin chain cannot be resolved, with --plugins", func() {
+	const unresolvableChain = `no plugin could be resolved with key "gone.example.com/v1"`
+
+	var (
+		dir        string
+		filesystem machinery.Filesystem
+		project    []byte
+	)
+
+	BeforeEach(func() {
+		// The filesystem and the working directory are the same directory, so a plugin step that
+		// runs a tool in the working directory is caught by the same check as a file it writes.
+		dir = GinkgoT().TempDir()
+		filesystem = machinery.Filesystem{FS: afero.NewBasePathFs(afero.NewOsFs(), dir)}
+		project = []byte(`domain: example.com
+layout:
+- gone.example.com/v1
+projectName: test
+version: "3"
+`)
+		Expect(afero.WriteFile(filesystem.FS, yamlstore.DefaultPath, project,
+			machinery.DefaultFilePermission)).To(Succeed())
+
+		originalDir, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(func() { Expect(os.Chdir(originalDir)).To(Succeed()) })
+		Expect(os.Chdir(dir)).To(Succeed())
+	})
+
+	// expectUntouched checks that the run left the PROJECT file as it was and wrote nothing else.
+	expectUntouched := func() {
+		GinkgoHelper()
+
+		entries, err := os.ReadDir(dir)
+		Expect(err).NotTo(HaveOccurred())
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			names = append(names, entry.Name())
+		}
+		Expect(names).To(ConsistOf(yamlstore.DefaultPath))
+
+		content, err := afero.ReadFile(filesystem.FS, yamlstore.DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(content).To(Equal(project))
+	}
+
+	It("should refuse create api instead of scaffolding with the plugin the flag names", func() {
+		scaffolder := newDescribedCreateAPIPlugin()
+		args := []string{
+			createSubcommand, apiSubcommand, pluginsFlagArg, projectChainPluginKey, kindFlagArg, kindValue,
+		}
+
+		err := executeEmbeddedCLI(filesystem, args, args, WithPlugins(scaffolder))
+		Expect(err).To(MatchError(ContainSubstring(unresolvableChain)))
+		Expect(scaffolder.subcommand.scaffolded).To(BeFalse(),
+			"the plugin named on the command line must not scaffold over a broken project")
+		expectUntouched()
+	})
+
+	It("should refuse edit with an optional plugin", func() {
+		args := []string{editSubcommand, pluginsFlagArg + "=helm/v2-alpha"}
+
+		err := executeEmbeddedCLI(filesystem, args, args, WithPlugins(&helmv2alpha.Plugin{}))
+		Expect(err).To(MatchError(ContainSubstring(unresolvableChain)))
+		expectUntouched()
+	})
+
+	It("should still answer a help request with the help of the plugin the flag names", func() {
+		scaffolder := newDescribedCreateAPIPlugin()
+		args := []string{createSubcommand, apiSubcommand, pluginsFlagArg, projectChainPluginKey, helpFlagArg}
+
+		out, err := runCLI(filesystem, args, args, WithPlugins(scaffolder))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(ContainSubstring("--" + projectChainFlag))
+		expectUntouched()
+	})
+})
+
+// A tool started with a help request in its process arguments runs the command it picks with
+// SetArgs, so a bad value for that command's flag fails it instead of printing help.
+var _ = Describe("a command a tool picks with SetArgs while the program was started with --help", func() {
+	newCommandWithFlag := func() (*cobra.Command, *bool) {
+		ran := false
+		cmd := &cobra.Command{Use: docsSubcommand, RunE: func(*cobra.Command, []string) error {
+			ran = true
+
+			return nil
+		}}
+		cmd.Flags().Bool("enabled", false, "a boolean flag of the tool")
+
+		return cmd, &ran
+	}
+
+	run := func(filesystem machinery.Filesystem, viaRun bool, extra *cobra.Command, commandArgs ...string) error {
+		GinkgoHelper()
+
+		c := buildCLI(filesystem, []string{helpFlagArg}, WithExtraCommands(extra))
+		c.cmd.SetOut(io.Discard)
+		c.cmd.SetErr(io.Discard)
+		c.cmd.SetArgs(commandArgs)
+		if viaRun {
+			return c.Run()
+		}
+
+		return c.cmd.Execute()
+	}
+
+	DescribeTable("should fail on a bad value of its flag and not run",
+		func(viaRun bool, filesystem func() machinery.Filesystem) {
+			docs, ran := newCommandWithFlag()
+			Expect(run(filesystem(), viaRun, docs, docsSubcommand, "--enabled=maybe")).NotTo(Succeed())
+			Expect(*ran).To(BeFalse())
+		},
+		Entry("through Execute, with no PROJECT file", false, filesystemWithoutProject),
+		Entry("through Execute, with a directory at the path", false, filesystemWithProjectDirectory),
+		Entry("through Run, with no PROJECT file", true, filesystemWithoutProject),
+		Entry("through Run, with a directory at the path", true, filesystemWithProjectDirectory),
+	)
+
+	DescribeTable("should run with a good value of its flag and no PROJECT file",
+		func(viaRun bool) {
+			docs, ran := newCommandWithFlag()
+			Expect(run(filesystemWithoutProject(), viaRun, docs, docsSubcommand, "--enabled=true")).To(Succeed())
+			Expect(*ran).To(BeTrue())
+		},
+		Entry("through Execute", false),
+		Entry("through Run", true),
+	)
 })
