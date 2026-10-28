@@ -310,7 +310,7 @@ func (p *createAPISubcommand) validateController() error {
 func (p *createAPISubcommand) validateControllerAcrossResources() error {
 	resources, err := p.config.GetResources()
 	if err != nil {
-		return nil
+		return fmt.Errorf("failed to get resources to check controller names: %w", err)
 	}
 
 	newName := p.options.ControllerName

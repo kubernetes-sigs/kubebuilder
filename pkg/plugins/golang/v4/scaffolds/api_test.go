@@ -104,6 +104,71 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 	)
 })
 
+var _ = Describe("scaffolding a legacy controller", func() {
+	// scaffoldFiles scaffolds res and returns every file written, by path.
+	scaffoldFiles := func(res resource.Resource, multiGroup bool) map[string]string {
+		GinkgoHelper()
+
+		cfg := newSSATestConfig()
+		if multiGroup {
+			Expect(cfg.SetMultiGroup()).To(Succeed())
+		}
+		fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+		Expect(machinery.NewScaffold(fs, machinery.WithConfig(cfg)).Execute(&cmd.Main{})).To(Succeed())
+		scaffolder := NewAPIScaffolder(cfg, res, false)
+		scaffolder.InjectFS(fs)
+		Expect(scaffolder.Scaffold()).To(Succeed())
+
+		files := map[string]string{}
+		Expect(afero.Walk(fs.FS, ".", func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return err
+			}
+			content, readErr := afero.ReadFile(fs.FS, path)
+			Expect(readErr).NotTo(HaveOccurred())
+			files[path] = string(content)
+
+			return nil
+		})).To(Succeed())
+
+		return files
+	}
+
+	DescribeTable("should write the same files as a controller named after the kind",
+		func(kind string, multiGroup bool, controllerPath, reconciler string) {
+			apiPath := "sigs.k8s.io/kubebuilder/test/api/v1"
+			if multiGroup {
+				apiPath = "sigs.k8s.io/kubebuilder/test/api/crew/v1"
+			}
+			legacy := ssaTestResource(kind, false)
+			legacy.Path = apiPath
+			legacy.Controller = true //nolint:staticcheck // legacy library consumer
+			named := ssaTestResource(kind, false)
+			named.Path = apiPath
+			named.Controllers = &resource.Controllers{{Name: resource.DefaultControllerName(kind)}}
+
+			legacyFiles := scaffoldFiles(legacy, multiGroup)
+			Expect(scaffoldFiles(named, multiGroup)).To(Equal(legacyFiles))
+
+			Expect(legacyFiles).To(HaveKeyWithValue(controllerPath, ContainSubstring("type "+reconciler+" struct")))
+			Expect(legacyFiles).To(HaveKey(strings.TrimSuffix(controllerPath, ".go") + "_test.go"))
+			Expect(legacyFiles).To(HaveKeyWithValue("cmd/main.go", ContainSubstring(reconciler+"{")))
+		},
+		Entry("for a simple kind", "Captain", false,
+			"internal/controller/captain_controller.go", "CaptainReconciler"),
+		Entry("for a compound kind", "FirstMate", false,
+			"internal/controller/firstmate_controller.go", "FirstMateReconciler"),
+		Entry("for an acronym kind", "HTTPRoute", false,
+			"internal/controller/httproute_controller.go", "HTTPRouteReconciler"),
+		Entry("for a simple kind in a multigroup project", "Captain", true,
+			"internal/controller/crew/captain_controller.go", "CaptainReconciler"),
+		Entry("for a compound kind in a multigroup project", "FirstMate", true,
+			"internal/controller/crew/firstmate_controller.go", "FirstMateReconciler"),
+		Entry("for an acronym kind in a multigroup project", "HTTPRoute", true,
+			"internal/controller/crew/httproute_controller.go", "HTTPRouteReconciler"),
+	)
+})
+
 var _ = Describe("API scaffolding with Server-Side Apply", func() {
 	Describe("hasSSAInPackage", func() {
 		It("should return true when another kind in the same group/version has SSA enabled", func() {

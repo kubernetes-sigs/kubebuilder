@@ -145,14 +145,29 @@ func (r Resource) validateReconcilerNames() error {
 	return nil
 }
 
+// migrations lists the steps Migrate runs, in order. Each step replaces one deprecated field.
+// To deprecate a field, add its step here.
+var migrations = []func(*Resource) error{
+	(*Resource).migrateControllers,
+}
+
 // Migrate replaces deprecated fields with the current resource format.
 // PROJECT files are migrated when saved; legacy fields remain supported on read.
+// If any step fails, the resource is left unchanged.
 func (r *Resource) Migrate() error {
 	if r == nil {
 		return nil
 	}
 
-	return r.migrateControllers()
+	migrated := r.Copy()
+	for _, migrate := range migrations {
+		if err := migrate(&migrated); err != nil {
+			return err
+		}
+	}
+	*r = migrated
+
+	return nil
 }
 
 // Normalize migrates deprecated resource fields.
@@ -163,7 +178,9 @@ func (r *Resource) Normalize() {
 	_ = r.Migrate()
 }
 
-// migrateControllers records a legacy controller under its default kind-based name.
+// migrateControllers records the deprecated Controller field as a controller named after the kind.
+//
+// Deprecated: remove it together with the Controller field in Kubebuilder v5.
 func (r *Resource) migrateControllers() error {
 	if !r.Controller {
 		return nil
@@ -173,22 +190,19 @@ func (r *Resource) migrateControllers() error {
 		return fmt.Errorf("cannot migrate legacy controller: kind cannot be empty")
 	}
 
-	// Validate a copy so a failed migration leaves the resource unchanged.
-	migrated := *r
-	controllers := r.Controllers.Copy()
-	migrated.Controllers = &controllers
+	if r.Controllers == nil {
+		r.Controllers = &Controllers{}
+	}
 	name := DefaultControllerName(r.Kind)
-	if !migrated.Controllers.HasController(name) {
-		if err := migrated.Controllers.AddController(name); err != nil {
+	if !r.Controllers.HasController(name) {
+		if err := r.Controllers.AddController(name); err != nil {
 			return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
 		}
 	}
-	migrated.Controller = false
-	if err := migrated.validateControllers(); err != nil {
+	r.Controller = false
+	if err := r.validateControllers(); err != nil {
 		return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
 	}
-	r.Controllers = migrated.Controllers
-	r.Controller = false
 
 	return nil
 }

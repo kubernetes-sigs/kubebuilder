@@ -17,6 +17,7 @@ limitations under the License.
 package v4
 
 import (
+	"errors"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -676,6 +677,13 @@ var _ = Describe("validateController across resources", func() {
 		Expect(subcommand("captain-backup").validateController()).To(Succeed())
 	})
 
+	It("should fail when the resources cannot be listed", func() {
+		p := subcommand("captain-backup")
+		p.config = failingResourcesConfig{Config: cfg}
+
+		Expect(p.validateController()).To(MatchError(ContainSubstring("resources unavailable")))
+	})
+
 	It("should reject a shared filename even when reconciler capitalization differs", func() {
 		existing := resource.Resource{
 			GVK:    resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: "MyKind"},
@@ -739,3 +747,12 @@ var _ = Describe("default controller name", func() {
 		Entry("a kind at the 63 character limit", "C"+strings.Repeat("a", 62)),
 	)
 })
+
+// failingResourcesConfig is a config whose resources cannot be listed.
+type failingResourcesConfig struct {
+	config.Config
+}
+
+func (failingResourcesConfig) GetResources() ([]resource.Resource, error) {
+	return nil, errors.New("resources unavailable")
+}

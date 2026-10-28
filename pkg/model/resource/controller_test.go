@@ -17,6 +17,9 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
+	"slices"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -194,24 +197,37 @@ var _ = Describe("Controller", func() {
 			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
 		})
 
-		It("should record a legacy controller under its default name", func() {
+		// Add a row for each deprecated field that Migrate replaces.
+		DescribeTable("should replace a deprecated field",
+			func(res, expected Resource) {
+				Expect(res.Migrate()).To(Succeed())
+				Expect(res).To(Equal(expected))
+			},
+			Entry("controller: true becomes a controller named after the kind",
+				Resource{GVK: GVK{Kind: captainKind}, Controller: true},
+				Resource{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captain}}}),
+			Entry("controller: true keeps the controllers already recorded",
+				Resource{
+					GVK: GVK{Kind: captainKind}, Controller: true,
+					Controllers: &Controllers{{Name: captainBackupKebab}},
+				},
+				Resource{
+					GVK:         GVK{Kind: captainKind},
+					Controllers: &Controllers{{Name: captainBackupKebab}, {Name: captain}},
+				}),
+		)
+
+		It("should leave the resource unchanged when a later step fails", func() {
+			original := migrations
+			DeferCleanup(func() { migrations = original })
+			migrations = append(slices.Clone(original), func(*Resource) error {
+				return errors.New("later step failed")
+			})
 			res := Resource{GVK: GVK{Kind: captainKind}, Controller: true}
+			before := res.Copy()
 
-			Expect(res.Migrate()).To(Succeed())
-			Expect(res.Controller).To(BeFalse())
-			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
-		})
-
-		It("should keep the default alongside names already recorded", func() {
-			res := Resource{
-				GVK:         GVK{Kind: captainKind},
-				Controller:  true,
-				Controllers: &Controllers{{Name: captainBackupKebab}},
-			}
-
-			Expect(res.Migrate()).To(Succeed())
-			Expect(res.Controller).To(BeFalse())
-			Expect(res.GetControllerNames()).To(Equal([]string{captainBackupKebab, captain}))
+			Expect(res.Migrate()).To(MatchError("later step failed"))
+			Expect(res).To(Equal(before))
 		})
 
 		It("should be a no-op for a resource with no controller", func() {
@@ -236,6 +252,17 @@ var _ = Describe("Controller", func() {
 
 		BeforeEach(func() {
 			gvk = GVK{Group: crewGroup, Version: "v1", Kind: captainKind}
+		})
+
+		It("should not share the controller list with the merged resource", func() {
+			res := Resource{GVK: gvk, Plural: "captains", Controllers: &Controllers{{Name: captain}}}
+			incoming := Resource{GVK: gvk, Plural: "captains", Controllers: &Controllers{{Name: captainBackupKebab}}}
+
+			Expect(res.Update(incoming)).To(Succeed())
+			(*res.Controllers)[1].Name = "changed"
+			Expect(res.Controllers.AddController("captain-nightly")).To(Succeed())
+
+			Expect(incoming.GetControllerNames()).To(Equal([]string{captainBackupKebab}))
 		})
 
 		DescribeTable("should reject collisions introduced by merging controllers",

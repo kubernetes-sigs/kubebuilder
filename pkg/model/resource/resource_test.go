@@ -387,6 +387,17 @@ var _ = Describe("Resource", func() {
 			Expect(res.Webhooks.Validation).To(BeTrue())
 			Expect(res.Webhooks.Conversion).To(BeTrue())
 		})
+
+		It("should not share the controller list with the copy", func() {
+			res.Controllers = &Controllers{{Name: "captain"}, {Name: "captain-backup"}}
+
+			other := res.Copy()
+			(*other.Controllers)[0].Name = "changed"
+			Expect(other.Controllers.AddController("captain-nightly")).To(Succeed())
+			other.Controllers = nil
+
+			Expect(res.Controllers).To(Equal(&Controllers{{Name: "captain"}, {Name: "captain-backup"}}))
+		})
 	})
 
 	Context("Update", func() {

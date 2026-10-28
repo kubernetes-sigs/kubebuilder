@@ -35,6 +35,7 @@ structures.
 - `universe`: Map of file paths to contents, updated across the plugin chain.
 - `pluginChain` (optional): Array of plugin keys in the order they were executed. External plugins can inspect this to tailor behavior based on other plugins that ran (for example, `go.kubebuilder.io/v4` or `kustomize.common.kubebuilder.io/v2`).
 - `config` (optional): Serialized PROJECT file configuration for the current project. Use it to inspect metadata, existing resources, or plugin-specific settings. Kubebuilder omits this field before the PROJECT file exists—typically during the first `init`—so plugins should check for its presence.
+  Resources list their controllers under `controllers`. The deprecated `controller` field is not sent.
 
 
 **Note:** Whenever Kubebuilder has a PROJECT file available (for example during `create api`, `create webhook`, `edit`, or a subsequent `init` run), `PluginRequest` includes the `config` field. During the very first `init` run the field is omitted because the PROJECT file does not exist yet.
