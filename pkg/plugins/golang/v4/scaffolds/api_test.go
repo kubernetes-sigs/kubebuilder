@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
 )
 
 func ssaTestResourceGV(kind, group, version string, ssa bool) resource.Resource {
@@ -61,6 +62,46 @@ func newSSATestConfig(resources ...resource.Resource) config.Config {
 	}
 	return cfg
 }
+
+var _ = Describe("controller scaffolding for library consumers", func() {
+	const backupController = "captain-backup"
+	DescribeTable("should scaffold and register the last explicitly named controller",
+		func(legacy bool, names []string, expectedName, expectedReconciler string) {
+			res := ssaTestResource("Captain", false)
+			res.API = nil
+			res.Path = "sigs.k8s.io/kubebuilder/test/api/v1"
+			res.Controller = legacy //nolint:staticcheck // legacy library consumer
+			for _, name := range names {
+				if res.Controllers == nil {
+					res.Controllers = &resource.Controllers{}
+				}
+				Expect(res.Controllers.AddController(name)).To(Succeed())
+			}
+			cfg := newSSATestConfig()
+			fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+			Expect(machinery.NewScaffold(fs, machinery.WithConfig(cfg)).Execute(&cmd.Main{})).To(Succeed())
+			scaffolder := NewAPIScaffolder(cfg, res, false)
+			scaffolder.InjectFS(fs)
+			Expect(scaffolder.Scaffold()).To(Succeed())
+
+			content, err := afero.ReadFile(fs.FS,
+				filepath.Join("internal", "controller", expectedName+"_controller.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring("type " + expectedReconciler + " struct"))
+			mainContent, err := afero.ReadFile(fs.FS, "cmd/main.go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(mainContent)).To(ContainSubstring("controller." + expectedReconciler + "{"))
+		},
+		Entry("legacy controller", true, nil, "captain", "CaptainReconciler"),
+		Entry("named controller", false, []string{backupController}, "captain_backup", "CaptainBackupReconciler"),
+		Entry("appended controller", false, []string{"captain", backupController},
+			"captain_backup", "CaptainBackupReconciler"),
+		Entry("named controller alongside legacy flag", true, []string{backupController},
+			"captain_backup", "CaptainBackupReconciler"),
+		Entry("controller name with several hyphens", false, []string{"captain-nightly-backup"},
+			"captain_nightly_backup", "CaptainNightlyBackupReconciler"),
+	)
+})
 
 var _ = Describe("API scaffolding with Server-Side Apply", func() {
 	Describe("hasSSAInPackage", func() {

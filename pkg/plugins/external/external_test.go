@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	v3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
@@ -960,7 +961,11 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 	})
 
 	Context("with config injection", func() {
-		const filePerm os.FileMode = 755
+		const (
+			filePerm          os.FileMode = 755
+			captainController             = "captain"
+			backupController              = "captain-backup"
+		)
 		var (
 			pluginFileName string
 			args           []string
@@ -1075,6 +1080,60 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(mockGetter.capturedRequest.Config).ToNot(BeNil())
 			Expect(mockGetter.capturedRequest.Config["domain"]).To(Equal("test.domain"))
 			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
+		})
+
+		DescribeTable("should preserve controller information in external plugin requests",
+			func(legacy bool, names, expected []string) {
+				res := resource.Resource{
+					GVK: resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"},
+				}
+				res.Controller = legacy //nolint:staticcheck // legacy external plugin compatibility
+				for _, name := range names {
+					if res.Controllers == nil {
+						res.Controllers = &resource.Controllers{}
+					}
+					Expect(res.Controllers.AddController(name)).To(Succeed())
+				}
+				Expect(cfg.AddResource(res)).To(Succeed())
+				pluginData := map[string]any{"custom": map[string]any{"enabled": true}}
+				Expect(cfg.EncodePluginConfig("consumer.example/v1", pluginData)).To(Succeed())
+				before := cfg.Resources[0].Copy()
+				c := createAPISubcommand{Path: pluginFileName, Args: args}
+				Expect(c.InjectConfig(cfg)).To(Succeed())
+				Expect(c.Scaffold(fs)).To(Succeed())
+
+				encoded, marshalErr := json.Marshal(mockGetter.capturedRequest.Config)
+				Expect(marshalErr).NotTo(HaveOccurred())
+				received := v3.New()
+				Expect(received.UnmarshalYAML(encoded)).To(Succeed())
+				actual, getErr := received.GetResource(res.GVK)
+				Expect(getErr).NotTo(HaveOccurred())
+				Expect(actual.GetControllerNames()).To(Equal(expected))
+				Expect(actual.HasController()).To(Equal(len(expected) > 0))
+				Expect(actual.Validate()).To(Succeed())
+				var receivedPluginData map[string]any
+				Expect(received.DecodePluginConfig("consumer.example/v1", &receivedPluginData)).To(Succeed())
+				Expect(receivedPluginData).To(Equal(pluginData))
+				Expect(cfg.Resources[0]).To(Equal(before))
+			},
+			Entry("legacy", true, nil, []string{captainController}),
+			Entry("named", false, []string{captainController, backupController}, []string{captainController, backupController}),
+			Entry("mixed", true, []string{backupController}, []string{backupController, captainController}),
+			Entry("no controller", false, nil, nil),
+		)
+
+		It("should reject invalid migration before invoking an external plugin", func() {
+			res := resource.Resource{
+				GVK:         resource.GVK{Group: "crew", Version: "v1", Kind: "MyKind"},
+				Controllers: &resource.Controllers{{Name: "my-kind"}},
+			}
+			res.Controller = true //nolint:staticcheck // legacy external plugin compatibility
+			Expect(cfg.AddResource(res)).To(Succeed())
+			c := createAPISubcommand{Path: pluginFileName, Args: args}
+			Expect(c.InjectConfig(cfg)).To(Succeed())
+			Expect(c.Scaffold(fs)).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+			Expect(mockGetter.capturedRequest).To(BeNil())
+			Expect(cfg.Resources[0].GetControllerNames()).To(Equal([]string{"my-kind", "mykind"}))
 		})
 
 		It("should handle nil config gracefully", func() {

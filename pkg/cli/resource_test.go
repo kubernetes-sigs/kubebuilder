@@ -87,7 +87,7 @@ var _ = Describe("resourceOptions", func() {
 				Expect(resource.API).NotTo(BeNil())
 				Expect(resource.API.CRDVersion).To(Equal(""))
 				Expect(resource.API.Namespaced).To(BeFalse())
-				Expect(resource.Controller).To(BeFalse())
+				Expect(resource.HasController()).To(BeFalse())
 				Expect(resource.Webhooks).NotTo(BeNil())
 				Expect(resource.Webhooks.WebhookVersion).To(Equal(""))
 				Expect(resource.Webhooks.Defaulting).To(BeFalse())

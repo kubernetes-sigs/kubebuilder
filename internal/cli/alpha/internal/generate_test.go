@@ -21,6 +21,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -347,8 +348,13 @@ var _ = Describe("generate: file-helpers", func() {
 
 var _ = Describe("generate: get-args-helpers", func() {
 	const (
-		fooDomain = "foo.com"
-		barRepo   = "bar"
+		fooDomain      = "foo.com"
+		barRepo        = "bar"
+		crewGroup      = "crew"
+		captainKind    = "Captain"
+		captainCtrl    = "captain"
+		captainBackup  = "captain-backup"
+		certManagerMod = "github.com/cert-manager/cert-manager@v1.18.2"
 	)
 
 	// getInitArgs
@@ -534,6 +540,33 @@ var _ = Describe("generate: get-args-helpers", func() {
 		})
 	})
 
+	Context("getControllerFlags", func() {
+		var res resource.Resource
+		BeforeEach(func() {
+			res = resource.Resource{
+				GVK: resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+			}
+		})
+
+		It("replays a named controller with its name", func() {
+			Expect(getControllerFlags(res, captainBackup)).To(ContainElements(
+				"--resource=false", "--controller=true", "--controller-name", captainBackup))
+		})
+
+		It("replays an external resource with its API flags", func() {
+			res.External = true
+			res.Path = "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+			res.Domain = "io"
+			res.Module = certManagerMod
+
+			Expect(getControllerFlags(res, "certificate")).To(ContainElements(
+				"--controller-name", "certificate",
+				"--external-api-path", res.Path,
+				"--external-api-domain", "io",
+				"--external-api-module", res.Module))
+		})
+	})
+
 	// getAPIResourceFlags
 	Context("getAPIResourceFlags", func() {
 		var res resource.Resource
@@ -543,7 +576,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 
 		Context("returns correct flags", func() {
 			It("for nil API with Controller set", func() {
-				res.Controller = true
+				res.Controller = true //nolint:staticcheck // exercising the deprecated field is the point
 				// Controllers are now created separately, so always --controller=false in API step
 				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller=false"))
 			})
@@ -649,6 +682,12 @@ var _ = Describe("generate: get-args-helpers", func() {
 })
 
 var _ = Describe("generate: create-helpers", func() {
+	const (
+		crewGroup     = "crew"
+		captainKind   = "Captain"
+		captainCtrl   = "captain"
+		captainBackup = "captain-backup"
+	)
 	var (
 		kbc         *utils.TestContext
 		err         error
@@ -672,6 +711,37 @@ var _ = Describe("generate: create-helpers", func() {
 		kbc.Destroy()
 	})
 
+	DescribeTable("createControllers should replay every recorded controller",
+		func(legacy bool, controllers *resource.Controllers, expectedNames []string) {
+			res := resource.Resource{
+				GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
+				Controller:  legacy, //nolint:staticcheck // legacy PROJECT compatibility
+				Controllers: controllers,
+			}
+			Expect(createControllers(res)).To(Succeed())
+			logPath := filepath.Join(kbc.Dir, "kubebuilder.log")
+			if len(expectedNames) == 0 {
+				Expect(logPath).NotTo(BeAnExistingFile())
+				return
+			}
+			content, readErr := os.ReadFile(logPath)
+			Expect(readErr).NotTo(HaveOccurred())
+			commands := strings.Split(strings.TrimSpace(string(content)), "\n")
+			Expect(commands).To(HaveLen(len(expectedNames)))
+			for i, name := range expectedNames {
+				Expect(commands[i]).To(ContainSubstring("create api"))
+				Expect(commands[i]).To(ContainSubstring("--controller-name " + name))
+				Expect(commands[i]).To(ContainSubstring("--resource=false"))
+			}
+		},
+		Entry("legacy unnamed controller", true, nil, []string{captainCtrl}),
+		Entry("named controllers", false, &resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}},
+			[]string{captainCtrl, captainBackup}),
+		Entry("both formats", true, &resource.Controllers{{Name: captainBackup}},
+			[]string{captainBackup, captainCtrl}),
+		Entry("no controllers", false, nil, nil),
+	)
+
 	// createAPI
 	Describe("createAPI", func() {
 		Context("Without External flag", func() {
@@ -680,7 +750,7 @@ var _ = Describe("generate: create-helpers", func() {
 					GVK:        resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
 					Plural:     examplesDir,
 					API:        &resource.API{Namespaced: true},
-					Controller: true,
+					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
 				}
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
@@ -693,7 +763,7 @@ var _ = Describe("generate: create-helpers", func() {
 					GVK:        resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: "external"},
 					Plural:     examplesDir,
 					API:        &resource.API{Namespaced: true},
-					Controller: true,
+					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
 					External:   true,
 					Path:       certManagerAPIPath,
 				}
@@ -705,8 +775,8 @@ var _ = Describe("generate: create-helpers", func() {
 				res := resource.Resource{
 					GVK:        resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
 					Plural:     "certificates",
-					API:        nil, // External resources typically don't scaffold API
-					Controller: true,
+					API:        nil,  // External resources typically don't scaffold API
+					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
 					External:   true,
 					Path:       certManagerAPIPath,
 					Module:     "github.com/cert-manager/cert-manager@v1.18.2",
@@ -720,7 +790,7 @@ var _ = Describe("generate: create-helpers", func() {
 					GVK:        resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
 					Plural:     "certificates",
 					API:        nil,
-					Controller: true,
+					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
 					External:   true,
 					Path:       certManagerAPIPath,
 					Module:     "", // No module specified
