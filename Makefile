@@ -19,6 +19,20 @@
 #
 export GOPROXY?=https://proxy.golang.org/
 
+#
+# Go.
+#
+# GO_VERSION is the toolchain used for builds and vulnerability scans.
+# Keep the go directive in go.mod at GO_DIRECTIVE_VERSION so library consumers
+# are not forced onto a newer patch (same split as Cluster API).
+# See: https://github.com/kubernetes-sigs/cluster-api/blob/main/Makefile
+GO_VERSION ?= 1.26.10
+GO_DIRECTIVE_VERSION ?= 1.26.0
+
+# Ensure the correct toolchain is used (overrides a newer local Go for scans/builds).
+GOTOOLCHAIN = go$(GO_VERSION)
+export GOTOOLCHAIN
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -154,13 +168,14 @@ go-apidiff:
 	$(call go-install-tool,$(GO_APIDIFF),github.com/joelanford/go-apidiff,$(GO_APIDIFF_VERSION))
 
 GOVULNCHECK_VERSION ?= v1.3.0
-# Pin the toolchain to match CI so a newer local Go (e.g. 1.27.1) does not
-# report stdlib CVEs that CI does not see.
-GOVULNCHECK_GOTOOLCHAIN ?= go1.26.10
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck (https://go.dev/doc/security/vuln/) against the module.
-	GOTOOLCHAIN=$(GOVULNCHECK_GOTOOLCHAIN) go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+
+.PHONY: go-version
+go-version: ## Print the Go toolchain version used for builds and scans
+	@echo $(GO_VERSION)
 
 ##@ Tests
 

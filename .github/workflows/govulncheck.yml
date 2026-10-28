@@ -24,10 +24,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # Use Makefile GO_VERSION (not go.mod) so stdlib CVE fixes can land without
+      # raising the go directive required by library consumers. Same pattern as
+      # Cluster API: make go-version → setup-go.
+      - name: Calculate go version
+        id: vars
+        run: echo "go_version=$(make go-version)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: go.mod
+          go-version: ${{ steps.vars.outputs.go_version }}
 
       # Use the Makefile target (GOVULNCHECK_VERSION) instead of golang/govulncheck-action, which
       # installs govulncheck@latest and can disagree with local `make govulncheck`.
