@@ -17,9 +17,22 @@ limitations under the License.
 package cli
 
 import (
+	"bytes"
+	"errors"
+	"io"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// failingWriter fails every write with err.
+type failingWriter struct {
+	err error
+}
+
+func (w failingWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
 
 var _ = Describe("Version", func() {
 	var c *CLI
@@ -40,6 +53,26 @@ var _ = Describe("Version", func() {
 			Expect(cmd.Long).To(ContainSubstring("Print the"))
 			Expect(cmd.Example).NotTo(Equal(""))
 			Expect(cmd.Example).To(ContainSubstring("version"))
+		})
+
+		// Tools that embed the CLI capture its output with SetOut.
+		It("writes the version to the command output", func() {
+			c.version = "v1.2.3"
+			cmd := c.newVersionCmd()
+			var out bytes.Buffer
+			cmd.SetOut(&out)
+			cmd.SetArgs([]string{})
+			Expect(cmd.Execute()).To(Succeed())
+			Expect(out.String()).To(Equal("v1.2.3\n"))
+		})
+
+		It("returns the error when the version can't be written", func() {
+			writeErr := errors.New("write failed")
+			cmd := c.newVersionCmd()
+			cmd.SetOut(failingWriter{err: writeErr})
+			cmd.SetErr(io.Discard)
+			cmd.SetArgs([]string{})
+			Expect(cmd.Execute()).To(MatchError(writeErr))
 		})
 	})
 })

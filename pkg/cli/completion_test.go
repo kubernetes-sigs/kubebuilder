@@ -17,8 +17,13 @@ limitations under the License.
 package cli
 
 import (
+	"bytes"
+	"errors"
+	"io"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/cobra"
 )
 
 var _ = Describe("Completion", func() {
@@ -77,4 +82,37 @@ var _ = Describe("Completion", func() {
 			Expect(cmd.Short).To(ContainSubstring("Load powershell completions"))
 		})
 	})
+
+	// Tools that embed the CLI capture its output with SetOut.
+	DescribeTable("writes the completion script to the command output",
+		func(shell, want string) {
+			root := &cobra.Command{Use: "kubebuilder"}
+			root.AddCommand(c.newCompletionCmd())
+			var out bytes.Buffer
+			root.SetOut(&out)
+			root.SetArgs([]string{"completion", shell})
+			Expect(root.Execute()).To(Succeed())
+			Expect(out.String()).To(ContainSubstring(want))
+		},
+		Entry("bash", "bash", "bash completion V2 for kubebuilder"),
+		Entry("zsh", "zsh", "zsh completion for kubebuilder"),
+		Entry("fish", "fish", "fish completion for kubebuilder"),
+		Entry("powershell", "powershell", "powershell completion for kubebuilder"),
+	)
+
+	DescribeTable("returns the error when the completion script can't be written",
+		func(shell string) {
+			writeErr := errors.New("write failed")
+			root := &cobra.Command{Use: "kubebuilder"}
+			root.AddCommand(c.newCompletionCmd())
+			root.SetOut(failingWriter{err: writeErr})
+			root.SetErr(io.Discard)
+			root.SetArgs([]string{"completion", shell})
+			Expect(root.Execute()).To(MatchError(writeErr))
+		},
+		Entry("bash", "bash"),
+		Entry("zsh", "zsh"),
+		Entry("fish", "fish"),
+		Entry("powershell", "powershell"),
+	)
 })
