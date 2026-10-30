@@ -18,7 +18,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -37,7 +36,7 @@ MacOS:
   $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
 `, c.commandName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Root().GenBashCompletionV2(os.Stdout, true)
+			return cmd.Root().GenBashCompletionV2(cmd.OutOrStdout(), true)
 		},
 	}
 }
@@ -56,7 +55,7 @@ $ %[1]s completion `+shellZsh+` > "${fpath[1]}/_%[1]s"
 # You will need to start a new shell for this setup to take effect.
 `, c.commandName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Root().GenZshCompletion(os.Stdout)
+			return cmd.Root().GenZshCompletion(cmd.OutOrStdout())
 		},
 	}
 }
@@ -72,7 +71,7 @@ $ %[1]s completion fish | source
 $ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
 `, c.commandName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Root().GenFishCompletion(os.Stdout, true)
+			return cmd.Root().GenFishCompletion(cmd.OutOrStdout(), true)
 		},
 	}
 }
@@ -82,7 +81,7 @@ func (CLI) newPowerShellCmd() *cobra.Command {
 		Use:   "powershell",
 		Short: "Load powershell completions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Root().GenPowerShellCompletion(os.Stdout)
+			return cmd.Root().GenPowerShellCompletion(cmd.OutOrStdout())
 		},
 	}
 }
