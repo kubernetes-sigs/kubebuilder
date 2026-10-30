@@ -1,0 +1,42 @@
+name: Random Order Tests
+
+# Trigger the workflow on pull requests and direct pushes to any branch
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+permissions: {}
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    name: Unit and integration tests in random order
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # This step is needed as the following one tries to remove
+      # kustomize for each test but has no permission to do so
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+
+      # Every Ginkgo spec runs in random order. This ensures each spec sets up
+      # what it uses and puts back what it changes, so a spec that passes only
+      # because another one ran first, or that breaks the specs after it, fails
+      # here instead of hiding until the order changes. The failure prints the
+      # seed to reproduce it.
+      - name: Random Order Tests
+        run: make test-random
