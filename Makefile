@@ -120,8 +120,17 @@ fix-docs: ## Fix documentation issues (accessibility + trailing spaces)
 	$(MAKE) remove-spaces
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
+lint: golangci-lint lint-project-rules ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
+
+# The project's own lint rules live in hack/lint/ruleguard/rules.go, and
+# golangci-lint runs them through gocritic's ruleguard check. golangci-lint
+# checks only the default build, so this also runs them on the files tagged
+# //go:build integration. Add a new project rule to that file; it is checked
+# here with no other change.
+.PHONY: lint-project-rules
+lint-project-rules: golangci-lint ## Run the project's own lint rules on the files tagged integration too
+	$(GOLANGCI_LINT) run --build-tags=integration --enable-only gocritic
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
@@ -275,7 +284,7 @@ kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-
 verify: verify-lint verify-license verify-sample-permissions verify-testdata verify-docs verify-helm ## Run all verification checks
 
 .PHONY: verify-lint
-verify-lint: verify-lint-config lint-fmt yamllint-yaml ## Run linting checks (config, format, YAML). Note: golangci-lint run is done via CI action for PR comments
+verify-lint: verify-lint-config lint-fmt yamllint-yaml lint-project-rules ## Run linting checks (config, format, YAML, project rules on integration files). Note: the full golangci-lint run is done via CI action for PR comments
 
 .PHONY: verify-lint-config
 verify-lint-config: golangci-lint ## Verify golangci-lint linter configuration
