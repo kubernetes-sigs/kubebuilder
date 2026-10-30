@@ -12,6 +12,7 @@ linters:
     - errcheck
     - ginkgolinter
     - goconst
+    - gocritic
     - gocyclo
     - govet
     - importas
@@ -39,6 +40,16 @@ linters:
     ginkgolinter:
       forbid-focus-container: true
       forbid-spec-pollution: true
+    gocritic:
+      # Only the ruleguard rules of the project. They keep tests that depend on
+      # the Kubebuilder binary on utils.NewTestContext, as AGENTS.md says.
+      disable-all: true
+      enabled-checks:
+        - ruleguard
+      settings:
+        ruleguard:
+          failOn: dsl,import
+          rules: "${config-path}/hack/lint/ruleguard/rules.go"
     govet:
       disable:
         - fieldalignment
