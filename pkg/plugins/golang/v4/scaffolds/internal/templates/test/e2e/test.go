@@ -43,6 +43,9 @@ type Test struct {
 	machinery.BoilerplateMixin
 	machinery.RepositoryMixin
 	machinery.ProjectNameMixin
+
+	// CurlImage is the image used to read the metrics endpoint
+	CurlImage string
 }
 
 // SetTemplateDefaults set defaults for this template
@@ -491,13 +494,13 @@ var _ = Describe("Manager", Ordered, func() {
 			By("creating the curl-metrics pod to access the metrics endpoint")
 			cmd = exec.Command("kubectl", "run", "curl-metrics", "--restart=Never",
 				"--namespace", namespace,
-				"--image=curlimages/curl:latest",
+				"--image={{ .CurlImage }}",
 				"--overrides",
 				fmt.Sprintf(` + "`" + `{
 					"spec": {
 						"containers": [{
 							"name": "curl",
-							"image": "curlimages/curl:latest",
+							"image": "{{ .CurlImage }}",
 							"command": ["/bin/sh", "-c"],
 							"args": [
 								"for i in $(seq 1 30); do ` +

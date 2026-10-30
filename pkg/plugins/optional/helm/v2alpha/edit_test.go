@@ -18,7 +18,9 @@ package v2alpha
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -252,7 +254,7 @@ build: ## Build manager binary.
 			contentStr := string(content)
 			Expect(contentStr).To(ContainSubstring("##@ Helm Deployment"))
 			Expect(contentStr).To(ContainSubstring("## Helm binary to use for deploying the chart"))
-			Expect(contentStr).To(ContainSubstring("HELM ?= helm"))
+			Expect(contentStr).To(ContainSubstring("HELM ?= $(LOCALBIN)/helm"))
 			Expect(contentStr).To(ContainSubstring("## Namespace to deploy the Helm release"))
 			Expect(contentStr).To(ContainSubstring("HELM_NAMESPACE ?= test-project-system"))
 			Expect(contentStr).To(ContainSubstring("## Name of the Helm release"))
@@ -261,22 +263,53 @@ build: ## Build manager binary.
 			Expect(contentStr).To(ContainSubstring("HELM_CHART_DIR ?= dist/chart"))
 			Expect(contentStr).To(ContainSubstring("## Additional arguments to pass to helm commands"))
 			Expect(contentStr).To(ContainSubstring("HELM_EXTRA_ARGS ?="))
-			Expect(contentStr).To(ContainSubstring(".PHONY: install-helm"))
-			Expect(contentStr).To(ContainSubstring("install-helm: ## Install the latest version of Helm."))
+			Expect(contentStr).To(ContainSubstring(".PHONY: helm"))
+			Expect(contentStr).To(ContainSubstring("helm: $(LOCALBIN) ## Download Helm locally if necessary."))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-deploy"))
 			Expect(contentStr).To(ContainSubstring(
-				"helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG."))
+				"helm-deploy: helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG."))
 			Expect(contentStr).To(ContainSubstring("--set manager.image.repository=$${IMG%:*}"))
 			Expect(contentStr).To(ContainSubstring("--set manager.image.tag=$${IMG##*:}"))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-uninstall"))
 			Expect(contentStr).To(ContainSubstring(
-				"helm-uninstall: ## Uninstall the Helm release from the K8s cluster."))
+				"helm-uninstall: helm ## Uninstall the Helm release from the K8s cluster."))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-status"))
-			Expect(contentStr).To(ContainSubstring("helm-status: ## Show Helm release status."))
+			Expect(contentStr).To(ContainSubstring("helm-status: helm ## Show Helm release status."))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-history"))
-			Expect(contentStr).To(ContainSubstring("helm-history: ## Show Helm release history."))
+			Expect(contentStr).To(ContainSubstring("helm-history: helm ## Show Helm release history."))
 			Expect(contentStr).To(ContainSubstring(".PHONY: helm-rollback"))
-			Expect(contentStr).To(ContainSubstring("helm-rollback: ## Rollback to previous Helm release."))
+			Expect(contentStr).To(ContainSubstring("helm-rollback: helm ## Rollback to previous Helm release."))
+		})
+
+		It("should install the pinned Helm before running a Helm command, unless HELM is set", func() {
+			if _, err := exec.LookPath("make"); err != nil {
+				Skip("make is not installed")
+			}
+			// LOCALBIN comes from the go/v4 Makefile
+			makefileContent := `LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+`
+			Expect(os.WriteFile("Makefile", []byte(makefileContent), 0o644)).To(Succeed())
+			Expect(editCmd.addHelmMakefileTargets("test-project-system")).To(Succeed())
+
+			install := "--version " + HelmVersion
+			for target, command := range map[string]string{
+				"helm-deploy":    "/bin/helm upgrade",
+				"helm-uninstall": "/bin/helm uninstall",
+				"helm-status":    "/bin/helm status",
+				"helm-history":   "/bin/helm history",
+				"helm-rollback":  "/bin/helm rollback",
+			} {
+				output := makeDryRun(target)
+				Expect(output).To(ContainSubstring(install), target)
+				Expect(strings.Index(output, command)).To(BeNumerically(">", strings.Index(output, install)), target)
+			}
+
+			By("using the Helm set in HELM")
+			output := makeDryRun("helm-status", "HELM=/opt/helm")
+			Expect(output).NotTo(ContainSubstring(install))
+			Expect(output).To(ContainSubstring("/opt/helm status"))
 		})
 
 		It("should not duplicate Helm targets if already present", func() {
@@ -290,7 +323,9 @@ build: ## Build manager binary.
 ##@ Helm Deployment
 
 ## Helm binary to use for deploying the chart
-HELM ?= helm
+HELM ?= $(LOCALBIN)/helm
+## Helm version to install
+HELM_VERSION ?= ` + HelmVersion + `
 ## Namespace to deploy the Helm release
 HELM_NAMESPACE ?= test-project-system
 ## Name of the Helm release
@@ -300,15 +335,21 @@ HELM_CHART_DIR ?= dist/chart
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
-.PHONY: install-helm
-install-helm: ## Install the latest version of Helm.
-	@command -v $(HELM) >/dev/null 2>&1 || { \
-		echo "Installing Helm..." && \
-		curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash; \
-	}
+.PHONY: helm
+helm: $(LOCALBIN) ## Download Helm locally if necessary.
+ifeq ($(HELM),$(LOCALBIN)/helm)
+helm: $(LOCALBIN)/helm-$(HELM_VERSION)
+	@ln -sf "helm-$(HELM_VERSION)" "$(HELM)"
+endif
+
+# The Helm install script checks that helm is on PATH
+$(LOCALBIN)/helm-$(HELM_VERSION): | $(LOCALBIN)
+	curl -fsSL -o "$(LOCALBIN)/get-helm-4" https://raw.githubusercontent.com/helm/helm/$(HELM_VERSION)/scripts/get-helm-4
+	PATH="$(LOCALBIN):$$PATH" HELM_INSTALL_DIR="$(LOCALBIN)" BINARY_NAME=helm-$(HELM_VERSION) USE_SUDO=false \
+		bash "$(LOCALBIN)/get-helm-4" --version $(HELM_VERSION)
 
 .PHONY: helm-deploy
-helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+helm-deploy: helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
 	IMG="$(IMG)"; $(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
 		--namespace $(HELM_NAMESPACE) \
 		--create-namespace \
@@ -319,19 +360,19 @@ helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify
 		$(HELM_EXTRA_ARGS)
 
 .PHONY: helm-uninstall
-helm-uninstall: ## Uninstall the Helm release from the K8s cluster.
+helm-uninstall: helm ## Uninstall the Helm release from the K8s cluster.
 	$(HELM) uninstall $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-status
-helm-status: ## Show Helm release status.
+helm-status: helm ## Show Helm release status.
 	$(HELM) status $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-history
-helm-history: ## Show Helm release history.
+helm-history: helm ## Show Helm release history.
 	$(HELM) history $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-rollback
-helm-rollback: ## Rollback to previous Helm release.
+helm-rollback: helm ## Rollback to previous Helm release.
 	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 `
 			err := os.WriteFile("Makefile", []byte(makefileContent), 0o644)
@@ -420,3 +461,10 @@ metadata:
 		})
 	})
 })
+
+// makeDryRun prints the commands that make would run for the given arguments.
+func makeDryRun(args ...string) string {
+	output, err := exec.Command("make", append([]string{"-n"}, args...)...).CombinedOutput()
+	Expect(err).NotTo(HaveOccurred(), string(output))
+	return string(output)
+}

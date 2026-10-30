@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 
 const (
 	certmanagerVersion = "v1.21.3"
+	helmVersion        = "v4.3.1"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 
 	defaultKindCluster = "kind"
@@ -380,32 +382,68 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 	return nil
 }
 
-// InstallHelm installs Helm in the e2e server.
+// InstallHelm installs the pinned Helm version into HelmPath, unless it is already there.
+// It does not replace the Helm on PATH and does not need sudo.
 func (t *TestContext) InstallHelm() error {
-	// Check if Helm is already installed
-	checkCmd := exec.Command("helm", "version")
-	_, err := t.Run(checkCmd)
-	if err == nil {
-		// Helm is already installed, skip installation
-		_, _ = fmt.Fprintf(GinkgoWriter, "Helm is already installed, skipping installation\n")
+	if version, err := t.helmVersion(); err == nil && version == helmVersion {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Helm %s is already installed in %s, skipping installation\n",
+			helmVersion, HelmPath())
 		return nil
 	}
 
-	// Install Helm if not found
-	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4"
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", helmInstallScript))
-	_, err = t.Run(cmd)
-	if err != nil {
+	installDir := filepath.Dir(HelmPath())
+	if err := os.MkdirAll(installDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create the Helm install directory %q: %w", installDir, err)
+	}
+
+	// The Helm install script checks that helm is on PATH
+	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/" + helmVersion + "/scripts/get-helm-4"
+	cmd := exec.Command("bash", "-c",
+		fmt.Sprintf("curl -fsSL %s | bash -s -- --version %s", helmInstallScript, helmVersion))
+	installer := &CmdContext{Dir: t.Dir, Stdin: t.Stdin, Env: append(slices.Clone(t.Env),
+		"HELM_INSTALL_DIR="+installDir, "USE_SUDO=false",
+		"PATH="+installDir+string(os.PathListSeparator)+os.Getenv("PATH"))}
+	if _, err := installer.Run(cmd); err != nil {
 		return err
 	}
 
-	verifyCmd := exec.Command("helm", "version")
-	_, err = t.Run(verifyCmd)
+	version, err := t.helmVersion()
 	if err != nil {
 		return err
+	}
+	if version != helmVersion {
+		return fmt.Errorf("helm in %q reports version %q after installing %q", HelmPath(), version, helmVersion)
 	}
 
 	return nil
+}
+
+// HelmPath returns the path of the pinned Helm binary. The directory is per user and per version.
+func HelmPath() string {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		cacheDir = os.TempDir()
+	}
+	return filepath.Join(cacheDir, "kubebuilder", "e2e", "helm", helmVersion, "helm")
+}
+
+// HelmCommand returns a command that runs the pinned Helm binary with the given arguments.
+func (t *TestContext) HelmCommand(args ...string) *exec.Cmd {
+	return exec.Command(HelmPath(), args...)
+}
+
+// helmVersion returns the version reported by the pinned Helm binary.
+// It reads only stdout because Helm prints warnings to stderr.
+func (t *TestContext) helmVersion() (string, error) {
+	cmd := t.HelmCommand("version", "--template", "{{ .Version }}")
+	cmd.Dir = t.Dir
+	cmd.Env = append(os.Environ(), t.Env...)
+	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", strings.Join(cmd.Args, " "))
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get the helm version: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
 }
 
 // UninstallHelmRelease removes the specified Helm release from the cluster.
@@ -415,7 +453,7 @@ func (t *TestContext) InstallHelm() error {
 func (t *TestContext) UninstallHelmRelease() error {
 	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
 	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
-	cmd := exec.Command("helm", "uninstall", releaseName, "--namespace", ns)
+	cmd := t.HelmCommand("uninstall", releaseName, "--namespace", ns)
 
 	_, err := t.Run(cmd)
 	if err != nil {
@@ -446,7 +484,7 @@ func (t *TestContext) HelmInstallReleaseWithOptions(crdKeep bool) error {
 	// Set the image to match what was built (format: e2e-test/controller-manager:suffix)
 	// Helm chart uses manager.image.repository and manager.image.tag
 	// --create-namespace ensures the namespace exists before installing
-	cmd := exec.Command("helm", "install", releaseName, "dist/chart",
+	cmd := t.HelmCommand("install", releaseName, "dist/chart",
 		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix),
 		"--create-namespace",
 		"--set", fmt.Sprintf("manager.image.repository=%s", "e2e-test/controller-manager"),
@@ -461,7 +499,7 @@ func (t *TestContext) HelmInstallReleaseWithOptions(crdKeep bool) error {
 func (t *TestContext) HelmUpgradeReleaseWithReplicas(replicas int) error {
 	releaseName := fmt.Sprintf("e2e-%s", t.TestSuffix)
 	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
-	cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+	cmd := t.HelmCommand("upgrade", releaseName, "dist/chart",
 		"--namespace", ns,
 		"--reuse-values",
 		"--set", fmt.Sprintf("manager.replicas=%d", replicas))

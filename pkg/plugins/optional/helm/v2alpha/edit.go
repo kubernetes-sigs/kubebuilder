@@ -287,13 +287,18 @@ func getHelmMakefileTargets(projectName, namespace, outputDir string) string {
 	return helmMakefileTemplate(namespace, release, outputDir)
 }
 
+// HelmVersion is the Helm version to install
+const HelmVersion = "v4.3.1"
+
 // helmMakefileTemplate returns the Helm deployment section template
 // This follows the same pattern as the Kustomize deployment section in the Go plugin
 const helmMakefileTemplateFormat = `
 ##@ Helm Deployment
 
 ## Helm binary to use for deploying the chart
-HELM ?= helm
+HELM ?= $(LOCALBIN)/helm
+## Helm version to install
+HELM_VERSION ?= ` + HelmVersion + `
 ## Namespace to deploy the Helm release
 HELM_NAMESPACE ?= %s
 ## Name of the Helm release
@@ -303,15 +308,21 @@ HELM_CHART_DIR ?= %s/chart
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
-.PHONY: install-helm
-install-helm: ## Install the latest version of Helm.
-	@command -v $(HELM) >/dev/null 2>&1 || { \
-		echo "Installing Helm..." && \
-		curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash; \
-	}
+.PHONY: helm
+helm: $(LOCALBIN) ## Download Helm locally if necessary.
+ifeq ($(HELM),$(LOCALBIN)/helm)
+helm: $(LOCALBIN)/helm-$(HELM_VERSION)
+	@ln -sf "helm-$(HELM_VERSION)" "$(HELM)"
+endif
+
+# The Helm install script checks that helm is on PATH
+$(LOCALBIN)/helm-$(HELM_VERSION): | $(LOCALBIN)
+	curl -fsSL -o "$(LOCALBIN)/get-helm-4" https://raw.githubusercontent.com/helm/helm/$(HELM_VERSION)/scripts/get-helm-4
+	PATH="$(LOCALBIN):$$PATH" HELM_INSTALL_DIR="$(LOCALBIN)" BINARY_NAME=helm-$(HELM_VERSION) USE_SUDO=false \
+		bash "$(LOCALBIN)/get-helm-4" --version $(HELM_VERSION)
 
 .PHONY: helm-deploy
-helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
+helm-deploy: helm ## Deploy manager to the K8s cluster via Helm. Specify an image with IMG.
 	IMG="$(IMG)"; $(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART_DIR) \
 		--namespace $(HELM_NAMESPACE) \
 		--create-namespace \
@@ -322,19 +333,19 @@ helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify
 		$(HELM_EXTRA_ARGS)
 
 .PHONY: helm-uninstall
-helm-uninstall: ## Uninstall the Helm release from the K8s cluster.
+helm-uninstall: helm ## Uninstall the Helm release from the K8s cluster.
 	$(HELM) uninstall $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-status
-helm-status: ## Show Helm release status.
+helm-status: helm ## Show Helm release status.
 	$(HELM) status $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-history
-helm-history: ## Show Helm release history.
+helm-history: helm ## Show Helm release history.
 	$(HELM) history $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-rollback
-helm-rollback: ## Rollback to previous Helm release.
+helm-rollback: helm ## Rollback to previous Helm release.
 	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
 `
 

@@ -27,6 +27,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
+// installHelmTarget is the line of the helm target in the Helm section.
+const installHelmTarget = "helm: $(LOCALBIN) ## Download Helm locally if necessary."
+
 var _ = Describe("Helm Makefile Targets", func() {
 	var (
 		tmpDir       string
@@ -78,20 +81,20 @@ deploy:
 
 		By("verifying Helm section was added")
 		Expect(makefileContent).To(ContainSubstring("##@ Helm Deployment"))
-		Expect(makefileContent).To(ContainSubstring("HELM ?= helm"))
-		Expect(makefileContent).To(ContainSubstring(".PHONY: install-helm"))
-		Expect(makefileContent).To(ContainSubstring("install-helm: ## Install the latest version of Helm."))
+		Expect(makefileContent).To(ContainSubstring("HELM ?= $(LOCALBIN)/helm"))
+		Expect(makefileContent).To(ContainSubstring(".PHONY: helm"))
+		Expect(makefileContent).To(ContainSubstring(installHelmTarget))
 		Expect(makefileContent).To(ContainSubstring(".PHONY: helm-deploy"))
-		Expect(makefileContent).To(ContainSubstring("helm-deploy: install-helm ##"))
+		Expect(makefileContent).To(ContainSubstring("helm-deploy: helm ##"))
 		Expect(makefileContent).To(ContainSubstring(".PHONY: helm-uninstall"))
 
 		// Count occurrences
 		helmSectionCount := strings.Count(makefileContent, "##@ Helm Deployment")
 		helmDeployCount := strings.Count(makefileContent, ".PHONY: helm-deploy")
-		helmInstallCount := strings.Count(makefileContent, "install-helm: ## Install the latest version of Helm.")
+		helmInstallCount := strings.Count(makefileContent, installHelmTarget)
 		Expect(helmSectionCount).To(Equal(1), "Helm section should appear exactly once")
 		Expect(helmDeployCount).To(Equal(1), "helm-deploy should appear exactly once")
-		Expect(helmInstallCount).To(Equal(1), "install-helm target should appear exactly once")
+		Expect(helmInstallCount).To(Equal(1), "helm target should appear exactly once")
 
 		By("appending Helm targets again (should not duplicate)")
 		err = util.AppendCodeIfNotExist(makefilePath, helmTargets)
@@ -105,10 +108,10 @@ deploy:
 		By("verifying no duplication occurred")
 		helmSectionCount2 := strings.Count(makefileContent2, "##@ Helm Deployment")
 		helmDeployCount2 := strings.Count(makefileContent2, ".PHONY: helm-deploy")
-		helmInstallCount2 := strings.Count(makefileContent2, "install-helm: ## Install the latest version of Helm.")
+		helmInstallCount2 := strings.Count(makefileContent2, installHelmTarget)
 		Expect(helmSectionCount2).To(Equal(1), "Helm section should still appear exactly once")
 		Expect(helmDeployCount2).To(Equal(1), "helm-deploy should still appear exactly once")
-		Expect(helmInstallCount2).To(Equal(1), "install-helm target should still appear exactly once")
+		Expect(helmInstallCount2).To(Equal(1), "helm target should still appear exactly once")
 
 		// Verify content is identical (no duplication)
 		Expect(makefileContent2).To(Equal(makefileContent), "Makefile should be unchanged after second append")
@@ -122,8 +125,8 @@ deploy:
 		Expect(helmTargets).To(ContainSubstring("HELM_NAMESPACE ?= my-project-system"))
 		Expect(helmTargets).To(ContainSubstring("HELM_RELEASE ?= my-project"))
 		Expect(helmTargets).To(ContainSubstring("HELM_CHART_DIR ?= dist/chart"))
-		Expect(helmTargets).To(ContainSubstring("install-helm: ## Install the latest version of Helm."))
-		Expect(helmTargets).To(ContainSubstring("helm-deploy: install-helm ##"))
+		Expect(helmTargets).To(ContainSubstring(installHelmTarget))
+		Expect(helmTargets).To(ContainSubstring("helm-deploy: helm ##"))
 		Expect(helmTargets).To(ContainSubstring("helm-uninstall:"))
 		Expect(helmTargets).To(ContainSubstring("helm-status:"))
 		Expect(helmTargets).To(ContainSubstring("helm-history:"))

@@ -30,11 +30,15 @@ jobs:
           "docs/book/src/multiversion-tutorial/testdata/project"
         ]
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    # Runs the same steps as the scaffolded test-chart.yml
+    defaults:
+      run:
+        working-directory: ${{ matrix.folder }}
+    env:
+      IMG: controller:latest
+      CERT_MANAGER_VERSION: v1.21.3
+      PROMETHEUS_OPERATOR_CRDS_VERSION: 32.0.2
     steps:
-      - name: Set project name
-        id: project
-        run: echo "name=$(basename ${{ matrix.folder }})" >> $GITHUB_OUTPUT
-
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,11 +49,11 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
+        working-directory: .
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -59,59 +63,42 @@ jobs:
 
       - name: Prepare project
         run: |
-          cd ${{ matrix.folder }}
           go mod tidy
-          make docker-build IMG=${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
-          kind load docker-image ${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
-        env:
-          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
+          make docker-build
+          kind load docker-image "$IMG"
 
       - name: Install Helm
-        run: make install-helm
-
-      - name: Lint Helm chart
         run: |
-          helm lint ${{ matrix.folder }}/dist/chart
+          make helm
+          # Use the Helm installed by make helm in the next steps
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
+      - name: Lint Helm Chart
+        run: helm lint ./dist/chart
+
+      - name: Install cert-manager via Helm (wait for readiness)
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager \
+            --version ${CERT_MANAGER_VERSION} \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --wait \
+            --timeout 300s
 
       - name: Install Prometheus Operator CRDs
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          helm install prometheus-crds prometheus-community/prometheus-operator-crds
-
-      - name: Install cert-manager via Helm
-        run: |
-          helm repo add jetstack https://charts.jetstack.io
-          helm repo update
-          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
-
-      - name: Wait for cert-manager to be ready
-        run: |
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
-          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
-
-      - name: Render Helm chart
-        run: |
-          helm template ${{ matrix.folder }}/dist/chart --namespace=${STEPS_PROJECT_OUTPUTS_NAME}-system
-        env:
-          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name }}
+          helm install prometheus-crds prometheus-community/prometheus-operator-crds \
+            --version ${PROMETHEUS_OPERATOR_CRDS_VERSION}
 
       - name: Deploy manager via Helm
-        working-directory: ${{ matrix.folder }}
         run: |
-          make helm-deploy IMG=${STEPS_PROJECT_OUTPUTS_NAME}:v0.1.0
-        env:
-          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
+          make helm-deploy
 
       - name: Check Helm release status
-        working-directory: ${{ matrix.folder }}
         run: |
           make helm-status
-
-      - name: Run Helm tests
-        run: |
-          helm test ${STEPS_PROJECT_OUTPUTS_NAME} --namespace ${STEPS_PROJECT_OUTPUTS_NAME}-system
-        env:
-          STEPS_PROJECT_OUTPUTS_NAME: ${{ steps.project.outputs.name}}
-

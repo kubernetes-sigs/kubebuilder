@@ -29,6 +29,8 @@ type CustomGcl struct {
 
 	// GolangciLintVersion is the version of golangci-lint to use
 	GolangciLintVersion string
+	// LogtoolsVersion is the version of the logcheck linter plugin to use
+	LogtoolsVersion string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -54,5 +56,5 @@ plugins:
   # logcheck validates structured logging calls and parameters (e.g., balanced key-value pairs)
   - module: "sigs.k8s.io/logtools"
     import: "sigs.k8s.io/logtools/logcheck/gclplugin"
-    version: latest
+    version: {{ .LogtoolsVersion }}
 `

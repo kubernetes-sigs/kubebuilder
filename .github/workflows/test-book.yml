@@ -45,11 +45,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -63,7 +62,7 @@ jobs:
 
       - name: Running make test-e2e for ${{ matrix.folder }}
         working-directory: ${{ matrix.folder }}
-        run: make test-e2e
+        run: make test-e2e KIND=kind
 
   webhook-certs:
     permissions:

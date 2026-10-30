@@ -62,7 +62,7 @@ case ${os} in
 esac
 
 # grab mdbook
-MDBOOK_VERSION="v0.5.2"
+MDBOOK_VERSION="v0.5.4"
 MDBOOK_BASENAME="mdBook-${MDBOOK_VERSION}-${arch}-${target}"
 MDBOOK_URL="https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/${MDBOOK_BASENAME}.${ext}"
 
