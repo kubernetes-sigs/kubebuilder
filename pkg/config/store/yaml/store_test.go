@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -204,12 +205,18 @@ layout: ""
 
 		It("should never read a non-regular file at the specified path", func() {
 			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+v3File), os.ModePerm)).To(Succeed())
-			fs := &nonRegularFs{Fs: s.fs, path: path}
-			s.fs = fs
+			s.fs = &nonRegularFs{Fs: s.fs, path: path}
 
 			err := s.LoadFrom(path)
 			Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
-			Expect(fs.reads).To(BeZero())
+		})
+
+		It("should reject a path replaced by a named pipe after it was checked", func() {
+			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+v3File), os.ModePerm)).To(Succeed())
+			s.fs = &replacedByPipeFs{Fs: s.fs, path: path}
+
+			err := s.LoadFrom(path)
+			Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
 		})
 
 		It("should load the Config through a symlink to a regular file", func() {
@@ -611,11 +618,10 @@ type nonRegularFileInfo struct{ os.FileInfo }
 // Mode adds a device-file mode to the wrapped file information.
 func (i nonRegularFileInfo) Mode() os.FileMode { return i.FileInfo.Mode() | os.ModeDevice }
 
-// nonRegularFs makes path look like a non-regular file and counts how many times it is opened.
+// nonRegularFs makes path look like a non-regular file, both when it is checked and when it is opened.
 type nonRegularFs struct {
 	afero.Fs
-	path  string
-	reads int
+	path string
 }
 
 // Stat reports the configured path as a non-regular file.
@@ -630,6 +636,52 @@ func (f *nonRegularFs) Stat(name string) (os.FileInfo, error) {
 
 	return info, nil
 }
+
+// replacedByPipeFs makes path look like a regular file to Stat, but the file opened at path reports
+// itself as a named pipe, as if another process replaced the file after it was checked.
+type replacedByPipeFs struct {
+	afero.Fs
+	path string
+}
+
+// Open opens the path the same way as OpenFile.
+func (f *replacedByPipeFs) Open(name string) (afero.File, error) {
+	return f.OpenFile(name, os.O_RDONLY, 0)
+}
+
+// OpenFile wraps the file opened at the configured path so that it reports a named pipe. Opening a
+// named pipe without O_NONBLOCK waits for a writer, so such an open fails here instead of blocking.
+func (f *replacedByPipeFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	if name == f.path && flag&syscall.O_NONBLOCK == 0 {
+		return nil, fmt.Errorf("open %q would block until a writer opens the named pipe", name)
+	}
+
+	file, err := f.Fs.OpenFile(name, flag, perm)
+	if err != nil || name != f.path {
+		return file, err
+	}
+
+	return pipeFile{File: file}, nil
+}
+
+// pipeFile reports a named pipe mode for the wrapped file.
+type pipeFile struct{ afero.File }
+
+// Stat reports the wrapped file as a named pipe.
+func (f pipeFile) Stat() (os.FileInfo, error) {
+	info, err := f.File.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	return pipeFileInfo{info}, nil
+}
+
+// pipeFileInfo reports a named pipe mode on top of the wrapped FileInfo.
+type pipeFileInfo struct{ os.FileInfo }
+
+// Mode adds a named pipe mode to the wrapped file information.
+func (i pipeFileInfo) Mode() os.FileMode { return i.FileInfo.Mode() | os.ModeNamedPipe }
 
 // failingStatFs fails to stat the given path.
 type failingStatFs struct {
@@ -667,16 +719,20 @@ func (f *unreachableLinkTargetFs) LstatIfPossible(name string) (os.FileInfo, boo
 	return info, lstatCalled, nil
 }
 
-// Open counts reads of the configured path before delegating to the wrapped filesystem.
+// Open opens the path the same way as OpenFile.
 func (f *nonRegularFs) Open(name string) (afero.File, error) {
-	if name == f.path {
-		f.reads++
-	}
+	return f.OpenFile(name, os.O_RDONLY, 0)
+}
 
-	file, err := f.Fs.Open(name)
+// OpenFile reports the configured path as a non-regular file once it is opened.
+func (f *nonRegularFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	file, err := f.Fs.OpenFile(name, flag, perm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %q: %w", name, err)
 	}
+	if name != f.path {
+		return file, nil
+	}
 
-	return file, nil
+	return pipeFile{File: file}, nil
 }
