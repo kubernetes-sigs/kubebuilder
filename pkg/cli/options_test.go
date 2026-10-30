@@ -398,6 +398,8 @@ var _ = Describe("Discover external plugins", func() {
 
 			It("should fail if pluginsroot is empty", func() {
 				errPluginsRoot := errors.New("could not retrieve plugins root")
+				original := retrievePluginsRoot
+				DeferCleanup(func() { retrievePluginsRoot = original })
 				retrievePluginsRoot = func(_ string) (string, error) {
 					return "", errPluginsRoot
 				}
@@ -409,6 +411,8 @@ var _ = Describe("Discover external plugins", func() {
 			})
 
 			It("should skip parsing of directories if plugins root is not a directory", func() {
+				original := retrievePluginsRoot
+				DeferCleanup(func() { retrievePluginsRoot = original })
 				retrievePluginsRoot = func(_ string) (string, error) {
 					return "externalplugin.sh", nil
 				}
@@ -418,10 +422,7 @@ var _ = Describe("Discover external plugins", func() {
 			})
 
 			It("should return full path to the external plugins without XDG_CONFIG_HOME", func() {
-				if _, ok := os.LookupEnv("XDG_CONFIG_HOME"); ok {
-					err = os.Setenv("XDG_CONFIG_HOME", "")
-					Expect(err).ToNot(HaveOccurred())
-				}
+				GinkgoT().Setenv("XDG_CONFIG_HOME", "")
 
 				home := os.Getenv("HOME")
 
@@ -437,8 +438,7 @@ var _ = Describe("Discover external plugins", func() {
 			})
 
 			It("should return full path to the external plugins with XDG_CONFIG_HOME", func() {
-				err = os.Setenv("XDG_CONFIG_HOME", "/some/random/path")
-				Expect(err).ToNot(HaveOccurred())
+				GinkgoT().Setenv("XDG_CONFIG_HOME", "/some/random/path")
 
 				pluginsRoot, err = getPluginsRoot(runtime.GOOS)
 				Expect(err).ToNot(HaveOccurred())
@@ -446,17 +446,8 @@ var _ = Describe("Discover external plugins", func() {
 			})
 
 			It("should return error when home directory is set to empty", func() {
-				_, ok := os.LookupEnv("XDG_CONFIG_HOME")
-				if ok {
-					err = os.Setenv("XDG_CONFIG_HOME", "")
-					Expect(err).ToNot(HaveOccurred())
-				}
-
-				_, ok = os.LookupEnv("HOME")
-				if ok {
-					err = os.Setenv("HOME", "")
-					Expect(err).ToNot(HaveOccurred())
-				}
+				GinkgoT().Setenv("XDG_CONFIG_HOME", "")
+				GinkgoT().Setenv("HOME", "")
 
 				pluginsRoot, err = getPluginsRoot(runtime.GOOS)
 				Expect(err).To(HaveOccurred())
