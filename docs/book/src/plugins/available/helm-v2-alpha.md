@@ -289,7 +289,7 @@ The default is `9443`, detected from your project configuration. To disable the 
 
 ### Health probe address configuration
 
-Set `manager.healthProbeBindAddress` to change the address where the manager serves its health probes, the liveness (`/healthz`) and readiness (`/readyz`) endpoints. The chart passes the value to the manager as `--health-probe-bind-address`, so you can set the host and the port together. The `health` container port takes the port of the address, and both probes use that named port.
+Set `manager.healthProbeBindAddress` to change the address where the manager serves its health probes, the liveness (`/healthz`) and readiness (`/readyz`) endpoints. The chart passes the value to the manager as `--health-probe-bind-address`, so you can set the host and the port together. The `health` container port takes the port of the address, and the probes that reach the server use that named port. They are found by their port, not their path, so probes on endpoints renamed in `cmd/main.go` (`LivenessEndpointName`, `ReadinessEndpointName`) follow too.
 
 For example, install the chart with the health probes on port `8082`:
 
@@ -297,7 +297,9 @@ For example, install the chart with the health probes on port `8082`:
 helm install my-operator ./dist/chart --set manager.healthProbeBindAddress=:8082
 ```
 
-The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag, the manager keeps its own default, and the container port and probes use `8081`. A project that sets an empty `--health-probe-bind-address=` gets `0`, since controller-runtime turns the server off for an empty address too.
+The value is detected from your project configuration, `:8081` for a scaffolded project. When it is empty, the chart passes no `--health-probe-bind-address` flag and the manager keeps the default in its `cmd/main.go`. The container port and probes then use `8081`, or, when your `config/manager/manager.yaml` does not pass the flag, the port it declares as `health` (or probes). A project that sets an empty `--health-probe-bind-address=` gets `0`, since controller-runtime turns the server off for an empty address too.
+
+If your `cmd/main.go` no longer defines `--health-probe-bind-address`, keep the value empty: with any other value, the chart passes the flag and the manager exits with `flag provided but not defined`.
 
 The kubelet sends the probes to the Pod IP, so keep the host empty or use one that covers it, such as `0.0.0.0`. With a loopback host such as `localhost` or `127.0.0.1`, the probes cannot reach the server.
 
