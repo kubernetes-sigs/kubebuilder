@@ -660,6 +660,18 @@ version: "3"
 
 		Context("controller migration", func() {
 			const captainKind = "Captain"
+			It("should return a migration error and leave the caller's config unchanged", func() {
+				cfg := Cfg{Version: Version, Resources: []resource.Resource{
+					{GVK: resource.GVK{Kind: captainKind}, Controller: true},
+					{Controller: true},
+				}}
+				before := []resource.Resource{cfg.Resources[0].Copy(), cfg.Resources[1].Copy()}
+
+				_, err := cfg.MarshalYAML()
+				Expect(err).To(MatchError(ContainSubstring("kind cannot be empty")))
+				Expect(cfg.Resources).To(Equal(before))
+			})
+
 			It("should migrate and omit empty fields without mutating the caller", func() {
 				cfg := Cfg{Version: Version, Resources: []resource.Resource{
 					{

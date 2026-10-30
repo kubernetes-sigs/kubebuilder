@@ -150,6 +150,59 @@ var _ = Describe("alpha generate", func() {
 		}
 	})
 
+	It("should record legacy and mixed controllers by name and leave the source PROJECT file unchanged",
+		func() {
+			const sailorKind = "Sailor"
+			kind := strings.ToLower(kbc.Kind)
+			backup := kind + "-backup"
+
+			By("scaffolding one resource with a controller and another with two")
+			Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", sailorKind,
+				"--resource", "--controller", "--make=false")).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+				"--resource", "--controller", "--make=false")).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+				"--resource=false", "--controller", "--controller-name", backup, "--make=false")).To(Succeed())
+
+			By("rewriting the PROJECT file in the legacy and the mixed forms")
+			projectPath := filepath.Join(kbc.Dir, "PROJECT")
+			content, err := os.ReadFile(projectPath)
+			Expect(err).NotTo(HaveOccurred())
+			legacyOnly := "  controllers:\n  - name: sailor\n"
+			bothForms := "  controllers:\n  - name: " + kind + "\n  - name: " + backup + "\n"
+			Expect(string(content)).To(ContainSubstring(legacyOnly))
+			Expect(string(content)).To(ContainSubstring(bothForms))
+			legacy := strings.Replace(string(content), legacyOnly, "  controller: true\n", 1)
+			legacy = strings.Replace(legacy, bothForms,
+				"  controller: true\n  controllers:\n  - name: "+backup+"\n", 1)
+			Expect(os.WriteFile(projectPath, []byte(legacy), 0o600)).To(Succeed())
+
+			By("regenerating the project into another directory")
+			//nolint:gosec
+			output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", snapshotDir))
+			Expect(err).NotTo(HaveOccurred(), string(output))
+
+			By("checking that every controller was kept and recorded by name")
+			regenerated, err := loadProjectConfig(snapshotDir)
+			Expect(err).NotTo(HaveOccurred())
+			for kindName, names := range map[string][]string{sailorKind: {"sailor"}, kbc.Kind: {kind, backup}} {
+				res, err := regenerated.GetResource(resource.GVK{
+					Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: kindName,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
+				Expect(res.GetControllerNames()).To(ConsistOf(names))
+				for _, name := range names {
+					Expect(filepath.Join(snapshotDir, "internal", "controller",
+						resource.NormalizeFileName(name)+"_controller.go")).To(BeAnExistingFile())
+				}
+			}
+
+			By("checking that the source PROJECT file was left as it was")
+			Expect(os.ReadFile(projectPath)).To(Equal([]byte(legacy)))
+		})
+
 	It("should migrate a deprecated Helm v1-alpha project to v2-alpha with an older Go layout", func() {
 		By("preparing a project with legacy Helm metadata")
 		Expect(kbc.Init("--plugins", "go/v4", "--project-version", "3", "--domain", kbc.Domain)).To(Succeed())

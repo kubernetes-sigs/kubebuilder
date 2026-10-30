@@ -1048,6 +1048,24 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
 		})
 
+		It("should send a legacy controller to an external plugin as the controllers list", func() {
+			cfg.Resources = []resource.Resource{{
+				GVK:        resource.GVK{Version: "v1", Kind: "Captain"},
+				Controller: true,
+			}}
+			c := createAPISubcommand{Path: pluginFileName, Args: args}
+			Expect(c.InjectConfig(cfg)).To(Succeed())
+
+			Expect(c.Scaffold(fs)).To(Succeed())
+
+			resources, ok := mockGetter.capturedRequest.Config["resources"].([]any)
+			Expect(ok).To(BeTrue())
+			Expect(resources).To(ConsistOf(SatisfyAll(
+				HaveKeyWithValue("controllers", ConsistOf(HaveKeyWithValue("name", "captain"))),
+				Not(HaveKey("controller")),
+			)))
+		})
+
 		It("should pass config to external plugin on create webhook subcommand", func() {
 			c := createWebhookSubcommand{
 				Path: pluginFileName,
