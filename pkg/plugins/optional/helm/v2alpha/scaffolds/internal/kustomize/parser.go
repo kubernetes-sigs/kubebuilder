@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/extractor"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater/appliers"
 )
 
 // ParsedResources holds Kubernetes resources organized by type for Helm chart generation.
@@ -38,11 +39,12 @@ type ParsedResources struct {
 	Services         []*unstructured.Unstructured
 
 	// RBAC resources
-	ServiceAccount      *unstructured.Unstructured
-	Roles               []*unstructured.Unstructured
-	ClusterRoles        []*unstructured.Unstructured
-	RoleBindings        []*unstructured.Unstructured
-	ClusterRoleBindings []*unstructured.Unstructured
+	ServiceAccount       *unstructured.Unstructured
+	ExtraServiceAccounts []*unstructured.Unstructured
+	Roles                []*unstructured.Unstructured
+	ClusterRoles         []*unstructured.Unstructured
+	RoleBindings         []*unstructured.Unstructured
+	ClusterRoleBindings  []*unstructured.Unstructured
 
 	// CRD and API resources
 	CustomResourceDefinitions []*unstructured.Unstructured
@@ -92,6 +94,7 @@ func (p *Parser) Parse() (*ParsedResources, error) {
 func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 	decoder := yaml.NewDecoder(reader)
 	var deployments []*unstructured.Unstructured
+	var serviceAccounts []*unstructured.Unstructured
 	resources := &ParsedResources{
 		CustomResourceDefinitions: make([]*unstructured.Unstructured, 0),
 		Roles:                     make([]*unstructured.Unstructured, 0),
@@ -104,6 +107,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		ServiceMonitors:           make([]*unstructured.Unstructured, 0),
 		NetworkPolicies:           make([]*unstructured.Unstructured, 0),
 		CustomResources:           make([]*unstructured.Unstructured, 0),
+		ExtraServiceAccounts:      make([]*unstructured.Unstructured, 0),
 		Other:                     make([]*unstructured.Unstructured, 0),
 	}
 
@@ -122,9 +126,12 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 		}
 
 		obj := &unstructured.Unstructured{Object: doc}
-		if obj.GetKind() == "Deployment" {
+		switch obj.GetKind() {
+		case "Deployment":
 			deployments = append(deployments, obj)
-		} else {
+		case "ServiceAccount":
+			serviceAccounts = append(serviceAccounts, obj)
+		default:
 			p.categorizeResource(obj, resources)
 		}
 	}
@@ -137,6 +144,8 @@ func (p *Parser) ParseFromReader(reader io.Reader) (*ParsedResources, error) {
 			resources.ExtraDeployments = append(resources.ExtraDeployments, d)
 		}
 	}
+
+	resolveServiceAccounts(resources, serviceAccounts)
 
 	return resources, nil
 }
@@ -151,8 +160,6 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.Namespace = obj
 	case kind == "CustomResourceDefinition":
 		resources.CustomResourceDefinitions = append(resources.CustomResourceDefinitions, obj)
-	case kind == "ServiceAccount":
-		resources.ServiceAccount = obj
 	case kind == "Role":
 		resources.Roles = append(resources.Roles, obj)
 	case kind == "ClusterRole":
@@ -175,6 +182,42 @@ func (p *Parser) categorizeResource(obj *unstructured.Unstructured, resources *P
 		resources.NetworkPolicies = append(resources.NetworkPolicies, obj)
 	default:
 		resources.Other = append(resources.Other, obj)
+	}
+}
+
+// resolveServiceAccounts selects the manager ServiceAccount from the manager Deployment
+// reference and routes all other ServiceAccounts to ExtraServiceAccounts.
+func resolveServiceAccounts(resources *ParsedResources, serviceAccounts []*unstructured.Unstructured) {
+	resources.ExtraServiceAccounts = make([]*unstructured.Unstructured, 0, len(serviceAccounts))
+
+	var managerSA *unstructured.Unstructured
+	if resources.Deployment != nil {
+		saName, found, err := unstructured.NestedString(
+			resources.Deployment.Object, "spec", "template", "spec", "serviceAccountName")
+		if found && err == nil && saName != "" {
+			deployNamespace := resources.Deployment.GetNamespace()
+			for _, sa := range serviceAccounts {
+				if sa.GetName() == saName && sa.GetNamespace() == deployNamespace {
+					managerSA = sa
+					break
+				}
+			}
+		}
+	}
+
+	if managerSA == nil {
+		for _, sa := range serviceAccounts {
+			if appliers.IsManagerServiceAccount(sa) {
+				managerSA = sa
+			}
+		}
+	}
+
+	resources.ServiceAccount = managerSA
+	for _, sa := range serviceAccounts {
+		if sa != managerSA {
+			resources.ExtraServiceAccounts = append(resources.ExtraServiceAccounts, sa)
+		}
 	}
 }
 

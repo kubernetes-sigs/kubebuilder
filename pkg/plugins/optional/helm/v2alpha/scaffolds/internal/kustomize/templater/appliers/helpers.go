@@ -81,16 +81,32 @@ func blockScalarLines(lines []string) []bool {
 	return inside
 }
 
+// IsManagerServiceAccount reports whether resource is the controller-manager ServiceAccount.
+func IsManagerServiceAccount(resource *unstructured.Unstructured) bool {
+	if resource == nil {
+		return false
+	}
+	name := resource.GetName()
+	return name == controllerManagerName || strings.HasSuffix(name, "-"+controllerManagerName)
+}
+
 // IsManagerDeployment reports whether resource is the controller-manager Deployment.
-// Annotation is not checked — any extra Deployment may carry it, causing false positives.
 func IsManagerDeployment(resource *unstructured.Unstructured) bool {
-	if resource.GetLabels()["control-plane"] == controllerManagerName {
-		return true
+	return common.IsManagerDeployment(resource)
+}
+
+// IsResolvedManagerDeployment reports whether resource is the manager Deployment selected during parsing.
+// An extra Deployment that looks like a manager is not it. Without a selected Deployment, it falls back
+// to IsManagerDeployment.
+func IsResolvedManagerDeployment(resource, managerDeployment *unstructured.Unstructured) bool {
+	if resource == nil {
+		return false
 	}
-	if names := ExtractContainerNames(resource); names["manager"] {
-		return true
+	if managerDeployment != nil {
+		return resource.GetName() == managerDeployment.GetName() &&
+			resource.GetNamespace() == managerDeployment.GetNamespace()
 	}
-	return strings.Contains(resource.GetName(), controllerManagerName)
+	return IsManagerDeployment(resource)
 }
 
 // wrapWebhookCertificateBlock wraps a webhook certificate block with its feature conditions.
@@ -177,6 +193,33 @@ func FindManagerContainerRange(yamlContent string) (int, int) {
 		return itemStart, len(lines) - 1
 	}
 	return -1, -1
+}
+
+// applyToManagerContainer runs transform on only the manager container's block within
+// yamlContent, leaving sidecar containers and the rest of the Deployment untouched.
+// The manager container is located via FindManagerContainerRange (the
+// kubectl.kubernetes.io/default-container annotation, falling back to "manager").
+// When it cannot be located, yamlContent is returned unchanged: templating is skipped
+// rather than applied document-wide, so brittle detection can never leak manager
+// substitutions into sidecar containers.
+func applyToManagerContainer(yamlContent string, transform func(string) string) string {
+	start, end := FindManagerContainerRange(yamlContent)
+	if start < 0 {
+		return yamlContent
+	}
+
+	lines := strings.Split(yamlContent, "\n")
+	before := lines[:start]
+	block := strings.Join(lines[start:end+1], "\n")
+	after := lines[end+1:]
+
+	transformed := strings.Split(transform(block), "\n")
+
+	result := make([]string, 0, len(before)+len(transformed)+len(after))
+	result = append(result, before...)
+	result = append(result, transformed...)
+	result = append(result, after...)
+	return strings.Join(result, "\n")
 }
 
 func findListField(lines []string, field string) (int, int) {
