@@ -172,5 +172,90 @@ var _ = Describe("NewMarkerFor with unsupported extensions", func() {
 	It("should panic for unsupported extensions", func() {
 		Expect(func() { NewMarkerFor("file.txt", "test") }).To(Panic())
 		Expect(func() { NewMarkerFor("file.md", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor("Makefile", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor(".gitignore", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor("file.", "test") }).To(Panic())
 	})
+})
+
+var _ = Describe("ParseMarkerFor", func() {
+	DescribeTable("should create valid markers for known extensions",
+		func(path, comment string) {
+			marker, err := ParseMarkerFor(path, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(marker.comment).To(Equal(comment))
+		},
+		Entry("for go files", "file.go", "//"),
+		Entry("for yaml files", "file.yaml", "#"),
+		Entry("for yaml files (short version)", "file.yml", "#"),
+	)
+
+	It("should use the kubebuilder scaffold prefix", func() {
+		marker, err := ParseMarkerFor("test.go", "imports")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(marker.String()).To(Equal("// +kubebuilder:scaffold:imports"))
+	})
+
+	DescribeTable("should return an error for unknown extensions",
+		func(path, extSubstr string) {
+			_, err := ParseMarkerFor(path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(extSubstr))
+		},
+		Entry("for .txt extension", "file.txt", ".txt"),
+		// filepath.Ext(".gitignore") == ".gitignore" (the leading dot counts as the final dot), so this
+		// is genuinely an unknown extension, not a missing one.
+		Entry("for Unix dotfile paths", ".gitignore", ".gitignore"),
+	)
+
+	DescribeTable("should return an error for paths with no file extension",
+		func(path string) {
+			_, err := ParseMarkerFor(path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no file extension"))
+		},
+		Entry("extensionless file", "Makefile"),
+		Entry("trailing-dot file", "file."),
+	)
+})
+
+var _ = Describe("ParseMarkerWithPrefixFor", func() {
+	DescribeTable("should create valid markers for known extensions",
+		func(path, prefix, comment string) {
+			marker, err := ParseMarkerWithPrefixFor(prefix, path, "test")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(marker.comment).To(Equal(comment))
+		},
+		Entry("for go files", "file.go", "custom:scaffold", "//"),
+		Entry("for yaml files", "file.yaml", "custom:scaffold", "#"),
+		Entry("for yaml files (short version)", "file.yml", "custom:scaffold", "#"),
+	)
+
+	It("should apply the given prefix", func() {
+		marker, err := ParseMarkerWithPrefixFor("custom:scaffold", "test.go", "test")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(marker.String()).To(Equal("// +custom:scaffold:test"))
+	})
+
+	DescribeTable("should return an error for unknown extensions",
+		func(path, extSubstr string) {
+			_, err := ParseMarkerWithPrefixFor("custom:scaffold", path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(extSubstr))
+		},
+		Entry("for .txt extension", "file.txt", ".txt"),
+		// filepath.Ext(".gitignore") == ".gitignore" (the leading dot counts as the final dot), so this
+		// is genuinely an unknown extension, not a missing one.
+		Entry("for Unix dotfile paths", ".gitignore", ".gitignore"),
+	)
+
+	DescribeTable("should return an error for paths with no file extension",
+		func(path string) {
+			_, err := ParseMarkerWithPrefixFor("custom:scaffold", path, "test")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no file extension"))
+		},
+		Entry("extensionless file", "Makefile"),
+		Entry("trailing-dot file", "file."),
+	)
 })
