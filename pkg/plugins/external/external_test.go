@@ -963,6 +963,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 	Context("with config injection", func() {
 		const (
 			filePerm          os.FileMode = 755
+			captainKind                   = "Captain"
 			captainController             = "captain"
 			backupController              = "captain-backup"
 		)
@@ -1048,6 +1049,42 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(mockGetter.capturedRequest.PluginChain).To(Equal(expectedChain))
 		})
 
+		It("should send a legacy controller as the controllers list in both the config and the PROJECT file",
+			func() {
+				cfg.Resources = []resource.Resource{{
+					GVK:        resource.GVK{Version: "v1", Kind: captainKind},
+					Controller: true,
+				}}
+				const legacyProject = `domain: test.domain
+resources:
+- controller: true
+  kind: Captain
+  version: v1
+version: "3"
+`
+				Expect(afero.WriteFile(fs.FS, "PROJECT", []byte(legacyProject), filePerm)).To(Succeed())
+				c := createAPISubcommand{Path: pluginFileName, Args: args}
+				Expect(c.InjectConfig(cfg)).To(Succeed())
+
+				Expect(c.Scaffold(fs)).To(Succeed())
+
+				resources, ok := mockGetter.capturedRequest.Config["resources"].([]any)
+				Expect(ok).To(BeTrue())
+				Expect(resources).To(ConsistOf(SatisfyAll(
+					HaveKeyWithValue("controllers", ConsistOf(HaveKeyWithValue("name", "captain"))),
+					Not(HaveKey("controller")),
+				)))
+				saved, marshalErr := cfg.MarshalYAML()
+				Expect(marshalErr).NotTo(HaveOccurred())
+				Expect(mockGetter.capturedRequest.Universe).To(HaveKeyWithValue("PROJECT", string(saved)))
+				sent := v3.New()
+				Expect(sent.UnmarshalYAML([]byte(mockGetter.capturedRequest.Universe["PROJECT"]))).To(Succeed())
+				captain, getErr := sent.GetResource(resource.GVK{Version: "v1", Kind: captainKind})
+				Expect(getErr).NotTo(HaveOccurred())
+				Expect(captain.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
+				Expect(captain.GetControllerNames()).To(Equal([]string{"captain"}))
+			})
+
 		It("should pass config to external plugin on create webhook subcommand", func() {
 			c := createWebhookSubcommand{
 				Path: pluginFileName,
@@ -1085,7 +1122,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 		DescribeTable("should preserve controller information in external plugin requests",
 			func(legacy bool, names, expected []string) {
 				res := resource.Resource{
-					GVK: resource.GVK{Group: "crew", Version: "v1", Kind: "Captain"},
+					GVK: resource.GVK{Group: "crew", Version: "v1", Kind: captainKind},
 				}
 				res.Controller = legacy //nolint:staticcheck // legacy external plugin compatibility
 				for _, name := range names {
@@ -1101,6 +1138,22 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				c := createAPISubcommand{Path: pluginFileName, Args: args}
 				Expect(c.InjectConfig(cfg)).To(Succeed())
 				Expect(c.Scaffold(fs)).To(Succeed())
+
+				rawResources, ok := mockGetter.capturedRequest.Config["resources"].([]any)
+				Expect(ok).To(BeTrue())
+				Expect(rawResources).To(HaveLen(1))
+				rawResource, ok := rawResources[0].(map[string]any)
+				Expect(ok).To(BeTrue())
+				Expect(rawResource).NotTo(HaveKey("controller"))
+				var rawNames []string
+				if rawControllers, found := rawResource["controllers"].([]any); found {
+					for _, entry := range rawControllers {
+						rawEntry, isMap := entry.(map[string]any)
+						Expect(isMap).To(BeTrue())
+						rawNames = append(rawNames, fmt.Sprint(rawEntry["name"]))
+					}
+				}
+				Expect(rawNames).To(Equal(expected))
 
 				encoded, marshalErr := json.Marshal(mockGetter.capturedRequest.Config)
 				Expect(marshalErr).NotTo(HaveOccurred())

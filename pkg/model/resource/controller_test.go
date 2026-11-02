@@ -17,6 +17,11 @@ limitations under the License.
 package resource
 
 import (
+	"encoding/json"
+	"errors"
+	"slices"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -52,6 +57,18 @@ var _ = Describe("Controller", func() {
 		Entry("an empty name", ""),
 		Entry("a name with uppercase characters", "MyController"),
 		Entry("a name with an underscore", "my_controller"),
+		Entry("a name starting with a hyphen", "-controller"),
+		Entry("a name longer than 63 characters", strings.Repeat("a", 64)),
+	)
+
+	DescribeTable("should always write the name key",
+		func(controller Controller, expected string) {
+			content, err := json.Marshal(controller)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal(expected))
+		},
+		Entry("for a named controller", Controller{Name: captain}, `{"name":"captain"}`),
+		Entry("for an unnamed controller", Controller{}, `{"name":""}`),
 	)
 
 	Context("Controllers", func() {
@@ -184,6 +201,30 @@ var _ = Describe("Controller", func() {
 			Expect(res.Controllers).To(BeNil())
 		})
 
+		// Normalize is deprecated but kept for library callers, so its signature and result must not change.
+		DescribeTable("Normalize should record the controllers Migrate records",
+			func(res, expected Resource) {
+				Expect((*Resource).Normalize).To(BeAssignableToTypeOf(func(*Resource) {}))
+				res.Normalize()
+				Expect(res).To(Equal(expected))
+			},
+			Entry("for a legacy controller",
+				Resource{GVK: GVK{Kind: captainKind}, Controller: true},
+				Resource{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captain}}}),
+			Entry("for a legacy controller beside a named one",
+				Resource{
+					GVK: GVK{Kind: captainKind}, Controller: true,
+					Controllers: &Controllers{{Name: captainBackupKebab}},
+				},
+				Resource{
+					GVK:         GVK{Kind: captainKind},
+					Controllers: &Controllers{{Name: captainBackupKebab}, {Name: captain}},
+				}),
+			Entry("for named controllers only",
+				Resource{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captainBackupKebab}}},
+				Resource{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captainBackupKebab}}}),
+		)
+
 		It("should not duplicate an already recorded default controller", func() {
 			res := Resource{
 				GVK: GVK{Kind: captainKind}, Controller: true,
@@ -194,24 +235,37 @@ var _ = Describe("Controller", func() {
 			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
 		})
 
-		It("should record a legacy controller under its default name", func() {
+		// Add a row for each deprecated field that Migrate replaces.
+		DescribeTable("should replace a deprecated field",
+			func(res, expected Resource) {
+				Expect(res.Migrate()).To(Succeed())
+				Expect(res).To(Equal(expected))
+			},
+			Entry("controller: true becomes a controller named after the kind",
+				Resource{GVK: GVK{Kind: captainKind}, Controller: true},
+				Resource{GVK: GVK{Kind: captainKind}, Controllers: &Controllers{{Name: captain}}}),
+			Entry("controller: true keeps the controllers already recorded",
+				Resource{
+					GVK: GVK{Kind: captainKind}, Controller: true,
+					Controllers: &Controllers{{Name: captainBackupKebab}},
+				},
+				Resource{
+					GVK:         GVK{Kind: captainKind},
+					Controllers: &Controllers{{Name: captainBackupKebab}, {Name: captain}},
+				}),
+		)
+
+		It("should leave the resource unchanged when a later step fails", func() {
+			original := migrations
+			DeferCleanup(func() { migrations = original })
+			migrations = append(slices.Clone(original), func(*Resource) error {
+				return errors.New("later step failed")
+			})
 			res := Resource{GVK: GVK{Kind: captainKind}, Controller: true}
+			before := res.Copy()
 
-			Expect(res.Migrate()).To(Succeed())
-			Expect(res.Controller).To(BeFalse())
-			Expect(res.GetControllerNames()).To(Equal([]string{captain}))
-		})
-
-		It("should keep the default alongside names already recorded", func() {
-			res := Resource{
-				GVK:         GVK{Kind: captainKind},
-				Controller:  true,
-				Controllers: &Controllers{{Name: captainBackupKebab}},
-			}
-
-			Expect(res.Migrate()).To(Succeed())
-			Expect(res.Controller).To(BeFalse())
-			Expect(res.GetControllerNames()).To(Equal([]string{captainBackupKebab, captain}))
+			Expect(res.Migrate()).To(MatchError("later step failed"))
+			Expect(res).To(Equal(before))
 		})
 
 		It("should be a no-op for a resource with no controller", func() {
@@ -238,6 +292,17 @@ var _ = Describe("Controller", func() {
 			gvk = GVK{Group: crewGroup, Version: "v1", Kind: captainKind}
 		})
 
+		It("should not share the controller list with the merged resource", func() {
+			res := Resource{GVK: gvk, Plural: "captains", Controllers: &Controllers{{Name: captain}}}
+			incoming := Resource{GVK: gvk, Plural: "captains", Controllers: &Controllers{{Name: captainBackupKebab}}}
+
+			Expect(res.Update(incoming)).To(Succeed())
+			(*res.Controllers)[1].Name = "changed"
+			Expect(res.Controllers.AddController("captain-nightly")).To(Succeed())
+
+			Expect(incoming.GetControllerNames()).To(Equal([]string{captainBackupKebab}))
+		})
+
 		DescribeTable("should reject collisions introduced by merging controllers",
 			func(legacy bool) {
 				res := Resource{
@@ -254,6 +319,25 @@ var _ = Describe("Controller", func() {
 			},
 			Entry("with an incoming legacy controller", true),
 			Entry("with an incoming named controller", false),
+		)
+
+		DescribeTable("should refuse invalid incoming controllers and leave the resource unchanged",
+			func(incoming Controllers, expected string) {
+				res := Resource{
+					GVK: gvk, Plural: captainsPlural,
+					Controllers: &Controllers{{Name: captain}, {Name: captainBackupKebab}},
+				}
+				before := res.Copy()
+				other := Resource{GVK: gvk, Plural: captainsPlural, Controllers: &incoming}
+
+				Expect(res.Update(other)).To(MatchError(ContainSubstring(expected)))
+				Expect(res).To(Equal(before))
+			},
+			Entry("a name that is not a DNS label", Controllers{{Name: "Captain_Backup"}}, "invalid controller name"),
+			Entry("a name listed twice", Controllers{{Name: controller1}, {Name: controller1}},
+				"duplicate controller name"),
+			Entry("a name generating the reconciler of a recorded one", Controllers{{Name: "captain--backup"}},
+				"both generate"),
 		)
 
 		It("should adopt the controllers of the other resource", func() {
@@ -341,6 +425,13 @@ var _ = Describe("Controller", func() {
 				Controllers: &Controllers{{Name: myKindCtrl}},
 			},
 			[]string{myKindCtrl}),
+		Entry("keeps a legacy default that differs from a listed name only by a hyphen",
+			Resource{
+				GVK:         GVK{Kind: "Captainbackup"},
+				Controller:  true,
+				Controllers: &Controllers{{Name: captainBackupKebab}},
+			},
+			[]string{captainBackupKebab, "captainbackup"}),
 	)
 
 	It("should report the same controllers that Migrate records", func() {

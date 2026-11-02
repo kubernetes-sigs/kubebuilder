@@ -55,6 +55,9 @@ func ssaTestResource(kind string, ssa bool) resource.Resource {
 	return ssaTestResourceGV(kind, "crew", "v1", ssa)
 }
 
+// testAPIPath is the Go package of the v1 API in the test project.
+const testAPIPath = "sigs.k8s.io/kubebuilder/test/api/v1"
+
 func newSSATestConfig(resources ...resource.Resource) config.Config {
 	cfg := cfgv3.New()
 	Expect(cfg.SetRepository("sigs.k8s.io/kubebuilder/test")).To(Succeed())
@@ -70,7 +73,7 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 		func(legacy bool, names []string, expectedName, expectedReconciler string) {
 			res := ssaTestResource("Captain", false)
 			res.API = nil
-			res.Path = "sigs.k8s.io/kubebuilder/test/api/v1"
+			res.Path = testAPIPath
 			res.Controller = legacy //nolint:staticcheck // legacy library consumer
 			for _, name := range names {
 				if res.Controllers == nil {
@@ -101,6 +104,127 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 			"captain_backup", "CaptainBackupReconciler"),
 		Entry("controller name with several hyphens", false, []string{"captain-nightly-backup"},
 			"captain_nightly_backup", "CaptainNightlyBackupReconciler"),
+	)
+
+	// The CLI records the default controller by name, while older releases recorded `controller: true`.
+	// Both must scaffold the same files, so projects keep their file names, structs and Named() values.
+	DescribeTable("should scaffold the default controller as older releases did",
+		func(multiGroup bool, controllerFile, runtimeName string) {
+			scaffoldFiles := func(res resource.Resource) map[string]string {
+				cfg := newSSATestConfig()
+				if multiGroup {
+					Expect(cfg.SetMultiGroup()).To(Succeed())
+				}
+				fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+				Expect(machinery.NewScaffold(fs, machinery.WithConfig(cfg)).Execute(&cmd.Main{})).To(Succeed())
+				scaffolder := NewAPIScaffolder(cfg, res, false)
+				scaffolder.InjectFS(fs)
+				Expect(scaffolder.Scaffold()).To(Succeed())
+
+				files := map[string]string{}
+				Expect(afero.Walk(fs.FS, ".", func(path string, info os.FileInfo, err error) error {
+					if err != nil || info.IsDir() {
+						return err
+					}
+					content, readErr := afero.ReadFile(fs.FS, path)
+					Expect(readErr).NotTo(HaveOccurred())
+					files[path] = string(content)
+					return nil
+				})).To(Succeed())
+				return files
+			}
+
+			res := ssaTestResource("FirstMate", false)
+			res.API = nil
+			res.Path = testAPIPath
+			legacy := res.Copy()
+			legacy.Controller = true //nolint:staticcheck // what older releases passed to the scaffolder
+			named := res.Copy()
+			named.Controllers = &resource.Controllers{{Name: "firstmate"}}
+
+			legacyFiles := scaffoldFiles(legacy)
+			namedFiles := scaffoldFiles(named)
+			Expect(namedFiles).To(Equal(legacyFiles))
+
+			Expect(namedFiles).To(HaveKey(controllerFile))
+			Expect(namedFiles[controllerFile]).To(ContainSubstring("type FirstMateReconciler struct"))
+			Expect(namedFiles[controllerFile]).To(ContainSubstring(`Named("` + runtimeName + `")`))
+			Expect(namedFiles["cmd/main.go"]).To(ContainSubstring("controller.FirstMateReconciler{"))
+			for path, content := range namedFiles {
+				Expect(strings.ToLower(content)).NotTo(ContainSubstring("legacy"), path)
+				Expect(strings.ToLower(content)).NotTo(ContainSubstring("deprecated"), path)
+				Expect(strings.ToLower(content)).NotTo(ContainSubstring("migrat"), path)
+			}
+		},
+		Entry("in a single-group project", false,
+			filepath.Join("internal", "controller", "firstmate_controller.go"), "firstmate"),
+		Entry("in a multigroup project", true,
+			filepath.Join("internal", "controller", "crew", "firstmate_controller.go"), "crew-firstmate"),
+	)
+})
+
+var _ = Describe("scaffolding a legacy controller", func() {
+	// scaffoldFiles scaffolds res and returns every file written, by path.
+	scaffoldFiles := func(res resource.Resource, multiGroup bool) map[string]string {
+		GinkgoHelper()
+
+		cfg := newSSATestConfig()
+		if multiGroup {
+			Expect(cfg.SetMultiGroup()).To(Succeed())
+		}
+		fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+		Expect(machinery.NewScaffold(fs, machinery.WithConfig(cfg)).Execute(&cmd.Main{})).To(Succeed())
+		scaffolder := NewAPIScaffolder(cfg, res, false)
+		scaffolder.InjectFS(fs)
+		Expect(scaffolder.Scaffold()).To(Succeed())
+
+		files := map[string]string{}
+		Expect(afero.Walk(fs.FS, ".", func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return err
+			}
+			content, readErr := afero.ReadFile(fs.FS, path)
+			Expect(readErr).NotTo(HaveOccurred())
+			files[path] = string(content)
+
+			return nil
+		})).To(Succeed())
+
+		return files
+	}
+
+	DescribeTable("should write the same files as a controller named after the kind",
+		func(kind string, multiGroup bool, controllerPath, reconciler string) {
+			apiPath := testAPIPath
+			if multiGroup {
+				apiPath = "sigs.k8s.io/kubebuilder/test/api/crew/v1"
+			}
+			legacy := ssaTestResource(kind, false)
+			legacy.Path = apiPath
+			legacy.Controller = true //nolint:staticcheck // legacy library consumer
+			named := ssaTestResource(kind, false)
+			named.Path = apiPath
+			named.Controllers = &resource.Controllers{{Name: resource.DefaultControllerName(kind)}}
+
+			legacyFiles := scaffoldFiles(legacy, multiGroup)
+			Expect(scaffoldFiles(named, multiGroup)).To(Equal(legacyFiles))
+
+			Expect(legacyFiles).To(HaveKeyWithValue(controllerPath, ContainSubstring("type "+reconciler+" struct")))
+			Expect(legacyFiles).To(HaveKey(strings.TrimSuffix(controllerPath, ".go") + "_test.go"))
+			Expect(legacyFiles).To(HaveKeyWithValue("cmd/main.go", ContainSubstring(reconciler+"{")))
+		},
+		Entry("for a simple kind", "Captain", false,
+			"internal/controller/captain_controller.go", "CaptainReconciler"),
+		Entry("for a compound kind", "FirstMate", false,
+			"internal/controller/firstmate_controller.go", "FirstMateReconciler"),
+		Entry("for an acronym kind", "HTTPRoute", false,
+			"internal/controller/httproute_controller.go", "HTTPRouteReconciler"),
+		Entry("for a simple kind in a multigroup project", "Captain", true,
+			"internal/controller/crew/captain_controller.go", "CaptainReconciler"),
+		Entry("for a compound kind in a multigroup project", "FirstMate", true,
+			"internal/controller/crew/firstmate_controller.go", "FirstMateReconciler"),
+		Entry("for an acronym kind in a multigroup project", "HTTPRoute", true,
+			"internal/controller/crew/httproute_controller.go", "HTTPRouteReconciler"),
 	)
 })
 

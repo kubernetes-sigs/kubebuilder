@@ -29,10 +29,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
-	_ "sigs.k8s.io/kubebuilder/v4/pkg/config/v3" // registers project version 3 so the store can decode PROJECT
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
@@ -149,6 +150,173 @@ var _ = Describe("alpha generate", func() {
 			Expect(err).NotTo(HaveOccurred(), "missing from the regenerated project: %s", path)
 		}
 	})
+
+	It("should record legacy and mixed controllers by name and leave the source PROJECT file unchanged",
+		func() {
+			const sailorKind = "Sailor"
+			kind := strings.ToLower(kbc.Kind)
+			backup := kind + "-backup"
+
+			By("scaffolding one resource with a controller and another with two")
+			Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", sailorKind,
+				"--resource", "--controller", "--make=false")).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+				"--resource", "--controller", "--make=false")).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+				"--resource=false", "--controller", "--controller-name", backup, "--make=false")).To(Succeed())
+
+			By("rewriting the PROJECT file in the legacy and the mixed forms")
+			recordLegacyController(kbc.Dir, resource.GVK{
+				Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: sailorKind,
+			}, "sailor")
+			recordLegacyController(kbc.Dir, resource.GVK{
+				Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: kbc.Kind,
+			}, kind)
+			projectPath := filepath.Join(kbc.Dir, yaml.DefaultPath)
+			legacy, err := os.ReadFile(projectPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("regenerating the project into another directory")
+			//nolint:gosec
+			output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", snapshotDir))
+			Expect(err).NotTo(HaveOccurred(), string(output))
+
+			By("checking that every controller was kept and recorded by name")
+			regenerated, err := loadProjectConfig(snapshotDir)
+			Expect(err).NotTo(HaveOccurred())
+			for kindName, names := range map[string][]string{sailorKind: {"sailor"}, kbc.Kind: {kind, backup}} {
+				res, err := regenerated.GetResource(resource.GVK{
+					Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: kindName,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
+				Expect(res.GetControllerNames()).To(ConsistOf(names))
+				for _, name := range names {
+					Expect(filepath.Join(snapshotDir, "internal", "controller",
+						resource.NormalizeFileName(name)+"_controller.go")).To(BeAnExistingFile())
+				}
+			}
+
+			By("checking that the source PROJECT file was left as it was")
+			Expect(os.ReadFile(projectPath)).To(Equal(legacy))
+		})
+
+	// sharedControllerProject scaffolds a kind in two versions that share one controller, then writes
+	// the controller of both versions in the legacy form or by name. It returns the PROJECT path.
+	sharedControllerProject := func(multiGroup, legacy bool) string {
+		GinkgoHelper()
+
+		kind := strings.ToLower(kbc.Kind)
+		Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+		if multiGroup {
+			Expect(kbc.Edit("--multigroup=true")).To(Succeed())
+		}
+		Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+			"--resource", "--controller", "--make=false")).To(Succeed())
+		Expect(kbc.CreateAPI("--group", kbc.Group, "--version", "v2", "--kind", kbc.Kind,
+			"--resource", "--controller=false", "--make=false")).To(Succeed())
+
+		projectPath := filepath.Join(kbc.Dir, yaml.DefaultPath)
+		projectStore := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+		Expect(projectStore.LoadFrom(projectPath)).To(Succeed())
+		v2 := resource.GVK{Group: kbc.Group, Domain: kbc.Domain, Version: "v2", Kind: kbc.Kind}
+		res, err := projectStore.Config().GetResource(v2)
+		Expect(err).NotTo(HaveOccurred())
+		res.Controllers = &resource.Controllers{{Name: kind}}
+		Expect(projectStore.Config().UpdateResource(res)).To(Succeed())
+		Expect(projectStore.SaveTo(projectPath)).To(Succeed())
+
+		if legacy {
+			for _, version := range []string{kbc.Version, "v2"} {
+				recordLegacyController(kbc.Dir, resource.GVK{
+					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kbc.Kind,
+				}, kind)
+			}
+		}
+
+		return projectPath
+	}
+
+	DescribeTable("should scaffold a controller that versions of a kind share once and keep it on each version",
+		func(multiGroup, legacy, inPlace bool) {
+			sharedControllerProject(multiGroup, legacy)
+			outputDir := kbc.Dir
+			if inPlace {
+				Expect(kbc.Regenerate()).To(Succeed())
+			} else {
+				outputDir = snapshotDir
+				//nolint:gosec
+				output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", outputDir))
+				Expect(err).NotTo(HaveOccurred(), string(output))
+			}
+
+			kind := strings.ToLower(kbc.Kind)
+			controllerDir := filepath.Join(outputDir, "internal", "controller")
+			if multiGroup {
+				controllerDir = filepath.Join(controllerDir, kbc.Group)
+			}
+			Expect(filepath.Join(controllerDir, kind+"_controller.go")).To(BeAnExistingFile())
+			mainFile, err := os.ReadFile(filepath.Join(outputDir, "cmd", "main.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.Count(string(mainFile), kbc.Kind+"Reconciler{")).To(Equal(1))
+
+			regenerated, err := loadProjectConfig(outputDir)
+			Expect(err).NotTo(HaveOccurred())
+			for _, version := range []string{kbc.Version, "v2"} {
+				res, err := regenerated.GetResource(resource.GVK{
+					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kbc.Kind,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.GetControllerNames()).To(Equal([]string{kind}))
+			}
+		},
+		Entry("in place, in the legacy form", false, true, true),
+		Entry("in place, by name", false, false, true),
+		Entry("into another directory, in the legacy form", false, true, false),
+		Entry("in place in a multigroup project, by name", true, false, true),
+		Entry("into another directory in a multigroup project, in the legacy form", true, true, false),
+	)
+
+	DescribeTable("should refuse controllers of different kinds that collide before changing anything",
+		func(inPlace bool) {
+			kind := strings.ToLower(kbc.Kind)
+			Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+				"--resource", "--controller", "--make=false")).To(Succeed())
+			Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", "Sailor",
+				"--resource", "--controller=false", "--make=false")).To(Succeed())
+
+			By("naming Sailor's controller like the existing one")
+			projectPath := filepath.Join(kbc.Dir, yaml.DefaultPath)
+			projectStore := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+			Expect(projectStore.LoadFrom(projectPath)).To(Succeed())
+			sailor, err := projectStore.Config().GetResource(resource.GVK{
+				Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: "Sailor",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			sailor.Controllers = &resource.Controllers{{Name: kind}}
+			Expect(projectStore.Config().UpdateResource(sailor)).To(Succeed())
+			Expect(projectStore.SaveTo(projectPath)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(kbc.Dir, "NOTES.md"), []byte("user notes\n"), 0o600)).To(Succeed())
+			before := snapshotFiles(kbc.Dir)
+
+			args := []string{"alpha", "generate"}
+			outputDir := filepath.Join(snapshotDir, "out")
+			if !inPlace {
+				args = append(args, "--output-dir", outputDir)
+			}
+			//nolint:gosec
+			output, err := kbc.Run(exec.Command(kbc.BinaryName, args...))
+			Expect(err).To(HaveOccurred())
+			Expect(string(output)).To(ContainSubstring("generate the same code"))
+
+			Expect(snapshotFiles(kbc.Dir)).To(Equal(before), "the project must be left as it was")
+			Expect(outputDir).NotTo(BeAnExistingFile())
+		},
+		Entry("in place", true),
+		Entry("into another directory", false),
+	)
 
 	It("should migrate a deprecated Helm v1-alpha project to v2-alpha with an older Go layout", func() {
 		By("preparing a project with legacy Helm metadata")
@@ -357,8 +525,9 @@ func compareResourceSets(original, regenerated []resource.Resource) []string {
 func resourceKeys(resources []resource.Resource) map[string]struct{} {
 	keys := make(map[string]struct{}, len(resources))
 	for _, res := range resources {
-		key := fmt.Sprintf("%s/%s/%s controller=%t webhooks=%s",
-			res.Group, res.Version, res.Kind, res.Controller, enabledWebhooks(res))
+		controllers := slices.Sorted(slices.Values(res.GetControllerNames()))
+		key := fmt.Sprintf("%s/%s/%s controllers=%s webhooks=%s",
+			res.Group, res.Version, res.Kind, strings.Join(controllers, ","), enabledWebhooks(res))
 		keys[key] = struct{}{}
 	}
 
@@ -386,4 +555,69 @@ func enabledWebhooks(res resource.Resource) string {
 	slices.Sort(enabled)
 
 	return strings.Join(enabled, "+")
+}
+
+// snapshotFiles returns the content of every file under dir, by path. The bin directory holds
+// downloaded tools, so it is skipped.
+func snapshotFiles(dir string) map[string]string {
+	GinkgoHelper()
+
+	files := map[string]string{}
+	Expect(filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if entry.Name() == "bin" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		content, readErr := os.ReadFile(path)
+		Expect(readErr).NotTo(HaveOccurred())
+		files[path] = string(content)
+
+		return nil
+	})).To(Succeed())
+
+	return files
+}
+
+// recordLegacyController rewrites the PROJECT file under dir as an older release wrote it: the
+// controller name of the resource gvk is recorded with `controller: true` instead of by name.
+func recordLegacyController(dir string, gvk resource.GVK, name string) {
+	GinkgoHelper()
+
+	projectPath := filepath.Join(dir, yaml.DefaultPath)
+	content, err := os.ReadFile(projectPath)
+	Expect(err).NotTo(HaveOccurred())
+	var cfg cfgv3.Cfg
+	Expect(cfg.UnmarshalYAML(content)).To(Succeed())
+
+	found := false
+	for i := range cfg.Resources {
+		res := &cfg.Resources[i]
+		if !res.GVK.IsEqualTo(gvk) {
+			continue
+		}
+		found = true
+		Expect(res.Controllers.HasController(name)).To(BeTrue(), "the controller must be recorded by name")
+		kept := resource.Controllers{}
+		for _, controller := range *res.Controllers {
+			if controller.Name != name {
+				kept = append(kept, controller)
+			}
+		}
+		res.Controller = true //nolint:staticcheck // writing the legacy form is the point
+		res.Controllers = nil
+		if len(kept) > 0 {
+			res.Controllers = &kept
+		}
+	}
+	Expect(found).To(BeTrue(), "the PROJECT file must record the resource")
+
+	// Cfg.MarshalYAML migrates the controller back to its name, so the file is written as it is.
+	legacy, err := sigsyaml.Marshal(cfg)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(os.WriteFile(projectPath, legacy, 0o600)).To(Succeed())
 }

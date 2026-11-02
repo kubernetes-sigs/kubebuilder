@@ -42,6 +42,8 @@ type Resource struct {
 	// Retained to read legacy PROJECT files and preserve compatibility with plugins.
 	//
 	// Deprecated: use Controllers.
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
 	Controller bool `json:"controller,omitempty"`
 
 	// Controllers holds named controllers for this resource.
@@ -145,25 +147,51 @@ func (r Resource) validateReconcilerNames() error {
 	return nil
 }
 
-// Migrate replaces deprecated fields with the current resource format.
+// migrations lists the steps Migrate runs, in order. Each step replaces one deprecated field.
+// To deprecate a field, add its step here.
+var migrations = []func(*Resource) error{
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
+	(*Resource).migrateControllers,
+}
+
+// Migrate replaces deprecated fields with the current resource format and validates its controllers.
 // PROJECT files are migrated when saved; legacy fields remain supported on read.
+// If any step fails, the resource is left unchanged.
 func (r *Resource) Migrate() error {
 	if r == nil {
 		return nil
 	}
 
-	return r.migrateControllers()
+	migrated := r.Copy()
+	for _, migrate := range migrations {
+		if err := migrate(&migrated); err != nil {
+			return err
+		}
+	}
+	if err := migrated.validateControllers(); err != nil {
+		return err
+	}
+	*r = migrated
+
+	return nil
 }
 
 // Normalize migrates deprecated resource fields.
 // A resource that cannot be migrated is left unchanged.
 //
 // Deprecated: use Migrate, which reports failures.
+// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+// and is kept only for backwards compatibility.
 func (r *Resource) Normalize() {
 	_ = r.Migrate()
 }
 
-// migrateControllers records a legacy controller under its default kind-based name.
+// migrateControllers records the deprecated Controller field as a controller named after the kind.
+//
+// Deprecated: it exists only for the Controller field.
+// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+// and is kept only for backwards compatibility.
 func (r *Resource) migrateControllers() error {
 	if !r.Controller {
 		return nil
@@ -173,22 +201,19 @@ func (r *Resource) migrateControllers() error {
 		return fmt.Errorf("cannot migrate legacy controller: kind cannot be empty")
 	}
 
-	// Validate a copy so a failed migration leaves the resource unchanged.
-	migrated := *r
-	controllers := r.Controllers.Copy()
-	migrated.Controllers = &controllers
+	if r.Controllers == nil {
+		r.Controllers = &Controllers{}
+	}
 	name := DefaultControllerName(r.Kind)
-	if !migrated.Controllers.HasController(name) {
-		if err := migrated.Controllers.AddController(name); err != nil {
+	if !r.Controllers.HasController(name) {
+		if err := r.Controllers.AddController(name); err != nil {
 			return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
 		}
 	}
-	migrated.Controller = false
-	if err := migrated.validateControllers(); err != nil {
+	r.Controller = false
+	if err := r.validateControllers(); err != nil {
 		return fmt.Errorf("cannot migrate controller of kind %q: %w", r.Kind, err)
 	}
-	r.Controllers = migrated.Controllers
-	r.Controller = false
 
 	return nil
 }
@@ -219,6 +244,9 @@ func (r Resource) HasAPI() bool {
 // HasController returns true if the resource has at least one associated controller.
 // It also accepts the legacy Controller field.
 func (r Resource) HasController() bool {
+	// Deprecated: the Controller check reads legacy PROJECT files.
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
 	return r.Controller || !r.Controllers.IsEmpty()
 }
 
@@ -253,7 +281,9 @@ func (r Resource) IsRegularPlural() bool {
 func (r Resource) GetControllerNames() []string {
 	names := r.Controllers.GetControllerNames()
 
-	// Preserve the legacy controller when both formats are present.
+	// Deprecated: preserve the legacy controller when both formats are present.
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
 	if name := DefaultControllerName(r.Kind); r.Controller && !r.Controllers.HasController(name) {
 		names = append(names, name)
 	}
@@ -297,32 +327,39 @@ func (r *Resource) Update(other Resource) error {
 			r.Plural, other.Plural)
 	}
 
-	if other.Path != "" && r.Path != other.Path {
-		if r.Path == "" {
-			r.Path = other.Path
+	// Merge into a copy so a rejected update leaves the receiver unchanged.
+	merged := r.Copy()
+
+	if other.Path != "" && merged.Path != other.Path {
+		if merged.Path == "" {
+			merged.Path = other.Path
 		} else {
 			return fmt.Errorf("cannot update resource (Path %q) with another with non-matching Path %q", r.Path, other.Path)
 		}
 	}
 
 	// Update API.
-	if r.API == nil && other.API != nil {
-		r.API = &API{}
+	if merged.API == nil && other.API != nil {
+		merged.API = &API{}
 	}
-	if err := r.API.Update(other.API); err != nil {
+	if err := merged.API.Update(other.API); err != nil {
 		return err
 	}
 
-	if err := r.updateControllers(other); err != nil {
+	if err := merged.updateControllers(other); err != nil {
 		return err
 	}
 
 	// Update Webhooks.
-	if r.Webhooks == nil && other.Webhooks != nil {
-		r.Webhooks = &Webhooks{}
+	if merged.Webhooks == nil && other.Webhooks != nil {
+		merged.Webhooks = &Webhooks{}
+	}
+	if err := merged.Webhooks.Update(other.Webhooks); err != nil {
+		return err
 	}
 
-	return r.Webhooks.Update(other.Webhooks)
+	*r = merged
+	return nil
 }
 
 // updateControllers migrates and merges controllers, then validates the result.
@@ -347,6 +384,9 @@ func (r *Resource) updateControllers(other Resource) error {
 	if err := merged.validateControllers(); err != nil {
 		return fmt.Errorf("cannot update controllers of kind %q: %w", r.Kind, err)
 	}
+	// Deprecated: the Controller field is kept until it is removed.
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
 	r.Controller = merged.Controller
 	r.Controllers = merged.Controllers
 

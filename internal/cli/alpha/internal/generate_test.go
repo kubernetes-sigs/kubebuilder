@@ -711,14 +711,15 @@ var _ = Describe("generate: create-helpers", func() {
 		kbc.Destroy()
 	})
 
-	DescribeTable("createControllers should replay every recorded controller",
+	DescribeTable("kubebuilderCreate should replay every recorded controller",
 		func(legacy bool, controllers *resource.Controllers, expectedNames []string) {
 			res := resource.Resource{
 				GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
 				Controller:  legacy, //nolint:staticcheck // legacy PROJECT compatibility
 				Controllers: controllers,
 			}
-			Expect(createControllers(res)).To(Succeed())
+			steps, _ := planControllers([]resource.Resource{res})
+			Expect(kubebuilderCreate(&fakeStore{cfg: &fakeConfig{}}, steps)).To(Succeed())
 			logPath := filepath.Join(kbc.Dir, "kubebuilder.log")
 			if len(expectedNames) == 0 {
 				Expect(logPath).NotTo(BeAnExistingFile())
@@ -739,6 +740,8 @@ var _ = Describe("generate: create-helpers", func() {
 			[]string{captainCtrl, captainBackup}),
 		Entry("both formats", true, &resource.Controllers{{Name: captainBackup}},
 			[]string{captainBackup, captainCtrl}),
+		Entry("named controllers listed before the default", false,
+			&resource.Controllers{{Name: captainBackup}, {Name: captainCtrl}}, []string{captainBackup, captainCtrl}),
 		Entry("no controllers", false, nil, nil),
 	)
 
@@ -929,8 +932,60 @@ var _ = Describe("generate: kubebuilder", func() {
 				},
 			}
 			store := &fakeStore{cfg: cfg}
-			Expect(kubebuilderCreate(store)).To(Succeed())
+			controllers, _ := planControllers(cfg.resources)
+			Expect(kubebuilderCreate(store, controllers)).To(Succeed())
 		})
+	})
+
+	Context("planning the controllers to scaffold", func() {
+		// withController returns a resource of the kind whose controller is in the legacy form, or
+		// named when name is set.
+		withController := func(group, version, kind, name string) resource.Resource {
+			res := resource.Resource{GVK: resource.GVK{Group: group, Domain: exampleDomain, Version: version, Kind: kind}}
+			if name == "" {
+				res.Controller = true //nolint:staticcheck // legacy PROJECT compatibility
+			} else {
+				res.Controllers = &resource.Controllers{{Name: name}}
+			}
+			return res
+		}
+
+		DescribeTable("should scaffold a controller that versions of a kind share once",
+			func(multiGroup bool, resources ...resource.Resource) {
+				Expect(validateDuplicateControllerNames(resources, multiGroup)).To(Succeed())
+				steps, shared := planControllers(resources)
+				Expect(steps).To(HaveLen(1))
+				Expect(steps[0].res.Version).To(Equal("v1"))
+				Expect(shared).To(Equal(map[resource.GVK][]string{resources[1].GVK: {"captain"}}))
+			},
+			Entry("in the legacy form", false,
+				withController("crew", "v1", "Captain", ""), withController("crew", "v2", "Captain", "")),
+			Entry("in the current form", false,
+				withController("crew", "v1", "Captain", "captain"), withController("crew", "v2", "Captain", "captain")),
+			Entry("in a multigroup project", true,
+				withController("crew", "v1", "Captain", ""), withController("crew", "v2", "Captain", "captain")),
+		)
+
+		It("should scaffold the same name in different groups of a multigroup project", func() {
+			resources := []resource.Resource{
+				withController("crew", "v1", "Captain", ""), withController("ship", "v1", "Captain", ""),
+			}
+			Expect(validateDuplicateControllerNames(resources, true)).To(Succeed())
+			steps, shared := planControllers(resources)
+			Expect(steps).To(HaveLen(2))
+			Expect(shared).To(BeEmpty())
+		})
+
+		DescribeTable("should refuse controllers of different kinds that generate the same code",
+			func(first, other resource.Resource) {
+				err := validateDuplicateControllerNames([]resource.Resource{first, other}, false)
+				Expect(err).To(MatchError(ContainSubstring("generate the same code")))
+			},
+			Entry("the same reconciler",
+				withController("crew", "v1", "Captain", ""), withController("crew", "v1", "Sailor", "captain")),
+			Entry("the same file with a different reconciler",
+				withController("crew", "v1", "MyKind", ""), withController("crew", "v1", "Mykind", "")),
+		)
 	})
 
 	Context("kubebuilderGrafanaEdit", func() {
@@ -1287,6 +1342,53 @@ var _ = Describe("generate: migrate-plugins", func() {
 })
 
 var _ = Describe("Generate", func() {
+	const (
+		defaultCtrl = "captain"
+		namedCtrl   = "captain-backup"
+	)
+
+	// projectTemplate is a PROJECT file with one resource. The placeholders hold the controller
+	// lines of the resource and its kind.
+	const projectTemplate = `domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: test-project
+repo: github.com/example/test-project
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+%s  domain: example.com
+  group: crew
+  kind: %s
+  path: github.com/example/test-project/api/v1
+  version: v1
+version: "3"
+`
+
+	// Controller lines of a resource, as older releases and the current one write them.
+	const (
+		legacyController = `  controller: true
+`
+		legacyAndNamedController = `  controller: true
+  controllers:
+  - name: captain-backup
+`
+		namedControllersBeforeDefault = `  controllers:
+  - name: captain-backup
+  - name: captain
+`
+		// An older release accepted both names, which generate the same MyKindReconciler.
+		collidingControllers = `  controllers:
+  - name: mykind
+  - name: my-kind
+`
+		legacyAndCollidingController = `  controller: true
+  controllers:
+  - name: my-kind
+`
+	)
+
 	var (
 		kbc                           *utils.TestContext
 		err                           error
@@ -1333,4 +1435,59 @@ var _ = Describe("Generate", func() {
 			Expect(g.Generate()).To(Succeed())
 		})
 	})
+
+	// Projects scaffolded by older releases record `controller: true`; regenerating them must replay
+	// every controller by name and must not rewrite the PROJECT file it reads.
+	DescribeTable("replays every controller without changing the input PROJECT file",
+		func(controllers string, expectedNames []string) {
+			project := []byte(fmt.Sprintf(projectTemplate, controllers, "Captain"))
+			projectPath := filepath.Join(kbc.Dir, "PROJECT")
+			Expect(os.WriteFile(projectPath, project, 0o644)).To(Succeed())
+			g.OutputDir = filepath.Join(kbc.Dir, "regenerated")
+
+			Expect(g.Generate()).To(Succeed())
+
+			Expect(os.ReadFile(projectPath)).To(Equal(project))
+			content, readErr := os.ReadFile(filepath.Join(kbc.Dir, "kubebuilder.log"))
+			Expect(readErr).NotTo(HaveOccurred())
+			var replayed []string
+			for command := range strings.SplitSeq(strings.TrimSpace(string(content)), "\n") {
+				if strings.HasPrefix(command, "create api") && strings.Contains(command, "--controller=true") {
+					replayed = append(replayed, command)
+				}
+			}
+			Expect(replayed).To(HaveLen(len(expectedNames)))
+			for i, name := range expectedNames {
+				Expect(replayed[i]).To(HaveSuffix("--controller-name " + name))
+			}
+		},
+		Entry("for a legacy controller", legacyController, []string{defaultCtrl}),
+		Entry("for a legacy controller beside a named one", legacyAndNamedController, []string{namedCtrl, defaultCtrl}),
+		Entry("for named controllers listed before the default", namedControllersBeforeDefault,
+			[]string{namedCtrl, defaultCtrl}),
+	)
+
+	// Older releases accepted controller names that generate the same reconciler. Regenerating such
+	// a project must stop before it cleans or scaffolds anything, so no controller is lost.
+	DescribeTable("refuses a PROJECT file it cannot migrate and changes nothing",
+		func(controllers string, inPlace bool) {
+			project := []byte(fmt.Sprintf(projectTemplate, controllers, "MyKind"))
+			projectPath := filepath.Join(kbc.Dir, "PROJECT")
+			Expect(os.WriteFile(projectPath, project, 0o644)).To(Succeed())
+			outputDir := filepath.Join(kbc.Dir, "regenerated")
+			if !inPlace {
+				g.OutputDir = outputDir
+			}
+
+			err := g.Generate()
+
+			Expect(err).To(MatchError(ContainSubstring(`"my-kind"`)))
+			Expect(os.ReadFile(projectPath)).To(Equal(project))
+			Expect(filepath.Join(kbc.Dir, "kubebuilder.log")).NotTo(BeAnExistingFile())
+			Expect(outputDir).NotTo(BeAnExistingFile())
+		},
+		Entry("for named controllers into a new directory", collidingControllers, false),
+		Entry("for a legacy controller beside a named one into a new directory", legacyAndCollidingController, false),
+		Entry("for named controllers in place", collidingControllers, true),
+	)
 })
