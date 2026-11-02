@@ -108,7 +108,7 @@ jobs:
 
       - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/{{ .KindVersion }}/kind-linux-$(go env GOARCH)
+          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/{{ .KindVersion }}/kind-linux-$(go env GOARCH)"
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
@@ -138,7 +138,7 @@ jobs:
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
           helm install cert-manager jetstack/cert-manager \
-            --version ${CERT_MANAGER_VERSION} \
+            --version "${CERT_MANAGER_VERSION}" \
             --namespace cert-manager \
             --create-namespace \
             --set crds.enabled=true \
@@ -151,7 +151,7 @@ jobs:
 #          helm repo add jetstack https://charts.jetstack.io
 #          helm repo update
 #          helm install cert-manager jetstack/cert-manager \
-#            --version ${CERT_MANAGER_VERSION} \
+#            --version "${CERT_MANAGER_VERSION}" \
 #            --namespace cert-manager \
 #            --create-namespace \
 #            --set crds.enabled=true \
