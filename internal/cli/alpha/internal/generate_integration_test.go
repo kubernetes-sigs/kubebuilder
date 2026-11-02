@@ -377,7 +377,7 @@ var _ = Describe("alpha generate", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(workflow)).To(ContainSubstring("\n      - name: Install cert-manager via Helm (wait for readiness)"))
 		Expect(string(workflow)).To(ContainSubstring("\n          helm install cert-manager jetstack/cert-manager \\"))
-		Expect(string(workflow)).To(ContainSubstring("\n            --version ${CERT_MANAGER_VERSION} \\"))
+		Expect(string(workflow)).To(ContainSubstring("\n            --version \"${CERT_MANAGER_VERSION}\" \\"))
 		Expect(string(workflow)).To(ContainSubstring("\n            --wait \\"))
 		Expect(string(workflow)).To(ContainSubstring("\n            --timeout 300s"))
 		Expect(string(workflow)).NotTo(ContainSubstring("# TODO: Uncomment if cert-manager is enabled"))
