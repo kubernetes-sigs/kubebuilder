@@ -19,6 +19,7 @@ package scaffolds
 import (
 	"fmt"
 	log "log/slog"
+	"os"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -103,6 +104,19 @@ func (s *apiScaffolder) Scaffold() error {
 
 		// Add scaffolded CRD Admin, Editor and Viewer roles in config/rbac/kustomization.yaml
 		rbacKustomizeFilePath := "config/rbac/kustomization.yaml"
+		// When another top-level key follows "resources:", place the comment at the
+		// end of the resources list so the role entries added after it stay in it
+		if content, errRead := os.ReadFile(rbacKustomizeFilePath); errRead == nil &&
+			!strings.Contains(string(content), comment) {
+			if end := resourcesListEnd(string(content)); end >= 0 {
+				updated := string(content[:end]) + "\n" + comment + string(content[end:])
+				//nolint:gosec // same permissions used by the pluginutil helpers
+				if errWrite := os.WriteFile(rbacKustomizeFilePath, []byte(updated), 0o644); errWrite != nil {
+					log.Error("failed to add the admin/edit/view roles comment in the file",
+						"file_path", rbacKustomizeFilePath)
+				}
+			}
+		}
 		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
 			comment)
 		if err != nil {
@@ -113,8 +127,15 @@ func (s *apiScaffolder) Scaffold() error {
 		if s.config.IsMultiGroup() && s.resource.Group != "" {
 			crdName = strings.ToLower(s.resource.Group) + "_" + crdName
 		}
+		// Match the indentation already used by the list, so files reformatted
+		// by tools such as yamlfmt or prettier stay valid YAML
+		indent := ""
+		if content, errRead := os.ReadFile(rbacKustomizeFilePath); errRead == nil {
+			indent = resourcesItemIndent(string(content))
+		}
 		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath, comment,
-			fmt.Sprintf("\n- %[1]s_admin_role.yaml\n- %[1]s_editor_role.yaml\n- %[1]s_viewer_role.yaml", crdName))
+			fmt.Sprintf("\n%[2]s- %[1]s_admin_role.yaml\n%[2]s- %[1]s_editor_role.yaml\n%[2]s- %[1]s_viewer_role.yaml",
+				crdName, indent))
 		if err != nil {
 			log.Error("failed to add admin, editor and viewer roles in the file",
 				"file_path", rbacKustomizeFilePath)
@@ -131,6 +152,77 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// resourcesItemIndent returns the leading whitespace used by the items of the
+// top-level "resources:" list in a kustomization file. It returns an empty
+// string when the list items are not indented or the list cannot be found.
+func resourcesItemIndent(content string) string {
+	inResources := false
+	for line := range strings.SplitSeq(content, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if !inResources {
+			inResources = isTopLevelResourcesKey(line)
+			continue
+		}
+		if isListItem(trimmed) {
+			return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		}
+		// The first non-comment line after "resources:" is not a list item
+		return ""
+	}
+	return ""
+}
+
+// resourcesListEnd returns the byte offset of the end of the last line of the
+// top-level "resources:" list when another top-level key follows it. It returns
+// -1 when the list is the last top-level key or cannot be found, in which case
+// content appended at the end of the file is still part of the list.
+func resourcesListEnd(content string) int {
+	offset := 0
+	inResources := false
+	end := -1
+	for line := range strings.SplitSeq(content, "\n") {
+		lineEnd := offset + len(line)
+		offset = lineEnd + 1
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		topLevel := line == strings.TrimLeft(line, " \t")
+		if !inResources {
+			if isTopLevelResourcesKey(line) {
+				inResources = true
+				end = lineEnd
+			}
+			continue
+		}
+		if !topLevel || isListItem(trimmed) {
+			end = lineEnd
+			continue
+		}
+		return end
+	}
+	return -1
+}
+
+// isTopLevelResourcesKey reports whether the line is the top-level "resources:"
+// key, optionally followed by a comment
+func isTopLevelResourcesKey(line string) bool {
+	if line != strings.TrimLeft(line, " \t") {
+		return false
+	}
+	key, _, _ := strings.Cut(line, " #")
+	return strings.TrimSpace(key) == "resources:"
+}
+
+// isListItem reports whether the trimmed line starts a YAML sequence item,
+// including a bare "-" whose value is on the following lines
+func isListItem(trimmed string) bool {
+	return trimmed == "-" || strings.HasPrefix(trimmed, "- ")
 }
 
 const adminEditViewRulesCommentFragment = `# For each CRD, "Admin", "Editor" and "Viewer" roles are scaffolded by
