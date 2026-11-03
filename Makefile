@@ -143,7 +143,8 @@ lint-fmt: golangci-lint ## Verify Go code is formatted
 
 # Lint all YAML: testdata files (yamllint-yaml) + Helm-rendered charts (yamllint-helm).
 # Repo YAML uses .yamllint; Helm output uses .yamllint-helm.
-YAMLLINT_FILES := $(shell find testdata -name '*.yaml' ! -path 'testdata/.helm-rendered.yaml' \( ! -path 'testdata/*/dist/*' -o -path 'testdata/*/dist/chart/Chart.yaml' -o -path 'testdata/*/dist/chart/values.yaml' \) 2>/dev/null)
+# Covers the testdata samples and the docs samples under docs/book/src/**/testdata.
+YAMLLINT_FILES := $(shell find testdata $(wildcard docs/book/src/*/testdata) -name '*.yaml' ! -path '*/.helm-rendered.yaml' \( ! -path '*/dist/*' -o -path '*/dist/chart/Chart.yaml' -o -path '*/dist/chart/values.yaml' \) 2>/dev/null)
 HELM_CHARTS := $(shell find testdata docs/book -type d -path '*/dist/chart' 2>/dev/null)
 
 .PHONY: yamllint yamllint-yaml yamllint-helm
@@ -152,10 +153,13 @@ yamllint: yamllint-yaml yamllint-helm
 yamllint-yaml:
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data cytopia/yamllint:latest $(YAMLLINT_FILES) -c .yamllint --no-warnings
 
+# Render each chart first so a helm template failure is not hidden by the pipe,
+# and stop at the first failing chart so its exit code is not lost in the loop.
 yamllint-helm:
-	@for chart in $(HELM_CHARTS); do \
-	  helm template release $$chart --namespace=release-system 2>/dev/null | \
-	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
+	@set -e; for chart in $(HELM_CHARTS); do \
+	  rendered=$$(helm template release $$chart --namespace=release-system) || { echo "yamllint-helm: helm template failed for $$chart"; exit 1; }; \
+	  printf '%s\n' "$$rendered" | \
+	    docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || { echo "yamllint-helm: $$chart failed"; exit 1; }; \
 	done
 
 # All Kubebuilder-generated samples (go/v4, kustomize, helm use machinery defaults 0755/0644).
