@@ -49,7 +49,8 @@ complexities of achieving this goal while allowing users to customize the genera
 
 ## Documentation
 
-Check out the Kubebuilder [book](https://book.kubebuilder.io).
+- English: [book.kubebuilder.io](https://book.kubebuilder.io)
+- Chinese / 中文 (community): [kubebuilder.cn](https://kubebuilder.cn)
 
 ## Resources
 
