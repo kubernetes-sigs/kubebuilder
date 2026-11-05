@@ -82,6 +82,9 @@ func GetControllerPodName(kbc *utils.TestContext) string {
 	return controllerPodName
 }
 
+// curlImage is the image of the pod that reads the metrics endpoint.
+const curlImage = "curlimages/curl:8.23.0"
+
 // defaultHealthProbePort is the scaffolded health probe port; no NetworkPolicy allows it
 const defaultHealthProbePort = 8081
 
@@ -270,13 +273,13 @@ func cmdOptsToCreateCurlPod(namePrefix string, kbc *utils.TestContext, token str
 		"run", "curl",
 		"--restart=Never",
 		"--namespace", kbc.Kubectl.Namespace,
-		"--image=curlimages/curl:latest",
+		"--image=" + curlImage,
 		"--overrides",
 		fmt.Sprintf(`{
 			"spec": {
 				"containers": [{
 					"name": "curl",
-					"image": "curlimages/curl:latest",
+					"image": "`+curlImage+`",
 					"command": ["/bin/sh", "-c"],
 					"args": [
 						"for i in $(seq 1 30); do `+
@@ -461,13 +464,13 @@ func runCurlPod(kbc *utils.TestContext, podName, namespace, script string) {
 		"run", podName,
 		"--restart=Never",
 		"--namespace", namespace,
-		"--image=curlimages/curl:latest",
+		"--image="+curlImage,
 		"--overrides",
 		fmt.Sprintf(`{
 			"spec": {
 				"containers": [{
 					"name": "%s",
-					"image": "curlimages/curl:latest",
+					"image": "`+curlImage+`",
 					"command": ["/bin/sh", "-c"],
 					"args": ["%s"],
 					"securityContext": {

@@ -31,11 +31,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -54,7 +53,7 @@ jobs:
       - name: Testing make test-e2e for project-v4
         working-directory: testdata/project-v4/
         run: |
-          make test-e2e
+          make test-e2e KIND=kind
 
   e2e-tests-project-v4-with-plugins:
     permissions:
@@ -74,11 +73,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -94,7 +92,7 @@ jobs:
       - name: Testing make test-e2e for project-v4-with-plugins
         working-directory: testdata/project-v4-with-plugins/
         run: |
-          make test-e2e
+          make test-e2e KIND=kind
 
   e2e-tests-project-v4-multigroup:
     permissions:
@@ -114,11 +112,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -134,7 +131,7 @@ jobs:
       - name: Testing make test-e2e for project-v4-multigroup
         working-directory: testdata/project-v4-multigroup/
         run: |
-          make test-e2e
+          make test-e2e KIND=kind
 
   # Test to validate e2e integration when no APIs are scaffolded
   e2e-test-basic-project:
@@ -153,11 +150,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          make kind
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Verify kind installation
         run: kind version
@@ -178,4 +174,4 @@ jobs:
 
       - name: Run make test-e2e on empty project
         working-directory: /tmp/basic-project-v4
-        run: make test-e2e
+        run: make test-e2e KIND=kind

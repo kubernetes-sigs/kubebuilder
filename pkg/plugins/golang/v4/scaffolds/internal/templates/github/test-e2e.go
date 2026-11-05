@@ -29,6 +29,9 @@ type E2eTestCi struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
 	machinery.ProjectNameMixin
+
+	// KindVersion is the kind version to install
+	KindVersion string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -69,9 +72,9 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/{{ .KindVersion }}/kind-linux-$(go env GOARCH)
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
@@ -81,5 +84,6 @@ jobs:
       - name: Running Test e2e
         run: |
           go mod tidy
-          make test-e2e
+          # Use the kind installed above
+          make test-e2e KIND=kind
 `

@@ -24,6 +24,16 @@ import (
 
 var _ machinery.Template = &HelmChartCI{}
 
+// KindVersion is the kind version to install. Keep it in sync with the go/v4 plugin.
+const KindVersion = "v0.33.0"
+
+// CertManagerVersion is the cert-manager version to install. Keep it in sync with the go/v4 e2e tests.
+const CertManagerVersion = "v1.21.3"
+
+// PrometheusOperatorCRDsVersion is the prometheus-operator-crds chart version to install.
+// It ships the CRDs of Prometheus Operator v0.94.2.
+const PrometheusOperatorCRDsVersion = "32.0.2"
+
 // HelmChartCI scaffolds the GitHub Action for testing Helm charts
 type HelmChartCI struct {
 	machinery.TemplateMixin
@@ -33,6 +43,12 @@ type HelmChartCI struct {
 	Force bool
 	// HasWebhooks enables cert-manager installation in the workflow
 	HasWebhooks bool
+	// KindVersion is the kind version to install
+	KindVersion string
+	// CertManagerVersion is the cert-manager version to install
+	CertManagerVersion string
+	// PrometheusOperatorCRDsVersion is the prometheus-operator-crds Helm chart version to install
+	PrometheusOperatorCRDsVersion string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -42,6 +58,15 @@ func (f *HelmChartCI) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = testChartTemplate
+	if f.KindVersion == "" {
+		f.KindVersion = KindVersion
+	}
+	if f.CertManagerVersion == "" {
+		f.CertManagerVersion = CertManagerVersion
+	}
+	if f.PrometheusOperatorCRDsVersion == "" {
+		f.PrometheusOperatorCRDsVersion = PrometheusOperatorCRDsVersion
+	}
 
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
@@ -68,6 +93,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMG: controller:latest
+      CERT_MANAGER_VERSION: {{ .CertManagerVersion }}
+      PROMETHEUS_OPERATOR_CRDS_VERSION: {{ .PrometheusOperatorCRDsVersion }}
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -79,9 +106,9 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
+      - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(go env GOARCH)
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/{{ .KindVersion }}/kind-linux-$(go env GOARCH)
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
@@ -95,20 +122,23 @@ jobs:
         run: |
           go mod tidy
           make docker-build
-          kind load docker-image $IMG
+          kind load docker-image "$IMG"
 
       - name: Install Helm
-        run: make install-helm
+        run: |
+          make helm
+          # Use the Helm installed by make helm in the next steps
+          echo "$PWD/bin" >> "$GITHUB_PATH"
 
       - name: Lint Helm Chart
-        run: |
-          helm lint ./dist/chart
+        run: helm lint ./dist/chart
 {{ if .HasWebhooks }}
       - name: Install cert-manager via Helm (wait for readiness)
         run: |
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
           helm install cert-manager jetstack/cert-manager \
+            --version ${CERT_MANAGER_VERSION} \
             --namespace cert-manager \
             --create-namespace \
             --set crds.enabled=true \
@@ -121,6 +151,7 @@ jobs:
 #          helm repo add jetstack https://charts.jetstack.io
 #          helm repo update
 #          helm install cert-manager jetstack/cert-manager \
+#            --version ${CERT_MANAGER_VERSION} \
 #            --namespace cert-manager \
 #            --create-namespace \
 #            --set crds.enabled=true \
@@ -132,7 +163,8 @@ jobs:
 #        run: |
 #          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 #          helm repo update
-#          helm install prometheus-crds prometheus-community/prometheus-operator-crds
+#          helm install prometheus-crds prometheus-community/prometheus-operator-crds \
+#            --version ${PROMETHEUS_OPERATOR_CRDS_VERSION}
 
       - name: Deploy manager via Helm
         run: |

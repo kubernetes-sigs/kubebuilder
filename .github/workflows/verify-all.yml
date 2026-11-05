@@ -128,7 +128,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Install Helm
-        run: make install-helm
+        run: make helm
 
       - name: Verify Helm charts
         run: make verify-helm

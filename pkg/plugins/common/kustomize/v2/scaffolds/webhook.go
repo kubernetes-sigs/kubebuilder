@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	log "log/slog"
+	"os"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
@@ -141,24 +142,34 @@ func (s *webhookScaffolder) Scaffold() error {
 	err := s.config.DecodePluginConfig(helmPluginKey, &helmPlugin)
 	if !errors.As(err, &config.PluginKeyNotFoundError{}) {
 		testChartPath := ".github/workflows/test-chart.yml"
-		_ = pluginutil.UncommentCode(
-			testChartPath, `#      - name: Install cert-manager via Helm (wait for readiness)
-#        run: |
-#          helm repo add jetstack https://charts.jetstack.io
-#          helm repo update
-#          helm install cert-manager jetstack/cert-manager \
-#            --namespace cert-manager \
-#            --create-namespace \
-#            --set crds.enabled=true \
-#            --wait \
-#            --timeout 300s
-`, "#",
-		)
+		enableCertManagerInChartWorkflow(testChartPath)
 
 		_ = pluginutil.ReplaceInFile(testChartPath, "# TODO: Uncomment if cert-manager is enabled", "")
 	}
 
 	return nil
+}
+
+// enableCertManagerInChartWorkflow uncomments the cert-manager install step in the Helm chart workflow.
+// It falls back to the unpinned step that older projects have.
+func enableCertManagerInChartWorkflow(testChartPath string) {
+	if _, err := os.Stat(testChartPath); err != nil {
+		return
+	}
+
+	for _, step := range []string{certManagerChartWorkflowStep, legacyCertManagerChartWorkflowStep} {
+		if err := pluginutil.UncommentCode(testChartPath, step, "#"); err == nil {
+			return
+		}
+	}
+
+	if hasStep, err := pluginutil.HasFileContentWith(testChartPath,
+		"\n      - name: Install cert-manager"); err == nil && hasStep {
+		return
+	}
+	log.Warn("unable to find the cert-manager install step to uncomment in the file. "+
+		"Install cert-manager in the workflow before deploying the chart, because webhooks require it",
+		"file", testChartPath)
 }
 
 // uncommentCodeForConversionWebhooks enables CA injection logic in Kustomize manifests
@@ -514,3 +525,28 @@ the latest bug fixes and enhancements.
 
 const allowWebhookTrafficFragment = `
 - allow-webhook-traffic.yaml`
+
+// certManagerChartWorkflowStep is the commented cert-manager install step in test-chart.yml.
+const certManagerChartWorkflowStep = `#      - name: Install cert-manager via Helm (wait for readiness)
+#        run: |
+#          helm repo add jetstack https://charts.jetstack.io
+#          helm repo update
+#          helm install cert-manager jetstack/cert-manager \
+#            --version ${CERT_MANAGER_VERSION} \
+#            --namespace cert-manager \
+#            --create-namespace \
+#            --set crds.enabled=true \
+#            --wait \
+#            --timeout 300s`
+
+// legacyCertManagerChartWorkflowStep is the same step without a pinned version, as older projects have.
+const legacyCertManagerChartWorkflowStep = `#      - name: Install cert-manager via Helm (wait for readiness)
+#        run: |
+#          helm repo add jetstack https://charts.jetstack.io
+#          helm repo update
+#          helm install cert-manager jetstack/cert-manager \
+#            --namespace cert-manager \
+#            --create-namespace \
+#            --set crds.enabled=true \
+#            --wait \
+#            --timeout 300s`

@@ -291,7 +291,7 @@ var _ = Describe("kubebuilder", func() {
 				if step.asString {
 					setFlag = "--set-string"
 				}
-				cmd := exec.Command("helm", "upgrade", releaseName, "dist/chart",
+				cmd := kbc.HelmCommand("upgrade", releaseName, "dist/chart",
 					"--namespace", kbc.Kubectl.Namespace, "--reuse-values",
 					setFlag, "manager.healthProbeBindAddress="+step.value)
 				_, err = kbc.Run(cmd)

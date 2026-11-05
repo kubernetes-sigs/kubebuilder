@@ -150,12 +150,12 @@ HELM_CHARTS := $(shell find testdata docs/book -type d -path '*/dist/chart' 2>/d
 yamllint: yamllint-yaml yamllint-helm
 
 yamllint-yaml:
-	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data cytopia/yamllint:latest $(YAMLLINT_FILES) -c .yamllint --no-warnings
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data cytopia/yamllint:$(YAMLLINT_IMAGE_TAG) $(YAMLLINT_FILES) -c .yamllint --no-warnings
 
-yamllint-helm:
+yamllint-helm: helm
 	@for chart in $(HELM_CHARTS); do \
-	  helm template release $$chart --namespace=release-system 2>/dev/null | \
-	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:latest -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
+	  $(HELM) template release $$chart --namespace=release-system 2>/dev/null | \
+	  docker run --rm -i -v $(PWD):/data -w /data cytopia/yamllint:$(YAMLLINT_IMAGE_TAG) -c .yamllint-helm --no-warnings - || (echo "yamllint-helm: $$chart failed"; exit 1); \
 	done
 
 # All Kubebuilder-generated samples (go/v4, kustomize, helm use machinery defaults 0755/0644).
@@ -208,13 +208,14 @@ test-integration: install ## Run the integration tests (requires kubebuilder bin
 # test targets, because it is heavy: it downloads old Kubebuilder release
 # binaries on every run. It installs Helm first, because the Helm plugin's
 # integration specs render the chart with `helm template` and skip themselves
-# when `helm` is not on PATH. A failure prints the seed; rerun it with
+# when `helm` is not on PATH; the installed Helm is used when there is none.
+# A failure prints the seed; rerun it with
 # make test-random GINKGO_RANDOM_FLAGS="-ginkgo.randomize-all -ginkgo.seed=<seed>".
 GINKGO_RANDOM_FLAGS ?= -ginkgo.randomize-all
 .PHONY: test-random
-test-random: install install-helm ## Run the unit and integration tests with every Ginkgo spec in random order
-	go test -race $(TEST_PKGS) $(GINKGO_RANDOM_FLAGS)
-	go test -race -tags=integration -timeout 30m $(TEST_PKGS) $(GINKGO_RANDOM_FLAGS)
+test-random: install helm ## Run the unit and integration tests with every Ginkgo spec in random order
+	PATH="$$PATH:$(LOCALBIN)" go test -race $(TEST_PKGS) $(GINKGO_RANDOM_FLAGS)
+	PATH="$$PATH:$(LOCALBIN)" go test -race -tags=integration -timeout 30m $(TEST_PKGS) $(GINKGO_RANDOM_FLAGS)
 
 .PHONY: test-coverage
 test-coverage: ## Run unit and integration tests with coverage report
@@ -271,27 +272,23 @@ test-external-plugin: install  ## Run tests for external plugin
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
 	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 test-plugin
 
-.PHONY: install-helm
-install-helm: ## Install the latest version of Helm locally
-	@command -v helm >/dev/null 2>&1 || curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
-
 .PHONY: install-kube-linter
 install-kube-linter: ## Install kube-linter locally if necessary
 	@mkdir -p $(LOCALBIN)
 	$(call go-install-tool,$(KUBE_LINTER),golang.stackrox.io/kube-linter/cmd/kube-linter,$(KUBE_LINTER_VERSION))
 
 .PHONY: helm-lint
-helm-lint: install-helm ## Lint all Helm charts in testdata and docs
+helm-lint: helm ## Lint all Helm charts in testdata and docs
 	@for chart in $(HELM_CHARTS); do \
 		echo "Linting $$chart..."; \
-		helm lint $$chart || exit 1; \
+		$(HELM) lint $$chart || exit 1; \
 	done
 
 .PHONY: kube-linter
-kube-linter: install-helm install-kube-linter ## Lint all Helm charts with kube-linter
+kube-linter: helm install-kube-linter ## Lint all Helm charts with kube-linter
 	@for chart in $(HELM_CHARTS); do \
 		echo "Validating $$chart with kube-linter..."; \
-		helm template $$chart | $(KUBE_LINTER) lint - || exit 1; \
+		$(HELM) template $$chart | $(KUBE_LINTER) lint - || exit 1; \
 	done
 
 ##@ Verification
@@ -334,12 +331,36 @@ verify-helm: yamllint-helm helm-lint kube-linter ## Verify Helm charts (yamllint
 ## Tool Binaries
 GO_APIDIFF ?= $(LOCALBIN)/go-apidiff
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+HELM ?= $(LOCALBIN)/helm
+KIND ?= $(LOCALBIN)/kind
 KUBE_LINTER ?= $(LOCALBIN)/kube-linter
 
 ## Tool Versions
 GO_APIDIFF_VERSION ?= v0.8.3
 GOLANGCI_LINT_VERSION ?= v2.15.0
+HELM_VERSION ?= v4.3.1
+KIND_VERSION ?= v0.33.0
+YAMLLINT_IMAGE_TAG ?= 1-0.14
 KUBE_LINTER_VERSION ?= v0.8.3
+
+.PHONY: kind
+kind: $(LOCALBIN) ## Download kind locally if necessary
+ifeq ($(KIND),$(LOCALBIN)/kind)
+	$(call go-install-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
+endif
+
+.PHONY: helm
+helm: $(LOCALBIN) ## Download Helm locally if necessary
+ifeq ($(HELM),$(LOCALBIN)/helm)
+helm: $(LOCALBIN)/helm-$(HELM_VERSION)
+	@ln -sf "helm-$(HELM_VERSION)" "$(HELM)"
+endif
+
+# The Helm install script checks that helm is on PATH
+$(LOCALBIN)/helm-$(HELM_VERSION): | $(LOCALBIN)
+	curl -fsSL -o "$(LOCALBIN)/get-helm-4" https://raw.githubusercontent.com/helm/helm/$(HELM_VERSION)/scripts/get-helm-4
+	PATH="$(LOCALBIN):$$PATH" HELM_INSTALL_DIR="$(LOCALBIN)" BINARY_NAME=helm-$(HELM_VERSION) USE_SUDO=false \
+		bash "$(LOCALBIN)/get-helm-4" --version $(HELM_VERSION)
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

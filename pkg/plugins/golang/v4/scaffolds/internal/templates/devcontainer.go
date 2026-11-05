@@ -119,7 +119,7 @@ echo "------------------------------------"
 # Install kind
 if ! command -v kind &> /dev/null; then
   echo "Installing kind..."
-  curl -Lo /usr/local/bin/kind "https://kind.sigs.k8s.io/dl/latest/kind-linux-${ARCH}"
+  curl -fsSLo /usr/local/bin/kind "https://kind.sigs.k8s.io/dl/{{ .KindVersion }}/kind-linux-${ARCH}"
   chmod +x /usr/local/bin/kind
   echo "kind installed successfully"
 fi
@@ -235,6 +235,9 @@ type DevContainer struct {
 // DevContainerPostInstallScript defines the scaffold that will be done with the post install script
 type DevContainerPostInstallScript struct {
 	machinery.TemplateMixin
+
+	// KindVersion is the kind version to install
+	KindVersion string
 }
 
 // SetTemplateDefaults set defaults for this template
