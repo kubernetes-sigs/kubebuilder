@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/rand"
 	"errors"
@@ -152,21 +151,14 @@ func UncommentCode(filename, target, prefix string) error {
 		return fmt.Errorf("failed to write to file %q: %w", filename, err)
 	}
 
-	scanner := bufio.NewScanner(bytes.NewBufferString(target))
-	if !scanner.Scan() {
-		return nil
+	// Split on "\n" instead of scanning lines so that a newline at the end
+	// of target is kept and the next line of the file is not joined to it.
+	lines := strings.Split(target, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimPrefix(line, prefix)
 	}
-	for {
-		if _, err = out.WriteString(strings.TrimPrefix(scanner.Text(), prefix)); err != nil {
-			return fmt.Errorf("failed to write to file %q: %w", filename, err)
-		}
-		// Avoid writing a newline in case the previous line was the last in target.
-		if !scanner.Scan() {
-			break
-		}
-		if _, err = out.WriteString("\n"); err != nil {
-			return fmt.Errorf("failed to write to file %q: %w", filename, err)
-		}
+	if _, err = out.WriteString(strings.Join(lines, "\n")); err != nil {
+		return fmt.Errorf("failed to write to file %q: %w", filename, err)
 	}
 
 	if _, err = out.Write(content[idx+len(target):]); err != nil {
@@ -202,12 +194,17 @@ func CommentCode(filename, target, prefix string) error {
 		return fmt.Errorf("failed to write to file %q: %w", filename, err)
 	}
 
-	// Add the comment prefix to each line of the target code
-	scanner := bufio.NewScanner(bytes.NewBufferString(target))
-	for scanner.Scan() {
-		if _, err = out.WriteString(prefix + scanner.Text() + "\n"); err != nil {
-			return fmt.Errorf("failed to write to file %q: %w", filename, err)
+	// Add the comment prefix to each line of the target code, keeping its
+	// line endings: a newline is only written where target has one.
+	lines := strings.Split(target, "\n")
+	for i, line := range lines {
+		if i == len(lines)-1 && line == "" {
+			break
 		}
+		lines[i] = prefix + line
+	}
+	if _, err = out.WriteString(strings.Join(lines, "\n")); err != nil {
+		return fmt.Errorf("failed to write to file %q: %w", filename, err)
 	}
 
 	// Write the rest of the file content
