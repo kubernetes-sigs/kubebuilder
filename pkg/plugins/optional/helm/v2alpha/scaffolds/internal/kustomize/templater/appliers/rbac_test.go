@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var _ = Describe("TemplateServiceAccountNameInDeployment", func() {
@@ -192,4 +193,169 @@ var _ = Describe("TemplateServiceAccountNameInBindings", func() {
 			annotation+withSubjects(userSubject+"\n"+templatedSubject)),
 		Entry("subjects only in an annotation", annotation, annotation),
 	)
+})
+
+var _ = Describe("templateServiceAccountNameInBindings", func() {
+	const chartName = "test-project"
+
+	It("templates only the manager ServiceAccount subject matching name and namespace", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("shared-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		yamlContent := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manager-binding
+subjects:
+- kind: ServiceAccount
+  name: shared-sa
+  namespace: test-project-system
+- kind: ServiceAccount
+  name: shared-sa
+  namespace: other-namespace
+`
+
+		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(
+			`name: {{ include "test-project.serviceAccountName" . }}
+  namespace: test-project-system`))
+		Expect(result).To(ContainSubstring(`name: shared-sa
+  namespace: other-namespace`))
+		Expect(result).NotTo(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}
+  namespace: other-namespace`))
+	})
+
+	It("does not template unrelated ServiceAccount subjects that share the manager name", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("shared-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		yamlContent := `subjects:
+- kind: ServiceAccount
+  name: shared-sa
+  namespace: external
+`
+
+		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
+		Expect(result).To(Equal(yamlContent))
+	})
+
+	It("templates prefixed custom manager SA subjects already converted to resourceName", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("test-project-operator-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		templatedName := ResourceNameTemplate(chartName, "operator-sa")
+		yamlContent := `subjects:
+- kind: ServiceAccount
+  name: ` + templatedName + `
+  namespace: test-project-system
+`
+
+		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(`name: {{ include "test-project.serviceAccountName" . }}`))
+		Expect(result).NotTo(ContainSubstring(templatedName))
+	})
+
+	It("templates a custom manager SA subject listed after other subjects", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("shared-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		yamlContent := `subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: alice
+- kind: ServiceAccount
+  name: shared-sa
+  namespace: {{ .Release.Namespace }}
+`
+
+		result := templateServiceAccountNameInBindings("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(Equal(`subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: alice
+- kind: ServiceAccount
+  name: {{ include "test-project.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+`))
+	})
+})
+
+var _ = Describe("templateServiceAccountNameInDeployment", func() {
+	const chartName = "test-project"
+
+	It("templates prefixed custom manager SA serviceAccountName already converted to resourceName", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("test-project-operator-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		templatedName := ResourceNameTemplate(chartName, "operator-sa")
+		yamlContent := `spec:
+  template:
+    spec:
+      serviceAccountName: ` + templatedName + `
+`
+
+		result := templateServiceAccountNameInDeployment("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(
+			`serviceAccountName: {{ include "test-project.serviceAccountName" . }}`))
+		Expect(result).NotTo(ContainSubstring(templatedName))
+	})
+
+	It("templates only the pod serviceAccountName for a custom manager SA", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("shared-sa")
+		managerSA.SetNamespace("test-project-system")
+
+		yamlContent := `spec:
+  template:
+    spec:
+      serviceAccountName: shared-sa
+      containers:
+      - name: manager
+        serviceAccountName: shared-sa
+`
+
+		result := templateServiceAccountNameInDeployment("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(Equal(`spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "test-project.serviceAccountName" . }}
+      containers:
+      - name: manager
+        serviceAccountName: shared-sa
+`))
+	})
+})
+
+var _ = Describe("templateServiceAccountName", func() {
+	const chartName = "test-project"
+
+	It("templates metadata.name without matching metadata.labels keys", func() {
+		managerSA := &unstructured.Unstructured{}
+		managerSA.SetName("shared-sa")
+
+		yamlContent := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shared-sa
+  labels:
+    app.kubernetes.io/name: shared-sa
+`
+
+		result := templateServiceAccountName("test-project", chartName, yamlContent, managerSA)
+
+		Expect(result).To(ContainSubstring(
+			`name: {{ include "test-project.serviceAccountName" . }}`))
+		Expect(result).To(ContainSubstring(`app.kubernetes.io/name: shared-sa`))
+		Expect(result).NotTo(ContainSubstring(`app.kubernetes.io/name: {{ include "test-project.serviceAccountName" . }}`))
+	})
 })
