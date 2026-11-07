@@ -657,8 +657,11 @@ func (f *replacedByPipeFs) OpenFile(name string, flag int, perm os.FileMode) (af
 	}
 
 	file, err := f.Fs.OpenFile(name, flag, perm)
-	if err != nil || name != f.path {
-		return file, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %q: %w", name, err)
+	}
+	if name != f.path {
+		return file, nil
 	}
 
 	return pipeFile{File: file}, nil
@@ -671,7 +674,7 @@ type pipeFile struct{ afero.File }
 func (f pipeFile) Stat() (os.FileInfo, error) {
 	info, err := f.File.Stat()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to stat opened file: %w", err)
 	}
 
 	return pipeFileInfo{info}, nil

@@ -324,18 +324,36 @@ type projectReadCountingFs struct {
 	reads int
 }
 
-// Open counts PROJECT reads before delegating to the wrapped filesystem.
+// Open opens PROJECT through OpenFile so reads are counted when bytes are actually consumed.
 func (f *projectReadCountingFs) Open(name string) (afero.File, error) {
-	if name == yamlstore.DefaultPath {
-		f.reads++
-	}
+	return f.OpenFile(name, os.O_RDONLY, 0)
+}
 
-	file, err := f.Fs.Open(name)
+// OpenFile wraps files so read assertions distinguish opening a path for metadata from reading it.
+func (f *projectReadCountingFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	file, err := f.Fs.OpenFile(name, flag, perm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %q: %w", name, err)
 	}
 
-	return file, nil
+	if name != yamlstore.DefaultPath {
+		return file, nil
+	}
+
+	return projectReadCountingFile{File: file, reads: &f.reads}, nil
+}
+
+// projectReadCountingFile increments the counter only when content is read.
+type projectReadCountingFile struct {
+	afero.File
+	reads *int
+}
+
+func (f projectReadCountingFile) Read(p []byte) (int, error) {
+	*f.reads++
+	n, err := f.File.Read(p)
+	// Preserve io.EOF so readers such as io.ReadAll can detect end of input.
+	return n, err //nolint:wrapcheck
 }
 
 // nonRegularProjectFileInfo reports a named pipe mode on top of the wrapped FileInfo.
@@ -360,6 +378,37 @@ func (f *nonRegularProjectFs) Stat(name string) (os.FileInfo, error) {
 	}
 
 	return info, nil
+}
+
+// Open opens PROJECT through OpenFile.
+func (f *nonRegularProjectFs) Open(name string) (afero.File, error) {
+	return f.OpenFile(name, os.O_RDONLY, 0)
+}
+
+// OpenFile reports PROJECT as a named pipe after it has been opened, modeling a replacement
+// between the caller's initial path check and opening the file.
+func (f *nonRegularProjectFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	file, err := f.Fs.OpenFile(name, flag, perm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %q: %w", name, err)
+	}
+	if name != yamlstore.DefaultPath {
+		return file, nil
+	}
+
+	return nonRegularProjectFile{File: file}, nil
+}
+
+// nonRegularProjectFile reports the opened PROJECT file as a named pipe.
+type nonRegularProjectFile struct{ afero.File }
+
+func (f nonRegularProjectFile) Stat() (os.FileInfo, error) {
+	info, err := f.File.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat opened PROJECT: %w", err)
+	}
+
+	return nonRegularProjectFileInfo{info}, nil
 }
 
 // executeCLI builds a CLI over the given filesystem and runs it with the given arguments, as the
