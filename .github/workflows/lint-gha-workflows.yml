@@ -22,6 +22,41 @@ jobs:
         with:
           advanced-security: false
   
+  scaffolded-workflows:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+      - name: Run actionlint on the workflows scaffolded for projects
+        run: |
+          actionlint testdata/*/.github/workflows/*.yml \
+            docs/book/src/*/testdata/project/.github/workflows/*.yml
+
+      - name: Run zizmor on the workflows scaffolded for projects
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          advanced-security: false
+          inputs: >-
+            testdata/project-v4
+            testdata/project-v4-multigroup
+            testdata/project-v4-with-plugins
+            docs/book/src/getting-started/testdata/project
+            docs/book/src/cronjob-tutorial/testdata/project
+            docs/book/src/multiversion-tutorial/testdata/project
+
   pinact:
     permissions:
       contents: read
