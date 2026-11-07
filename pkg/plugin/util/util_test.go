@@ -241,6 +241,38 @@ var _ = Describe("Cover plugin util helpers", func() {
 		})
 	})
 
+	Describe("UncommentCode and CommentCode line endings", func() {
+		var path string
+
+		BeforeEach(func() {
+			path = filepath.Join(GinkgoT().TempDir(), "file.txt")
+		})
+
+		It("should keep the newline at the end of the target when uncommenting", func() {
+			Expect(os.WriteFile(path, []byte("#line1\n#line2\nline3\n"), 0o644)).To(Succeed())
+			Expect(UncommentCode(path, "#line1\n#line2\n", "#")).To(Succeed())
+			b, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(b)).To(Equal("line1\nline2\nline3\n"))
+		})
+
+		It("should not add a newline after a target without one when commenting", func() {
+			Expect(os.WriteFile(path, []byte("line1\nline2\nline3\n"), 0o644)).To(Succeed())
+			Expect(CommentCode(path, "line1\nline2", "#")).To(Succeed())
+			b, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(b)).To(Equal("#line1\n#line2\nline3\n"))
+		})
+
+		It("should keep the newline at the end of the target when commenting", func() {
+			Expect(os.WriteFile(path, []byte("line1\nline2\nline3\n"), 0o644)).To(Succeed())
+			Expect(CommentCode(path, "line1\nline2\n", "#")).To(Succeed())
+			b, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(b)).To(Equal("#line1\n#line2\nline3\n"))
+		})
+	})
+
 	Describe("EnsureExistAndReplace", func() {
 		Context("Content Exists", func() {
 			It("should replace all the matched contents", func() {
