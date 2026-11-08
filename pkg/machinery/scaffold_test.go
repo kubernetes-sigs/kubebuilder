@@ -16,6 +16,7 @@ package machinery
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -528,6 +529,13 @@ func init() {
 			})
 		})
 
+		It("should return the error from closing the written file", func() {
+			s.fs = closeErrorFs{Fs: afero.NewMemMapFs(), closeErr: testErr}
+
+			err := s.Execute(&fakeTemplate{fakeBuilder: fakeBuilder{path: path}, body: content})
+			Expect(err).To(MatchError(CloseFileError{testErr}))
+		})
+
 		Context("WithConfig option", func() {
 			It("should set repository in imports.LocalPrefix", func() {
 				cfg := cfgv3.New()
@@ -575,6 +583,32 @@ func init() {
 		})
 	})
 })
+
+// closeErrorFs is an afero.Fs whose files opened with OpenFile fail to close
+type closeErrorFs struct {
+	afero.Fs
+	closeErr error
+}
+
+// OpenFile implements afero.Fs
+func (fs closeErrorFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	f, err := fs.Fs.OpenFile(name, flag, perm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %q: %w", name, err)
+	}
+	return closeErrorFile{File: f, closeErr: fs.closeErr}, nil
+}
+
+type closeErrorFile struct {
+	afero.File
+	closeErr error
+}
+
+// Close implements afero.File
+func (f closeErrorFile) Close() error {
+	_ = f.File.Close()
+	return f.closeErr
+}
 
 var _ Builder = fakeBuilder{}
 
