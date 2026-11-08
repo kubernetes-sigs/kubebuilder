@@ -52,6 +52,11 @@ var coreGroups = map[string]string{
 	"storage":               k8sIODomainSuffix,
 }
 
+// corePackages maps the core groups whose package in k8s.io/api is not named after the group.
+var corePackages = map[string]string{
+	"rbac.authorization": "rbac",
+}
+
 // Options contains the information required to build a new resource.Resource.
 type Options struct {
 	// Plural is the resource's kind plural form.
@@ -176,7 +181,11 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 				if domain, found := coreGroups[res.Group]; found {
 					res.Core = true
 					res.Domain = domain
-					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+					pkg := res.Group
+					if corePackage, hasPackage := corePackages[res.Group]; hasPackage {
+						pkg = corePackage
+					}
+					res.Path = path.Join("k8s.io", "api", pkg, res.Version)
 				}
 			}
 		}
