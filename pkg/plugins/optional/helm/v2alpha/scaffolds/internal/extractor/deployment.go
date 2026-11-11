@@ -615,12 +615,19 @@ func extractExtraVolumeMounts(container map[string]any, config map[string]any) {
 
 // extractDeploymentReplicas extracts the replicas count from the deployment spec.
 func extractDeploymentReplicas(deployment *unstructured.Unstructured, config map[string]any) {
-	replicas, found, err := unstructured.NestedInt64(deployment.Object, "spec", "replicas")
+	field, found, err := unstructured.NestedFieldNoCopy(deployment.Object, "spec", "replicas")
 	if !found || err != nil {
 		return
 	}
 
-	config["replicas"] = int(replicas)
+	// The parser decodes the manifest with a YAML decoder, so the value is an int
+	// rather than the int64 that unstructured.NestedInt64 expects.
+	replicas, ok := toInt(field)
+	if !ok {
+		return
+	}
+
+	config["replicas"] = replicas
 }
 
 // extractDeploymentStrategy extracts the deployment strategy.

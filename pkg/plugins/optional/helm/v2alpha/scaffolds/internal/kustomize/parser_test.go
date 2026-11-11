@@ -19,6 +19,7 @@ limitations under the License.
 package kustomize
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -253,6 +254,41 @@ spec:
 			Expect(np.GetKind()).To(Equal("NetworkPolicy"))
 			Expect(np.GetName()).To(Equal("allow-metrics-traffic"))
 		})
+	})
+
+	Context("with the manager replicas set in the manifest", func() {
+		DescribeTable("should keep the replicas when extracting the manager config",
+			func(replicas int) {
+				yamlContent := fmt.Sprintf(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller-manager
+  namespace: test-system
+  labels:
+    control-plane: controller-manager
+spec:
+  replicas: %d
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: controller:latest
+`, replicas)
+				Expect(os.WriteFile(tempFile, []byte(yamlContent), 0o600)).To(Succeed())
+
+				resources, err := NewParser(tempFile).Parse()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resources.Deployment).NotTo(BeNil())
+
+				deploymentExtractor := extractor.DeploymentExtractor{}
+				config, err := deploymentExtractor.ExtractDeploymentConfig(resources.Deployment)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config.Manager.Replicas).NotTo(BeNil())
+				Expect(*config.Manager.Replicas).To(Equal(replicas))
+			},
+			Entry("for 3 replicas", 3),
+			Entry("for scale-to-zero", 0),
+		)
 	})
 
 	Context("with empty or invalid YAML", func() {
