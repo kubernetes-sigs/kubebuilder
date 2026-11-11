@@ -53,6 +53,9 @@ Dockerfile.cross
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# macOS Finder file
+.DS_Store
+
 # Go workspace file
 go.work
 
