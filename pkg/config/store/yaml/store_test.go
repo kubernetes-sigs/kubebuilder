@@ -205,18 +205,22 @@ layout: ""
 
 		It("should never read a non-regular file at the specified path", func() {
 			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+v3File), os.ModePerm)).To(Succeed())
-			s.fs = &nonRegularFs{Fs: s.fs, path: path}
+			fs := &nonRegularFs{Fs: s.fs, path: path}
+			s.fs = fs
 
 			err := s.LoadFrom(path)
 			Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
+			Expect(fs.reads).To(BeZero())
 		})
 
 		It("should reject a path replaced by a named pipe after it was checked", func() {
 			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+v3File), os.ModePerm)).To(Succeed())
-			s.fs = &replacedByPipeFs{Fs: s.fs, path: path}
+			fs := &replacedByPipeFs{Fs: s.fs, path: path}
+			s.fs = fs
 
 			err := s.LoadFrom(path)
 			Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
+			Expect(fs.reads).To(BeZero())
 		})
 
 		It("should load the Config through a symlink to a regular file", func() {
@@ -621,7 +625,8 @@ func (i nonRegularFileInfo) Mode() os.FileMode { return i.FileInfo.Mode() | os.M
 // nonRegularFs makes path look like a non-regular file, both when it is checked and when it is opened.
 type nonRegularFs struct {
 	afero.Fs
-	path string
+	path  string
+	reads int
 }
 
 // Stat reports the configured path as a non-regular file.
@@ -641,7 +646,8 @@ func (f *nonRegularFs) Stat(name string) (os.FileInfo, error) {
 // itself as a named pipe, as if another process replaced the file after it was checked.
 type replacedByPipeFs struct {
 	afero.Fs
-	path string
+	path  string
+	reads int
 }
 
 // Open opens the path the same way as OpenFile.
@@ -664,11 +670,20 @@ func (f *replacedByPipeFs) OpenFile(name string, flag int, perm os.FileMode) (af
 		return file, nil
 	}
 
-	return pipeFile{File: file}, nil
+	return pipeFile{File: file, reads: &f.reads}, nil
 }
 
-// pipeFile reports a named pipe mode for the wrapped file.
-type pipeFile struct{ afero.File }
+// pipeFile reports a named pipe mode for the wrapped file and counts the reads made from it.
+type pipeFile struct {
+	afero.File
+	reads *int
+}
+
+// Read reads from the wrapped file and counts the call.
+func (f pipeFile) Read(p []byte) (int, error) {
+	*f.reads++
+	return f.File.Read(p)
+}
 
 // Stat reports the wrapped file as a named pipe.
 func (f pipeFile) Stat() (os.FileInfo, error) {
@@ -737,5 +752,5 @@ func (f *nonRegularFs) OpenFile(name string, flag int, perm os.FileMode) (afero.
 		return file, nil
 	}
 
-	return pipeFile{File: file}, nil
+	return pipeFile{File: file, reads: &f.reads}, nil
 }
