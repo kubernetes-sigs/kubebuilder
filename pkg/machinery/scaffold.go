@@ -509,7 +509,7 @@ func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, e
 	return out.Bytes(), nil
 }
 
-func (s Scaffold) writeFile(f *File) error {
+func (s Scaffold) writeFile(f *File) (err error) {
 	// Check if the file to write already exists
 	exists, err := afero.Exists(s.fs, f.Path)
 	if err != nil {
