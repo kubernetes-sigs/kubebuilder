@@ -41,7 +41,7 @@ type Makefile struct {
 	KindVersion string
 	// ControllerRuntimeVersion version to be used to download the envtest setup script
 	ControllerRuntimeVersion string
-	// EnvtestVersion store the name of the verions to be used to install setup-envtest
+	// EnvtestVersion store the name of the version to be used to install setup-envtest
 	EnvtestVersion string
 }
 
