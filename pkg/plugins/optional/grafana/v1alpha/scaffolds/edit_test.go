@@ -141,7 +141,18 @@ customMetrics:
 
 			validated := validateCustomMetricItems(items)
 			Expect(validated).To(HaveLen(1))
-			Expect(validated[0].Expr).To(Equal("foo_bar"))
+			// Gauge should use avg() for multi-pod support
+			Expect(validated[0].Expr).To(ContainSubstring("avg(foo_bar"))
+			Expect(validated[0].Expr).To(ContainSubstring(`{job=\"$job\", namespace=\"$namespace\"}`))
+			Expect(validated[0].Expr).To(ContainSubstring("by (instance, pod)"))
+		})
+
+		It("should fill missing expr for unknown type with raw metric", func() {
+			// Note: validateCustomMetricItems filters out unknown types via hasFields,
+			// so we test fillMissingExpr directly here
+			item := templates.CustomMetricItem{Metric: "foo_bar", Type: "unknown"}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(Equal("foo_bar"))
 		})
 
 		It("should not override existing expr", func() {
@@ -153,6 +164,55 @@ customMetrics:
 			validated := validateCustomMetricItems(items)
 			Expect(validated).To(HaveLen(1))
 			Expect(validated[0].Expr).To(Equal(customExpr))
+		})
+	})
+
+	Describe("fillMissingExpr", func() {
+		It("should generate rate expression for counter", func() {
+			item := templates.CustomMetricItem{Metric: "http_requests_total", Type: "counter"}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(ContainSubstring("sum(rate(http_requests_total"))
+			Expect(filled.Expr).To(ContainSubstring(`{job=\"$job\", namespace=\"$namespace\"}[5m])`))
+			Expect(filled.Expr).To(ContainSubstring("by (instance, pod)"))
+		})
+
+		It("should generate histogram_quantile expression for histogram", func() {
+			item := templates.CustomMetricItem{Metric: "request_duration_seconds", Type: "histogram"}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(ContainSubstring("histogram_quantile(0.90"))
+			Expect(filled.Expr).To(ContainSubstring("sum by(instance, le)"))
+			Expect(filled.Expr).To(ContainSubstring("rate(request_duration_seconds"))
+		})
+
+		It("should generate avg expression for gauge", func() {
+			item := templates.CustomMetricItem{Metric: "memory_usage_bytes", Type: "gauge"}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(ContainSubstring("avg(memory_usage_bytes"))
+			Expect(filled.Expr).To(ContainSubstring(`{job=\"$job\", namespace=\"$namespace\"}`))
+			Expect(filled.Expr).To(ContainSubstring("by (instance, pod)"))
+		})
+
+		It("should fallback to raw metric for unknown types", func() {
+			item := templates.CustomMetricItem{Metric: "custom_metric", Type: "summary"}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(Equal("custom_metric"))
+		})
+
+		It("should not override existing expression", func() {
+			customExpr := "my_custom{label=\"value\"}"
+			item := templates.CustomMetricItem{Metric: "foo_bar", Type: "counter", Expr: customExpr}
+			filled := fillMissingExpr(item)
+			Expect(filled.Expr).To(Equal(customExpr))
+		})
+
+		It("should handle case-insensitive type matching", func() {
+			types := []string{"COUNTER", "Counter", "HISTOGRAM", "Histogram", "GAUGE", "Gauge"}
+			for _, t := range types {
+				item := templates.CustomMetricItem{Metric: "test_metric", Type: t}
+				filled := fillMissingExpr(item)
+				Expect(filled.Expr).NotTo(BeEmpty(), "Type %s should generate expression", t)
+				Expect(filled.Expr).NotTo(Equal("test_metric"), "Type %s should not use raw metric", t)
+			}
 		})
 	})
 
