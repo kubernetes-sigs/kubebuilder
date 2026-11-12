@@ -4808,9 +4808,10 @@ metadata:
 				// Should preserve existing annotation
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
-				// Should merge into the existing block and omit the scaffolded key so overrides never duplicate
-				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit . "existing.annotation/key" }}`))
+				// Should merge into the existing block and guard the scaffolded key so a value replaces it
+				Expect(result).To(ContainSubstring("{{- if .Values.serviceAccount.annotations }}"))
+				Expect(result).To(ContainSubstring(
+					`{{- if not (hasKey (.Values.serviceAccount.annotations | default dict) "existing.annotation/key") }}`))
 
 				// Labels still merge independently of the annotations ordering
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))

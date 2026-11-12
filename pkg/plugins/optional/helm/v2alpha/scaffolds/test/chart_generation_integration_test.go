@@ -756,14 +756,17 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Entry("a keep-chomped annotation with a trailing blank line",
 				"    example.com/keep: |+\n      first\n      second\n\n", nil,
 				map[string]string{"example.com/keep": "first\nsecond\n\n"}),
+			Entry("a multi-line annotation ending in a line of non-breaking spaces, before another annotation",
+				"    example.com/a: \"first\\n\\u00a0\\n\"\n    example.com/z: stable\n", nil,
+				map[string]string{"example.com/a": "first\n\u00a0\n", "example.com/z": "stable"}),
+			Entry("an annotation kept when the annotations value is an empty string",
+				"    example.com/role: a\n",
+				[]string{"--set", "serviceAccount.annotations="},
+				map[string]string{"example.com/role": "a"}),
 			Entry("a keep-chomped annotation with a trailing blank line beside a custom annotation",
 				"    example.com/keep: |+\n      first\n      second\n\n",
 				[]string{"--set", "serviceAccount.annotations.team=platform"},
 				map[string]string{"example.com/keep": "first\nsecond\n\n", "team": "platform"}),
-			Entry("a keep-chomped annotation with a trailing blank line when every custom annotation is already set",
-				"    example.com/keep: |+\n      first\n      second\n\n",
-				[]string{"--set", "serviceAccount.annotations.example\\.com/keep=other"},
-				map[string]string{"example.com/keep": "first\nsecond\n\n"}),
 			Entry("a multi-line annotation with lines like labels: and app.kubernetes.io/name:",
 				"    example.com/description: |\n      labels:\n        app.kubernetes.io/name: other\n", nil,
 				map[string]string{"example.com/description": "labels:\n  app.kubernetes.io/name: other\n"}),
@@ -1022,6 +1025,168 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	// Values replace keys config/ already has, except the chart's own labels. Decoding fails on a
+	// duplicate key.
+	Context("ServiceAccount and ServiceMonitor values replacing existing keys (rendered)", func() {
+		// metadataOf decodes the labels and annotations of a rendered resource; a duplicate key fails it.
+		metadataOf := func(doc string) (map[string]string, map[string]string) {
+			Expect(doc).NotTo(BeEmpty(), "expected the resource in the render")
+			var rendered struct {
+				Metadata struct {
+					Labels      map[string]string `yaml:"labels"`
+					Annotations map[string]string `yaml:"annotations"`
+				} `yaml:"metadata"`
+			}
+			Expect(yaml.Unmarshal([]byte(doc), &rendered)).To(Succeed(), "got:\n%s", doc)
+			return rendered.Metadata.Labels, rendered.Metadata.Annotations
+		}
+
+		// withTierLabel adds a label that is not one of the chart's own labels to the resource of kind.
+		withTierLabel := func(kustomize, kind string) string {
+			start := strings.Index(kustomize, "\nkind: "+kind+"\n")
+			Expect(start).To(BeNumerically(">=", 0), "no %s in the fixture", kind)
+			offset := strings.Index(kustomize[start:], "\n  labels:\n")
+			Expect(offset).To(BeNumerically(">=", 0), "no labels block on the %s", kind)
+			at := start + offset + len("\n  labels:\n")
+			return kustomize[:at] + "    example.com/tier: backend\n" + kustomize[at:]
+		}
+
+		DescribeTable("lets a value replace an existing ServiceAccount annotation whatever its shape",
+			func(annotations string, setArgs []string, want map[string]string) {
+				kustomize := strings.Replace(createKustomizeForServiceAccountWithAnnotationsRender("test-project"),
+					"    example.com/existing-annotation: preserved-value\n", annotations, 1)
+				Expect(kustomize).To(ContainSubstring(annotations))
+				out, err := helmTemplate(kustomize, setArgs...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+				_, rendered := metadataOf(serviceAccountDoc(out))
+				Expect(rendered).To(Equal(want), "got:\n%s", out)
+			},
+			Entry("a keep-chomped annotation replaced by the value set for its key",
+				"    example.com/keep: |+\n      first\n      second\n\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/keep=other"},
+				map[string]string{"example.com/keep": "other"}),
+			Entry("a keep-chomped annotation kept when the annotation after it is replaced",
+				"    example.com/keep: |+\n      first\n\n    example.com/next: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/next=b"},
+				map[string]string{"example.com/keep": "first\n\n", "example.com/next": "b"}),
+			Entry("a keep-chomped annotation with two trailing blank lines kept beside a replaced annotation",
+				"    example.com/keep: |+\n      first\n\n\n    example.com/next: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/next=b"},
+				map[string]string{"example.com/keep": "first\n\n\n", "example.com/next": "b"}),
+			Entry("an annotation kept after a replaced keep-chomped annotation",
+				"    example.com/keep: |+\n      first\n\n    example.com/next: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/keep=other"},
+				map[string]string{"example.com/keep": "other", "example.com/next": "a"}),
+			Entry("an annotation replaced by the value set for its key",
+				"    example.com/role: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/role=b"},
+				map[string]string{"example.com/role": "b"}),
+			Entry("an annotation replaced by an empty value",
+				"    example.com/role: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/role="},
+				map[string]string{"example.com/role": ""}),
+			Entry("an annotation with a quoted key replaced by the value set for it",
+				"    \"on\": original\n",
+				[]string{"--set", "serviceAccount.annotations.on=custom"},
+				map[string]string{"on": "custom"}),
+			Entry("a multi-line annotation replaced by the value set for its key",
+				"    example.com/description: |\n      first paragraph\n\n      second paragraph\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/description=short"},
+				map[string]string{"example.com/description": "short"}),
+			Entry("an annotation named like one of the chart's own labels",
+				"    app.kubernetes.io/name: from-config\n",
+				[]string{"--set", "serviceAccount.annotations.app\\.kubernetes\\.io/name=from-values"},
+				map[string]string{"app.kubernetes.io/name": "from-values"}),
+			Entry("a long annotation the generator folds, kept beside a replaced annotation",
+				"    example.com/long: "+longAnnotationValue+"\n    example.com/role: a\n",
+				[]string{"--set", "serviceAccount.annotations.example\\.com/role=b"},
+				map[string]string{"example.com/long": longAnnotationValue, "example.com/role": "b"}),
+		)
+
+		It("lets ServiceAccount values replace existing keys, except the chart's own labels", func() {
+			kustomize := withTierLabel(
+				createKustomizeForServiceAccountWithAnnotationsRender("test-project"), "ServiceAccount")
+			out, err := helmTemplate(kustomize,
+				"--set", "serviceAccount.annotations.example\\.com/existing-annotation=from-values",
+				"--set", "serviceAccount.labels.example\\.com/tier=frontend",
+				"--set", "serviceAccount.labels.app\\.kubernetes\\.io/managed-by=other",
+				"--set", "serviceAccount.labels.app\\.kubernetes\\.io/name=other",
+				"--set", "serviceAccount.labels.app\\.kubernetes\\.io/instance=other",
+				"--set", "serviceAccount.labels.helm\\.sh/chart=other")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			labels, annotations := metadataOf(serviceAccountDoc(out))
+			Expect(annotations).To(Equal(map[string]string{"example.com/existing-annotation": "from-values"}))
+			Expect(labels).To(HaveKeyWithValue("example.com/tier", "frontend"))
+			Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/managed-by", "Helm"))
+			Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/name", "test-project"))
+			Expect(labels).To(HaveKeyWithValue("app.kubernetes.io/instance", "my-release"))
+			Expect(labels).To(HaveKeyWithValue("helm.sh/chart", "test-project-0.1.0"))
+		})
+
+		// YAML reads U+2028 as a line break, so this block keeps its config/ values, each key once.
+		It("keeps existing annotations once when an annotation holds a Unicode line separator", func() {
+			kustomize := strings.Replace(createKustomizeForServiceAccountWithAnnotationsRender("test-project"),
+				"    example.com/existing-annotation: preserved-value\n",
+				"    example.com/a: \"x\u2028y\"\n    example.com/sep: \"line1\\nline2\u2028\"\n    example.com/zz: z\n", 1)
+			out, err := helmTemplate(kustomize,
+				"--set", "serviceAccount.annotations.example\\.com/a=new",
+				"--set", "serviceAccount.annotations.example\\.com/zz=new")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			_, annotations := metadataOf(serviceAccountDoc(out))
+			Expect(annotations).To(HaveKeyWithValue("example.com/a", "x\u2028y"))
+			Expect(annotations).To(HaveKey("example.com/sep"))
+			Expect(annotations).To(HaveKeyWithValue("example.com/zz", "z"))
+		})
+
+		It("lets a values file replace existing ServiceAccount annotations", func() {
+			kustomize := strings.Replace(createKustomizeForServiceAccountWithAnnotationsRender("test-project"),
+				"    example.com/existing-annotation: preserved-value\n",
+				"    \"on\": original\n    example.com/existing-annotation: preserved-value\n", 1)
+			valuesFile := filepath.Join(tmpDir, "sa-override-values.yaml")
+			Expect(os.WriteFile(valuesFile, []byte("serviceAccount:\n  annotations:\n    \"on\": custom\n"+
+				"    example.com/existing-annotation: from-file\n"), 0o600)).To(Succeed())
+
+			out, err := helmTemplate(kustomize, "-f", valuesFile)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			_, annotations := metadataOf(serviceAccountDoc(out))
+			Expect(annotations).To(Equal(map[string]string{
+				"on":                              "custom",
+				"example.com/existing-annotation": "from-file",
+			}))
+		})
+
+		It("keeps existing ServiceAccount keys when no values are set", func() {
+			kustomize := withTierLabel(
+				createKustomizeForServiceAccountWithAnnotationsRender("test-project"), "ServiceAccount")
+			out, err := helmTemplate(kustomize)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			labels, annotations := metadataOf(serviceAccountDoc(out))
+			Expect(annotations).To(Equal(map[string]string{"example.com/existing-annotation": "preserved-value"}))
+			Expect(labels).To(HaveKeyWithValue("example.com/tier", "backend"))
+		})
+
+		It("lets ServiceMonitor values replace existing keys, except the chart's own labels", func() {
+			kustomize := withTierLabel(createKustomizeWithServiceMonitorAnnotations("test-project"), "ServiceMonitor")
+			out, err := helmTemplate(kustomize,
+				"--set", "metrics.enabled=true",
+				"--set", "prometheus.enabled=true",
+				"--set", "prometheus.annotations.example\\.com/existing-annotation=from-values",
+				"--set", "prometheus.labels.example\\.com/tier=frontend",
+				"--set", "prometheus.labels.control-plane=other")
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+
+			labels, annotations := metadataOf(serviceMonitorDoc(out))
+			Expect(annotations).To(Equal(map[string]string{"example.com/existing-annotation": "from-values"}))
+			Expect(labels).To(HaveKeyWithValue("example.com/tier", "frontend"))
+			Expect(labels).To(HaveKeyWithValue("control-plane", "controller-manager"))
+		})
+	})
+
 	Context("ServiceAccount routing (rendered)", func() {
 		It("leaves ServiceAccount names in a ConfigMap and in an annotation unchanged", func() {
 			rendered, err := helmTemplate(createKustomizeWithServiceAccountReferences("test-project"),
@@ -1088,7 +1253,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			))
 
 			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
-			// omit strips keys already defined by the scaffolded labels block, so
+			// control-plane is one of the chart's own labels, so omit strips it from the values:
 			// the user value must not appear; only the scaffolded value remains.
 			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
 				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
@@ -3222,6 +3387,10 @@ func createKustomizeForMixedServiceAccountSubjectsRender(projectName string) str
 	return strings.ReplaceAll(createKustomizeForServiceAccountRender(projectName),
 		"subjects:\n"+managerSubject, "subjects:\n"+mixedSubjects)
 }
+
+// longAnnotationValue is long enough that the generator folds it onto a continuation line.
+const longAnnotationValue = "this annotation value is long enough that the generator folds it " +
+	"onto a second line in the chart"
 
 // createKustomizeForServiceAccountWithAnnotationsRender reuses the serviceAccountName render
 // fixture but gives the ServiceAccount pre-existing annotations. Kustomize sorts metadata keys
