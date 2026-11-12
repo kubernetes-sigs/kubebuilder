@@ -136,13 +136,33 @@ func SubstituteResourceNamesWithPrefix(
 	yamlContent string,
 	resource *unstructured.Unstructured,
 ) string {
+	keepServiceAccountName := resource.GetKind() == common.KindServiceAccount
+	return substituteResourceNamesWithPrefix(detectedPrefix, chartName, yamlContent, resource, keepServiceAccountName)
+}
+
+// SubstituteResourceNamesWithPrefixAndManagerServiceAccount templates resource names like
+// SubstituteResourceNamesWithPrefix, but keeps metadata.name only for the manager ServiceAccount, which
+// templateServiceAccountName renames. Any other ServiceAccount gets the same name template as the
+// references to it, so RoleBinding subjects and serviceAccountName fields still match its name.
+func SubstituteResourceNamesWithPrefixAndManagerServiceAccount(
+	detectedPrefix, chartName, yamlContent string,
+	resource, managerServiceAccount *unstructured.Unstructured,
+) string {
+	keepServiceAccountName := resource.GetKind() == common.KindServiceAccount &&
+		IsResolvedManagerServiceAccount(resource, managerServiceAccount)
+	return substituteResourceNamesWithPrefix(detectedPrefix, chartName, yamlContent, resource, keepServiceAccountName)
+}
+
+func substituteResourceNamesWithPrefix(
+	detectedPrefix, chartName, yamlContent string,
+	resource *unstructured.Unstructured,
+	keepServiceAccountName bool,
+) string {
 	namePattern := regexp.MustCompile(
 		`(\s+)([a-zA-Z]*[Nn]ame):\s+` + regexp.QuoteMeta(detectedPrefix) + `(-[a-zA-Z0-9-]+)`)
 
 	lines := strings.Split(yamlContent, "\n")
 	result := make([]string, 0, len(lines))
-
-	isServiceAccount := resource.GetKind() == common.KindServiceAccount
 
 	// Extract actual container names from the structured object so
 	// they can be skipped without backward text-scanning.
@@ -168,7 +188,7 @@ func SubstituteResourceNamesWithPrefix(
 		// For ServiceAccount, skip metadata.name (handled by templateServiceAccountName)
 		// but still process other name fields like imagePullSecrets[].name or secrets[].name
 		isServiceAccountMetadataName := false
-		if isServiceAccount && strings.Contains(line, "name:") {
+		if keepServiceAccountName && strings.Contains(line, "name:") {
 			// Check if this is metadata.name by looking for "metadata:" with proper indentation
 			// metadata.name has 2-space indentation (one level under metadata:)
 			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
