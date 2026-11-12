@@ -19,6 +19,7 @@ package extractor
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -112,6 +113,15 @@ func podSpec(d *unstructured.Unstructured) map[string]any {
 	return m
 }
 
+// parsedValue decodes a YAML scalar with the decoder the kustomize parser uses, so a
+// fixture carries the Go type the extractor gets from a real manifest (int for an integer).
+func parsedValue(scalar string) any {
+	GinkgoHelper()
+	var value any
+	Expect(yaml.Unmarshal([]byte(scalar), &value)).To(Succeed())
+	return value
+}
+
 var _ = Describe("DeploymentExtractor", func() {
 	Describe("ExtractDeploymentConfig replicas handling", func() {
 		var (
@@ -135,7 +145,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should preserve scale-to-zero", func() {
-			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(0)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = parsedValue("0")
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -143,7 +153,7 @@ var _ = Describe("DeploymentExtractor", func() {
 		})
 
 		It("should extract replicas value", func() {
-			deployment.Object[keySpec].(map[string]any)[keyReplicas] = int64(3)
+			deployment.Object[keySpec].(map[string]any)[keyReplicas] = parsedValue("3")
 			result, err := extractor.ExtractDeploymentConfig(deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Manager.Replicas).NotTo(BeNil())
@@ -488,7 +498,7 @@ var _ = Describe("DeploymentExtractor", func() {
 						keyPorts: []any{
 							map[string]any{
 								keyName:          "webhook-server",
-								keyContainerPort: int64(9443),
+								keyContainerPort: parsedValue("9443"),
 							},
 						},
 					},
