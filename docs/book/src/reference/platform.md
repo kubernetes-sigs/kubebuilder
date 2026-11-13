@@ -219,5 +219,5 @@ end up labeled with ` kubernetes.io/os=linux`
 
 [node-affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
 [docker-manifest]: https://docs.docker.com/engine/reference/commandline/manifest/
-[buildx]: https://docs.docker.com/build/buildx/
+[buildx]: https://docs.docker.com/engine/reference/commandline/buildx/
 [goreleaser-buildx]: https://goreleaser.com/customization/docker/#use-a-specific-builder-with-docker-buildx
