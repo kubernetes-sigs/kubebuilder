@@ -26,7 +26,7 @@ export GOPROXY?=https://proxy.golang.org/
 # Keep the go directive in go.mod at GO_DIRECTIVE_VERSION so library consumers
 # are not forced onto a newer patch (same split as Cluster API).
 # See: https://github.com/kubernetes-sigs/cluster-api/blob/main/Makefile
-GO_VERSION ?= 1.26.10
+GO_VERSION ?= 1.26.11
 GO_DIRECTIVE_VERSION ?= 1.26.0
 
 # Ensure the correct toolchain is used (overrides a newer local Go for scans/builds).
