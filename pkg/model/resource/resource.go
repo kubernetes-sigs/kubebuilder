@@ -18,6 +18,7 @@ package resource
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"golang.org/x/mod/module"
@@ -38,12 +39,13 @@ type Resource struct {
 	// API holds the information related to the resource API.
 	API *API `json:"api,omitempty"`
 
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
+
 	// Controller specifies if a controller has been scaffolded.
 	// Retained to read legacy PROJECT files and preserve compatibility with plugins.
 	//
 	// Deprecated: use Controllers.
-	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
-	// and is kept only for backwards compatibility.
 	Controller bool `json:"controller,omitempty"`
 
 	// Controllers holds named controllers for this resource.
@@ -181,9 +183,9 @@ func (r *Resource) Migrate() error {
 // A resource that cannot be migrated is left unchanged.
 //
 // Deprecated: use Migrate, which reports failures.
-// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
-// and is kept only for backwards compatibility.
 func (r *Resource) Normalize() {
+	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
+	// and is kept only for backwards compatibility.
 	_ = r.Migrate()
 }
 
@@ -248,6 +250,24 @@ func (r Resource) HasController() bool {
 	// TODO: remove when Kubebuilder 5.x is released. This should no longer be part of 5.x
 	// and is kept only for backwards compatibility.
 	return r.Controller || !r.Controllers.IsEmpty()
+}
+
+// HasControllerWithName returns true if the resource has a controller with the given name.
+// It also accepts the legacy Controller field, whose controller has the default name.
+func (r Resource) HasControllerWithName(name string) bool {
+	return slices.Contains(r.GetControllerNames(), name)
+}
+
+// ControllerCollides reports whether the controller name of r and the controller otherName of other
+// generate the same controller file or reconciler struct in one controller package. Each group has
+// its own controller package in a multigroup project, so controllers of 2 groups never collide there.
+func (r Resource) ControllerCollides(name string, other Resource, otherName string, multiGroup bool) bool {
+	if multiGroup && r.Group != other.Group {
+		return false
+	}
+
+	return NormalizeFileName(name) == NormalizeFileName(otherName) ||
+		NormalizeReconcilerName(name, r.Kind) == NormalizeReconcilerName(otherName, other.Kind)
 }
 
 // HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.

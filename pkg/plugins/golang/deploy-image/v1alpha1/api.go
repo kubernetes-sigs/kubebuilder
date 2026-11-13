@@ -69,7 +69,7 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 
 	Note: In general, it’s recommended to have one controller responsible for managing each API created for the project to properly follow the design goals set by Controller Runtime(https://github.com/kubernetes-sigs/controller-runtime).
 
-	This plugin will work as the common behaviour of the flag --force and will scaffold the API and controller always. Use core types or external APIs is not officially support by default with.
+	This plugin will work as the common behaviour of the flag --force and will scaffold the API and controller always. It scaffolds each API once: it refuses to run again for an API that it already scaffolded. Use core types or external APIs is not officially support by default with.
 `
 	//nolint:lll
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1, Kind: Frigate to represent the
@@ -172,7 +172,40 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 			"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html")
 	}
 
+	// Check that the controller does not replace a controller of another resource, and does not
+	// generate the code of another controller of the same resource: plugins earlier in the chain
+	// write their files before the resource is saved
+	if err := p.options.ValidateControllerName(p.resource, p.config); err != nil {
+		return fmt.Errorf("error validating controller: %w", err)
+	}
+
+	// Check that this plugin did not scaffold the resource before: a second run would register
+	// its controller in main.go again
+	if p.scaffoldedBefore() {
+		return fmt.Errorf("the deploy-image plugin already scaffolded the API and controller of %s/%s/%s",
+			p.resource.Group, p.resource.Version, p.resource.Kind)
+	}
+
 	return nil
+}
+
+// scaffoldedBefore reports whether the plugin configuration of the project already lists the resource.
+func (p *createAPISubcommand) scaffoldedBefore() bool {
+	keys := []string{plugin.GetPluginKeyForConfig(p.config.GetPluginChain(), Plugin{}), plugin.KeyFor(Plugin{})}
+	for _, key := range keys {
+		cfg := PluginConfig{}
+		if err := p.config.DecodePluginConfig(key, &cfg); err != nil {
+			continue
+		}
+		for _, scaffolded := range cfg.Resources {
+			if scaffolded.Group == p.resource.Group && scaffolded.Version == p.resource.Version &&
+				scaffolded.Kind == p.resource.Kind {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {

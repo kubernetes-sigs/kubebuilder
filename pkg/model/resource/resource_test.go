@@ -250,6 +250,54 @@ var _ = Describe("Resource", func() {
 			})
 		})
 
+		Context("HasControllerWithName", func() {
+			const (
+				defaultName = "captain"
+				otherName   = "captain-backup"
+			)
+
+			DescribeTable("should report whether the resource has a controller with the name",
+				func(res Resource, name string, want bool) {
+					res.Kind = "Captain"
+
+					Expect(res.HasControllerWithName(name)).To(Equal(want))
+				},
+				Entry("for the default name of a legacy controller", Resource{Controller: true}, defaultName, true),
+				Entry("for a listed name", Resource{Controllers: &Controllers{{Name: otherName}}}, otherName, true),
+				Entry("for the default name beside a listed name",
+					Resource{Controller: true, Controllers: &Controllers{{Name: otherName}}}, defaultName, true),
+				Entry("for a name the resource does not have",
+					Resource{Controllers: &Controllers{{Name: defaultName}}}, otherName, false),
+				Entry("for a resource with no controller", Resource{}, defaultName, false),
+			)
+		})
+		Context("ControllerCollides", func() {
+			const (
+				sailorKind = "Sailor"
+				backupName = "backup"
+			)
+
+			DescribeTable("should report whether 2 controllers generate the same file or reconciler in 1 package",
+				func(name string, other Resource, otherName string, multiGroup, want bool) {
+					captain := Resource{GVK: GVK{Group: group, Domain: domain, Version: version, Kind: "Captain"}}
+
+					Expect(captain.ControllerCollides(name, other, otherName, multiGroup)).To(Equal(want))
+				},
+				Entry("for the same name, which gives the same file", backupName,
+					Resource{GVK: GVK{Group: group, Domain: domain, Version: version, Kind: sailorKind}}, backupName, false, true),
+				Entry("for 2 files that give the same reconciler", "my-kind",
+					Resource{GVK: GVK{Group: group, Domain: domain, Version: version, Kind: "MyKind"}}, "mykind", false, true),
+				Entry("for a name that gives another kind's default reconciler", "sailor",
+					Resource{GVK: GVK{Group: group, Domain: domain, Version: version, Kind: sailorKind}}, "sailor", false, true),
+				Entry("for different names and reconcilers", "captain",
+					Resource{GVK: GVK{Group: group, Domain: domain, Version: version, Kind: sailorKind}}, "sailor", false, false),
+				Entry("for the same name in 2 groups of a multigroup project", backupName,
+					Resource{GVK: GVK{Group: "ship", Domain: domain, Version: version, Kind: sailorKind}}, backupName, true, false),
+				Entry("for the same name in 2 groups of a single-group project", backupName,
+					Resource{GVK: GVK{Group: "ship", Domain: domain, Version: version, Kind: sailorKind}}, backupName, false, true),
+			)
+		})
+
 		Context("HasDefaultingWebhook", func() {
 			It("should return true if the defaulting webhook is scaffolded", func() {
 				Expect(Resource{Webhooks: &Webhooks{Defaulting: true}}.HasDefaultingWebhook()).To(BeTrue())

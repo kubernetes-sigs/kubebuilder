@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
@@ -263,6 +264,7 @@ var _ = Describe("createAPISubcommand", func() {
 		subCmd.options.DoController = true
 		subCmd.options.ExternalAPIPath = existing.Path
 		subCmd.options.ExternalAPIDomain = existing.Domain
+		subCmd.force = true
 		Expect(subCmd.InjectResource(res)).To(Succeed())
 		Expect(res.GVK).To(Equal(existing.GVK))
 	})
@@ -620,6 +622,30 @@ var _ = Describe("createAPISubcommand", func() {
 		err := subCmd.InjectResource(res)
 		Expect(err).To(MatchError(ContainSubstring("both generate CaptainBackupReconciler")))
 	})
+
+	// The kustomize plugin writes the sample before go/v4 scaffolds, so the clash must stop
+	// create api while the resource is injected.
+	It("should refuse create api --force without a name when the default controller generates "+
+		"the reconciler of a recorded one, before any file is written", func() {
+		Expect(cfg.AddResource(resource.Resource{
+			GVK:         resource.GVK{Group: crewGroup, Domain: testIO, Version: "v1", Kind: "FirstMate"},
+			Plural:      "firstmates",
+			API:         &resource.API{CRDVersion: "v1", Namespaced: true},
+			Controllers: &resource.Controllers{{Name: "first-mate"}},
+		})).To(Succeed())
+		before, err := cfg.GetResources()
+		Expect(err).NotTo(HaveOccurred())
+
+		subCmd.options.DoAPI = true
+		subCmd.options.DoController = true
+		subCmd.force = true
+		res.Kind = "FirstMate"
+		res.Plural = "firstmates"
+
+		err = subCmd.InjectResource(res)
+		Expect(err).To(MatchError(ContainSubstring("both generate FirstMateReconciler")))
+		Expect(cfg.GetResources()).To(Equal(before))
+	})
 })
 
 var _ = Describe("validateController", func() {
@@ -636,7 +662,10 @@ var _ = Describe("validateController", func() {
 
 	stored := func(controllers *resource.Controllers, legacy bool) {
 		res := resource.Resource{GVK: gvk, Plural: captains, Controllers: controllers}
-		res.Controller = legacy //nolint:staticcheck // simulating an unmigrated PROJECT file
+		if legacy {
+			// An unmigrated PROJECT file records the controller with the deprecated key.
+			Expect(sigsyaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
+		}
 		Expect(cfg.AddResource(res)).To(Succeed())
 	}
 
@@ -651,6 +680,15 @@ var _ = Describe("validateController", func() {
 	It("should skip validation when no controller is requested", func() {
 		stored(&resource.Controllers{{Name: captainCtrl}}, false)
 		p := subcommand("", false)
+		p.options.DoController = false
+
+		Expect(p.validateController()).To(Succeed())
+	})
+
+	It("should ignore a controller name another version records when no controller is requested", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+		p := subcommand(captainCtrl, true)
+		p.resource.Version = "v2"
 		p.options.DoController = false
 
 		Expect(p.validateController()).To(Succeed())
@@ -684,16 +722,59 @@ var _ = Describe("validateController", func() {
 		Expect(subcommand("captain--backup", false).validateController()).NotTo(Succeed())
 	})
 
-	It("should allow re-scaffolding the single default controller without a name", func() {
+	It("should allow re-scaffolding the single default controller without a name with --force", func() {
 		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+		p := subcommand("", false)
+		p.force = true
 
-		Expect(subcommand("", false).validateController()).To(Succeed())
+		Expect(p.validateController()).To(Succeed())
 	})
 
-	It("should require a name when the resource has several controllers", func() {
-		stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+	It("should refuse the recorded default controller without a name or --force", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}}, false)
+
+		err := subcommand("", false).validateController()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--force"))
+	})
+
+	It("should refuse the legacy default controller without a name or --force", func() {
+		stored(nil, true)
 
 		Expect(subcommand("", false).validateController()).NotTo(Succeed())
+	})
+
+	It("should refuse the default controller without a name or --force when the resource has several controllers",
+		func() {
+			stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+
+			Expect(subcommand("", false).validateController()).NotTo(Succeed())
+		})
+
+	It("should scaffold the default controller again without a name with --force "+
+		"when the resource has other controllers", func() {
+		stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+		p := subcommand("", false)
+		p.force = true
+
+		Expect(p.validateController()).To(Succeed())
+	})
+
+	It("should require a name with --force when the resource does not record the default controller", func() {
+		stored(&resource.Controllers{{Name: captainBackup}}, false)
+		p := subcommand("", false)
+		p.force = true
+
+		Expect(p.validateController()).NotTo(Succeed())
+	})
+
+	It("should accept the default controller along with the API when the resource records only another one", func() {
+		stored(&resource.Controllers{{Name: captainBackup}}, false)
+		p := subcommand("", true)
+		p.force = true
+
+		Expect(p.validateController()).To(Succeed())
 	})
 
 	It("should require a name when the only controller is not the default", func() {
@@ -702,10 +783,12 @@ var _ = Describe("validateController", func() {
 		Expect(subcommand("", false).validateController()).NotTo(Succeed())
 	})
 
-	It("should allow omitting the name while recreating the API", func() {
+	It("should allow omitting the name while recreating the API with --force", func() {
 		stored(&resource.Controllers{{Name: captainCtrl}, {Name: captainBackup}}, false)
+		p := subcommand("", true)
+		p.force = true
 
-		Expect(subcommand("", true).validateController()).To(Succeed())
+		Expect(p.validateController()).To(Succeed())
 	})
 })
 
@@ -946,6 +1029,10 @@ repo: github.com/example/test
 	// createAPI runs the create api hooks in the order the CLI runs them: load the PROJECT file,
 	// inject the config and the resource, scaffold the files, then save the PROJECT file.
 	// --resource and --controller default to true; later arguments override them.
+	// laterPlugin, when set, changes the resource after this plugin injected it, as a plugin later in
+	// the chain does.
+	var laterPlugin func(res *resource.Resource)
+
 	createAPI := func(group, version, kind string, args ...string) error {
 		s := yaml.New(fs)
 		Expect(s.Load()).To(Succeed())
@@ -965,6 +1052,9 @@ repo: github.com/example/test
 		}
 		if err := p.InjectResource(res); err != nil {
 			return err
+		}
+		if laterPlugin != nil {
+			laterPlugin(res)
 		}
 		if err := p.Scaffold(fs); err != nil {
 			return err
@@ -1002,14 +1092,46 @@ repo: github.com/example/test
 		GinkgoHelper()
 		res, err := loadProject().GetResource(resource.GVK{Group: group, Domain: testIO, Version: version, Kind: kind})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(res.Controller).To(BeFalse(), //nolint:staticcheck // legacy field
-			"the legacy field must not be written")
+		Expect(sigsyaml.Marshal(res)).NotTo(MatchRegexp(`(?m)^controller:`), "the legacy field must not be written")
 		return res.GetControllerNames()
 	}
 
 	controllerFile := func(name string) string {
 		return filepath.Join("internal", "controller", name+"_controller.go")
 	}
+
+	Context("when a plugin later in the chain records its own controller", func() {
+		BeforeEach(func() {
+			laterPlugin = func(res *resource.Resource) {
+				if res.Controllers == nil {
+					res.Controllers = &resource.Controllers{}
+				}
+				Expect(res.Controllers.AddController("later")).To(Succeed())
+			}
+			DeferCleanup(func() { laterPlugin = nil })
+		})
+
+		DescribeTable("should scaffold only the controller it was asked for",
+			func(args []string, scaffolded []string) {
+				writeProject()
+
+				Expect(createAPI(crewGroup, "v1", captainKind, args...)).To(Succeed())
+
+				Expect(files()).NotTo(HaveKey(controllerFile("later")))
+				for _, name := range []string{captainCtrl, captainBackup} {
+					file := controllerFile(resource.NormalizeFileName(name))
+					if slices.Contains(scaffolded, name) {
+						Expect(files()).To(HaveKey(file))
+					} else {
+						Expect(files()).NotTo(HaveKey(file))
+					}
+				}
+			},
+			Entry("the default controller when no name is given", nil, []string{captainCtrl}),
+			Entry("the given name", []string{nameFlag, captainBackup}, []string{captainBackup}),
+			Entry("no controller when none is requested", []string{"--controller=false"}, nil),
+		)
+	})
 
 	Context("in a project that records controllers by name", func() {
 		DescribeTable("should record the controller it scaffolds",
@@ -1065,7 +1187,7 @@ repo: github.com/example/test
 		It("should record the legacy controller once when it is scaffolded again without a name", func() {
 			writeProject(entry(crewGroup, "v1", captainKind, legacy))
 
-			Expect(createAPI(crewGroup, "v1", captainKind, noAPIFlag)).To(Succeed())
+			Expect(createAPI(crewGroup, "v1", captainKind, noAPIFlag, "--force")).To(Succeed())
 
 			Expect(controllersOf(crewGroup, "v1", captainKind)).To(Equal([]string{captainCtrl}))
 		})
