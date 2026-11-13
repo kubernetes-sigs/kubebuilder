@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -28,6 +29,119 @@ import (
 )
 
 var _ = Describe("Options", func() {
+	Context("ValidateControllerName", func() {
+		// An older release let a named controller take the file of another kind's default
+		// controller. Such a project is loaded, not built through the config API.
+		const olderProject = `version: "3"
+repo: test
+resources:
+- controller: true
+  domain: test.io
+  group: crew
+  kind: Backup
+  version: v1
+- controllers:
+  - name: backup
+  domain: test.io
+  group: crew
+  kind: Captain
+  version: v1
+`
+
+		It("should refuse the default controller of a kind when another kind records the same name", func() {
+			cfg := cfgv3.New()
+			Expect(cfg.UnmarshalYAML([]byte(olderProject))).To(Succeed())
+			res := &resource.Resource{GVK: resource.GVK{Group: "crew", Domain: "test.io", Version: "v1", Kind: "Backup"}}
+
+			err := Options{DoController: true}.ValidateControllerName(res, cfg)
+
+			Expect(err).To(MatchError(ContainSubstring(`conflicts with controller "backup" of crew/v1/Captain`)))
+		})
+
+		// Kubebuilder v4.13.0 records this when the second version is created with --force: both
+		// versions share one captain_controller.go and one CaptainReconciler.
+		const sharedLegacyProject = `version: "3"
+repo: test
+resources:
+- controller: true
+  domain: test.io
+  group: crew
+  kind: Captain
+  version: v1
+- controller: true
+  domain: test.io
+  group: crew
+  kind: Captain
+  version: v2
+`
+		const sharedNamedProject = `version: "3"
+repo: test
+resources:
+- controllers:
+  - name: captain
+  domain: test.io
+  group: crew
+  kind: Captain
+  version: v1
+- controllers:
+  - name: captain
+  domain: test.io
+  group: crew
+  kind: Captain
+  version: v2
+`
+
+		DescribeTable("should refuse a name generating the reconciler of another controller the resource records",
+			func(recorded, requested string) {
+				cfg := cfgv3.New()
+				gvk := resource.GVK{Group: "ship", Domain: "example.com", Version: "v1", Kind: "MyKind"}
+				Expect(cfg.AddResource(resource.Resource{
+					GVK: gvk, Plural: "mykinds", Controllers: &resource.Controllers{{Name: recorded}},
+				})).To(Succeed())
+
+				err := Options{DoController: true, ControllerName: requested}.
+					ValidateControllerName(&resource.Resource{GVK: gvk}, cfg)
+
+				Expect(err).To(MatchError(ContainSubstring("MyKindReconciler")))
+			},
+			Entry("for the default name beside a named controller", "my-kind", ""),
+			Entry("for a name beside the default controller", "mykind", "my-kind"),
+		)
+
+		It("should accept the name the resource already records", func() {
+			cfg := cfgv3.New()
+			gvk := resource.GVK{Group: "ship", Domain: "example.com", Version: "v1", Kind: "MyKind"}
+			Expect(cfg.AddResource(resource.Resource{
+				GVK: gvk, Plural: "mykinds", Controllers: &resource.Controllers{{Name: "my-kind"}},
+			})).To(Succeed())
+
+			Expect(Options{DoController: true, ControllerName: "my-kind"}.
+				ValidateControllerName(&resource.Resource{GVK: gvk}, cfg)).To(Succeed())
+		})
+
+		DescribeTable("should accept the default controller again for a version that shares it with another version",
+			func(project, version string) {
+				cfg := cfgv3.New()
+				Expect(cfg.UnmarshalYAML([]byte(project))).To(Succeed())
+				recorded, err := cfg.GetResources()
+				Expect(err).NotTo(HaveOccurred())
+				res := &resource.Resource{}
+				for _, r := range recorded {
+					if r.Version == version {
+						res.GVK = r.GVK
+					}
+				}
+				Expect(res.Version).To(Equal(version))
+
+				Expect(Options{DoController: true}.ValidateControllerName(res, cfg)).To(Succeed())
+			},
+			Entry("for the first version, in the legacy form", sharedLegacyProject, "v1"),
+			Entry("for the second version, in the legacy form", sharedLegacyProject, "v2"),
+			Entry("for the first version, by name", sharedNamedProject, "v1"),
+			Entry("for the second version, by name", sharedNamedProject, "v2"),
+		)
+	})
+
 	Context("UpdateResource", func() {
 		const (
 			group         = "crew"
@@ -99,7 +213,7 @@ var _ = Describe("Options", func() {
 					} else {
 						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
-					Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // asserting it stays unwritten
+					Expect(sigsyaml.Marshal(res)).NotTo(MatchRegexp(`(?m)^controller:`), "the legacy field must not be written")
 					Expect(res.HasController()).To(Equal(options.DoController))
 					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
@@ -157,11 +271,12 @@ var _ = Describe("Options", func() {
 			})
 
 			It("should carry a legacy controller into the list before adding a new one", func() {
-				res.Controller = true //nolint:staticcheck // simulating a project read from an old PROJECT file
+				// An old PROJECT file records the controller with the deprecated key.
+				Expect(sigsyaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
 
 				Options{DoController: true, ControllerName: backupControl}.UpdateResource(&res, cfg)
 
-				Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // asserting it stays unwritten
+				Expect(sigsyaml.Marshal(res)).NotTo(MatchRegexp(`(?m)^controller:`), "the legacy field must not be written")
 				Expect(res.GetControllerNames()).To(Equal([]string{controller, backupControl}))
 			})
 
