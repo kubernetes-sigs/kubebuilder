@@ -35,6 +35,7 @@ const (
 	argFlag1       = "--flag1"
 	argFlag2       = "--flag2"
 	argValue       = "value"
+	valGroup       = "batch"
 )
 
 var _ = Describe("helpers", func() {
@@ -72,13 +73,35 @@ var _ = Describe("helpers", func() {
 			bindAllFlags(fs, []string{
 				"--repo", "github.com/example/my--operator",
 				"--domain", "example.com",
-			})
+			}, nil)
 
 			Expect(fs.Lookup("repo")).NotTo(BeNil())
 			Expect(fs.Lookup("repo").Value.Type()).To(Equal("string"))
 			Expect(fs.Lookup("domain")).NotTo(BeNil())
 			Expect(fs.Lookup("domain").Value.Type()).To(Equal("string"))
 		})
+
+		DescribeTable("binds the flags so that the args can be parsed",
+			func(args []string) {
+				fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+				group := fs.String(flagNameGroup, "", "")
+
+				Expect(func() {
+					bindAllFlags(fs, args, []argFilterFunc{gvkArgFilter, helpArgFilter})
+				}).NotTo(Panic())
+				Expect(fs.Parse(args)).To(Succeed())
+				Expect(fs.Args()).To(BeEmpty())
+				Expect(*group).To(Equal(valGroup))
+			},
+			Entry("with a flag passed as --name=value",
+				[]string{"--image=nginx", argGroup, valGroup}),
+			Entry("with a boolean flag before a filtered flag",
+				[]string{"--force", argGroup, valGroup}),
+			Entry("with a filtered flag passed as --name=value",
+				[]string{"--group=batch", "--force"}),
+			Entry("with a flag passed more than once",
+				[]string{"--spoke", "v1", "--spoke", "v2", argGroup, valGroup}),
+		)
 	})
 
 	Context("filterFlags", func() {

@@ -248,21 +248,31 @@ func isBooleanFlag(argIndex int, args []string) bool {
 		argIndex+1 >= len(args)
 }
 
-// bindAllFlags will bind all flags passed into the subcommand by a user
-func bindAllFlags(fs *pflag.FlagSet, args []string) {
+// bindAllFlags will bind all flags passed into the subcommand by a user.
+// Flags rejected by argFilters are skipped. They are checked by name instead
+// of being removed from args first, because removing "--group" would leave
+// its value behind and make the flag before it look like a string flag.
+func bindAllFlags(fs *pflag.FlagSet, args []string, argFilters []argFilterFunc) {
 	defaultFlagDescription := "Kubebuilder could not validate this flag with the external plugin. " +
 		"Consult the external plugin documentation for more information."
 
 	// Bind all flags passed in
 	for i := range args {
-		if strings.HasPrefix(args[i], "--") {
-			flag := strings.Replace(args[i], "--", "", 1)
-			// Check if the flag is a boolean flag
-			if isBooleanFlag(i, args) {
-				_ = fs.Bool(flag, false, defaultFlagDescription)
-			} else {
-				_ = fs.String(flag, "", defaultFlagDescription)
-			}
+		if !strings.HasPrefix(args[i], "--") {
+			continue
+		}
+
+		// A flag passed as --name=value carries its value in the same arg.
+		flag, _, hasValue := strings.Cut(strings.Replace(args[i], "--", "", 1), "=")
+		if fs.Lookup(flag) != nil || len(filterArgs([]string{flag}, argFilters)) == 0 {
+			continue
+		}
+
+		// Check if the flag is a boolean flag
+		if !hasValue && isBooleanFlag(i, args) {
+			_ = fs.Bool(flag, false, defaultFlagDescription)
+		} else {
+			_ = fs.String(flag, "", defaultFlagDescription)
 		}
 	}
 }
@@ -367,10 +377,10 @@ func bindExternalPluginFlags(fs *pflag.FlagSet, subcommand string, path string, 
 	// can be used to filter out non-overridable flags or other
 	// criteria by creating your own filterFlagFunc
 	if err != nil {
-		bindAllFlags(fs, filterArgs(args, []argFilterFunc{
+		bindAllFlags(fs, args, []argFilterFunc{
 			gvkArgFilter,
 			helpArgFilter,
-		}))
+		})
 	} else {
 		bindSpecificFlags(fs, filterFlags(flags, []externalFlagFilterFunc{
 			gvkFlagFilter,
