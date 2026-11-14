@@ -760,10 +760,10 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				"    example.com/keep: |+\n      first\n      second\n\n",
 				[]string{"--set", "serviceAccount.annotations.team=platform"},
 				map[string]string{"example.com/keep": "first\nsecond\n\n", "team": "platform"}),
-			Entry("a keep-chomped annotation with a trailing blank line when every custom annotation is already set",
+			Entry("a keep-chomped annotation with a trailing blank line replaced by a value",
 				"    example.com/keep: |+\n      first\n      second\n\n",
 				[]string{"--set", "serviceAccount.annotations.example\\.com/keep=other"},
-				map[string]string{"example.com/keep": "first\nsecond\n\n"}),
+				map[string]string{"example.com/keep": "other"}),
 			Entry("a multi-line annotation with lines like labels: and app.kubernetes.io/name:",
 				"    example.com/description: |\n      labels:\n        app.kubernetes.io/name: other\n", nil,
 				map[string]string{"example.com/description": "labels:\n  app.kubernetes.io/name: other\n"}),
@@ -790,18 +790,18 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sa).To(ContainSubstring("env: prod"))
 		})
 
-		It("does not duplicate a scaffolded label a user tries to override", func() {
+		It("renders a scaffolded label set in the values once, with that value", func() {
 			sa := serviceAccountDoc(renderChart(
 				"--set", "serviceAccount.labels.app\\.kubernetes\\.io/name=override"))
 
-			Expect(strings.Count(sa, "app.kubernetes.io/name:")).To(Equal(1),
-				"a user override must not add a second app.kubernetes.io/name label, got:\n%s", sa)
+			Expect(strings.Count(sa, "app.kubernetes.io/name:")).To(Equal(1), "got:\n%s", sa)
+			Expect(sa).To(ContainSubstring("app.kubernetes.io/name: override"))
 		})
 	})
 
 	// The manager Deployment merges manager.labels, manager.annotations, manager.pod.labels and
-	// manager.pod.annotations into the blocks Kustomize emitted, and each key renders once. These specs
-	// do not check which value is used when a key is in both config/ and the values.
+	// manager.pod.annotations into the blocks Kustomize emitted. A key set in the values replaces the
+	// one from config/, and each key renders once.
 	Context("Manager Deployment labels and annotations (rendered)", func() {
 		type renderedMetadata struct {
 			Labels      map[string]string `yaml:"labels"`
@@ -840,7 +840,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			podAnnotation      = "        kubectl.kubernetes.io/default-container: manager\n"
 		)
 
-		DescribeTable("keeps existing keys that are quoted or have multi-line values",
+		DescribeTable("renders existing keys that are quoted or have multi-line values once",
 			func(existing, replacement string, setArgs []string, check func(deployment, pod renderedMetadata)) {
 				kustomize := createKustomizeForServiceAccountRender("test-project")
 				Expect(kustomize).To(ContainSubstring(existing))
@@ -872,13 +872,13 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				func(deployment, _ renderedMetadata) {
 					Expect(deployment.Annotations).To(Equal(map[string]string{"example.com/keep": "first\nsecond\n\n"}))
 				}),
-			Entry("a keep-chomped pod annotation with a trailing blank line when every custom annotation is already set",
+			Entry("a keep-chomped pod annotation with a trailing blank line replaced by a value",
 				podAnnotation, podAnnotation+"        note: |+\n          first\n          second\n\n",
 				[]string{"--set", "manager.pod.annotations.note=other"},
 				func(_, pod renderedMetadata) {
 					Expect(pod.Annotations).To(Equal(map[string]string{
 						"kubectl.kubernetes.io/default-container": "manager",
-						"note": "first\nsecond\n\n",
+						"note": "other",
 					}))
 				}),
 			Entry("a Deployment annotation whose text ends with a line like labels:",
@@ -896,7 +896,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 					"    example.com/description: |\n      spec:\n      text\n    example.com/z-last: keep\n",
 				[]string{"--set", "manager.annotations.example\\.com/a-first=override"},
 				func(deployment, _ renderedMetadata) {
-					Expect(deployment.Annotations).To(HaveKey("example.com/a-first"))
+					Expect(deployment.Annotations).To(HaveKeyWithValue("example.com/a-first", "override"))
 					Expect(deployment.Annotations).To(HaveKeyWithValue("example.com/description", "spec:\ntext\n"))
 					Expect(deployment.Annotations).To(HaveKeyWithValue("example.com/z-last", "keep"))
 				}),
@@ -927,20 +927,20 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				deploymentLabel, "    \"on\": original\n"+deploymentLabel,
 				[]string{"--set", "manager.labels.on=override"},
 				func(deployment, _ renderedMetadata) {
-					Expect(deployment.Labels).To(HaveKey("on"))
+					Expect(deployment.Labels).To(HaveKeyWithValue("on", "override"))
 				}),
 			Entry("a pod label with a quoted key",
 				podLabel, "        \"on\": original\n"+podLabel,
 				[]string{"--set", "manager.pod.labels.on=override"},
 				func(_, pod renderedMetadata) {
-					Expect(pod.Labels).To(HaveKey("on"))
+					Expect(pod.Labels).To(HaveKeyWithValue("on", "override"))
 					Expect(pod.Labels).To(HaveKeyWithValue("control-plane", "controller-manager"))
 				}),
 			Entry("a pod annotation with a quoted key",
 				podAnnotation, podAnnotation+"        \"on\": original\n",
 				[]string{"--set", "manager.pod.annotations.on=override"},
 				func(_, pod renderedMetadata) {
-					Expect(pod.Annotations).To(HaveKey("on"))
+					Expect(pod.Annotations).To(HaveKeyWithValue("on", "override"))
 					Expect(pod.Annotations).To(HaveKeyWithValue("kubectl.kubernetes.io/default-container", "manager"))
 				}),
 			Entry("a Deployment annotation with a quoted key",
@@ -952,7 +952,7 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 				deploymentMetadata, deploymentMetadata+"  annotations:\n    \"on\": original\n",
 				[]string{"--set", "manager.annotations.on=override", "--set", "manager.annotations.team=platform"},
 				func(deployment, _ renderedMetadata) {
-					Expect(deployment.Annotations).To(HaveKey("on"))
+					Expect(deployment.Annotations).To(HaveKeyWithValue("on", "override"))
 					Expect(deployment.Annotations).To(HaveKeyWithValue("team", "platform"))
 				}),
 			Entry("a Deployment annotation with lines like labels: and app.kubernetes.io/name:",
@@ -1081,17 +1081,21 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).To(ContainSubstring("example.com/env: staging"))
 		})
 
-		It("does not duplicate a scaffolded label a user tries to override", func() {
+		It("renders a scaffolded label set in the values once, with that value", func() {
 			sm := serviceMonitorDoc(renderChart(
 				"--set", "prometheus.enabled=true",
 				"--set", "prometheus.labels.control-plane=myvalue",
 			))
 
 			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
-			// omit strips keys already defined by the scaffolded labels block, so
-			// the user value must not appear; only the scaffolded value remains.
-			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
-				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+			var rendered struct {
+				Metadata struct {
+					Labels map[string]string `yaml:"labels"`
+				} `yaml:"metadata"`
+			}
+			// yaml.v3 fails on a key rendered twice.
+			Expect(yaml.Unmarshal([]byte(sm), &rendered)).To(Succeed(), "got:\n%s", sm)
+			Expect(rendered.Metadata.Labels).To(HaveKeyWithValue("control-plane", "myvalue"))
 		})
 
 		It("merges into an existing annotations block instead of duplicating it", func() {
@@ -1155,17 +1159,21 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).To(ContainSubstring("example.com/env: staging"))
 		})
 
-		It("does not duplicate a scaffolded label a user tries to override", func() {
+		It("renders a scaffolded label set in the values once, with that value", func() {
 			sm := serviceMonitorDoc(renderChart(
 				"--set", "prometheus.enabled=true",
 				"--set", "prometheus.labels.control-plane=myvalue",
 			))
 
 			Expect(sm).NotTo(BeEmpty(), "expected a ServiceMonitor manifest in the render")
-			// omit strips keys already defined by the scaffolded labels block, so
-			// the user value must not appear; only the scaffolded value remains.
-			Expect(sm).NotTo(ContainSubstring("control-plane: myvalue"),
-				"the omit guard must prevent duplicating a scaffolded label, got:\n%s", sm)
+			var rendered struct {
+				Metadata struct {
+					Labels map[string]string `yaml:"labels"`
+				} `yaml:"metadata"`
+			}
+			// yaml.v3 fails on a key rendered twice.
+			Expect(yaml.Unmarshal([]byte(sm), &rendered)).To(Succeed(), "got:\n%s", sm)
+			Expect(rendered.Metadata.Labels).To(HaveKeyWithValue("control-plane", "myvalue"))
 		})
 
 		It("does not render the ServiceMonitor when metrics are disabled", func() {
@@ -1177,6 +1185,52 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(sm).To(BeEmpty(),
 				"the ServiceMonitor scrapes the metrics Service, so it must not render without it")
 		})
+	})
+
+	// A label or annotation set in the values replaces the one from config/, so each key renders
+	// once. yaml.v3 fails on a key rendered twice.
+	Context("Values that replace existing labels and annotations (rendered)", func() {
+		type metadata struct {
+			Labels      map[string]string `yaml:"labels,omitempty"`
+			Annotations map[string]string `yaml:"annotations,omitempty"`
+		}
+		decode := func(doc string) metadata {
+			var resource struct {
+				Metadata metadata `yaml:"metadata"`
+			}
+			Expect(doc).NotTo(BeEmpty())
+			Expect(yaml.Unmarshal([]byte(doc), &resource)).To(Succeed(), "got:\n%s", doc)
+			return resource.Metadata
+		}
+
+		// Every label the chart writes, set at once, renders once with the value set.
+		DescribeTable("uses every label set in the values",
+			func(kustomize, valuesKey string, doc func(string) string) {
+				labels := map[string]string{
+					"app.kubernetes.io/managed-by": "managed",
+					"app.kubernetes.io/name":       "name",
+					"app.kubernetes.io/instance":   "instance",
+					"helm.sh/chart":                "chart",
+					"control-plane":                "plane",
+					"example.com/new":              "new",
+				}
+				args := make([]string, 0, 4+2*len(labels))
+				args = append(args, "--set", "metrics.enabled=true", "--set", "prometheus.enabled=true")
+				for key, value := range labels {
+					args = append(args, "--set", valuesKey+"."+strings.ReplaceAll(key, ".", "\\.")+"="+value)
+				}
+
+				out, err := helmTemplate(kustomize, args...)
+				Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+				Expect(decode(doc(out)).Labels).To(Equal(labels))
+			},
+			Entry("on the ServiceAccount",
+				createKustomizeForServiceAccountRender("test-project"), "serviceAccount.labels", serviceAccountDoc),
+			Entry("on the ServiceMonitor from config/",
+				createKustomizeWithServiceMonitor("test-project"), "prometheus.labels", serviceMonitorDoc),
+			Entry("on the ServiceMonitor the chart adds when config/ has none",
+				createBasicKustomizeOutput("test-project"), "prometheus.labels", serviceMonitorDoc),
+		)
 	})
 
 	Context("NetworkPolicy (rendered)", func() {

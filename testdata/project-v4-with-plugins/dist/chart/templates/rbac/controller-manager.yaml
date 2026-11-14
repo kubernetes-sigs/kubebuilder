@@ -3,14 +3,21 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
+    {{- $labels := .Values.serviceAccount.labels | default dict }}
+    {{- if not (hasKey $labels "app.kubernetes.io/managed-by") }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    {{- with .Values.serviceAccount.labels }}
-    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}
-    {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/name") }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    {{- end }}
+    {{- if not (hasKey $labels "helm.sh/chart") }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/instance") }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- end }}
+    {{- with .Values.serviceAccount.labels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- with .Values.serviceAccount.annotations }}
   annotations:
