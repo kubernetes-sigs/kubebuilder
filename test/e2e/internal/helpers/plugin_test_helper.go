@@ -80,6 +80,9 @@ type RunOptions struct {
 	HelmFullnameOverride string
 	// SkipChartGeneration skips build-installer and chart generation (chart already prepared externally)
 	SkipChartGeneration bool
+	// WithoutHealthProbeFlag indicates the manager gets no --health-probe-bind-address and listens
+	// on the default in its cmd/main.go
+	WithoutHealthProbeFlag bool
 }
 
 func (o RunOptions) metricsPort() int {
@@ -190,8 +193,10 @@ func Run(kbc *utils.TestContext, opts RunOptions) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(podOutput).To(ContainSubstring("leader-elect"),
 		"Expected manager pod to have --leader-elect flag")
-	Expect(podOutput).To(ContainSubstring("health-probe-bind-address"),
-		"Expected manager pod to have --health-probe-bind-address flag")
+	if !opts.WithoutHealthProbeFlag {
+		Expect(podOutput).To(ContainSubstring("health-probe-bind-address"),
+			"Expected manager pod to have --health-probe-bind-address flag")
+	}
 
 	By("validating that the Prometheus manager has provisioned the Service")
 	Eventually(func(g Gomega) {
