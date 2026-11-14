@@ -7,17 +7,17 @@ metadata:
     app.kubernetes.io/name: {{ include "project.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    control-plane: controller-manager
+    control-plane: {{ include "project.valueOrDefault" (list .Values.manager.labels "control-plane" "controller-manager") }}
     {{- with .Values.manager.labels }}
     {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
-    {{- toYaml . | nindent 4 }}
+    {{- include "project.stringMap" . | nindent 4 }}
     {{- end }}
     {{- end }}
   name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
   namespace: {{ .Release.Namespace }}
   {{- if .Values.manager.annotations }}
   annotations:
-    {{- toYaml .Values.manager.annotations | nindent 4 }}
+    {{- include "project.stringMap" .Values.manager.annotations | nindent 4 }}
   {{- end }}
 spec:
   {{- with .Values.manager.strategy }}
@@ -35,7 +35,7 @@ spec:
         {{- with .Values.manager.pod }}
         {{- with .annotations }}
         {{- with omit . "kubectl.kubernetes.io/default-container" }}
-        {{- toYaml . | nindent 8 }}
+        {{- include "project.stringMap" . | nindent 8 }}
         {{- end }}
         {{- end }}
         {{- end }}
@@ -48,7 +48,7 @@ spec:
         {{- with .Values.manager.pod }}
         {{- with .labels }}
         {{- with omit . "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "app.kubernetes.io/managed-by" "control-plane" }}
-        {{- toYaml . | nindent 8 }}
+        {{- include "project.stringMap" . | nindent 8 }}
         {{- end }}
         {{- end }}
         {{- end }}

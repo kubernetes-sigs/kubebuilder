@@ -96,6 +96,31 @@ var _ = Describe("NetworkPolicy", func() {
 			Expect(networkPolicy.TemplateBody).NotTo(ContainSubstring("allow-metrics-traffic"))
 		})
 
+		It("should select the manager pods with the given selector, or else the scaffolded labels", func() {
+			cfg := cfgv3.New()
+			Expect(cfg.SetProjectName("test-project")).To(Succeed())
+			render := func(policy *NetworkPolicy) string {
+				fs := afero.NewMemMapFs()
+				scaffold := machinery.NewScaffold(machinery.Filesystem{FS: fs}, machinery.WithConfig(cfg))
+				Expect(scaffold.Execute(policy)).To(Succeed())
+				content, err := afero.ReadFile(fs, "dist/chart/templates/network-policy/allow-metrics-traffic.yaml")
+				Expect(err).NotTo(HaveOccurred())
+				return string(content)
+			}
+
+			given := render(&NetworkPolicy{OutputDir: helmChartOutputDir, PodSelector: []string{
+				`app.kubernetes.io/name: {{ include "test-project.name" . }}`, `example.com/team: a`,
+			}})
+			Expect(given).To(ContainSubstring("  podSelector:\n    matchLabels:\n" +
+				`      app.kubernetes.io/name: {{ include "test-project.name" . }}` + "\n" +
+				"      example.com/team: a\n  policyTypes:"))
+			Expect(given).NotTo(ContainSubstring("control-plane"))
+
+			scaffolded := render(&NetworkPolicy{OutputDir: helmChartOutputDir})
+			Expect(scaffolded).To(ContainSubstring("      control-plane: controller-manager\n"))
+			Expect(scaffolded).To(ContainSubstring(`      app.kubernetes.io/name: {{ include "test-project.name" . }}` + "\n"))
+		})
+
 		It("should render Helm template syntax through machinery", func() {
 			cfg := cfgv3.New()
 			Expect(cfg.SetProjectName("test-project")).To(Succeed())

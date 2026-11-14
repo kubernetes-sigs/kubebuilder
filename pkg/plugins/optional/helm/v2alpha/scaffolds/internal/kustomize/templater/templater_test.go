@@ -100,7 +100,7 @@ spec:
 			Expect(result).To(ContainSubstring("app.kubernetes.io/managed-by: {{ .Release.Service }}"))
 			// Should replace app.kubernetes.io/name with chart name template
 			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"test-project.name\" . }}"))
-			Expect(result).To(ContainSubstring("control-plane: controller-manager"))
+			Expect(result).To(ContainSubstring(`"control-plane" "controller-manager") }}`))
 
 			// Should substitute namespace
 			Expect(result).To(ContainSubstring("namespace: {{ .Release.Namespace }}"))
@@ -1109,7 +1109,7 @@ spec:
 					`    {{- with omit . "helm.sh/resource-policy" }}`))
 				Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n" +
 					"  labels:\n" +
-					"    {{- toYaml . | nindent 4 }}\n" +
+					"    {{- include \"test-project.stringMap\" . | nindent 4 }}\n" +
 					"  {{- end }}\n" +
 					"  name: guestbooks.example.com"))
 				// Null metadata maps are treated as empty, so no second labels or annotations key is added
@@ -1592,10 +1592,9 @@ spec:
 			result := templater.ApplyHelmSubstitutions(content, deployment)
 
 			// All three should be templated
-			Expect(result).To(ContainSubstring("app.kubernetes.io/name: {{ include \"test-project.name\" . }}"))
 			Expect(result).NotTo(ContainSubstring("app.kubernetes.io/name: test-project"))
 			// Count occurrences - should be 3
-			count := strings.Count(result, "app.kubernetes.io/name: {{ include \"test-project.name\" . }}")
+			count := strings.Count(result, `include "test-project.name" .`)
 			Expect(count).To(Equal(3))
 		})
 	})
@@ -4106,18 +4105,18 @@ spec:
 				"Should have exactly 2 annotations blocks (1 for Deployment, 1 for Pod template)")
 
 			// Existing annotations should still be present
-			Expect(result).To(ContainSubstring("existing-annotation: from-kustomize"))
-			Expect(result).To(ContainSubstring("another-annotation: value"))
+			Expect(result).To(ContainSubstring(`"existing-annotation" "from-kustomize") }}`))
+			Expect(result).To(ContainSubstring(`"another-annotation" "value") }}`))
 
 			// Verify injection order: custom annotations should come after existing ones
 			// Find the manager annotations block (either pattern)
 			annotationsPattern := regexp.MustCompile(`{{- (?:with|if) \.Values\.manager\.annotations`)
 			annotationsMatch := annotationsPattern.FindStringIndex(result)
-			existingAnnotationIdx := strings.Index(result, "existing-annotation: from-kustomize")
-			if annotationsMatch != nil {
-				Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotationIdx),
-					"Custom annotations should be injected after existing annotations")
-			}
+			existingAnnotationIdx := strings.Index(result, "existing-annotation: {{")
+			Expect(existingAnnotationIdx).To(BeNumerically(">=", 0))
+			Expect(annotationsMatch).NotTo(BeNil())
+			Expect(annotationsMatch[0]).To(BeNumerically(">", existingAnnotationIdx),
+				"Custom annotations should be injected after existing annotations")
 		})
 
 		It("should convert empty map annotations: {} to block style for injection", func() {
@@ -4229,8 +4228,8 @@ spec:
 			Expect(result).NotTo(ContainSubstring("annotations: {"))
 
 			// Should have block-style annotations with existing entries preserved
-			Expect(result).To(ContainSubstring("existing: value"))
-			Expect(result).To(ContainSubstring("another: test"))
+			Expect(result).To(ContainSubstring(`"existing" "value") }}`))
+			Expect(result).To(ContainSubstring(`"another" "test") }}`))
 
 			// Should inject custom annotations template blocks (with automatic filtering)
 			Expect(result).To(Or(
@@ -4283,8 +4282,8 @@ spec:
 			Expect(result).NotTo(ContainSubstring("annotations:{"))
 
 			// Should have block-style annotations with existing entries preserved
-			Expect(result).To(ContainSubstring("existing: value"))
-			Expect(result).To(ContainSubstring("another: test"))
+			Expect(result).To(ContainSubstring(`"existing" "value") }}`))
+			Expect(result).To(ContainSubstring(`"another" "test") }}`))
 
 			// Should inject custom annotations template blocks
 			Expect(result).To(Or(
@@ -4885,7 +4884,7 @@ metadata:
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
 				Expect(result).To(ContainSubstring("annotations:"))
-				Expect(result).To(ContainSubstring("{{- toYaml . | nindent 4 }}"))
+				Expect(result).To(ContainSubstring(`{{- include "test-project.stringMap" . | nindent 4 }}`))
 			})
 
 			It("supports custom labels without duplicating existing standard labels", func() {
@@ -4941,9 +4940,10 @@ metadata:
 				// Should preserve existing annotation
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
-				// Should merge into the existing block and omit the scaffolded key so overrides never duplicate
+				// The existing annotation gives way to the same key set in the values
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit . "existing.annotation/key" }}`))
+				Expect(result).To(ContainSubstring(
+					`(list .Values.serviceAccount.annotations "existing.annotation/key" "\"existing-value\"") }}`))
 
 				// Labels still merge independently of the annotations ordering
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
@@ -5253,5 +5253,53 @@ spec:
 					"manager replicas template must appear for a deployment with a container named manager")
 			})
 		})
+	})
+})
+
+var _ = Describe("RenderLabels", func() {
+	// serviceSelector returns the selector lines of a Service that selects by labels, as the chart
+	// templates them.
+	serviceSelector := func(t *Templater, labels map[string]string) []string {
+		selector := map[string]any{}
+		for key, value := range labels {
+			selector[key] = value
+		}
+		service := &unstructured.Unstructured{Object: map[string]any{
+			"apiVersion": "v1", "kind": "Service",
+			"metadata":   map[string]any{"name": testProjectName + "-extra"},
+			k8sSpecField: map[string]any{"selector": selector},
+		}}
+		content, err := yaml.Marshal(service.Object)
+		Expect(err).NotTo(HaveOccurred())
+
+		var lines []string
+		for line := range strings.SplitSeq(t.ApplyHelmSubstitutions(string(content), service), "\n") {
+			if label, indented := strings.CutPrefix(line, "    "); indented {
+				lines = append(lines, label)
+			}
+		}
+		return lines
+	}
+
+	DescribeTable("renders labels as a resource from config/ carries them",
+		func(labels map[string]string) {
+			t := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+
+			Expect(t.RenderLabels(labels)).To(Equal(serviceSelector(t, labels)))
+		},
+		Entry("the scaffolded labels", map[string]string{
+			"app.kubernetes.io/name": testProjectName, "example.com/team": "a",
+		}),
+		Entry("the managed-by label of kustomize", map[string]string{"app.kubernetes.io/managed-by": "kustomize"}),
+		Entry("a label that names a resource", map[string]string{"name": testProjectName + "-controller-manager"}),
+		Entry("a label that names the namespace", map[string]string{"namespace": testProjectSystemNamespace}),
+		Entry("a name label that is not the project name", map[string]string{"app.kubernetes.io/name": "other"}),
+		Entry("labels kustomize added", map[string]string{"example.com/team": "a", "example.com/empty": ""}),
+	)
+
+	It("returns nothing for no labels", func() {
+		t := NewTemplater(testProjectName, testProjectName, testProjectSystemNamespace, nil)
+
+		Expect(t.RenderLabels(nil)).To(BeEmpty())
 	})
 })

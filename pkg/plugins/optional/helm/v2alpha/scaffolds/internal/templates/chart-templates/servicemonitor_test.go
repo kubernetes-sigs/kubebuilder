@@ -49,10 +49,21 @@ var _ = Describe("ServiceMonitor", func() {
 
 		It("merges .Values.prometheus.labels and .Values.prometheus.annotations into metadata", func() {
 			Expect(serviceMonitor.SetTemplateDefaults()).To(Succeed())
-			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`{{ "{{- with .Values.prometheus.labels }}" }}`))
-			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`omit . \"app.kubernetes.io/managed-by\"`))
-			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`\"control-plane\" }}`))
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(".Values.prometheus.labels"))
 			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(`{{ "{{- with .Values.prometheus.annotations }}" }}`))
+		})
+
+		It("selects the metrics Service with the given selector, or else the scaffolded labels", func() {
+			Expect(serviceMonitor.SetTemplateDefaults()).To(Succeed())
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring("  selector:\n    matchLabels:\n" +
+				"      {{`app.kubernetes.io/name: {{ include \"test-project.name\" . }}`}}\n" +
+				"      {{`control-plane: controller-manager`}}\n"))
+
+			serviceMonitor.Selector = []string{"example.com/team: a"}
+			Expect(serviceMonitor.SetTemplateDefaults()).To(Succeed())
+			Expect(serviceMonitor.TemplateBody).To(ContainSubstring(
+				"  selector:\n    matchLabels:\n      {{`example.com/team: a`}}\n"))
+			Expect(serviceMonitor.TemplateBody).NotTo(ContainSubstring("control-plane: controller-manager`"))
 		})
 	})
 })

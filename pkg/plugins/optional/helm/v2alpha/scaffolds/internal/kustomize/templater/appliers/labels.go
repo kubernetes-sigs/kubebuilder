@@ -17,12 +17,15 @@ limitations under the License.
 package appliers
 
 import (
+	"maps"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"go.yaml.in/yaml/v3"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 )
@@ -47,6 +50,12 @@ func AddHelmLabelsAndAnnotations(detectedPrefix, chartName, yamlContent string) 
 	hardcodedNameLabel := "app.kubernetes.io/name: " + detectedPrefix
 	templatedNameLabel := "app.kubernetes.io/name: {{ include \"" + chartName + ".name\" . }}"
 	yamlContent = strings.ReplaceAll(yamlContent, hardcodedNameLabel, templatedNameLabel)
+
+	// A matchExpressions requirement on the name label follows the name too, so it keeps matching.
+	// The content comes from sigs.k8s.io/yaml: key, operator, then values as a block list.
+	nameExpression := regexp.MustCompile(`(?m)(- key: app\.kubernetes\.io/name\n *operator: \w+\n *values:\n` +
+		`(?: *- .*\n)*? *- )` + regexp.QuoteMeta(detectedPrefix) + `$`)
+	yamlContent = nameExpression.ReplaceAllString(yamlContent, `${1}{{ include "`+chartName+`.name" . }}`)
 
 	return AddStandardHelmLabels(yamlContent)
 }
@@ -173,28 +182,39 @@ func AddStandardHelmLabels(yamlContent string) string {
 // .Values.serviceAccount.labels and .Values.serviceAccount.annotations. It merges into whichever
 // labels and annotations blocks Kustomize already emitted, in either order, and injects the block
 // that is missing. User-supplied values therefore always render and no metadata key is duplicated.
-func AddServiceAccountLabelsAndAnnotations(yamlContent string) string {
-	return addMetadataLabelsAndAnnotations(yamlContent, valuesServiceAccountLabels, valuesServiceAccountAnnotations)
+func AddServiceAccountLabelsAndAnnotations(chartName, yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(
+		chartName, yamlContent, valuesServiceAccountLabels, valuesServiceAccountAnnotations, nil)
 }
 
 // AddServiceMonitorLabelsAndAnnotations makes the ServiceMonitor metadata honor
 // .Values.prometheus.labels and .Values.prometheus.annotations, using the same merge
 // semantics as AddServiceAccountLabelsAndAnnotations.
-func AddServiceMonitorLabelsAndAnnotations(yamlContent string) string {
-	return addMetadataLabelsAndAnnotations(yamlContent, valuesPrometheusLabels, valuesPrometheusAnnotations)
+func AddServiceMonitorLabelsAndAnnotations(chartName, yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(
+		chartName, yamlContent, valuesPrometheusLabels, valuesPrometheusAnnotations, nil)
+}
+
+// crdFixedAnnotations are the annotations of a CRD the values do not replace: crd.keep sets the
+// resource policy, and controller-gen and the cert-manager injection write the other 2.
+var crdFixedAnnotations = []string{
+	"helm.sh/resource-policy", "controller-gen.kubebuilder.io/version", "cert-manager.io/inject-ca-from",
 }
 
 // AddCRDLabelsAndAnnotations makes CRD metadata honor .Values.crd.labels and .Values.crd.annotations,
-// using the same merge semantics as AddServiceAccountLabelsAndAnnotations. Keys the CRD already sets
-// (e.g. controller-gen.kubebuilder.io/version, helm.sh/resource-policy) are not duplicated.
-func AddCRDLabelsAndAnnotations(yamlContent string) string {
-	return addMetadataLabelsAndAnnotations(yamlContent, valuesCRDLabels, valuesCRDAnnotations)
+// using the same merge semantics as AddServiceAccountLabelsAndAnnotations.
+func AddCRDLabelsAndAnnotations(chartName, yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(
+		chartName, yamlContent, valuesCRDLabels, valuesCRDAnnotations, crdFixedAnnotations)
 }
 
 // addMetadataLabelsAndAnnotations merges into the labels and annotations blocks under the resource's
 // own (first) metadata, in either order, and injects the missing one, so no key is duplicated.
-// Nested "metadata:" keys, such as those in a CRD's OpenAPI schema, are left untouched.
-func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsValuePath string) string {
+// Nested "metadata:" keys, such as those in a CRD's OpenAPI schema, are left untouched. The values
+// replace the keys the blocks already have, but for the Helm labels and fixedAnnotations.
+func addMetadataLabelsAndAnnotations(
+	chartName, yamlContent, labelsValuePath, annotationsValuePath string, fixedAnnotations []string,
+) string {
 	lines := strings.Split(yamlContent, "\n")
 	merged := make([]string, 0, len(lines))
 
@@ -218,11 +238,11 @@ func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsVa
 			merged = append(merged, lines[lineIndex])
 		case inMetadata && isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyLabels, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
-				merged, lines, lineIndex, common.YamlKeyLabels, labelsValuePath)
+				merged, lines, lineIndex, common.YamlKeyLabels, labelsValuePath, chartName, helmLabels)
 			labelsBlockEnd = len(merged)
 		case inMetadata && isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyAnnotations, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
-				merged, lines, lineIndex, common.YamlKeyAnnotations, annotationsValuePath)
+				merged, lines, lineIndex, common.YamlKeyAnnotations, annotationsValuePath, chartName, fixedAnnotations)
 			annotationsBlockEnd = len(merged)
 		default:
 			merged = append(merged, lines[lineIndex])
@@ -236,7 +256,7 @@ func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsVa
 
 	merged = injectMissingMetadataBlocks(
 		merged, childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd,
-		labelsValuePath, annotationsValuePath)
+		labelsValuePath, annotationsValuePath, chartName)
 	return strings.Join(merged, "\n")
 }
 
@@ -278,12 +298,12 @@ func isMetadataMapChildHeader(line, mapKey string, metadataIndent int) bool {
 func injectMissingMetadataBlocks(
 	merged []string,
 	childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd int,
-	labelsValuePath, annotationsValuePath string,
+	labelsValuePath, annotationsValuePath, chartName string,
 ) []string {
 	labelsBlock := buildGuardedMetadataMapBlock(
-		childIndent, common.YamlKeyLabels, labelsValuePath)
+		childIndent, common.YamlKeyLabels, labelsValuePath, chartName)
 	annotationsBlock := buildGuardedMetadataMapBlock(
-		childIndent, common.YamlKeyAnnotations, annotationsValuePath)
+		childIndent, common.YamlKeyAnnotations, annotationsValuePath, chartName)
 
 	switch {
 	case labelsBlockEnd >= 0 && annotationsBlockEnd < 0:
@@ -298,11 +318,13 @@ func injectMissingMetadataBlocks(
 }
 
 // mergeMetadataMapBlock re-emits the existing labels/annotations block that starts at headerIndex
-// and appends a Helm block that merges the matching .Values map, omitting keys the block already
-// defines so nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
-// a guarded block, so the header renders only when the user supplies values and never as a null
-// key. It returns the updated output and the index of the last source line it consumed.
-func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valuePath string) ([]string, int) {
+// and appends a Helm block that merges the matching .Values map. A key set in the values replaces
+// the existing one, so each key renders once. An empty block (a bare header or an inline "{}") is
+// replaced by a guarded block, so the header renders only when the user supplies values and never
+// as a null key. It returns the updated output and the index of the last source line it consumed.
+func mergeMetadataMapBlock(
+	merged, lines []string, headerIndex int, mapKey, valuePath, chartName string, fixedKeys []string,
+) ([]string, int) {
 	_, headerIndent := LeadingWhitespace(lines[headerIndex])
 
 	bodyStart := headerIndex + 1
@@ -318,23 +340,124 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	body := lines[bodyStart:bodyEnd]
 	existingKeys := extractMapKeys(body)
 	if len(existingKeys) == 0 {
-		merged = append(merged, buildGuardedMetadataMapBlock(headerIndent, mapKey, valuePath)...)
+		merged = append(merged, buildGuardedMetadataMapBlock(headerIndent, mapKey, valuePath, chartName)...)
 		return merged, bodyEnd - 1
 	}
 
 	merged = append(merged, strings.Repeat(" ", headerIndent)+mapKey)
+	start := len(merged)
 	merged = append(merged, body...)
 	valueIndent := strings.Repeat(" ", headerIndent+2)
-	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
 
-	return merged, bodyEnd - 1
+	merged, existingKeys = letValuesReplace(merged, start, valueIndent, valuePath, chartName, fixedKeys)
+	return appendHelmMapBlock(merged, valueIndent, valuePath, chartName, existingKeys), bodyEnd - 1
+}
+
+// letValuesReplace makes each entry in result[start:] give way to the same key in the map at
+// valuePath, so a key renders once: with the value set for it, or else as config/ has it. An entry
+// whose key is in fixedKeys stays as it is. It returns the keys of the entries, which the block
+// that renders the rest of the map must omit.
+func letValuesReplace(
+	result []string, start int, indent, valuePath, chartName string, fixedKeys []string,
+) ([]string, []string) {
+	body := slices.Clone(result[start:])
+	entries, ok := splitMapEntries(body)
+	if !ok {
+		// Not a map of entries, which kustomize never writes: the values do not replace any key.
+		return result, extractMapKeys(body)
+	}
+
+	result = append(result[:start], body[:entries[0].start]...)
+	keys := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		keys = append(keys, entry.key)
+		// The actions that wrap a neighbor entry stay where they are, after this one.
+		lines, wrappers := splitTrailingActions(body[entry.start:entry.end])
+		switch line, oneLine := valueOrDefaultEntry(lines, entry, valuePath, chartName); {
+		case slices.Contains(fixedKeys, entry.key):
+			result = append(result, lines...)
+		case oneLine:
+			result = append(result, line)
+		default:
+			result = appendUnlessSet(result, lines, entry.key, indent, valuePath, chartName)
+		}
+		result = append(result, wrappers...)
+	}
+	return result, keys
+}
+
+// splitTrailingActions splits off the lines at the end of an entry that are only a Helm action at
+// the indentation of its key, such as the "{{- end }}" and "{{- if ... }}" that wrap a neighbor
+// entry.
+func splitTrailingActions(lines []string) ([]string, []string) {
+	keyIndent, _ := LeadingWhitespace(lines[0])
+	end := len(lines)
+	for ; end > 1; end-- {
+		indent, _ := LeadingWhitespace(lines[end-1])
+		trimmed := strings.TrimSpace(lines[end-1])
+		if loc := helmTemplateRegex.FindStringIndex(trimmed); indent != keyIndent || loc == nil ||
+			loc[0] != 0 || loc[1] != len(trimmed) {
+			break
+		}
+	}
+	return lines[:end], lines[end:]
+}
+
+// helmLabels are the labels the chart sets for Helm. They are fixed keys of every labels block.
+var helmLabels = []string{
+	"app.kubernetes.io/managed-by",
+	"app.kubernetes.io/name",
+	"app.kubernetes.io/instance",
+	"helm.sh/chart",
+}
+
+// valueOrDefault returns the call to the chart helper that renders the value set for key in the map
+// at valuePath as a quoted string, or defaultText when the key is not set or is null.
+func valueOrDefault(chartName, valuePath, key, defaultText string) string {
+	return `{{ include "` + chartName + `.valueOrDefault" (list ` + valuePath + " " +
+		strconv.Quote(key) + " " + strconv.Quote(defaultText) + ") }}"
+}
+
+// valueOrDefaultEntry rewrites a "key: value" line so the value set in the values replaces value.
+// It returns false when the entry is not one line of plain ASCII text, or when its value holds a
+// Helm action, which only renders as it is written.
+func valueOrDefaultEntry(lines []string, entry mapEntry, valuePath, chartName string) (string, bool) {
+	if len(lines) != 1 || entry.valueColumn <= 0 || entry.valueColumn > len(lines[0]) {
+		return "", false
+	}
+	line := lines[0]
+	key, value := line[:entry.valueColumn], line[entry.valueColumn:]
+	// The value column counts characters, so it is the byte offset only in an ASCII line.
+	if !strings.HasSuffix(strings.TrimSpace(key), ":") || strings.Contains(value, "{{") ||
+		strings.ContainsFunc(line, func(r rune) bool { return r > unicode.MaxASCII }) {
+		return "", false
+	}
+	return key + valueOrDefault(chartName, valuePath, entry.key, value), true
+}
+
+// appendUnlessSet appends the lines of an existing entry so they render when the map at valuePath
+// does not set the same key, and the value set for the key when it does.
+func appendUnlessSet(result, lines []string, key, indent, valuePath, chartName string) []string {
+	quotedKey := strconv.Quote(key)
+	elseAction, endAction := indent+"{{- else }}", indent+"{{- end }}"
+	// A blank last line belongs to a |+ value. Actions that do not trim keep it.
+	if last := len(lines) - 1; strings.Trim(lines[last], " \t") == "" {
+		lines, elseAction, endAction = lines[:last], "{{ else }}", "{{ end }}"
+	}
+
+	result = append(result,
+		indent+`{{- if kindIs "invalid" (index (`+valuePath+" | default dict) "+quotedKey+") }}")
+	result = append(result, lines...)
+	return append(result, elseAction,
+		indent+quotedKey+": "+valueOrDefault(chartName, valuePath, key, ""), endAction)
 }
 
 // helmTemplateRegex matches a {{ }} action, including quoted strings containing {{ }}.
 var helmTemplateRegex = regexp.MustCompile(`\{\{(?:"(?:[^"\\]|\\.)*"|[^"}]|\}[^}])*\}\}`)
 
-// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
-func extractMapKeys(body []string) []string {
+// parseMap parses body as a YAML map, replacing Helm actions with placeholders.
+// It returns nil when body is not a map.
+func parseMap(body []string) *yaml.Node {
 	cleaned := make([]string, 0, len(body))
 	for _, line := range body {
 		trimmed := strings.TrimSpace(line)
@@ -352,10 +475,18 @@ func extractMapKeys(body []string) []string {
 	var document yaml.Node
 	if err := yaml.Unmarshal([]byte(strings.Join(cleaned, "\n")), &document); err != nil ||
 		len(document.Content) != 1 || document.Content[0].Kind != yaml.MappingNode {
+		return nil
+	}
+	return document.Content[0]
+}
+
+// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
+func extractMapKeys(body []string) []string {
+	mapping := parseMap(body)
+	if mapping == nil {
 		return extractKeysFromLines(body)
 	}
 
-	mapping := document.Content[0]
 	keys := make([]string, 0, len(mapping.Content)/2)
 	for i := 0; i < len(mapping.Content); i += 2 {
 		keys = append(keys, mapping.Content[i].Value)
@@ -363,16 +494,74 @@ func extractMapKeys(body []string) []string {
 	return keys
 }
 
+// mapEntry is a key of a YAML map and the lines body[start:end] it covers.
+// valueColumn is where the value starts in the line of the key, or 0 when it is not on that line.
+type mapEntry struct {
+	key         string
+	start, end  int
+	valueColumn int
+}
+
+// splitMapEntries splits a block-style YAML map into its entries. It returns false when two keys
+// share a line or body is not a block-style map.
+func splitMapEntries(body []string) ([]mapEntry, bool) {
+	mapping := parseMap(body)
+	if mapping == nil || mapping.Style&yaml.FlowStyle != 0 || len(mapping.Content) == 0 {
+		return nil, false
+	}
+
+	// YAML also breaks lines on \r, U+0085, U+2028 and U+2029, so map its line numbers to body.
+	var bodyLine []int
+	for i, line := range body {
+		bodyLine = append(bodyLine, i)
+		for _, r := range strings.TrimSuffix(line, "\r") {
+			if r == '\r' || r == '\u0085' || r == '\u2028' || r == '\u2029' {
+				bodyLine = append(bodyLine, i)
+			}
+		}
+	}
+
+	entries := make([]mapEntry, 0, len(mapping.Content)/2)
+	for i := 0; i < len(mapping.Content); i += 2 {
+		yamlLine := mapping.Content[i].Line - 1
+		if yamlLine < 0 || yamlLine >= len(bodyLine) {
+			return nil, false
+		}
+		start := bodyLine[yamlLine]
+		if len(entries) > 0 && start <= entries[len(entries)-1].start {
+			return nil, false
+		}
+		entry := mapEntry{key: mapping.Content[i].Value, start: start}
+		if value := mapping.Content[i+1]; value.Kind == yaml.ScalarNode && value.Line == mapping.Content[i].Line {
+			entry.valueColumn = value.Column - 1
+		}
+		entries = append(entries, entry)
+	}
+	for i := range entries {
+		entries[i].end = len(body)
+		if i+1 < len(entries) {
+			entries[i].end = entries[i+1].start
+		}
+	}
+	return entries, true
+}
+
+// stringValues returns the action that renders the map a Helm expression gives as labels or
+// annotations: the chart's stringMap helper writes each value as a string and leaves out null ones.
+func stringValues(chartName, expression string, indentWidth int) string {
+	return `{{- include "` + chartName + `.stringMap" ` + expression + " | nindent " + strconv.Itoa(indentWidth) + " }}"
+}
+
 // buildGuardedMetadataMapBlock renders a labels/annotations block wrapped in
 // "{{- with <valuePath> }}" so it appears only when the user sets that map. headerIndent is the
 // indentation of the header key.
-func buildGuardedMetadataMapBlock(headerIndent int, mapKey, valuePath string) []string {
+func buildGuardedMetadataMapBlock(headerIndent int, mapKey, valuePath, chartName string) []string {
 	indent := strings.Repeat(" ", headerIndent)
 	valueIndent := strings.Repeat(" ", headerIndent+2)
 	return []string{
 		indent + "{{- with " + valuePath + " }}",
 		indent + mapKey,
-		valueIndent + "{{- toYaml . | nindent " + strconv.Itoa(headerIndent+2) + " }}",
+		valueIndent + stringValues(chartName, ".", headerIndent+2),
 		indent + "{{- end }}",
 	}
 }
@@ -388,39 +577,50 @@ func appendAfterExistingEntries(result, block []string) []string {
 	return append(result, block...)
 }
 
+// quotedKeys returns keys as the arguments of a Helm function, each one a quoted string.
+func quotedKeys(keys []string) string {
+	quoted := make([]string, len(keys))
+	for i, key := range keys {
+		quoted[i] = strconv.Quote(key)
+	}
+	return strings.Join(quoted, " ")
+}
+
 // appendHelmMapBlock appends Helm template blocks for custom labels/annotations.
-func appendHelmMapBlock(result []string, indent, valuePath string, existingKeys []string) []string {
-	childIndentWidth := strconv.Itoa(len(indent))
+func appendHelmMapBlock(result []string, indent, valuePath, chartName string, existingKeys []string) []string {
+	values := indent + stringValues(chartName, ".", len(indent))
 
 	if len(existingKeys) > 0 {
-		omitKeys := strings.Join(existingKeys, "\" \"")
+		omitKeys := quotedKeys(existingKeys)
 		return appendAfterExistingEntries(result, []string{
 			indent + "{{- with " + valuePath + " }}",
-			indent + "{{- with omit . \"" + omitKeys + "\" }}",
-			indent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
+			indent + "{{- with omit . " + omitKeys + " }}",
+			values,
 			indent + "{{- end }}",
 			indent + "{{- end }}",
 		})
 	}
 
 	return append(result,
-		indent+"{{- if "+valuePath+" }}",
-		indent+"{{- toYaml "+valuePath+" | nindent "+childIndentWidth+" }}",
+		indent+"{{- with "+valuePath+" }}",
+		values,
 		indent+"{{- end }}",
 	)
 }
 
 // appendNestedHelmMapBlock appends nested Helm template blocks (e.g., .Values.manager.pod -> .labels).
-func appendNestedHelmMapBlock(result []string, indent, outerPath, innerPath string, existingKeys []string) []string {
-	childIndentWidth := strconv.Itoa(len(indent))
+func appendNestedHelmMapBlock(
+	result []string, indent, outerPath, innerPath, chartName string, existingKeys []string,
+) []string {
+	values := indent + stringValues(chartName, ".", len(indent))
 
 	if len(existingKeys) > 0 {
-		omitKeys := strings.Join(existingKeys, "\" \"")
+		omitKeys := quotedKeys(existingKeys)
 		return appendAfterExistingEntries(result, []string{
 			indent + "{{- with " + outerPath + " }}",
 			indent + "{{- with " + innerPath + " }}",
-			indent + "{{- with omit . \"" + omitKeys + "\" }}",
-			indent + "{{- toYaml . | nindent " + childIndentWidth + " }}",
+			indent + "{{- with omit . " + omitKeys + " }}",
+			values,
 			indent + "{{- end }}",
 			indent + "{{- end }}",
 			indent + "{{- end }}",
@@ -430,7 +630,7 @@ func appendNestedHelmMapBlock(result []string, indent, outerPath, innerPath stri
 	return append(result,
 		indent+"{{- with "+outerPath+" }}",
 		indent+"{{- with "+innerPath+" }}",
-		indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+		values,
 		indent+"{{- end }}",
 		indent+"{{- end }}",
 	)
@@ -476,5 +676,22 @@ func extractKeysFromLines(lines []string) []string {
 		}
 	}
 
+	return keys
+}
+
+// SelectorKeys returns the label keys the selector of a Deployment names, in matchLabels and in
+// matchExpressions.
+func SelectorKeys(deployment *unstructured.Unstructured) []string {
+	matchLabels, _, _ := unstructured.NestedStringMap(deployment.Object, "spec", "selector", "matchLabels")
+	expressions, _, _ := unstructured.NestedSlice(deployment.Object, "spec", "selector", "matchExpressions")
+
+	keys := slices.Sorted(maps.Keys(matchLabels))
+	for _, expression := range expressions {
+		if requirement, ok := expression.(map[string]any); ok {
+			if key, ok := requirement["key"].(string); ok {
+				keys = append(keys, key)
+			}
+		}
+	}
 	return keys
 }

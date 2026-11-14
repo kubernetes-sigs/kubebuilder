@@ -9,12 +9,12 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.23.0
     {{- with .Values.crd.annotations }}
     {{- with omit . "helm.sh/resource-policy" "controller-gen.kubebuilder.io/version" }}
-    {{- toYaml . | nindent 4 }}
+    {{- include "project-v4-with-plugins.stringMap" . | nindent 4 }}
     {{- end }}
     {{- end }}
   {{- with .Values.crd.labels }}
   labels:
-    {{- toYaml . | nindent 4 }}
+    {{- include "project-v4-with-plugins.stringMap" . | nindent 4 }}
   {{- end }}
   name: memcacheds.example.com.testproject.org
 spec:

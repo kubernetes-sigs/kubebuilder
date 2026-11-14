@@ -26,7 +26,7 @@ Many users prefer Helm for packaging and upgrades. This plugin converts `dist/in
 - Preserves environment variables, labels, annotations, and patches
 - Organizes templates to match your `config/` directory layout
 - Includes only configurable parameters in `values.yaml`
-- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, and `network-policy/allow-webhook-traffic.yaml` unless you use `--force`
+- Never overwrites `Chart.yaml`; preserves `values.yaml`, `NOTES.txt`, `_helpers.tpl`, `.helmignore`, `test-chart.yml`, `network-policy/allow-metrics-traffic.yaml`, `network-policy/allow-webhook-traffic.yaml`, and `prometheus/controller-manager-metrics-monitor.yaml` unless you use `--force`
 - Adds default `ServiceMonitor` and `NetworkPolicy` templates when kustomize output does not provide them
 - Places custom resources in `templates/extras/` with Helm templating
 
@@ -94,6 +94,7 @@ The plugin generates a chart layout that mirrors your `config/` directory:
 └── templates/
     ├── NOTES.txt
     ├── _helpers.tpl
+    ├── _labels.tpl              # Helper for labels and annotations (always regenerated)
     ├── rbac/                    # Individual RBAC files (examples)
     │   ├── controller-manager.yaml
     │   ├── leader-election-role.yaml
@@ -118,8 +119,8 @@ The plugin generates a chart layout that mirrors your `config/` directory:
     ├── webhook/
     │   ├── validating-webhook-configuration.yaml
     │   └── webhook-service.yaml
-    ├── monitoring/
-    │   └── servicemonitor.yaml
+    ├── prometheus/
+    │   └── controller-manager-metrics-monitor.yaml
     ├── network-policy/
     │   ├── allow-metrics-traffic.yaml
     │   └── allow-webhook-traffic.yaml  # If webhooks are configured
@@ -358,9 +359,17 @@ The default webhook policy allows ingress from all sources to the manager pod's 
 
 ### Custom labels and annotations
 
-Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
+Set custom labels and annotations for each resource:
 
-The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. For example, to match a Prometheus Operator `serviceMonitorSelector`:
+| Resource | Labels | Annotations |
+|---|---|---|
+| Deployment | `manager.labels` | `manager.annotations` |
+| Pods | `manager.pod.labels` | `manager.pod.annotations` |
+| ServiceAccount | `serviceAccount.labels` | `serviceAccount.annotations` |
+| ServiceMonitor | `prometheus.labels` | `prometheus.annotations` |
+| Every CRD in the chart | `crd.labels` | `crd.annotations` |
+
+For example, to match a Prometheus Operator `serviceMonitorSelector`:
 
 ```yaml
 prometheus:
@@ -371,7 +380,7 @@ prometheus:
     example.com/owner: sre
 ```
 
-CRDs support the same pattern through `crd.labels` and `crd.annotations`. The values apply to every CRD in the chart. For example, to have Argo CD use server-side apply for every CRD in the chart, such as when one or more of them are too large for the `kubectl.kubernetes.io/last-applied-configuration` annotation:
+To make Argo CD use server-side apply for the CRDs:
 
 ```yaml
 crd:
@@ -381,7 +390,24 @@ crd:
     example.com/team: platform
 ```
 
-Keys the CRDs already set, such as `controller-gen.kubebuilder.io/version` or `cert-manager.io/inject-ca-from`, keep their generated value. The `helm.sh/resource-policy` annotation is controlled by `crd.keep` and cannot be set through `crd.annotations`.
+If `config/` already sets a key, your value replaces it. For example, to replace a ServiceAccount annotation from `config/`:
+
+```yaml
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-role
+```
+
+The chart renders every value as a string, so a number or a boolean works. A `null` value does not remove a key: the value from `config/` stays, and a new key is left out.
+
+The chart ignores values for these keys:
+
+- The labels that Helm manages: `app.kubernetes.io/managed-by`, `app.kubernetes.io/name`, `app.kubernetes.io/instance`, and `helm.sh/chart`.
+- In `manager.pod.labels`, the labels that `config/` sets, such as `control-plane`. Selectors use them to find the pods.
+- In `manager.pod.annotations`, `kubectl.kubernetes.io/default-container`.
+- In `crd.annotations`: `controller-gen.kubebuilder.io/version` and, on CRDs that set it, `cert-manager.io/inject-ca-from`. Set `helm.sh/resource-policy` with `crd.keep`.
+
+Do not edit `templates/_labels.tpl`. The plugin regenerates it on every run.
 
 ### ServiceAccount configuration
 

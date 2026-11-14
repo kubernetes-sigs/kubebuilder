@@ -127,10 +127,7 @@ var _ = Describe("HelmValues", func() {
 			Expect(result).To(ContainSubstring("crd:\n" +
 				"  # Install CRDs with the chart\n  enabled: true\n" +
 				"  # Keep CRDs when uninstalling\n  keep: true\n\n" +
-				"  ## Custom CRD annotations (e.g. argocd.argoproj.io/sync-options: ServerSideApply=true)\n" +
-				"  ## Keys the CRDs already set (e.g. controller-gen.kubebuilder.io/version) keep their generated\n" +
-				"  ## value, and helm.sh/resource-policy is controlled by keep.\n" +
-				"  ##\n  # annotations: {}\n\n" +
+				"  ## Custom CRD annotations\n  ##\n  # annotations: {}\n\n" +
 				"  ## Custom CRD labels\n  ##\n  # labels: {}\n"))
 		})
 

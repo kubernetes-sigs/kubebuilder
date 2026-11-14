@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"helm.sh/helm/v3/pkg/action"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -231,6 +232,34 @@ spec:
 			testChartContent, err := os.ReadFile(testChartPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(testChartContent)).To(Equal(customTestChartContent), "test-chart.yml should not be overwritten without --force")
+		})
+	})
+
+	Context("the helper the generated templates call", func() {
+		It("is regenerated without --force, so a chart with a preserved _helpers.tpl still renders", func() {
+			scaffolder := scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			Expect(scaffolder.Scaffold()).To(Succeed())
+
+			// A chart from before the helper existed: no _labels.tpl, and _helpers.tpl is preserved.
+			chartDir := filepath.Join(tmpDir, outputDir, "chart")
+			labelsPath := filepath.Join(chartDir, "templates", "_labels.tpl")
+			helpersPath := filepath.Join(chartDir, "templates", "_helpers.tpl")
+			Expect(os.Remove(labelsPath)).To(Succeed())
+			helpers, err := os.ReadFile(helpersPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			scaffolder = scaffolds.NewChartScaffolder(projectConfig, false, manifestsFile, outputDir)
+			scaffolder.InjectFS(fs)
+			Expect(scaffolder.Scaffold()).To(Succeed())
+
+			labels, err := os.ReadFile(labelsPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(labels)).To(ContainSubstring(`.valueOrDefault" -}}`))
+			Expect(os.ReadFile(helpersPath)).To(Equal(helpers))
+
+			lintResult := action.NewLint().Run([]string{chartDir}, nil)
+			Expect(lintResult.Errors).To(BeEmpty(), "helm lint failed: %v", lintResult.Errors)
 		})
 	})
 

@@ -33,6 +33,9 @@ type ServiceMonitor struct {
 
 	// ServiceName is the full name of the metrics service, derived from Kustomize
 	ServiceName string
+	// Selector holds the matchLabels lines that select the metrics Service, as the chart renders
+	// its labels. When empty, the ServiceMonitor selects the scaffolded labels.
+	Selector []string
 
 	// OutputDir specifies the output directory for the chart
 	OutputDir string
@@ -51,7 +54,11 @@ func (f *ServiceMonitor) SetTemplateDefaults() error {
 	}
 
 	chartName := f.ProjectName
-	f.TemplateBody = fmt.Sprintf(serviceMonitorTemplate, chartName, chartName, chartName, chartName)
+	matchLabels := matchLabelsLines(f.Selector, []string{
+		`app.kubernetes.io/name: {{ include "` + chartName + `.name" . }}`,
+		`control-plane: controller-manager`,
+	})
+	f.TemplateBody = fmt.Sprintf(serviceMonitorTemplate, chartName, matchLabels)
 
 	// User-owned file: preserve local edits on regeneration unless --force is set.
 	if f.Force {
@@ -70,21 +77,22 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ "{{ .Release.Service }}" }}
-    app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
+    app.kubernetes.io/name: {{ "{{ include \"%[1]s.name\" . }}" }}
     helm.sh/chart: {{ "{{ .Chart.Name }}-{{ .Chart.Version | replace \"+\" \"_\" }}" }}
     app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
-    control-plane: controller-manager
+    control-plane: {{ "{{ include \"%[1]s.valueOrDefault\" " }}` +
+	`{{ "(list .Values.prometheus.labels \"control-plane\" \"controller-manager\") }}" }}
     {{ "{{- with .Values.prometheus.labels }}" }}
 ` + `    {{ "{{- with omit . \"app.kubernetes.io/managed-by\" \"app.kubernetes.io/name\" \"helm.sh/chart\" \"app.kubernetes.io/instance\" \"control-plane\" }}" }}` + "\n" + //nolint:lll
-	`    {{ "{{- toYaml . | nindent 4 }}" }}
+	`    {{ "{{- include \"%[1]s.stringMap\" . | nindent 4 }}" }}
     {{ "{{- end }}" }}
     {{ "{{- end }}" }}
   {{ "{{- with .Values.prometheus.annotations }}" }}
   annotations:
-    {{ "{{- toYaml . | nindent 4 }}" }}
+    {{ "{{- include \"%[1]s.stringMap\" . | nindent 4 }}" }}
   {{ "{{- end }}" }}
   name: ` +
-	`{{ "{{ include \"%s.resourceName\" " }}` +
+	`{{ "{{ include \"%[1]s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-monitor\" \"context\" $) }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
@@ -98,7 +106,7 @@ spec:
     {{ "{{- if .Values.metrics.secure }}" }}
     tlsConfig:
       serverName: ` +
-	`{{ "{{ include \"%s.resourceName\" " }}` +
+	`{{ "{{ include \"%[1]s.resourceName\" " }}` +
 	`{{ "(dict \"suffix\" \"controller-manager-metrics-service\" \"context\" $) }}" }}.` +
 	`{{ "{{ .Release.Namespace }}" }}.svc
       {{ "{{- if .Values.certManager.enabled }}" }}
@@ -119,7 +127,5 @@ spec:
     {{ "{{- end }}" }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
-      control-plane: controller-manager
-{{` + "`" + `{{- end }}` + "`" + `}}
+%[2]s{{` + "`" + `{{- end }}` + "`" + `}}
 `
