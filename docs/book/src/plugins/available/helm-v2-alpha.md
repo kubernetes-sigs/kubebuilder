@@ -358,7 +358,7 @@ The default webhook policy allows ingress from all sources to the manager pod's 
 
 Add custom labels and annotations using `manager.labels`, `manager.annotations`, `manager.pod.labels`, and `manager.pod.annotations`. Duplicate keys from kustomize are filtered automatically.
 
-The ServiceAccount and ServiceMonitor resources support the same pattern through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. For example, to match a Prometheus Operator `serviceMonitorSelector`:
+The ServiceAccount and ServiceMonitor resources take custom labels and annotations through `serviceAccount.labels`, `serviceAccount.annotations`, `prometheus.labels`, and `prometheus.annotations`. For example, to match a Prometheus Operator `serviceMonitorSelector`:
 
 ```yaml
 prometheus:
@@ -368,6 +368,8 @@ prometheus:
   annotations:
     example.com/owner: sre
 ```
+
+A key set in these values replaces the same key from `config/`, so each key renders once with the value you set. The chart's own labels (`app.kubernetes.io/managed-by`, `app.kubernetes.io/name`, `app.kubernetes.io/instance`, `helm.sh/chart`, and `control-plane`) keep their generated value when the resource has them. One exception: if an existing value contains a Unicode line break other than a newline (U+2028, U+2029, or U+0085) or a line made only of Unicode spaces such as U+00A0, the existing keys in that `labels` or `annotations` block keep their `config/` value.
 
 ### ServiceAccount configuration
 
