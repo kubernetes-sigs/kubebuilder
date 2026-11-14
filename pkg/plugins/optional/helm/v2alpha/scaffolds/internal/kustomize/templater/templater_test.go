@@ -4774,9 +4774,8 @@ metadata:
 				result := saTemplater.ApplyHelmSubstitutions(content, serviceAccount)
 
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit .`))
-				Expect(result).To(ContainSubstring(`"app.kubernetes.io/name"`))
-				Expect(result).To(ContainSubstring(`"app.kubernetes.io/managed-by"`))
+				Expect(result).To(ContainSubstring(`{{- if not (hasKey $labels "app.kubernetes.io/name") }}`))
+				Expect(result).To(ContainSubstring(`{{- if not (hasKey $labels "app.kubernetes.io/managed-by") }}`))
 			})
 
 			// Kustomize emits metadata keys alphabetically, so a ServiceAccount that already
@@ -4808,13 +4807,13 @@ metadata:
 				// Should preserve existing annotation
 				Expect(result).To(ContainSubstring("existing.annotation/key"))
 
-				// Should merge into the existing block and omit the scaffolded key so overrides never duplicate
+				// The existing annotation renders only when the values do not set the same key
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.annotations }}"))
-				Expect(result).To(ContainSubstring(`{{- with omit . "existing.annotation/key" }}`))
+				Expect(result).To(ContainSubstring(`{{- if not (hasKey $annotations "existing.annotation/key") }}`))
 
 				// Labels still merge independently of the annotations ordering
 				Expect(result).To(ContainSubstring("{{- with .Values.serviceAccount.labels }}"))
-				Expect(result).To(MatchRegexp(`{{- with omit \. .*"app.kubernetes.io/name".* }}`))
+				Expect(result).To(ContainSubstring(`{{- if not (hasKey $labels "app.kubernetes.io/name") }}`))
 			})
 		})
 

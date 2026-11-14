@@ -3,15 +3,24 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    {{- $labels := .Values.prometheus.labels | default dict }}
+    {{- if not (hasKey $labels "app.kubernetes.io/managed-by") }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    control-plane: controller-manager
-    {{- with .Values.prometheus.labels }}
-    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
-    {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/name") }}
+    app.kubernetes.io/name: {{ include "project-v4-with-plugins.name" . }}
+    {{- end }}
+    {{- if not (hasKey $labels "helm.sh/chart") }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/instance") }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- end }}
+    {{- if not (hasKey $labels "control-plane") }}
+    control-plane: controller-manager
+    {{- end }}
+    {{- with .Values.prometheus.labels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- with .Values.prometheus.annotations }}
   annotations:

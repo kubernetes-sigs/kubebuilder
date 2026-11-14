@@ -270,10 +270,10 @@ func injectMissingMetadataBlocks(
 }
 
 // mergeMetadataMapBlock re-emits the existing labels/annotations block that starts at headerIndex
-// and appends a Helm block that merges the matching .Values map, omitting keys the block already
-// defines so nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
-// a guarded block, so the header renders only when the user supplies values and never as a null
-// key. It returns the updated output and the index of the last source line it consumed.
+// and appends a Helm block that merges the matching .Values map. A key set in the values replaces
+// the existing one, so each key renders once. An empty block (a bare header or an inline "{}") is
+// replaced by a guarded block, so the header renders only when the user supplies values and never
+// as a null key. It returns the updated output and the index of the last source line it consumed.
 func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valuePath string) ([]string, int) {
 	_, headerIndent := LeadingWhitespace(lines[headerIndex])
 
@@ -295,18 +295,56 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	}
 
 	merged = append(merged, strings.Repeat(" ", headerIndent)+mapKey)
+	start := len(merged)
 	merged = append(merged, body...)
 	valueIndent := strings.Repeat(" ", headerIndent+2)
-	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
 
-	return merged, bodyEnd - 1
+	merged, existingKeys = guardExistingEntries(
+		merged, start, valueIndent, valuePath, "$"+strings.TrimSuffix(mapKey, ":"), existingKeys)
+	return appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys), bodyEnd - 1
+}
+
+// guardExistingEntries reads the map at valuePath into variable and renders each entry in
+// result[start:] only when that map does not set its key. It returns the keys the values block
+// must still omit: none, or all of existingKeys when the entries cannot be split, which kustomize
+// never writes.
+func guardExistingEntries(
+	result []string, start int, indent, valuePath, variable string, existingKeys []string,
+) ([]string, []string) {
+	body := slices.Clone(result[start:])
+	entries, ok := splitMapEntries(body)
+	if !ok {
+		return result, existingKeys
+	}
+
+	result = append(result[:start], indent+"{{- "+variable+" := "+valuePath+" | default dict }}")
+	result = append(result, body[:entries[0].start]...)
+	for _, entry := range entries {
+		result = appendUnlessSet(result, body[entry.start:entry.end], entry.key, indent, variable)
+	}
+	return result, nil
+}
+
+// appendUnlessSet appends the lines of an existing entry so they render only when the map in
+// variable does not set the same key.
+func appendUnlessSet(result, lines []string, key, indent, variable string) []string {
+	result = append(result, indent+"{{- if not (hasKey "+variable+" "+strconv.Quote(key)+") }}")
+
+	// A blank last line belongs to a |+ value. "{{ end }}" keeps it, "{{- end }}" would remove it.
+	if last := len(lines) - 1; strings.Trim(lines[last], " \t") == "" {
+		result = append(result, lines[:last]...)
+		return append(result, "{{ end }}")
+	}
+	result = append(result, lines...)
+	return append(result, indent+"{{- end }}")
 }
 
 // helmTemplateRegex matches a {{ }} action, including quoted strings containing {{ }}.
 var helmTemplateRegex = regexp.MustCompile(`\{\{(?:"(?:[^"\\]|\\.)*"|[^"}]|\}[^}])*\}\}`)
 
-// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
-func extractMapKeys(body []string) []string {
+// parseMap parses body as a YAML map, replacing Helm actions with placeholders.
+// It returns nil when body is not a map.
+func parseMap(body []string) *yaml.Node {
 	cleaned := make([]string, 0, len(body))
 	for _, line := range body {
 		cleaned = append(cleaned, helmTemplateRegex.ReplaceAllString(line, "x"))
@@ -315,15 +353,69 @@ func extractMapKeys(body []string) []string {
 	var document yaml.Node
 	if err := yaml.Unmarshal([]byte(strings.Join(cleaned, "\n")), &document); err != nil ||
 		len(document.Content) != 1 || document.Content[0].Kind != yaml.MappingNode {
+		return nil
+	}
+	return document.Content[0]
+}
+
+// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
+func extractMapKeys(body []string) []string {
+	mapping := parseMap(body)
+	if mapping == nil {
 		return extractKeysFromLines(body)
 	}
 
-	mapping := document.Content[0]
 	keys := make([]string, 0, len(mapping.Content)/2)
 	for i := 0; i < len(mapping.Content); i += 2 {
 		keys = append(keys, mapping.Content[i].Value)
 	}
 	return keys
+}
+
+// mapEntry is a key of a YAML map and the lines body[start:end] it covers.
+type mapEntry struct {
+	key        string
+	start, end int
+}
+
+// splitMapEntries splits a block-style YAML map into its entries. It returns false when two keys
+// share a line or body is not a block-style map.
+func splitMapEntries(body []string) ([]mapEntry, bool) {
+	mapping := parseMap(body)
+	if mapping == nil || mapping.Style&yaml.FlowStyle != 0 || len(mapping.Content) == 0 {
+		return nil, false
+	}
+
+	// YAML also breaks lines on \r, U+0085, U+2028 and U+2029, so map its line numbers to body.
+	var bodyLine []int
+	for i, line := range body {
+		bodyLine = append(bodyLine, i)
+		for _, r := range strings.TrimSuffix(line, "\r") {
+			if r == '\r' || r == '\u0085' || r == '\u2028' || r == '\u2029' {
+				bodyLine = append(bodyLine, i)
+			}
+		}
+	}
+
+	entries := make([]mapEntry, 0, len(mapping.Content)/2)
+	for i := 0; i < len(mapping.Content); i += 2 {
+		yamlLine := mapping.Content[i].Line - 1
+		if yamlLine < 0 || yamlLine >= len(bodyLine) {
+			return nil, false
+		}
+		start := bodyLine[yamlLine]
+		if len(entries) > 0 && start <= entries[len(entries)-1].start {
+			return nil, false
+		}
+		entries = append(entries, mapEntry{key: mapping.Content[i].Value, start: start})
+	}
+	for i := range entries {
+		entries[i].end = len(body)
+		if i+1 < len(entries) {
+			entries[i].end = entries[i+1].start
+		}
+	}
+	return entries, true
 }
 
 // buildGuardedMetadataMapBlock renders a labels/annotations block wrapped in
@@ -367,8 +459,8 @@ func appendHelmMapBlock(result []string, indent, valuePath string, existingKeys 
 	}
 
 	return append(result,
-		indent+"{{- if "+valuePath+" }}",
-		indent+"{{- toYaml "+valuePath+" | nindent "+childIndentWidth+" }}",
+		indent+"{{- with "+valuePath+" }}",
+		indent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
 		indent+"{{- end }}",
 	)
 }
