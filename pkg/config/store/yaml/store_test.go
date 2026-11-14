@@ -758,3 +758,17 @@ func (f *nonRegularFs) Open(name string) (afero.File, error) {
 
 	return file, nil
 }
+
+// OpenFile counts reads of the configured path before delegating to the wrapped filesystem.
+func (f *nonRegularFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	if name == f.path {
+		f.reads++
+	}
+
+	file, err := f.Fs.OpenFile(name, flag, perm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %q: %w", name, err)
+	}
+
+	return file, nil
+}
