@@ -32,4 +32,3 @@ spec:
                 - ALL
               readOnlyRootFilesystem: false
           restartPolicy: OnFailure
-  
