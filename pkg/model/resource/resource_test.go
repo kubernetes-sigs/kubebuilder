@@ -250,6 +250,28 @@ var _ = Describe("Resource", func() {
 			})
 		})
 
+		Context("HasControllerWithName", func() {
+			const (
+				defaultName = "captain"
+				otherName   = "captain-backup"
+			)
+
+			DescribeTable("should report whether the resource has a controller with the name",
+				func(res Resource, name string, want bool) {
+					res.Kind = "Captain"
+
+					Expect(res.HasControllerWithName(name)).To(Equal(want))
+				},
+				Entry("for the default name of a legacy controller", Resource{Controller: true}, defaultName, true),
+				Entry("for a listed name", Resource{Controllers: &Controllers{{Name: otherName}}}, otherName, true),
+				Entry("for the default name beside a listed name",
+					Resource{Controller: true, Controllers: &Controllers{{Name: otherName}}}, defaultName, true),
+				Entry("for a name the resource does not have",
+					Resource{Controllers: &Controllers{{Name: defaultName}}}, otherName, false),
+				Entry("for a resource with no controller", Resource{}, defaultName, false),
+			)
+		})
+
 		Context("HasDefaultingWebhook", func() {
 			It("should return true if the defaulting webhook is scaffolded", func() {
 				Expect(Resource{Webhooks: &Webhooks{Defaulting: true}}.HasDefaultingWebhook()).To(BeTrue())

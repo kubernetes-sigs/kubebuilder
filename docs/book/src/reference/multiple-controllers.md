@@ -131,8 +131,9 @@ reconcilers before saving the file again.
 **"conflicts with ... both generate"**: Different names generate the same reconciler struct name. Choose distinct names.
 
 **"controller with name ... already exists"**: Controller already exists for this resource. Use a different name.
+To scaffold the default controller again, run the request without `--controller-name` and with `--force`.
 
 **"resource already has controllers defined"**: An unnamed request with
-`--resource=false` cannot select a controller when the resource has several
-controllers or only a non-default controller. Pass `--controller-name`, or use
-`--controller=false` to skip controller scaffolding.
+`--resource=false` asks for the default controller, which is only added along
+with the API when the resource already has other controllers. Pass
+`--controller-name` to add another controller.

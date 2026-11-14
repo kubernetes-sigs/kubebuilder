@@ -17,6 +17,7 @@ limitations under the License.
 package golang
 
 import (
+	"fmt"
 	log "log/slog"
 	"path"
 
@@ -204,4 +205,88 @@ func (opts Options) updateControllers(res *resource.Resource) {
 			log.Error("failed to record controller", "name", name, "kind", res.Kind, "error", err)
 		}
 	}
+}
+
+// ValidateControllerName rejects the controller these options request when the resource records
+// another controller that generates the same reconciler, or when its reconciler name or file
+// name collides with a controller of another resource in the same package, including default
+// names. A controller that versions of a kind share is not a collision when the requested
+// resource records it too.
+func (opts Options) ValidateControllerName(res *resource.Resource, c config.Config) error {
+	name := opts.ControllerName
+	if name == "" {
+		name = resource.DefaultControllerName(res.Kind)
+	}
+
+	if err := checkOwnControllers(c, res, name); err != nil {
+		return err
+	}
+
+	return checkOtherControllers(c, res, name)
+}
+
+// checkOwnControllers rejects a name that generates the reconciler of another controller the
+// resource already records.
+func checkOwnControllers(c config.Config, res *resource.Resource, name string) error {
+	stored, err := c.GetResource(res.GVK)
+	if err != nil {
+		// The resource is not recorded yet, so it has no controller to collide with.
+		return nil
+	}
+
+	reconciler := resource.NormalizeReconcilerName(name, res.Kind)
+	for _, recorded := range stored.GetControllerNames() {
+		if recorded != name && resource.NormalizeReconcilerName(recorded, res.Kind) == reconciler {
+			return fmt.Errorf("controller name %q conflicts with existing controller %q: both generate %s",
+				name, recorded, reconciler)
+		}
+	}
+
+	return nil
+}
+
+// checkOtherControllers rejects a name that generates the file or the reconciler of a controller
+// of another resource in the same package.
+func checkOtherControllers(c config.Config, res *resource.Resource, name string) error {
+	resources, err := c.GetResources()
+	if err != nil {
+		return fmt.Errorf("failed to get resources to check controller names: %w", err)
+	}
+
+	reconciler := resource.NormalizeReconcilerName(name, res.Kind)
+	// Versions of a kind may share 1 controller that each of them records. Scaffolding it again
+	// for a version that records it does not clash with the other versions.
+	stored, err := c.GetResource(res.GVK)
+	recordsIt := err == nil && stored.HasControllerWithName(name)
+
+	for _, other := range resources {
+		// Each group has its own controller package in a multigroup project.
+		if other.IsEqualTo(res.GVK) || (c.IsMultiGroup() && other.Group != res.Group) {
+			continue
+		}
+		sameKind := other.Group == res.Group && other.Domain == res.Domain && other.Kind == res.Kind
+
+		for _, recorded := range other.GetControllerNames() {
+			if recordsIt && sameKind && recorded == name {
+				continue
+			}
+			if resource.NormalizeReconcilerName(recorded, other.Kind) != reconciler {
+				if recorded == name {
+					return fmt.Errorf("controller name %q conflicts with controller of %s/%s/%s: "+
+						"both generate %s_controller.go in the same package; use '--controller-name' to pick another name",
+						name, other.Group, other.Version, other.Kind, resource.NormalizeFileName(name))
+				}
+				continue
+			}
+
+			return fmt.Errorf(
+				"controller %q conflicts with controller %q of %s/%s/%s: "+
+					"both generate %s in the same package; use '--controller-name' to pick "+
+					"another name, or '--controller=false' if that controller already reconciles this resource",
+				name, recorded, other.Group, other.Version, other.Kind, reconciler,
+			)
+		}
+	}
+
+	return nil
 }

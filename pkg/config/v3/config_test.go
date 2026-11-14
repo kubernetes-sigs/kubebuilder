@@ -25,6 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -164,7 +165,6 @@ var _ = Describe("Cfg", func() {
 					CRDVersion: "v1",
 					Namespaced: true,
 				},
-				Controller: true, //nolint:staticcheck // legacy PROJECT compatibility
 				Webhooks: &resource.Webhooks{
 					WebhookVersion: "v1",
 					Defaulting:     true,
@@ -172,6 +172,8 @@ var _ = Describe("Cfg", func() {
 					Conversion:     true,
 				},
 			}
+			// Record the controller with the deprecated key, as an old PROJECT file does.
+			Expect(yaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
 			resWithoutPlural = res.Copy()
 
 			// As some of the tests insert directly into the slice without using the interface methods,
@@ -766,8 +768,7 @@ resources:
 				GinkgoHelper()
 				res, err := cfg.GetResource(gvk)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(res.Controller).To(BeFalse(), //nolint:staticcheck // legacy field
-					"the legacy field must not be written")
+				Expect(yaml.Marshal(res)).NotTo(MatchRegexp(`(?m)^controller:`), "the legacy field must not be written")
 				return res.GetControllerNames()
 			}
 
