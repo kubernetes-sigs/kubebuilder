@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"github.com/spf13/afero"
 	"sigs.k8s.io/yaml"
@@ -214,19 +215,46 @@ func classifyLinkTarget(fs afero.Fs, path string) (pathClass, error) {
 	return target, nil
 }
 
+// readRegularFile opens the path once and reads it only when the opened file is a regular file.
+// Checking the path and then reading it in a second step would let another process swap in a named
+// pipe between them, and opening a pipe blocks until something writes to it. O_NONBLOCK keeps the
+// open from waiting, and the opened file is checked before it is read.
+func readRegularFile(fs afero.Fs, path string) ([]byte, error) {
+	file, err := fs.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		// Report why the path cannot be opened, such as a missing file or a dangling symbolic link
+		if checkErr := checkReadable(fs, path); checkErr != nil {
+			return nil, checkErr
+		}
+		return nil, fmt.Errorf("failed to read %q file: %w", path, err)
+	}
+	defer func() { _ = file.Close() }()
+
+	info, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check %q: %w", path, err)
+	}
+
+	if class, _ := classifyInfo(path, info, nil); class != pathRegularFile {
+		return nil, fmt.Errorf("%q is %s", path, class)
+	}
+
+	in, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %q file: %w", path, err)
+	}
+
+	return in, nil
+}
+
 // LoadFrom implements store.Store interface
 func (s *yamlStore) LoadFrom(path string) error {
 	s.mustNotExist = false
 
-	// Only a regular file can carry configuration data.
-	if err := checkReadable(s.fs, path); err != nil {
-		return store.LoadError{Err: err}
-	}
-
 	// Read the file
-	in, err := afero.ReadFile(s.fs, path)
+	in, err := readRegularFile(s.fs, path)
 	if err != nil {
-		return store.LoadError{Err: fmt.Errorf("failed to read %q file: %w", path, err)}
+		return store.LoadError{Err: err}
 	}
 
 	// Check the file version
