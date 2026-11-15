@@ -42,6 +42,7 @@ type FeatureSet struct {
 	WebhookPort             int
 	MetricsPort             int
 	HealthProbeBindAddress  string // empty when the manager does not set --health-probe-bind-address
+	HealthProbeDefaultPort  int    // the port the manager listens on when the chart passes no flag
 	MetricsSecure           *bool  // nil when the manager does not set --metrics-secure
 	RoleNamespaces          map[string]string
 }
@@ -51,9 +52,10 @@ type FeatureSet struct {
 // The managerNamespace is the namespace where the manager deployment runs.
 func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, managerNamespace string) FeatureSet {
 	features := FeatureSet{
-		WebhookPort:    9443,
-		MetricsPort:    8443,
-		RoleNamespaces: make(map[string]string),
+		WebhookPort:            9443,
+		MetricsPort:            8443,
+		HealthProbeDefaultPort: scaffoldedHealthProbePort,
+		RoleNamespaces:         make(map[string]string),
 	}
 
 	features.HasCRDs = len(resources.CustomResourceDefinitions) > 0
@@ -111,6 +113,7 @@ func (f *FeaturesExtractor) DetectFeatures(resources *ResourceSet, namePrefix, m
 	// The health probe address is the manager container's --health-probe-bind-address arg.
 	if resources.Deployment != nil {
 		features.HealthProbeBindAddress = extractHealthProbeBindAddressFromDeployment(resources.Deployment)
+		features.HealthProbeDefaultPort = extractHealthProbeDefaultPortFromDeployment(resources.Deployment)
 	}
 
 	// Whether metrics are served over HTTPS is defined on the manager container's --metrics-secure arg.
@@ -307,6 +310,52 @@ func extractHealthProbeBindAddressFromDeployment(deployment *unstructured.Unstru
 	}
 
 	return ""
+}
+
+// scaffoldedHealthProbePort is the default go/v4 scaffolds in cmd/main.go for
+// --health-probe-bind-address.
+const scaffoldedHealthProbePort = 8081
+
+// extractHealthProbeDefaultPortFromDeployment returns the port the manager listens on when
+// the chart passes no --health-probe-bind-address, the default in the project's cmd/main.go.
+// When the manager container does not pass the flag, a manifest that works declares that port
+// as its "health" port or probes it, so that port is returned. Otherwise it is 8081.
+func extractHealthProbeDefaultPortFromDeployment(deployment *unstructured.Unstructured) int {
+	specMap := extractDeploymentSpec(deployment)
+	if specMap == nil {
+		return scaffoldedHealthProbePort
+	}
+	container := findManagerContainer(deployment, specMap)
+	if container == nil {
+		return scaffoldedHealthProbePort
+	}
+
+	for _, field := range []string{"command", "args"} {
+		items, _, _ := unstructured.NestedStringSlice(container, field)
+		for _, item := range items {
+			if strings.Contains(item, "--health-probe-bind-address") {
+				return scaffoldedHealthProbePort
+			}
+		}
+	}
+
+	ports, _, _ := unstructured.NestedFieldNoCopy(container, "ports")
+	portList, _ := ports.([]any)
+	for _, p := range portList {
+		if portMap, ok := p.(map[string]any); ok && portMap["name"] == "health" {
+			if port, isInt := toInt(portMap["containerPort"]); isInt && port > 0 {
+				return port
+			}
+		}
+	}
+	for _, probe := range []string{"livenessProbe", "readinessProbe"} {
+		if value, found, _ := unstructured.NestedFieldNoCopy(container, probe, "httpGet", "port"); found {
+			if port, isInt := toInt(value); isInt && port > 0 {
+				return port
+			}
+		}
+	}
+	return scaffoldedHealthProbePort
 }
 
 // extractMetricsSecureFromDeployment extracts whether metrics are served over
