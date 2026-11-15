@@ -23,17 +23,24 @@ import (
 	"text/template"
 
 	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // DefaultFuncMap returns the default template.FuncMap for rendering the template.
 func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"title":      cases.Title,
+		"title":      title,
 		"lower":      strings.ToLower,
 		"upper":      strings.ToUpper,
 		"isEmptyStr": isEmptyString,
 		"hashFNV":    hashFNV,
 	}
+}
+
+// title upper-cases the first letter of each word in s and leaves the
+// other letters unchanged.
+func title(s string) string {
+	return cases.Title(language.Und, cases.NoLower).String(s)
 }
 
 // isEmptyString returns whether the string is empty

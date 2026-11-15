@@ -17,6 +17,9 @@ limitations under the License.
 package machinery
 
 import (
+	"bytes"
+	"text/template"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -34,6 +37,24 @@ var _ = Describe("funcmap functions", func() {
 			Entry(`for "-"`, "-"),
 			Entry(`for "."`, "."),
 		)
+	})
+
+	Context("title", func() {
+		DescribeTable("should upper-case the first letter of each word",
+			func(str, expected string) { Expect(title(str)).To(Equal(expected)) },
+			Entry(`for "foo"`, "foo", "Foo"),
+			Entry(`for "foo bar"`, "foo bar", "Foo Bar"),
+			Entry(`for "fooBar"`, "fooBar", "FooBar"),
+			Entry(`for ""`, "", ""),
+		)
+
+		It("should be usable from a template", func() {
+			tmpl, err := template.New("test").Funcs(DefaultFuncMap()).Parse(`{{ title "first mate" }}`)
+			Expect(err).NotTo(HaveOccurred())
+			out := &bytes.Buffer{}
+			Expect(tmpl.Execute(out, nil)).To(Succeed())
+			Expect(out.String()).To(Equal("First Mate"))
+		})
 	})
 
 	Context("hashFNV", func() {
