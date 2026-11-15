@@ -707,7 +707,7 @@ func (sp *Sample) updateExample() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "config/samples/batch_v1_cronjob.yaml"),
-		`# TODO(user): Add fields here`, "")
+		"\n  # TODO(user): Add fields here", "")
 	hackutils.CheckError("fixing samples/batch_v1_cronjob.yaml", err)
 }
 
