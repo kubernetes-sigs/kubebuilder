@@ -31,6 +31,15 @@ import (
 func AddConditionalWrappers(
 	yamlContent string, resource *unstructured.Unstructured, detectedPrefix string,
 ) string {
+	return AddConditionalWrappersWithManagerDeployment(yamlContent, resource, detectedPrefix, nil)
+}
+
+// AddConditionalWrappersWithManagerDeployment wraps resources like AddConditionalWrappers, giving the
+// manager.enabled conditional only to the manager Deployment selected during parsing.
+func AddConditionalWrappersWithManagerDeployment(
+	yamlContent string, resource *unstructured.Unstructured, detectedPrefix string,
+	managerDeployment *unstructured.Unstructured,
+) string {
 	kind := resource.GetKind()
 	apiVersion := resource.GetAPIVersion()
 	name := resource.GetName()
@@ -86,7 +95,7 @@ func AddConditionalWrappers(
 	case kind == common.KindDeployment:
 		// Manager deployment conditional allows backward compatibility:
 		// enabled when manager.enabled key is absent OR when explicitly true
-		if IsManagerDeployment(resource) {
+		if IsResolvedManagerDeployment(resource, managerDeployment) {
 			return fmt.Sprintf(
 				"{{- if or (not (hasKey .Values.manager \"enabled\")) (.Values.manager.enabled) }}\n%s\n{{- end }}\n",
 				yamlContent,

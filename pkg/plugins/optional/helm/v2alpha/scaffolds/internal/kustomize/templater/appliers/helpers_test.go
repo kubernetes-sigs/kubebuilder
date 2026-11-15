@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -557,3 +558,99 @@ spec:
 		Expect(rangeContent).To(ContainSubstring(".Values.manager.env"))
 	})
 })
+
+var _ = Describe("IsManagerServiceAccount", func() {
+	It("returns false for nil resource", func() {
+		Expect(IsManagerServiceAccount(nil)).To(BeFalse())
+	})
+
+	It("returns true for unprefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns true for prefixed controller-manager name", func() {
+		resource := makeUnstructuredServiceAccount("test-project-controller-manager")
+		Expect(IsManagerServiceAccount(resource)).To(BeTrue())
+	})
+
+	It("returns false for external ServiceAccount names", func() {
+		resource := makeUnstructuredServiceAccount("external-sa")
+		Expect(IsManagerServiceAccount(resource)).To(BeFalse())
+	})
+})
+
+var _ = Describe("IsResolvedManagerDeployment", func() {
+	deployment := func(name, namespace, containerName string) *unstructured.Unstructured {
+		resource := &unstructured.Unstructured{Object: map[string]any{
+			specKey: map[string]any{
+				k8sObjectTemplateField: map[string]any{
+					specKey: map[string]any{
+						containersKey: []any{map[string]any{nameKey: containerName}},
+					},
+				},
+			},
+		}}
+		resource.SetAPIVersion("apps/v1")
+		resource.SetKind("Deployment")
+		resource.SetName(name)
+		resource.SetNamespace(namespace)
+		return resource
+	}
+
+	DescribeTable("matches only the Deployment selected during parsing",
+		func(resource *unstructured.Unstructured, managerSelected, want bool) {
+			var managerDeployment *unstructured.Unstructured
+			if managerSelected {
+				managerDeployment = deployment("test-project-operator", "test-project-system", "operator")
+			}
+			Expect(IsResolvedManagerDeployment(resource, managerDeployment)).To(Equal(want))
+		},
+		Entry("a nil resource", nil, true, false),
+		Entry("the selected Deployment",
+			deployment("test-project-operator", "test-project-system", "operator"), true, true),
+		Entry("an extra Deployment with a manager container",
+			deployment("test-project-worker", "test-project-system", managerVal), true, false),
+		Entry("an extra Deployment named like a manager",
+			deployment("test-project-controller-manager", "test-project-system", "worker"), true, false),
+		Entry("the selected name in another namespace",
+			deployment("test-project-operator", "other", "operator"), true, false),
+		Entry("a manager container when none was selected",
+			deployment("test-project-worker", "test-project-system", managerVal), false, true),
+		Entry("no manager signal when none was selected",
+			deployment("test-project-worker", "test-project-system", "worker"), false, false),
+	)
+})
+
+var _ = Describe("templateVolumeMounts", func() {
+	It("does not inject manager extraVolumeMounts when the manager container range is unknown", func() {
+		yamlContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-project-controller-manager
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: manager
+      containers:
+      - name: sidecar
+        volumeMounts:
+        - name: sidecar-config
+          mountPath: /etc/sidecar
+`
+
+		result := templateVolumeMounts(yamlContent)
+
+		Expect(result).To(Equal(yamlContent))
+		Expect(result).NotTo(ContainSubstring(".Values.manager.extraVolumeMounts"))
+	})
+})
+
+func makeUnstructuredServiceAccount(name string) *unstructured.Unstructured {
+	resource := &unstructured.Unstructured{}
+	resource.SetAPIVersion("v1")
+	resource.SetKind("ServiceAccount")
+	resource.SetName(name)
+	return resource
+}
