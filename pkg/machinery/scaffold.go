@@ -34,6 +34,7 @@ import (
 	"github.com/spf13/afero"
 	"golang.org/x/tools/imports"
 
+	"sigs.k8s.io/kubebuilder/v4/internal/yamlindent"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
@@ -279,7 +280,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 		return nil
 	}
 
-	content, err := insertStrings(m.Contents, codeFragments)
+	content, err := insertStrings(i.GetPath(), m.Contents, codeFragments)
 	if err != nil {
 		return fmt.Errorf("failed to insert values: %w", err)
 	}
@@ -485,22 +486,39 @@ func scanMultiline(content string, scanLines int, scanFunc func(contentGroup str
 	return nil
 }
 
-func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {
+func insertStrings(path, content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {
 	out := new(bytes.Buffer)
+	isYAML := yamlindent.IsYAML(path)
 
 	scanner := bufio.NewScanner(strings.NewReader(content))
+	offset := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		for marker, codeFragments := range codeFragmentsMap {
 			if marker.EqualsLine(line) {
 				for _, codeFragment := range codeFragments {
-					_, _ = out.WriteString(codeFragment) // bytes.Buffer.WriteString always returns nil errors
+					// In YAML files, match the indentation of the sequence around the marker,
+					// which formatters such as yamlfmt or prettier may have changed
+					if isYAML {
+						codeFragment = yamlindent.ReindentAt(content, offset, codeFragment)
+					}
+					// bytes.Buffer.WriteString always returns nil errors
+					_, _ = out.WriteString(codeFragment)
 				}
 			}
 		}
 
 		_, _ = out.WriteString(line + "\n") // bytes.Buffer.WriteString always returns nil errors
+
+		// Move past the line and its terminator, which the scanner drops whether
+		// it is "\n" or "\r\n"
+		offset += len(line)
+		if strings.HasPrefix(content[offset:], "\r\n") {
+			offset += 2
+		} else {
+			offset++
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to scan content: %w", err)

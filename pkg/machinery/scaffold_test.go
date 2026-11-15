@@ -326,6 +326,42 @@ var b int
 					},
 				},
 			),
+			Entry("should insert sequence items with the indentation of the sequence for yaml files",
+				pathYaml,
+				`resources:
+  - a.yaml
+# +kubebuilder:scaffold:-
+`,
+				`resources:
+  - a.yaml
+  - b.yaml
+  - path: c.yaml
+    kind: C
+# +kubebuilder:scaffold:-
+`,
+				fakeInserter{
+					fakeBuilder: fakeBuilder{path: pathYaml},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"- b.yaml\n", "- path: c.yaml\n  kind: C\n"},
+					},
+				},
+			),
+			// Raw strings cannot hold the carriage returns of CRLF line endings
+			Entry("should insert sequence items with the indentation of the sequence for yaml files with CRLF",
+				pathYaml,
+				"resources:\r\n  - a.yaml\r\n# +kubebuilder:scaffold:-\r\n",
+				`resources:
+  - a.yaml
+  - b.yaml
+# +kubebuilder:scaffold:-
+`,
+				fakeInserter{
+					fakeBuilder: fakeBuilder{path: pathYaml},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"- b.yaml\n"},
+					},
+				},
+			),
 			Entry("should use models if there is no file",
 				pathYaml,
 				"",
