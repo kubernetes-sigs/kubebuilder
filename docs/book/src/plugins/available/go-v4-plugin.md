@@ -43,11 +43,11 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [quickstart]: ./../../quick-start.md
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata
-[plugins-main]: ./../../../../../cmd/main.go
+[plugins-main]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/internal/cli/cmd/cmd.go
 [kustomize-plugin]: ./../../plugins/available/kustomize-v2.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
 [standard-go-project]: https://github.com/golang-standards/project-layout
-[v4-plugin]: ./../../../../../pkg/plugins/golang/v4
+[v4-plugin]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/golang/v4
 [migration-guide-doc]: ./../../migration/migration_guide_gov3_to_gov4.md
 [project-doc]: ./../../reference/project-config.md
-[bundle]: ./../../../../../pkg/plugin/bundle.go
+[bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
