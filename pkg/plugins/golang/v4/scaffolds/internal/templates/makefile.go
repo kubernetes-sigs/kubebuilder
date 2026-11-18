@@ -41,7 +41,7 @@ type Makefile struct {
 	KindVersion string
 	// ControllerRuntimeVersion version to be used to download the envtest setup script
 	ControllerRuntimeVersion string
-	// EnvtestVersion store the name of the verions to be used to install setup-envtest
+	// EnvtestVersion is unused by the Makefile template, which derives ENVTEST_VERSION from go.mod.
 	EnvtestVersion string
 }
 
