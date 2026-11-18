@@ -207,12 +207,17 @@ func (s *apiScaffolder) scaffoldCreateAPI() error {
 // which will have its own controller template which set the recorder so that we can use it
 // in the reconciliation to create an event inside for the finalizer
 func (s *apiScaffolder) updateMainByAddingEventRecorder(defaultMainPath string) error {
+	controllerPackage := "controller"
+	if s.config.IsMultiGroup() && s.resource.Group != "" {
+		controllerPackage = s.resource.PackageName() + "controller"
+	}
+
 	if err := util.InsertCode(
 		defaultMainPath,
 		fmt.Sprintf(
-			`%sReconciler{
+			`(&%s.%sReconciler{
 		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),`, s.resource.Kind),
+		Scheme: mgr.GetScheme(),`, controllerPackage, s.resource.Kind),
 		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
 	); err != nil {
 		return fmt.Errorf("error scaffolding event recorder in %q: %w", defaultMainPath, err)
