@@ -371,7 +371,7 @@ prometheus:
     example.com/owner: sre
 ```
 
-CRDs support the same pattern through `crd.labels` and `crd.annotations`. The values apply to every CRD in the chart. For example, to have Argo CD use server-side apply only for CRDs that are too large for the `kubectl.kubernetes.io/last-applied-configuration` annotation:
+CRDs support the same pattern through `crd.labels` and `crd.annotations`. The values apply to every CRD in the chart. For example, to have Argo CD use server-side apply for every CRD in the chart, such as when one or more of them are too large for the `kubectl.kubernetes.io/last-applied-configuration` annotation:
 
 ```yaml
 crd:

@@ -1190,16 +1190,28 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			return ""
 		}
 
-		// renderCRD renders the chart and returns the decoded CRD and its YAML document. Decoding
-		// fails on a duplicated metadata key, so a successful decode also proves none was emitted.
+		// renderCRD renders the chart and returns the decoded CRD and its YAML document. The document
+		// is first decoded with yaml.v3, which rejects duplicated keys (the Kubernetes decoder keeps
+		// the last one), so a successful render also proves no metadata key was emitted twice.
 		renderCRD := func(kustomizeYAML string, setArgs ...string) (*unstructured.Unstructured, string) {
 			out, err := helmTemplate(kustomizeYAML, setArgs...)
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			doc := crdDoc(out)
+			var strict map[string]any
+			Expect(yaml.Unmarshal([]byte(doc), &strict)).To(Succeed(),
+				"the CRD must be valid YAML without duplicated keys, got:\n%s", doc)
 			crds, err := renderedResourcesByKind(out, "CustomResourceDefinition")
 			Expect(err).NotTo(HaveOccurred(), "render must be valid YAML:\n%s", out)
 			Expect(crds).To(HaveLen(1))
-			return crds[0], crdDoc(out)
+			return crds[0], doc
 		}
+
+		// nestedSchemaMetadata is the schema's labels and annotations properties under
+		// spec.template.spec.metadata, which must never receive chart values.
+		const nestedSchemaMetadata = "                      metadata:\n" +
+			"                        properties:\n" +
+			"                          annotations:\n" +
+			"                            additionalProperties:\n"
 
 		It("renders the CRD metadata unchanged when no labels or annotations are set", func() {
 			crd, _ := renderCRD(createKustomizeWithControllerGenCRD())
@@ -1229,6 +1241,31 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(strings.Count(doc, "controller-gen.kubebuilder.io/version")).To(Equal(1))
 			Expect(doc).To(ContainSubstring("                  metadata:\n                    type: object\n"),
 				"the nested schema metadata must stay untouched, got:\n%s", doc)
+			Expect(doc).To(ContainSubstring(nestedSchemaMetadata),
+				"the nested labels and annotations schema must stay untouched, got:\n%s", doc)
+		})
+
+		It("keeps helm.sh/resource-policy under crd.keep when the CRD has no annotations of its own", func() {
+			kustomizeYAML := strings.Replace(createKustomizeWithControllerGenCRD(),
+				"metadata:\n  annotations:\n    controller-gen.kubebuilder.io/version: v0.23.0\n  name: cronjobs",
+				"metadata:\n  name: cronjobs", 1)
+			Expect(kustomizeYAML).NotTo(ContainSubstring("controller-gen.kubebuilder.io/version"))
+
+			crd, doc := renderCRD(kustomizeYAML)
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{"helm.sh/resource-policy": "keep"}))
+			Expect(doc).To(ContainSubstring(nestedSchemaMetadata),
+				"the nested labels and annotations schema must stay untouched, got:\n%s", doc)
+
+			crd, doc = renderCRD(kustomizeYAML,
+				"--set", "crd.keep=false",
+				"--set-string", "crd.annotations.helm\\.sh/resource-policy=keep",
+				"--set-string", "crd.annotations.argocd\\.argoproj\\.io/sync-options=ServerSideApply=true",
+			)
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+				"argocd.argoproj.io/sync-options": "ServerSideApply=true",
+			}))
+			Expect(doc).To(ContainSubstring(nestedSchemaMetadata),
+				"the nested labels and annotations schema must stay untouched, got:\n%s", doc)
 		})
 	})
 

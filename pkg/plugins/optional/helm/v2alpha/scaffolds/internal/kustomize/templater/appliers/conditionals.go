@@ -214,64 +214,50 @@ func MakeRBACKindConditional(yamlContent string, kind string) string {
 
 // InjectCRDResourcePolicyAnnotation adds the helm.sh/resource-policy: keep annotation to CRDs.
 // This prevents Helm from deleting CRDs when the chart is uninstalled.
+// Only the CRD's own (first) metadata is considered: nested "annotations:" keys, such as those in
+// the OpenAPI schema of a CRD that embeds ObjectMeta, are left untouched.
 func InjectCRDResourcePolicyAnnotation(yamlContent string) string {
-	// Check if metadata section exists
-	if !strings.Contains(yamlContent, "metadata:") {
-		return yamlContent
-	}
-
 	lines := strings.Split(yamlContent, "\n")
 
-	// Check if annotations: already exists
-	if strings.Contains(yamlContent, common.YamlKeyAnnotations) {
-		// Find the annotations: line and determine its indentation
-		for i, line := range lines {
-			trimmed := strings.TrimSpace(line)
-			if trimmed == common.YamlKeyAnnotations || strings.HasPrefix(trimmed, common.YamlKeyAnnotations) {
-				annotationsIndent, _ := LeadingWhitespace(line)
-				// Annotation values need one more level of indentation (2 spaces for sigs.k8s.io/yaml)
-				valueIndent := annotationsIndent + "  "
-
-				// Build the conditional annotation block
-				resourcePolicyBlock := fmt.Sprintf(
-					"%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
-					valueIndent, valueIndent, valueIndent)
-
-				// Insert after the annotations: line
-				result := make([]string, 0, len(lines)+3)
-				result = append(result, lines[:i+1]...)
-				result = append(result, resourcePolicyBlock)
-				result = append(result, lines[i+1:]...)
-				return strings.Join(result, "\n")
-			}
+	metadataLine := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == common.YamlKeyMetadata {
+			metadataLine = i
+			break
 		}
-	} else {
-		// No annotations section exists, need to add it after metadata:
-		for i, line := range lines {
-			trimmed := strings.TrimSpace(line)
-			if trimmed == common.YamlKeyMetadata || strings.HasPrefix(trimmed, common.YamlKeyMetadata) {
-				metadataIndent, _ := LeadingWhitespace(line)
-				// Fields under metadata need one more level of indentation (2 spaces for sigs.k8s.io/yaml)
-				fieldIndent := metadataIndent + "  "
-				// Annotation values need two more levels (4 spaces total)
-				valueIndent := metadataIndent + "    "
+	}
+	if metadataLine < 0 {
+		return yamlContent
+	}
+	metadataIndentStr, metadataIndent := LeadingWhitespace(lines[metadataLine])
 
-				// Build annotations section with conditional resource-policy
-				annotationsSection := fmt.Sprintf(
-					"%sannotations:\n%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
-					fieldIndent, valueIndent, valueIndent, valueIndent)
-
-				// Insert after the metadata: line
-				result := make([]string, 0, len(lines)+4)
-				result = append(result, lines[:i+1]...)
-				result = append(result, annotationsSection)
-				result = append(result, lines[i+1:]...)
-				return strings.Join(result, "\n")
-			}
+	// Look for an annotations block directly under metadata.
+	insertAfter := -1
+	for i := metadataLine + 1; i < len(lines) && !closesMetadataBlock(lines[i], metadataIndent); i++ {
+		if isMetadataMapChildHeader(lines[i], common.YamlKeyAnnotations, metadataIndent) {
+			insertAfter = i
+			break
 		}
 	}
 
-	return yamlContent
+	// Fields under metadata and annotation values are indented 2 and 4 spaces deeper (sigs.k8s.io/yaml).
+	fieldIndent := metadataIndentStr + "  "
+	valueIndent := metadataIndentStr + "    "
+	resourcePolicyBlock := fmt.Sprintf(
+		"%s{{- if .Values.crd.keep }}\n%s\"helm.sh/resource-policy\": keep\n%s{{- end }}",
+		valueIndent, valueIndent, valueIndent)
+
+	if insertAfter < 0 {
+		// No annotations section exists, so add one right after metadata:
+		insertAfter = metadataLine
+		resourcePolicyBlock = fieldIndent + common.YamlKeyAnnotations + "\n" + resourcePolicyBlock
+	}
+
+	result := make([]string, 0, len(lines)+4)
+	result = append(result, lines[:insertAfter+1]...)
+	result = append(result, resourcePolicyBlock)
+	result = append(result, lines[insertAfter+1:]...)
+	return strings.Join(result, "\n")
 }
 
 // MakeWebhookAnnotationsConditional makes cert-manager annotations conditional on .Values.certManager.enabled.

@@ -1151,6 +1151,48 @@ spec:
 			Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n  labels:\n"))
 		})
 
+		It("should add resource-policy to the CRD's own metadata, not to a nested schema annotations key", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("cronjobs.example.com")
+
+			schema := `spec:
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          metadata:
+            properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                type: object
+            type: object
+        type: object`
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: cronjobs.example.com
+` + schema
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// The resource-policy guard goes into a new top-level annotations block, and
+			// .Values.crd.annotations cannot override it
+			Expect(result).To(ContainSubstring("metadata:\n" +
+				"  annotations:\n" +
+				"    {{- if .Values.crd.keep }}\n" +
+				"    \"helm.sh/resource-policy\": keep\n" +
+				"    {{- end }}\n" +
+				"    {{- with .Values.crd.annotations }}\n" +
+				`    {{- with omit . "helm.sh/resource-policy" }}`))
+			Expect(strings.Count(result, "helm.sh/resource-policy")).To(Equal(2))
+			// The nested schema is left untouched
+			Expect(result).To(ContainSubstring(schema))
+		})
+
 		It("should add manager.enabled conditional for manager Deployments", func() {
 			deploymentResource := &unstructured.Unstructured{}
 			deploymentResource.SetAPIVersion("apps/v1")
