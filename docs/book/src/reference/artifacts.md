@@ -29,7 +29,7 @@ of its tooling. Additionally, you can find more information by reviewing the Kub
 <aside class="warning" role="note">
     <p class="note-title">IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </p>
 
--**Artifacts provided under [https://storage.googleapis.com/kubebuilder-tools](https://storage.googleapis.com/kubebuilder-tools) are deprecated and Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these artifacts.**
+**Artifacts provided under [https://storage.googleapis.com/kubebuilder-tools](https://storage.googleapis.com/kubebuilder-tools) are deprecated and Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these artifacts.**
 
 You can find the [ENVTEST][env-test-doc] binaries available in the new location from k8s release `1.28`, see: [https://github.com/kubernetes-sigs/controller-tools/blob/main/envtest-releases.yaml](https://github.com/kubernetes-sigs/controller-tools/blob/main/envtest-releases.yaml).
 Also, binaries to test your controllers after k8s `1.29.3` will no longer be found in the old location.
