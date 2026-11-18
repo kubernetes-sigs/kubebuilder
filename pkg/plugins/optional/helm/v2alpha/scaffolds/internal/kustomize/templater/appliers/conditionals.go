@@ -19,6 +19,7 @@ package appliers
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -251,6 +252,10 @@ func InjectCRDResourcePolicyAnnotation(yamlContent string) string {
 		// No annotations section exists, so add one right after metadata:
 		insertAfter = metadataLine
 		resourcePolicyBlock = fieldIndent + common.YamlKeyAnnotations + "\n" + resourcePolicyBlock
+	} else {
+		// crd.keep is the only source of the policy: drop a copy the source CRD already sets, which
+		// would otherwise render a duplicate key and keep the policy even when crd.keep is false.
+		lines = removeAnnotationEntry(lines, insertAfter, len(valueIndent), crdResourcePolicyKey)
 	}
 
 	result := make([]string, 0, len(lines)+4)
@@ -258,6 +263,43 @@ func InjectCRDResourcePolicyAnnotation(yamlContent string) string {
 	result = append(result, resourcePolicyBlock)
 	result = append(result, lines[insertAfter+1:]...)
 	return strings.Join(result, "\n")
+}
+
+const crdResourcePolicyKey = "helm.sh/resource-policy"
+
+// removeAnnotationEntry removes the key entry (plain or quoted) from the annotations block whose
+// header is at headerIndex, along with any continuation lines of its value. entryIndent is the
+// indentation of the block's entries; deeper lines belong to a value and are never matched.
+func removeAnnotationEntry(lines []string, headerIndex, entryIndent int, key string) []string {
+	keyForms := []string{key + ":", `"` + key + `":`, "'" + key + "':"}
+	result := make([]string, 0, len(lines))
+	result = append(result, lines[:headerIndex+1]...)
+
+	i := headerIndex + 1
+	for ; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		_, indent := LeadingWhitespace(lines[i])
+		if trimmed != "" && !strings.HasPrefix(trimmed, "#") && indent < entryIndent {
+			break
+		}
+		isEntry := indent == entryIndent && slices.ContainsFunc(keyForms, func(form string) bool {
+			return trimmed == form || strings.HasPrefix(trimmed, form+" ")
+		})
+		if !isEntry {
+			result = append(result, lines[i])
+			continue
+		}
+		// Skip the entry and any lines of its value, which are indented deeper than the entry.
+		for i+1 < len(lines) {
+			next := lines[i+1]
+			_, nextIndent := LeadingWhitespace(next)
+			if strings.TrimSpace(next) != "" && nextIndent <= entryIndent {
+				break
+			}
+			i++
+		}
+	}
+	return append(result, lines[i:]...)
 }
 
 // MakeWebhookAnnotationsConditional makes cert-manager annotations conditional on .Values.certManager.enabled.

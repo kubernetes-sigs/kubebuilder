@@ -252,9 +252,10 @@ func closesMetadataBlock(line string, metadataIndent int) bool {
 }
 
 // isMetadataMapHeader reports whether trimmed is the header for the given metadata map key
-// (for example "labels:"), including the inline empty-map form "labels: {}".
+// (for example "labels:"), including the inline empty forms "labels: {}" and "labels: null".
+// Callers rewrite the header as a plain "labels:", so an empty form never stays as a second key.
 func isMetadataMapHeader(trimmed, mapKey string) bool {
-	return trimmed == mapKey || trimmed == mapKey+" {}"
+	return trimmed == mapKey || trimmed == mapKey+" {}" || trimmed == mapKey+" null"
 }
 
 // isMetadataMapChildHeader reports whether line is the mapKey header (labels: or annotations:)
