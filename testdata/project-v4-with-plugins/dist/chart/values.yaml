@@ -170,6 +170,16 @@ crd:
   # Keep CRDs when uninstalling
   keep: true
 
+  ## Custom CRD annotations (e.g. argocd.argoproj.io/sync-options: ServerSideApply=true)
+  ## Keys the CRDs already set (e.g. controller-gen.kubebuilder.io/version) keep their generated
+  ## value, and helm.sh/resource-policy is controlled by keep.
+  ##
+  # annotations: {}
+
+  ## Custom CRD labels
+  ##
+  # labels: {}
+
 ## Controller metrics endpoint.
 ## Enable to expose /metrics endpoint
 ##

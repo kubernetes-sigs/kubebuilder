@@ -1101,6 +1101,16 @@ spec:
 				"    \"helm.sh/resource-policy\": keep\n" +
 				"    {{- end }}"
 			Expect(result).To(ContainSubstring(expectedAnnotations))
+			// Should merge .Values.crd.annotations without duplicating the resource-policy key,
+			// and add a guarded .Values.crd.labels block since the CRD had no labels
+			Expect(result).To(ContainSubstring(expectedAnnotations + "\n" +
+				"    {{- with .Values.crd.annotations }}\n" +
+				`    {{- with omit . "helm.sh/resource-policy" }}`))
+			Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n" +
+				"  labels:\n" +
+				"    {{- toYaml . | nindent 4 }}\n" +
+				"  {{- end }}\n" +
+				"  name: guestbooks.example.com"))
 		})
 
 		It("should add resource-policy annotation to CRDs that already have annotations", func() {
@@ -1134,6 +1144,11 @@ spec:
 				"    {{- end }}\n" +
 				"    controller-gen.kubebuilder.io/version"
 			Expect(result).To(ContainSubstring(expectedAnnotations))
+			// Should merge .Values.crd.annotations, omitting the keys the CRD already sets
+			Expect(result).To(ContainSubstring("    controller-gen.kubebuilder.io/version: v0.17.0\n" +
+				"    {{- with .Values.crd.annotations }}\n" +
+				`    {{- with omit . "helm.sh/resource-policy" "controller-gen.kubebuilder.io/version" }}`))
+			Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n  labels:\n"))
 		})
 
 		It("should add manager.enabled conditional for manager Deployments", func() {

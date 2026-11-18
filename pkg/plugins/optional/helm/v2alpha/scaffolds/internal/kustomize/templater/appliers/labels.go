@@ -32,6 +32,8 @@ const (
 	valuesServiceAccountAnnotations = ".Values.serviceAccount.annotations"
 	valuesPrometheusLabels          = ".Values.prometheus.labels"
 	valuesPrometheusAnnotations     = ".Values.prometheus.annotations"
+	valuesCRDLabels                 = ".Values.crd.labels"
+	valuesCRDAnnotations            = ".Values.crd.annotations"
 
 	// How many lines to scan around a label for its siblings before giving up.
 	labelScanWindow = 10
@@ -182,29 +184,43 @@ func AddServiceMonitorLabelsAndAnnotations(yamlContent string) string {
 	return addMetadataLabelsAndAnnotations(yamlContent, valuesPrometheusLabels, valuesPrometheusAnnotations)
 }
 
-// addMetadataLabelsAndAnnotations merges into whichever labels and annotations blocks Kustomize
-// already emitted under metadata, in either order, and injects the block that is missing.
-// User-supplied values therefore always render and no metadata key is duplicated.
+// AddCRDLabelsAndAnnotations makes CRD metadata honor .Values.crd.labels and .Values.crd.annotations,
+// using the same merge semantics as AddServiceAccountLabelsAndAnnotations. Keys the CRD already sets
+// (e.g. controller-gen.kubebuilder.io/version, helm.sh/resource-policy) are not duplicated.
+func AddCRDLabelsAndAnnotations(yamlContent string) string {
+	return addMetadataLabelsAndAnnotations(yamlContent, valuesCRDLabels, valuesCRDAnnotations)
+}
+
+// addMetadataLabelsAndAnnotations merges into the labels and annotations blocks under the resource's
+// own (first) metadata, in either order, and injects the missing one, so no key is duplicated.
+// Nested "metadata:" keys, such as those in a CRD's OpenAPI schema, are left untouched.
 func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsValuePath string) string {
 	lines := strings.Split(yamlContent, "\n")
 	merged := make([]string, 0, len(lines))
 
 	metadataIndent := -1
 	metadataLineIndex := -1
+	metadataClosed := false
 	labelsBlockEnd := -1
 	annotationsBlockEnd := -1
 
 	for lineIndex := 0; lineIndex < len(lines); lineIndex++ {
-		switch trimmed := strings.TrimSpace(lines[lineIndex]); {
-		case trimmed == common.YamlKeyMetadata:
+		trimmed := strings.TrimSpace(lines[lineIndex])
+		if metadataIndent >= 0 && !metadataClosed && closesMetadataBlock(lines[lineIndex], metadataIndent) {
+			metadataClosed = true
+		}
+		inMetadata := metadataIndent >= 0 && !metadataClosed
+
+		switch {
+		case trimmed == common.YamlKeyMetadata && metadataIndent < 0:
 			_, metadataIndent = LeadingWhitespace(lines[lineIndex])
 			metadataLineIndex = len(merged)
 			merged = append(merged, lines[lineIndex])
-		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyLabels, metadataIndent):
+		case inMetadata && isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyLabels, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
 				merged, lines, lineIndex, common.YamlKeyLabels, labelsValuePath)
 			labelsBlockEnd = len(merged)
-		case isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyAnnotations, metadataIndent):
+		case inMetadata && isMetadataMapChildHeader(lines[lineIndex], common.YamlKeyAnnotations, metadataIndent):
 			merged, lineIndex = mergeMetadataMapBlock(
 				merged, lines, lineIndex, common.YamlKeyAnnotations, annotationsValuePath)
 			annotationsBlockEnd = len(merged)
@@ -222,6 +238,17 @@ func addMetadataLabelsAndAnnotations(yamlContent, labelsValuePath, annotationsVa
 		merged, childIndent, metadataLineIndex, labelsBlockEnd, annotationsBlockEnd,
 		labelsValuePath, annotationsValuePath)
 	return strings.Join(merged, "\n")
+}
+
+// closesMetadataBlock reports whether line is a YAML key at or above metadataIndent, which ends
+// the metadata block. Blank lines, comments and Helm actions do not end it.
+func closesMetadataBlock(line string, metadataIndent int) bool {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "{{") {
+		return false
+	}
+	_, indent := LeadingWhitespace(line)
+	return indent <= metadataIndent
 }
 
 // isMetadataMapHeader reports whether trimmed is the header for the given metadata map key
@@ -309,6 +336,15 @@ var helmTemplateRegex = regexp.MustCompile(`\{\{(?:"(?:[^"\\]|\\.)*"|[^"}]|\}[^}
 func extractMapKeys(body []string) []string {
 	cleaned := make([]string, 0, len(body))
 	for _, line := range body {
+		trimmed := strings.TrimSpace(line)
+		if loc := helmTemplateRegex.FindStringIndex(trimmed); loc != nil && loc[0] == 0 && loc[1] == len(trimmed) {
+			// A line that is only a Helm action (such as "{{- if ... }}") becomes a comment: a bare
+			// placeholder there would break the map, while a comment keeps it valid and, inside a
+			// block scalar, stays as content with the same indentation.
+			indent, _ := LeadingWhitespace(line)
+			cleaned = append(cleaned, indent+"#")
+			continue
+		}
 		cleaned = append(cleaned, helmTemplateRegex.ReplaceAllString(line, "x"))
 	}
 

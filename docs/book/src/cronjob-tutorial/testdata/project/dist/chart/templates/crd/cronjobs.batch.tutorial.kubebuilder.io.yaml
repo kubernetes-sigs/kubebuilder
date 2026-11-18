@@ -7,6 +7,15 @@ metadata:
     "helm.sh/resource-policy": keep
     {{- end }}
     controller-gen.kubebuilder.io/version: v0.23.0
+    {{- with .Values.crd.annotations }}
+    {{- with omit . "helm.sh/resource-policy" "controller-gen.kubebuilder.io/version" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  {{- with .Values.crd.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   group: batch.tutorial.kubebuilder.io

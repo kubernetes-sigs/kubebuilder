@@ -1179,6 +1179,59 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("CRD labels and annotations (rendered)", func() {
+		// crdDoc returns the CustomResourceDefinition YAML document from a multi-document render.
+		crdDoc := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: CustomResourceDefinition\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		// renderCRD renders the chart and returns the decoded CRD and its YAML document. Decoding
+		// fails on a duplicated metadata key, so a successful decode also proves none was emitted.
+		renderCRD := func(kustomizeYAML string, setArgs ...string) (*unstructured.Unstructured, string) {
+			out, err := helmTemplate(kustomizeYAML, setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			crds, err := renderedResourcesByKind(out, "CustomResourceDefinition")
+			Expect(err).NotTo(HaveOccurred(), "render must be valid YAML:\n%s", out)
+			Expect(crds).To(HaveLen(1))
+			return crds[0], crdDoc(out)
+		}
+
+		It("renders the CRD metadata unchanged when no labels or annotations are set", func() {
+			crd, _ := renderCRD(createKustomizeWithControllerGenCRD())
+
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+				"helm.sh/resource-policy":               "keep",
+				"controller-gen.kubebuilder.io/version": "v0.23.0",
+			}))
+			Expect(crd.GetLabels()).To(BeEmpty())
+		})
+
+		It("renders user-supplied labels and annotations without duplicating the CRD's own keys", func() {
+			crd, doc := renderCRD(createKustomizeWithControllerGenCRD(),
+				"--set", "crd.labels.team=platform",
+				"--set-string", "crd.annotations.argocd\\.argoproj\\.io/sync-options=ServerSideApply=true",
+				"--set-string", "crd.annotations.helm\\.sh/resource-policy=delete",
+				"--set-string", "crd.annotations.controller-gen\\.kubebuilder\\.io/version=v0.0.0",
+			)
+
+			Expect(crd.GetLabels()).To(Equal(map[string]string{"team": "platform"}))
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+				"helm.sh/resource-policy":               "keep",
+				"controller-gen.kubebuilder.io/version": "v0.23.0",
+				"argocd.argoproj.io/sync-options":       "ServerSideApply=true",
+			}))
+			Expect(strings.Count(doc, "helm.sh/resource-policy")).To(Equal(1))
+			Expect(strings.Count(doc, "controller-gen.kubebuilder.io/version")).To(Equal(1))
+			Expect(doc).To(ContainSubstring("                  metadata:\n                    type: object\n"),
+				"the nested schema metadata must stay untouched, got:\n%s", doc)
+		})
+	})
+
 	Context("NetworkPolicy (rendered)", func() {
 		// networkPolicyDoc returns the NetworkPolicy document whose name ends with the given
 		// suffix from a multi-document render, or "" when it was not rendered.
@@ -1802,7 +1855,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 
 		It("renders a conversion webhook chart and rejects disabling its webhook", func() {
-			out, err := helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"))
+			out, err := helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"),
+				"--set", "crd.labels.team=platform", "--set", "crd.annotations.team=platform")
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 
 			var crd string
@@ -1816,6 +1870,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(crd).To(ContainSubstring("strategy: Webhook"))
 			Expect(crd).To(ContainSubstring("name: my-release-test-project-webhook-service"))
 			Expect(crd).To(ContainSubstring("namespace: my-namespace"))
+			Expect(crd).To(ContainSubstring("keep\n    team: platform\n  labels:\n    team: platform\n"),
+				"crd.annotations and crd.labels must render on the conversion CRD")
 			Expect(networkPolicyDoc(out, "-allow-webhook-traffic")).To(ContainSubstring("port: 9443"),
 				"the webhook NetworkPolicy must render with webhook.enabled defaulting to true")
 
@@ -2734,6 +2790,60 @@ webhooks:
       path: /validate
   name: validate.example.com
   sideEffects: None
+`
+}
+
+// createKustomizeWithControllerGenCRD returns kustomize output with a CRD shaped like controller-gen
+// output: a controller-gen version annotation, no labels, and an OpenAPI schema whose nested
+// metadata, labels and annotations properties must not be mistaken for the CRD's own metadata.
+func createKustomizeWithControllerGenCRD() string {
+	return createBasicKustomizeOutput("test-project") + `---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: cronjobs.batch.tutorial.kubebuilder.io
+spec:
+  group: batch.tutorial.kubebuilder.io
+  names:
+    kind: CronJob
+    listKind: CronJobList
+    plural: cronjobs
+    singular: cronjob
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          metadata:
+            type: object
+          spec:
+            properties:
+              template:
+                properties:
+                  metadata:
+                    type: object
+                  spec:
+                    properties:
+                      metadata:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                    type: object
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
 `
 }
 

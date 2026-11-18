@@ -371,6 +371,18 @@ prometheus:
     example.com/owner: sre
 ```
 
+CRDs support the same pattern through `crd.labels` and `crd.annotations`. The values apply to every CRD in the chart. For example, to have Argo CD use server-side apply only for CRDs that are too large for the `kubectl.kubernetes.io/last-applied-configuration` annotation:
+
+```yaml
+crd:
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+  labels:
+    example.com/team: platform
+```
+
+Keys the CRDs already set, such as `controller-gen.kubebuilder.io/version` or `cert-manager.io/inject-ca-from`, keep their generated value. The `helm.sh/resource-policy` annotation is controlled by `crd.keep` and cannot be set through `crd.annotations`.
+
 ### ServiceAccount configuration
 
 Set `serviceAccount.enabled: true` (default) to create a ServiceAccount. Set `serviceAccount.enabled: false` to use an existing one:
