@@ -617,7 +617,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			usage := "Kubebuilder could not validate this flag with the external plugin. " +
 				"Consult the external plugin documentation for more information."
 
-			bindAllFlags(fs, filterArgs(args, argFilters))
+			bindAllFlags(fs, args, argFilters)
 			Expect(fs.HasFlags()).To(BeTrue())
 			Expect(fs.Lookup("domain")).NotTo(BeNil())
 			Expect(fs.Lookup("domain").Value.Type()).To(Equal("string"))
