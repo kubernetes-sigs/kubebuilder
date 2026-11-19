@@ -249,7 +249,7 @@ So that the plugin could use the [plugin/util](../pkg/plugin/util) lib provide
 to comment (We can add a method like the [UncommentCode](https://github.com/kubernetes-sigs/kubebuilder/blob/72586d386cfbcaecea6321a703d1d7560c521885/pkg/plugin/util/util.go#L102))
 the patches in the `config/default/kustomization` and disable the default network policy used within
 and [replace the code](https://github.com/kubernetes-sigs/kubebuilder/blob/72586d386cfbcaecea6321a703d1d7560c521885/pkg/plugin/util/util.go#L231)
-in the `main.go` bellow with to not use the controller-runtime
+in the `main.go` below with to not use the controller-runtime
 feature instead.
 
 ```go

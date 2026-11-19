@@ -67,7 +67,7 @@ The releases occur in an account in the Google Cloud (See [here](https://console
 
 ### To build the Kubebuilder CLI binaries:
 
-A trigger GitHub action [release](.github/workflows/release.yml) is trigged when a new tag is pushed.
+A trigger GitHub action [release](.github/workflows/release.yml) is triggered when a new tag is pushed.
 This action will call the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
 
 ###  (Deprecated) - To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)

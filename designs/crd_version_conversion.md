@@ -123,10 +123,10 @@ func (ch *conversionHandler) Handle(r *http.Request, w http.Response) {
 func (ch *conversionHandler) convertObject(src, dst runtime.Object) error {
     // check if src and dst are of same type, then may be return with error because API server will never invoke this handler for same version.
     srcIsHub, dstIsHub := isHub(src), isHub(dst)
-    srcIsConvertible, dstIsConvertible := isConvertible(src), isConvertable(dst)
+    srcIsConvertible, dstIsConvertible := isConvertible(src), isConvertible(dst)
     if srcIsHub {
         if dstIsConvertible {
-            return dst.(conversion.Convertable).ConvertFrom(src.(conversion.Hub))
+            return dst.(conversion.Convertible).ConvertFrom(src.(conversion.Hub))
         } else {
             // this is error case, this can be flagged at setup time ?
             return fmt.Errorf("%T is not convertible to", src)
@@ -135,7 +135,7 @@ func (ch *conversionHandler) convertObject(src, dst runtime.Object) error {
 
     if dstIsHub {
         if srcIsConvertible {
-            return src.(conversion.Convertable).ConvertTo(dst.(conversion.Hub))
+            return src.(conversion.Convertible).ConvertTo(dst.(conversion.Hub))
         } else {
             // this is error case.
             return fmt.Errorf("%T is not convertible", src)
@@ -152,7 +152,7 @@ func (ch *conversionHandler) convertObject(src, dst runtime.Object) error {
 
     // shall we get Hub for dst type as well and ensure hubs are same ?
     // src and dst needs to be convertible for it to work
-    if !srcIsConvertable || !dstIsConvertable {
+    if !srcIsConvertible || !dstIsConvertible {
         return fmt.Errorf("%T and %T needs to be both convertible", src, dst)
     }
 

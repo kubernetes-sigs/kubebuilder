@@ -275,7 +275,7 @@ if f.Force {
 for the HelmChart plugin. However, we might use the force flag to replicate
 the same behavior implemented in the subCommands of the kustomize plugin.
 For instance, if the flag is used when creating an API, it forces
-the overwriten of the generated samples. Similarly, if the api subCommand
+the overwritten of the generated samples. Similarly, if the api subCommand
 of the HelmChart plugin is called with `--force`, we should replace
 all samples with the latest versions instead of only adding the new one.
 

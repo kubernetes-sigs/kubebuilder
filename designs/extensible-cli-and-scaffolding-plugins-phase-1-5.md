@@ -194,7 +194,7 @@ their controllers. The other case is also relevant, a project where most of the 
 declarative pattern may need a single controller not to follow it.
 
 In order to achieve this, the `--plugins` flag will be allowed in every command call, overriding the
-value used in its corresponging project initialization call.
+value used in its corresponding project initialization call.
 
 ### Plugin chain persistence
 
