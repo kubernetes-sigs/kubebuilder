@@ -41,6 +41,15 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
 )
+
+/*
+The controller reads the current time from its ` + "`" + `Clock` + "`" + `, so the tests can control it.
+We use a clock stopped at a fixed time in the past. The test CronJob is created after that time, so the
+controller never finds a scheduled run that is due, and the tests pass no matter when they run.
+*/
+type fixedClock struct{ now time.Time }
+
+func (c fixedClock) Now() time.Time { return c.now }
 `
 
 const suiteTestAddSchema = `
@@ -98,6 +107,7 @@ const suiteTestDescription = `
 	err = (&CronJobReconciler{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
+		Clock:  fixedClock{now: time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)},
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

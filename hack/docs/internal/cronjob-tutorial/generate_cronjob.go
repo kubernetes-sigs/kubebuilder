@@ -535,7 +535,7 @@ func (sp *Sample) updateSuiteTest() {
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
 	"testing"
-`, `
+`, `	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 `)
