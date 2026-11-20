@@ -121,6 +121,16 @@ exit 0`
 		))
 	}
 
+	verifyBoilerplateRestored := func() {
+		logs, readErr := os.ReadFile(logFile)
+		Expect(readErr).NotTo(HaveOccurred())
+		s := string(logs)
+
+		restore := strings.Index(s, fmt.Sprintf("checkout %s -- hack/boilerplate.go.txt", opts.FromBranch))
+		Expect(restore).To(BeNumerically(">", strings.Index(s, "-c find")))
+		Expect(restore).To(BeNumerically("<", strings.Index(s, "alpha generate")))
+	}
+
 	Context("Update", func() {
 		It("succeeds using a default three-way Git merge", func() {
 			err = opts.Update()
@@ -275,6 +285,26 @@ exit 1`
 			verifyLogs(opts.AncestorBranch, opts.FromBranch, opts.FromVersion)
 		})
 
+		It("restores the license header from the from branch before regenerating", func() {
+			err = opts.prepareAncestorBranch()
+			Expect(err).ToNot(HaveOccurred())
+			verifyBoilerplateRestored()
+		})
+
+		It("does not restore a license header the from branch does not have", func() {
+			noBoilerplate := `#!/bin/bash
+echo "$@" >> "` + logFile + `"
+if [ "$1" = "cat-file" ]; then exit 1; fi
+exit 0`
+			Expect(mockBinResponse(noBoilerplate, mockGit)).To(Succeed())
+
+			err = opts.prepareAncestorBranch()
+			Expect(err).ToNot(HaveOccurred())
+			logs, readErr := os.ReadFile(logFile)
+			Expect(readErr).NotTo(HaveOccurred())
+			Expect(string(logs)).NotTo(ContainSubstring("-- hack/boilerplate.go.txt"))
+		})
+
 		It("fails creating branch", func() {
 			fail := `#!/bin/bash
 echo "$@" >> "` + logFile + `"
@@ -295,6 +325,12 @@ exit 1`
 			err = opts.prepareUpgradeBranch()
 			Expect(err).ToNot(HaveOccurred())
 			verifyLogs(opts.UpgradeBranch, opts.AncestorBranch, opts.ToVersion)
+		})
+
+		It("restores the license header from the from branch before regenerating", func() {
+			err = opts.prepareUpgradeBranch()
+			Expect(err).ToNot(HaveOccurred())
+			verifyBoilerplateRestored()
 		})
 
 		It("fails creating branch", func() {

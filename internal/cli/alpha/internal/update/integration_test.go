@@ -42,6 +42,9 @@ const (
 	toVersion             = "v4.6.0"
 	toVersionWithConflict = "v4.7.0"
 
+	licenseFromVersion = "v4.13.0"
+	licenseToVersion   = "v4.14.0"
+
 	// Memcached operator + all plugins integration test (mirrors testdata generate.sh with-plugins)
 	// Upgrade from a fixed past version to current (latest release when test runs).
 	memcachedFromVersion = "v4.11.1"
@@ -313,6 +316,69 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(output)).To(ContainSubstring("already uses the specified version"))
 			Expect(string(output)).To(ContainSubstring("No action taken"))
+		})
+	})
+
+	Context("alpha update with the project license header", func() {
+		var (
+			pathBinFromVersion string
+			kbc                *utils.TestContext
+		)
+
+		BeforeEach(func() {
+			var err error
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(kbc.Prepare()).To(Succeed())
+
+			By("scaffolding a project with v4.13.0 and its default license header")
+			pathBinFromVersion, err = downloadKubebuilderVersion(licenseFromVersion)
+			Expect(err).NotTo(HaveOccurred())
+
+			cmd := exec.Command(pathBinFromVersion, "init", "--domain", "example.com", "--repo",
+				"github.com/example/test-operator")
+			cmd.Dir = kbc.Dir
+			output, err := cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("init failed: %s", output))
+
+			cmd = exec.Command(pathBinFromVersion, "create", "api", "--group", "webapp", "--version", "v1",
+				"--kind", "TestOperator", "--resource", "--controller")
+			cmd.Dir = kbc.Dir
+			output, err = cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("create api failed: %s", output))
+
+			initializeGitRepo(kbc.Dir)
+		})
+
+		AfterEach(func() {
+			By("cleaning up test artifacts")
+			_ = os.RemoveAll(filepath.Dir(pathBinFromVersion))
+			_ = os.RemoveAll(kbc.Dir)
+			kbc.Destroy()
+		})
+
+		It("should keep the license header of the project", func() {
+			By("running alpha update from v4.13.0 to v4.14.0")
+			cmd := exec.Command(kbc.BinaryName, "alpha", "update",
+				"--from-version", licenseFromVersion,
+				"--to-version", licenseToVersion,
+				"--from-branch", "main")
+			cmd.Dir = kbc.Dir
+			out, err := kbc.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), string(out))
+			Expect(string(out)).NotTo(ContainSubstring("unable to find boilerplate file"))
+
+			By("checking that the license header is kept")
+			expectFileExists(kbc.Dir, filepath.Join("hack", "boilerplate.go.txt"))
+			for _, file := range []string{
+				filepath.Join("cmd", "main.go"),
+				filepath.Join("api", "v1", "testoperator_types.go"),
+				filepath.Join("internal", "controller", "testoperator_controller.go"),
+			} {
+				content, readErr := os.ReadFile(filepath.Join(kbc.Dir, file))
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring("Licensed under the Apache License"), file)
+			}
 		})
 	})
 

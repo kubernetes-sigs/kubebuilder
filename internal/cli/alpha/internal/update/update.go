@@ -397,6 +397,7 @@ func (opts *Update) prepareAncestorBranch() error {
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s : %w", opts.AncestorBranch, err)
 	}
+	opts.restoreBoilerplate()
 	if err := regenerateProjectWithVersion(opts.FromVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with fromVersion %s: %w", opts.FromVersion, err)
 	}
@@ -424,6 +425,17 @@ func cleanupBranch() error {
 		return fmt.Errorf("failed to clean up files: %w", err)
 	}
 	return nil
+}
+
+// restoreBoilerplate checks out the license header that cleanupBranch removed.
+func (opts *Update) restoreBoilerplate() {
+	boilerplatePath := "hack/boilerplate.go.txt"
+	if err := helpers.GitCmd(opts.GitConfig, "cat-file", "-e", opts.FromBranch+":./"+boilerplatePath).Run(); err != nil {
+		return
+	}
+	if err := helpers.GitCmd(opts.GitConfig, "checkout", opts.FromBranch, "--", boilerplatePath).Run(); err != nil {
+		log.Warn("failed to restore the license header", "path", boilerplatePath, "branch", opts.FromBranch, "error", err)
+	}
 }
 
 // runMakeTargets runs the make targets needed to keep the tree consistent.
@@ -605,6 +617,7 @@ func (opts *Update) prepareUpgradeBranch() error {
 	if err := cleanupBranch(); err != nil {
 		return fmt.Errorf("failed to cleanup the %s branch: %w", opts.UpgradeBranch, err)
 	}
+	opts.restoreBoilerplate()
 	if err := regenerateProjectWithVersion(opts.ToVersion); err != nil {
 		return fmt.Errorf("failed to regenerate project with version %s: %w", opts.ToVersion, err)
 	}
