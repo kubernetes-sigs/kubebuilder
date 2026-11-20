@@ -230,6 +230,21 @@ func mergeFlagSetInto(
 			return
 		}
 		if existing.Value.Type() != flag.Value.Type() {
+			// An external plugin without a flags command binds the flags it is
+			// given with a guessed type; a declared flag of the same name wins.
+			if isFallbackFlag(flag) {
+				return
+			}
+			if isFallbackFlag(existing) {
+				*existing = *flag
+				firstPluginByFlag[flag.Name] = pluginKey
+				if showPluginPrefix {
+					existing.Usage = "For plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
+				} else {
+					existing.Usage = strings.TrimSpace(flag.Usage)
+				}
+				return
+			}
 			firstKey := firstPluginByFlag[flag.Name]
 			err = fmt.Errorf(
 				"plugins %q and %q use the same flag name %q but expect different value types: one %s, other %s",
@@ -251,6 +266,13 @@ func mergeFlagSetInto(
 		existing.Usage += " AND for plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
 	})
 	return err
+}
+
+// isFallbackFlag reports whether the flag was bound by an external plugin
+// without knowing its type.
+func isFallbackFlag(flag *pflag.Flag) bool {
+	_, ok := flag.Annotations[external.FallbackFlagAnnotation]
+	return ok
 }
 
 // syncDuplicateFlags copies the parsed value of each flag to all duplicate Values from merge.
