@@ -52,4 +52,4 @@ Now, copy over the existing types, and make the change:
 
 Now that the types are in place, set up conversion...
 
-[cronjob-sched-code]: ./multiversion-tutorial/testdata/project/api/v2/cronjob_types.go "CronJob Code"
+[cronjob-sched-code]: ./testdata/project/api/v2/cronjob_types.go "CronJob Code"
