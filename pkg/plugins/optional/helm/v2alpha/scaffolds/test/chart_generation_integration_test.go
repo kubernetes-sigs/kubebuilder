@@ -1179,6 +1179,107 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 	})
 
+	Context("CRD labels and annotations (rendered)", func() {
+		// crdDoc returns the CustomResourceDefinition YAML document from a multi-document render.
+		crdDoc := func(rendered string) string {
+			for _, doc := range strings.Split(rendered, "\n---") {
+				if strings.Contains(doc, "\nkind: CustomResourceDefinition\n") {
+					return doc
+				}
+			}
+			return ""
+		}
+
+		// renderCRD renders the chart and returns the decoded CRD and its YAML document. The document
+		// is first decoded with yaml.v3, which rejects duplicated keys (the Kubernetes decoder keeps
+		// the last one), so a successful render also proves no metadata key was emitted twice.
+		renderCRD := func(kustomizeYAML string, setArgs ...string) (*unstructured.Unstructured, string) {
+			out, err := helmTemplate(kustomizeYAML, setArgs...)
+			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
+			doc := crdDoc(out)
+			var strict map[string]any
+			Expect(yaml.Unmarshal([]byte(doc), &strict)).To(Succeed(),
+				"the CRD must be valid YAML without duplicated keys, got:\n%s", doc)
+			crds, err := renderedResourcesByKind(out, "CustomResourceDefinition")
+			Expect(err).NotTo(HaveOccurred(), "render must be valid YAML:\n%s", out)
+			Expect(crds).To(HaveLen(1))
+			return crds[0], doc
+		}
+
+		// expectSpecUnchanged checks that the rendered CRD spec, including the nested metadata,
+		// labels and annotations schema, equals the source spec, so chart values never leak into it.
+		expectSpecUnchanged := func(crd *unstructured.Unstructured, kustomizeYAML string) {
+			sources, err := renderedResourcesByKind(kustomizeYAML, "CustomResourceDefinition")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sources).To(HaveLen(1))
+			Expect(crd.Object["spec"]).To(Equal(sources[0].Object["spec"]),
+				"the CRD spec, including its nested metadata schema, must stay untouched")
+		}
+
+		It("renders the CRD metadata unchanged when no labels or annotations are set", func() {
+			crd, _ := renderCRD(createKustomizeWithControllerGenCRD())
+
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+				"helm.sh/resource-policy":               "keep",
+				"controller-gen.kubebuilder.io/version": "v0.23.0",
+			}))
+			Expect(crd.GetLabels()).To(BeEmpty())
+		})
+
+		It("renders user-supplied labels and annotations without duplicating the CRD's own keys", func() {
+			kustomizeYAML := createKustomizeWithControllerGenCRD()
+			crd, doc := renderCRD(kustomizeYAML,
+				"--set", "crd.labels.team=platform",
+				"--set-string", "crd.annotations.argocd\\.argoproj\\.io/sync-options=ServerSideApply=true",
+				"--set-string", "crd.annotations.helm\\.sh/resource-policy=delete",
+				"--set-string", "crd.annotations.controller-gen\\.kubebuilder\\.io/version=v0.0.0",
+			)
+
+			Expect(crd.GetLabels()).To(Equal(map[string]string{"team": "platform"}))
+			Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+				"helm.sh/resource-policy":               "keep",
+				"controller-gen.kubebuilder.io/version": "v0.23.0",
+				"argocd.argoproj.io/sync-options":       "ServerSideApply=true",
+			}))
+			Expect(strings.Count(doc, "helm.sh/resource-policy")).To(Equal(1))
+			Expect(strings.Count(doc, "controller-gen.kubebuilder.io/version")).To(Equal(1))
+			expectSpecUnchanged(crd, kustomizeYAML)
+		})
+
+		// Each entry replaces the CRD's own annotations with a different metadata shape. In every
+		// shape crd.keep alone controls helm.sh/resource-policy, and crd.labels and crd.annotations
+		// render exactly once.
+		DescribeTable("keeps helm.sh/resource-policy under crd.keep",
+			func(crdMetadata string) {
+				kustomizeYAML := strings.Replace(createKustomizeWithControllerGenCRD(),
+					"metadata:\n  annotations:\n    controller-gen.kubebuilder.io/version: v0.23.0\n  name: cronjobs",
+					"metadata:\n"+crdMetadata+"  name: cronjobs", 1)
+				Expect(kustomizeYAML).NotTo(ContainSubstring("controller-gen.kubebuilder.io/version"))
+
+				crd, doc := renderCRD(kustomizeYAML)
+				Expect(crd.GetAnnotations()).To(Equal(map[string]string{"helm.sh/resource-policy": "keep"}))
+				Expect(strings.Count(doc, "helm.sh/resource-policy")).To(Equal(1))
+				expectSpecUnchanged(crd, kustomizeYAML)
+
+				crd, doc = renderCRD(kustomizeYAML,
+					"--set", "crd.keep=false",
+					"--set", "crd.labels.team=platform",
+					"--set-string", "crd.annotations.helm\\.sh/resource-policy=keep",
+					"--set-string", "crd.annotations.argocd\\.argoproj\\.io/sync-options=ServerSideApply=true",
+				)
+				Expect(crd.GetLabels()).To(Equal(map[string]string{"team": "platform"}))
+				Expect(crd.GetAnnotations()).To(Equal(map[string]string{
+					"argocd.argoproj.io/sync-options": "ServerSideApply=true",
+				}))
+				Expect(doc).NotTo(ContainSubstring(": null"))
+				expectSpecUnchanged(crd, kustomizeYAML)
+			},
+			Entry("when the CRD has no annotations of its own", ""),
+			Entry("when the CRD has null labels and annotations", "  annotations: null\n  labels: null\n"),
+			Entry("when the CRD already sets the policy", "  annotations:\n    helm.sh/resource-policy: keep\n"),
+		)
+	})
+
 	Context("NetworkPolicy (rendered)", func() {
 		// networkPolicyDoc returns the NetworkPolicy document whose name ends with the given
 		// suffix from a multi-document render, or "" when it was not rendered.
@@ -1802,7 +1903,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 		})
 
 		It("renders a conversion webhook chart and rejects disabling its webhook", func() {
-			out, err := helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"))
+			out, err := helmTemplate(createKustomizeConversionOnlyWithNetworkPolicies("test-project"),
+				"--set", "crd.labels.team=platform", "--set", "crd.annotations.team=platform")
 			Expect(err).NotTo(HaveOccurred(), "helm template failed: %s", out)
 
 			var crd string
@@ -1816,6 +1918,8 @@ var _ = Describe("Chart Generation Integration Tests", func() {
 			Expect(crd).To(ContainSubstring("strategy: Webhook"))
 			Expect(crd).To(ContainSubstring("name: my-release-test-project-webhook-service"))
 			Expect(crd).To(ContainSubstring("namespace: my-namespace"))
+			Expect(crd).To(ContainSubstring("keep\n    team: platform\n  labels:\n    team: platform\n"),
+				"crd.annotations and crd.labels must render on the conversion CRD")
 			Expect(networkPolicyDoc(out, "-allow-webhook-traffic")).To(ContainSubstring("port: 9443"),
 				"the webhook NetworkPolicy must render with webhook.enabled defaulting to true")
 
@@ -2734,6 +2838,60 @@ webhooks:
       path: /validate
   name: validate.example.com
   sideEffects: None
+`
+}
+
+// createKustomizeWithControllerGenCRD returns kustomize output with a CRD shaped like controller-gen
+// output: a controller-gen version annotation, no labels, and an OpenAPI schema whose nested
+// metadata, labels and annotations properties must not be mistaken for the CRD's own metadata.
+func createKustomizeWithControllerGenCRD() string {
+	return createBasicKustomizeOutput("test-project") + `---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: cronjobs.batch.tutorial.kubebuilder.io
+spec:
+  group: batch.tutorial.kubebuilder.io
+  names:
+    kind: CronJob
+    listKind: CronJobList
+    plural: cronjobs
+    singular: cronjob
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          metadata:
+            type: object
+          spec:
+            properties:
+              template:
+                properties:
+                  metadata:
+                    type: object
+                  spec:
+                    properties:
+                      metadata:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                    type: object
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
 `
 }
 

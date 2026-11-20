@@ -1073,37 +1073,53 @@ metadata:
 			Expect(result).To(ContainSubstring("{{- if .Values.certManager.enabled }}"))
 		})
 
-		It("should add crd.enabled conditional and resource-policy annotation for CRDs", func() {
-			crdResource := &unstructured.Unstructured{}
-			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
-			crdResource.SetKind("CustomResourceDefinition")
-			crdResource.SetName("guestbooks.example.com")
+		DescribeTable("should add crd.enabled conditional and resource-policy annotation for CRDs",
+			func(crdMetadata string) {
+				crdResource := &unstructured.Unstructured{}
+				crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+				crdResource.SetKind("CustomResourceDefinition")
+				crdResource.SetName("guestbooks.example.com")
 
-			content := `apiVersion: apiextensions.k8s.io/v1
+				content := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: guestbooks.example.com
+` + crdMetadata + `  name: guestbooks.example.com
 spec:
   group: example.com`
 
-			result := templater.ApplyHelmSubstitutions(content, crdResource)
+				result := templater.ApplyHelmSubstitutions(content, crdResource)
 
-			// Should be wrapped with crd.enabled conditional
-			Expect(result).To(ContainSubstring("{{- if .Values.crd.enabled }}"))
-			Expect(result).To(ContainSubstring("{{- end }}"))
-			// Should have resource-policy annotation for helm uninstall protection
-			Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
-			Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
-			// Injected annotations should use 2-space indentation matching sigs.k8s.io/yaml output.
-			// annotations: at 2-space indent, values at 4-space indent.
-			expectedAnnotations := "  annotations:\n" +
-				"    {{- if .Values.crd.keep }}\n" +
-				"    \"helm.sh/resource-policy\": keep\n" +
-				"    {{- end }}"
-			Expect(result).To(ContainSubstring(expectedAnnotations))
-		})
+				// Should be wrapped with crd.enabled conditional
+				Expect(result).To(ContainSubstring("{{- if .Values.crd.enabled }}"))
+				Expect(result).To(ContainSubstring("{{- end }}"))
+				// Should have resource-policy annotation for helm uninstall protection
+				Expect(result).To(ContainSubstring("{{- if .Values.crd.keep }}"))
+				Expect(result).To(ContainSubstring(`"helm.sh/resource-policy": keep`))
+				// Injected annotations should use 2-space indentation matching sigs.k8s.io/yaml output.
+				// annotations: at 2-space indent, values at 4-space indent.
+				expectedAnnotations := "  annotations:\n" +
+					"    {{- if .Values.crd.keep }}\n" +
+					"    \"helm.sh/resource-policy\": keep\n" +
+					"    {{- end }}"
+				Expect(result).To(ContainSubstring(expectedAnnotations))
+				// Should merge .Values.crd.annotations without duplicating the resource-policy key,
+				// and add a guarded .Values.crd.labels block since the CRD had no labels
+				Expect(result).To(ContainSubstring(expectedAnnotations + "\n" +
+					"    {{- with .Values.crd.annotations }}\n" +
+					`    {{- with omit . "helm.sh/resource-policy" }}`))
+				Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n" +
+					"  labels:\n" +
+					"    {{- toYaml . | nindent 4 }}\n" +
+					"  {{- end }}\n" +
+					"  name: guestbooks.example.com"))
+				// Null metadata maps are treated as empty, so no second labels or annotations key is added
+				Expect(result).NotTo(ContainSubstring(": null"))
+			},
+			Entry("when the CRD has no labels or annotations", ""),
+			Entry("when the CRD has null labels and annotations", "  annotations: null\n  labels: null\n"),
+		)
 
-		It("should add resource-policy annotation to CRDs that already have annotations", func() {
+		It("should add resource-policy annotation to CRDs that already have annotations, replacing their own", func() {
 			crdResource := &unstructured.Unstructured{}
 			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
 			crdResource.SetKind("CustomResourceDefinition")
@@ -1114,6 +1130,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.0
+    helm.sh/resource-policy: keep
   name: configs.example.com
 spec:
   group: example.com`
@@ -1134,6 +1151,56 @@ spec:
 				"    {{- end }}\n" +
 				"    controller-gen.kubebuilder.io/version"
 			Expect(result).To(ContainSubstring(expectedAnnotations))
+			// Should merge .Values.crd.annotations, omitting the keys the CRD already sets
+			Expect(result).To(ContainSubstring("    controller-gen.kubebuilder.io/version: v0.17.0\n" +
+				"    {{- with .Values.crd.annotations }}\n" +
+				`    {{- with omit . "helm.sh/resource-policy" "controller-gen.kubebuilder.io/version" }}`))
+			Expect(result).To(ContainSubstring("  {{- with .Values.crd.labels }}\n  labels:\n"))
+			// The CRD's own resource-policy is replaced by the crd.keep guarded entry, so crd.keep controls it
+			Expect(strings.Count(result, "helm.sh/resource-policy")).To(Equal(2))
+			Expect(result).NotTo(ContainSubstring("    helm.sh/resource-policy: keep"))
+		})
+
+		It("should add resource-policy to the CRD's own metadata, not to a nested schema annotations key", func() {
+			crdResource := &unstructured.Unstructured{}
+			crdResource.SetAPIVersion("apiextensions.k8s.io/v1")
+			crdResource.SetKind("CustomResourceDefinition")
+			crdResource.SetName("cronjobs.example.com")
+
+			schema := `spec:
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          metadata:
+            properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                type: object
+            type: object
+        type: object`
+			content := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: cronjobs.example.com
+` + schema
+
+			result := templater.ApplyHelmSubstitutions(content, crdResource)
+
+			// The resource-policy guard goes into a new top-level annotations block, and
+			// .Values.crd.annotations cannot override it
+			Expect(result).To(ContainSubstring("metadata:\n" +
+				"  annotations:\n" +
+				"    {{- if .Values.crd.keep }}\n" +
+				"    \"helm.sh/resource-policy\": keep\n" +
+				"    {{- end }}\n" +
+				"    {{- with .Values.crd.annotations }}\n" +
+				`    {{- with omit . "helm.sh/resource-policy" }}`))
+			Expect(strings.Count(result, "helm.sh/resource-policy")).To(Equal(2))
+			// The nested schema is left untouched
+			Expect(result).To(ContainSubstring(schema))
 		})
 
 		It("should add manager.enabled conditional for manager Deployments", func() {
