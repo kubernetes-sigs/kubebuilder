@@ -287,7 +287,7 @@ project to use certificates managed by CertManager.
           kind: Deployment
       ```
 3. **Enable the CertManager replaces for the Metrics Server certificates in `config/default/kustomization.yaml`:**
-    - Uncomment the replacements block bellow. It is required to properly set the DNS names for the certificates configured under `config/certmanager`.
+    - Uncomment the replacements block below. It is required to properly set the DNS names for the certificates configured under `config/certmanager`.
 
       ```yaml
       # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.

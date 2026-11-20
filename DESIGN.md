@@ -74,7 +74,7 @@ project and its various components.
   enables clear, concise code.  This includes aliasing groups of
   functionality under "alias" or "prelude" packages to avoid having 40
   lines of imports, including common idioms as flexible helpers, and
-  infering resource information from the user's object types in client
+  inferring resource information from the user's object types in client
   code.
 
 * **A Little Bit of Magic Goes a Long Way**: In absence of generics,

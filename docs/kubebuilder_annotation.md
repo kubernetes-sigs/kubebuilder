@@ -58,7 +58,7 @@ Delimiter symbols are distinguished to work in different levels from top-down fo
 
 1. Separate two `submodule` (categories) under `webhook`: 1) `admission`and 2) `serveroption`, handling webhookTags and serverTags separately.
 2. For each submodule, all key values should put in the same comment line.
-3. using `|` for splitting key value of `lables`
+3. using `|` for splitting key value of `labels`
 
 #### RBAC Annotation examples
 
