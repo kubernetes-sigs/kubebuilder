@@ -269,9 +269,19 @@ func injectMissingMetadataBlocks(
 	return merged
 }
 
+// chartOwnedLabelKeys keep their generated value: the standard Helm labels and control-plane,
+// the same keys the ServiceMonitor template omits.
+var chartOwnedLabelKeys = []string{
+	strings.TrimSuffix(common.LabelKeyAppManagedBy, ":"),
+	strings.TrimSuffix(common.LabelKeyAppName, ":"),
+	strings.TrimSuffix(common.LabelKeyHelmChart, ":"),
+	strings.TrimSuffix(common.LabelKeyAppInstance, ":"),
+	"control-plane",
+}
+
 // mergeMetadataMapBlock re-emits the existing labels/annotations block that starts at headerIndex
-// and appends a Helm block that merges the matching .Values map, omitting keys the block already
-// defines so nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
+// and appends a Helm block that merges the matching .Values map, so a value replaces the same key
+// and nothing is duplicated. An empty block (a bare header or an inline "{}") is replaced by
 // a guarded block, so the header renders only when the user supplies values and never as a null
 // key. It returns the updated output and the index of the last source line it consumed.
 func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valuePath string) ([]string, int) {
@@ -288,25 +298,72 @@ func mergeMetadataMapBlock(merged, lines []string, headerIndex int, mapKey, valu
 	}
 
 	body := lines[bodyStart:bodyEnd]
-	existingKeys := extractMapKeys(body)
+	entries, ok := extractMapEntries(body)
+	existingKeys := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		existingKeys = append(existingKeys, entry.key)
+	}
+	if !ok {
+		existingKeys = extractMapKeys(body)
+	}
 	if len(existingKeys) == 0 {
 		merged = append(merged, buildGuardedMetadataMapBlock(headerIndent, mapKey, valuePath)...)
 		return merged, bodyEnd - 1
 	}
 
 	merged = append(merged, strings.Repeat(" ", headerIndent)+mapKey)
-	merged = append(merged, body...)
 	valueIndent := strings.Repeat(" ", headerIndent+2)
-	merged = appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys)
+	if !ok {
+		// The entries cannot be told apart, so keep them all and omit their keys from the values.
+		merged = append(merged, body...)
+		return appendHelmMapBlock(merged, valueIndent, valuePath, existingKeys), bodyEnd - 1
+	}
 
-	return merged, bodyEnd - 1
+	var ownedKeys []string
+	if mapKey == common.YamlKeyLabels {
+		for _, key := range existingKeys {
+			if slices.Contains(chartOwnedLabelKeys, key) {
+				ownedKeys = append(ownedKeys, key)
+			}
+		}
+	}
+
+	merged = appendOverridableEntries(merged, body, entries, valueIndent, valuePath, ownedKeys)
+	return appendHelmMapBlock(merged, valueIndent, valuePath, ownedKeys), bodyEnd - 1
+}
+
+// appendOverridableEntries appends each entry of body behind a hasKey check, so a value for the
+// same key replaces it. Entries whose key is in ownedKeys are appended as they are.
+func appendOverridableEntries(
+	result, body []string, entries []mapEntry, indent, valuePath string, ownedKeys []string,
+) []string {
+	result = append(result, body[:entries[0].start]...)
+	for _, entry := range entries {
+		entryLines := body[entry.start:entry.end]
+		if slices.Contains(ownedKeys, entry.key) {
+			result = append(result, entryLines...)
+			continue
+		}
+
+		result = append(result,
+			indent+"{{- if not (hasKey ("+valuePath+" | default dict) "+strconv.Quote(entry.key)+") }}")
+		if last := len(entryLines) - 1; strings.TrimSpace(entryLines[last]) == "" {
+			// A trailing blank line ends a |+ value: "{{ end }}" in its place keeps it, "{{- end }}" would not.
+			result = append(result, entryLines[:last]...)
+			result = append(result, "{{ end }}")
+			continue
+		}
+		result = append(result, entryLines...)
+		result = append(result, indent+"{{- end }}")
+	}
+	return result
 }
 
 // helmTemplateRegex matches a {{ }} action, including quoted strings containing {{ }}.
 var helmTemplateRegex = regexp.MustCompile(`\{\{(?:"(?:[^"\\]|\\.)*"|[^"}]|\}[^}])*\}\}`)
 
-// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
-func extractMapKeys(body []string) []string {
+// parseMapBody parses body as one YAML map, with Helm actions replaced by placeholders.
+func parseMapBody(body []string) (*yaml.Node, bool) {
 	cleaned := make([]string, 0, len(body))
 	for _, line := range body {
 		cleaned = append(cleaned, helmTemplateRegex.ReplaceAllString(line, "x"))
@@ -315,15 +372,64 @@ func extractMapKeys(body []string) []string {
 	var document yaml.Node
 	if err := yaml.Unmarshal([]byte(strings.Join(cleaned, "\n")), &document); err != nil ||
 		len(document.Content) != 1 || document.Content[0].Kind != yaml.MappingNode {
+		return nil, false
+	}
+	return document.Content[0], true
+}
+
+// extractMapKeys extracts keys from a YAML map, replacing Helm actions with placeholders.
+func extractMapKeys(body []string) []string {
+	mapping, ok := parseMapBody(body)
+	if !ok {
 		return extractKeysFromLines(body)
 	}
 
-	mapping := document.Content[0]
 	keys := make([]string, 0, len(mapping.Content)/2)
 	for i := 0; i < len(mapping.Content); i += 2 {
 		keys = append(keys, mapping.Content[i].Value)
 	}
 	return keys
+}
+
+// mapEntry is a key of a YAML map body and the lines body[start:end] it spans.
+type mapEntry struct {
+	key        string
+	start, end int
+}
+
+// yamlExtraLineBreaks are line breaks for YAML but not for body, which is split on "\n".
+const yamlExtraLineBreaks = "\r\u0085\u2028\u2029"
+
+// extractMapEntries returns the entries of a block-style YAML map body in order. It returns false
+// when a line reads differently in YAML, such as a line of Unicode spaces TrimSpace sees as blank.
+func extractMapEntries(body []string) ([]mapEntry, bool) {
+	for _, line := range body {
+		if strings.ContainsAny(line, yamlExtraLineBreaks) ||
+			(strings.TrimSpace(line) == "" && strings.Trim(line, " \t") != "") {
+			return nil, false
+		}
+	}
+
+	mapping, ok := parseMapBody(body)
+	if !ok || mapping.Style&yaml.FlowStyle != 0 || len(mapping.Content) == 0 {
+		return nil, false
+	}
+
+	entries := make([]mapEntry, 0, len(mapping.Content)/2)
+	for i := 0; i < len(mapping.Content); i += 2 {
+		entries = append(entries, mapEntry{key: mapping.Content[i].Value, start: mapping.Content[i].Line - 1})
+	}
+	for i := range entries {
+		entries[i].end = len(body)
+		if i+1 < len(entries) {
+			entries[i].end = entries[i+1].start
+		}
+		// Each entry must span at least its own key line.
+		if entries[i].start < 0 || entries[i].start >= entries[i].end || entries[i].end > len(body) {
+			return nil, false
+		}
+	}
+	return entries, true
 }
 
 // buildGuardedMetadataMapBlock renders a labels/annotations block wrapped in
