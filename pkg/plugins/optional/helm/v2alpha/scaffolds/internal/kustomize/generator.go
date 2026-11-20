@@ -22,9 +22,9 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater/appliers"
 )
 
 // ChartGenerator generates Helm chart template files derived from kustomize resources.
@@ -113,7 +113,7 @@ func (g *TemplatesGenerator) templateResource(
 	resource *unstructured.Unstructured,
 	t *templater.Templater,
 ) string {
-	yamlBytes, err := yaml.Marshal(resource.Object)
+	yamlContent, err := appliers.MarshalResource(resource.Object)
 	if err != nil {
 		// Return error as YAML comment to make marshal failures visible
 		return fmt.Sprintf(
@@ -124,7 +124,6 @@ func (g *TemplatesGenerator) templateResource(
 			err,
 		)
 	}
-	yamlContent := string(yamlBytes)
 	if t == nil {
 		return yamlContent
 	}

@@ -3,15 +3,24 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    {{- $labels := .Values.manager.labels | default dict }}
+    {{- if not (hasKey $labels "app.kubernetes.io/managed-by") }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "project.name" . }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    control-plane: controller-manager
-    {{- with .Values.manager.labels }}
-    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
-    {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/name") }}
+    app.kubernetes.io/name: {{ include "project.name" . }}
+    {{- end }}
+    {{- if not (hasKey $labels "helm.sh/chart") }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    {{- end }}
+    {{- if not (hasKey $labels "app.kubernetes.io/instance") }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- end }}
+    {{- if not (hasKey $labels "control-plane") }}
+    control-plane: controller-manager
+    {{- end }}
+    {{- with .Values.manager.labels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   name: {{ include "project.resourceName" (dict "suffix" "controller-manager" "context" $) }}
   namespace: {{ .Release.Namespace }}
@@ -31,25 +40,35 @@ spec:
   template:
     metadata:
       annotations:
+        {{- $podAnnotations := (.Values.manager.pod | default dict).annotations | default dict }}
+        {{- if not (hasKey $podAnnotations "kubectl.kubernetes.io/default-container") }}
         kubectl.kubernetes.io/default-container: manager
+        {{- end }}
         {{- with .Values.manager.pod }}
         {{- with .annotations }}
-        {{- with omit . "kubectl.kubernetes.io/default-container" }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
         {{- end }}
         {{- end }}
       labels:
+        {{- $podLabels := (.Values.manager.pod | default dict).labels | default dict }}
+        {{- if not (hasKey $podLabels "app.kubernetes.io/name") }}
         app.kubernetes.io/name: {{ include "project.name" . }}
+        {{- end }}
+        {{- if not (hasKey $podLabels "helm.sh/chart") }}
         helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        {{- end }}
+        {{- if not (hasKey $podLabels "app.kubernetes.io/instance") }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- end }}
+        {{- if not (hasKey $podLabels "app.kubernetes.io/managed-by") }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
+        {{- end }}
+        {{- if not (hasKey $podLabels "control-plane") }}
         control-plane: controller-manager
+        {{- end }}
         {{- with .Values.manager.pod }}
         {{- with .labels }}
-        {{- with omit . "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "app.kubernetes.io/managed-by" "control-plane" }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
         {{- end }}
         {{- end }}
     spec:

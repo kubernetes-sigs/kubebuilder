@@ -17,8 +17,12 @@ limitations under the License.
 package appliers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
+
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -126,4 +130,85 @@ func CollapseBlankLineAfterIf(yamlContent string) string {
 		out = append(out, line)
 	}
 	return strings.Join(out, "\n")
+}
+
+// MarshalResource marshals a resource with sigs.k8s.io/yaml. That encoder writes U+0085 (NEL) as is,
+// and YAML reads it back as a line break, so a string holding it is written double-quoted with \N.
+func MarshalResource(object map[string]any) (string, error) {
+	var quoted []string
+	copied, ok := replaceNEL(object, &quoted).(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("unexpected resource type %T", object)
+	}
+	out, err := yaml.Marshal(copied)
+	if err != nil {
+		return "", fmt.Errorf("marshaling the resource: %w", err)
+	}
+	content := string(out)
+	for i, value := range quoted {
+		content = strings.Replace(content, nelPlaceholder(i), doubleQuoted(value), 1)
+	}
+	return content, nil
+}
+
+func nelPlaceholder(i int) string {
+	return fmt.Sprintf("kubebuilder-nel-placeholder-%d-end", i)
+}
+
+// replaceNEL returns a copy of value where each string holding U+0085 is replaced by a placeholder.
+func replaceNEL(value any, quoted *[]string) any {
+	switch v := value.(type) {
+	case string:
+		if !strings.ContainsRune(v, '\u0085') {
+			return v
+		}
+		*quoted = append(*quoted, v)
+		return nelPlaceholder(len(*quoted) - 1)
+	case map[string]any:
+		out := make(map[string]any, len(v))
+		for key, item := range v {
+			out[key] = replaceNEL(item, quoted)
+		}
+		return out
+	case []any:
+		out := make([]any, len(v))
+		for i, item := range v {
+			out[i] = replaceNEL(item, quoted)
+		}
+		return out
+	}
+	return value
+}
+
+// doubleQuoted returns s as a one-line YAML double-quoted string.
+func doubleQuoted(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range s {
+		switch r {
+		case '"', '\\':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '\u0085':
+			b.WriteString(`\N`)
+		case '\u2028':
+			b.WriteString(`\L`)
+		case '\u2029':
+			b.WriteString(`\P`)
+		default:
+			if unicode.IsControl(r) {
+				fmt.Fprintf(&b, `\u%04X`, r)
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }

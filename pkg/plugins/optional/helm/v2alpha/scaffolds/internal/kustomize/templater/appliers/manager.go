@@ -1073,6 +1073,8 @@ func handleDeploymentAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
+			result, existingKeys = guardExistingEntries(result, state.currentBlockStart, childIndent,
+				".Values.manager.annotations", "$annotations", existingKeys)
 			result = injectDeploymentAnnotations(result, childIndent, existingKeys)
 		}
 
@@ -1115,6 +1117,8 @@ func handlePodAnnotations(
 				parentIndent+"{{- end }}",
 			)
 		} else {
+			result, existingKeys = guardExistingEntries(result, state.currentBlockStart, childIndent,
+				podValuesPath+".annotations", "$podAnnotations", existingKeys)
 			result = addPodAnnotations(result, childIndent, existingKeys)
 		}
 
@@ -1128,7 +1132,7 @@ func handlePodAnnotations(
 		result = append(result, indent+"{{- with .Values.manager.pod }}")
 		result = append(result, indent+"{{- with .annotations }}")
 		result = append(result, indent+"annotations:")
-		result = addPodAnnotations(result, indent+"  ", nil)
+		result = append(result, indent+"  {{- toYaml . | nindent "+strconv.Itoa(len(indent)+2)+" }}")
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+common.YamlKeyLabels)
@@ -1176,6 +1180,8 @@ func handleDeploymentLabels(
 		result = result[:len(result)-1]
 		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
+		result, existingKeys = guardExistingEntries(result, state.currentBlockStart, childIndent,
+			".Values.manager.labels", "$labels", existingKeys)
 		result = injectDeploymentLabels(result, childIndent, existingKeys)
 		result = append(result, line)
 		state.addedLabelsToDeployment = true
@@ -1202,6 +1208,8 @@ func handlePodLabels(
 		result = result[:len(result)-1]
 		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
+		result, existingKeys = guardExistingEntries(result, state.currentBlockStart, childIndent,
+			podValuesPath+".labels", "$podLabels", existingKeys)
 		result = injectPodLabels(result, childIndent, existingKeys)
 		result = append(result, line)
 		state.addedPodLabels = true
@@ -1234,6 +1242,9 @@ func shouldInjectPodLabels(
 		trimmed != "" &&
 		trimmed != common.YamlKeyLabels
 }
+
+// podValuesPath reads .Values.manager.pod even when the values leave it out.
+const podValuesPath = "(.Values.manager.pod | default dict)"
 
 func injectDeploymentLabels(result []string, childIndent string, existingKeys []string) []string {
 	return appendHelmMapBlock(result, childIndent, ".Values.manager.labels", existingKeys)
