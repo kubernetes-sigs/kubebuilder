@@ -29,6 +29,7 @@ import (
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 )
 
@@ -225,6 +226,95 @@ var _ = Describe("createAPISubcommand", func() {
 			res.Group = exampleDomain
 
 			Expect(subCmd.InjectResource(res)).To(Succeed())
+		})
+
+		Context("when the plugin already scaffolded a resource", func() {
+			BeforeEach(func() {
+				Expect(cfg.EncodePluginConfig(plugin.KeyFor(Plugin{}), PluginConfig{Resources: []ResourceData{{
+					Group: res.Group, Domain: res.Domain, Version: res.Version, Kind: res.Kind,
+				}}})).To(Succeed())
+			})
+
+			It("should refuse the same resource before writing any file", func() {
+				before, err := cfg.GetResources()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = subCmd.InjectResource(res)
+
+				Expect(err).To(MatchError(ContainSubstring("already scaffolded the API and controller")))
+				Expect(cfg.GetResources()).To(Equal(before))
+			})
+
+			It("should accept another kind", func() {
+				res.Kind = "Busybox"
+				res.Plural = "busyboxes"
+
+				Expect(subCmd.InjectResource(res)).To(Succeed())
+			})
+		})
+
+		Context("when another resource records a controller", func() {
+			// userController stands for the controller file the user implemented.
+			const userController = "package controller\n\n// implemented by the user\n"
+
+			addCaptain := func(controller string) {
+				Expect(cfg.AddResource(resource.Resource{
+					GVK:         resource.GVK{Group: exampleDomain, Domain: testIODomain, Version: "v1alpha1", Kind: "Captain"},
+					Plural:      "captains",
+					API:         &resource.API{CRDVersion: "v1", Namespaced: true},
+					Controllers: &resource.Controllers{{Name: controller}},
+				})).To(Succeed())
+			}
+
+			It("should refuse a controller generating the same reconciler before writing any file", func() {
+				controllerFile := filepath.Join("internal", "controller", "memcached_controller.go")
+				addCaptain("memcached")
+				Expect(afero.WriteFile(fs.FS, controllerFile, []byte(userController), 0o644)).To(Succeed())
+				before, err := cfg.GetResources()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = subCmd.InjectResource(res)
+
+				Expect(err).To(MatchError(ContainSubstring("both generate MemcachedReconciler")))
+				Expect(cfg.GetResources()).To(Equal(before))
+				Expect(afero.ReadFile(fs.FS, controllerFile)).To(BeEquivalentTo(userController))
+			})
+
+			It("should accept a controller generating another reconciler", func() {
+				addCaptain("captain-backup")
+
+				Expect(subCmd.InjectResource(res)).To(Succeed())
+			})
+		})
+
+		Context("when the same resource records a controller", func() {
+			addMemcached := func(controller string) {
+				Expect(cfg.AddResource(resource.Resource{
+					GVK:         res.GVK,
+					Plural:      res.Plural,
+					API:         &resource.API{CRDVersion: "v1", Namespaced: true},
+					Controllers: &resource.Controllers{{Name: controller}},
+				})).To(Succeed())
+			}
+
+			It("should refuse a default controller generating the same reconciler before writing any file", func() {
+				res.Kind = "MyKind"
+				res.Plural = "mykinds"
+				addMemcached("my-kind")
+				before, err := cfg.GetResources()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = subCmd.InjectResource(res)
+
+				Expect(err).To(MatchError(ContainSubstring("both generate MyKindReconciler")))
+				Expect(cfg.GetResources()).To(Equal(before))
+			})
+
+			It("should accept the recorded default controller again", func() {
+				addMemcached(resource.DefaultControllerName(res.Kind))
+
+				Expect(subCmd.InjectResource(res)).To(Succeed())
+			})
 		})
 	})
 })

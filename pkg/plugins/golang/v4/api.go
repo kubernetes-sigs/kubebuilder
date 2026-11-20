@@ -250,8 +250,8 @@ func (p *createAPISubcommand) validateController() error {
 		return nil
 	}
 
-	if err := p.validateControllerName(); err != nil {
-		return err
+	if err := p.options.ValidateControllerName(p.resource, p.config); err != nil {
+		return fmt.Errorf("error validating controller: %w", err)
 	}
 
 	existingRes, err := p.config.GetResource(p.resource.GVK)
@@ -260,95 +260,37 @@ func (p *createAPISubcommand) validateController() error {
 		return nil
 	}
 
-	existing := existingRes.GetControllerNames()
-	if len(existing) == 0 {
+	if !existingRes.HasController() {
 		return nil
 	}
 
-	if p.options.ControllerName == "" {
-		// Allow unnamed controllers when recreating an API.
-		if p.options.DoAPI {
-			return nil
-		}
-		// An unnamed request selects the single default controller.
-		if len(existing) == 1 && existing[0] == resource.DefaultControllerName(p.resource.Kind) {
-			return nil
-		}
-		return errors.New(
-			"resource already has controllers defined; please specify '--controller-name' " +
-				"to add another controller, or use '--controller=false' to skip controller scaffolding",
-		)
-	}
-
-	newReconciler := resource.NormalizeReconcilerName(p.options.ControllerName, p.resource.Kind)
-	for _, name := range existing {
-		if name == p.options.ControllerName {
-			return fmt.Errorf(
-				"controller with name %q already exists for resource %s/%s/%s",
-				p.options.ControllerName,
-				p.resource.Group,
-				p.resource.Version,
-				p.resource.Kind,
-			)
-		}
-
-		if resource.NormalizeReconcilerName(name, p.resource.Kind) == newReconciler {
-			return fmt.Errorf(
-				"controller name %q conflicts with existing controller %q: both generate %s",
-				p.options.ControllerName,
-				name,
-				newReconciler,
-			)
-		}
-	}
-
-	return nil
-}
-
-// validateControllerName rejects a controller whose reconciler name or generated filename
-// collides with a controller of another resource in the same package, including default names.
-func (p *createAPISubcommand) validateControllerName() error {
-	resources, err := p.config.GetResources()
-	if err != nil {
-		return fmt.Errorf("failed to get resources to check controller names: %w", err)
-	}
-
 	newName := p.options.ControllerName
-	if newName == "" {
+	unnamed := newName == ""
+	if unnamed {
 		newName = resource.DefaultControllerName(p.resource.Kind)
 	}
-	newReconciler := resource.NormalizeReconcilerName(newName, p.resource.Kind)
 
-	for _, res := range resources {
-		if res.IsEqualTo(p.resource.GVK) || !p.sharesControllerPackage(res) {
-			continue
-		}
-
-		for _, name := range res.GetControllerNames() {
-			if resource.NormalizeReconcilerName(name, res.Kind) != newReconciler {
-				if name == newName {
-					return fmt.Errorf("controller name %q conflicts with controller of %s/%s/%s: "+
-						"both generate %s_controller.go in the same package; use '--controller-name' to pick another name",
-						newName, res.Group, res.Version, res.Kind, resource.NormalizeFileName(newName))
-				}
-				continue
-			}
-
-			return fmt.Errorf(
-				"controller %q conflicts with controller %q of %s/%s/%s: "+
-					"both generate %s in the same package; use '--controller-name' to pick "+
-					"another name, or '--controller=false' if that controller already reconciles this resource",
-				newName, name, res.Group, res.Version, res.Kind, newReconciler,
+	if !existingRes.HasControllerWithName(newName) {
+		// Without a name, create api adds the default controller only along with the API.
+		if unnamed && !p.options.DoAPI {
+			return errors.New(
+				"resource already has controllers defined; use '--controller-name' to add another controller",
 			)
 		}
+		return nil
 	}
 
-	return nil
-}
-
-// sharesControllerPackage reports whether resources use the same controller directory.
-func (p *createAPISubcommand) sharesControllerPackage(other resource.Resource) bool {
-	return !p.config.IsMultiGroup() || p.resource.Group == other.Group
+	// The resource already records this controller: only an unnamed request with --force
+	// scaffolds the default controller again.
+	if unnamed && p.force {
+		return nil
+	}
+	hint := ""
+	if unnamed {
+		hint = "; use '--force' to scaffold it again"
+	}
+	return fmt.Errorf("controller with name %q already exists for resource %s/%s/%s%s",
+		newName, p.resource.Group, p.resource.Version, p.resource.Kind, hint)
 }
 
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
@@ -361,7 +303,14 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
+	// A plugin later in the chain, such as deploy-image, records its own default controller on
+	// the shared resource. Scaffold the controller this plugin was asked for, whatever was added.
+	res := p.resource.Copy()
+	if p.options.DoController && p.options.ControllerName != "" {
+		res.Controllers = &resource.Controllers{{Name: p.options.ControllerName}}
+	}
+
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, res, p.force)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding API: %w", err)

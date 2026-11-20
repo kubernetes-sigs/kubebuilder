@@ -146,14 +146,16 @@ var _ = Describe("Server-Side Apply (--ssa) Scaffolding", func() {
 		Expect(string(typesContent)).To(ContainSubstring("+genclient"))
 
 		By("verifying the PROJECT file tracks both ssa and the controller for the resource")
+		projectPath := filepath.Join(kbc.Dir, yaml.DefaultPath)
+		Expect(os.ReadFile(projectPath)).NotTo(MatchRegexp(`(?m)^[ -]*controller:`),
+			"the legacy field must not be written")
 		store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-		Expect(store.LoadFrom(filepath.Join(kbc.Dir, yaml.DefaultPath))).To(Succeed())
+		Expect(store.LoadFrom(projectPath)).To(Succeed())
 		admiral, err := store.Config().GetResource(resource.GVK{
 			Group: "crew", Domain: "test.io", Version: "v1", Kind: "Admiral",
 		})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(admiral.API.SSA).To(BeTrue(), "adding the controller must not drop the ssa flag from the PROJECT file")
-		Expect(admiral.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 		Expect(admiral.GetControllerNames()).To(Equal([]string{"admiral"}))
 	})
 

@@ -178,11 +178,12 @@ var _ = Describe("alpha generate", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("regenerating the project into another directory")
-			//nolint:gosec
 			output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", snapshotDir))
 			Expect(err).NotTo(HaveOccurred(), string(output))
 
 			By("checking that every controller was kept and recorded by name")
+			Expect(os.ReadFile(filepath.Join(snapshotDir, yaml.DefaultPath))).NotTo(
+				MatchRegexp(`(?m)^[ -]*controller:`), "the legacy field must not be written")
 			regenerated, err := loadProjectConfig(snapshotDir)
 			Expect(err).NotTo(HaveOccurred())
 			for kindName, names := range map[string][]string{sailorKind: {"sailor"}, kbc.Kind: {kind, backup}} {
@@ -190,7 +191,6 @@ var _ = Describe("alpha generate", func() {
 					Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: kindName,
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(res.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 				Expect(res.GetControllerNames()).To(ConsistOf(names))
 				for _, name := range names {
 					Expect(filepath.Join(snapshotDir, "internal", "controller",
@@ -203,35 +203,48 @@ var _ = Describe("alpha generate", func() {
 		})
 
 	// sharedControllerProject scaffolds a kind in two versions that share one controller, then writes
-	// the controller of both versions in the legacy form or by name. It returns the PROJECT path.
-	sharedControllerProject := func(multiGroup, legacy bool) string {
+	// the controller of both versions in the legacy form or by name. A name other than the default is
+	// passed as --controller-name, and a plural, when set, as --plural. It returns the PROJECT path.
+	sharedControllerProject := func(multiGroup, legacy bool, kind, name, plural string) string {
 		GinkgoHelper()
 
-		kind := strings.ToLower(kbc.Kind)
 		Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
 		if multiGroup {
 			Expect(kbc.Edit("--multigroup=true")).To(Succeed())
 		}
-		Expect(kbc.CreateAPI("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
-			"--resource", "--controller", "--make=false")).To(Succeed())
-		Expect(kbc.CreateAPI("--group", kbc.Group, "--version", "v2", "--kind", kbc.Kind,
-			"--resource", "--controller=false", "--make=false")).To(Succeed())
+		v1Args := []string{
+			"--group", kbc.Group, "--version", kbc.Version, "--kind", kind,
+			"--resource", "--controller", "--make=false",
+		}
+		v2Args := []string{
+			"--group", kbc.Group, "--version", "v2", "--kind", kind,
+			"--resource", "--controller=false", "--make=false",
+		}
+		if name != resource.DefaultControllerName(kind) {
+			v1Args = append(v1Args, "--controller-name", name)
+		}
+		if plural != "" {
+			v1Args = append(v1Args, "--plural", plural)
+			v2Args = append(v2Args, "--plural", plural)
+		}
+		Expect(kbc.CreateAPI(v1Args...)).To(Succeed())
+		Expect(kbc.CreateAPI(v2Args...)).To(Succeed())
 
 		projectPath := filepath.Join(kbc.Dir, yaml.DefaultPath)
 		projectStore := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
 		Expect(projectStore.LoadFrom(projectPath)).To(Succeed())
-		v2 := resource.GVK{Group: kbc.Group, Domain: kbc.Domain, Version: "v2", Kind: kbc.Kind}
+		v2 := resource.GVK{Group: kbc.Group, Domain: kbc.Domain, Version: "v2", Kind: kind}
 		res, err := projectStore.Config().GetResource(v2)
 		Expect(err).NotTo(HaveOccurred())
-		res.Controllers = &resource.Controllers{{Name: kind}}
+		res.Controllers = &resource.Controllers{{Name: name}}
 		Expect(projectStore.Config().UpdateResource(res)).To(Succeed())
 		Expect(projectStore.SaveTo(projectPath)).To(Succeed())
 
 		if legacy {
 			for _, version := range []string{kbc.Version, "v2"} {
 				recordLegacyController(kbc.Dir, resource.GVK{
-					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kbc.Kind,
-				}, kind)
+					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kind,
+				}, name)
 			}
 		}
 
@@ -239,43 +252,51 @@ var _ = Describe("alpha generate", func() {
 	}
 
 	DescribeTable("should scaffold a controller that versions of a kind share once and keep it on each version",
-		func(multiGroup, legacy, inPlace bool) {
-			sharedControllerProject(multiGroup, legacy)
+		func(multiGroup, legacy, inPlace, named bool) {
+			kind, name, plural := kbc.Kind, strings.ToLower(kbc.Kind), ""
+			if named {
+				kind, name, plural = "Captain", "captain-backup", "captainz"
+			}
+			sharedControllerProject(multiGroup, legacy, kind, name, plural)
 			outputDir := kbc.Dir
 			if inPlace {
 				Expect(kbc.Regenerate()).To(Succeed())
 			} else {
 				outputDir = snapshotDir
-				//nolint:gosec
 				output, err := kbc.Run(exec.Command(kbc.BinaryName, "alpha", "generate", "--output-dir", outputDir))
 				Expect(err).NotTo(HaveOccurred(), string(output))
 			}
 
-			kind := strings.ToLower(kbc.Kind)
 			controllerDir := filepath.Join(outputDir, "internal", "controller")
 			if multiGroup {
 				controllerDir = filepath.Join(controllerDir, kbc.Group)
 			}
-			Expect(filepath.Join(controllerDir, kind+"_controller.go")).To(BeAnExistingFile())
+			controllers, err := filepath.Glob(filepath.Join(controllerDir, "*_controller.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(controllers).To(ConsistOf(filepath.Join(controllerDir, resource.NormalizeFileName(name)+"_controller.go")))
 			mainFile, err := os.ReadFile(filepath.Join(outputDir, "cmd", "main.go"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(strings.Count(string(mainFile), kbc.Kind+"Reconciler{")).To(Equal(1))
+			Expect(strings.Count(string(mainFile), resource.NormalizeReconcilerName(name, kind)+"{")).To(Equal(1))
 
 			regenerated, err := loadProjectConfig(outputDir)
 			Expect(err).NotTo(HaveOccurred())
 			for _, version := range []string{kbc.Version, "v2"} {
 				res, err := regenerated.GetResource(resource.GVK{
-					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kbc.Kind,
+					Group: kbc.Group, Domain: kbc.Domain, Version: version, Kind: kind,
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(res.GetControllerNames()).To(Equal([]string{kind}))
+				Expect(res.GetControllerNames()).To(Equal([]string{name}))
+				if plural != "" {
+					Expect(res.Plural).To(Equal(plural))
+				}
 			}
 		},
-		Entry("in place, in the legacy form", false, true, true),
-		Entry("in place, by name", false, false, true),
-		Entry("into another directory, in the legacy form", false, true, false),
-		Entry("in place in a multigroup project, by name", true, false, true),
-		Entry("into another directory in a multigroup project, in the legacy form", true, true, false),
+		Entry("in place, in the legacy form", false, true, true, false),
+		Entry("in place, by name", false, false, true, false),
+		Entry("into another directory, in the legacy form", false, true, false, false),
+		Entry("in place in a multigroup project, by name", true, false, true, false),
+		Entry("into another directory in a multigroup project, in the legacy form", true, true, false, false),
+		Entry("in place, under a custom name with an irregular plural", false, false, true, true),
 	)
 
 	DescribeTable("should refuse controllers of different kinds that collide before changing anything",
@@ -306,7 +327,6 @@ var _ = Describe("alpha generate", func() {
 			if !inPlace {
 				args = append(args, "--output-dir", outputDir)
 			}
-			//nolint:gosec
 			output, err := kbc.Run(exec.Command(kbc.BinaryName, args...))
 			Expect(err).To(HaveOccurred())
 			Expect(string(output)).To(ContainSubstring("generate the same code"))
@@ -609,8 +629,8 @@ func recordLegacyController(dir string, gvk resource.GVK, name string) {
 				kept = append(kept, controller)
 			}
 		}
-		res.Controller = true //nolint:staticcheck // writing the legacy form is the point
 		res.Controllers = nil
+		*res = withLegacyController(*res)
 		if len(kept) > 0 {
 			res.Controllers = &kept
 		}

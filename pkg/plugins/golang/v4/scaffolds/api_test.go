@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
@@ -58,6 +59,14 @@ func ssaTestResource(kind string, ssa bool) resource.Resource {
 // testAPIPath is the Go package of the v1 API in the test project.
 const testAPIPath = "sigs.k8s.io/kubebuilder/test/api/v1"
 
+// withLegacyController returns res as older releases passed it to the scaffolder, with the
+// deprecated `controller: true` key of an old PROJECT file.
+func withLegacyController(res resource.Resource) resource.Resource {
+	GinkgoHelper()
+	Expect(sigsyaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
+	return res
+}
+
 func newSSATestConfig(resources ...resource.Resource) config.Config {
 	cfg := cfgv3.New()
 	Expect(cfg.SetRepository("sigs.k8s.io/kubebuilder/test")).To(Succeed())
@@ -74,7 +83,9 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 			res := ssaTestResource("Captain", false)
 			res.API = nil
 			res.Path = testAPIPath
-			res.Controller = legacy //nolint:staticcheck // legacy library consumer
+			if legacy {
+				res = withLegacyController(res)
+			}
 			for _, name := range names {
 				if res.Controllers == nil {
 					res.Controllers = &resource.Controllers{}
@@ -105,6 +116,34 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 		Entry("controller name with several hyphens", false, []string{"captain-nightly-backup"},
 			"captain_nightly_backup", "CaptainNightlyBackupReconciler"),
 	)
+
+	// The CLI of older releases records this resource after `create api --controller-name captain-backup`,
+	// `create api --resource=false --controller-name captain` and `create api --force`.
+	It("should scaffold the last named controller alongside the legacy flag and keep the file of the other one", func() {
+		res := withLegacyController(ssaTestResource("Captain", false))
+		res.API = nil
+		res.Path = testAPIPath
+		res.Controllers = &resource.Controllers{{Name: backupController}, {Name: "captain"}}
+		cfg := newSSATestConfig()
+		fs := machinery.Filesystem{FS: afero.NewMemMapFs()}
+		Expect(machinery.NewScaffold(fs, machinery.WithConfig(cfg)).Execute(&cmd.Main{})).To(Succeed())
+		backupPath := filepath.Join("internal", "controller", "captain_backup_controller.go")
+		backupContent := []byte("package controller\n\n// edited by the user\n")
+		Expect(afero.WriteFile(fs.FS, backupPath, backupContent, 0o600)).To(Succeed())
+
+		scaffolder := NewAPIScaffolder(cfg, res, false)
+		scaffolder.InjectFS(fs)
+		Expect(scaffolder.Scaffold()).To(Succeed())
+
+		content, err := afero.ReadFile(fs.FS, filepath.Join("internal", "controller", "captain_controller.go"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(content)).To(ContainSubstring("type CaptainReconciler struct"))
+		mainContent, err := afero.ReadFile(fs.FS, "cmd/main.go")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(mainContent)).To(ContainSubstring("controller.CaptainReconciler{"))
+		Expect(mainContent).NotTo(ContainSubstring("controller.CaptainBackupReconciler{"))
+		Expect(afero.ReadFile(fs.FS, backupPath)).To(Equal(backupContent))
+	})
 
 	// The CLI records the default controller by name, while older releases recorded `controller: true`.
 	// Both must scaffold the same files, so projects keep their file names, structs and Named() values.
@@ -137,8 +176,7 @@ var _ = Describe("controller scaffolding for library consumers", func() {
 			res := ssaTestResource("FirstMate", false)
 			res.API = nil
 			res.Path = testAPIPath
-			legacy := res.Copy()
-			legacy.Controller = true //nolint:staticcheck // what older releases passed to the scaffolder
+			legacy := withLegacyController(res.Copy())
 			named := res.Copy()
 			named.Controllers = &resource.Controllers{{Name: "firstmate"}}
 
@@ -201,7 +239,7 @@ var _ = Describe("scaffolding a legacy controller", func() {
 			}
 			legacy := ssaTestResource(kind, false)
 			legacy.Path = apiPath
-			legacy.Controller = true //nolint:staticcheck // legacy library consumer
+			legacy = withLegacyController(legacy)
 			named := ssaTestResource(kind, false)
 			named.Path = apiPath
 			named.Controllers = &resource.Controllers{{Name: resource.DefaultControllerName(kind)}}

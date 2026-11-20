@@ -276,6 +276,8 @@ layout: ""
 	})
 
 	Context("legacy controller migration", func() {
+		// legacyControllerKey matches the deprecated controller key in a PROJECT file.
+		const legacyControllerKey = `(?m)^[ -]*controller:`
 		const legacyProject = `version: "3"
 resources:
 - controller: true
@@ -297,6 +299,7 @@ resources:
 			Expect(legacy.Validate()).To(Succeed())
 			Expect(legacy.GetControllerNames()).To(Equal([]string{"mykind"}))
 			Expect(s.Save()).To(Succeed())
+			Expect(afero.ReadFile(s.fs, DefaultPath)).NotTo(MatchRegexp(legacyControllerKey))
 			unchanged, err := s.Config().GetResource(gvk)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(unchanged).To(Equal(legacy))
@@ -304,7 +307,6 @@ resources:
 			migrated, err := s.Config().GetResource(gvk)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(migrated.Validate()).To(Succeed())
-			Expect(migrated.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 			Expect(migrated.GetControllerNames()).To(Equal(legacy.GetControllerNames()))
 		})
 
@@ -341,12 +343,12 @@ resources:
 				}
 
 				Expect(s.Save()).To(Succeed())
+				Expect(afero.ReadFile(s.fs, DefaultPath)).NotTo(MatchRegexp(legacyControllerKey))
 
 				Expect(s.Load()).To(Succeed())
 				for gvk, names := range expected {
 					migrated, err := s.Config().GetResource(gvk)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(migrated.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 					Expect(migrated.GetControllerNames()).To(Equal(names))
 				}
 			},
