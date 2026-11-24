@@ -164,6 +164,19 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 	return universe, nil
 }
 
+// projectFileHeader returns the comment lines at the top of a PROJECT file, which the store
+// writes before the configuration.
+func projectFileHeader(project string) string {
+	var header strings.Builder
+	for line := range strings.Lines(project) {
+		if !strings.HasPrefix(line, "#") {
+			break
+		}
+		header.WriteString(line)
+	}
+	return header.String()
+}
+
 func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string, cfg config.Config) error {
 	var err error
 
@@ -187,8 +200,8 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 		req.Config = configMap
 		// Send the PROJECT file as it will be saved, so it matches the config.
-		if _, ok := req.Universe[yamlstore.DefaultPath]; ok {
-			req.Universe[yamlstore.DefaultPath] = string(configData)
+		if project, ok := req.Universe[yamlstore.DefaultPath]; ok {
+			req.Universe[yamlstore.DefaultPath] = projectFileHeader(project) + string(configData)
 		}
 	}
 

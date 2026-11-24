@@ -444,13 +444,33 @@ func migrateDeployImagePlugin(s store.Store) error {
 		return nil
 	}
 
-	for _, r := range deployImagePlugin.Resources {
+	for _, r := range uniqueDeployImageResources(deployImagePlugin.Resources) {
 		if err := createAPIWithDeployImage(r); err != nil {
 			return fmt.Errorf("failed to create API with deploy-image: %w", err)
 		}
 	}
 
 	return nil
+}
+
+// uniqueDeployImageResources returns one entry for each group, version and kind. Older PROJECT files can
+// list the same API more than once, and the deploy-image plugin scaffolds each API only once. The last
+// entry is kept because its options are the ones used by the code of the project.
+func uniqueDeployImageResources(resources []deployimagev1alpha1.ResourceData) []deployimagev1alpha1.ResourceData {
+	unique := make([]deployimagev1alpha1.ResourceData, 0, len(resources))
+	index := map[resource.GVK]int{}
+	for _, r := range resources {
+		gvk := resource.GVK{Group: r.Group, Version: r.Version, Kind: r.Kind}
+		if i, found := index[gvk]; found {
+			slog.Warn("Skipping repeated deploy-image entry", "group", r.Group, "version", r.Version, "kind", r.Kind)
+			unique[i] = r
+			continue
+		}
+		index[gvk] = len(unique)
+		unique = append(unique, r)
+	}
+
+	return unique
 }
 
 // Creates an API with Deploy Image plugin.
@@ -635,7 +655,7 @@ func validateDuplicateControllerNames(resources []resource.Resource, multiGroup 
 	for _, res := range resources {
 		for _, name := range res.GetControllerNames() {
 			for _, earlier := range recorded {
-				if isSharedController(earlier, res, name) || !scaffoldsSameController(earlier, res, name, multiGroup) {
+				if isSharedController(earlier, res, name) || !earlier.res.ControllerCollides(earlier.name, res, name, multiGroup) {
 					continue
 				}
 
@@ -675,17 +695,6 @@ func planControllers(resources []resource.Resource) ([]controllerStep, map[resou
 func isSharedController(step controllerStep, res resource.Resource, name string) bool {
 	return step.name == name && step.res.Group == res.Group && step.res.Domain == res.Domain &&
 		step.res.Kind == res.Kind && step.res.Version != res.Version
-}
-
-// scaffoldsSameController reports whether step and the controller name of res would scaffold the
-// same controller file or reconciler in the same controller package.
-func scaffoldsSameController(step controllerStep, res resource.Resource, name string, multiGroup bool) bool {
-	if multiGroup && step.res.Group != res.Group {
-		return false
-	}
-
-	return resource.NormalizeFileName(step.name) == resource.NormalizeFileName(name) ||
-		resource.NormalizeReconcilerName(step.name, step.res.Kind) == resource.NormalizeReconcilerName(name, res.Kind)
 }
 
 // recordSharedControllers adds to the regenerated PROJECT file the controllers that versions of a

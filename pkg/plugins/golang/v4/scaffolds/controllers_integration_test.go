@@ -74,11 +74,12 @@ var _ = Describe("a controller recorded in a legacy PROJECT file", func() {
 			By("saving the PROJECT file through an unrelated command")
 			Expect(kbc.CreateWebhook("--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
 				"--defaulting", "--make=false")).To(Succeed())
+			Expect(os.ReadFile(projectPath)).NotTo(MatchRegexp(`(?m)^[ -]*controller:`),
+				"the legacy field must not be written")
 			store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
 			Expect(store.LoadFrom(projectPath)).To(Succeed())
 			migrated, err := store.Config().GetResource(gvk)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(migrated.Controller).To(BeFalse()) //nolint:staticcheck // checking the migrated field
 			Expect(migrated.GetControllerNames()).To(Equal([]string{kind}))
 
 			By("refusing a new API whose controller collides with the existing one")
@@ -97,6 +98,33 @@ var _ = Describe("a controller recorded in a legacy PROJECT file", func() {
 		Entry("in a single-group project", false),
 		Entry("in a multigroup project", true),
 	)
+
+	It("should scaffold the named controller and the deploy-image one when both plugins run in a chain", func() {
+		kind := strings.ToLower(kbc.Kind)
+		gvk := resource.GVK{Group: kbc.Group, Domain: kbc.Domain, Version: kbc.Version, Kind: kbc.Kind}
+		controllerDir := filepath.Join(kbc.Dir, "internal", "controller")
+
+		Expect(kbc.Init("--plugins", "go/v4", "--domain", kbc.Domain)).To(Succeed())
+		Expect(kbc.CreateAPI("--plugins", "go/v4,deploy-image/v1-alpha",
+			"--group", kbc.Group, "--version", kbc.Version, "--kind", kbc.Kind,
+			"--resource", "--controller", "--controller-name", kind+"-backup",
+			"--image", "busybox:1.36", "--make=false", "--manifests=false")).To(Succeed())
+
+		By("recording both controllers")
+		store := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+		Expect(store.LoadFrom(filepath.Join(kbc.Dir, yaml.DefaultPath))).To(Succeed())
+		recorded, err := store.Config().GetResource(gvk)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(recorded.GetControllerNames()).To(ConsistOf(kind+"-backup", kind))
+
+		By("writing and registering both controllers")
+		Expect(filepath.Join(controllerDir, kind+"_backup_controller.go")).To(BeAnExistingFile())
+		Expect(filepath.Join(controllerDir, kind+"_controller.go")).To(BeAnExistingFile())
+		mainContent, err := os.ReadFile(filepath.Join(kbc.Dir, "cmd", "main.go"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(mainContent)).To(ContainSubstring("controller." + kbc.Kind + "BackupReconciler{"))
+		Expect(string(mainContent)).To(ContainSubstring("controller." + kbc.Kind + "Reconciler{"))
+	})
 })
 
 // projectFiles returns the content of every file in the project, by path. The bin directory holds
@@ -150,8 +178,9 @@ func recordLegacyController(dir string, gvk resource.GVK, name string) {
 				kept = append(kept, controller)
 			}
 		}
-		res.Controller = true //nolint:staticcheck // writing the legacy form is the point
 		res.Controllers = nil
+		// Record the controller with the deprecated key, as an old PROJECT file does.
+		Expect(sigsyaml.Unmarshal([]byte("controller: true"), res)).To(Succeed())
 		if len(kept) > 0 {
 			res.Controllers = &kept
 		}

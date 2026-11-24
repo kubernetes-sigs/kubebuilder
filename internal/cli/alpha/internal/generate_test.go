@@ -26,6 +26,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
@@ -34,6 +35,14 @@ import (
 	autoupdatev1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/autoupdate/v1alpha"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
+
+// withLegacyController returns res as an older PROJECT file records it, with the deprecated
+// `controller: true` key.
+func withLegacyController(res resource.Resource) resource.Resource {
+	GinkgoHelper()
+	Expect(sigsyaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
+	return res
+}
 
 type fakeConfig struct {
 	config.Config
@@ -523,6 +532,28 @@ var _ = Describe("generate: get-args-helpers", func() {
 		})
 	})
 
+	Context("uniqueDeployImageResources", func() {
+		It("keeps the last entry of an API listed more than once", func() {
+			first := deployimagev1alpha1.ResourceData{Group: exampleDomain, Version: "v1", Kind: fooKind}
+			first.Options.Image = "busybox:1.36"
+			other := deployimagev1alpha1.ResourceData{Group: exampleDomain, Version: "v2", Kind: fooKind}
+			last := first
+			last.Options.Image = "busybox:1.37"
+
+			Expect(uniqueDeployImageResources([]deployimagev1alpha1.ResourceData{first, other, last})).
+				To(Equal([]deployimagev1alpha1.ResourceData{last, other}))
+		})
+
+		It("keeps entries of different APIs", func() {
+			resources := []deployimagev1alpha1.ResourceData{
+				{Group: exampleDomain, Version: "v1", Kind: fooKind},
+				{Group: exampleDomain, Version: "v2", Kind: fooKind},
+			}
+
+			Expect(uniqueDeployImageResources(resources)).To(Equal(resources))
+		})
+	})
+
 	// getDeployImageOptions
 	Context("getDeployImageOptions", func() {
 		It("returns correct options", func() {
@@ -576,7 +607,7 @@ var _ = Describe("generate: get-args-helpers", func() {
 
 		Context("returns correct flags", func() {
 			It("for nil API with Controller set", func() {
-				res.Controller = true //nolint:staticcheck // exercising the deprecated field is the point
+				res = withLegacyController(res)
 				// Controllers are now created separately, so always --controller=false in API step
 				Expect(getAPIResourceFlags(res)).To(ContainElements("--resource=false", "--controller=false"))
 			})
@@ -715,8 +746,10 @@ var _ = Describe("generate: create-helpers", func() {
 		func(legacy bool, controllers *resource.Controllers, expectedNames []string) {
 			res := resource.Resource{
 				GVK:         resource.GVK{Group: crewGroup, Version: "v1", Kind: captainKind},
-				Controller:  legacy, //nolint:staticcheck // legacy PROJECT compatibility
 				Controllers: controllers,
+			}
+			if legacy {
+				res = withLegacyController(res)
 			}
 			steps, _ := planControllers([]resource.Resource{res})
 			Expect(kubebuilderCreate(&fakeStore{cfg: &fakeConfig{}}, steps)).To(Succeed())
@@ -749,12 +782,11 @@ var _ = Describe("generate: create-helpers", func() {
 	Describe("createAPI", func() {
 		Context("Without External flag", func() {
 			It("runs kubebuilder create api successfully for a resource", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
-					Plural:     examplesDir,
-					API:        &resource.API{Namespaced: true},
-					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
-				}
+				res := withLegacyController(resource.Resource{
+					GVK:    resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: fixtureTest},
+					Plural: examplesDir,
+					API:    &resource.API{Namespaced: true},
+				})
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
 			})
@@ -762,42 +794,39 @@ var _ = Describe("generate: create-helpers", func() {
 
 		Context("With External flag set", func() {
 			It("runs kubebuilder create api successfully for a resource", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: "external"},
-					Plural:     examplesDir,
-					API:        &resource.API{Namespaced: true},
-					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
-					External:   true,
-					Path:       certManagerAPIPath,
-				}
+				res := withLegacyController(resource.Resource{
+					GVK:      resource.GVK{Group: exampleDomain, Version: "v1", Kind: exampleKind, Domain: "external"},
+					Plural:   examplesDir,
+					API:      &resource.API{Namespaced: true},
+					External: true,
+					Path:     certManagerAPIPath,
+				})
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
 			})
 
 			It("runs kubebuilder create api successfully with module version", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
-					Plural:     "certificates",
-					API:        nil,  // External resources typically don't scaffold API
-					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
-					External:   true,
-					Path:       certManagerAPIPath,
-					Module:     "github.com/cert-manager/cert-manager@v1.18.2",
-				}
+				res := withLegacyController(resource.Resource{
+					GVK:      resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
+					Plural:   "certificates",
+					API:      nil, // External resources typically don't scaffold API
+					External: true,
+					Path:     certManagerAPIPath,
+					Module:   "github.com/cert-manager/cert-manager@v1.18.2",
+				})
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
 			})
 
 			It("runs kubebuilder create api successfully WITHOUT module version", func() {
-				res := resource.Resource{
-					GVK:        resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
-					Plural:     "certificates",
-					API:        nil,
-					Controller: true, //nolint:staticcheck // exercising legacy PROJECT compatibility
-					External:   true,
-					Path:       certManagerAPIPath,
-					Module:     "", // No module specified
-				}
+				res := withLegacyController(resource.Resource{
+					GVK:      resource.GVK{Group: certManagerGroup, Version: "v1", Kind: certificateKind, Domain: "io"},
+					Plural:   "certificates",
+					API:      nil,
+					External: true,
+					Path:     certManagerAPIPath,
+					Module:   "", // No module specified
+				})
 				// Run createAPI and verify no errors
 				Expect(createAPI(res)).To(Succeed())
 			})
@@ -943,7 +972,7 @@ var _ = Describe("generate: kubebuilder", func() {
 		withController := func(group, version, kind, name string) resource.Resource {
 			res := resource.Resource{GVK: resource.GVK{Group: group, Domain: exampleDomain, Version: version, Kind: kind}}
 			if name == "" {
-				res.Controller = true //nolint:staticcheck // legacy PROJECT compatibility
+				res = withLegacyController(res)
 			} else {
 				res.Controllers = &resource.Controllers{{Name: name}}
 			}
@@ -956,7 +985,8 @@ var _ = Describe("generate: kubebuilder", func() {
 				steps, shared := planControllers(resources)
 				Expect(steps).To(HaveLen(1))
 				Expect(steps[0].res.Version).To(Equal("v1"))
-				Expect(shared).To(Equal(map[resource.GVK][]string{resources[1].GVK: {"captain"}}))
+				Expect(steps[0].name).To(Equal(resources[0].GetControllerNames()[0]))
+				Expect(shared).To(Equal(map[resource.GVK][]string{resources[1].GVK: resources[1].GetControllerNames()}))
 			},
 			Entry("in the legacy form", false,
 				withController("crew", "v1", "Captain", ""), withController("crew", "v2", "Captain", "")),
@@ -964,6 +994,9 @@ var _ = Describe("generate: kubebuilder", func() {
 				withController("crew", "v1", "Captain", "captain"), withController("crew", "v2", "Captain", "captain")),
 			Entry("in a multigroup project", true,
 				withController("crew", "v1", "Captain", ""), withController("crew", "v2", "Captain", "captain")),
+			Entry("under a custom name", false,
+				withController("crew", "v1", "Captain", "captain-backup"),
+				withController("crew", "v2", "Captain", "captain-backup")),
 		)
 
 		It("should scaffold the same name in different groups of a multigroup project", func() {
@@ -976,7 +1009,7 @@ var _ = Describe("generate: kubebuilder", func() {
 			Expect(shared).To(BeEmpty())
 		})
 
-		DescribeTable("should refuse controllers of different kinds that generate the same code",
+		DescribeTable("should refuse controllers of different APIs that generate the same code",
 			func(first, other resource.Resource) {
 				err := validateDuplicateControllerNames([]resource.Resource{first, other}, false)
 				Expect(err).To(MatchError(ContainSubstring("generate the same code")))
@@ -985,6 +1018,12 @@ var _ = Describe("generate: kubebuilder", func() {
 				withController("crew", "v1", "Captain", ""), withController("crew", "v1", "Sailor", "captain")),
 			Entry("the same file with a different reconciler",
 				withController("crew", "v1", "MyKind", ""), withController("crew", "v1", "Mykind", "")),
+			Entry("the same kind in another domain and version",
+				withController("batch", "v2", "CronJob", ""), func() resource.Resource {
+					external := withController("batch", "v1", "CronJob", "")
+					external.Domain = "k8s.io"
+					return external
+				}()),
 		)
 	})
 

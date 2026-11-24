@@ -25,6 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
@@ -164,7 +165,6 @@ var _ = Describe("Cfg", func() {
 					CRDVersion: "v1",
 					Namespaced: true,
 				},
-				Controller: true, //nolint:staticcheck // legacy PROJECT compatibility
 				Webhooks: &resource.Webhooks{
 					WebhookVersion: "v1",
 					Defaulting:     true,
@@ -172,6 +172,8 @@ var _ = Describe("Cfg", func() {
 					Conversion:     true,
 				},
 			}
+			// Record the controller with the deprecated key, as an old PROJECT file does.
+			Expect(yaml.Unmarshal([]byte("controller: true"), &res)).To(Succeed())
 			resWithoutPlural = res.Copy()
 
 			// As some of the tests insert directly into the slice without using the interface methods,
@@ -766,8 +768,7 @@ resources:
 				GinkgoHelper()
 				res, err := cfg.GetResource(gvk)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(res.Controller).To(BeFalse(), //nolint:staticcheck // legacy field
-					"the legacy field must not be written")
+				Expect(yaml.Marshal(res)).NotTo(MatchRegexp(`(?m)^controller:`), "the legacy field must not be written")
 				return res.GetControllerNames()
 			}
 
@@ -975,6 +976,20 @@ resources:
 				Entry("a legacy default that differs from a listed name only by a hyphen", "Captainbackup",
 					captainBackup, []string{captainBackup, "captainbackup"}),
 			)
+
+			It("should refuse a legacy controller beside its default listed twice, leaving the caller unchanged", func() {
+				cfg := Cfg{Version: Version, Resources: []resource.Resource{{
+					GVK: captainV1, Controller: true,
+					Controllers: &resource.Controllers{{Name: captainCtrl}, {Name: captainCtrl}},
+				}}}
+				before := cfg.Resources[0].Copy()
+
+				content, err := cfg.MarshalYAML()
+				Expect(err).To(MatchError(ContainSubstring(`duplicate controller name "captain"`)))
+				Expect(errors.As(err, &config.MarshalError{})).To(BeTrue())
+				Expect(content).To(BeNil())
+				Expect(cfg.Resources).To(Equal([]resource.Resource{before}))
+			})
 
 			DescribeTable("should refuse to save invalid controllers of one resource",
 				func(controllers resource.Controllers, expected string) {
