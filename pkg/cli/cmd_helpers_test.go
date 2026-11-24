@@ -469,6 +469,28 @@ var _ = Describe("cmd_helpers", func() {
 			Entry("when the fallback flag is merged first", true),
 		)
 
+		It("should not let a fallback flag hide a type conflict between declared flags", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ContinueOnError)
+			externalPlugin := pflag.NewFlagSet("external", pflag.ContinueOnError)
+			stringPlugin := pflag.NewFlagSet("string", pflag.ContinueOnError)
+			boolPlugin := pflag.NewFlagSet("bool", pflag.ContinueOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			externalPlugin.String("mode", "", "could not validate this flag")
+			Expect(externalPlugin.SetAnnotation("mode", external.FallbackFlagAnnotation, []string{"true"})).To(Succeed())
+			stringPlugin.String("mode", "", "mode as a string")
+			boolPlugin.Bool("mode", false, "mode as a bool")
+
+			Expect(mergeFlagSetInto(dest, externalPlugin, duplicateValues, "external/v1", firstPluginByFlag, true)).
+				To(Succeed())
+			Expect(mergeFlagSetInto(dest, stringPlugin, duplicateValues, "string/v1", firstPluginByFlag, true)).
+				To(Succeed())
+			err := mergeFlagSetInto(dest, boolPlugin, duplicateValues, "bool/v1", firstPluginByFlag, true)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("different value types"))
+		})
+
 		It("should sync parsed value to duplicate Values after syncDuplicateFlags", func() {
 			flags := pflag.NewFlagSet("cmd", pflag.ExitOnError)
 			var mainVal, dupVal bool

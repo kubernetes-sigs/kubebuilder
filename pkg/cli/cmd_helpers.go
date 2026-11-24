@@ -252,6 +252,10 @@ func mergeFlagSetInto(
 			)
 			return
 		}
+		if isFallbackFlag(existing) && !isFallbackFlag(flag) {
+			// The type is now declared, so a later flag with another type must conflict.
+			existing.Annotations = withoutFallbackAnnotation(existing.Annotations)
+		}
 		duplicateValues[flag.Name] = append(duplicateValues[flag.Name], flag.Value)
 
 		if !showPluginPrefix && len(duplicateValues[flag.Name]) == 1 {
@@ -273,6 +277,17 @@ func mergeFlagSetInto(
 func isFallbackFlag(flag *pflag.Flag) bool {
 	_, ok := flag.Annotations[external.FallbackFlagAnnotation]
 	return ok
+}
+
+// withoutFallbackAnnotation returns a copy of annotations without the fallback marker.
+func withoutFallbackAnnotation(annotations map[string][]string) map[string][]string {
+	result := make(map[string][]string, len(annotations))
+	for key, value := range annotations {
+		if key != external.FallbackFlagAnnotation {
+			result[key] = value
+		}
+	}
+	return result
 }
 
 // syncDuplicateFlags copies the parsed value of each flag to all duplicate Values from merge.
