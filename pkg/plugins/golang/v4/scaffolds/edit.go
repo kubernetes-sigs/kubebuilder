@@ -283,8 +283,8 @@ func (s *editScaffolder) updateMakefileHeaderFile(boilerplatePath string) {
 // makefileGeneratorWithHeaderPattern matches an object or applyconfiguration generator
 // that reads the default boilerplate file, as scaffolded by this and older releases.
 var makefileGeneratorWithHeaderPattern = regexp.MustCompile(
-	`^(object|` + makefileApplyConfigurationMarker + `):headerFile="?` +
-		regexp.QuoteMeta(hack.DefaultBoilerplatePath) + `"?(?:,year=\$\(YEAR\))?$`)
+	`^(object|` + makefileApplyConfigurationMarker + `):headerFile=["']?` +
+		regexp.QuoteMeta(hack.DefaultBoilerplatePath) + `["']?(?:,year=\$\(YEAR\))?$`)
 
 // makefileArgPattern matches each whitespace separated argument of a recipe line.
 var makefileArgPattern = regexp.MustCompile(`\S+`)
@@ -296,22 +296,41 @@ var makefileArgPattern = regexp.MustCompile(`\S+`)
 func setMakefileHeaderFile(content, boilerplatePath string) string {
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
-		args := controllerGenArgs(line)
-		if len(args) == 0 {
-			continue
-		}
-		isArg := make(map[string]bool, len(args))
-		for _, arg := range args {
-			isArg[arg] = true
-		}
-		lines[i] = makefileArgPattern.ReplaceAllStringFunc(line, func(arg string) string {
-			if !isArg[arg] {
-				return arg
-			}
-			return generatorWithHeaderFile(arg, boilerplatePath)
-		})
+		lines[i] = setLineHeaderFile(line, boilerplatePath)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// setLineHeaderFile applies setMakefileHeaderFile to the controller-gen commands of one recipe line.
+// The line is split into commands, so arguments of other commands on the same line stay unchanged.
+func setLineHeaderFile(line, boilerplatePath string) string {
+	var out strings.Builder
+	last := 0
+	for _, sep := range shellCommandSeparator.FindAllStringIndex(line, -1) {
+		out.WriteString(setCommandHeaderFile(line[last:sep[0]], boilerplatePath))
+		out.WriteString(line[sep[0]:sep[1]])
+		last = sep[1]
+	}
+	out.WriteString(setCommandHeaderFile(line[last:], boilerplatePath))
+	return out.String()
+}
+
+// setCommandHeaderFile rewrites the generator arguments of a single command if it is controller-gen.
+func setCommandHeaderFile(command, boilerplatePath string) string {
+	args := controllerGenArgs(command)
+	if len(args) == 0 {
+		return command
+	}
+	isArg := make(map[string]bool, len(args))
+	for _, arg := range args {
+		isArg[arg] = true
+	}
+	return makefileArgPattern.ReplaceAllStringFunc(command, func(arg string) string {
+		if !isArg[arg] {
+			return arg
+		}
+		return generatorWithHeaderFile(arg, boilerplatePath)
+	})
 }
 
 // generatorWithHeaderFile returns the controller-gen generator arg with headerFile

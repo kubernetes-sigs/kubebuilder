@@ -81,6 +81,20 @@ var _ = Describe("Edit scaffolding of the license header", func() {
 			Expect(setMakefileHeaderFile(content, "")).To(Equal(content))
 		})
 
+		It("should remove a headerFile written with single quotes", func() {
+			content := "\t\"$(CONTROLLER_GEN)\" object:headerFile='hack/boilerplate.go.txt',year=$(YEAR) paths=\"./...\"\n"
+
+			Expect(setMakefileHeaderFile(content, "")).To(Equal("\t\"$(CONTROLLER_GEN)\" object paths=\"./...\"\n"))
+		})
+
+		It("should not change the arguments of other commands on the same line", func() {
+			content := "\t\"$(CONTROLLER_GEN)\" object paths=\"./...\" && cp object object.bak\n"
+			want := "\t\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR) paths=\"./...\" && cp object object.bak\n"
+
+			Expect(setMakefileHeaderFile(content, hack.DefaultBoilerplatePath)).To(Equal(want))
+			Expect(setMakefileHeaderFile(want, "")).To(Equal(content))
+		})
+
 		It("should only change controller-gen commands", func() {
 			content := "# \"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR)\n" +
 				"\t@echo object applyconfiguration\n" +
