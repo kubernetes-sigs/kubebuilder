@@ -20,6 +20,8 @@ import (
 	"fmt"
 	log "log/slog"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/afero"
 
@@ -210,6 +212,7 @@ func (s *editScaffolder) updateBoilerplate() error {
 			}
 		}
 		log.Info("Removed license header file (--license none)", "path", boilerplatePath)
+		s.updateMakefileHeaderFile("")
 		return nil
 	}
 
@@ -249,5 +252,83 @@ func (s *editScaffolder) updateBoilerplate() error {
 	}
 
 	log.Info("License header updated successfully", "path", hack.DefaultBoilerplatePath)
+	s.updateMakefileHeaderFile(hack.DefaultBoilerplatePath)
 	return nil
+}
+
+// updateMakefileHeaderFile makes the controller-gen commands in the Makefile use
+// the boilerplate file only when it exists. An empty boilerplatePath removes headerFile.
+// On failure, logs a warning and does not stop scaffolding.
+func (s *editScaffolder) updateMakefileHeaderFile(boilerplatePath string) {
+	const makefilePath = "Makefile"
+	content, err := afero.ReadFile(s.fs.FS, makefilePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Warn("unable to read the Makefile to update the controller-gen headerFile", "error", err)
+		}
+		return
+	}
+
+	updated := setMakefileHeaderFile(string(content), boilerplatePath)
+	if updated == string(content) {
+		return
+	}
+	if err := afero.WriteFile(s.fs.FS, makefilePath, []byte(updated), 0o644); err != nil {
+		log.Warn("unable to update the controller-gen headerFile in the Makefile", "error", err)
+		return
+	}
+	log.Info("Updated the controller-gen headerFile in the Makefile", "path", makefilePath)
+}
+
+// makefileGeneratorWithHeaderPattern matches an object or applyconfiguration generator
+// that reads the default boilerplate file, as scaffolded by this and older releases.
+var makefileGeneratorWithHeaderPattern = regexp.MustCompile(
+	`^(object|` + makefileApplyConfigurationMarker + `):headerFile="?` +
+		regexp.QuoteMeta(hack.DefaultBoilerplatePath) + `"?(?:,year=\$\(YEAR\))?$`)
+
+// makefileArgPattern matches each whitespace separated argument of a recipe line.
+var makefileArgPattern = regexp.MustCompile(`\S+`)
+
+// setMakefileHeaderFile returns the Makefile content with the headerFile of the
+// object and applyconfiguration generators set to boilerplatePath, as in the
+// scaffolded Makefile. An empty boilerplatePath removes the headerFile that points
+// to the default boilerplate file. Only controller-gen commands are changed.
+func setMakefileHeaderFile(content, boilerplatePath string) string {
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		args := controllerGenArgs(line)
+		if len(args) == 0 {
+			continue
+		}
+		isArg := make(map[string]bool, len(args))
+		for _, arg := range args {
+			isArg[arg] = true
+		}
+		lines[i] = makefileArgPattern.ReplaceAllStringFunc(line, func(arg string) string {
+			if !isArg[arg] {
+				return arg
+			}
+			return generatorWithHeaderFile(arg, boilerplatePath)
+		})
+	}
+	return strings.Join(lines, "\n")
+}
+
+// generatorWithHeaderFile returns the controller-gen generator arg with headerFile
+// set to boilerplatePath, or without headerFile when boilerplatePath is empty.
+// Other args, and generators with a custom headerFile, are returned unchanged.
+func generatorWithHeaderFile(arg, boilerplatePath string) string {
+	if boilerplatePath == "" {
+		if match := makefileGeneratorWithHeaderPattern.FindStringSubmatch(arg); match != nil {
+			return match[1]
+		}
+		return arg
+	}
+	switch arg {
+	case "object":
+		return fmt.Sprintf("object:headerFile=%q,year=$(YEAR)", boilerplatePath)
+	case makefileApplyConfigurationMarker:
+		return fmt.Sprintf("%s:headerFile=%q", makefileApplyConfigurationMarker, boilerplatePath)
+	}
+	return arg
 }

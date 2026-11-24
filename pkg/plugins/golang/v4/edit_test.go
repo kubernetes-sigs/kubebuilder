@@ -382,6 +382,91 @@ Custom License Header
 			Expect(string(content)).To(ContainSubstring("New Company"), "New owner should be present")
 			Expect(string(content)).NotTo(ContainSubstring("Custom License Header"), "Old custom license should be replaced")
 		})
+
+		Context("Makefile headerFile", func() {
+			//nolint:lll
+			const (
+				makefileWithHeader = `manifests: controller-gen
+	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook applyconfiguration:headerFile="hack/boilerplate.go.txt" paths="./..." output:crd:artifacts:config=config/crd/bases
+
+generate: controller-gen
+	"$(CONTROLLER_GEN)" object:headerFile="hack/boilerplate.go.txt",year=$(YEAR) paths="./..."
+`
+				makefileWithoutHeader = `manifests: controller-gen
+	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook applyconfiguration paths="./..." output:crd:artifacts:config=config/crd/bases
+
+generate: controller-gen
+	"$(CONTROLLER_GEN)" object paths="./..."
+`
+			)
+
+			var makefilePath, boilerplatePath string
+
+			BeforeEach(func() {
+				makefilePath = filepath.Join(tmpDir, "Makefile")
+				boilerplatePath = filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			})
+
+			It("should remove headerFile from the Makefile when running edit with license none", func() {
+				Expect(os.MkdirAll(filepath.Dir(boilerplatePath), 0o755)).To(Succeed())
+				Expect(os.WriteFile(boilerplatePath, []byte("/*\nOld License\n*/"), 0o644)).To(Succeed())
+				Expect(os.WriteFile(makefilePath, []byte(makefileWithHeader), 0o644)).To(Succeed())
+
+				testCfg := cfgv3.New()
+				scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false, "none", "", "")
+				scaffolder.InjectFS(fs)
+				Expect(scaffolder.Scaffold()).To(Succeed())
+
+				_, err := os.Stat(boilerplatePath)
+				Expect(os.IsNotExist(err)).To(BeTrue())
+				content, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(Equal(makefileWithoutHeader))
+			})
+
+			It("should add headerFile to the Makefile when running edit with a license on a project without one", func() {
+				Expect(os.WriteFile(makefilePath, []byte(makefileWithoutHeader), 0o644)).To(Succeed())
+
+				testCfg := cfgv3.New()
+				scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false, "apache2", "New Owner", "")
+				scaffolder.InjectFS(fs)
+				Expect(scaffolder.Scaffold()).To(Succeed())
+
+				_, err := os.Stat(boilerplatePath)
+				Expect(err).NotTo(HaveOccurred())
+				content, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(Equal(makefileWithHeader))
+			})
+
+			It("should add headerFile to the Makefile when running edit with a license file", func() {
+				customLicensePath := filepath.Join(tmpDir, "new-header.txt")
+				Expect(os.WriteFile(customLicensePath, []byte("/*\nCustom\n*/"), 0o644)).To(Succeed())
+				Expect(os.WriteFile(makefilePath, []byte(makefileWithoutHeader), 0o644)).To(Succeed())
+
+				testCfg := cfgv3.New()
+				scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false, "", "", customLicensePath)
+				scaffolder.InjectFS(fs)
+				Expect(scaffolder.Scaffold()).To(Succeed())
+
+				content, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(Equal(makefileWithHeader))
+			})
+
+			It("should not change the Makefile when no license flag is set", func() {
+				Expect(os.WriteFile(makefilePath, []byte(makefileWithHeader), 0o644)).To(Succeed())
+
+				testCfg := cfgv3.New()
+				scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false, "", "", "")
+				scaffolder.InjectFS(fs)
+				Expect(scaffolder.Scaffold()).To(Succeed())
+
+				content, err := os.ReadFile(makefilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(Equal(makefileWithHeader))
+			})
+		})
 	})
 
 	Context("PreScaffold validation", func() {

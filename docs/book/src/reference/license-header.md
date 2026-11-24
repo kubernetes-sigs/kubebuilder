@@ -163,6 +163,8 @@ For hand-written files, manually update headers using `hack/boilerplate.go.txt` 
 - `kubebuilder alpha generate` - entire project
 
 All tools automatically reference `hack/boilerplate.go.txt`. The Makefile is already configured - no changes needed.
+`kubebuilder edit --license` keeps the Makefile in sync: with `--license none` it removes the `headerFile` arguments
+from the controller-gen commands, and with another license or `--license-file` it adds them back.
 
 ## Examples
 
