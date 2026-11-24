@@ -112,6 +112,10 @@ imagePullSecrets:
   - name: my-registry
     labels:
       example.com/team: platform`
+
+	// saExistingAnnotationGuard renders the scaffolded annotation only when the values do not set it.
+	saExistingAnnotationGuard = `    {{- if not (hasKey (.Values.serviceAccount.annotations | default dict) ` +
+		`"example.com/existing-annotation") }}`
 )
 
 var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
@@ -138,28 +142,32 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 			}),
 		Entry("annotations then labels (Kustomize alphabetical order): both merge, none duplicated",
 			saAnnotationsThenLabels, func(rendered string) {
-				Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(saExistingAnnotationGuard + "\n" +
+					"    example.com/existing-annotation: keep\n    {{- end }}\n" +
+					"    {{- if .Values.serviceAccount.annotations }}"))
 				Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
 			}),
 		Entry("labels then annotations (hand-ordered): both merge, none duplicated",
 			saLabelsThenAnnotations, func(rendered string) {
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(saExistingAnnotationGuard))
 				Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
 			}),
 		Entry("annotations only (labels removed from base): the labels block is injected",
 			saAnnotationsOnly, func(rendered string) {
 				Expect(rendered).To(ContainSubstring(`{{- with .Values.serviceAccount.labels }}`))
-				Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+				Expect(rendered).To(ContainSubstring(saExistingAnnotationGuard))
 			}),
 		Entry("neither block present: both are injected",
 			saNoLabelsNoAnnotations, func(rendered string) {
 				Expect(rendered).To(ContainSubstring(`{{- with .Values.serviceAccount.labels }}`))
 				Expect(rendered).To(ContainSubstring(`{{- with .Values.serviceAccount.annotations }}`))
 			}),
-		Entry("empty-value label key is still omitted so a user override cannot duplicate it",
+		Entry("empty-value label key is guarded so a user value replaces it instead of duplicating it",
 			saEmptyValueKey, func(rendered string) {
-				Expect(rendered).To(ContainSubstring(`"example.com/empty"`))
+				Expect(rendered).To(ContainSubstring(
+					`{{- if not (hasKey (.Values.serviceAccount.labels | default dict) "example.com/empty") }}` +
+						"\n    example.com/empty:\n    {{- end }}"))
+				Expect(rendered).To(ContainSubstring(`{{- with omit . "app.kubernetes.io/name" }}`))
 			}),
 		Entry("inline empty annotations map does not duplicate the annotations key",
 			saInlineAnnotations, func(rendered string) {
@@ -182,6 +190,44 @@ var _ = Describe("AddServiceAccountLabelsAndAnnotations", func() {
 
 		// The labels: nested under imagePullSecrets is left exactly as written.
 		Expect(rendered).To(ContainSubstring("    labels:\n      example.com/team: platform"))
+	})
+
+	It("lets a value replace a scaffolded label while chart-owned labels keep the chart's value", func() {
+		input := strings.Replace(saLabelsOnly, "    app.kubernetes.io/name: test-project\n",
+			"    app.kubernetes.io/name: test-project\n    example.com/tier: backend\n", 1)
+
+		rendered := AddServiceAccountLabelsAndAnnotations(input)
+
+		Expect(rendered).To(ContainSubstring("  labels:\n" +
+			"    app.kubernetes.io/name: test-project\n" +
+			`    {{- if not (hasKey (.Values.serviceAccount.labels | default dict) "example.com/tier") }}` + "\n" +
+			"    example.com/tier: backend\n" +
+			"    {{- end }}\n" +
+			"    {{- with .Values.serviceAccount.labels }}\n" +
+			`    {{- with omit . "app.kubernetes.io/name" }}`))
+	})
+
+	It("closes a keep-chomped entry with an untrimmed end in place of its blank line", func() {
+		input := strings.Replace(saAnnotationsThenLabels, "    example.com/existing-annotation: keep\n",
+			"    example.com/keep: |+\n      first\n\n    example.com/other: value\n", 1)
+
+		rendered := AddServiceAccountLabelsAndAnnotations(input)
+
+		Expect(rendered).To(ContainSubstring("    example.com/keep: |+\n      first\n{{ end }}\n" +
+			`    {{- if not (hasKey (.Values.serviceAccount.annotations | default dict) "example.com/other") }}` + "\n" +
+			"    example.com/other: value\n    {{- end }}\n"))
+	})
+
+	It("keeps every existing key omitted when the block is not valid YAML", func() {
+		input := strings.Replace(saAnnotationsThenLabels, "    example.com/existing-annotation: keep\n",
+			"    example.com/keep: value\n    example.com/broken: [unclosed\n", 1)
+
+		rendered := AddServiceAccountLabelsAndAnnotations(input)
+
+		Expect(rendered).To(ContainSubstring("    example.com/keep: value\n    example.com/broken: [unclosed\n" +
+			"    {{- with .Values.serviceAccount.annotations }}\n" +
+			`    {{- with omit . "example.com/keep" "example.com/broken" }}`))
+		Expect(rendered).NotTo(ContainSubstring("hasKey (.Values.serviceAccount.annotations"))
 	})
 })
 
@@ -208,6 +254,53 @@ var _ = Describe("extractMapKeys", func() {
 			"    example.com/keep: value\n    example.com/broken: [unclosed\n",
 			[]string{"example.com/keep", "example.com/broken"}),
 		Entry("an empty block", "", []string{}),
+		Entry("a key after a Unicode line separator that ends a line of a multi-line value",
+			"    sep: |\n      line1\n      line2\u2028    zz: z\n", []string{"sep", "zz"}),
+	)
+})
+
+var _ = Describe("extractMapEntries", func() {
+	DescribeTable("returns each key with the lines it spans",
+		func(body string, want []mapEntry) {
+			entries, ok := extractMapEntries(strings.Split(strings.TrimSuffix(body, "\n"), "\n"))
+			Expect(ok).To(BeTrue())
+			Expect(entries).To(Equal(want))
+		},
+		Entry("one-line values and a quoted key",
+			"    a: one\n    \"on\": two\n",
+			[]mapEntry{{key: "a", start: 0, end: 1}, {key: "on", start: 1, end: 2}}),
+		Entry("a multi-line value with lines that look like keys",
+			"    note: |\n      labels:\n        foo: bar\n    b: two\n",
+			[]mapEntry{{key: "note", start: 0, end: 3}, {key: "b", start: 3, end: 4}}),
+		Entry("a keep-chomped value keeps its trailing blank line",
+			"    keep: |+\n      text\n\n    b: two\n",
+			[]mapEntry{{key: "keep", start: 0, end: 3}, {key: "b", start: 3, end: 4}}),
+		Entry("a long value folded onto a continuation line",
+			"    long: first part of the value\n      continued here\n    b: two\n",
+			[]mapEntry{{key: "long", start: 0, end: 2}, {key: "b", start: 2, end: 3}}),
+		Entry("Helm expressions in values",
+			"    managed-by: {{ .Release.Service }}\n    name: {{ include \"p.name\" . }}\n",
+			[]mapEntry{{key: "managed-by", start: 0, end: 1}, {key: "name", start: 1, end: 2}}),
+	)
+
+	DescribeTable("returns false when the entries cannot be told apart",
+		func(body string) {
+			_, ok := extractMapEntries(strings.Split(body, "\n"))
+			Expect(ok).To(BeFalse())
+		},
+		Entry("a block that is not valid YAML", "    a: one\n    b: [unclosed"),
+		Entry("a flow-style map", "    {a: one, b: two}"),
+		Entry("a flow-style map with one key", "    {a: one}"),
+		Entry("an empty block", ""),
+		// YAML also breaks lines on these characters, which the marshaller writes as they are.
+		Entry("a Unicode line separator in a value", "    a: 'x\u2028y'\n    b: z"),
+		Entry("a Unicode paragraph separator in a value", "    a: 'x\u2029y'\n    b: z"),
+		Entry("a next-line character in a value", "    a: 'x\u0085y'\n    b: z"),
+		Entry("a carriage return in a value", "    a: 'x\ry'\n    b: z"),
+		Entry("a Unicode line separator before a multi-line value",
+			"    a: 'x\u2028y'\n    b: |\n      one\n      two"),
+		Entry("a line of non-breaking spaces in a multi-line value",
+			"    a: |\n      first\n      \u00a0\n    b: z"),
 	)
 })
 
@@ -273,7 +366,9 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 			"want exactly one labels: header in:\n%s", rendered)
 		Expect(rendered).To(ContainSubstring(`example.com/existing-annotation: keep`))
 		Expect(rendered).To(ContainSubstring(valuesPrometheusAnnotations))
-		Expect(rendered).To(ContainSubstring(`{{- with omit . "example.com/existing-annotation" }}`))
+		Expect(rendered).To(ContainSubstring(`{{- if not (hasKey (.Values.prometheus.annotations | default dict) ` +
+			`"example.com/existing-annotation") }}`))
+		Expect(rendered).NotTo(ContainSubstring(`omit . "example.com/existing-annotation"`))
 	})
 
 	It("keeps an existing annotation with a quoted key", func() {
@@ -282,8 +377,9 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 
 		rendered := AddServiceMonitorLabelsAndAnnotations(input)
 
-		Expect(rendered).To(ContainSubstring("  annotations:\n    \"on\": original\n"))
-		Expect(rendered).To(ContainSubstring(`{{- with omit . "on" }}`))
+		Expect(rendered).To(ContainSubstring("  annotations:\n" +
+			`    {{- if not (hasKey (.Values.prometheus.annotations | default dict) "on") }}` + "\n" +
+			"    \"on\": original\n    {{- end }}\n"))
 	})
 
 	It("leaves the spec.selector.matchLabels block untouched", func() {
