@@ -19,6 +19,7 @@ package v4
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -206,6 +207,52 @@ Updated License Header.
 			content, err := os.ReadFile(boilerplatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(content)).To(Equal(customContent))
+		})
+
+		It("should update boilerplate when the project has no Dockerfile", func() {
+			// Projects can drop the Dockerfile.
+			Expect(os.Remove(filepath.Join(tmpDir, "Dockerfile"))).To(Succeed())
+
+			testCfg := cfgv3.New()
+			_ = testCfg.SetRepository("github.com/test/repo")
+			_ = testCfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false,
+				"apache2", "New Owner", "")
+			scaffolder.InjectFS(fs)
+			Expect(scaffolder.Scaffold()).To(Succeed())
+
+			boilerplatePath := filepath.Join(tmpDir, "hack", "boilerplate.go.txt")
+			content, err := os.ReadFile(boilerplatePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring("New Owner"))
+		})
+
+		It("should leave an existing Dockerfile untouched", func() {
+			dockerfilePath := filepath.Join(tmpDir, "Dockerfile")
+			original := []byte("FROM golang:1.23\n# a local edit that must survive\n")
+			Expect(os.WriteFile(dockerfilePath, original, 0o644)).To(Succeed())
+
+			// Pin the mtime so a write-back shows up even though the bytes are unchanged.
+			pinned := time.Now().Add(-2 * time.Hour).Truncate(time.Second)
+			Expect(os.Chtimes(dockerfilePath, pinned, pinned)).To(Succeed())
+
+			testCfg := cfgv3.New()
+			_ = testCfg.SetRepository("github.com/test/repo")
+			_ = testCfg.SetDomain("test.io")
+
+			scaffolder := scaffolds.NewEditScaffolder(testCfg, false, false, false,
+				"apache2", "New Owner", "")
+			scaffolder.InjectFS(fs)
+			Expect(scaffolder.Scaffold()).To(Succeed())
+
+			content, err := os.ReadFile(dockerfilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(Equal(original))
+
+			info, err := os.Stat(dockerfilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(info.ModTime().Unix()).To(Equal(pinned.Unix()))
 		})
 
 		It("should update boilerplate with license flag", func() {
