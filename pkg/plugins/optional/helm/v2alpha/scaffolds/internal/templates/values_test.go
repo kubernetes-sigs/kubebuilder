@@ -110,6 +110,38 @@ var _ = Describe("HelmValues", func() {
 		})
 	})
 
+	Describe("CRD section", func() {
+		crdValues := func() *HelmValues {
+			values := &HelmValues{
+				Extraction: &extractor.Extraction{
+					Features: extractor.FeatureSet{HasCRDs: true},
+				},
+			}
+			values.ProjectName = testProjectName
+			return values
+		}
+
+		It("should document the optional labels and annotations keys as commented placeholders", func() {
+			result := crdValues().generateValues()
+
+			Expect(result).To(ContainSubstring("crd:\n" +
+				"  # Install CRDs with the chart\n  enabled: true\n" +
+				"  # Keep CRDs when uninstalling\n  keep: true\n\n" +
+				"  ## Custom CRD annotations (e.g. argocd.argoproj.io/sync-options: ServerSideApply=true)\n" +
+				"  ## Keys the CRDs already set (e.g. controller-gen.kubebuilder.io/version) keep their generated\n" +
+				"  ## value, and helm.sh/resource-policy is controlled by keep.\n" +
+				"  ##\n  # annotations: {}\n\n" +
+				"  ## Custom CRD labels\n  ##\n  # labels: {}\n"))
+		})
+
+		It("should set no labels or annotations by default", func() {
+			var rendered map[string]any
+			Expect(yaml.Unmarshal([]byte(crdValues().generateValues()), &rendered)).To(Succeed())
+
+			Expect(rendered["crd"]).To(Equal(map[string]any{"enabled": true, "keep": true}))
+		})
+	})
+
 	Describe("ServiceAccount section", func() {
 		It("should enable the ServiceAccount and set no name, labels or annotations", func() {
 			values := &HelmValues{Extraction: nil}

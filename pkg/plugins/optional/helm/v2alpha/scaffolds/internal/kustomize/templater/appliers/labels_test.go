@@ -207,6 +207,10 @@ var _ = Describe("extractMapKeys", func() {
 		Entry("a block that is not valid YAML, through the line-based fallback",
 			"    example.com/keep: value\n    example.com/broken: [unclosed\n",
 			[]string{"example.com/keep", "example.com/broken"}),
+		Entry("a quoted key in a block with Helm conditionals",
+			"    {{- if .Values.crd.keep }}\n    \"helm.sh/resource-policy\": keep\n    {{- end }}\n"+
+				"    controller-gen.kubebuilder.io/version: v0.23.0\n",
+			[]string{"helm.sh/resource-policy", "controller-gen.kubebuilder.io/version"}),
 		Entry("an empty block", "", []string{}),
 	)
 })
@@ -293,6 +297,65 @@ var _ = Describe("AddServiceMonitorLabelsAndAnnotations", func() {
 			"  selector:\n    matchLabels:\n      app.kubernetes.io/name: " +
 				`{{ include "test-project.name" . }}` + "\n      control-plane: controller-manager"))
 		Expect(strings.Count(rendered, valuesPrometheusLabels)).To(Equal(1))
+	})
+})
+
+// A CRD's OpenAPI schema has nested metadata, labels and annotations keys that belong to the
+// schema, not to the CRD's own metadata, so they must be left untouched.
+const crdSchema = `spec:
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          metadata:
+            type: object
+          spec:
+            properties:
+              template:
+                properties:
+                  metadata:
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                type: object
+            type: object
+        type: object
+`
+
+var _ = Describe("AddCRDLabelsAndAnnotations", func() {
+	It("merges only into the CRD's own metadata, not the nested schema metadata", func() {
+		input := `kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: cronjobs.batch.tutorial.kubebuilder.io
+` + crdSchema
+
+		rendered := AddCRDLabelsAndAnnotations(input)
+
+		Expect(rendered).To(Equal(`kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+    {{- with .Values.crd.annotations }}
+    {{- with omit . "controller-gen.kubebuilder.io/version" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  {{- with .Values.crd.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: cronjobs.batch.tutorial.kubebuilder.io
+` + crdSchema))
 	})
 })
 
