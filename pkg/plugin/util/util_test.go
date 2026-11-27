@@ -429,4 +429,315 @@ version: "3"
 			Expect(found).To(BeFalse())
 		})
 	})
+
+	Describe("YAML files with indented sequences", func() {
+		// Formatters such as yamlfmt and prettier indent the items of top-level
+		// sequences and the comments between them, but leave a comment after the
+		// last item at column 0
+		const rbacComment = `# Roles for each CRD.
+# Comment the following lines to disable them.`
+
+		var path string
+
+		BeforeEach(func() {
+			path = filepath.Join(GinkgoT().TempDir(), "kustomization.yaml")
+		})
+
+		write := func(content string) {
+			Expect(os.WriteFile(path, []byte(content), 0o644)).To(Succeed())
+		}
+		read := func() string {
+			b, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			return string(b)
+		}
+
+		It("should keep inserting items at column 0 in files as scaffolded", func() {
+			const (
+				content = `resources:
+- role.yaml
+`
+				expected = `resources:
+- webhook.yaml
+- role.yaml
+`
+			)
+			write(content)
+			Expect(InsertCode(path, "resources:", "\n- webhook.yaml")).To(Succeed())
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should insert items with the indentation of the sequence", func() {
+			const (
+				content = `resources:
+  - role.yaml
+`
+				expected = `resources:
+  - webhook.yaml
+  - role.yaml
+`
+			)
+			write(content)
+			Expect(InsertCodeIfNotExist(path, "resources:", "\n- webhook.yaml")).To(Succeed())
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should not insert items again when they were indented", func() {
+			const content = `resources:
+  - webhook.yaml
+  - role.yaml
+`
+			write(content)
+			Expect(InsertCodeIfNotExist(path, "resources:", "\n- webhook.yaml")).To(Succeed())
+			Expect(read()).To(Equal(content))
+		})
+
+		It("should insert items after a target whose lines were indented", func() {
+			const (
+				content = `resources:
+  - role.yaml
+  # Roles for each CRD.
+  # Comment the following lines to disable them.
+  - a_admin_role.yaml
+`
+				roles = `
+- b_admin_role.yaml
+- b_viewer_role.yaml`
+				expected = `resources:
+  - role.yaml
+  # Roles for each CRD.
+  # Comment the following lines to disable them.
+  - b_admin_role.yaml
+  - b_viewer_role.yaml
+  - a_admin_role.yaml
+`
+			)
+			write(content)
+
+			Expect(AppendCodeIfNotExist(path, rbacComment)).To(Succeed())
+			Expect(InsertCodeIfNotExist(path, rbacComment, roles)).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should insert items with the indentation of the sequence before a target at the end", func() {
+			const (
+				content = `resources:
+  - role.yaml
+`
+				expected = `resources:
+  - role.yaml
+# Roles for each CRD.
+# Comment the following lines to disable them.
+  - a_admin_role.yaml`
+			)
+			write(content)
+
+			Expect(AppendCodeIfNotExist(path, rbacComment)).To(Succeed())
+			Expect(InsertCodeIfNotExist(path, rbacComment, "\n- a_admin_role.yaml")).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should uncomment items with the indentation of the sequence", func() {
+			const (
+				content = `patches:
+  - path: a.yaml
+    target:
+      kind: A
+
+#- path: b.yaml
+#  target:
+#    kind: B
+`
+				target = `#- path: b.yaml
+#  target:
+#    kind: B`
+				expected = `patches:
+  - path: a.yaml
+    target:
+      kind: A
+
+  - path: b.yaml
+    target:
+      kind: B
+`
+			)
+			write(content)
+
+			Expect(UncommentCode(path, target, "#")).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should keep uncommenting items at column 0 in files as scaffolded", func() {
+			const (
+				content = `patches:
+- path: a.yaml
+#- path: b.yaml
+`
+				expected = `patches:
+- path: a.yaml
+- path: b.yaml
+`
+			)
+			write(content)
+			Expect(UncommentCode(path, "#- path: b.yaml", "#")).To(Succeed())
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should uncomment items whose comments were indented", func() {
+			const (
+				content = `patches:
+  - path: a.yaml
+  #- path: b.yaml
+  #  target:
+  #    kind: B
+`
+				target = `#- path: b.yaml
+#  target:
+#    kind: B`
+				expected = `patches:
+  - path: a.yaml
+  - path: b.yaml
+    target:
+      kind: B
+`
+			)
+			write(content)
+
+			Expect(UncommentCode(path, target, "#")).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should uncomment items whose comments were indented inconsistently", func() {
+			const (
+				content = `patches:
+  - path: a.yaml
+#- path: b.yaml
+  #  target:
+  #    kind: B
+`
+				target = `#- path: b.yaml
+#  target:
+#    kind: B`
+				expected = `patches:
+  - path: a.yaml
+  - path: b.yaml
+    target:
+      kind: B
+`
+			)
+			write(content)
+
+			Expect(UncommentCode(path, target, "#")).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should insert items with the indentation of the sequence before the next top-level key", func() {
+			const (
+				content = `resources:
+  - a.yaml
+namespace: system
+`
+				expected = `resources:
+  - a.yaml
+  - b.yaml
+namespace: system
+`
+			)
+			write(content)
+			Expect(InsertCode(path, "- a.yaml\n", "- b.yaml\n")).To(Succeed())
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should comment items so they can be uncommented again", func() {
+			const (
+				content = `patches:
+  - path: a.yaml
+    target:
+      kind: A
+`
+				target = `- path: a.yaml
+  target:
+    kind: A`
+				commentedTarget = `#- path: a.yaml
+#  target:
+#    kind: A`
+				commented = `patches:
+  #- path: a.yaml
+  #  target:
+  #    kind: A
+`
+			)
+			write(content)
+
+			Expect(CommentCode(path, target, "#")).To(Succeed())
+			Expect(read()).To(Equal(commented))
+
+			Expect(UncommentCode(path, commentedTarget, "#")).To(Succeed())
+			Expect(read()).To(Equal(content))
+		})
+
+		It("should find a sequence indented under its key", func() {
+			const (
+				content = `configurations:
+  - kustomizeconfig.yaml
+`
+				text = `configurations:
+- kustomizeconfig.yaml`
+			)
+			write(content)
+			found, err := HasFileContentWith(path, text)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeTrue())
+		})
+
+		It("should not take nested items for top-level ones", func() {
+			const (
+				content = `resources:
+  - role.yaml
+# Roles for each CRD.
+# Comment the following lines to disable them.
+patches:
+  - path: p.yaml
+    target:
+      - a_admin_role.yaml
+`
+				expected = `resources:
+  - role.yaml
+# Roles for each CRD.
+# Comment the following lines to disable them.
+  - a_admin_role.yaml
+patches:
+  - path: p.yaml
+    target:
+      - a_admin_role.yaml
+`
+			)
+			write(content)
+
+			Expect(InsertCodeIfNotExist(path, rbacComment, "\n- a_admin_role.yaml")).To(Succeed())
+
+			Expect(read()).To(Equal(expected))
+		})
+
+		It("should not change the indentation in files that are not YAML", func() {
+			const (
+				content = `resources:
+  - role.yaml
+`
+				expected = `resources:
+- webhook.yaml
+  - role.yaml
+`
+			)
+			path = filepath.Join(filepath.Dir(path), "kustomization.txt")
+			write(content)
+			Expect(InsertCode(path, "resources:", "\n- webhook.yaml")).To(Succeed())
+			Expect(read()).To(Equal(expected))
+		})
+	})
 })
