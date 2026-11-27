@@ -47,7 +47,7 @@ jobs:
           make build
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
         with:
           languages: go
           build-mode: autobuild
