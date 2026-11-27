@@ -67,12 +67,10 @@ func (s *editScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *editScaffolder) Scaffold() error {
-	filename := "Dockerfile"
-	bs, err := afero.ReadFile(s.fs.FS, filename)
-	if err != nil {
-		return fmt.Errorf("error reading %q: %w", filename, err)
+	// A Dockerfile is optional; warn and carry on instead of failing the edit.
+	if _, err := s.fs.FS.Stat("Dockerfile"); os.IsNotExist(err) {
+		log.Warn("Unable to find the Dockerfile. make docker-build won't work until you add one.")
 	}
-	str := string(bs)
 
 	// Update boilerplate if license flags are provided.
 	// This allows users to change the license header after project initialization.
@@ -152,15 +150,6 @@ func (s *editScaffolder) Scaffold() error {
 		fmt.Println("3. Run: make manifests")
 		fmt.Println()
 		fmt.Println("See: https://book.kubebuilder.io/migration/namespace-scoped.html")
-	}
-
-	// Check if the str is not empty, because when the file is already in desired format it will return empty string
-	// because there is nothing to replace.
-	if str != "" {
-		// TODO: instead of writing it directly, we should use the scaffolding machinery for consistency
-		if err = afero.WriteFile(s.fs.FS, filename, []byte(str), 0o644); err != nil {
-			return fmt.Errorf("error writing %q: %w", filename, err)
-		}
 	}
 
 	return nil

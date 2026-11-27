@@ -2646,12 +2646,11 @@ var _ = Describe("commands driven by Command().SetArgs", func() {
 	It("should read the skipped configuration when the command tree was built for its plugin chain", func() {
 		fs := &projectReadCountingFs{Fs: filesystemWithResolvableProject().FS}
 
-		// The command reaches the plugins of the project, so it stops at the missing scaffold and
-		// not at the plugin chain.
+		// The command reaches the plugins of the project, so it reads the skipped configuration
+		// and completes instead of stopping at the plugin chain.
 		err := executeEmbeddedCLI(machinery.Filesystem{FS: fs},
 			[]string{kubebuilderSubcommandVersion}, []string{editSubcommand})
-		Expect(err).To(MatchError(ContainSubstring("failed to edit scaffold")))
-		Expect(err).NotTo(MatchError(ContainSubstring("the command tree was built for the plugin chain")))
+		Expect(err).To(Succeed())
 		Expect(fs.reads).NotTo(BeZero())
 	})
 
