@@ -89,7 +89,8 @@ var _ = Describe("Edit scaffolding of the license header", func() {
 
 		It("should not change the arguments of other commands on the same line", func() {
 			content := "\t\"$(CONTROLLER_GEN)\" object paths=\"./...\" && cp object object.bak\n"
-			want := "\t\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR) paths=\"./...\" && cp object object.bak\n"
+			want := "\t\"$(CONTROLLER_GEN)\" object:headerFile=\"hack/boilerplate.go.txt\",year=$(YEAR)" +
+				" paths=\"./...\" && cp object object.bak\n"
 
 			Expect(setMakefileHeaderFile(content, hack.DefaultBoilerplatePath)).To(Equal(want))
 			Expect(setMakefileHeaderFile(want, "")).To(Equal(content))
