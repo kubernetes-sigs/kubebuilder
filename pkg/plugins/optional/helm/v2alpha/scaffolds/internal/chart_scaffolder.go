@@ -137,6 +137,7 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 		},
 		&templates.HelmIgnore{OutputDir: s.config.OutputDir, Force: s.config.Force},
 		&charttemplates.HelmHelpers{OutputDir: s.config.OutputDir, Force: s.config.Force},
+		&charttemplates.HelmLabels{OutputDir: s.config.OutputDir},
 		&charttemplates.Notes{
 			OutputDir: s.config.OutputDir,
 			Force:     s.config.Force,
@@ -146,11 +147,16 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 	// Add generic ServiceMonitor only if kustomize output doesn't provide one
 	if !extraction.Features.HasPrometheus {
 		metricsServiceName := extraction.Metadata.DetectedPrefix + "-controller-manager-metrics-service"
+		var serviceSelector []string
 		for _, svc := range resources.Services {
 			svcName := svc.GetName()
 			if strings.HasSuffix(svcName, "-metrics-service") ||
 				strings.HasSuffix(svcName, "-controller-manager-metrics-service") {
 				metricsServiceName = svcName
+				// Without managed-by, the default selector stays the name and control-plane labels.
+				serviceLabels := svc.GetLabels()
+				delete(serviceLabels, "app.kubernetes.io/managed-by")
+				serviceSelector = chartConverter.RenderLabels(serviceLabels)
 				break
 			}
 		}
@@ -158,21 +164,25 @@ func (s *ChartScaffolder) PrepareTemplates(_ machinery.Filesystem) ([]machinery.
 		builders = append(builders, &charttemplates.ServiceMonitor{
 			OutputDir:   s.config.OutputDir,
 			ServiceName: metricsServiceName,
+			Selector:    serviceSelector,
 			Force:       s.config.Force,
 		})
 	}
 
 	// Add fallback policies only when kustomize output does not define any NetworkPolicy.
 	if !extraction.Features.HasNetworkPolicy {
+		podSelector := chartConverter.ManagerPodSelector()
 		builders = append(builders, &charttemplates.NetworkPolicy{
-			OutputDir: s.config.OutputDir,
-			Force:     s.config.Force,
+			PodSelector: podSelector,
+			OutputDir:   s.config.OutputDir,
+			Force:       s.config.Force,
 		})
 		if extraction.Features.HasWebhooks {
 			builders = append(builders, &charttemplates.NetworkPolicy{
-				Webhook:   true,
-				OutputDir: s.config.OutputDir,
-				Force:     s.config.Force,
+				Webhook:     true,
+				PodSelector: podSelector,
+				OutputDir:   s.config.OutputDir,
+				Force:       s.config.Force,
 			})
 		}
 	}

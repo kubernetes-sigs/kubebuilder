@@ -19,6 +19,7 @@ package appliers
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -45,6 +46,8 @@ const (
 )
 
 type customFieldsState struct {
+	chartName               string
+	selectorKeys            []string
 	position                metadataPosition
 	deploymentMetadataDepth int
 
@@ -120,7 +123,11 @@ func templateReplicas(yamlContent string) string {
 	return replicasPattern.ReplaceAllString(yamlContent, "${1}replicas: {{ .Values.manager.replicas }}")
 }
 
-func AddCustomLabelsAndAnnotations(yamlContent string) string {
+// AddCustomLabelsAndAnnotations adds the labels and annotations of .Values.manager to the manager
+// Deployment and its pods. A value replaces the same key from config/, but for the pod labels. The
+// values do not set a pod label in selectorKeys, the keys the Deployment selector names: a selector
+// can require that a label is absent.
+func AddCustomLabelsAndAnnotations(chartName, yamlContent string, selectorKeys []string) string {
 	hasDeploymentLabels := strings.Contains(yamlContent, "{{- if .Values.manager.labels }}") ||
 		strings.Contains(yamlContent, "{{- with .Values.manager.labels }}")
 	hasDeploymentAnnotations := strings.Contains(yamlContent, "{{- if .Values.manager.annotations }}") ||
@@ -134,6 +141,8 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 	inBlockScalar := blockScalarLines(lines)
 	result := make([]string, 0, len(lines))
 	state := &customFieldsState{
+		chartName:                    chartName,
+		selectorKeys:                 selectorKeys,
 		position:                     positionStart,
 		addedLabelsToDeployment:      hasDeploymentLabels,
 		addedAnnotationsToDeployment: hasDeploymentAnnotations,
@@ -160,10 +169,24 @@ func AddCustomLabelsAndAnnotations(yamlContent string) string {
 			result = append(result, metadataChildIndent+"{{- if .Values.manager.annotations }}")
 			result = append(result, metadataChildIndent+"annotations:")
 			childIndent := metadataChildIndent + "  "
-			childIndentWidth := strconv.Itoa(len(childIndent))
-			result = append(result, childIndent+"{{- toYaml .Values.manager.annotations | nindent "+childIndentWidth+" }}")
+			result = append(result, childIndent+stringValues(chartName, ".Values.manager.annotations", len(childIndent)))
 			result = append(result, metadataChildIndent+"{{- end }}")
 			state.addedAnnotationsToDeployment = true
+		}
+
+		// Create the labels block the same way, so .Values.manager.labels always renders.
+		if state.position == positionDeploymentMetadata &&
+			trimmed == common.YamlKeySpec &&
+			!state.addedLabelsToDeployment &&
+			state.currentBlock != blockDeploymentLabels {
+			metadataChildIndent := strings.Repeat(" ", state.deploymentMetadataDepth) + "  "
+			result = append(result,
+				metadataChildIndent+"{{- with .Values.manager.labels }}",
+				metadataChildIndent+"labels:",
+				metadataChildIndent+"  "+stringValues(chartName, ".", len(metadataChildIndent)+2),
+				metadataChildIndent+"{{- end }}",
+			)
+			state.addedLabelsToDeployment = true
 		}
 
 		updateMetadataTracking(state, lines, i, trimmed, indentLen)
@@ -1065,15 +1088,16 @@ func handleDeploymentAnnotations(
 
 		if len(existingKeys) == 0 {
 			result = result[:state.currentBlockStart-1]
-			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
 				parentIndent+"{{- if .Values.manager.annotations }}",
 				parentIndent+"annotations:",
-				childIndent+"{{- toYaml .Values.manager.annotations | nindent "+childIndentWidth+" }}",
+				childIndent+stringValues(state.chartName, ".Values.manager.annotations", len(childIndent)),
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			result = injectDeploymentAnnotations(result, childIndent, existingKeys)
+			result, existingKeys = letValuesReplace(result, state.currentBlockStart, childIndent,
+				".Values.manager.annotations", state.chartName, nil)
+			result = injectDeploymentAnnotations(result, childIndent, state.chartName, existingKeys)
 		}
 
 		result = append(result, line)
@@ -1105,17 +1129,18 @@ func handlePodAnnotations(
 
 		if len(existingKeys) == 0 {
 			result = result[:state.currentBlockStart-1]
-			childIndentWidth := strconv.Itoa(len(childIndent))
 			result = append(result,
 				parentIndent+"{{- with .Values.manager.pod }}",
 				parentIndent+"{{- with .annotations }}",
 				parentIndent+"annotations:",
-				childIndent+"{{- toYaml . | nindent "+childIndentWidth+" }}",
+				childIndent+stringValues(state.chartName, ".", len(childIndent)),
 				parentIndent+"{{- end }}",
 				parentIndent+"{{- end }}",
 			)
 		} else {
-			result = addPodAnnotations(result, childIndent, existingKeys)
+			result, existingKeys = letValuesReplace(result, state.currentBlockStart, childIndent,
+				podValuesPath+".annotations", state.chartName, []string{common.DefaultContainerAnnotation})
+			result = addPodAnnotations(result, childIndent, state.chartName, existingKeys)
 		}
 
 		result = append(result, line)
@@ -1128,7 +1153,7 @@ func handlePodAnnotations(
 		result = append(result, indent+"{{- with .Values.manager.pod }}")
 		result = append(result, indent+"{{- with .annotations }}")
 		result = append(result, indent+"annotations:")
-		result = addPodAnnotations(result, indent+"  ", nil)
+		result = append(result, indent+"  "+stringValues(state.chartName, ".", len(indent)+2))
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+"{{- end }}")
 		result = append(result, indent+common.YamlKeyLabels)
@@ -1174,9 +1199,11 @@ func handleDeploymentLabels(
 
 	if shouldInjectDeploymentLabels(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
-		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
-		result = injectDeploymentLabels(result, childIndent, existingKeys)
+		var existingKeys []string
+		result, existingKeys = letValuesReplace(result, state.currentBlockStart, childIndent,
+			".Values.manager.labels", state.chartName, helmLabels)
+		result = injectDeploymentLabels(result, childIndent, state.chartName, existingKeys)
 		result = append(result, line)
 		state.addedLabelsToDeployment = true
 		state.currentBlock = blockNone
@@ -1200,9 +1227,16 @@ func handlePodLabels(
 
 	if shouldInjectPodLabels(state, trimmed, indentLen) {
 		result = result[:len(result)-1]
-		existingKeys := extractMapKeys(result[state.currentBlockStart:])
 		childIndent := strings.Repeat(" ", state.currentBlockIndent) + "  "
-		result = injectPodLabels(result, childIndent, existingKeys)
+		// Selectors find the pods by their labels, so the values add labels but do not replace one,
+		// and do not add one the Deployment selector names.
+		existingKeys := extractMapKeys(result[state.currentBlockStart:])
+		for _, key := range state.selectorKeys {
+			if !slices.Contains(existingKeys, key) {
+				existingKeys = append(existingKeys, key)
+			}
+		}
+		result = injectPodLabels(result, childIndent, state.chartName, existingKeys)
 		result = append(result, line)
 		state.addedPodLabels = true
 		state.currentBlock = blockNone
@@ -1235,20 +1269,23 @@ func shouldInjectPodLabels(
 		trimmed != common.YamlKeyLabels
 }
 
-func injectDeploymentLabels(result []string, childIndent string, existingKeys []string) []string {
-	return appendHelmMapBlock(result, childIndent, ".Values.manager.labels", existingKeys)
+// podValuesPath reads .Values.manager.pod even when the values leave it out.
+const podValuesPath = "(.Values.manager.pod | default dict)"
+
+func injectDeploymentLabels(result []string, childIndent, chartName string, existingKeys []string) []string {
+	return appendHelmMapBlock(result, childIndent, ".Values.manager.labels", chartName, existingKeys)
 }
 
-func injectPodLabels(result []string, childIndent string, existingKeys []string) []string {
-	return appendNestedHelmMapBlock(result, childIndent, ".Values.manager.pod", ".labels", existingKeys)
+func injectPodLabels(result []string, childIndent, chartName string, existingKeys []string) []string {
+	return appendNestedHelmMapBlock(result, childIndent, ".Values.manager.pod", ".labels", chartName, existingKeys)
 }
 
-func injectDeploymentAnnotations(result []string, indent string, existingKeys []string) []string {
-	return appendHelmMapBlock(result, indent, ".Values.manager.annotations", existingKeys)
+func injectDeploymentAnnotations(result []string, indent, chartName string, existingKeys []string) []string {
+	return appendHelmMapBlock(result, indent, ".Values.manager.annotations", chartName, existingKeys)
 }
 
-func addPodAnnotations(result []string, indent string, existingKeys []string) []string {
-	return appendNestedHelmMapBlock(result, indent, ".Values.manager.pod", ".annotations", existingKeys)
+func addPodAnnotations(result []string, indent, chartName string, existingKeys []string) []string {
+	return appendNestedHelmMapBlock(result, indent, ".Values.manager.pod", ".annotations", chartName, existingKeys)
 }
 
 func handleFlowStyleAnnotations(

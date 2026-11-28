@@ -10,8 +10,8 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      control-plane: controller-manager
       app.kubernetes.io/name: {{ include "project.name" . }}
+      control-plane: controller-manager
   policyTypes:
     - Ingress
   ingress:

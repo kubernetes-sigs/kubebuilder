@@ -9,12 +9,12 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     {{- with .Values.serviceAccount.labels }}
     {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" }}
-    {{- toYaml . | nindent 4 }}
+    {{- include "project.stringMap" . | nindent 4 }}
     {{- end }}
     {{- end }}
   {{- with .Values.serviceAccount.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- include "project.stringMap" . | nindent 4 }}
   {{- end }}
   name: {{ include "project.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}

@@ -19,6 +19,7 @@ package charttemplates
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
@@ -33,10 +34,27 @@ type NetworkPolicy struct {
 
 	// Webhook generates the webhook ingress policy instead of the metrics ingress policy.
 	Webhook bool
+	// PodSelector holds the matchLabels lines that select the manager pods, as the chart renders the
+	// selector of the manager Deployment. When empty, the policy selects the scaffolded labels.
+	PodSelector []string
 	// OutputDir specifies the output directory for the chart.
 	OutputDir string
 	// Force if true allows overwriting the scaffolded file.
 	Force bool
+}
+
+// matchLabelsLines returns the lines of a matchLabels selector the chart adds: lines, or defaults
+// when there are none. Each line is written as a raw string, so the Helm actions in it reach the
+// chart as they are.
+func matchLabelsLines(lines, defaults []string) string {
+	if len(lines) == 0 {
+		lines = defaults
+	}
+	var matchLabels strings.Builder
+	for _, line := range lines {
+		matchLabels.WriteString("      {{`" + line + "`}}\n")
+	}
+	return matchLabels.String()
 }
 
 // SetTemplateDefaults implements machinery.Template.
@@ -54,10 +72,14 @@ func (f *NetworkPolicy) SetTemplateDefaults() error {
 	}
 
 	chartName := f.ProjectName
+	matchLabels := matchLabelsLines(f.PodSelector, []string{
+		`control-plane: controller-manager`,
+		`app.kubernetes.io/name: {{ include "` + chartName + `.name" . }}`,
+	})
 	if f.Webhook {
-		f.TemplateBody = fmt.Sprintf(webhookNetworkPolicyTemplate, chartName, chartName, chartName)
+		f.TemplateBody = fmt.Sprintf(webhookNetworkPolicyTemplate, chartName, matchLabels)
 	} else {
-		f.TemplateBody = fmt.Sprintf(networkPolicyTemplate, chartName, chartName, chartName)
+		f.TemplateBody = fmt.Sprintf(networkPolicyTemplate, chartName, matchLabels)
 	}
 
 	if f.Force {
@@ -76,15 +98,13 @@ kind: NetworkPolicy
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ "{{ .Release.Service }}" }}
-    app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
-  name: {{ "{{ include \"%s.resourceName\" (dict \"suffix\" \"allow-metrics-traffic\" \"context\" $) }}" }}
+    app.kubernetes.io/name: {{ "{{ include \"%[1]s.name\" . }}" }}
+  name: {{ "{{ include \"%[1]s.resourceName\" (dict \"suffix\" \"allow-metrics-traffic\" \"context\" $) }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
   podSelector:
     matchLabels:
-      control-plane: controller-manager
-      app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
-  policyTypes:
+%[2]s  policyTypes:
     - Ingress
   ingress:
     - from:
@@ -110,15 +130,13 @@ kind: NetworkPolicy
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ "{{ .Release.Service }}" }}
-    app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
-  name: {{ "{{ include \"%s.resourceName\" (dict \"suffix\" \"allow-webhook-traffic\" \"context\" $) }}" }}
+    app.kubernetes.io/name: {{ "{{ include \"%[1]s.name\" . }}" }}
+  name: {{ "{{ include \"%[1]s.resourceName\" (dict \"suffix\" \"allow-webhook-traffic\" \"context\" $) }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
   podSelector:
     matchLabels:
-      control-plane: controller-manager
-      app.kubernetes.io/name: {{ "{{ include \"%s.name\" . }}" }}
-  policyTypes:
+%[2]s  policyTypes:
     - Ingress
   ingress:
     - ports:

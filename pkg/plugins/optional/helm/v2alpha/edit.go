@@ -82,8 +82,8 @@ Helm deployment targets to the Makefile.`
 **NOTE**: Chart.yaml is never overwritten (contains user-managed version info).
 Without --force, the plugin also preserves values.yaml, NOTES.txt, _helpers.tpl, .helmignore,
 .github/workflows/test-chart.yml, and default NetworkPolicy and ServiceMonitor templates.
-Templates from the kustomize output always regenerate. Use --force to regenerate all files
-except Chart.yaml.
+Templates from the kustomize output and _labels.tpl always regenerate. Use --force to regenerate
+all files except Chart.yaml.
 
 The generated chart structure mirrors your config/ directory:
 <output>/chart/
@@ -93,6 +93,7 @@ The generated chart structure mirrors your config/ directory:
 └── templates/
     ├── NOTES.txt
     ├── _helpers.tpl
+    ├── _labels.tpl
     ├── rbac/
     ├── manager/
     ├── webhook/

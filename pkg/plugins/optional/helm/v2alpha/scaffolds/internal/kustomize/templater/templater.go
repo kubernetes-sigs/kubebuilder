@@ -17,7 +17,10 @@ limitations under the License.
 package templater
 
 import (
+	"strings"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/internal/common"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v2alpha/scaffolds/internal/kustomize/templater/appliers"
@@ -61,9 +64,8 @@ func (t *Templater) GetManagerNamespace() string {
 	return t.managerNamespace
 }
 
-// ApplyHelmSubstitutions applies Helm template syntax to a single resource.
-// This is the main transformation orchestrator that coordinates all template substitutions.
-func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstructured.Unstructured) string {
+// applyCommonSubstitutions applies the substitutions every resource gets, whatever its kind.
+func (t *Templater) applyCommonSubstitutions(yamlContent string, resource *unstructured.Unstructured) string {
 	yamlContent = appliers.EscapeExistingTemplateSyntax(yamlContent)
 	yamlContent = appliers.AddConditionalWrappers(yamlContent, resource, t.detectedPrefix)
 	yamlContent = appliers.SubstituteProjectNames(yamlContent, resource)
@@ -72,15 +74,44 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 	yamlContent = appliers.SubstituteCertManagerReferences(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.SubstituteResourceNamesWithPrefix(t.detectedPrefix, t.chartName, yamlContent, resource)
 	yamlContent = appliers.AddHelmLabelsAndAnnotations(t.detectedPrefix, t.chartName, yamlContent)
-	yamlContent = appliers.SubstituteRBACValues(t.detectedPrefix, t.chartName, yamlContent)
+	return appliers.SubstituteRBACValues(t.detectedPrefix, t.chartName, yamlContent)
+}
+
+// RenderLabels returns labels as the chart renders them on a resource, one "key: value" line each.
+// The resources the chart adds select the pods and the Services from config/ with these lines, so
+// they get the same substitutions.
+func (t *Templater) RenderLabels(labels map[string]string) []string {
+	if len(labels) == 0 {
+		return nil
+	}
+	// The substitutions match indented lines, as the labels are in a resource.
+	content, err := yaml.Marshal(map[string]any{"selector": labels})
+	if err != nil {
+		return nil
+	}
+	const indent = "  "
+	var lines []string
+	rendered := t.applyCommonSubstitutions(string(content), &unstructured.Unstructured{})
+	for line := range strings.SplitSeq(rendered, "\n") {
+		if label, indented := strings.CutPrefix(line, indent); indented {
+			lines = append(lines, label)
+		}
+	}
+	return lines
+}
+
+// ApplyHelmSubstitutions applies Helm template syntax to a single resource.
+// This is the main transformation orchestrator that coordinates all template substitutions.
+func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstructured.Unstructured) string {
+	yamlContent = t.applyCommonSubstitutions(yamlContent, resource)
 	if resource.GetKind() == common.KindCRD {
-		yamlContent = appliers.AddCRDLabelsAndAnnotations(yamlContent)
+		yamlContent = appliers.AddCRDLabelsAndAnnotations(t.chartName, yamlContent)
 	}
 	if resource.GetKind() == common.KindServiceAccount {
 		yamlContent = appliers.TemplateServiceAccount(t.detectedPrefix, t.chartName, yamlContent)
 	}
 	if resource.GetKind() == common.KindDeployment && appliers.IsManagerDeployment(resource) {
-		yamlContent = appliers.AddCustomLabelsAndAnnotations(yamlContent)
+		yamlContent = appliers.AddCustomLabelsAndAnnotations(t.chartName, yamlContent, appliers.SelectorKeys(resource))
 		yamlContent = appliers.TemplateDeploymentFields(t.detectedPrefix, t.chartName, yamlContent)
 		yamlContent = appliers.MakeContainerArgsConditional(yamlContent)
 		yamlContent = appliers.MakeWebhookVolumeMountsConditional(yamlContent)
@@ -94,7 +125,7 @@ func (t *Templater) ApplyHelmSubstitutions(yamlContent string, resource *unstruc
 		yamlContent = appliers.TemplatePorts(yamlContent, resource, t.detectedPrefix)
 	}
 	if resource.GetKind() == common.KindServiceMonitor {
-		yamlContent = appliers.AddServiceMonitorLabelsAndAnnotations(yamlContent)
+		yamlContent = appliers.AddServiceMonitorLabelsAndAnnotations(t.chartName, yamlContent)
 		yamlContent = appliers.TemplateServiceMonitor(yamlContent)
 	}
 	yamlContent = appliers.CollapseBlankLineAfterIf(yamlContent)

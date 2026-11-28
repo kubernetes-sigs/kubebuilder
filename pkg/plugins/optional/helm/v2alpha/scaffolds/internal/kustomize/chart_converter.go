@@ -59,6 +59,27 @@ func NewChartConverter(
 	}
 }
 
+// ManagerPodSelector returns the matchLabels the manager Deployment selects its pods by, as the
+// chart renders them. It returns nil when the selector is not matchLabels alone: a selector built
+// from part of it would match more pods.
+func (c *ChartConverter) ManagerPodSelector() []string {
+	if c.resources == nil || c.resources.Deployment == nil {
+		return nil
+	}
+	selector := c.resources.Deployment.Object
+	matchLabels, _, _ := unstructured.NestedStringMap(selector, "spec", "selector", "matchLabels")
+	expressions, _, _ := unstructured.NestedSlice(selector, "spec", "selector", "matchExpressions")
+	if len(expressions) > 0 {
+		return nil
+	}
+	return c.templater.RenderLabels(matchLabels)
+}
+
+// RenderLabels returns labels from config/ as the chart renders them.
+func (c *ChartConverter) RenderLabels(labels map[string]string) []string {
+	return c.templater.RenderLabels(labels)
+}
+
 // GetChartBuilders converts resources to machinery.Builders for chart template files.
 func (c *ChartConverter) GetChartBuilders() []machinery.Builder {
 	resourceGroups := c.categorizer.CategorizeByFunction()

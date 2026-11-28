@@ -178,7 +178,7 @@ func podSpecFieldIndex(lines []string, field string) int {
 
 // TemplateServiceAccount applies all ServiceAccount-specific transformations.
 func TemplateServiceAccount(detectedPrefix, chartName, yamlContent string) string {
-	yamlContent = AddServiceAccountLabelsAndAnnotations(yamlContent)
+	yamlContent = AddServiceAccountLabelsAndAnnotations(chartName, yamlContent)
 	yamlContent = TemplateServiceAccountName(detectedPrefix, chartName, yamlContent)
 	yamlContent = WrapServiceAccountWithEnabledConditional(yamlContent)
 	return yamlContent
