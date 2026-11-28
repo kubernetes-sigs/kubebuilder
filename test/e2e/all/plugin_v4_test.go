@@ -134,4 +134,24 @@ var _ = Describe("kubebuilder", func() {
 			})
 		})
 	})
+
+	Context("plugin go/v4 edit on a namespaced project", func() {
+		var kbc *utils.TestContext
+
+		BeforeEach(func() {
+			var err error
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(kbc.Prepare()).To(Succeed())
+		})
+
+		AfterEach(func() {
+			By("removing working dir")
+			kbc.Destroy()
+		})
+
+		It("should keep the namespaced scope across edit and alpha generate", func() {
+			helpers.EditPreservesNamespacedScope(kbc)
+		})
+	})
 })
