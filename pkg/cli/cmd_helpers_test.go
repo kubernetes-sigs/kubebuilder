@@ -438,6 +438,59 @@ var _ = Describe("cmd_helpers", func() {
 			Expect(err.Error()).To(ContainSubstring("pluginB/v1"))
 		})
 
+		DescribeTable("should keep the declared type of a flag an external plugin bound as a fallback",
+			func(externalFirst bool) {
+				dest := pflag.NewFlagSet("dest", pflag.ContinueOnError)
+				goPlugin := pflag.NewFlagSet("go", pflag.ContinueOnError)
+				externalPlugin := pflag.NewFlagSet("external", pflag.ContinueOnError)
+				duplicateValues := make(map[string][]pflag.Value)
+				firstPluginByFlag := make(map[string]string)
+
+				makeFlag := goPlugin.Bool("make", true, "if true, run make generate after generating files")
+				externalPlugin.String("make", "", "could not validate this flag")
+				Expect(externalPlugin.SetAnnotation("make", external.FallbackFlagAnnotation, []string{"true"})).To(Succeed())
+
+				goKey, externalKey := "go.kubebuilder.io/v4", "external.example.com/v1"
+				first, firstKey, second, secondKey := goPlugin, goKey, externalPlugin, externalKey
+				if externalFirst {
+					first, firstKey, second, secondKey = externalPlugin, externalKey, goPlugin, goKey
+				}
+				Expect(mergeFlagSetInto(dest, first, duplicateValues, firstKey, firstPluginByFlag, true)).To(Succeed())
+				Expect(mergeFlagSetInto(dest, second, duplicateValues, secondKey, firstPluginByFlag, true)).To(Succeed())
+
+				Expect(dest.Lookup("make").Value.Type()).To(Equal("bool"))
+				Expect(dest.Lookup("make").Usage).To(Equal(
+					"For plugin (go.kubebuilder.io/v4): if true, run make generate after generating files"))
+				Expect(dest.Parse([]string{"--make=false"})).To(Succeed())
+				syncDuplicateFlags(dest, duplicateValues)
+				Expect(*makeFlag).To(BeFalse())
+			},
+			Entry("when the declared flag is merged first", false),
+			Entry("when the fallback flag is merged first", true),
+		)
+
+		It("should not let a fallback flag hide a type conflict between declared flags", func() {
+			dest := pflag.NewFlagSet("dest", pflag.ContinueOnError)
+			externalPlugin := pflag.NewFlagSet("external", pflag.ContinueOnError)
+			stringPlugin := pflag.NewFlagSet("string", pflag.ContinueOnError)
+			boolPlugin := pflag.NewFlagSet("bool", pflag.ContinueOnError)
+			duplicateValues := make(map[string][]pflag.Value)
+			firstPluginByFlag := make(map[string]string)
+
+			externalPlugin.String("mode", "", "could not validate this flag")
+			Expect(externalPlugin.SetAnnotation("mode", external.FallbackFlagAnnotation, []string{"true"})).To(Succeed())
+			stringPlugin.String("mode", "", "mode as a string")
+			boolPlugin.Bool("mode", false, "mode as a bool")
+
+			Expect(mergeFlagSetInto(dest, externalPlugin, duplicateValues, "external/v1", firstPluginByFlag, true)).
+				To(Succeed())
+			Expect(mergeFlagSetInto(dest, stringPlugin, duplicateValues, "string/v1", firstPluginByFlag, true)).
+				To(Succeed())
+			err := mergeFlagSetInto(dest, boolPlugin, duplicateValues, "bool/v1", firstPluginByFlag, true)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("different value types"))
+		})
+
 		It("should sync parsed value to duplicate Values after syncDuplicateFlags", func() {
 			flags := pflag.NewFlagSet("cmd", pflag.ExitOnError)
 			var mainVal, dupVal bool

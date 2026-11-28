@@ -230,12 +230,31 @@ func mergeFlagSetInto(
 			return
 		}
 		if existing.Value.Type() != flag.Value.Type() {
+			// An external plugin without a flags command binds the flags it is
+			// given with a guessed type; a declared flag of the same name wins.
+			if isFallbackFlag(flag) {
+				return
+			}
+			if isFallbackFlag(existing) {
+				*existing = *flag
+				firstPluginByFlag[flag.Name] = pluginKey
+				if showPluginPrefix {
+					existing.Usage = "For plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
+				} else {
+					existing.Usage = strings.TrimSpace(flag.Usage)
+				}
+				return
+			}
 			firstKey := firstPluginByFlag[flag.Name]
 			err = fmt.Errorf(
 				"plugins %q and %q use the same flag name %q but expect different value types: one %s, other %s",
 				firstKey, pluginKey, flag.Name, existing.Value.Type(), flag.Value.Type(),
 			)
 			return
+		}
+		if isFallbackFlag(existing) && !isFallbackFlag(flag) {
+			// The type is now declared, so a later flag with another type must conflict.
+			existing.Annotations = withoutFallbackAnnotation(existing.Annotations)
 		}
 		duplicateValues[flag.Name] = append(duplicateValues[flag.Name], flag.Value)
 
@@ -251,6 +270,24 @@ func mergeFlagSetInto(
 		existing.Usage += " AND for plugin (" + pluginKey + "): " + strings.TrimSpace(flag.Usage)
 	})
 	return err
+}
+
+// isFallbackFlag reports whether the flag was bound by an external plugin
+// without knowing its type.
+func isFallbackFlag(flag *pflag.Flag) bool {
+	_, ok := flag.Annotations[external.FallbackFlagAnnotation]
+	return ok
+}
+
+// withoutFallbackAnnotation returns a copy of annotations without the fallback marker.
+func withoutFallbackAnnotation(annotations map[string][]string) map[string][]string {
+	result := make(map[string][]string, len(annotations))
+	for key, value := range annotations {
+		if key != external.FallbackFlagAnnotation {
+			result[key] = value
+		}
+	}
+	return result
 }
 
 // syncDuplicateFlags copies the parsed value of each flag to all duplicate Values from merge.
