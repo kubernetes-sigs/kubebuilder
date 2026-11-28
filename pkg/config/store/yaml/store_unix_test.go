@@ -56,16 +56,24 @@ var _ = Describe("yamlStore with a named pipe", func() {
 	})
 
 	It("should report the pipe instead of reading it", func() {
-		err := returnsWithin(pipeDeadline, func() error { return s.LoadFrom(path) })
+		err := returnsWithin(func() error { return s.LoadFrom(path) })
 		Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
 		Expect(err).NotTo(MatchError(os.ErrNotExist))
+	})
+
+	// Another process can replace the file with a pipe after the store checked the path.
+	It("should report a pipe that replaced the file after the check instead of reading it", func() {
+		s.fs = &checkedAsRegularFs{Fs: s.fs, path: path}
+
+		err := returnsWithin(func() error { return s.LoadFrom(path) })
+		Expect(err).To(MatchError(occupiedConfigError(path, "not a regular file")))
 	})
 
 	It("should refuse to save a new configuration to it", func() {
 		s.cfg = cfgv3.New()
 		s.mustNotExist = true
 
-		err := returnsWithin(pipeDeadline, func() error { return s.SaveTo(path) })
+		err := returnsWithin(func() error { return s.SaveTo(path) })
 		Expect(err).To(MatchError(store.SaveError{
 			Err: fmt.Errorf("cannot save configuration to %q: path is not a regular file", path),
 		}))
@@ -74,7 +82,7 @@ var _ = Describe("yamlStore with a named pipe", func() {
 	It("should refuse to update a configuration at it", func() {
 		s.cfg = cfgv3.New()
 
-		err := returnsWithin(pipeDeadline, func() error { return s.SaveTo(path) })
+		err := returnsWithin(func() error { return s.SaveTo(path) })
 		Expect(err).To(MatchError(store.SaveError{
 			Err: fmt.Errorf("cannot save configuration to %q: path is not a regular file", path),
 		}))
@@ -82,15 +90,15 @@ var _ = Describe("yamlStore with a named pipe", func() {
 })
 
 // returnsWithin runs call on a goroutine of its own and returns what it returned. It fails the
-// spec when call is still running once the deadline passes, which means the store opened the pipe.
-func returnsWithin(deadline time.Duration, call func() error) error {
+// spec when call is still running once pipeDeadline passes, which means the store opened the pipe.
+func returnsWithin(call func() error) error {
 	GinkgoHelper()
 
 	done := make(chan error, 1)
 	go func() { done <- call() }()
 
 	var err error
-	Eventually(done).WithTimeout(deadline).Should(Receive(&err),
+	Eventually(done).WithTimeout(pipeDeadline).Should(Receive(&err),
 		"the store opened the named pipe and is blocked on it")
 
 	return err
@@ -107,4 +115,30 @@ func releasePipe(path string) {
 		}
 		_ = end.Close()
 	}
+}
+
+// regularFileInfo reports a regular file mode on top of the wrapped FileInfo.
+type regularFileInfo struct{ os.FileInfo }
+
+// Mode clears the file type bits of the wrapped file information.
+func (i regularFileInfo) Mode() os.FileMode { return i.FileInfo.Mode() &^ os.ModeType }
+
+// checkedAsRegularFs reports a regular file at the path, as a check sees the file right before
+// a pipe replaces it.
+type checkedAsRegularFs struct {
+	afero.Fs
+	path string
+}
+
+// Stat reports the configured path as a regular file.
+func (f *checkedAsRegularFs) Stat(name string) (os.FileInfo, error) {
+	info, err := f.Fs.Stat(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat %q: %w", name, err)
+	}
+	if name == f.path {
+		info = regularFileInfo{info}
+	}
+
+	return info, nil
 }
