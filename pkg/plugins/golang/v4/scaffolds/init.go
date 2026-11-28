@@ -41,7 +41,7 @@ const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
 	GolangciLintVersion = "v2.15.0"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.25.2"
+	ControllerRuntimeVersion = "v0.25.3"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.23.0"
 	// KindVersion is the kind version that the Makefile, the e2e workflow and the dev container install
